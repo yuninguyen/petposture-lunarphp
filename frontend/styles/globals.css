@@ -1,0 +1,350 @@
+/*
+ * ============================================================
+ *  PetPosture — globals.css
+ *  Import file này trong app/layout.tsx.
+ *  Import tokens.css trước để có CSS variables.
+ * ============================================================
+ */
+
+@import './tokens.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* ── BASE RESET & TYPOGRAPHY ────────────────────────────────── */
+@layer base {
+
+  html {
+    font-size: var(--font-size-base);   /* 103% */
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (max-width: 768px) {
+    html { font-size: var(--font-size-base); } /* 102% override từ tokens.css */
+  }
+
+  body {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-regular);
+    color: var(--color-primary);
+    background-color: var(--color-white);
+    line-height: var(--line-height-base);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Headings dùng Hanken Grotesk 700 */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    line-height: var(--line-height-heading);
+    margin: 0;
+  }
+
+  h1 { font-size: var(--font-size-h1); line-height: var(--line-height-tight); }
+  h2 { font-size: var(--font-size-h2); }
+  h3 { font-size: var(--font-size-h3); }
+  h4 { font-size: var(--font-size-h4); line-height: var(--line-height-snug); }
+  h5 { font-size: var(--font-size-h5); }
+  h6 { font-size: var(--font-size-h6); }
+
+  /* Links */
+  a {
+    color: var(--color-link);
+    text-decoration: none;
+    transition: color var(--transition-base);
+  }
+  a:hover { color: var(--color-link-hover); }
+
+  /* Paragraphs */
+  p {
+    margin: 0;
+    line-height: var(--line-height-base);
+  }
+
+  /* Images */
+  img, video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Inputs & buttons reset */
+  button, input, textarea, select {
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  /* Focus visible — accessibility */
+  :focus-visible {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 2px;
+  }
+
+  /* Box sizing */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+}
+
+
+/* ── COMPONENT LAYER ────────────────────────────────────────── */
+@layer components {
+
+  /* Container */
+  .container-pet {
+    max-width: var(--container-max);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
+  }
+
+  /* ── BUTTONS ──────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    text-transform: var(--text-transform-btn);
+    letter-spacing: var(--tracking-wider);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  .btn:focus-visible {
+    box-shadow: var(--shadow-focus);
+    outline: none;
+  }
+
+  /* Primary button */
+  .btn-primary {
+    background-color: var(--color-secondary);
+    border-color: var(--color-secondary);
+    color: var(--color-white);
+  }
+  .btn-primary:hover {
+    background-color: var(--color-secondary-dark);
+    border-color: var(--color-secondary-dark);
+    color: var(--color-white);
+  }
+
+  /* Outline button — trên background trắng */
+  .btn-outline {
+    background-color: transparent;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  .btn-outline:hover {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+  }
+
+  /* Outline button — trên background tối */
+  .btn-outline-white {
+    background-color: transparent;
+    border-color: var(--color-white);
+    color: var(--color-white);
+  }
+  .btn-outline-white:hover {
+    background-color: var(--color-white);
+    color: var(--color-primary);
+  }
+
+  /* Ghost button */
+  .btn-ghost {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--color-primary);
+  }
+  .btn-ghost:hover {
+    background-color: var(--color-gray-50);
+  }
+
+  /* Size variants */
+  .btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: var(--font-size-xs);
+  }
+  .btn-lg {
+    padding: 1rem 2rem;
+    font-size: var(--font-size-md);
+  }
+
+  /* Add to cart — shop specific */
+  .btn-add-to-cart {
+    background-color: var(--color-add-to-cart);
+    border-color: var(--color-add-to-cart);
+    color: var(--color-white);
+  }
+  .btn-add-to-cart:hover {
+    background-color: var(--color-secondary-dark);
+    border-color: var(--color-secondary-dark);
+    color: var(--color-white);
+  }
+
+
+  /* ── CARDS ────────────────────────────────────────────────── */
+  .card {
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .card-body {
+    padding: var(--space-4);
+  }
+
+
+  /* ── BADGES / TAGS ────────────────────────────────────────── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    text-transform: var(--text-transform-badge);
+    letter-spacing: var(--tracking-wider);
+  }
+
+  .badge-primary {
+    background-color: var(--color-secondary-light);
+    color: var(--color-secondary-dark);
+  }
+
+  .badge-dark {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+  }
+
+  /* Sale bubble */
+  .badge-sale {
+    background-color: var(--color-sale-bubble);
+    color: var(--color-white);
+  }
+
+
+  /* ── SECTION TITLE ────────────────────────────────────────── */
+  .section-title {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    text-transform: var(--text-transform-section);
+    letter-spacing: var(--tracking-wider);
+    text-align: center;
+    margin-bottom: var(--space-3);
+  }
+
+  .section-title-underline {
+    width: 2.5rem;
+    height: 3px;
+    background-color: var(--color-secondary);
+    margin: 0 auto var(--space-8);
+    border-radius: var(--radius-full);
+  }
+
+  /* ── NAVIGATION ───────────────────────────────────────────── */
+  .nav-link {
+    font-family: var(--font-nav);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    text-transform: var(--text-transform-nav);
+    letter-spacing: var(--tracking-widest);
+    color: var(--color-primary);
+    transition: color var(--transition-base);
+    text-decoration: none;
+  }
+  .nav-link:hover,
+  .nav-link.active {
+    color: var(--color-secondary);
+  }
+
+  /* ── PRODUCT PRICE ────────────────────────────────────────── */
+  .price {
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-lg);
+    color: var(--color-sale-price);
+  }
+
+  .price-original {
+    font-weight: var(--font-weight-regular);
+    font-size: var(--font-size-sm);
+    color: var(--color-original-price);
+    text-decoration: line-through;
+  }
+
+  /* ── REVIEW STARS ─────────────────────────────────────────── */
+  .stars { color: var(--color-review-stars); }
+
+  /* ── TOOLTIP ──────────────────────────────────────────────── */
+  .tooltip {
+    background-color: var(--color-tooltip-bg);
+    color: var(--color-tooltip-text);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-xs);
+  }
+
+  /* ── FORM ELEMENTS ────────────────────────────────────────── */
+  .input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: var(--font-size-md);
+    color: var(--color-primary);
+    background-color: var(--color-white);
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
+    outline: none;
+  }
+  .input::placeholder { color: var(--color-gray-400); }
+  .input:focus {
+    border-color: var(--color-border-focus);
+    box-shadow: var(--shadow-focus);
+  }
+
+  /* ── ALT FONT ─────────────────────────────────────────────── */
+  .alt-font { font-family: var(--font-alt); }
+}
+
+
+/* ── UTILITY LAYER ──────────────────────────────────────────── */
+@layer utilities {
+
+  /* Section padding */
+  .section-py   { padding-top: var(--space-16); padding-bottom: var(--space-16); }
+  .section-py-sm{ padding-top: var(--space-12); padding-bottom: var(--space-12); }
+
+  /* Gradient text — dùng cho hero taglines */
+  .text-gradient {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Dark background text helper */
+  .on-dark     { color: rgba(255, 255, 255, 0.90); }
+  .on-dark-sub { color: rgba(255, 255, 255, 0.55); }
+}

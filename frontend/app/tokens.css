@@ -1,0 +1,212 @@
+/*
+ * ============================================================
+ *  PetPosture — Design Tokens
+ *  Source of truth: mọi màu, font, spacing đều lấy từ đây.
+ *  Tất cả file khác (tailwind.config, tokens.ts) đều reference
+ *  đến các biến CSS này.
+ * ============================================================
+ */
+
+:root {
+
+  /* ── COLORS: Brand ───────────────────────────────────────── */
+  --color-primary:        #3e4c57;   /* Navy slate — text, headings, nav */
+  --color-primary-light:  #5a6c7a;   /* Lighter tint cho subtext */
+  --color-primary-dark:   #2c3840;   /* Darker cho hover states */
+
+  --color-secondary:      #df8448;   /* Warm orange — CTA, accents */
+  --color-secondary-light:#fdf2ea;   /* Background tint */
+  --color-secondary-dark: #c9713a;   /* Hover state */
+
+  /* ── COLORS: Semantic ────────────────────────────────────── */
+  --color-success:        #28a745;
+  --color-success-light:  #e9f7ec;
+  --color-alert:          #dc3545;
+  --color-alert-light:    #fdecea;
+  --color-warning:        #ffc107;
+  --color-warning-light:  #fff8e1;
+
+  /* ── COLORS: Neutral ─────────────────────────────────────── */
+  --color-white:          #ffffff;
+  --color-gray-50:        #f4f5f6;   /* Page backgrounds */
+  --color-gray-100:       #e8eaec;   /* Borders, dividers */
+  --color-gray-200:       #d1d5db;   /* Disabled states */
+  --color-gray-400:       #9ca3af;   /* Placeholder text */
+  --color-gray-600:       #6b7280;   /* Body secondary text */
+  --color-gray-800:       #374151;   /* Body primary text */
+  --color-black:          #111111;
+
+  /* ── COLORS: Shop-specific ───────────────────────────────── */
+  --color-add-to-cart:    var(--color-secondary);   /* #df8448 */
+  --color-checkout-btn:   var(--color-secondary);   /* #df8448 */
+  --color-sale-bubble:    var(--color-secondary);   /* #df8448 */
+  --color-review-stars:   var(--color-secondary);   /* #df8448 */
+  --color-sale-price:     var(--color-primary);     /* #3e4c57 */
+  --color-original-price: var(--color-gray-400);    /* strikethrough */
+
+  /* ── COLORS: UI states ───────────────────────────────────── */
+  --color-link:           var(--color-primary);
+  --color-link-hover:     var(--color-secondary);
+  --color-border:         var(--color-gray-100);
+  --color-border-focus:   var(--color-secondary);
+  --color-bg-page:        var(--color-gray-50);
+  --color-bg-card:        var(--color-white);
+  --color-bg-dark:        var(--color-primary);
+
+  /* ── COLORS: Tooltip ─────────────────────────────────────── */
+  --color-tooltip-text:   #ffffff;
+  --color-tooltip-bg:     var(--color-primary);
+
+
+  /* ── TYPOGRAPHY: Font Families ───────────────────────────── */
+  --font-heading:  'Hanken Grotesk', sans-serif;  /* H1–H6 */
+  --font-body:     'Hanken Grotesk', sans-serif;  /* Base text */
+  --font-nav:      'Lato', sans-serif;            /* Navigation, tabs */
+  --font-alt:      'Dancing Script', cursive;     /* Alt / decorative */
+  --font-mono:     'JetBrains Mono', monospace;   /* Code */
+
+  /* ── TYPOGRAPHY: Font Weights ────────────────────────────── */
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
+  --font-weight-bold:     700;
+  --font-weight-black:    900;
+
+  /* ── TYPOGRAPHY: Base Size ───────────────────────────────── */
+  /* 103% của browser default 16px = ~16.48px */
+  --font-size-base:       103%;
+  /* Scale dùng clamp() để responsive tự nhiên */
+  --font-size-xs:         0.75rem;    /* 12px */
+  --font-size-sm:         0.875rem;   /* 14px */
+  --font-size-md:         1rem;       /* 16px */
+  --font-size-lg:         1.125rem;   /* 18px */
+  --font-size-xl:         1.25rem;    /* 20px */
+  --font-size-2xl:        1.5rem;     /* 24px */
+  --font-size-3xl:        1.875rem;   /* 30px */
+  --font-size-4xl:        2.25rem;    /* 36px */
+  --font-size-5xl:        3rem;       /* 48px */
+  --font-size-6xl:        clamp(2.5rem, 5vw, 4rem); /* Hero: 40–64px */
+
+  /* ── TYPOGRAPHY: Heading Scale ───────────────────────────── */
+  --font-size-h1: clamp(2.25rem, 4vw, 3.5rem);    /* 36–56px */
+  --font-size-h2: clamp(1.75rem, 3vw, 2.5rem);    /* 28–40px */
+  --font-size-h3: clamp(1.375rem, 2.5vw, 1.875rem); /* 22–30px */
+  --font-size-h4: clamp(1.125rem, 2vw, 1.5rem);   /* 18–24px */
+  --font-size-h5: 1.125rem;                        /* 18px */
+  --font-size-h6: 1rem;                            /* 16px */
+
+  /* ── TYPOGRAPHY: Line Heights ────────────────────────────── */
+  --line-height-tight:    1.1;
+  --line-height-heading:  1.2;
+  --line-height-snug:     1.4;
+  --line-height-base:     1.65;
+  --line-height-relaxed:  1.8;
+
+  /* ── TYPOGRAPHY: Letter Spacing ──────────────────────────── */
+  --tracking-tight:       -0.02em;
+  --tracking-normal:       0em;
+  --tracking-wide:         0.04em;
+  --tracking-wider:        0.08em;
+  --tracking-widest:       0.12em;  /* Uppercase labels, nav */
+
+  /* ── TEXT TRANSFORMS ─────────────────────────────────────── */
+  --text-transform-btn:       uppercase;
+  --text-transform-nav:       uppercase;
+  --text-transform-section:   uppercase;
+  --text-transform-widget:    uppercase;
+  --text-transform-breadcrumb:uppercase;
+  --text-transform-badge:     uppercase;
+
+
+  /* ── SPACING ─────────────────────────────────────────────── */
+  /*  Dùng scale 4px — nhất quán với Tailwind spacing  */
+  --space-1:   0.25rem;    /*  4px */
+  --space-2:   0.5rem;     /*  8px */
+  --space-3:   0.75rem;    /* 12px */
+  --space-4:   1rem;       /* 16px */
+  --space-5:   1.25rem;    /* 20px */
+  --space-6:   1.5rem;     /* 24px */
+  --space-8:   2rem;       /* 32px */
+  --space-10:  2.5rem;     /* 40px */
+  --space-12:  3rem;       /* 48px */
+  --space-16:  4rem;       /* 64px */
+  --space-20:  5rem;       /* 80px */
+  --space-24:  6rem;       /* 96px */
+
+  /* ── LAYOUT ──────────────────────────────────────────────── */
+  --container-max:        1200px;
+  --container-wide:       1400px;
+  --container-narrow:     720px;
+  --container-padding:    1.5rem;    /* 24px gutter on sides */
+
+
+  /* ── BORDER RADIUS ───────────────────────────────────────── */
+  --radius-none:   0;
+  --radius-sm:     0.25rem;   /* 4px  — tags, badges */
+  --radius-md:     0.375rem;  /* 6px  — buttons */
+  --radius-lg:     0.625rem;  /* 10px — cards */
+  --radius-xl:     0.75rem;   /* 12px — panels */
+  --radius-2xl:    1rem;      /* 16px — modals, hero blocks */
+  --radius-full:   9999px;    /* Pills, avatars */
+
+
+  /* ── SHADOWS ─────────────────────────────────────────────── */
+  --shadow-none:   none;
+  --shadow-sm:     0 1px 3px rgba(62, 76, 87, 0.08);
+  --shadow-md:     0 4px 12px rgba(62, 76, 87, 0.10);
+  --shadow-lg:     0 8px 28px rgba(62, 76, 87, 0.14);
+  --shadow-xl:     0 16px 48px rgba(62, 76, 87, 0.18);
+  --shadow-focus:  0 0 0 3px rgba(223, 132, 72, 0.35); /* Secondary color ring */
+
+
+  /* ── TRANSITIONS ─────────────────────────────────────────── */
+  --transition-fast:    150ms ease;
+  --transition-base:    200ms ease;
+  --transition-slow:    300ms ease;
+  --transition-spring:  300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+
+  /* ── Z-INDEX ─────────────────────────────────────────────── */
+  --z-below:      -1;
+  --z-base:        0;
+  --z-raised:     10;
+  --z-dropdown:   100;
+  --z-sticky:     200;
+  --z-overlay:    300;
+  --z-modal:      400;
+  --z-toast:      500;
+  --z-tooltip:    600;
+}
+
+
+/* ── MOBILE OVERRIDES ───────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root {
+    --font-size-base:      102%;
+    --container-padding:   1rem;    /* 16px gutter trên mobile */
+  }
+}
+
+
+/* ── UTILITY CLASSES (dùng được ngay không cần Tailwind) ────── */
+
+/* Typography */
+.font-heading  { font-family: var(--font-heading); font-weight: var(--font-weight-bold); }
+.font-body     { font-family: var(--font-body); font-weight: var(--font-weight-regular); }
+.font-nav      { font-family: var(--font-nav); font-weight: var(--font-weight-bold); }
+.alt-font      { font-family: var(--font-alt); }
+
+/* Text colors */
+.text-primary   { color: var(--color-primary); }
+.text-secondary { color: var(--color-secondary); }
+.text-muted     { color: var(--color-gray-600); }
+
+/* Backgrounds */
+.bg-primary   { background-color: var(--color-primary); }
+.bg-secondary { background-color: var(--color-secondary); }
+.bg-page      { background-color: var(--color-bg-page); }
+
+/* Uppercase text transforms */
+.uppercase-btn       { text-transform: var(--text-transform-btn); letter-spacing: var(--tracking-wider); }
+.uppercase-nav       { text-transform: var(--text-transform-nav); letter-spacing: var(--tracking-widest); }
+.uppercase-section   { text-transform: var(--text-transform-section); letter-spacing: var(--tracking-wider); }
+.uppercase-badge     { text-transform: var(--text-transform-badge); letter-spacing: var(--tracking-wider); }

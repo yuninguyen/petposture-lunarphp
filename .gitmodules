@@ -1,0 +1,6 @@
+[submodule "library/awesome-skills"]
+	path = library/awesome-skills
+	url = https://github.com/yuninguyen/antigravity-awesome-skills
+[submodule "library/everything-claude"]
+	path = library/everything-claude
+	url = https://github.com/affaan-m/everything-claude-code

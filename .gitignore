@@ -1,0 +1,12 @@
+.nexus/
+.gitnexus/
+.claude/
+.cursor/
+.roocode/
+node_modules/
+backend/vendor/
+frontend/.next/
+tools/skill-generator/temp/
+.env
+
+# LƯU Ý: KHÔNG chặn .agent/ để đồng bộ kỹ năng cá nhân
