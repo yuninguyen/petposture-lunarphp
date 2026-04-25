@@ -36,6 +36,9 @@ frontend/.env*.local
 # Tools
 tools/skill-generator/temp/
 
+# Libraries and external assets
+library/
+
 # Root env
 .env
 
