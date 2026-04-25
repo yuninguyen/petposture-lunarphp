@@ -7,12 +7,23 @@ use App\Http\Resources\Api\PostResource;
 use App\Models\Post;
 use App\Models\BlogCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
+    private function authorizeAdmin(): void
+    {
+        $user = request()->user();
+        if (! $user || ! $user->hasAnyRole(['super_admin', 'admin', 'staff'])) {
+            abort(403, 'Forbidden');
+        }
+    }
+
     public function index(Request $request)
     {
+        $this->authorizeAdmin();
+
         $query = Post::with('blogCategory')->latest();
 
         if ($request->has('category')) {
@@ -30,11 +41,14 @@ class PostController extends Controller
 
     public function categories()
     {
+        $this->authorizeAdmin();
+
         return response()->json(BlogCategory::all());
     }
 
     public function store(Request $request)
     {
+        $this->authorizeAdmin();
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -60,11 +74,14 @@ class PostController extends Controller
 
     public function show(Post $post)
     {
+        $this->authorizeAdmin();
+
         return new PostResource($post->load('blogCategory'));
     }
 
     public function update(Request $request, Post $post)
     {
+        $this->authorizeAdmin();
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
             'content' => 'sometimes|required|string',
@@ -86,6 +103,8 @@ class PostController extends Controller
 
     public function destroy(Post $post)
     {
+        $this->authorizeAdmin();
+
         $post->delete();
         return response()->json(null, 204);
     }
