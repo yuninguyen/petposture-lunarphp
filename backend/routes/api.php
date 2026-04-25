@@ -36,15 +36,17 @@ Route::get('/blog/categories', [ContentController::class, 'categories']);
 
 Route::get('/settings', [SettingsController::class, 'index']);
 
-Route::prefix('/admin')->middleware(['auth:sanctum', 'role_or_permission:super_admin|admin|staff'])->group(function () {
-    Route::get('/posts', [PostController::class, 'index']);
-    Route::post('/posts', [PostController::class, 'store']);
-    Route::get('/posts/{post}', [PostController::class, 'show']);
-    Route::put('/posts/{post}', [PostController::class, 'update']);
-    Route::patch('/posts/{post}', [PostController::class, 'update']);
-    Route::delete('/posts/{post}', [PostController::class, 'destroy']);
-    Route::get('/blog/categories', [PostController::class, 'categories']);
-});
+Route::prefix('/admin')
+    ->middleware(['auth:sanctum', 'role:super_admin|admin|staff'])
+    ->group(function () {
+        Route::get('/posts', [PostController::class, 'index']);
+        Route::post('/posts', [PostController::class, 'store']);
+        Route::get('/posts/{post}', [PostController::class, 'show']);
+        Route::put('/posts/{post}', [PostController::class, 'update']);
+        Route::patch('/posts/{post}', [PostController::class, 'update']);
+        Route::delete('/posts/{post}', [PostController::class, 'destroy']);
+        Route::get('/blog/categories', [PostController::class, 'categories']);
+    });
 
 // Protected Routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
