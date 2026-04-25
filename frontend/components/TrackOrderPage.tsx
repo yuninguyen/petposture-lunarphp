@@ -3,14 +3,85 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Search, Package, CheckCircle2, Truck, HelpCircle, ChevronRight, Mail, Phone, ArrowLeft } from "lucide-react";
+import { Search, Package, CheckCircle2, Truck, HelpCircle, ChevronRight, Mail, ArrowLeft } from "lucide-react";
 import Header from "./Header";
 import Footer from "./Footer";
+import { getApiBaseUrl } from "@/lib/api";
+import RetryPaymentPanel from "./orders/RetryPaymentPanel";
+
+type OrderAddress = {
+    first_name: string | null;
+    last_name: string | null;
+    line_one: string | null;
+    line_two: string | null;
+    city: string | null;
+    state: string | null;
+    postcode: string | null;
+    country: string | null;
+    phone: string | null;
+};
+
+type TrackedOrder = {
+    reference: string;
+    created_at: string;
+    status: string;
+    status_label: string;
+    payment_status: string;
+    payment_status_label: string;
+    payment_label?: string | null;
+    payment_intent_status?: string | null;
+    payment_method: string | null;
+    shipping_method: string | null;
+    order_events?: Array<{
+        type: string;
+        title: string;
+        detail?: string | null;
+        created_at: string;
+    }>;
+    shipments?: Array<{
+        id: string;
+        tracking_number: string;
+        carrier?: string | null;
+        tracking_url?: string | null;
+        status: string;
+    }>;
+    total: {
+        decimal: number;
+    };
+    shipping_address: OrderAddress;
+};
+
+function paymentStateHint(order: TrackedOrder) {
+    if (order.payment_status === "paid") {
+        return "Payment confirmed";
+    }
+
+    if (order.payment_status === "processing" || order.payment_intent_status === "processing") {
+        return "Payment processing";
+    }
+
+    if (order.payment_status === "failed") {
+        return "Payment failed";
+    }
+
+    return order.payment_status_label;
+}
+
+function formatMethodLabel(value: string | null, fallback: string) {
+    return (value || fallback)
+        .replace(/[_-]/g, " ")
+        .replace(/\bcod\b/i, "Cash on delivery")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function latestShipment(order: TrackedOrder) {
+    return order.shipments?.[order.shipments.length - 1] ?? null;
+}
 
 const fadeUp = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-} as any;
+};
 
 const staggerContainer = {
     animate: { transition: { staggerChildren: 0.1 } }
@@ -19,9 +90,41 @@ const staggerContainer = {
 export default function TrackOrderPage() {
     const [orderId, setOrderId] = useState("");
     const [email, setEmail] = useState("");
-    const [statusData, setStatusData] = useState<any>(null);
+    const [statusData, setStatusData] = useState<TrackedOrder | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    const formatAddress = (address: OrderAddress) => {
+        return [
+            [address.first_name, address.last_name].filter(Boolean).join(" ").trim(),
+            address.line_one,
+            address.line_two,
+            [address.city, address.state, address.postcode].filter(Boolean).join(", ").trim(),
+            address.country,
+        ].filter(Boolean).join(", ");
+    };
+
+    const fetchTrackedOrder = async (trackingNumber: string, trackingEmail: string) => {
+        const apiBase = getApiBaseUrl();
+        const res = await fetch(`${apiBase}/api/orders/track`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                tracking_number: trackingNumber.trim(),
+                email: trackingEmail.trim(),
+            }),
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || "Order not found or invalid details. Please verify your Tracking Number and Email.");
+        }
+
+        const data = await res.json();
+        return data?.data ?? null;
+    };
 
     const handleTrack = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,16 +133,10 @@ export default function TrackOrderPage() {
         setStatusData(null);
 
         try {
-            const parsedId = orderId.replace(/[^0-9]/g, '');
-            const res = await fetch(`http://127.0.0.1:8000/api/orders/${parsedId}`);
-            if (res.ok) {
-                const data = await res.json();
-                setStatusData(data);
-            } else {
-                setError("Order not found or invalid ID. Please verify your details.");
-            }
+            const data = await fetchTrackedOrder(orderId, email);
+            setStatusData(data);
         } catch (err) {
-            setError("Could not connect to tracking satellite. Please try again later.");
+            setError(err instanceof Error ? err.message : "Could not connect to the tracking server. Please check your connection and try again.");
         } finally {
             setIsLoading(false);
         }
@@ -102,19 +199,19 @@ export default function TrackOrderPage() {
                                 </div>
 
                                 <p className="text-zinc-500 text-[15px] mb-10 leading-relaxed uppercase tracking-wider font-medium">
-                                    To track your order please enter your Order ID in the box below and press the "Track" button. This was given to you on your receipt and in the confirmation email you should have received.
+                                    To track your order please enter your Tracking Number in the box below and press the &quot;Track&quot; button. This was given to you on your receipt and in the confirmation email you should have received.
                                 </p>
 
                                 <form onSubmit={handleTrack} className="space-y-8">
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <div className="space-y-3">
-                                            <label className="text-[12px] font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Order ID</label>
+                                            <label className="text-[12px] font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Tracking Number</label>
                                             <input
                                                 type="text"
                                                 required
                                                 value={orderId}
                                                 onChange={(e) => setOrderId(e.target.value)}
-                                                placeholder="e.g. #12345"
+                                                placeholder="e.g. PP-XXXXXX-XXXX"
                                                 className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium"
                                             />
                                             <p className="text-[11px] text-zinc-400 italic ml-1">(Found in your order confirmation email.)</p>
@@ -153,29 +250,92 @@ export default function TrackOrderPage() {
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="mt-10 p-6 bg-[#f8f9fa] border border-[#df8448]/20 shadow-sm rounded-2xl pointer-events-none"
+                                        className="mt-10 space-y-4"
                                     >
-                                        <div className="flex items-center gap-3 mb-4 border-b border-zinc-200 pb-4">
-                                            <CheckCircle2 className="text-green-500" size={24} />
-                                            <div>
-                                                <h3 className="text-[16px] font-bold text-[#3e4c57]">Order Found: #{statusData.id}</h3>
-                                                <p className="text-[12px] text-zinc-500 font-medium">Placed on {new Date(statusData.created_at).toLocaleDateString()}</p>
+                                        <div className="rounded-2xl border border-[#df8448]/20 bg-[#f8f9fa] p-6 shadow-sm">
+                                            <div className="flex items-center gap-3 mb-4 border-b border-zinc-200 pb-4">
+                                                <CheckCircle2 className="text-green-500" size={24} />
+                                                <div>
+                                                    <h3 className="text-[16px] font-bold text-[#3e4c57]">Order Found: {statusData.reference}</h3>
+                                                    <p className="text-[12px] text-zinc-500 font-medium">Placed on {new Date(statusData.created_at).toLocaleDateString()}</p>
+                                                </div>
                                             </div>
+                                            <div className="space-y-4 pt-2">
+                                                <div className="flex justify-between items-center text-[13px]">
+                                                    <span className="text-zinc-500 font-bold uppercase tracking-wider">Status</span>
+                                                    <span className="bg-[#df8448] text-white px-3 py-1 rounded-[4px] font-black uppercase text-[10px] tracking-widest">{statusData.status_label}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[13px]">
+                                                    <span className="text-zinc-500 font-bold uppercase tracking-wider">Total</span>
+                                                    <span className="font-black text-[#3e4c57]">${statusData.total.decimal.toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[13px]">
+                                                    <span className="text-zinc-500 font-bold uppercase tracking-wider">Shipping</span>
+                                                    <span className="font-medium text-[#3e4c57]">{formatMethodLabel(statusData.shipping_method, "Standard")}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[13px]">
+                                                    <span className="text-zinc-500 font-bold uppercase tracking-wider">Payment</span>
+                                                    <div className="text-right">
+                                                        <p className="font-medium text-[#3e4c57]">{formatMethodLabel(statusData.payment_label || statusData.payment_method, "Card")}</p>
+                                                        <p className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-zinc-400">{paymentStateHint(statusData)}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-between items-start text-[13px]">
+                                                    <span className="text-zinc-500 font-bold uppercase tracking-wider">Destination</span>
+                                                    <span className="font-medium text-[#3e4c57] text-right max-w-[220px]">{formatAddress(statusData.shipping_address)}</span>
+                                                </div>
+                                                {latestShipment(statusData)?.tracking_url ? (
+                                                    <div className="flex justify-between items-center text-[13px]">
+                                                        <span className="text-zinc-500 font-bold uppercase tracking-wider">Tracking link</span>
+                                                        <a
+                                                            href={latestShipment(statusData)?.tracking_url || "#"}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="font-semibold text-[#df8448] hover:underline"
+                                                        >
+                                                            Open carrier tracking
+                                                        </a>
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                            {statusData.order_events && statusData.order_events.length > 0 ? (
+                                                <div className="mt-5 border-t border-zinc-200 pt-4">
+                                                    <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-zinc-400">
+                                                        Recent updates
+                                                    </p>
+                                                    <div className="space-y-3">
+                                                        {[...statusData.order_events].reverse().slice(0, 4).map((event, index) => (
+                                                            <div key={`${event.type}-${event.created_at}-${index}`} className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
+                                                                <div className="flex items-start justify-between gap-4">
+                                                                    <div>
+                                                                        <p className="text-[12.5px] font-semibold text-[#3e4c57]">{event.title}</p>
+                                                                        {event.detail ? (
+                                                                            <p className="mt-1 text-[12px] leading-5 text-zinc-500">{event.detail}</p>
+                                                                        ) : null}
+                                                                    </div>
+                                                                    <p className="whitespace-nowrap text-[10px] uppercase tracking-[0.14em] text-zinc-400">
+                                                                        {new Date(event.created_at).toLocaleString()}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : null}
                                         </div>
-                                        <div className="space-y-4 pt-2">
-                                            <div className="flex justify-between items-center text-[13px]">
-                                                <span className="text-zinc-500 font-bold uppercase tracking-wider">Status</span>
-                                                <span className="bg-[#df8448] text-white px-3 py-1 rounded-[4px] font-black uppercase text-[10px] tracking-widest">{statusData.status}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center text-[13px]">
-                                                <span className="text-zinc-500 font-bold uppercase tracking-wider">Total</span>
-                                                <span className="font-black text-[#3e4c57]">${parseFloat(statusData.total_amount).toFixed(2)}</span>
-                                            </div>
-                                            <div className="flex justify-between items-start text-[13px]">
-                                                <span className="text-zinc-500 font-bold uppercase tracking-wider">Destination</span>
-                                                <span className="font-medium text-[#3e4c57] text-right max-w-[200px]">{statusData.shipping_address}</span>
-                                            </div>
-                                        </div>
+                                        <RetryPaymentPanel
+                                            reference={statusData.reference}
+                                            email={email}
+                                            customerName={`${statusData.shipping_address.first_name || ""} ${statusData.shipping_address.last_name || ""}`.trim()}
+                                            paymentMethod={statusData.payment_method}
+                                            paymentStatus={statusData.payment_status}
+                                            orderStatus={statusData.status}
+                                            onCompleted={() => {
+                                                void fetchTrackedOrder(orderId, email).then(setStatusData).catch((err) => {
+                                                    setError(err instanceof Error ? err.message : "Failed to refresh order.");
+                                                });
+                                            }}
+                                        />
                                     </motion.div>
                                 )}
                             </motion.div>

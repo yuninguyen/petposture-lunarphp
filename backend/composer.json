@@ -15,7 +15,9 @@
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
-        "lunarphp/lunar": "^1.0"
+        "lunarphp/lunar": "^1.0",
+        "spatie/laravel-permission": "^6.4",
+        "bezhansalleh/filament-shield": "^3.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -30,7 +32,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Helpers/settings.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

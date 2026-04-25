@@ -9,6 +9,7 @@ import { Mail, Phone, MapPin, Send, CheckCircle2 } from "lucide-react";
 /* ─────────────────────────────────────────────────────────────────
    DESIGN TOKENS (Synced with HomePage.tsx)
   ───────────────────────────────────────────────────────────────── */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const C = {
     primary: '#3e4c57',
     primaryHover: '#2c3840',
@@ -23,6 +24,7 @@ const C = {
     borderHover: '#c8cdd2',
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const F = {
     heading: "var(--font-hanken), sans-serif",
     body: "var(--font-hanken), sans-serif",

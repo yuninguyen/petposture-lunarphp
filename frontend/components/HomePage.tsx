@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image'; // Add this line
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import Footer from '@/components/Footer';
+import { ProductCard } from '@/components/shop/ProductCard';
+import type { Product } from '@/types/shop';
 
 /* ─────────────────────────────────────────────────────────────────
    DESIGN TOKENS
@@ -31,15 +34,7 @@ const F = {
 };
 
 /* ── TypeScript Interfaces ──────────────────────────────────────── */
-interface Product {
-  id: number;
-  category: string;
-  name: string;
-  price: string;
-  reviews: number;
-  emoji: string;
-  isNew: boolean;
-}
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
 interface BlogPost {
   cat: string;
@@ -437,111 +432,68 @@ function WhyChoose() {
 /* ─────────────────────────────────────────────────────────────────
    OUR BEST SELLERS
  ───────────────────────────────────────────────────────────────── */
-const PRODUCT_COLORS = ['#dde6eb', '#e8ded6', '#dde8e2', '#e8e4d6'];
-
-function ProductCard({ product, index }: { product: Product; index: number }) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <Link
-      href={`/product/${product.id}`}
-      style={{ textDecoration: 'none', display: 'block' }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Image */}
-      <div style={{
-        background: PRODUCT_COLORS[index % 4],
-        aspectRatio: '1/1',
-        borderRadius: 4,
-        marginBottom: 16,
-        overflow: 'hidden',
-        position: 'relative',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <div style={{
-          transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)',
-          transform: isHovered ? 'scale(1.06)' : 'scale(1)',
-          width: '100%', height: '100%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <span style={{ fontSize: 52, opacity: 0.55 }}>{product.emoji}</span>
-        </div>
-
-        {/* Quick-view overlay */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          background: 'rgba(62,76,87,0.92)',
-          color: C.white,
-          fontFamily: F.nav, fontSize: 10, fontWeight: 700,
-          letterSpacing: '0.12em', textTransform: 'uppercase',
-          padding: '12px', textAlign: 'center',
-          transform: isHovered ? 'translateY(0)' : 'translateY(100%)',
-          transition: 'transform 0.25s ease',
-        }}>
-          Quick View
-        </div>
-
-        {product.isNew && (
-          <div style={{
-            position: 'absolute', top: 12, left: 12,
-            background: C.secondary, color: C.white,
-            fontFamily: F.nav, fontSize: 12, fontWeight: 800,
-            letterSpacing: '0.12em', textTransform: 'uppercase',
-            padding: '4px 8px', borderRadius: 2,
-          }}>
-            New
-          </div>
-        )}
-      </div>
-
-      {/* Category Badge */}
-      <div style={{
-        display: 'inline-block', fontSize: 12, fontWeight: 800,
-        color: C.grayText, background: C.grayLight,
-        padding: '3px 8px', borderRadius: 2,
-        letterSpacing: '0.1em', marginBottom: 8,
-        textTransform: 'uppercase',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
-      }}>
-        {product.category}
-      </div>
-
-      {/* Name */}
-      <div style={{
-        fontFamily: F.heading, fontSize: 15, fontWeight: 700,
-        color: isHovered ? C.secondary : C.primary,
-        marginBottom: 6, lineHeight: 1.4,
-        transition: 'color 0.2s ease',
-      }}>
-        {product.name}
-      </div>
-
-      {/* Stars + Price row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 12, color: '#f59e0b', letterSpacing: 2 }}>
-          {'★'.repeat(5)}
-          <span style={{ color: C.grayText, marginLeft: 4, fontSize: 12 }}>
-            ({product.reviews})
-          </span>
-        </div>
-        <div style={{
-          fontFamily: F.heading, fontSize: 15, fontWeight: 700, color: C.primary,
-        }}>
-          {product.price}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
 function BestSellers() {
-  const products = [
-    { id: 1, category: 'ERGONOMIC BOWL', name: 'PosturePro™ Tilted Bowl', price: '$29.00', reviews: 214, emoji: '🥣', isNew: false },
-    { id: 2, category: 'MOBILITY', name: 'ErgoStep™ Pet Ramp', price: '$49.00', reviews: 182, emoji: '🪜', isNew: true },
-    { id: 3, category: 'ORTHOPEDIC', name: 'ComfortRest™ Memory Bed', price: '$89.00', reviews: 308, emoji: '🛏️', isNew: false },
-    { id: 4, category: 'HARNESS', name: 'SpineSave™ Support Harness', price: '$34.00', reviews: 97, emoji: '🦮', isNew: true },
-  ];
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/products`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch products: ${response.status}`);
+        }
+        const data = await response.json();
+        setProducts(data.data.slice(0, 4)); // Only show first 4
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to load products.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <section style={{ background: C.white, padding: '40px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+          <SectionTitle sub="Loading our most-loved products...">
+            Our Best Sellers
+          </SectionTitle>
+          <p style={{ color: C.grayText }}>Loading products...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section style={{ background: C.white, padding: '40px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+          <SectionTitle sub="Failed to load products.">
+            Our Best Sellers
+          </SectionTitle>
+          <p style={{ color: C.primary, fontWeight: 600 }}>Error: {error}</p>
+          <p style={{ color: C.grayText }}>Please check the API connection or try again later.</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <section style={{ background: C.white, padding: '40px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+          <SectionTitle sub="No products available at the moment.">
+            Our Best Sellers
+          </SectionTitle>
+          <p style={{ color: C.grayText }}>Please check back soon!</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section style={{ background: C.white, padding: '40px 24px' }}>
@@ -550,8 +502,8 @@ function BestSellers() {
           Our Best Sellers
         </SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-          {products.map((p, i) => (
-            <ProductCard key={p.id} product={p} index={i} />
+          {products.map((p) => (
+            <ProductCard key={p.variantId} product={p} />
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: 48 }}>
@@ -631,11 +583,15 @@ function MealtimeDiff() {
             border: `1px solid ${C.border}`,
             width: '100%',
           }}>
-            <img
-              src="/assets/petposture-corgi-1.jpg"
-              alt="Ergonomic mealtime difference illustration"
-              style={{ width: '100%', display: 'block', borderRadius: 16 }}
-            />
+            <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', borderRadius: 16, overflow: 'hidden' }}>
+              <Image
+                src="/assets/petposture-corgi-1.jpg"
+                alt="Ergonomic mealtime difference illustration"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                style={{ objectFit: 'cover' }}
+              />
+            </div>
           </div>
 
           {/* 4. Content (Mobile: Bottom, Desktop: Right Column, Row 2) */}
@@ -976,11 +932,13 @@ function PostCard({ post }: { post: BlogPost }) {
         overflow: 'hidden', position: 'relative',
       }}>
         {post.img ? (
-          <img
+          <Image
             src={post.img}
             alt={post.title}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
             style={{
-              width: '100%', height: '100%', objectFit: 'cover',
+              objectFit: 'cover',
               transition: 'transform 0.6s cubic-bezier(0.4,0,0.2,1)',
               transform: isHovered ? 'scale(1.08)' : 'scale(1)',
             }}

@@ -1,26 +1,73 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { Package, DollarSign, ExternalLink, Calendar, MapPin, Truck, ChevronRight } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import { Product } from '@/types/shop';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { Calendar, ChevronRight, DollarSign, ExternalLink, MapPin, Package, Truck } from "lucide-react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { getApiBaseUrl } from "@/lib/api";
 
-interface OrderItem {
+interface OrderAddress {
+    first_name: string | null;
+    last_name: string | null;
+    line_one: string | null;
+    line_two: string | null;
+    city: string | null;
+    state: string | null;
+    postcode: string | null;
+    country: string | null;
+}
+
+interface OrderLine {
     id: number;
+    type?: string;
     quantity: number;
-    price_at_purchase: string;
-    product: Product;
 }
 
 interface Order {
-    id: number;
-    total_amount: string;
+    id: string;
+    reference: string;
     status: string;
-    payment_method: string;
-    shipping_address: string;
+    status_label: string;
+    customer_email: string;
+    payment_method: string | null;
+    shipping_method: string | null;
+    shipping_address: OrderAddress;
+    total: {
+        decimal: number;
+        formatted: string;
+    };
+    lines: OrderLine[];
     created_at: string;
-    orderItems: OrderItem[];
+}
+
+interface OrdersResponse {
+    data: Order[];
+}
+
+function formatMethodLabel(value: string | null, fallback: string) {
+    return (value || fallback)
+        .replace(/[_-]/g, " ")
+        .replace(/\bcod\b/i, "Cash on delivery")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatAddress(address: OrderAddress) {
+    return [
+        [address.first_name, address.last_name].filter(Boolean).join(" ").trim(),
+        address.line_one,
+        address.line_two,
+        [address.city, address.state, address.postcode].filter(Boolean).join(", ").trim(),
+        address.country,
+    ].filter(Boolean).join(", ");
+}
+
+function normalizeStatus(status: string) {
+    return status.toUpperCase();
+}
+
+function countProductLines(order: Order) {
+    return order.lines.filter((line) => line.type !== "shipping").length;
 }
 
 export default function AdminOrdersPage() {
@@ -30,10 +77,14 @@ export default function AdminOrdersPage() {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const res = await fetch('http://127.0.0.1:8000/api/orders');
+                const apiBase = getApiBaseUrl();
+                const res = await fetch(`${apiBase}/api/orders`, {
+                    credentials: "include",
+                });
+
                 if (res.ok) {
-                    const data = await res.json();
-                    setOrders(data);
+                    const data: OrdersResponse = await res.json();
+                    setOrders(data.data || []);
                 }
             } catch (err) {
                 console.error("Fetch orders failed", err);
@@ -41,20 +92,27 @@ export default function AdminOrdersPage() {
                 setIsLoading(false);
             }
         };
+
         fetchOrders();
     }, []);
 
-    const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
-    const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
+    const totalRevenue = orders.reduce((sum, order) => sum + order.total.decimal, 0);
+    const pendingOrders = orders.filter((order) =>
+        ["AWAITING-PAYMENT", "PAYMENT-OFFLINE", "PENDING"].includes(normalizeStatus(order.status))
+    ).length;
 
     const StatusBadge = ({ status }: { status: string }) => {
-        switch (status) {
-            case 'PENDING':
-                return <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">Pending</span>;
-            case 'PAID':
+        switch (normalizeStatus(status)) {
+            case "AWAITING-PAYMENT":
+            case "PENDING":
+                return <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">Awaiting payment</span>;
+            case "PAYMENT-RECEIVED":
+            case "PAID":
                 return <span className="px-3 py-1 bg-green-100 text-green-800 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">Paid</span>;
-            case 'SHIPPED':
-                return <span className="px-3 py-1 bg-blue-100 text-blue-800 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">Shipped</span>;
+            case "PROCESSING":
+                return <span className="px-3 py-1 bg-blue-100 text-blue-800 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">Processing</span>;
+            case "SHIPPED":
+                return <span className="px-3 py-1 bg-sky-100 text-sky-800 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">Shipped</span>;
             default:
                 return <span className="px-3 py-1 bg-zinc-100 text-zinc-800 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">{status}</span>;
         }
@@ -65,8 +123,6 @@ export default function AdminOrdersPage() {
             <Header />
 
             <div className="flex-1 w-full max-w-[1200px] mx-auto p-4 md:p-8">
-
-                {/* Dashboard Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                     <div>
                         <h1 className="text-[28px] font-bold text-[#3e4c57] leading-tight">Order Management</h1>
@@ -74,7 +130,6 @@ export default function AdminOrdersPage() {
                     </div>
                 </div>
 
-                {/* Metrics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div className="bg-white p-6 rounded-xl border border-zinc-100 shadow-sm flex items-center justify-between group hover:border-[#df8448] transition-colors">
                         <div>
@@ -107,7 +162,6 @@ export default function AdminOrdersPage() {
                     </div>
                 </div>
 
-                {/* Orders Data Table */}
                 <div className="bg-white rounded-xl border border-zinc-100 shadow-sm overflow-hidden">
                     <div className="px-6 py-5 border-b border-zinc-100 flex items-center justify-between">
                         <h2 className="text-[16px] font-bold text-[#3e4c57]">Recent Orders</h2>
@@ -138,10 +192,10 @@ export default function AdminOrdersPage() {
                                         <td colSpan={6} className="px-6 py-12 text-center text-zinc-400">No orders found.</td>
                                     </tr>
                                 ) : (
-                                    orders.map(order => (
+                                    orders.map((order) => (
                                         <tr key={order.id} className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors group">
                                             <td className="px-6 py-4">
-                                                <span className="text-[14px] font-bold text-[#3e4c57]">#{order.id}</span>
+                                                <span className="text-[14px] font-bold text-[#3e4c57]">#{order.reference}</span>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2 text-zinc-500 text-[13px]">
@@ -150,25 +204,27 @@ export default function AdminOrdersPage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="flex items-start gap-2 max-w-[200px]">
+                                                <div className="flex items-start gap-2 max-w-[260px]">
                                                     <MapPin size={16} className="text-zinc-400 flex-shrink-0 mt-0.5" />
                                                     <div>
-                                                        <span className="block text-[13px] font-medium text-[#3e4c57] truncate">{order.shipping_address}</span>
-                                                        <span className="block text-[11px] text-zinc-400 uppercase tracking-wider">{order.payment_method}</span>
+                                                        <span className="block text-[13px] font-medium text-[#3e4c57] truncate">{formatAddress(order.shipping_address)}</span>
+                                                        <span className="block text-[11px] text-zinc-400 uppercase tracking-wider">
+                                                            {formatMethodLabel(order.payment_method, "Card")}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <StatusBadge status={order.status} />
+                                                <StatusBadge status={order.status_label || order.status} />
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <span className="text-[14px] font-black text-[#df8448]">${parseFloat(order.total_amount).toFixed(2)}</span>
-                                                <span className="block text-[11px] text-zinc-400">{order.orderItems?.length || 0} items</span>
+                                                <span className="text-[14px] font-black text-[#df8448]">${order.total.decimal.toFixed(2)}</span>
+                                                <span className="block text-[11px] text-zinc-400">{countProductLines(order)} items</span>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <button className="p-2 text-zinc-300 hover:text-[#3e4c57] hover:bg-zinc-100 rounded-full transition-colors">
+                                                <Link href={`/admin/orders/${order.id}`} className="p-2 text-zinc-300 hover:text-[#3e4c57] hover:bg-zinc-100 rounded-full transition-colors inline-flex">
                                                     <ChevronRight size={18} />
-                                                </button>
+                                                </Link>
                                             </td>
                                         </tr>
                                     ))
@@ -177,7 +233,6 @@ export default function AdminOrdersPage() {
                         </table>
                     </div>
                 </div>
-
             </div>
 
             <Footer />

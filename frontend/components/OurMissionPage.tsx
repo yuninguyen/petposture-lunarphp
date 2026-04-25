@@ -11,29 +11,10 @@ import Footer from "./Footer";
 /* ─────────────────────────────────────────────────────────────────
    DESIGN TOKENS (Synced with HomePage.tsx & Figma)
   ───────────────────────────────────────────────────────────────── */
-const C = {
-    primary: '#3e4c57', // Slate Blue-Gray (Main Heading & Buttons)
-    primaryHover: '#2c3840',
-    secondary: '#df8448', // Brand Orange (Eyebrows & Accents)
-    secondaryHover: '#c9713a',
-    white: '#ffffff',
-    grayLight: '#f4f5f6',
-    grayText: '#6b7280',
-    border: '#e2e5e8',
-};
-
 const fadeUp = {
     initial: { opacity: 0, y: 30 },
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.8, ease: "easeOut" }
-};
-
-const staggerContainer = {
-    animate: {
-        transition: {
-            staggerChildren: 0.2
-        }
-    }
 };
 
 export default function OurMissionPage() {
@@ -176,7 +157,7 @@ export default function OurMissionPage() {
                     </div>
 
                     <div
-                        className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-3 gap-0 md:gap-12 lg:gap-20"
+                        className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-3 gap-0 md:gap-12 lg:gap-20 py-8"
                         onScroll={handleScroll}
                         style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
                     >
@@ -187,7 +168,7 @@ export default function OurMissionPage() {
                                 initial="initial"
                                 whileInView="animate"
                                 viewport={{ once: true }}
-                                className="min-w-[85vw] md:min-w-0 snap-center flex flex-col items-center text-center group px-4 md:px-0"
+                                className="min-w-[85vw] md:min-w-0 snap-center flex flex-col items-center text-center group px-4 md:px-0 pt-4"
                             >
                                 <div className="w-16 h-16 bg-[#3e4c57] rounded-full flex items-center justify-center text-[#df8448] mb-8 group-hover:scale-110 transition-transform duration-500 shadow-xl shadow-black/10">
                                     <feature.icon size={36} strokeWidth={1} />

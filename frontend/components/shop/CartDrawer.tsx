@@ -1,8 +1,9 @@
 "use client";
 
+import Image from 'next/image';
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, X, Minus, Plus, Trash2 } from 'lucide-react';
+import { ShoppingBag, X, Minus, Plus } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 
@@ -29,96 +30,109 @@ export function CartDrawer() {
                         animate={{ x: 0 }}
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col font-hanken"
+                        className="fixed top-0 right-0 h-full w-full max-w-[400px] bg-white shadow-2xl z-50 flex flex-col font-hanken"
                     >
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-zinc-100">
-                            <div className="flex items-center gap-3">
-                                <ShoppingBag className="text-[#3e4c57]" size={20} />
-                                <h2 className="text-[18px] font-bold text-[#3e4c57] uppercase tracking-wide">
-                                    Your Cart ({items.length})
-                                </h2>
-                            </div>
+                        {/* Header - Centered & Premium */}
+                        <div className="relative flex items-center justify-center p-8 border-b border-zinc-100/80">
+                            <h2 className="text-[14px] font-black text-[#3e4c57] uppercase tracking-[0.3em] ml-4">
+                                Cart
+                            </h2>
                             <button
                                 onClick={() => setCartOpen(false)}
-                                className="p-2 hover:bg-zinc-100 rounded-full transition-colors text-zinc-400"
+                                className="absolute right-6 p-2 text-zinc-400 hover:text-[#3e4c57] transition-all hover:rotate-90 duration-300"
                             >
-                                <X size={20} />
+                                <X size={20} strokeWidth={2.5} />
                             </button>
                         </div>
 
                         {/* Cart Items */}
-                        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+                        <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-8 scrollbar-hide">
                             {items.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full text-center text-zinc-400">
-                                    <ShoppingBag size={48} className="mb-4 opacity-20" />
-                                    <p className="text-[16px] font-medium">Your cart is empty</p>
+                                <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                                    <div className="w-20 h-20 bg-zinc-50 rounded-full flex items-center justify-center mb-6">
+                                        <ShoppingBag size={32} className="text-zinc-200" />
+                                    </div>
+                                    <p className="text-[14px] font-bold text-[#3e4c57] uppercase tracking-widest mb-2">Your cart is empty</p>
+                                    <p className="text-[12px] text-zinc-400 mb-8">Add items to get started</p>
                                     <button
                                         onClick={() => setCartOpen(false)}
-                                        className="mt-6 text-[#df8448] font-bold text-[13px] uppercase tracking-widest hover:underline"
+                                        className="bg-[#3e4c57] text-white px-8 py-4 rounded-[4px] text-[11px] font-black uppercase tracking-widest hover:bg-[#2c363e] transition-all shadow-lg shadow-zinc-200"
                                     >
                                         Continue Shopping
                                     </button>
                                 </div>
                             ) : (
                                 items.map(item => (
-                                    <div key={item.id} className="flex gap-4 items-center group">
-                                        <div className="w-20 h-20 bg-zinc-50 rounded-[8px] overflow-hidden flex-shrink-0 border border-zinc-100">
-                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                    <div key={item.variantId} className="flex gap-6 items-center">
+                                        {/* Image */}
+                                        <div className="w-[80px] h-[100px] bg-zinc-50 rounded-[4px] overflow-hidden flex-shrink-0 border border-zinc-100 group relative">
+                                            <Image src={item.image} alt={item.name} fill sizes="80px" className="object-cover" />
                                         </div>
 
+                                        {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="text-[13px] font-bold text-[#3e4c57] leading-tight truncate">
+                                            <h3 className="text-[13px] font-bold text-[#3e4c57] leading-tight mb-1 hover:text-[#df8448] transition-colors cursor-pointer">
                                                 {item.name}
                                             </h3>
-                                            <p className="text-[#df8448] font-bold mt-1 text-[14px]">
-                                                ${item.price.toFixed(2)}
-                                            </p>
+                                            <div className="flex items-center gap-2 text-[12px] font-medium text-zinc-400">
+                                                <span>{item.quantity}</span>
+                                                <span>&times;</span>
+                                                <span className="text-[#df8448] font-bold">${item.price.toFixed(2)}</span>
+                                            </div>
 
-                                            <div className="flex items-center gap-4 mt-3">
-                                                <div className="flex items-center bg-zinc-50 border border-zinc-200 rounded-[4px] overflow-hidden">
-                                                    <button
-                                                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                        className="px-2 py-1 text-zinc-500 hover:bg-zinc-200 transition-colors"
-                                                    >
-                                                        <Minus size={12} />
-                                                    </button>
-                                                    <span className="px-3 text-[13px] font-bold text-[#3e4c57]">{item.quantity}</span>
-                                                    <button
-                                                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                        className="px-2 py-1 text-zinc-500 hover:bg-zinc-200 transition-colors"
-                                                    >
-                                                        <Plus size={12} />
-                                                    </button>
-                                                </div>
+                                            {/* Quantity Adjuster Mini */}
+                                            <div className="flex items-center mt-3 bg-zinc-50 rounded-[4px] w-fit border border-zinc-100">
+                                                <button
+                                                    onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                                                    className="px-2.5 py-1 text-zinc-400 hover:text-[#3e4c57] transition-colors"
+                                                >
+                                                    <Minus size={10} strokeWidth={3} />
+                                                </button>
+                                                <span className="px-2 text-[11px] font-black text-[#3e4c57] min-w-[20px] text-center">{item.quantity}</span>
+                                                <button
+                                                    onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                                                    className="px-2.5 py-1 text-zinc-400 hover:text-[#3e4c57] transition-colors"
+                                                >
+                                                    <Plus size={10} strokeWidth={3} />
+                                                </button>
                                             </div>
                                         </div>
 
+                                        {/* Remove Button - Circular logic */}
                                         <button
-                                            onClick={() => removeItem(item.id)}
-                                            className="p-2 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                            onClick={() => removeItem(item.variantId)}
+                                            className="w-8 h-8 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-300 hover:text-red-500 hover:bg-red-50 hover:border-red-100 border border-transparent transition-all"
                                         >
-                                            <Trash2 size={16} />
+                                            <X size={14} strokeWidth={3} />
                                         </button>
                                     </div>
                                 ))
                             )}
                         </div>
 
-                        {/* Footer / Checkout */}
+                        {/* Footer - Professional Action Bar */}
                         {items.length > 0 && (
-                            <div className="p-6 bg-zinc-50 border-t border-zinc-100">
-                                <div className="flex items-center justify-between mb-4">
-                                    <span className="text-zinc-500 font-medium">Subtotal</span>
-                                    <span className="text-[20px] font-black text-[#3e4c57]">${totalAmount.toFixed(2)}</span>
+                            <div className="p-8 bg-white border-t border-zinc-100 flex flex-col gap-4">
+                                <div className="flex items-center justify-between py-2">
+                                    <span className="text-[#3e4c57] text-[13px] font-bold uppercase tracking-widest">Subtotal:</span>
+                                    <span className="text-[18px] font-black text-[#3e4c57]">${totalAmount.toFixed(2)}</span>
                                 </div>
-                                <p className="text-zinc-400 text-[12px] mb-6">Taxes and shipping calculated at checkout.</p>
-                                <button
-                                    onClick={() => { setCartOpen(false); router.push('/checkout'); }}
-                                    className="w-full bg-[#df8448] text-white py-4 rounded-[4px] text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[#c9713a] transition-all flex items-center justify-center gap-2"
-                                >
-                                    Secure Checkout
-                                </button>
+                                <div className="h-[1px] bg-zinc-100 w-full mb-2" />
+
+                                <div className="flex flex-col gap-3">
+                                    <button
+                                        onClick={() => { setCartOpen(false); router.push('/cart'); }}
+                                        className="w-full bg-[#3e4c57] text-white py-4 rounded-[4px] text-[11px] font-black uppercase tracking-[0.25em] hover:bg-[#2c363e] transition-all flex items-center justify-center"
+                                    >
+                                        View Cart
+                                    </button>
+                                    <button
+                                        onClick={() => { setCartOpen(false); router.push('/checkout'); }}
+                                        className="w-full bg-[#df8448] text-white py-4 rounded-[4px] text-[11px] font-black uppercase tracking-[0.25em] shadow-xl shadow-orange-500/10 hover:bg-[#c9713a] transition-all flex items-center justify-center"
+                                    >
+                                        Checkout
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </motion.div>

@@ -1,154 +1,223 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, MessageSquare, Facebook, Twitter, Instagram, Youtube, Bookmark, Share2, User, ArrowRight } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import Link from 'next/link';
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import {
+    ArrowRight,
+    BookOpen,
+    Bookmark,
+    ChevronRight,
+    Facebook,
+    Instagram,
+    Loader2,
+    MessageSquare,
+    Share2,
+    Twitter,
+    User,
+    Youtube,
+} from "lucide-react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { getApiBaseUrl } from "@/lib/api";
+
+type BlogCategory = {
+    id: string;
+    name: string;
+    slug: string;
+};
+
+type BlogPost = {
+    id: string;
+    slug: string;
+    title: string;
+    content: string;
+    featured_image?: string | null;
+    author?: string | null;
+    read_time?: string | null;
+    created_at?: string | null;
+    blog_category?: BlogCategory | null;
+};
+
+type PostsResponse = {
+    data?: BlogPost[];
+};
+
+type CategoriesResponse = {
+    data?: BlogCategory[];
+};
 
 const fadeUp = {
     initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+    animate: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
-
-const CATEGORIES = [
-    "All",
-    "Ergonomics",
-    "Health",
-    "Breed Guides",
-    "Lifestyle",
-    "Product News"
-];
-
-const BLOG_POSTS = [
-    {
-        id: 1,
-        category: "Ergonomics",
-        title: "The Ultimate Guide to Pet Posture: Why Ergonomics Matter for Longevity",
-        excerpt: "Discover how simple changes in your pet's environment can prevent long-term spinal issues and improve their overall quality of life.",
-        image: "/assets/Corgi.png",
-        author: "Dr. Sarah Miller",
-        date: "March 24, 2024",
-        readTime: "8 min read",
-        isHero: true
-    },
-    {
-        id: 2,
-        category: "Breed Guides",
-        title: "Dachshunding 101: Keeping Long-Backed Breeds Safe at Home",
-        excerpt: "Specialized advice for owners of IVDD-prone breeds on how to navigate height and furniture safely.",
-        image: "/assets/Shop-by-Breed.jpg",
-        author: "James Wilson",
-        date: "March 22, 2024",
-        readTime: "5 min read"
-    },
-    {
-        id: 3,
-        category: "Health",
-        title: "Orthopedic vs. Standard: Which Bed Does Your Senior Pet Really Need?",
-        excerpt: "We break down the science of pressure points and joint support for aging cats and dogs.",
-        image: "/assets/Pug-Dog-Bed.jpg",
-        author: "Dr. Sarah Miller",
-        date: "March 20, 2024",
-        readTime: "6 min read"
-    },
-    {
-        id: 4,
-        category: "Lifestyle",
-        title: "Creating a Pet-First Home Without Sacrificing Interior Design",
-        excerpt: "Ergonomic furniture doesn't have to look like medical gear. Here's how to blend style and support.",
-        image: "/assets/badposture-goodposture.jpg",
-        author: "Elena Rossi",
-        date: "March 18, 2024",
-        readTime: "4 min read"
-    },
-    {
-        id: 5,
-        category: "Health",
-        title: "5 Signs Your Pet Is Struggling with Traditional Bowls",
-        excerpt: "Signs like excessive splashing or hesitation before eating could mean your pet is in discomfort.",
-        image: "/assets/Dog-Bowls-5.png",
-        author: "James Wilson",
-        date: "March 15, 2024",
-        readTime: "7 min read"
-    }
-];
 
 export default function BlogPage() {
     const [activeTab, setActiveTab] = useState("All");
+    const [posts, setPosts] = useState<BlogPost[]>([]);
+    const [categories, setCategories] = useState<BlogCategory[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const apiBase = getApiBaseUrl();
+                const [postsRes, catsRes] = await Promise.all([
+                    fetch(`${apiBase}/api/posts`),
+                    fetch(`${apiBase}/api/blog/categories`),
+                ]);
+
+                if (!postsRes.ok || !catsRes.ok) {
+                    throw new Error("Data sync failed");
+                }
+
+                const [postsData, catsData] = (await Promise.all([
+                    postsRes.json(),
+                    catsRes.json(),
+                ])) as [PostsResponse, CategoriesResponse];
+
+                setPosts(Array.isArray(postsData.data) ? postsData.data : []);
+                setCategories(Array.isArray(catsData.data) ? catsData.data : []);
+            } catch {
+                setError("We are currently updating our stories. Please check back shortly.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        void fetchData();
+    }, []);
+
+    const filteredPosts =
+        activeTab === "All"
+            ? posts
+            : posts.filter((post) => post.blog_category?.name === activeTab);
+
+    const featuredPost = posts.length > 0 ? posts[0] : null;
+    const latestPosts =
+        posts.length > 1 && featuredPost
+            ? filteredPosts.filter((post) => post.id !== featuredPost.id)
+            : filteredPosts;
+
+    if (isLoading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-white font-hanken">
+                <div className="text-center">
+                    <Loader2 className="mx-auto mb-6 animate-spin text-[#df8448]" size={48} />
+                    <p className="text-[12px] font-bold uppercase tracking-widest text-[#3e4c57]">
+                        Curating your feed...
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <main className="min-h-screen bg-white font-hanken overflow-x-hidden">
+        <main className="min-h-screen overflow-x-hidden bg-white font-hanken">
             <Header />
 
-            {/* Hero Section - Featured Post */}
-            <section className="bg-[#f8f9fa] pt-8 pb-16 px-4 md:px-8">
-                <div className="max-w-[1200px] mx-auto">
-                    <motion.div
-                        initial="initial"
-                        animate="animate"
-                        variants={fadeUp}
-                        className="flex flex-col lg:flex-row gap-0 lg:gap-10 bg-white rounded-2xl overflow-hidden shadow-sm border border-zinc-100"
-                    >
-                        <div className="lg:w-3/5 h-[300px] md:h-[450px] relative overflow-hidden group">
-                            <img
-                                src={BLOG_POSTS[0].image}
-                                alt="Hero Post"
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                            />
-                            <div className="absolute top-6 left-6">
-                                <span className="bg-[#df8448] text-white text-[11px] font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-[3px] shadow-lg">
-                                    Featured Article
-                                </span>
-                            </div>
-                        </div>
-                        <div className="lg:w-2/5 p-8 md:p-12 flex flex-col justify-center">
-                            <div className="flex items-center gap-3 mb-6">
-                                <span className="text-[#df8448] text-[13px] font-bold tracking-widest uppercase">
-                                    {BLOG_POSTS[0].category}
-                                </span>
-                                <span className="w-1 h-1 bg-zinc-300 rounded-full"></span>
-                                <span className="text-zinc-400 text-[13px]">{BLOG_POSTS[0].date}</span>
-                            </div>
-                            <h1 className="text-[28px] md:text-[36px] font-bold text-[#3e4c57] leading-tight mb-6 hover:text-[#df8448] transition-colors cursor-pointer">
-                                {BLOG_POSTS[0].title}
-                            </h1>
-                            <p className="text-[#666666] text-[16px] leading-relaxed mb-8 line-clamp-3">
-                                {BLOG_POSTS[0].excerpt}
-                            </p>
-                            <div className="flex items-center justify-between mt-auto pt-6 border-t border-zinc-100">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center border border-zinc-200 overflow-hidden">
-                                        <User size={20} className="text-zinc-400" />
-                                    </div>
-                                    <div>
-                                        <span className="block text-[14px] font-bold text-[#3e4c57]">{BLOG_POSTS[0].author}</span>
-                                        <span className="block text-[12px] text-zinc-400">{BLOG_POSTS[0].readTime}</span>
-                                    </div>
+            {featuredPost && (
+                <section className="bg-[#f8f9fa] px-4 pb-16 pt-8 md:px-8">
+                    <div className="mx-auto max-w-[1200px]">
+                        <motion.div
+                            initial="initial"
+                            animate="animate"
+                            variants={fadeUp}
+                            className="flex flex-col gap-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm lg:flex-row lg:gap-10"
+                        >
+                            <div className="group relative h-[300px] overflow-hidden md:h-[450px] lg:w-3/5">
+                                <Image
+                                    src={featuredPost.featured_image || "/assets/placeholder-post.jpg"}
+                                    alt={featuredPost.title}
+                                    fill
+                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                    sizes="(max-width: 1024px) 100vw, 60vw"
+                                />
+                                <div className="absolute left-6 top-6">
+                                    <span className="rounded-[3px] bg-[#df8448] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg">
+                                        Featured Article
+                                    </span>
                                 </div>
-                                <button className="text-[#3e4c57] hover:text-[#df8448] transition-all flex items-center gap-2 font-bold uppercase tracking-widest text-[11px]">
-                                    Continue <ArrowRight size={14} />
-                                </button>
                             </div>
-                        </div>
-                    </motion.div>
-                </div>
-            </section>
+                            <div className="flex flex-col justify-center p-8 md:p-12 lg:w-2/5">
+                                <div className="mb-6 flex items-center gap-3">
+                                    <span className="text-[13px] font-bold uppercase tracking-widest text-[#df8448]">
+                                        {featuredPost.blog_category?.name || "Insights"}
+                                    </span>
+                                    <span className="h-1 w-1 rounded-full bg-zinc-300" />
+                                    <span className="text-[13px] text-zinc-400">
+                                        {featuredPost.created_at
+                                            ? new Date(featuredPost.created_at).toLocaleDateString("en-US", {
+                                                  month: "long",
+                                                  day: "numeric",
+                                                  year: "numeric",
+                                              })
+                                            : "Recently published"}
+                                    </span>
+                                </div>
+                                <h1 className="mb-6 cursor-pointer text-[28px] font-bold leading-tight text-[#3e4c57] transition-colors hover:text-[#df8448] md:text-[36px]">
+                                    {featuredPost.title}
+                                </h1>
+                                <p className="mb-8 line-clamp-3 text-[16px] leading-relaxed text-[#666666]">
+                                    {featuredPost.content.substring(0, 160)}...
+                                </p>
+                                <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-100">
+                                            <User size={20} className="text-zinc-400" />
+                                        </div>
+                                        <div>
+                                            <span className="block text-[14px] font-bold text-[#3e4c57]">
+                                                {featuredPost.author || "PetPosture Editorial"}
+                                            </span>
+                                            <span className="block text-[12px] text-zinc-400">
+                                                {featuredPost.read_time || "5 min read"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <Link
+                                        href={`/blog/${featuredPost.slug || featuredPost.id}`}
+                                        className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#3e4c57] transition-all hover:text-[#df8448]"
+                                    >
+                                        Continue <ArrowRight size={14} />
+                                    </Link>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                </section>
+            )}
 
-            {/* Category Navigation */}
-            <nav className="border-y border-zinc-100 bg-white sticky top-[65px] md:top-[100px] z-40">
-                <div className="max-w-[1200px] mx-auto px-4 md:px-8 overflow-x-auto no-scrollbar">
-                    <div className="flex items-center gap-8 py-5 whitespace-nowrap">
-                        {CATEGORIES.map((cat) => (
+            <nav className="sticky top-[65px] z-40 border-y border-zinc-100 bg-white md:top-[100px]">
+                <div className="mx-auto max-w-[1200px] overflow-x-auto px-4 no-scrollbar md:px-8">
+                    <div className="flex items-center gap-8 whitespace-nowrap py-5">
+                        <button
+                            onClick={() => setActiveTab("All")}
+                            className={`relative py-2 text-[12px] font-bold uppercase tracking-[0.15em] transition-all md:text-[13px] ${
+                                activeTab === "All"
+                                    ? "text-[#df8448]"
+                                    : "text-[#3e4c57]/60 hover:text-[#3e4c57]"
+                            }`}
+                        >
+                            All
+                            {activeTab === "All" && (
+                                <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#df8448]" />
+                            )}
+                        </button>
+                        {categories.map((cat) => (
                             <button
-                                key={cat}
-                                onClick={() => setActiveTab(cat)}
-                                className={`text-[12px] md:text-[13px] font-bold uppercase tracking-[0.15em] transition-all relative py-2 ${activeTab === cat ? 'text-[#df8448]' : 'text-[#3e4c57]/60 hover:text-[#3e4c57]'
-                                    }`}
+                                key={cat.id}
+                                onClick={() => setActiveTab(cat.name)}
+                                className={`relative py-2 text-[12px] font-bold uppercase tracking-[0.15em] transition-all md:text-[13px] ${
+                                    activeTab === cat.name
+                                        ? "text-[#df8448]"
+                                        : "text-[#3e4c57]/60 hover:text-[#3e4c57]"
+                                }`}
                             >
-                                {cat}
-                                {activeTab === cat && (
+                                {cat.name}
+                                {activeTab === cat.name && (
                                     <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#df8448]" />
                                 )}
                             </button>
@@ -157,87 +226,111 @@ export default function BlogPage() {
                 </div>
             </nav>
 
-            {/* Main Content Grid */}
-            <section className="py-16 px-4 md:px-8">
-                <div className="max-w-[1200px] mx-auto flex flex-col lg:flex-row gap-16">
-
-                    {/* Main Posts Feed */}
+            <section className="px-4 py-16 md:px-8">
+                <div className="mx-auto flex max-w-[1200px] flex-col gap-16 lg:flex-row">
                     <div className="flex-1">
-                        <h2 className="text-[20px] font-bold text-[#3e4c57] uppercase tracking-[0.2em] mb-10 flex items-center gap-4">
+                        <h2 className="mb-10 flex items-center gap-4 text-[20px] font-bold uppercase tracking-[0.2em] text-[#3e4c57]">
                             Latest Stories
-                            <div className="flex-1 h-[1px] bg-zinc-100" />
+                            <div className="h-[1px] flex-1 bg-zinc-100" />
                         </h2>
+
+                        {error && (
+                            <div className="mb-8 rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-[13px] font-medium text-amber-700">
+                                {error}
+                            </div>
+                        )}
+
                         <div className="space-y-12 md:space-y-16">
-                            {BLOG_POSTS.slice(1).map((post) => (
-                                <article key={post.id} className="flex flex-col md:flex-row gap-8 group">
-                                    <div className="md:w-[35%] aspect-[4/3] rounded-xl overflow-hidden relative shadow-sm shrink-0">
-                                        <img
-                                            src={post.image}
-                                            alt={post.title}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                        />
-                                        <div className="absolute top-4 left-4">
-                                            <span className="bg-white/90 backdrop-blur-sm text-[#df8448] text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-[3px] shadow-sm">
-                                                {post.category}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex-1 flex flex-col py-1">
-                                        <div className="flex items-center gap-3 text-zinc-400 text-[11px] mb-3 uppercase tracking-wider font-bold">
-                                            <span className="text-[#df8448]">{post.author}</span>
-                                            <span className="w-1 h-1 bg-zinc-200 rounded-full"></span>
-                                            <span>{post.date}</span>
-                                        </div>
-                                        <h3 className="text-[22px] md:text-[26px] font-bold text-[#3e4c57] leading-tight mb-4 hover:text-[#df8448] transition-colors cursor-pointer line-clamp-2">
-                                            {post.title}
-                                        </h3>
-                                        <p className="text-[#666666] text-[15px] leading-relaxed mb-6 line-clamp-3">
-                                            {post.excerpt}
-                                        </p>
-                                        <div className="mt-auto flex items-center justify-between pt-5 border-t border-zinc-50">
-                                            <div className="flex items-center gap-6">
-                                                <button className="flex items-center gap-1.5 text-zinc-400 hover:text-[#df8448] transition-colors text-[12px] font-medium">
-                                                    <Share2 size={14} /> Share
-                                                </button>
-                                                <button className="flex items-center gap-1.5 text-zinc-400 hover:text-[#df8448] transition-colors text-[12px] font-medium">
-                                                    <MessageSquare size={14} /> 12
-                                                </button>
+                            {latestPosts.length === 0 ? (
+                                <div className="rounded-2xl border border-zinc-100 bg-[#f8f9fa] py-20 text-center">
+                                    <BookOpen size={40} className="mx-auto mb-4 text-zinc-200" />
+                                    <p className="font-bold text-[#3e4c57]">No stories found in this section.</p>
+                                </div>
+                            ) : (
+                                latestPosts.map((post) => (
+                                    <article key={post.id} className="group flex flex-col gap-8 md:flex-row">
+                                        <div className="relative aspect-[4/3] shrink-0 overflow-hidden rounded-xl shadow-sm md:w-[35%]">
+                                            <Image
+                                                src={post.featured_image || "/assets/placeholder-post.jpg"}
+                                                alt={post.title}
+                                                fill
+                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                sizes="(max-width: 768px) 100vw, 35vw"
+                                            />
+                                            <div className="absolute left-4 top-4">
+                                                <span className="rounded-[3px] bg-white/90 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-[#df8448] shadow-sm backdrop-blur-sm">
+                                                    {post.blog_category?.name || "Insights"}
+                                                </span>
                                             </div>
-                                            <Link href={`/blog/${post.id}`} className="text-[#3e4c57] hover:text-[#df8448] transition-all font-bold uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
-                                                Read Story <ChevronRight size={14} />
-                                            </Link>
                                         </div>
-                                    </div>
-                                </article>
-                            ))}
+                                        <div className="flex flex-1 flex-col py-1">
+                                            <div className="mb-3 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                                                <span className="text-[#df8448]">
+                                                    {post.author || "PetPosture Editorial"}
+                                                </span>
+                                                <span className="h-1 w-1 rounded-full bg-zinc-200" />
+                                                <span>
+                                                    {post.created_at
+                                                        ? new Date(post.created_at).toLocaleDateString()
+                                                        : "Recently published"}
+                                                </span>
+                                            </div>
+                                            <h3 className="mb-4 line-clamp-2 cursor-pointer text-[22px] font-bold leading-tight text-[#3e4c57] transition-colors hover:text-[#df8448] md:text-[26px]">
+                                                {post.title}
+                                            </h3>
+                                            <p className="mb-6 line-clamp-3 text-[15px] leading-relaxed text-[#666666]">
+                                                {post.content.substring(0, 140)}...
+                                            </p>
+                                            <div className="mt-auto flex items-center justify-between border-t border-zinc-50 pt-5">
+                                                <div className="flex items-center gap-6">
+                                                    <button className="flex items-center gap-1.5 text-[12px] font-medium text-zinc-400 transition-colors hover:text-[#df8448]">
+                                                        <Share2 size={14} /> Share
+                                                    </button>
+                                                    <button className="flex items-center gap-1.5 text-[12px] font-medium text-zinc-400 transition-colors hover:text-[#df8448]">
+                                                        <MessageSquare size={14} /> Discuss
+                                                    </button>
+                                                </div>
+                                                <Link
+                                                    href={`/blog/${post.slug || post.id}`}
+                                                    className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#3e4c57] transition-all hover:text-[#df8448]"
+                                                >
+                                                    Read Story <ChevronRight size={14} />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </article>
+                                ))
+                            )}
                         </div>
 
-                        <div className="mt-20 pt-10 border-t border-zinc-100 flex justify-center">
-                            <button className="bg-[#df8448] text-white px-14 py-4 rounded-[3px] font-bold uppercase tracking-[0.2em] text-[11px] hover:bg-[#c9713a] transition-all shadow-xl shadow-orange-100/50">
-                                Load More Content
-                            </button>
-                        </div>
+                        {latestPosts.length > 0 && (
+                            <div className="mt-20 flex justify-center border-t border-zinc-100 pt-10">
+                                <button className="rounded-[3px] bg-[#df8448] px-14 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-xl shadow-orange-100/50 transition-all hover:bg-[#c9713a]">
+                                    Load More Content
+                                </button>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Sidebar */}
-                    <aside className="lg:w-80 space-y-12">
-
-                        {/* Follow Us Section */}
-                        <div className="bg-white rounded-2xl p-8 border border-zinc-100 shadow-sm">
-                            <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#df8448] mb-6 flex items-center gap-3">
+                    <aside className="space-y-12 lg:w-80">
+                        <div className="rounded-2xl border border-zinc-100 bg-white p-8 shadow-sm">
+                            <h4 className="mb-6 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#df8448]">
                                 Follow PetPosture
-                                <div className="w-1.5 h-1.5 bg-[#df8448]/20 rounded-full" />
+                                <div className="h-1.5 w-1.5 rounded-full bg-[#df8448]/20" />
                             </h4>
                             <div className="grid grid-cols-1 gap-3">
                                 {[
                                     { icon: Facebook, label: "Facebook", count: "12K", color: "#1877F2" },
                                     { icon: Instagram, label: "Instagram", count: "25K", color: "#E4405F" },
                                     { icon: Twitter, label: "Twitter (X)", count: "8K", color: "#000000" },
-                                    { icon: Youtube, label: "Youtube", count: "15K", color: "#FF0000" }
+                                    { icon: Youtube, label: "Youtube", count: "15K", color: "#FF0000" },
                                 ].map((social) => (
-                                    <button key={social.label} className="flex items-center justify-between p-3.5 rounded-xl bg-[#f8f9fa] hover:bg-zinc-100 transition-all border border-zinc-100/50 group">
+                                    <button
+                                        key={social.label}
+                                        className="group flex items-center justify-between rounded-xl border border-zinc-100/50 bg-[#f8f9fa] p-3.5 transition-all hover:bg-zinc-100"
+                                    >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white shadow-sm border border-zinc-100 group-hover:border-[#df8448]/30 transition-colors">
+                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-100 bg-white shadow-sm transition-colors group-hover:border-[#df8448]/30">
                                                 <social.icon size={16} style={{ color: social.color }} />
                                             </div>
                                             <span className="text-[13px] font-bold text-[#3e4c57]">{social.label}</span>
@@ -248,100 +341,119 @@ export default function BlogPage() {
                             </div>
                         </div>
 
-                        {/* Trending Section */}
-                        <div>
-                            <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#df8448] mb-8 flex items-center gap-3">
-                                Most Discussed
-                                <div className="flex-1 h-[1px] bg-zinc-100" />
-                            </h4>
-                            <div className="space-y-7">
-                                <div className="relative rounded-xl overflow-hidden aspect-[16/10] group cursor-pointer shadow-sm">
-                                    <img
-                                        src={BLOG_POSTS[1].image}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                        alt="Trending"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#3e4c57]/90 via-[#3e4c57]/20 to-transparent flex flex-col justify-end p-5">
-                                        <span className="bg-[#df8448] text-white text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-[2px] w-fit mb-2">Editor's Pick</span>
-                                        <h5 className="text-white text-[15px] font-bold leading-tight group-hover:text-[#df8448] transition-colors line-clamp-2">
-                                            {BLOG_POSTS[1].title}
-                                        </h5>
+                        {posts.length > 0 && (
+                            <div>
+                                <h4 className="mb-8 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#df8448]">
+                                    Most Discussed
+                                    <div className="h-[1px] flex-1 bg-zinc-100" />
+                                </h4>
+                                <div className="space-y-7">
+                                    <div className="group relative aspect-[16/10] cursor-pointer overflow-hidden rounded-xl shadow-sm">
+                                        <Image
+                                            src={posts[0].featured_image || "/assets/placeholder-post.jpg"}
+                                            alt={posts[0].title}
+                                            fill
+                                            className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                            sizes="320px"
+                                        />
+                                        <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#3e4c57]/90 via-[#3e4c57]/20 to-transparent p-5">
+                                            <span className="mb-2 w-fit rounded-[2px] bg-[#df8448] px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-white">
+                                                Editor&apos;s Pick
+                                            </span>
+                                            <h5 className="line-clamp-2 text-[15px] font-bold leading-tight text-white transition-colors group-hover:text-[#df8448]">
+                                                {posts[0].title}
+                                            </h5>
+                                        </div>
                                     </div>
-                                </div>
-                                {[3, 4, 5].map((id) => {
-                                    const post = BLOG_POSTS.find(p => p.id === id);
-                                    return (
-                                        <div key={id} className="flex gap-4 group cursor-pointer">
-                                            <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 shadow-sm border border-zinc-100">
-                                                <img src={post?.image} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="Thumb" />
+                                    {posts.slice(1, 4).map((post) => (
+                                        <div key={post.id} className="group flex cursor-pointer gap-4">
+                                            <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-zinc-100 shadow-sm">
+                                                <Image
+                                                    src={post.featured_image || "/assets/placeholder-post.jpg"}
+                                                    alt={post.title}
+                                                    fill
+                                                    className="object-cover transition-transform group-hover:scale-110"
+                                                    sizes="64px"
+                                                />
                                             </div>
                                             <div className="flex-1">
-                                                <h6 className="text-[13px] font-bold text-[#3e4c57] leading-snug group-hover:text-[#df8448] transition-colors mb-1 line-clamp-2">
-                                                    {post?.title}
+                                                <h6 className="mb-1 line-clamp-2 text-[13px] font-bold leading-snug text-[#3e4c57] transition-colors group-hover:text-[#df8448]">
+                                                    {post.title}
                                                 </h6>
-                                                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{post?.date}</span>
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                                                    {post.created_at
+                                                        ? new Date(post.created_at).toLocaleDateString()
+                                                        : "Recently published"}
+                                                </span>
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        {/* Newsletter Mini Card */}
-                        <div className="bg-[#f8f9fa] rounded-2xl p-8 border border-zinc-100 relative overflow-hidden">
-                            <h4 className="text-[14px] font-bold text-[#3e4c57] mb-4 uppercase tracking-[0.1em]">Never miss a post</h4>
-                            <p className="text-[13px] text-[#666666] mb-6">Join 5,000+ pet parents getting our weekly ergonomics report.</p>
+                        <div className="relative overflow-hidden rounded-2xl border border-zinc-100 bg-[#f8f9fa] p-8">
+                            <h4 className="mb-4 text-[14px] font-bold uppercase tracking-[0.1em] text-[#3e4c57]">
+                                Never miss a post
+                            </h4>
+                            <p className="mb-6 text-[13px] text-[#666666]">
+                                Join 5,000+ pet parents getting our weekly ergonomics report.
+                            </p>
                             <input
                                 type="email"
                                 placeholder="Your email"
-                                className="w-full px-4 py-3 rounded-[3px] border border-zinc-200 mb-4 outline-none focus:border-[#df8448] text-[13px]"
+                                className="mb-4 w-full rounded-[3px] border border-zinc-200 px-4 py-3 text-[13px] outline-none focus:border-[#df8448]"
                             />
-                            <button className="w-full bg-[#df8448] text-white py-3 rounded-[3px] font-bold uppercase tracking-[0.15em] text-[11px] hover:bg-[#c9713a] transition-all">
+                            <button className="w-full rounded-[3px] bg-[#df8448] py-3 text-[11px] font-bold uppercase tracking-[0.15em] text-white transition-all hover:bg-[#c9713a]">
                                 Subscribe
                             </button>
                         </div>
 
-                        {/* Quote Banner */}
-                        <div className="bg-[#f8f9fa] rounded-2xl p-8 text-[#3e4c57] text-center border border-zinc-100 relative overflow-hidden">
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                        <div className="relative overflow-hidden rounded-2xl border border-zinc-100 bg-[#f8f9fa] p-8 text-center text-[#3e4c57]">
+                            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
                                 <Bookmark className="text-[#df8448]" size={20} />
                             </div>
-                            <p className="text-[15px] font-bold italic leading-relaxed relative z-10">
-                                "A dog doesn't need much, but they deserve to be comfortable while they wait for you."
+                            <p className="relative z-10 text-[15px] font-bold italic leading-relaxed">
+                                &quot;A dog doesn&apos;t need much, but they deserve to be comfortable while they wait for you.&quot;
                             </p>
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-[#df8448]/5 rounded-full -mr-12 -mt-12" />
-                            <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#3e4c57]/5 rounded-full -ml-12 -mb-12" />
+                            <div className="absolute right-0 top-0 -mr-12 -mt-12 h-24 w-24 rounded-full bg-[#df8448]/5" />
+                            <div className="absolute bottom-0 left-0 -mb-12 -ml-12 h-24 w-24 rounded-full bg-[#3e4c57]/5" />
                         </div>
-
                     </aside>
                 </div>
             </section>
 
-            {/* Main Newsletter Section */}
-            <section className="bg-white py-12 px-4 md:px-8 border-t border-zinc-50">
-                <div className="max-w-[1000px] mx-auto bg-[#3e4c57] rounded-2xl p-8 md:p-14 text-center relative overflow-hidden shadow-xl">
-                    <motion.div initial="initial" whileInView="animate" viewport={{ once: true }} variants={fadeUp} className="relative z-10">
-                        <h2 className="text-[32px] md:text-[36px] font-bold text-white mb-4 tracking-tight">Stay Inside The Loop</h2>
-                        <p className="text-white/70 text-[15px] md:text-[16px] mb-8 max-w-lg mx-auto leading-relaxed">
+            <section className="border-t border-zinc-50 bg-white px-4 py-12 md:px-8">
+                <div className="relative mx-auto max-w-[1000px] overflow-hidden rounded-2xl bg-[#3e4c57] p-8 text-center shadow-xl md:p-14">
+                    <motion.div
+                        initial="initial"
+                        whileInView="animate"
+                        viewport={{ once: true }}
+                        variants={fadeUp}
+                        className="relative z-10"
+                    >
+                        <h2 className="mb-4 text-[32px] font-bold tracking-tight text-white md:text-[36px]">
+                            Stay Inside The Loop
+                        </h2>
+                        <p className="mx-auto mb-8 max-w-lg text-[15px] leading-relaxed text-white/70 md:text-[16px]">
                             Get the latest pet ergonomics news, breed-specific guides, and exclusive collection previews delivered to your inbox.
                         </p>
-                        <div className="flex flex-col md:flex-row gap-3 max-w-xl mx-auto">
+                        <div className="mx-auto flex max-w-xl flex-col gap-3 md:flex-row">
                             <input
                                 type="email"
                                 placeholder="Enter your email address"
-                                className="flex-1 px-6 py-4 rounded-[3px] bg-white text-[#3e4c57] outline-none text-[14px] font-medium"
+                                className="flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-[#3e4c57] outline-none"
                             />
-                            <button className="bg-[#df8448] text-white px-10 py-4 rounded-[3px] font-bold uppercase tracking-[0.2em] text-[11px] hover:bg-[#c9713a] transition-all whitespace-nowrap shadow-lg">
+                            <button className="whitespace-nowrap rounded-[3px] bg-[#df8448] px-10 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-all hover:bg-[#c9713a]">
                                 Subscribe Now
                             </button>
                         </div>
-                        <p className="mt-6 text-white/30 text-[10px] uppercase tracking-widest font-bold">
+                        <p className="mt-6 text-[10px] font-bold uppercase tracking-widest text-white/30">
                             By subscribing, you agree to our privacy policy and terms.
                         </p>
                     </motion.div>
-                    {/* Decorative Elements */}
-                    <div className="absolute top-0 left-0 w-48 h-48 bg-[#df8448]/10 rounded-full blur-[80px] -ml-24 -mt-24" />
-                    <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-[80px] -mr-24 -mb-24" />
+                    <div className="absolute left-0 top-0 -ml-24 -mt-24 h-48 w-48 rounded-full bg-[#df8448]/10 blur-[80px]" />
+                    <div className="absolute bottom-0 right-0 -mb-24 -mr-24 h-48 w-48 rounded-full bg-white/5 blur-[80px]" />
                 </div>
             </section>
 

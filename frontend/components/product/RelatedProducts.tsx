@@ -1,7 +1,6 @@
 "use client";
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Product } from '@/types/shop';
 import { ProductCard } from '@/components/shop/ProductCard';
 
@@ -13,7 +12,7 @@ interface RelatedProductsProps {
 export function RelatedProducts({ products, currentProductId }: RelatedProductsProps) {
     // Filter out current product and take top 4
     const related = products
-        .filter(p => p.id !== currentProductId)
+        .filter((p) => p.productId !== currentProductId)
         .slice(0, 4);
 
     if (related.length === 0) return null;
@@ -30,15 +29,10 @@ export function RelatedProducts({ products, currentProductId }: RelatedProductsP
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {related.map((product, index) => (
-                        <motion.div
-                            key={product.id}
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                        >
+                    {related.map((product) => (
+                        <div key={product.variantId}>
                             <ProductCard product={product} />
-                        </motion.div>
+                        </div>
                     ))}
                 </div>
             </div>

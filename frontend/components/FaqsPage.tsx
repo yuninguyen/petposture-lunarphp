@@ -150,7 +150,7 @@ export default function FaqsPage() {
                                     {cat.title}
                                 </h2>
                                 <div className="space-y-0">
-                                    {FAQ_ITEMS.filter(item => item.category === cat.id).map((item, idx) => {
+                                    {FAQ_ITEMS.filter(item => item.category === cat.id).map((item) => {
                                         const globalIdx = FAQ_ITEMS.indexOf(item);
                                         const isOpen = openItems.includes(globalIdx);
                                         return (
@@ -197,7 +197,7 @@ export default function FaqsPage() {
                             </div>
                             <h3 className="text-[22px] font-bold text-[#3e4c57] mb-4 uppercase tracking-widest">Still have questions?</h3>
                             <p className="text-[#666666] mb-8 max-w-md mx-auto text-[15px]">
-                                Our friendly support team is here to help. We'll get back to you within 24 business hours.
+                                Our friendly support team is here to help. We&apos;ll get back to you within 24 business hours.
                             </p>
                             <a
                                 href="/contact"

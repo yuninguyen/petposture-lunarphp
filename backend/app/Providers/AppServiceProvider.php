@@ -2,7 +2,18 @@
 
 namespace App\Providers;
 
+use App\Models\OrderEvent;
+use App\Lunar\ShippingModifiers\DefaultShippingModifier;
+use App\Payments\Gateways\CashOnDeliveryGateway;
+use App\Payments\Gateways\MockPayPalGateway;
+use App\Payments\Gateways\StripeCardGateway;
+use App\Payments\PaymentGatewayManager;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Lunar\Models\Order;
+use Lunar\Base\ShippingModifiers;
+use Lunar\Models\ProductVariant;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -11,6 +22,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(PaymentGatewayManager::class, function () {
+            return new PaymentGatewayManager([
+                new CashOnDeliveryGateway(),
+                new StripeCardGateway(),
+                new MockPayPalGateway(),
+            ]);
+        });
+
+        // Filament panels must be registered during the service provider
+        // registration phase, otherwise their routes are never mounted.
         \Lunar\Admin\Support\Facades\LunarPanel::register();
     }
 
@@ -19,6 +40,29 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Lunar\Models\Order::observe(\App\Observers\OrderObserver::class);
+        \Lunar\Models\ProductVariant::observe(\App\Observers\ProductVariantObserver::class);
+        \App\Models\Product::observe(\App\Observers\LegacyProductObserver::class);
+        $this->app->make(ShippingModifiers::class)->add(DefaultShippingModifier::class);
+        Order::resolveRelationUsing('orderEvents', function (Order $order) {
+            return $order->hasMany(OrderEvent::class, 'order_id')->orderBy('occurred_at');
+        });
+
+        $legacyVariantMorph = ProductVariant::class;
+        $currentVariantMorph = (new ProductVariant)->getMorphClass();
+
+        if ($legacyVariantMorph !== $currentVariantMorph && Schema::hasTable('lunar_prices')) {
+            DB::table('lunar_prices')
+                ->where('priceable_type', $legacyVariantMorph)
+                ->update(['priceable_type' => $currentVariantMorph]);
+        }
+
+        // Register custom discount type
+        $this->app->make(\Lunar\Base\DiscountManagerInterface::class)
+            ->addType(\App\Lunar\DiscountTypes\FixedAmountOffPerUnit::class);
+
+        \Illuminate\Support\Facades\RateLimiter::for('api', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
     }
 }

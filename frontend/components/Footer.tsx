@@ -26,6 +26,15 @@ const legalLinks = [
   "Acceptable Use Policy",
 ];
 
+type FooterSectionProps = {
+  title: string;
+  id: string;
+  isOpen: boolean;
+  onToggle: (section: string) => void;
+  items?: string[];
+  isCustomContent?: React.ReactNode;
+};
+
 const getLegalHref = (link: string) => {
   switch (link) {
     case "Privacy Policy": return "/privacy-policy";
@@ -36,74 +45,67 @@ const getLegalHref = (link: string) => {
   }
 };
 
+function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: FooterSectionProps) {
+  return (
+    <div className="border-b lg:border-none border-white/5 py-4 lg:py-0">
+      <button
+        onClick={() => onToggle(id)}
+        className="flex items-center justify-between w-full lg:mb-4 group text-left"
+      >
+        <div>
+          <h4 className="font-bold text-[16px] uppercase tracking-[0.15em] text-white inline-block">
+            {title}
+          </h4>
+          <div className="hidden lg:block w-8 h-[2px] bg-[#df8448] mt-3" />
+        </div>
+        <div className="lg:hidden text-white/40 group-hover:text-white transition-colors">
+          {isOpen ? <Minus size={18} /> : <Plus size={18} />}
+        </div>
+      </button>
+
+      <div className={`
+        overflow-hidden lg:overflow-visible transition-all duration-300 ease-in-out lg:max-h-none lg:opacity-100 lg:mt-0
+        ${isOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0'}
+      `}>
+        {isCustomContent ? (
+          isCustomContent
+        ) : (
+          <ul className="space-y-3 pb-2 lg:pb-0">
+            {items?.map((item) => (
+              <li key={item}>
+                <Link
+                  href={
+                    item === "Contact Us" ? "/contact" :
+                      item === "Shipping Policy" ? "/shipping-policy" :
+                        item === "Return & Refund Policy" ? "/return-refund-policy" :
+                          item === "FAQs" ? "/faqs" :
+                            item === "Track Your Order" ? "/track-order" :
+                              item === "Eating & Digestion" ? "/shop?category=Bowls" :
+                                item === "Mobility & Support" ? "/shop?category=Ramps" :
+                                  item === "Comfort & Safety" ? "/shop?category=Beds" :
+                                    item === "All Products" ? "/shop" :
+                                      item === "Flat-Faced Breeds" ? "/shop?category=Bowls" :
+                                        item === "Long-Backed Breeds" ? "/shop?category=Ramps" : "#"
+                  }
+                  className="text-[16px] text-white/60 hover:text-[#df8448] transition-colors flex items-center gap-2 group"
+                >
+                  <span className="w-0 h-[1px] bg-[#df8448] transition-all group-hover:w-3" />
+                  {item}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Footer() {
   const [openSection, setOpenSection] = useState<string | null>(null);
 
   const toggleSection = (section: string) => {
     setOpenSection(openSection === section ? null : section);
-  };
-
-  const FooterSection = ({ title, items, id, isCustomContent }: {
-    title: string;
-    items?: string[];
-    id: string;
-    isCustomContent?: React.ReactNode;
-  }) => {
-    const isOpen = openSection === id;
-
-    return (
-      <div className="border-b lg:border-none border-white/5 py-4 lg:py-0">
-        <button
-          onClick={() => toggleSection(id)}
-          className="flex items-center justify-between w-full lg:mb-4 group text-left"
-        >
-          <div>
-            <h4 className="font-bold text-[16px] uppercase tracking-[0.15em] text-white inline-block">
-              {title}
-            </h4>
-            <div className="hidden lg:block w-8 h-[2px] bg-[#df8448] mt-3" />
-          </div>
-          <div className="lg:hidden text-white/40 group-hover:text-white transition-colors">
-            {isOpen ? <Minus size={18} /> : <Plus size={18} />}
-          </div>
-        </button>
-
-        <div className={`
-          overflow-hidden lg:overflow-visible transition-all duration-300 ease-in-out lg:max-h-none lg:opacity-100 lg:mt-0
-          ${isOpen ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0'}
-        `}>
-          {isCustomContent ? (
-            isCustomContent
-          ) : (
-            <ul className="space-y-3 pb-2 lg:pb-0">
-              {items?.map((item) => (
-                <li key={item}>
-                  <Link
-                    href={
-                      item === "Contact Us" ? "/contact" :
-                        item === "Shipping Policy" ? "/shipping-policy" :
-                          item === "Return & Refund Policy" ? "/return-refund-policy" :
-                            item === "FAQs" ? "/faqs" :
-                              item === "Track Your Order" ? "/track-order" :
-                                item === "Eating & Digestion" ? "/shop?category=Bowls" :
-                                  item === "Mobility & Support" ? "/shop?category=Ramps" :
-                                    item === "Comfort & Safety" ? "/shop?category=Beds" :
-                                      item === "All Products" ? "/shop" :
-                                        item === "Flat-Faced Breeds" ? "/shop?category=Bowls" :
-                                          item === "Long-Backed Breeds" ? "/shop?category=Ramps" : "#"
-                    }
-                    className="text-[16px] text-white/60 hover:text-[#df8448] transition-colors flex items-center gap-2 group"
-                  >
-                    <span className="w-0 h-[1px] bg-[#df8448] transition-all group-hover:w-3" />
-                    {item}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -116,6 +118,8 @@ export default function Footer() {
             <FooterSection
               title="About PetPosture"
               id="about"
+              isOpen={openSection === "about"}
+              onToggle={toggleSection}
               isCustomContent={
                 <div className="pb-4 lg:pb-0">
                   <p className="text-[16px] text-white/60 leading-[1.75] mb-6 max-w-sm">
@@ -145,9 +149,9 @@ export default function Footer() {
             />
 
             {/* Shop sections with accordion on mobile */}
-            <FooterSection title="Shop by Solution" items={shopBySolution} id="solution" />
-            <FooterSection title="Shop by Breed" items={shopByBreed} id="breed" />
-            <FooterSection title="Customer Service" items={customerService} id="service" />
+            <FooterSection title="Shop by Solution" items={shopBySolution} id="solution" isOpen={openSection === "solution"} onToggle={toggleSection} />
+            <FooterSection title="Shop by Breed" items={shopByBreed} id="breed" isOpen={openSection === "breed"} onToggle={toggleSection} />
+            <FooterSection title="Customer Service" items={customerService} id="service" isOpen={openSection === "service"} onToggle={toggleSection} />
           </div>
         </div>
       </div>

@@ -37,7 +37,7 @@ export default function Insights() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {posts.map(({ title, excerpt, image, category, href }, i) => (
+          {posts.map(({ title, image, category, href }, i) => (
             <Link key={i} href={href} className="group flex flex-col items-center text-center">
               <div className="relative w-full overflow-hidden bg-zinc-100 mb-8 aspect-[1.15/1]">
                 <Image

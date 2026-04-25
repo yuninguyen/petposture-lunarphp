@@ -167,7 +167,7 @@ export default function ReturnRefundPolicyPage() {
                                                 Original shipping charges are **non-refundable**.
                                             </p>
                                             <p className="mt-2">
-                                                For "Buyer's Remorse" returns (e.g., changed mind, wrong size/color), the customer is responsible for the return shipping costs. For confirmed defective or incorrect items reported within 7 days, PetPosture will provide a pre-paid label.
+                                                For &quot;Buyer&apos;s Remorse&quot; returns (e.g., changed mind, wrong size/color), the customer is responsible for the return shipping costs. For confirmed defective or incorrect items reported within 7 days, PetPosture will provide a pre-paid label.
                                             </p>
                                         </div>
                                     </div>

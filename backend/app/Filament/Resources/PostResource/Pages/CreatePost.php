@@ -9,4 +9,13 @@ use Filament\Resources\Pages\CreateRecord;
 class CreatePost extends CreateRecord
 {
     protected static string $resource = PostResource::class;
+
+    protected function afterCreate(): void
+    {
+        $metadata = $this->data['metadata'] ?? [];
+
+        foreach ($metadata as $key => $value) {
+            $this->record->setMeta($key, $value);
+        }
+    }
 }

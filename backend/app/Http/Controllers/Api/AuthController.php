@@ -3,61 +3,61 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\Api\LoginRequest;
+use App\Http\Requests\Api\RegisterRequest;
+use App\Http\Resources\Api\UserResource;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use App\Traits\HttpResponses;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:users,email',
-            'password' => 'required|string|min:6'
-        ]);
+    use HttpResponses;
 
+    public function login(LoginRequest $request)
+    {
+        $request->authenticate();
+
+        $user = Auth::user();
+
+        return $this->success([
+            'user' => new UserResource($user),
+            'token' => $user->createToken('Api Token of ' . $user->name)->plainTextToken
+        ], 'Đăng nhập thành công');
+    }
+
+    public function register(RegisterRequest $request)
+    {
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'user' => $user,
-            'token' => $token
-        ], 201);
-    }
-
-    public function login(Request $request)
-    {
-        $validated = $request->validate([
-            'email' => 'required|string|email',
-            'password' => 'required|string'
-        ]);
-
-        if (!Auth::attempt($validated)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+        // Assign 'customer' role by default
+        $customerRole = Role::where('name', 'customer')->first();
+        if ($customerRole) {
+            $user->assignRole($customerRole);
         }
 
-        $user = User::where('email', $validated['email'])->firstOrFail();
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'user' => $user,
-            'token' => $token
-        ]);
+        return $this->success([
+            'user' => new UserResource($user),
+            'token' => $user->createToken('Api Token of ' . $user->name)->plainTextToken
+        ], 'Đăng ký thành công');
     }
 
-    public function logout(Request $request)
+    public function logout()
     {
-        $user = $request->user();
-        if ($user) {
-            $user->currentAccessToken()->delete();
-        }
-        return response()->json(['message' => 'Logged out successfully'], 200);
+        Auth::user()->currentAccessToken()->delete();
+
+        return $this->success(null, 'Đã đăng xuất');
+    }
+
+    public function me()
+    {
+        return $this->success(new UserResource(Auth::user()));
     }
 }

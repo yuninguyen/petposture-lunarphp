@@ -86,13 +86,37 @@ return [
             'favourite' => true,
         ],
 
-        'dispatched' => [
-            'label' => 'Dispatched',
+        'processing' => [
+            'label' => 'Processing',
+            'color' => '#3b82f6',
             'mailers' => [],
             'notifications' => [],
             'favourite' => true,
         ],
 
+        'shipped' => [
+            'label' => 'Shipped',
+            'color' => '#f59e0b',
+            'mailers' => [],
+            'notifications' => [],
+            'favourite' => true,
+        ],
+
+        'delivered' => [
+            'label' => 'Delivered',
+            'color' => '#10b981',
+            'mailers' => [],
+            'notifications' => [],
+            'favourite' => true,
+        ],
+
+        'cancelled' => [
+            'label' => 'Cancelled',
+            'color' => '#ef4444',
+            'mailers' => [],
+            'notifications' => [],
+            'favourite' => true,
+        ],
     ],
 
     /*

@@ -10,6 +10,7 @@ interface ScientificBreakdownProps {
 }
 
 export function ScientificBreakdown({ product }: ScientificBreakdownProps) {
+    void product;
     const specs = [
         { icon: <Beaker size={24} />, title: "BIOMETRIC FIT", desc: "Digital mapping ensures zero pressure points on joints." },
         { icon: <Activity size={24} />, title: "VET-VALIDATED", desc: "Clinically tested to improve spinal alignment by 22%." },

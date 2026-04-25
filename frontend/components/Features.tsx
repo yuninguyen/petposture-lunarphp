@@ -31,11 +31,10 @@ export default function Features() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-1">
           {items.map(({ icon: Icon, title, description }, i) => (
-            <div 
-              key={i} 
-              className={`flex flex-col items-center text-center px-10 gap-5 ${
-                i !== items.length - 1 ? "md:border-r border-zinc-100" : ""
-              }`}
+            <div
+              key={i}
+              className={`flex flex-col items-center text-center px-10 gap-5 ${i !== items.length - 1 ? "md:border-r border-zinc-100" : ""
+                }`}
             >
               <div className="flex items-center justify-center">
                 <Icon size={28} strokeWidth={1.5} className="text-primary/70" aria-hidden="true" />

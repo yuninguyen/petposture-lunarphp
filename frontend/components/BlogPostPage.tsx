@@ -1,10 +1,10 @@
 "use client";
 
 import React from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronRight,
-    MessageSquare,
     Share2,
     User,
     Calendar,
@@ -12,9 +12,7 @@ import {
     ArrowLeft,
     Facebook,
     Twitter,
-    Instagram,
-    Youtube,
-    Bookmark
+    Instagram
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -103,11 +101,15 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                             transition={{ duration: 0.8 }}
                             className="rounded-2xl overflow-hidden shadow-2xl shadow-zinc-200/50 mb-12 border border-zinc-100"
                         >
-                            <img
-                                src={post.image}
-                                alt={post.title}
-                                className="w-full aspect-[16/9] object-cover"
-                            />
+                            <div className="relative aspect-[16/9]">
+                                <Image
+                                    src={post.image}
+                                    alt={post.title}
+                                    fill
+                                    sizes="(max-width: 1024px) 100vw, 70vw"
+                                    className="object-cover"
+                                />
+                            </div>
                         </motion.div>
 
                         <article className="prose prose-zinc max-w-none">
@@ -117,23 +119,23 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                 </p>
 
                                 <p>
-                                    As pet owners, we often overlook the long-term impact of daily physical activities. Simple motions like jumping off a couch, leaning down to reach a bowl, or sleeping on an unsupportive surface can accumulate stress on a pet's skeletal structure over time. This is especially true for specific breeds like Dachshunds, Pugs, and senior pets of all sizes.
+                                    As pet owners, we often overlook the long-term impact of daily physical activities. Simple motions like jumping off a couch, leaning down to reach a bowl, or sleeping on an unsupportive surface can accumulate stress on a pet&apos;s skeletal structure over time. This is especially true for specific breeds like Dachshunds, Pugs, and senior pets of all sizes.
                                 </p>
 
                                 <h2 className="text-[28px] md:text-[32px] font-bold text-[#3e4c57] mt-12 mb-6">The Science Behind the Slump</h2>
 
                                 <p>
-                                    Modern veterinary ergonomic research suggests that a "neutral spine" position is critical for digestive health and joint longevity. When a pet eats from a bowl placed too low, they must arch their neck and compress their chest, which can lead to air swallowing (aerophagia) and unnecessary strain on the cervical vertebrae.
+                                    Modern veterinary ergonomic research suggests that a &quot;neutral spine&quot; position is critical for digestive health and joint longevity. When a pet eats from a bowl placed too low, they must arch their neck and compress their chest, which can lead to air swallowing (aerophagia) and unnecessary strain on the cervical vertebrae.
                                 </p>
 
                                 <blockquote className="border-l-4 border-[#df8448] pl-8 py-4 my-10 bg-[#fdf2ea] rounded-r-xl italic text-[22px] text-[#3e4c57] font-semibold">
-                                    "Prevention is always more effective—and less painful—than correction when it comes to spinal health."
+                                    &quot;Prevention is always more effective—and less painful—than correction when it comes to spinal health.&quot;
                                 </blockquote>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-12">
                                     <div className="bg-[#f8f9fa] p-8 rounded-2xl border border-zinc-100">
                                         <h3 className="text-[18px] font-bold text-[#df8448] mb-4 uppercase tracking-widest">The Risk</h3>
-                                        <p className="text-[16px] text-zinc-600">Standard bowls and beds don't account for natural anatomical angles, leading to premature aging and joint inflammation.</p>
+                                        <p className="text-[16px] text-zinc-600">Standard bowls and beds don&apos;t account for natural anatomical angles, leading to premature aging and joint inflammation.</p>
                                     </div>
                                     <div className="bg-[#3e4c57] p-8 rounded-2xl text-white">
                                         <h3 className="text-[18px] font-bold text-[#df8448] mb-4 uppercase tracking-widest">The Solution</h3>
@@ -142,7 +144,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                 </div>
 
                                 <p>
-                                    By incorporating ergonomic tools into your pet's life today, you're not just buying gear; you're investing in years of mobility and comfort. At PetPosture, our mission is to make these scientific benefits accessible without compromising the aesthetic of your home.
+                                    By incorporating ergonomic tools into your pet&apos;s life today, you&apos;re not just buying gear; you&apos;re investing in years of mobility and comfort. At PetPosture, our mission is to make these scientific benefits accessible without compromising the aesthetic of your home.
                                 </p>
                             </div>
                         </article>
@@ -193,7 +195,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                             <span className="text-[11px] text-zinc-400">Mar 25, 2024</span>
                                         </div>
                                         <p className="text-[#666666] text-[15px] leading-relaxed">
-                                            This is exactly the information I was looking for! My Dachshund has been showing some signs of discomfort during meals, and I'll definitely look into a tilted bowl.
+                                            This is exactly the information I was looking for! My Dachshund has been showing some signs of discomfort during meals, and I&apos;ll definitely look into a tilted bowl.
                                         </p>
                                         <button className="mt-4 text-[11px] font-bold text-[#df8448] uppercase tracking-widest hover:text-[#3e4c57] transition-colors">Reply</button>
                                     </div>
@@ -275,8 +277,14 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                             <div className="space-y-8">
                                 {recentPosts.map((rPost) => (
                                     <Link href={`/blog/${rPost.id}`} key={rPost.id} className="flex gap-4 group">
-                                        <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-zinc-200 shadow-sm">
-                                            <img src={rPost.image} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={rPost.title} />
+                                        <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-zinc-200 shadow-sm">
+                                            <Image
+                                                src={rPost.image}
+                                                alt={rPost.title}
+                                                fill
+                                                sizes="80px"
+                                                className="object-cover transition-transform group-hover:scale-110"
+                                            />
                                         </div>
                                         <div>
                                             <h5 className="text-[14px] font-bold text-[#3e4c57] leading-tight group-hover:text-[#df8448] transition-colors mb-2 line-clamp-2">
@@ -347,7 +355,13 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                     {recentPosts.slice(0, 3).map((rPost) => (
                         <article key={rPost.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-zinc-100 group">
                             <div className="aspect-[16/10] overflow-hidden relative">
-                                <img src={rPost.image} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={rPost.title} />
+                                <Image
+                                    src={rPost.image}
+                                    alt={rPost.title}
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, 33vw"
+                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                />
                                 <div className="absolute top-4 left-4">
                                     <span className="bg-white/90 backdrop-blur-sm text-[#df8448] text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-[3px]">
                                         {rPost.category}

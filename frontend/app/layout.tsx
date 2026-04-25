@@ -1,34 +1,30 @@
 import './globals.css';
 
-import { Hanken_Grotesk, Lato, Dancing_Script } from 'next/font/google';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartDrawer } from '@/components/shop/CartDrawer';
 
-const hanken = Hanken_Grotesk({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-hanken',
-  display: 'swap',
-});
-
-const lato = Lato({
-  subsets: ['latin'],
-  weight: ['700'],
-  variable: '--font-lato',
-  display: 'swap',
-});
-
-const dancing = Dancing_Script({
-  subsets: ['latin'],
-  weight: ['400'],
-  variable: '--font-dancing',
-  display: 'swap',
-});
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${hanken.variable} ${lato.variable} ${dancing.variable}`}>
+    <html
+      lang="en"
+      style={
+        {
+          '--font-hanken': '"Hanken Grotesk", "Avenir Next", "Segoe UI", sans-serif',
+          '--font-lato': '"Lato", "Arial Narrow", "Segoe UI", sans-serif',
+          '--font-dancing': '"Dancing Script", "Brush Script MT", cursive',
+        } as React.CSSProperties
+      }
+    >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;700&family=Lato:wght@700&family=Dancing+Script:wght@400&display=swap"
+        />
+      </head>
       <body>
         <AuthProvider>
           <CartProvider>

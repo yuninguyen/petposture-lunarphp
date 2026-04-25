@@ -6,10 +6,13 @@ import { ChevronRight, Home } from 'lucide-react';
 
 interface BreadcrumbsProps {
     category?: string;
+    categorySlug?: string;
     productName?: string;
 }
 
-export function Breadcrumbs({ category, productName }: BreadcrumbsProps) {
+export function Breadcrumbs({ category, categorySlug, productName }: BreadcrumbsProps) {
+    const isCategoryGeneric = category?.toLowerCase() === 'shop' || category?.toLowerCase() === 'categories';
+
     return (
         <nav className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-zinc-400 py-8 px-4 md:px-8 max-w-[1200px] mx-auto">
             <Link href="/" className="hover:text-[#df8448] transition-colors flex items-center gap-1">
@@ -23,10 +26,10 @@ export function Breadcrumbs({ category, productName }: BreadcrumbsProps) {
                 Shop
             </Link>
 
-            {category && (
+            {category && !isCategoryGeneric && (
                 <>
                     <ChevronRight size={12} className="opacity-30" />
-                    <Link href={`/shop?category=${category.toLowerCase()}`} className="hover:text-[#df8448] transition-colors">
+                    <Link href={`/shop/${categorySlug || 'categories'}`} className="hover:text-[#df8448] transition-colors">
                         {category}
                     </Link>
                 </>

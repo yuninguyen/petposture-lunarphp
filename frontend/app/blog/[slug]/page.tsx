@@ -1,77 +1,115 @@
 import React from 'react';
-import BlogPostPage from '@/components/BlogPostPage';
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
-const BLOG_POSTS = [
-    {
-        id: 1,
-        slug: "ultimate-guide-to-pet-posture",
-        category: "Ergonomics",
-        title: "The Ultimate Guide to Pet Posture: Why Ergonomics Matter for Longevity",
-        excerpt: "Discover how simple changes in your pet's environment can prevent long-term spinal issues and improve their overall quality of life.",
-        image: "/assets/Corgi.png",
-        author: "Dr. Sarah Miller",
-        date: "March 24, 2024",
-        readTime: "8 min read"
-    },
-    {
-        id: 2,
-        slug: "dachshunding-101",
-        category: "Breed Guides",
-        title: "Dachshunding 101: Keeping Long-Backed Breeds Safe at Home",
-        excerpt: "Specialized advice for owners of IVDD-prone breeds on how to navigate height and furniture safely.",
-        image: "/assets/Shop-by-Breed.jpg",
-        author: "James Wilson",
-        date: "March 22, 2024",
-        readTime: "5 min read"
-    },
-    {
-        id: 3,
-        slug: "orthopedic-vs-standard",
-        category: "Health",
-        title: "Orthopedic vs. Standard: Which Bed Does Your Senior Pet Really Need?",
-        excerpt: "We break down the science of pressure points and joint support for aging cats and dogs.",
-        image: "/assets/Pug-Dog-Bed.jpg",
-        author: "Dr. Sarah Miller",
-        date: "March 20, 2024",
-        readTime: "6 min read"
-    },
-    {
-        id: 4,
-        slug: "creating-a-pet-first-home",
-        category: "Lifestyle",
-        title: "Creating a Pet-First Home Without Sacrificing Interior Design",
-        excerpt: "Ergonomic furniture doesn't have to look like medical gear. Here's how to blend style and support.",
-        image: "/assets/badposture-goodposture.jpg",
-        author: "Elena Rossi",
-        date: "March 18, 2024",
-        readTime: "4 min read"
-    },
-    {
-        id: 5,
-        slug: "5-signs-traditional-bowls",
-        category: "Health",
-        title: "5 Signs Your Pet Is Struggling with Traditional Bowls",
-        excerpt: "Signs like excessive splashing or hesitation before eating could mean your pet is in discomfort.",
-        image: "/assets/Dog-Bowls-5.png",
-        author: "James Wilson",
-        date: "March 15, 2024",
-        readTime: "7 min read"
-    }
-];
+import BlogPostPage from '@/components/BlogPostPage';
+import { API_BASE_URL } from '@/lib/api';
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-    const post = BLOG_POSTS.find(p => p.id.toString() === params.slug || p.slug === params.slug);
+type ApiPost = {
+    id: string;
+    slug: string;
+    title: string;
+    content?: string;
+    featured_image?: string | null;
+    author?: string | null;
+    read_time?: string | null;
+    created_at?: string | null;
+    blog_category?: {
+        id: string;
+        name: string;
+        slug?: string | null;
+    } | null;
+};
+
+type BlogPostViewModel = {
+    id: number;
+    slug: string;
+    category: string;
+    title: string;
+    excerpt: string;
+    content?: string;
+    image: string;
+    author: string;
+    date: string;
+    readTime: string;
+};
+
+function toViewModel(post: ApiPost): BlogPostViewModel {
+    const content = post.content || '';
+
     return {
-        title: post ? `${post.title} | Blog | PetPosture` : "Blog Post",
-        description: post?.excerpt || "Pet Ergonomics Tips",
+        id: Number(post.id),
+        slug: post.slug,
+        category: post.blog_category?.name || 'Insights',
+        title: post.title,
+        excerpt: content.slice(0, 180) || post.title,
+        content,
+        image: post.featured_image || '/assets/placeholder-post.jpg',
+        author: post.author || 'PetPosture Editorial',
+        date: post.created_at ? new Date(post.created_at).toLocaleDateString() : 'Recently published',
+        readTime: post.read_time || '5 min read',
     };
 }
 
-export default function Page({ params }: { params: { slug: string } }) {
-    // In a real app, this would be an API fetch
-    const post = BLOG_POSTS.find(p => p.id.toString() === params.slug || p.slug === params.slug) || BLOG_POSTS[0];
-    const recentPosts = BLOG_POSTS.filter(p => p.id !== post.id);
+async function fetchPost(slug: string): Promise<ApiPost | null> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/posts/${slug}`, {
+            next: { revalidate: 60 },
+        });
 
-    return <BlogPostPage post={post} recentPosts={recentPosts} />;
+        if (!response.ok) {
+            return null;
+        }
+
+        const payload = await response.json();
+        return payload?.data ?? null;
+    } catch (error) {
+        console.error('Failed to fetch blog post:', error);
+        return null;
+    }
+}
+
+async function fetchRecentPosts(currentSlug: string): Promise<ApiPost[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/posts`, {
+            next: { revalidate: 60 },
+        });
+
+        if (!response.ok) {
+            return [];
+        }
+
+        const payload = await response.json();
+        const posts = Array.isArray(payload?.data) ? payload.data as ApiPost[] : [];
+
+        return posts.filter((post) => post.slug !== currentSlug).slice(0, 3);
+    } catch (error) {
+        console.error('Failed to fetch recent blog posts:', error);
+        return [];
+    }
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+    const { slug } = await params;
+    const post = await fetchPost(slug);
+
+    return {
+        title: post ? `${post.title} | Blog | PetPosture` : 'Blog Post',
+        description: post?.content?.slice(0, 160) || 'Pet ergonomics tips',
+    };
+}
+
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+
+    const [post, recentPosts] = await Promise.all([
+        fetchPost(slug),
+        fetchRecentPosts(slug),
+    ]);
+
+    if (!post) {
+        notFound();
+    }
+
+    return <BlogPostPage post={toViewModel(post)} recentPosts={recentPosts.map(toViewModel)} />;
 }

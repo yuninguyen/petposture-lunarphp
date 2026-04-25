@@ -1,82 +1,98 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Star } from 'lucide-react';
-import { Product } from '@/types/shop';
-import { useCart } from '@/context/CartContext';
+import { Star, ArrowUpRight, ShoppingBag } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
+import { useCart } from '@/context/CartContext';
+import type { Product } from '@/types/shop';
 
-interface ProductCardProps {
-    product: Product;
-}
-
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product }: { product: Product }) {
     const { addItem } = useCart();
 
     return (
-        <motion.div
-            layout
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="group"
-        >
-            <div className="relative aspect-[4/5] bg-[#f8f9fa] rounded-2xl overflow-hidden mb-6 border border-zinc-50 shadow-sm group-hover:shadow-2xl group-hover:shadow-zinc-200 transition-all duration-500">
-                <Link href={`/product/${product.id}`}>
-                    <img
+        <article className="group overflow-hidden rounded-[20px] border border-[#eee3d7] bg-[#fcfbf8] shadow-[0_12px_28px_rgba(34,33,33,0.04)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(34,33,33,0.08)]">
+            <Link href={`/shop/${product.categorySlug}/${product.slug}`} className="block">
+                <div className="relative aspect-square overflow-hidden border-b border-[#efe5dc] bg-[#f4eee7]">
+                    <Image
                         src={product.image}
                         alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 cursor-pointer"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="transition duration-500 group-hover:scale-[1.03]"
                     />
-                </Link>
 
-                {/* Badges */}
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
-                    {product.badge && (
-                        <span className="bg-[#df8448] text-white text-[9px] font-black px-3 py-1 rounded-[2px] uppercase tracking-widest shadow-lg shadow-orange-500/20">
-                            {product.badge}
+                    <div className="absolute left-3 top-3">
+                        <span className="rounded-full bg-white/92 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-[#56616a] shadow-sm">
+                            {product.category}
                         </span>
-                    )}
-                    {product.isNew && (
-                        <span className="bg-[#3e4c57] text-white text-[9px] font-black px-3 py-1 rounded-[2px] uppercase tracking-widest shadow-lg shadow-zinc-500/20">
-                            NEW ARRIVAL
-                        </span>
-                    )}
-                </div>
+                    </div>
 
-                {/* Action Overlay */}
-                <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 flex flex-col gap-2">
-                    <button
-                        onClick={() => addItem(product)}
-                        className="w-full bg-[#df8448] text-white py-4 rounded-[4px] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[#c9713a] transition-all"
-                    >
-                        Add to Cart
-                    </button>
+                    <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
+                        {product.badge && (
+                            <span className="rounded-full bg-[#df8448] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-orange-500/20">
+                                {product.badge}
+                            </span>
+                        )}
+                        {product.isNew && (
+                            <span className="rounded-full bg-[#3e4c57] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
+                                New
+                            </span>
+                        )}
+                        {product.lowStockWarning && !product.backorder && (
+                            <span className="rounded-full bg-[#d94e33] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-red-500/20">
+                                Low Stock
+                            </span>
+                        )}
+                        {product.backorder && (
+                            <span className="rounded-full bg-[#6b7280] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
+                                Backorder
+                            </span>
+                        )}
+                    </div>
                 </div>
-            </div>
+            </Link>
 
-            <div className="px-1 text-center">
-                <div className="flex items-center justify-center gap-1 mb-3">
+            <div className="p-4">
+                <div className="mb-2 flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
                         <Star
                             key={i}
-                            size={10}
-                            className={i < product.rating ? "text-[#df8448] fill-[#df8448]" : "text-zinc-200"}
+                            size={11}
+                            className={i < product.rating ? "fill-[#df8448] text-[#df8448]" : "text-zinc-200"}
                         />
                     ))}
-                    <span className="text-[10px] text-zinc-400 font-bold ml-1">({product.reviews})</span>
+                    <span className="ml-1 text-[10px] font-medium text-[#8b8f93]">{product.reviews} reviews</span>
                 </div>
-                <Link href={`/product/${product.id}`}>
-                    <h3 className="text-[13px] font-bold text-[#3e4c57] uppercase tracking-wide mb-3 leading-tight group-hover:text-[#df8448] transition-colors cursor-pointer">
+
+                <Link href={`/shop/${product.categorySlug}/${product.slug}`} className="block">
+                    <h3 className="line-clamp-2 min-h-[48px] text-[16px] font-semibold leading-6 text-[#2d3a43] transition-colors group-hover:text-[#df8448]">
                         {product.name}
                     </h3>
                 </Link>
-                <div className="flex items-center justify-center gap-3 font-bold">
-                    <span className="text-[#df8448] text-[15px]">${product.price.toFixed(2)}</span>
-                    {product.oldPrice && (
-                        <span className="text-zinc-300 text-[13px] line-through font-medium">${product.oldPrice.toFixed(2)}</span>
-                    )}
+
+                <div className="mt-3 flex items-end justify-between gap-3">
+                    <div className="flex items-center gap-3 font-bold">
+                        <span className="text-[16px] text-[#df8448]">${product.price.toFixed(2)}</span>
+                        {product.oldPrice != null && (
+                            <span className="text-[12px] font-medium text-zinc-300 line-through">${product.oldPrice.toFixed(2)}</span>
+                        )}
+                    </div>
+
+                    <Link
+                        href={`/shop/${product.categorySlug}/${product.slug}`}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#54646e] transition hover:text-[#df8448]"
+                    >
+                        View <ArrowUpRight size={14} />
+                    </Link>
                 </div>
+
+                <button
+                    onClick={() => addItem(product)}
+                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#2f3d46] px-4 text-[11px] font-bold uppercase tracking-[0.16em] text-white transition hover:bg-[#df8448]"
+                >
+                    <ShoppingBag size={15} />
+                    Add to Cart
+                </button>
             </div>
-        </motion.div>
+        </article>
     );
 }

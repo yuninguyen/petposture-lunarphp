@@ -12,16 +12,21 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Spatie\Permission\Traits\HasRoles;
 use Lunar\Base\Traits\LunarUser;
 use Lunar\Base\LunarUser as LunarUserInterface;
 
 class User extends Authenticatable implements FilamentUser, LunarUserInterface
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, LunarUser;
+    use HasRoles, HasApiTokens, HasFactory, Notifiable, LunarUser;
 
     public function canAccessPanel(Panel $panel): bool
     {
+        if ($panel->getId() === 'admin') {
+            return $this->hasAnyRole(['super_admin', 'admin', 'staff', 'Product Manager', 'Order Manager', 'Support']);
+        }
+
         return true;
     }
 

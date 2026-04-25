@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { getApiBaseUrl } from '@/lib/api';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { User, Lock, Mail, ChevronRight } from 'lucide-react';
@@ -28,7 +29,8 @@ export default function AuthPage() {
         const body = isLogin ? { email, password } : { name, email, password };
 
         try {
-            const res = await fetch(`http://localhost:8000${endpoint}`, {
+            const backendHost = getApiBaseUrl();
+            const res = await fetch(`${backendHost}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
@@ -42,7 +44,7 @@ export default function AuthPage() {
             } else {
                 setError(data.message || (isLogin ? "Invalid credentials" : "Registration failed"));
             }
-        } catch (err) {
+        } catch {
             setError("Could not connect to the authentication server.");
         } finally {
             setIsLoading(false);

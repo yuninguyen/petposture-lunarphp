@@ -4,9 +4,39 @@
 .cursor/
 .roocode/
 node_modules/
+
+# Backend (Laravel)
 backend/vendor/
+backend/.env
+backend/.env.*
+backend/storage/logs/
+backend/storage/framework/cache/
+backend/bootstrap/cache/
+backend/*.txt
+backend/out_*.txt
+backend/users_list.txt
+backend/audit_*.php
+backend/check_*.php
+backend/debug_*.php
+backend/dump_*.php
+backend/fix_*.php
+backend/list_*.php
+backend/diag_*.php
+backend/final_*.php
+backend/hard_*.php
+backend/internal_debug.php
+backend/legacy_hard_fix.php
+backend/fix_checkout.py
+
+# Frontend (Next.js)
 frontend/.next/
+frontend/.env.local
+frontend/.env*.local
+
+# Tools
 tools/skill-generator/temp/
+
+# Root env
 .env
 
 # LƯU Ý: KHÔNG chặn .agent/ để đồng bộ kỹ năng cá nhân

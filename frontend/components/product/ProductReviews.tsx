@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Star, MessageSquare, ShieldCheck, User, Send } from 'lucide-react';
 import { Product } from '@/types/shop';
+import { getApiBaseUrl } from '@/lib/api';
 
 interface Review {
     id: number;
@@ -31,13 +31,10 @@ export function ProductReviews({ product }: ProductReviewsProps) {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    useEffect(() => {
-        fetchReviews();
-    }, [product.id]);
-
-    const fetchReviews = async () => {
+    const fetchReviews = useCallback(async () => {
         try {
-            const res = await fetch(`http://localhost:8000/api/products/${product.id}/reviews`);
+            const backendHost = getApiBaseUrl();
+            const res = await fetch(`${backendHost}/api/products/${product.slug}/reviews`);
             const data = await res.json();
             setReviews(data.data || []);
         } catch (err) {
@@ -45,13 +42,18 @@ export function ProductReviews({ product }: ProductReviewsProps) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [product.slug]);
+
+    useEffect(() => {
+        fetchReviews();
+    }, [fetchReviews]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const res = await fetch(`http://localhost:8000/api/products/${product.id}/reviews`, {
+            const backendHost = getApiBaseUrl();
+            const res = await fetch(`${backendHost}/api/products/${product.slug}/reviews`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -119,15 +121,9 @@ export function ProductReviews({ product }: ProductReviewsProps) {
 
                     {/* Review List & Form */}
                     <div className="lg:col-span-2">
-                        <AnimatePresence mode="wait">
-                            {isFormOpen ? (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -20 }}
-                                    className="bg-white p-12 rounded-3xl border border-zinc-100 shadow-2xl shadow-zinc-200/30 mb-12"
-                                >
-                                    <h4 className="text-[#3e4c57] text-[20px] font-bold mb-8 uppercase tracking-wide">Share your pet's journey</h4>
+                        {isFormOpen ? (
+                                <div className="bg-white p-12 rounded-3xl border border-zinc-100 shadow-2xl shadow-zinc-200/30 mb-12">
+                                    <h4 className="text-[#3e4c57] text-[20px] font-bold mb-8 uppercase tracking-wide">Share your pet&apos;s journey</h4>
                                     <form onSubmit={handleSubmit} className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
@@ -178,9 +174,8 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                             )}
                                         </button>
                                     </form>
-                                </motion.div>
+                                </div>
                             ) : null}
-                        </AnimatePresence>
 
                         <div className="space-y-8">
                             {isLoading ? (
@@ -194,12 +189,9 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                     <p className="text-zinc-400 font-bold uppercase tracking-widest text-[11px]">No journeys shared yet. Be the first to lead the pack.</p>
                                 </div>
                             ) : (
-                                reviews.map((review, index) => (
-                                    <motion.div
+                                reviews.map((review) => (
+                                    <div
                                         key={review.id}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: index * 0.1 }}
                                         className="bg-white p-10 rounded-3xl border border-zinc-100 shadow-sm hover:shadow-xl hover:shadow-zinc-200/20 transition-all group"
                                     >
                                         <div className="flex items-center justify-between mb-6">
@@ -220,11 +212,11 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                                 ))}
                                             </div>
                                         </div>
-                                        <p className="text-zinc-500 text-[15px] leading-relaxed italic">"{review.comment}"</p>
+                                        <p className="text-zinc-500 text-[15px] leading-relaxed italic">&quot;{review.comment}&quot;</p>
                                         <div className="mt-6 pt-6 border-t border-zinc-50 text-[10px] font-bold text-zinc-300 uppercase tracking-widest">
                                             {new Date(review.created_at).toLocaleDateString()}
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 ))
                             )}
                         </div>

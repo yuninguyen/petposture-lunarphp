@@ -14,6 +14,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call([
+            RoleSeeder::class,
+        ]);
+
         // 1. Create Categories
         $categories = [
             ['name' => 'Beds', 'slug' => 'beds', 'image_url' => '/assets/Pug-Dog-Bed.jpg'],
