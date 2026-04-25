@@ -11,19 +11,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth');
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:auth');
 
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/products/{slug}/reviews', [ProductController::class, 'reviews']);
-Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview']);
+Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('throttle:api-write');
 Route::post('/orders/track', [OrderController::class, 'track']);
 Route::post('/orders/retry-payment', [OrderController::class, 'retryPayment']);
 Route::get('/api-test', function () {
     return ['status' => 'ok', 'v' => 3];
 });
-Route::post('/apply-coupon', [CheckoutController::class, 'applyCoupon']);
+Route::post('/apply-coupon', [CheckoutController::class, 'applyCoupon'])->middleware('throttle:api-write');
 Route::get('/checkout/payment-methods', [CheckoutController::class, 'paymentMethods']);
 Route::post('/checkout/payment-intent', [CheckoutController::class, 'preparePaymentIntent']);
 Route::post('/checkout/tax-quote', [CheckoutController::class, 'taxQuote']);
@@ -36,7 +36,7 @@ Route::get('/blog/categories', [ContentController::class, 'categories']);
 
 Route::get('/settings', [SettingsController::class, 'index']);
 
-Route::prefix('/admin')->group(function () {
+Route::prefix('/admin')->middleware(['auth:sanctum', 'role_or_permission:super_admin|admin|staff'])->group(function () {
     Route::get('/posts', [PostController::class, 'index']);
     Route::post('/posts', [PostController::class, 'store']);
     Route::get('/posts/{post}', [PostController::class, 'show']);
@@ -58,5 +58,5 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/orders/{id}/actions/{action}', [OrderController::class, 'performAction']);
     Route::post('/orders/{id}/shipments', [OrderController::class, 'createShipment']);
 });
-Route::post('/checkout/place-order', [CheckoutController::class, 'placeOrder']);
+Route::post('/checkout/place-order', [CheckoutController::class, 'placeOrder'])->middleware('throttle:api-write');
 
