@@ -11,14 +11,15 @@ class ProductResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $variant = $this->variants->first();
-        $price = $variant?->prices->sortBy('min_quantity')->first();
+        $variants = $this->variants;
+        $defaultVariant = $variants->first();
+        $price = $defaultVariant?->prices->sortBy('min_quantity')->first();
         $productSlug = $this->defaultUrl?->slug
             ?? $this->urls->firstWhere('default', true)?->slug
             ?? $this->urls->first()?->slug
             ?? $this->translateAttribute('legacy_product_slug')
             ?? (string) $this->id;
-        $variantId = (int) ($variant?->id ?? 0);
+        $variantId = (int) ($defaultVariant?->id ?? 0);
         $productId = (int) $this->id;
 
         return [
@@ -38,8 +39,17 @@ class ProductResource extends JsonResource
             'badge' => $this->translateAttribute('badge'),
             'isNew' => $this->translateAttribute('is_new') === '1',
             'description' => $this->translateAttribute('description'),
-            'lowStockWarning' => $variant?->stock <= ($variant?->low_stock_threshold ?? 5),
-            'backorder' => (bool) $variant?->backorder,
+            'lowStockWarning' => $defaultVariant?->stock <= ($defaultVariant?->low_stock_threshold ?? 5),
+            'backorder' => (bool) $defaultVariant?->backorder,
+            'variants' => $variants->map(fn ($v) => [
+                'id' => (int) $v->id,
+                'name' => $v->translateAttribute('name'),
+                'sku' => $v->sku,
+                'stock' => (int) $v->stock,
+                'price' => $this->minorToDecimal($v->prices->sortBy('min_quantity')->first()?->getRawOriginal('price')),
+                'lowStockWarning' => $v->stock <= ($v->low_stock_threshold ?? 5),
+                'backorder' => (bool) $v->backorder,
+            ])->all(),
         ];
     }
 

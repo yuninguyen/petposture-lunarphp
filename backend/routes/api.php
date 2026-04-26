@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\ContentController;
+use App\Http\Controllers\Api\NewsletterController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
@@ -24,13 +26,16 @@ Route::get('/api-test', function () {
     return ['status' => 'ok', 'v' => 3];
 });
 Route::post('/apply-coupon', [CheckoutController::class, 'applyCoupon'])->middleware('throttle:api-write');
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
 Route::get('/checkout/payment-methods', [CheckoutController::class, 'paymentMethods']);
-Route::post('/checkout/payment-intent', [CheckoutController::class, 'preparePaymentIntent']);
-Route::post('/checkout/tax-quote', [CheckoutController::class, 'taxQuote']);
+Route::post('/checkout/payment-intent', [CheckoutController::class, 'preparePaymentIntent'])->middleware('throttle:api-write');
+Route::post('/checkout/tax-quote', [CheckoutController::class, 'taxQuote'])->middleware('throttle:api-write');
 Route::post('/webhooks/stripe', [CheckoutController::class, 'stripeWebhook']);
 
 Route::get('/posts', [ContentController::class, 'posts']);
 Route::get('/posts/{slug}', [ContentController::class, 'post']);
+Route::get('/posts/{slug}/comments', [CommentController::class, 'index']);
+Route::post('/posts/{slug}/comments', [CommentController::class, 'store']);
 Route::get('/categories', [ContentController::class, 'categories']);
 Route::get('/blog/categories', [ContentController::class, 'categories']);
 

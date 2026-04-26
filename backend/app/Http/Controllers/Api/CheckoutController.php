@@ -75,8 +75,7 @@ class CheckoutController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Checkout failed.',
-                'error' => $e->getMessage()
+                'message' => 'Checkout failed. Please try again.',
             ], 500);
         }
     }
@@ -109,7 +108,7 @@ class CheckoutController extends Controller
             Log::error("Coupon Application Error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
             return response()->json([
                 'success' => false,
-                'message' => 'Error applying coupon: ' . $e->getMessage(),
+                'message' => 'Error applying coupon. Please try again.',
             ], 500);
         }
     }
@@ -182,7 +181,7 @@ class CheckoutController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Webhook processing failed.',
             ], Response::HTTP_BAD_REQUEST);
         }
     }

@@ -16,12 +16,51 @@ class ProductController extends Controller
 {
     use HttpResponses;
 
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::where('status', 'published')
+        $query = Product::where('status', 'published')
             ->whereHas('variants')
-            ->with(['variants.prices', 'thumbnail', 'defaultUrl', 'urls', 'collections.defaultUrl'])
-            ->paginate(12);
+            ->with(['variants.prices', 'thumbnail', 'defaultUrl', 'urls', 'collections.defaultUrl']);
+
+        // Filter by category
+        if ($request->has('category')) {
+            $query->whereHas('collections', fn($q) => 
+                $q->where('slug', $request->input('category'))
+            );
+        }
+
+        // Search by name/description
+        if ($request->has('q')) {
+            $search = $request->input('q');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Min price filter
+        if ($request->has('min_price')) {
+            $query->whereHas('variants.prices', fn($q) =>
+                $q->where('price', '>=', (int) ($request->input('min_price') * 100))
+            );
+        }
+
+        // Max price filter
+        if ($request->has('max_price')) {
+            $query->whereHas('variants.prices', fn($q) =>
+                $q->where('price', '<=', (int) ($request->input('max_price') * 100))
+            );
+        }
+
+        // Sort
+        $sort = $request->input('sort', 'newest');
+        $query->orderBy match ($sort) {
+            'price_asc' => 'price',
+            'price_desc' => 'price',
+            default => 'created_at',
+        };
+
+        $products = $query->paginate(12);
 
         return ProductResource::collection($products);
     }
