@@ -81,7 +81,7 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->plugins([
-                LunarPanelPlugin::make()
+                LunarPanelPlugin::make(),
                     //->withoutOrderResource(), // Keep order resource for now
                 FilamentShieldPlugin::make(),
             ])
