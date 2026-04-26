@@ -1,4 +1,4 @@
-# PetPosture
+# PetPosture Healess Ecommerce
 
 An e-commerce platform for pet products, built on a full-stack architecture with Next.js (frontend) and Laravel + Lunar PHP (backend).
 
