@@ -24,7 +24,7 @@ class MediaResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Settings');
+        return __('System');
     }
 
     public static function table(Table $table): Table

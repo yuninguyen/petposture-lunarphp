@@ -29,10 +29,6 @@ class AppServiceProvider extends ServiceProvider
                 new MockPayPalGateway(),
             ]);
         });
-
-        // Filament panels must be registered during the service provider
-        // registration phase, otherwise their routes are never mounted.
-        \Lunar\Admin\Support\Facades\LunarPanel::register();
     }
 
     /**
