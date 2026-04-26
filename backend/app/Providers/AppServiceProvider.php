@@ -36,8 +36,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \Lunar\Models\Order::observe(\App\Observers\OrderObserver::class);
-        \Lunar\Models\ProductVariant::observe(\App\Observers\ProductVariantObserver::class);
+        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+            return $user->hasRole('super_admin') ? true : null;
+        });
+
+        Order::observe(\App\Observers\OrderObserver::class);
+        ProductVariant::observe(\App\Observers\ProductVariantObserver::class);
         \App\Models\Product::observe(\App\Observers\LegacyProductObserver::class);
         $this->app->make(ShippingModifiers::class)->add(DefaultShippingModifier::class);
         Order::resolveRelationUsing('orderEvents', function (Order $order) {

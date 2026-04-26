@@ -54,11 +54,17 @@ class ProductController extends Controller
 
         // Sort
         $sort = $request->input('sort', 'newest');
-        $query->orderBy match ($sort) {
-            'price_asc' => 'price',
-            'price_desc' => 'price',
-            default => 'created_at',
-        };
+        $query->orderBy(
+            match ($sort) {
+                'price_asc', 'price_desc' => 'price',
+                default => 'created_at',
+            },
+            match ($sort) {
+                'price_asc' => 'asc',
+                'price_desc' => 'desc',
+                default => 'desc',
+            }
+        );
 
         $products = $query->paginate(12);
 

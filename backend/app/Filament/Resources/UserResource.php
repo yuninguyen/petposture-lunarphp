@@ -65,18 +65,11 @@ class UserResource extends Resource
                         Forms\Components\Select::make('roles')
                             ->label(__('Roles'))
                             ->relationship('roles', 'name', fn(Builder $query) => $query->where('guard_name', 'web'))
+                            ->getOptionLabelFromRecordUsing(fn($record) => str($record->name)->headline())
                             ->multiple()
                             ->preload()
                             ->searchable()
-                            ->required()
-                            ->options([
-                                'super_admin' => 'Super Admin',
-                                'admin' => 'Admin',
-                                'staff' => 'Staff',
-                                'Product Manager' => 'Product Manager',
-                                'Order Manager' => 'Order Manager',
-                                'Support' => 'Support',
-                            ]),
+                            ->required(),
                     ]),
             ]);
     }
@@ -94,6 +87,7 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('roles.name')
                     ->label(__('Roles'))
                     ->badge()
+                    ->formatStateUsing(fn(string $state): string => str($state)->headline())
                     ->color('info'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('Created At'))
