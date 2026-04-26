@@ -125,23 +125,42 @@ class CheckoutController extends Controller
     public function preparePaymentIntent(Request $request)
     {
         $validated = Validator::make($request->all(), [
-            'payment_method' => 'required|string|in:card',
-            'amount' => 'required|integer|min:1',
-            'currency' => 'nullable|string|max:10',
-            'email' => 'nullable|email',
+            'payment_method'        => 'required|string|in:card',
+            'items'                 => 'required|array|min:1',
+            'items.*.variantId'     => 'required|exists:lunar_product_variants,id',
+            'items.*.quantity'      => 'required|integer|min:1',
+            'coupon_code'           => 'nullable|string',
+            'shipping_method'       => 'nullable|string',
+            'shipping.state'        => 'nullable|string|max:255',
+            'shipping.country'      => 'nullable|string|max:255',
+            'shipping.city'         => 'nullable|string|max:255',
+            'shipping.postcode'     => 'nullable|string|max:32',
+            'currency'              => 'nullable|string|max:10',
+            'email'                 => 'nullable|email',
         ])->validate();
 
         try {
+            $amount = $this->checkoutService->calculateTotal(
+                $validated['items'],
+                $validated['coupon_code'] ?? null,
+                $validated['shipping'] ?? null,
+                $validated['shipping_method'] ?? null,
+            );
+
             return response()->json([
                 'success' => true,
-                'payment_intent' => $this->stripePaymentIntentService->create($validated),
+                'payment_intent' => $this->stripePaymentIntentService->create([
+                    'amount'   => $amount,
+                    'currency' => $validated['currency'] ?? 'usd',
+                    'email'    => $validated['email'] ?? '',
+                ]),
             ]);
         } catch (\Throwable $e) {
             Log::error("Stripe Payment Intent Error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Unable to prepare payment. Please try again.',
             ], 500);
         }
     }

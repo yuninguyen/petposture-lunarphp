@@ -841,7 +841,15 @@ export default function CheckoutPage() {
             },
             body: JSON.stringify({
                 payment_method: 'card',
-                amount: Math.round(finalTotal * 100),
+                items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+                coupon_code: coupon.code || null,
+                shipping_method: form.shippingMethod,
+                shipping: {
+                    state: form.province,
+                    country: form.country,
+                    city: form.city,
+                    postcode: form.postalCode,
+                },
                 currency: 'usd',
                 email: form.email,
             }),
