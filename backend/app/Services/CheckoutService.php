@@ -151,6 +151,55 @@ class CheckoutService
         return $this->paymentGatewayManager->supportedMethods();
     }
 
+    /**
+     * Calculate the order total server-side from cart contents.
+     * Used by preparePaymentIntent so the Stripe amount is never client-supplied.
+     * Returns total in minor currency units (cents).
+     */
+    public function calculateTotal(
+        array $items,
+        ?string $couponCode,
+        ?array $shipping,
+        ?string $shippingMethod
+    ): int {
+        $currency = Currency::getDefault();
+        $subTotal = 0;
+
+        foreach ($items as $item) {
+            $variant = ProductVariant::with(['prices' => fn ($q) => $q->where('currency_id', $currency->id)])
+                ->findOrFail($item['variantId']);
+            $price = $variant->prices->sortBy('min_quantity')->first();
+            $subTotal += $this->normalizeAmount($price?->price) * max(1, (int) $item['quantity']);
+        }
+
+        $discount = $couponCode
+            ? Discount::active()->where('coupon', $couponCode)->first()
+            : null;
+
+        $discountValue = $this->resolveDiscountValue($couponCode, $currency);
+
+        // resolveDiscountValue only covers fixed discounts; handle percentage here
+        if ($discount && $discountValue === 0 && $discount->type === \Lunar\DiscountTypes\AmountOff::class) {
+            $percentage = (float) ($discount->data['percentage'] ?? 0);
+            if ($percentage > 0) {
+                $discountValue = (int) round($subTotal * ($percentage / 100));
+            }
+        }
+
+        $isFreeShipping = (bool) ($discount?->data['free_shipping'] ?? false);
+        $shippingValue = (! $isFreeShipping && ($shippingMethod ?? 'standard') === 'express') ? 2500 : 0;
+
+        $taxableAmount = max(0, $subTotal - $discountValue);
+        $taxAmount = 0;
+
+        if (! empty($shipping)) {
+            $taxContext = $this->resolveTaxContext($shipping, $taxableAmount);
+            $taxAmount = (int) max(0, $taxContext['tax_amount'] ?? 0);
+        }
+
+        return max(1, $subTotal + $shippingValue - $discountValue + $taxAmount);
+    }
+
     private function resolveCountry(array $address): ?Country
     {
         $countryInput = trim((string) ($address['country'] ?? 'US'));
