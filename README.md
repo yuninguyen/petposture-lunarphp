@@ -1,6 +1,6 @@
 # PetPosture
 
-Nền tảng thương mại điện tử chuyên bán sản phẩm cho thú cưng, xây dựng trên kiến trúc full-stack với Next.js (frontend) và Laravel + Lunar PHP (backend).
+An e-commerce platform for pet products, built on a full-stack architecture with Next.js (frontend) and Laravel + Lunar PHP (backend).
 
 **Live:** https://petposture-lunarphp.vercel.app
 
@@ -8,8 +8,8 @@ Nền tảng thương mại điện tử chuyên bán sản phẩm cho thú cưn
 
 ## Tech Stack
 
-| Layer | Công nghệ |
-|-------|-----------|
+| Layer | Technology |
+|-------|------------|
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
 | Backend | Laravel 11, PHP 8.3, Lunar PHP (e-commerce) |
 | Admin Panel | Filament 3 + Filament Shield |
@@ -19,7 +19,7 @@ Nền tảng thương mại điện tử chuyên bán sản phẩm cho thú cưn
 
 ---
 
-## Cấu trúc Project
+## Project Structure
 
 ```
 petposture-lunarphp/
@@ -39,30 +39,30 @@ petposture-lunarphp/
 
 ---
 
-## Tính năng
+## Features
 
-- Danh mục & sản phẩm (variants, attributes, brands)
-- Giỏ hàng & checkout
-- Quản lý đơn hàng
-- Blog & bình luận
-- Mã giảm giá / discount
+- Product catalog with categories, variants, attributes, and brands
+- Shopping cart & checkout
+- Order management
+- Blog with comments
+- Discount / coupon codes
 - SEO metadata
-- Trang tĩnh: FAQ, chính sách, liên hệ
-- Admin panel đầy đủ qua Filament
-- Sitemap tự động
+- Static pages: FAQ, policies, contact
+- Full admin panel via Filament
+- Automatic sitemap
 
 ---
 
-## Yêu cầu
+## Requirements
 
 - PHP 8.3+, Composer
 - Node.js 18+, npm
-- MySQL hoặc PostgreSQL
-- (Tùy chọn) Docker & Docker Compose
+- MySQL or PostgreSQL
+- (Optional) Docker & Docker Compose
 
 ---
 
-## Cài đặt & Chạy Local
+## Local Setup
 
 ### Backend
 
@@ -83,9 +83,9 @@ npm install
 npm run dev
 ```
 
-Frontend chạy tại `http://localhost:3000`, backend tại `http://localhost:8000`.
+Frontend runs at `http://localhost:3000`, backend at `http://localhost:8000`.
 
-### Chạy bằng Docker
+### Docker
 
 ```bash
 docker-compose up -d
@@ -96,10 +96,10 @@ docker-compose up -d
 
 ---
 
-## API Endpoints (tóm tắt)
+## API Endpoints
 
-| Nhóm | Prefix |
-|------|--------|
+| Group | Prefix |
+|-------|--------|
 | Auth | `/api/auth/...` |
 | Products | `/api/products/...` |
 | Categories | `/api/categories/...` |
@@ -110,9 +110,9 @@ docker-compose up -d
 
 ---
 
-## Kiến trúc
+## Architecture
 
-Xem [ARCHITECTURE.md](./ARCHITECTURE.md) để biết sơ đồ chi tiết và luồng xử lý request.
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for a detailed system diagram and request flow.
 
 ---
 
