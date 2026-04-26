@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use Filament\Http\Middleware\Authenticate;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Lunar\Admin\LunarPanelPlugin;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
@@ -80,6 +81,8 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->plugins([
+                LunarPanelPlugin::make()
+                    ->withoutOrderResource(),
                 FilamentShieldPlugin::make(),
             ])
             ->authMiddleware([

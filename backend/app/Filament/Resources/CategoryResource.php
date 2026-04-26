@@ -19,7 +19,7 @@ class CategoryResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Ecommerce');
+        return __('Catalogue');
     }
     protected static ?int $navigationSort = 1;
 

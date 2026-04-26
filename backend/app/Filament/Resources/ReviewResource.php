@@ -23,7 +23,7 @@ class ReviewResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Ecommerce');
+        return __('Sales');
     }
 
     protected static ?int $navigationSort = 5;
