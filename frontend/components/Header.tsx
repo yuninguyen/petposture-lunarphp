@@ -59,13 +59,14 @@ export default function Header() {
           </button>
 
           {/* Left: Logo */}
-          <Link href="/" className="flex-shrink-0 relative w-[220px] md:w-[240px] h-full flex items-center -ml-2">
+          <Link href="/" className="flex-shrink-0 flex items-center">
             <Image
               src="/assets/Logo-PetPosture-1.png"
               alt="PetPosture Logo"
-              fill
-              sizes="240px"
-              className="absolute left-0 top-1/2 z-50 h-[130px] w-auto -translate-y-[45%] object-contain drop-shadow-sm md:h-[130px]"
+              width={400}
+              height={140}
+              priority
+              className="h-[75px] md:h-[130px] w-auto object-contain"
             />
           </Link>
 
@@ -216,13 +217,13 @@ export default function Header() {
             >
               {/* Drawer Header */}
               <div className="flex items-center justify-between px-6 h-[80px] border-b border-zinc-100 relative">
-                <Link href="/" onClick={() => setMobileOpen(false)} className="flex-shrink-0 relative w-[240px] h-full flex items-center -ml-2">
+                <Link href="/" onClick={() => setMobileOpen(false)} className="flex-shrink-0 flex items-center">
                   <Image
                     src="/assets/Logo-PetPosture-1.png"
                     alt="Logo"
-                    fill
-                    sizes="240px"
-                    className="absolute left-0 top-1/2 z-50 h-[140px] w-auto -translate-y-[45%] object-contain drop-shadow-sm md:h-[130px]"
+                    width={320}
+                    height={100}
+                    className="h-[80px] w-auto object-contain"
                   />
                 </Link>
                 <button

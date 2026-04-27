@@ -23,12 +23,11 @@ class User extends Authenticatable implements FilamentUser, LunarUserInterface
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return true;
-        // if ($panel->getId() === 'admin') {
-        //     return $this->hasAnyRole(['super_admin', 'admin', 'staff', 'Product Manager', 'Order Manager', 'Support']);
-        // }
+        if ($panel->getId() === 'admin') {
+            return $this->hasAnyRole(['super_admin', 'admin', 'staff', 'Product Manager', 'Order Manager', 'Support']);
+        }
 
-        // return true;
+        return true;
     }
 
     protected $fillable = [
