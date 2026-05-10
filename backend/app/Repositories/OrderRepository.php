@@ -2,8 +2,8 @@
 
 namespace App\Repositories;
 
-use App\Models\Order;
-use App\Models\OrderItem;
+use App\Models\Legacy\Order;
+use App\Models\Legacy\OrderItem;
 use Illuminate\Support\Collection;
 
 class OrderRepository

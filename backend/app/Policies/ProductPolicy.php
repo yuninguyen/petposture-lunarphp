@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\Product;
+use Lunar\Models\Product;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ProductPolicy

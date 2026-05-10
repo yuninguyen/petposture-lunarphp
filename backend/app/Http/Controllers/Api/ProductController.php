@@ -10,7 +10,9 @@ use App\Models\Review;
 use App\Traits\HttpResponses;
 use Illuminate\Http\Request;
 use Lunar\Models\Order;
+use Lunar\Models\Price;
 use Lunar\Models\Product;
+use Lunar\Models\ProductVariant;
 
 class ProductController extends Controller
 {
@@ -22,49 +24,61 @@ class ProductController extends Controller
             ->whereHas('variants')
             ->with(['variants.prices', 'thumbnail', 'defaultUrl', 'urls', 'collections.defaultUrl']);
 
-        // Filter by category
-        if ($request->has('category')) {
-            $query->whereHas('collections', fn($q) => 
-                $q->where('slug', $request->input('category'))
+        // Filter by category: slug lives in lunar_urls, not lunar_collections
+        if ($request->filled('category')) {
+            $query->whereHas('collections', fn ($q) =>
+                $q->whereHas('urls', fn ($q2) =>
+                    $q2->where('slug', $request->input('category'))
+                )
             );
         }
 
-        // Search by name/description
-        if ($request->has('q')) {
-            $search = $request->input('q');
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
+        // Search: Lunar product names/descriptions are stored in attribute_data JSON
+        if ($request->filled('q')) {
+            $term = '%' . strtolower($request->input('q')) . '%';
+            $query->whereRaw('LOWER(CAST(attribute_data AS TEXT)) LIKE ?', [$term]);
         }
 
         // Min price filter
-        if ($request->has('min_price')) {
-            $query->whereHas('variants.prices', fn($q) =>
-                $q->where('price', '>=', (int) ($request->input('min_price') * 100))
+        if ($request->filled('min_price')) {
+            $variantMorph = (new ProductVariant)->getMorphClass();
+            $query->whereHas('variants', fn ($q) =>
+                $q->whereHas('prices', fn ($q2) =>
+                    $q2->where('price', '>=', (int) ($request->input('min_price') * 100))
+                      ->where('priceable_type', $variantMorph)
+                )
             );
         }
 
         // Max price filter
-        if ($request->has('max_price')) {
-            $query->whereHas('variants.prices', fn($q) =>
-                $q->where('price', '<=', (int) ($request->input('max_price') * 100))
+        if ($request->filled('max_price')) {
+            $variantMorph = (new ProductVariant)->getMorphClass();
+            $query->whereHas('variants', fn ($q) =>
+                $q->whereHas('prices', fn ($q2) =>
+                    $q2->where('price', '<=', (int) ($request->input('max_price') * 100))
+                      ->where('priceable_type', $variantMorph)
+                )
             );
         }
 
-        // Sort
+        // Sort: price requires a subquery since price is on lunar_prices, not lunar_products
         $sort = $request->input('sort', 'newest');
-        $query->orderBy(
-            match ($sort) {
-                'price_asc', 'price_desc' => 'price',
-                default => 'created_at',
-            },
-            match ($sort) {
-                'price_asc' => 'asc',
-                'price_desc' => 'desc',
-                default => 'desc',
-            }
-        );
+
+        if (in_array($sort, ['price_asc', 'price_desc'])) {
+            $direction  = $sort === 'price_asc' ? 'asc' : 'desc';
+            $variantMorph = (new ProductVariant)->getMorphClass();
+            $priceSubquery = Price::query()
+                ->selectRaw('MIN(price)')
+                ->join('lunar_product_variants', 'lunar_product_variants.id', '=', 'lunar_prices.priceable_id')
+                ->whereColumn('lunar_product_variants.product_id', 'lunar_products.id')
+                ->where('lunar_prices.priceable_type', $variantMorph);
+
+            $query->selectRaw('lunar_products.*')
+                  ->selectSub($priceSubquery, '_sort_price')
+                  ->orderBy('_sort_price', $direction);
+        } else {
+            $query->orderBy('lunar_products.created_at', 'desc');
+        }
 
         $products = $query->paginate(12);
 

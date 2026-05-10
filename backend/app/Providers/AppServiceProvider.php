@@ -42,7 +42,7 @@ class AppServiceProvider extends ServiceProvider
 
         Order::observe(\App\Observers\OrderObserver::class);
         ProductVariant::observe(\App\Observers\ProductVariantObserver::class);
-        \App\Models\Product::observe(\App\Observers\LegacyProductObserver::class);
+        \App\Models\Legacy\Product::observe(\App\Observers\LegacyProductObserver::class);
         $this->app->make(ShippingModifiers::class)->add(DefaultShippingModifier::class);
         Order::resolveRelationUsing('orderEvents', function (Order $order) {
             return $order->hasMany(OrderEvent::class, 'order_id')->orderBy('occurred_at');

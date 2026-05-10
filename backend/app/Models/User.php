@@ -54,8 +54,4 @@ class User extends Authenticatable implements FilamentUser, LunarUserInterface
         ];
     }
 
-    public function orders(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(Order::class);
-    }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use App\Models\Product;
+use App\Models\Legacy\Product;
 use App\Services\ProductSyncService;
 
 class LegacyProductObserver

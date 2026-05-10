@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Product as LegacyProduct;
+use App\Models\Legacy\Product as LegacyProduct;
 use App\Models\ProductSyncMapping;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

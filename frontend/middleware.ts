@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
     // Admin routes protection
     if (pathname.startsWith('/admin')) {
         if (!token || !userJson) {
-            return NextResponse.redirect(new URL('/auth/login', request.url));
+            return NextResponse.redirect(new URL('/auth', request.url));
         }
 
         try {
@@ -22,7 +22,7 @@ export function middleware(request: NextRequest) {
                 return NextResponse.redirect(new URL('/', request.url));
             }
         } catch (e) {
-            return NextResponse.redirect(new URL('/auth/login', request.url));
+            return NextResponse.redirect(new URL('/auth', request.url));
         }
     }
 
