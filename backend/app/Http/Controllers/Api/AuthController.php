@@ -24,47 +24,69 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
-        // Merge guest cart if the client provided a cart token
         $cartToken = $request->input('cart_token');
         if ($cartToken) {
             app(CartService::class)->mergeGuestCart((string) $cartToken, $user->id);
         }
 
+        $plainToken = $user->createToken("Api Token of {$user->name}")->plainTextToken;
+
         return $this->success([
             'user'  => new UserResource($user),
-            'token' => $user->createToken("Api Token of {$user->name}")->plainTextToken,
-        ], 'Đăng nhập thành công');
+            'token' => $plainToken,
+        ], 'Đăng nhập thành công')->withCookie($this->authCookie($plainToken));
     }
 
     public function register(RegisterRequest $request)
     {
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'email'    => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        // Assign 'customer' role by default
         $customerRole = Role::where('name', 'customer')->first();
         if ($customerRole) {
             $user->assignRole($customerRole);
         }
 
+        $plainToken = $user->createToken("Api Token of {$user->name}")->plainTextToken;
+
         return $this->success([
-            'user' => new UserResource($user),
-            'token' => $user->createToken('Api Token of ' . $user->name)->plainTextToken
-        ], 'Đăng ký thành công');
+            'user'  => new UserResource($user),
+            'token' => $plainToken,
+        ], 'Đăng ký thành công')->withCookie($this->authCookie($plainToken));
     }
 
     public function logout()
     {
         Auth::user()->currentAccessToken()->delete();
 
-        return $this->success(null, 'Đã đăng xuất');
+        return $this->success(null, 'Đã đăng xuất')
+            ->withCookie(cookie()->forget('petposture_token'));
     }
 
     public function me()
     {
         return $this->success(new UserResource(Auth::user()));
+    }
+
+    private function authCookie(string $token): \Symfony\Component\HttpFoundation\Cookie
+    {
+        $isProd     = app()->environment('production');
+        $sameSite   = $isProd ? 'none' : 'lax';
+        $domain     = config('session.domain');
+
+        return cookie(
+            'petposture_token',
+            $token,
+            60 * 24 * 7,  // 7 days
+            '/',
+            $domain,
+            $isProd,  // Secure flag — only in production (requires HTTPS)
+            true,     // httpOnly — JS cannot read this cookie
+            false,
+            $sameSite
+        );
     }
 }
