@@ -7,6 +7,7 @@ use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Resources\Api\UserResource;
 use App\Models\User;
+use App\Services\CartService;
 use App\Traits\HttpResponses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,9 +24,15 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
+        // Merge guest cart if the client provided a cart token
+        $cartToken = $request->input('cart_token');
+        if ($cartToken) {
+            app(CartService::class)->mergeGuestCart((string) $cartToken, $user->id);
+        }
+
         return $this->success([
-            'user' => new UserResource($user),
-            'token' => $user->createToken('Api Token of ' . $user->name)->plainTextToken
+            'user'  => new UserResource($user),
+            'token' => $user->createToken("Api Token of {$user->name}")->plainTextToken,
         ], 'Đăng nhập thành công');
     }
 

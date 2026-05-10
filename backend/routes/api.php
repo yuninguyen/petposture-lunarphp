@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\ContentController;
@@ -40,6 +41,13 @@ Route::get('/categories', [ContentController::class, 'categories']);
 Route::get('/blog/categories', [ContentController::class, 'categories']);
 
 Route::get('/settings', [SettingsController::class, 'index']);
+
+// Cart — works for both guest (X-Cart-Token header) and auth users
+Route::get('/cart', [CartController::class, 'show']);
+Route::post('/cart/lines', [CartController::class, 'addLine'])->middleware('throttle:api-write');
+Route::put('/cart/lines/{lineId}', [CartController::class, 'updateLine'])->middleware('throttle:api-write');
+Route::delete('/cart/lines/{lineId}', [CartController::class, 'removeLine']);
+Route::delete('/cart', [CartController::class, 'clear']);
 
 Route::prefix('/admin')
     ->middleware(['auth:sanctum', 'role:super_admin|admin|staff'])

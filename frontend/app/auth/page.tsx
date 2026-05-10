@@ -20,13 +20,19 @@ export default function AuthPage() {
     const { login } = useAuth();
     const router = useRouter();
 
+    const getCartToken = () =>
+        typeof window !== 'undefined' ? localStorage.getItem('petposture_cart_token') : null;
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError(null);
 
         const endpoint = isLogin ? '/api/login' : '/api/register';
-        const body = isLogin ? { email, password } : { name, email, password };
+        const cartToken = getCartToken();
+        const body = isLogin
+            ? { email, password, ...(cartToken ? { cart_token: cartToken } : {}) }
+            : { name, email, password };
 
         try {
             const backendHost = getApiBaseUrl();
