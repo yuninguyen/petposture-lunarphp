@@ -9,4 +9,4 @@ Route::get('/', function () {
 });
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index']);
-Route::get('/api/seo/{path}', [SeoController::class, 'show']);
+Route::get('/api/seo', [SeoController::class, 'show']); // ?path=shop/product-slug

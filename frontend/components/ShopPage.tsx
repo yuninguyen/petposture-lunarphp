@@ -94,6 +94,7 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
                             activeCategory={shopLogic.activeCategory}
                             searchQuery={shopLogic.searchQuery}
                             clearFilters={shopLogic.clearFilters}
+                            loading={shopLogic.loading}
                         />
                     </div>
                 </div>

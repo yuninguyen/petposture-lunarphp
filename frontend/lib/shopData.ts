@@ -3,10 +3,9 @@ import { Product } from '@/types/shop';
 export const CATEGORIES = ["All", "Bowls", "Ramps", "Beds", "Harnesses"];
 
 export const SORT_OPTIONS = [
-    { label: "Default Sorting", value: "default" },
-    { label: "Price: Low to High", value: "price-asc" },
-    { label: "Price: High to Low", value: "price-desc" },
-    { label: "High Rated", value: "rating" }
+    { label: "Default Sorting", value: "newest" },
+    { label: "Price: Low to High", value: "price_asc" },
+    { label: "Price: High to Low", value: "price_desc" },
 ];
 
 export const PRODUCTS: Product[] = [

@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
+use App\Models\Post;
+use Lunar\Models\Collection;
 use Lunar\Models\Product;
 
 class SitemapController extends Controller
@@ -22,17 +23,30 @@ class SitemapController extends Controller
         $urls[] = ['loc' => $frontendUrl . '/shop', 'lastmod' => now()->toAtomString(), 'priority' => '0.8'];
         $urls[] = ['loc' => $frontendUrl . '/our-mission', 'lastmod' => now()->toAtomString(), 'priority' => '0.6'];
 
-        // 2. Dynamic Categories
-        $categories = Category::all();
-        foreach ($categories as $category) {
+        // 2. Lunar Collections (product categories)
+        $collections = Collection::with(['defaultUrl', 'urls'])->get();
+        foreach ($collections as $collection) {
+            $slug = $collection->defaultUrl?->slug
+                ?? $collection->urls->first()?->slug;
+            if (! $slug) continue;
             $urls[] = [
-                'loc' => $frontendUrl . '/shop?category=' . urlencode($category->name),
-                'lastmod' => $category->updated_at->toAtomString(),
-                'priority' => '0.7'
+                'loc'     => $frontendUrl . '/shop/' . $slug,
+                'lastmod' => $collection->updated_at->toAtomString(),
+                'priority' => '0.7',
             ];
         }
 
-        // 3. Dynamic Products
+        // 3. Blog posts
+        $posts = Post::where('status', 'published')->select('slug', 'updated_at')->get();
+        foreach ($posts as $post) {
+            $urls[] = [
+                'loc'     => $frontendUrl . '/blog/' . $post->slug,
+                'lastmod' => $post->updated_at->toAtomString(),
+                'priority' => '0.6',
+            ];
+        }
+
+        // 4. Dynamic Products
         $products = Product::query()
             ->where('status', 'published')
             ->whereHas('variants')

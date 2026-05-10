@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Product } from '@/types/shop';
 import { PRODUCTS as MOCK_PRODUCTS } from '@/lib/shopData';
+import { getApiBaseUrl } from '@/lib/api';
 
 export type ShopCategoryOption = {
     name: string;
@@ -9,79 +9,103 @@ export type ShopCategoryOption = {
 };
 
 export function useShopLogic(initialProducts: Product[] = MOCK_PRODUCTS) {
-    const searchParams = useSearchParams();
-    const initialCategory = searchParams.get('category') || "All";
-    const [activeCategory, setActiveCategory] = useState(initialCategory);
-    const [sortBy, setSortBy] = useState("default");
-    const [searchQuery, setSearchQuery] = useState("");
-    const [products] = useState<Product[]>(initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS);
+    const [activeCategory, setActiveCategory] = useState('All');
+    const [sortBy, setSortBy] = useState('newest');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filteredProducts, setFilteredProducts] = useState<Product[]>(
+        initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS
+    );
+    const [loading, setLoading] = useState(false);
+    const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Categories derived from the full initial (unfiltered) product set
     const categories = useMemo<ShopCategoryOption[]>(() => {
-        const counts = products.reduce<Record<string, number>>((acc, product) => {
-            if (!product.category) {
-                return acc;
-            }
-
-            acc[product.category] = (acc[product.category] || 0) + 1;
+        const base = initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS;
+        const counts = base.reduce<Record<string, number>>((acc, p) => {
+            if (p.category) acc[p.category] = (acc[p.category] || 0) + 1;
             return acc;
         }, {});
-
         return [
-            { name: "All", count: products.length },
+            { name: 'All', count: base.length },
             ...Object.entries(counts)
-                .sort(([left], [right]) => left.localeCompare(right))
+                .sort(([a], [b]) => a.localeCompare(b))
                 .map(([name, count]) => ({ name, count })),
         ];
-    }, [products]);
+    }, [initialProducts]);
 
-    const resolvedActiveCategory = categories.some((category) => category.name === activeCategory)
-        ? activeCategory
-        : "All";
+    const hasActiveFilters = activeCategory !== 'All' || sortBy !== 'newest' || searchQuery.trim() !== '';
 
-    const filteredProducts = useMemo(() => {
-        let result = [...products];
+    const fetchProducts = (category: string, sort: string, q: string) => {
+        const params = new URLSearchParams();
+        if (category !== 'All') params.set('category', category);
+        if (sort !== 'newest') params.set('sort', sort);
+        if (q.trim()) params.set('q', q.trim());
 
-        // Filter by Category
-        if (resolvedActiveCategory !== "All") {
-            result = result.filter((p: Product) => p.category === resolvedActiveCategory);
+        // No filters: restore initial SSR data without a network call
+        if (!params.toString()) {
+            setFilteredProducts(initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS);
+            setLoading(false);
+            return () => {};
         }
 
-        // Filter by Search
-        if (searchQuery) {
-            result = result.filter((p: Product) =>
-                p.name.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
+        const controller = new AbortController();
+        setLoading(true);
 
-        // Sort
-        if (sortBy === "price-asc") {
-            result.sort((a: Product, b: Product) => a.price - b.price);
-        } else if (sortBy === "price-desc") {
-            result.sort((a: Product, b: Product) => b.price - a.price);
-        } else if (sortBy === "rating") {
-            result.sort((a: Product, b: Product) => b.rating - a.rating);
-        }
+        fetch(`${getApiBaseUrl()}/api/products?${params.toString()}`, {
+            signal: controller.signal,
+            next: { revalidate: 0 },
+        } as RequestInit)
+            .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
+            .then(data => {
+                setFilteredProducts(Array.isArray(data?.data) ? data.data : []);
+            })
+            .catch(err => {
+                if (err !== 'AbortError' && !(err instanceof DOMException)) {
+                    setFilteredProducts([]);
+                }
+            })
+            .finally(() => setLoading(false));
 
-        return result;
-    }, [resolvedActiveCategory, sortBy, searchQuery, products]);
+        return () => controller.abort();
+    };
+
+    // Immediate re-fetch on category / sort change
+    useEffect(() => {
+        const cancel = fetchProducts(activeCategory, sortBy, searchQuery);
+        return cancel;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeCategory, sortBy]);
+
+    // Debounced re-fetch on search input (300 ms)
+    useEffect(() => {
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = setTimeout(() => {
+            fetchProducts(activeCategory, sortBy, searchQuery);
+        }, 300);
+        return () => {
+            if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery]);
 
     const clearFilters = () => {
-        setActiveCategory("All");
-        setSortBy("default");
-        setSearchQuery("");
+        setActiveCategory('All');
+        setSortBy('newest');
+        setSearchQuery('');
     };
 
     return {
         categories,
-        activeCategory: resolvedActiveCategory,
+        activeCategory,
         setActiveCategory,
         sortBy,
         setSortBy,
         searchQuery,
         setSearchQuery,
         filteredProducts,
-        totalProducts: products.length,
+        totalProducts: categories[0]?.count ?? 0,
+        loading,
         clearFilters,
-        hasActiveFilters: resolvedActiveCategory !== "All" || sortBy !== "default" || searchQuery.trim().length > 0,
+        hasActiveFilters,
     };
 }
