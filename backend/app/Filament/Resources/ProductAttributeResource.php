@@ -15,7 +15,11 @@ class ProductAttributeResource extends Resource
     protected static ?string $model = ProductAttribute::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
-    protected static ?string $navigationGroup = 'Catalogue';
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Catalogue';
+    }
+
     protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form

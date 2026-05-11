@@ -3,9 +3,9 @@
 return [
     'navigation' => [
         'sales' => 'Sales',
-        'content' => 'Content',
-        'settings' => 'Settings',
-        'catalog' => 'Product Catalog',
+        'content' => 'Content Management',
+        'settings' => 'Lunar Settings',
+        'catalog' => 'Catalogue',
     ],
     'orders' => [
         'label' => 'Order',

@@ -3,9 +3,9 @@
 return [
     'navigation' => [
         'sales' => 'Bán hàng',
-        'content' => 'Nội dung',
-        'settings' => 'Cài đặt',
-        'catalog' => 'Danh mục sản phẩm',
+        'content' => 'Quản lý nội dung',
+        'settings' => 'Cài đặt Lunar',
+        'catalog' => 'Danh mục',
     ],
     'orders' => [
         'label' => 'Đơn hàng',

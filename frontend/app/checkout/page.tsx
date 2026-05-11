@@ -12,6 +12,7 @@ import {
     Mail,
     MapPinHouse,
     Search,
+    ShieldCheck,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';

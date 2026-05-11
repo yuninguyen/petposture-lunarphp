@@ -4,6 +4,8 @@ namespace App\Models\Legacy;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Legacy\Order;
+use App\Models\Legacy\Product;
 
 class OrderItem extends Model
 {

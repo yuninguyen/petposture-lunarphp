@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\HasSeo;
+use App\Models\Legacy\Product;
 
 class Category extends Model
 {

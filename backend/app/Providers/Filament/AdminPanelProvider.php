@@ -105,6 +105,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->font('Hanken Grotesk')
             ->brandName('PetPosture Admin')
+            ->navigationGroups([
+                'Catalogue',
+                'Sales',
+                'Content Management',
+                'System',
+                'Lunar Settings',
+            ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->resources([
                 // Lunar ecommerce resources

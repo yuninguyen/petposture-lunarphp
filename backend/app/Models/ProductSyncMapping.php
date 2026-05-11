@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Lunar\Models\Product as LunarProduct;
+use App\Models\Legacy\Product;
 
 class ProductSyncMapping extends Model
 {

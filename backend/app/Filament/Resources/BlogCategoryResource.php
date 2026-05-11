@@ -29,7 +29,7 @@ class BlogCategoryResource extends Resource
 
     public static function getPluralLabel(): string
     {
-        return __('Categories');
+        return __('Blog Categories');
     }
     protected static ?int $navigationSort = 1;
 
