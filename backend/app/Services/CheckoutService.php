@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Mail\OrderConfirmation;
 use App\Payments\PaymentGatewayManager;
 use App\Services\SalesTaxService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Lunar\Base\ShippingManifestInterface;
 use Lunar\DataTypes\Price as PriceDataType;
 use Lunar\DataTypes\ShippingOption;
@@ -142,7 +144,14 @@ class CheckoutService
                 dedupeAgainstLatest: false,
             );
 
-            return $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
+            $placed = $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
+
+            // Queue confirmation email — non-blocking, fails silently if mail not configured
+            if ($placed->customer_reference) {
+                Mail::queue(new OrderConfirmation($placed));
+            }
+
+            return $placed;
         });
     }
 

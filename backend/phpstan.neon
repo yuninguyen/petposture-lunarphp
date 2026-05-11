@@ -1,0 +1,14 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+    level: 3
+    ignoreErrors:
+        # Magic property access via Eloquent model attributes is expected
+        - '#Access to an undefined property Lunar\\Models\\[a-zA-Z]+::#'
+        # Lunar uses dynamic relations resolved at runtime
+        - '#Call to an undefined method Lunar\\Models\\[a-zA-Z]+::#'
+    checkMissingIterableValueType: false
+    reportUnmatchedIgnoredErrors: false

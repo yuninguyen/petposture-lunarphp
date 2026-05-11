@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Mail\OrderCancelled;
+use App\Mail\OrderShipped;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use App\Support\Orders\OrderStateMachine;
@@ -79,7 +82,17 @@ class OrderOperationsService
             $this->orderEventService->record($order, $type, $title, $detail);
         }
 
-        return $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
+        $refreshed = $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
+
+        if ($targetStatus && $refreshed->customer_reference) {
+            match ($targetStatus) {
+                'shipped'    => Mail::queue(new OrderShipped($refreshed)),
+                'cancelled'  => Mail::queue(new OrderCancelled($refreshed)),
+                default      => null,
+            };
+        }
+
+        return $refreshed;
     }
 
     public function performAction(Order $order, string $action, array $payload = []): Order

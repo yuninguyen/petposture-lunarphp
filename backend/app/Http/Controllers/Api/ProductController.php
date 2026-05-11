@@ -9,6 +9,7 @@ use App\Models\ProductSyncMapping;
 use App\Models\Review;
 use App\Traits\HttpResponses;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Lunar\Models\Order;
 use Lunar\Models\Price;
 use Lunar\Models\Product;
@@ -80,7 +81,17 @@ class ProductController extends Controller
             $query->orderBy('lunar_products.created_at', 'desc');
         }
 
-        $products = $query->paginate(12);
+        // Skip cache for filtered/sorted requests; cache only the unfiltered first page
+        $hasFilters = $request->hasAny(['category', 'q', 'min_price', 'max_price'])
+            || ($sort !== 'newest')
+            || ($request->input('page', 1) > 1);
+
+        if ($hasFilters) {
+            return ProductResource::collection($query->paginate(12));
+        }
+
+        $cacheKey = 'products:index:p1';
+        $products  = Cache::tags(['products'])->remember($cacheKey, now()->addHour(), fn () => $query->paginate(12));
 
         return ProductResource::collection($products);
     }

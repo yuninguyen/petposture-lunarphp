@@ -13,6 +13,15 @@ use App\Http\Controllers\Api\SettingsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+// Health check — used by uptime monitors and CI readiness probes
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'db'     => \Illuminate\Support\Facades\DB::connection()->getPdo() ? 'connected' : 'error',
+        'ts'     => now()->toIso8601String(),
+    ]);
+});
+
 // Public Routes
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth');
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:auth');

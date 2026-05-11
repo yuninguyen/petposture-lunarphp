@@ -9,6 +9,7 @@ use App\Services\CheckoutService;
 use App\Services\SalesTaxService;
 use App\Services\StripePaymentIntentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
@@ -63,13 +64,26 @@ class CheckoutController extends Controller
             'customer_note' => 'nullable|string|max:2000',
         ])->validate();
 
+        // Idempotency: client can pass Idempotency-Key header to prevent duplicate orders
+        // on double-click / network retry. Key is scoped per IP+email.
+        $idempotencyKey = $request->header('Idempotency-Key');
+        if ($idempotencyKey) {
+            $cacheKey = 'checkout:idem:' . md5($idempotencyKey . ($validated['shipping']['email'] ?? ''));
+            $cached   = Cache::get($cacheKey);
+            if ($cached) {
+                return response()->json(['success' => true, 'order' => $cached, '_idempotent' => true], 201);
+            }
+        }
+
         try {
             $order = $this->checkoutService->placeOrder($validated, auth('sanctum')->id());
+            $result = new OrderResource($order);
 
-            return response()->json([
-                'success' => true,
-                'order' => new OrderResource($order),
-            ], 201);
+            if ($idempotencyKey) {
+                Cache::put($cacheKey, $result, now()->addHours(24));
+            }
+
+            return response()->json(['success' => true, 'order' => $result], 201);
         } catch (\Throwable $e) {
             Log::error("Checkout Failed: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
 
