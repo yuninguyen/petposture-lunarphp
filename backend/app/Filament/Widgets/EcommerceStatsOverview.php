@@ -15,15 +15,15 @@ class EcommerceStatsOverview extends BaseWidget
         $revenue = Order::whereNotIn('status', ['cancelled'])->sum('total');
 
         return [
-            Stat::make('Total Revenue', '$' . number_format($revenue / 100, 2))
-                ->description('All time, excluding cancelled')
+            Stat::make(__('admin.dashboard.stats.revenue.label'), '$' . number_format($revenue / 100, 2))
+                ->description(__('admin.dashboard.stats.revenue.description'))
                 ->color('primary'),
-            Stat::make('Total Orders', Order::count())
-                ->description('Lifetime transactions'),
-            Stat::make('Active Products', Product::where('status', 'published')->count())
-                ->description('Published in catalogue'),
-            Stat::make('Customers', User::role('customer')->count())
-                ->description('Registered customers'),
+            Stat::make(__('admin.dashboard.stats.orders.label'), Order::count())
+                ->description(__('admin.dashboard.stats.orders.description')),
+            Stat::make(__('admin.dashboard.stats.products.label'), Product::where('status', 'published')->count())
+                ->description(__('admin.dashboard.stats.products.description')),
+            Stat::make(__('admin.dashboard.stats.customers.label'), User::role('customer')->count())
+                ->description(__('admin.dashboard.stats.customers.description')),
         ];
     }
 }

@@ -9,6 +9,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Navigation\NavigationGroup;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Facades\FilamentView;
@@ -21,12 +22,13 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use Lunar\Admin\Filament\Resources;
-use Lunar\Admin\Filament\Widgets\Dashboard\Orders\AverageOrderValueChart;
+use App\Filament\Widgets\AverageOrderValueChart;
+use App\Filament\Widgets\NewVsReturningCustomersChart;
+use App\Filament\Widgets\OrdersSalesChart;
+use App\Filament\Widgets\EcommerceStatsOverview;
+use App\Filament\Widgets\OrderTotalsChart;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\LatestOrdersTable;
-use Lunar\Admin\Filament\Widgets\Dashboard\Orders\NewVsReturningCustomersChart;
-use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrdersSalesChart;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderStatsOverview;
-use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderTotalsChart;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\PopularProductsTable;
 
 class AdminPanelProvider extends PanelProvider
@@ -101,16 +103,17 @@ class AdminPanelProvider extends PanelProvider
                     900 => '#6b3e25',
                     950 => '#3a2012',
                 ],
-                'gray' => Color::Zinc,
+                'gray' => Color::Slate,
             ])
-            ->font('Hanken Grotesk')
+            ->font('Google Sans Flex')
             ->brandName('PetPosture Admin')
             ->navigationGroups([
-                'Catalogue',
-                'Sales',
-                'Content Management',
-                'System',
-                'Lunar Settings',
+                __('lunarpanel::global.sections.catalog'),
+                __('lunarpanel::global.sections.sales'),
+                __('Content Management'),
+                __('System'),
+                __('filament-shield::filament-shield.nav.group'),
+                __('lunarpanel::global.sections.settings'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->resources([
@@ -140,11 +143,47 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            ->renderHook(
+                'panels::head.done',
+                fn (): string => '
+                    <link rel="preconnect" href="https://fonts.googleapis.com">
+                    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                    <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,100..1000&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+                    <link rel="stylesheet" href="' . asset('css/custom-theme.css') . '">',
+            )
+            ->renderHook(
+                'panels::content.before',
+                fn (): string => '
+                    <div class="dashboard-welcome-container mb-10 px-4 md:px-6 lg:px-8 pt-4">
+                        <div class="relative flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+                            <div class="flex-1">
+                                <h1 class="text-3xl md:text-5xl font-bold tracking-tight text-slate-900" style="font-family: \'Google Sans Flex\', sans-serif; line-height: 1.5; padding-bottom: 10px;">
+                                    ' . str_replace(':name', '<span class="text-primary-500">' . auth()->user()->name . '</span>', __('admin.dashboard.welcome', ['name' => ':name'])) . '
+                                </h1>
+                                <p class="text-base md:text-xl text-slate-400 mt-4 max-w-3xl font-medium tracking-tight" style="font-family: \'Google Sans Flex\', sans-serif; line-height: 1.5; ">
+                                    ' . __('admin.dashboard.subtitle') . '
+                                </p>
+                            </div>
+                            <div class="flex flex-col items-start md:items-end shrink-0 mb-1">
+                                <div class="text-sm font-bold text-slate-900 tracking-tight" style="font-family: \'Google Sans Flex\', sans-serif; line-height: 1.5; padding-bottom: 10px;">
+                                    ' . ucfirst(now()->translatedFormat('l, j F Y')) . '
+                                </div>
+                                <div class="flex items-center gap-1.5 mt-1 pr-1">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                                        PetPosture Cloud
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>',
+            )
+            // ->discoverWidgets(in: app_path('Filament\\Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+                EcommerceStatsOverview::class,
                 OrderStatsOverview::class,
-                OrderTotalsChart::class,
                 OrdersSalesChart::class,
+                OrderTotalsChart::class,
                 AverageOrderValueChart::class,
                 NewVsReturningCustomersChart::class,
                 PopularProductsTable::class,

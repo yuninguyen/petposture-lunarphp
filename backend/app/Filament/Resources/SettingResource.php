@@ -16,7 +16,10 @@ class SettingResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static ?string $navigationGroup = 'System';
+    public static function getNavigationGroup(): ?string
+    {
+        return __('admin.navigation.system');
+    }
 
     protected static bool $shouldRegisterNavigation = false;
 

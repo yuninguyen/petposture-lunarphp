@@ -6,6 +6,7 @@ use App\Filament\Resources\CategoryResource\Pages;
 use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -19,7 +20,7 @@ class CategoryResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Catalogue';
+        return __('lunarpanel::global.sections.catalog');
     }
     protected static ?int $navigationSort = 1;
 
@@ -41,7 +42,7 @@ class CategoryResource extends Resource
                     ->label(__('Name'))
                     ->required()
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn(string $operation, $state, Forms\Set $set) =>
+                    ->afterStateUpdated(fn(string $operation, $state, Set $set) =>
                         $operation === 'create' ? $set('slug', Str::slug($state)) : null),
                 Forms\Components\TextInput::make('slug')
                     ->label(__('Slug'))

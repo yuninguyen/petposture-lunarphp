@@ -2,9 +2,9 @@
 
 return [
     'sections' => [
-        'catalog' => 'Catalogue',
-        'sales' => 'Sales',
-        'reports' => 'Báo cáo',
-        'settings' => 'Settings',
+        'catalog' => '📦 Danh mục',
+        'sales' => '🛒 Bán hàng',
+        'reports' => '📊 Báo cáo',
+        'settings' => '⚙️ Cài đặt',
     ],
 ];

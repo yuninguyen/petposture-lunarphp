@@ -4,8 +4,12 @@ return [
     'navigation' => [
         'sales' => 'Sales',
         'content' => 'Content Management',
-        'settings' => 'Lunar Settings',
+        'settings' => 'Settings',
         'catalog' => 'Catalogue',
+        'system' => 'System',
+        'manage_settings' => 'Manage Settings',
+        'media_management' => 'Media Management',
+        'shield' => 'Security & Roles',
     ],
     'orders' => [
         'label' => 'Order',
@@ -40,6 +44,47 @@ return [
             'tax_id' => 'Tax ID',
             'account_ref' => 'Account Ref',
             'customer_groups' => 'Customer Groups',
+        ],
+    ],
+    'dashboard' => [
+        'welcome' => 'Welcome back, :name!',
+        'subtitle' => 'Here is an overview of PetPosture\'s performance today.',
+        'overview' => 'Overview',
+        'stats' => [
+            'revenue' => [
+                'label' => 'Total Revenue',
+                'description' => 'All time, excluding cancelled',
+            ],
+            'orders' => [
+                'label' => 'Total Orders',
+                'description' => 'Lifetime transactions',
+            ],
+            'products' => [
+                'label' => 'Active Products',
+                'description' => 'Published in catalogue',
+            ],
+            'customers' => [
+                'label' => 'Customers',
+                'description' => 'Registered customers',
+            ],
+        ],
+    ],
+    'resources' => [
+        'product_attributes' => [
+            'label' => 'Product Attributes',
+            'plural_label' => 'Product Attributes',
+            'navigation_label' => 'Product Attributes',
+            'attributes' => [
+                'name' => 'Attribute Name',
+                'handle' => 'Handle',
+                'values_count' => 'Values Count',
+                'values' => 'Values',
+            ],
+            'sections' => [
+                'details' => 'Attribute Details',
+                'values' => 'Values',
+                'values_description' => 'Define the available values for this attribute (e.g. Red, Blue for Color)',
+            ],
         ],
     ],
 ];

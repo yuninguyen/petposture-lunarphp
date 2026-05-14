@@ -1,17 +1,11 @@
 {
     "Catalogue": "📦 Catalogue",
-    "Catalog": "📦 Catalogue",
-    "catalog": "📦 Catalogue",
-    "lunar::admin.navigation.catalog": "📦 Catalogue",
     "Sales": "🛒 Sales",
-    "sales": "🛒 Sales",
-    "lunar::admin.navigation.sales": "🛒 Sales",
     "Content Management": "📝 Content Management",
     "System": "⚙️ System",
-    "system": "⚙️ System",
-    "lunar::admin.navigation.system": "⚙️ System",
-    "Lunar Settings": "Lunar Settings",
-    "Settings": "Lunar Settings",
-    "lunar::admin.navigation.settings": "Lunar Settings",
-    "Filament Shield": "⚙️ System"
+    "Filament Shield": "🛡️ Security & Roles",
+    "lunarpanel::global.sections.catalog": "📦 Catalogue",
+    "lunarpanel::global.sections.sales": "🛒 Sales",
+    "lunarpanel::global.sections.settings": "⚙️ Settings",
+    "filament-shield::filament-shield.nav.group": "🛡️ Security & Roles"
 }

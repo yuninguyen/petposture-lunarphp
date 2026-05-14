@@ -17,13 +17,25 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Session::has('locale')) {
-            $locale = Session::get('locale');
-            App::setLocale($locale);
-            config(['app.locale' => $locale]);
+        $locale = Session::get('locale', config('app.locale'));
+        
+        App::setLocale($locale);
+        config(['app.locale' => $locale]);
+        
+        // Set Carbon locale for translated formats
+        \Carbon\Carbon::setLocale($locale);
+        
+        // Set PHP system locale for standard date formats (Windows compatible)
+        if ($locale === 'vi') {
+            setlocale(LC_ALL, 'vi_VN.UTF-8', 'vi_VN', 'vietnamese', 'vie', 'vn', 'vietnam');
+            try {
+                \Illuminate\Support\Facades\DB::statement("SET lc_time_names = 'vi_VN'");
+            } catch (\Exception $e) {}
         } else {
-            $locale = config('app.locale');
-            App::setLocale($locale);
+            setlocale(LC_ALL, 'en_US.UTF-8', 'en_US', 'english', 'eng', 'en');
+            try {
+                \Illuminate\Support\Facades\DB::statement("SET lc_time_names = 'en_US'");
+            } catch (\Exception $e) {}
         }
 
         return $next($request);

@@ -10,6 +10,7 @@ use App\Payments\Gateways\StripeCardGateway;
 use App\Payments\PaymentGatewayManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\ServiceProvider;
 use Lunar\Models\Order;
 use Lunar\Base\ShippingModifiers;
@@ -36,6 +37,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (class_exists(\Lunar\Facades\Telemetry::class)) {
+            \Lunar\Facades\Telemetry::optOut();
+        }
+
         \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
             return $user->hasRole('super_admin') ? true : null;
         });

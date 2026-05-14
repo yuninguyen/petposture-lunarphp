@@ -6,6 +6,7 @@ use App\Filament\Resources\BlogCategoryResource\Pages;
 use App\Models\BlogCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -41,7 +42,7 @@ class BlogCategoryResource extends Resource
                     ->label(__('Name'))
                     ->required()
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn(string $operation, $state, Forms\Set $set) =>
+                    ->afterStateUpdated(fn(string $operation, $state, Set $set) =>
                         $operation === 'create' ? $set('slug', Str::slug($state)) : null),
                 Forms\Components\TextInput::make('slug')
                     ->label(__('Slug'))

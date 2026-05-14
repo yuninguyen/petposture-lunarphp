@@ -23,7 +23,7 @@ class ReviewResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Sales';
+        return __('lunarpanel::global.sections.sales');
     }
 
     protected static ?int $navigationSort = 5;

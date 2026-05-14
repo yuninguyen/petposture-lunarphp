@@ -16,7 +16,15 @@ class MediaResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
-    protected static ?string $navigationLabel = 'Media Management';
+    public static function getNavigationLabel(): string
+    {
+        return __('admin.navigation.media_management');
+    }
+
+    public static function getPluralLabel(): string
+    {
+        return __('admin.navigation.media_management');
+    }
 
     protected static ?string $modelLabel = 'Media';
 
@@ -24,7 +32,7 @@ class MediaResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'System';
+        return __('System');
     }
 
     public static function table(Table $table): Table

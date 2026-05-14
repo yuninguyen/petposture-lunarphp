@@ -1,0 +1,79 @@
+:root {
+    --common-border-radius: 12px;
+    --brand-slate: #1e293b;
+    --brand-orange: #df8448;
+}
+
+.fi-sidebar {
+    background-color: var(--brand-slate) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.fi-sidebar-nav-label,
+.fi-sidebar-nav-link-label {
+    color: #f1f5f9 !important;
+}
+
+.fi-sidebar-nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.fi-sidebar-nav-link-active {
+    background-color: var(--brand-orange) !important;
+    color: white !important;
+}
+
+.fi-topbar {
+    border-bottom: 1px solid #f1f5f9;
+    background-color: white !important;
+}
+
+.fi-section {
+    border-radius: 1rem !important;
+    border: 1px solid #f1f5f9 !important;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+}
+
+.fi-wi-stats-overview-stat {
+    border-radius: 1rem !important;
+    border: 1px solid #f1f5f9 !important;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+    background-color: white !important;
+}
+
+.fi-wi-stats-overview-stat-value {
+    color: var(--brand-slate) !important;
+    font-weight: 700 !important;
+}
+
+.fi-wi-stats-overview-stat-label {
+    color: var(--brand-orange) !important;
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+}
+
+/* Dashboard Welcome Styles */
+.dashboard-welcome-container {
+    background: radial-gradient(circle at top left, rgba(223, 132, 72, 0.05), transparent 40%),
+                radial-gradient(circle at bottom right, rgba(223, 132, 72, 0.03), transparent 40%);
+    border-radius: 2rem;
+}
+
+.dashboard-welcome-container h1 {
+    font-family: 'Google Sans Flex', sans-serif !important;
+    letter-spacing: -0.05em !important;
+}
+
+.dashboard-welcome-container p {
+    letter-spacing: -0.02em !important;
+}
+
+.apexcharts-canvas {
+    border-radius: 1rem;
+}
+
+.fi-wi-widget {
+    border-radius: 1rem !important;
+}

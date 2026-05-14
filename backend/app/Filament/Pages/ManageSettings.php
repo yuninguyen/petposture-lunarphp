@@ -21,10 +21,18 @@ class ManageSettings extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return 'System';
+        return __('System');
     }
 
-    protected static ?string $title = 'Manage Settings';
+    public function getTitle(): string
+    {
+        return __('admin.navigation.manage_settings');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('admin.navigation.manage_settings');
+    }
 
     protected static string $view = 'filament.pages.manage-settings';
 

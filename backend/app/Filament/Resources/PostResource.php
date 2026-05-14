@@ -6,6 +6,7 @@ use App\Filament\Resources\PostResource\Pages;
 use App\Models\Post;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -44,7 +45,7 @@ class PostResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn(string $operation, $state, Forms\Set $set) =>
+                            ->afterStateUpdated(fn(string $operation, $state, Set $set) =>
                                 $operation === 'create' ? $set('slug', Str::slug($state)) : null),
 
                         Forms\Components\TextInput::make('slug')
@@ -82,11 +83,6 @@ class PostResource extends Resource
                         Forms\Components\DateTimePicker::make('published_at')
                             ->label(__('Published At')),
 
-                        Forms\Components\Textarea::make('embed_code')
-                            ->label(__('Custom Embed Code (HTML)'))
-                            ->placeholder(__('e.g. YouTube iframe or custom script'))
-                            ->rows(5)
-                            ->columnSpanFull(),
                     ])->columns(2),
 
                 Forms\Components\Section::make(__('SEO Settings'))

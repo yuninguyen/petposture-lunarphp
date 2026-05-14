@@ -4,8 +4,12 @@ return [
     'navigation' => [
         'sales' => 'Bán hàng',
         'content' => 'Quản lý nội dung',
-        'settings' => 'Cài đặt Lunar',
+        'settings' => 'Cài đặt',
         'catalog' => 'Danh mục',
+        'system' => 'Hệ thống',
+        'manage_settings' => 'Cài đặt hệ thống',
+        'media_management' => 'Quản lý Media',
+        'shield' => 'Bảo mật & Vai trò',
     ],
     'orders' => [
         'label' => 'Đơn hàng',
@@ -40,6 +44,47 @@ return [
             'tax_id' => 'Mã số thuế',
             'account_ref' => 'Mã tham chiếu',
             'customer_groups' => 'Nhóm khách hàng',
+        ],
+    ],
+    'dashboard' => [
+        'welcome' => 'Chào mừng trở lại, :name!',
+        'subtitle' => 'Dưới đây là thông tin tổng quan về hiệu suất của PetPosture hôm nay.',
+        'overview' => 'Tổng quan',
+        'stats' => [
+            'revenue' => [
+                'label' => 'Tổng doanh thu',
+                'description' => 'Toàn thời gian, không bao gồm đơn đã hủy',
+            ],
+            'orders' => [
+                'label' => 'Tổng đơn hàng',
+                'description' => 'Tổng số giao dịch',
+            ],
+            'products' => [
+                'label' => 'Sản phẩm đang hoạt động',
+                'description' => 'Đã xuất bản trong danh mục',
+            ],
+            'customers' => [
+                'label' => 'Khách hàng',
+                'description' => 'Khách hàng đã đăng ký',
+            ],
+        ],
+    ],
+    'resources' => [
+        'product_attributes' => [
+            'label' => 'Thuộc tính Sản phẩm',
+            'plural_label' => 'Thuộc tính Sản phẩm',
+            'navigation_label' => 'Thuộc tính Sản phẩm',
+            'attributes' => [
+                'name' => 'Tên thuộc tính',
+                'handle' => 'Mã định danh',
+                'values_count' => 'Số lượng giá trị',
+                'values' => 'Các giá trị',
+            ],
+            'sections' => [
+                'details' => 'Chi tiết thuộc tính',
+                'values' => 'Giá trị thuộc tính',
+                'values_description' => 'Định nghĩa các giá trị có sẵn cho thuộc tính này (ví dụ: Đỏ, Xanh cho thuộc tính Màu sắc)',
+            ],
         ],
     ],
 ];
