@@ -15,9 +15,18 @@ use Illuminate\Support\Facades\Route;
 
 // Health check — used by uptime monitors and CI readiness probes
 Route::get('/health', function () {
+    $dbStatus = 'error';
+    try {
+        if (\Illuminate\Support\Facades\DB::connection()->getPdo()) {
+            $dbStatus = 'connected';
+        }
+    } catch (\Exception $e) {
+        $dbStatus = 'disconnected';
+    }
+
     return response()->json([
         'status' => 'ok',
-        'db'     => \Illuminate\Support\Facades\DB::connection()->getPdo() ? 'connected' : 'error',
+        'db'     => $dbStatus,
         'ts'     => now()->toIso8601String(),
     ]);
 });
