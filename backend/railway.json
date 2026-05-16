@@ -4,7 +4,7 @@
               "builder": "NIXPACKS"
       },
       "deploy": {
-              "startCommand": "php artisan tinker --execute=\"DB::statement('SET FOREIGN_KEY_CHECKS=0'); DB::statement('DROP TABLE IF EXISTS cart_items, lunar_cart_lines, lunar_cart_addresses, lunar_cart_line_discount, lunar_carts, carts, migrations, sessions, users, activity_log, cache, cache_locks');\" && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan storage:link && php artisan serve --host=0.0.0.0 --port=$PORT",
+              "startCommand": "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan storage:link && php artisan serve --host=0.0.0.0 --port=$PORT",
               "healthcheckPath": "/api/health",
               "restartPolicyType": "ON_FAILURE"
       }
