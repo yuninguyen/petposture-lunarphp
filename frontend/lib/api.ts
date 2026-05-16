@@ -1,7 +1,7 @@
 export const getApiBaseUrl = () => {
     // Priority 1: Environment variable (works on both client and server)
-    if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-        return process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (process.env.NEXT_PUBLIC_API_URL) {
+        return process.env.NEXT_PUBLIC_API_URL;
     }
 
     // Priority 2: Client-side detection for local development

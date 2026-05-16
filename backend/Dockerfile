@@ -1,49 +1,60 @@
-FROM php:8.3-fpm
+FROM dunglas/frankenphp:1.2-php8.3-alpine
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies & PHP extensions
+RUN apk add --no-cache \
     git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
     unzip \
-    libicu-dev \
+    libpng-dev \
     libzip-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libmariadb-dev
+    icu-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    oniguruma-dev \
+    libxml2-dev \
+    bash
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip
+    && docker-php-ext-install -j$(nproc) \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    intl \
+    zip \
+    opcache
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set environment variables for Composer
-ENV COMPOSER_ALLOW_SUPERUSER=1
-
 # Set working directory
-WORKDIR /var/www
+WORKDIR /app
 
-# Copy existing application directory contents
-COPY . /var/www
+# Copy application code
+COPY . .
 
-# Install dependencies without running scripts (avoids database connection errors during build)
+# Install dependencies
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+# Set permissions for Laravel
+RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Start the application
-CMD php artisan migrate --force && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache && \
-    php artisan storage:link && \
-    php artisan serve --host=0.0.0.0 --port=$PORT
+# Create a startup script to handle migrations and port binding
+RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint.sh && \
+    echo 'set -e' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'echo "Running migrations..."' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'php artisan migrate --force || echo "Migration failed, but continuing..."' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'php artisan config:cache' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'php artisan route:cache' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'php artisan view:cache' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'php artisan storage:link || true' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'echo "Starting FrankenPHP on port $PORT..."' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'export SERVER_NAME=":${PORT:-80}"' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'exec frankenphp run --config /etc/caddy/Caddyfile' >> /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Expose port 80 (standard for HTTP, Railway will remap)
+EXPOSE 80
+
+ENTRYPOINT ["docker-entrypoint.sh"]
