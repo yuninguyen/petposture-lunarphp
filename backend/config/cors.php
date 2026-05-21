@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => array_filter(array_map('trim', explode(',', env('FRONTEND_URL', 'http://localhost:3000')))),
+    'allowed_origins' => array_filter(array_map('trim', explode(',', env('FRONTEND_URL', 'https://petposture.vercel.app,http://localhost:3000')))),
 
     'allowed_origins_patterns' => [],
 
