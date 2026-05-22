@@ -40,6 +40,9 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Set permissions for Laravel
 RUN chown -R www-data:www-data storage bootstrap/cache
 
+# Copy properly formatted Caddyfile
+COPY Caddyfile /etc/caddy/Caddyfile
+
 # Create a startup script to handle migrations and port binding
 RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint.sh && \
     echo 'set -e' >> /usr/local/bin/docker-entrypoint.sh && \
