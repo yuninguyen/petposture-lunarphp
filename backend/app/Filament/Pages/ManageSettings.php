@@ -4,7 +4,6 @@ namespace App\Filament\Pages;
 
 use App\Models\Setting;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\TextInput;
@@ -113,10 +112,21 @@ class ManageSettings extends Page
                                     ->helperText('From Stripe Dashboard → Developers → Webhooks → your endpoint → Signing secret.')
                                     ->columnSpanFull(),
 
-                                Placeholder::make('webhook_url')
+                                TextInput::make('webhook_url')
                                     ->label('Webhook Endpoint URL')
-                                    ->content(fn () => url('/api/webhooks/stripe'))
-                                    ->helperText('Register this URL in your Stripe Dashboard under Developers → Webhooks.'),
+                                    ->default(fn () => url('/api/webhooks/stripe'))
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->suffixAction(
+                                        \Filament\Forms\Components\Actions\Action::make('copy')
+                                            ->icon('heroicon-o-clipboard-document')
+                                            ->tooltip('Copy to clipboard')
+                                            ->action(fn () => null)
+                                            ->extraAttributes([
+                                                'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                            ])
+                                    )
+                                    ->helperText('Register this URL in your Stripe Dashboard → Developers → Webhooks.'),
                             ]),
 
                         // ── SMTP ─────────────────────────────────────────────

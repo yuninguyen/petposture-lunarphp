@@ -1,79 +1,354 @@
+/* ═══════════════════════════════════════════════════════════════
+   PetPosture Admin — Custom Theme
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
-    --common-border-radius: 12px;
-    --brand-slate: #1e293b;
-    --brand-orange: #df8448;
+    --brand-slate:      #1e293b;
+    --brand-slate-mid:  #2c3e50;
+    --brand-slate-light:#334155;
+    --brand-orange:     #df8448;
+    --brand-orange-dark:#c9713a;
+    --brand-orange-glow:rgba(223,132,72,0.15);
+    --sidebar-width:    260px;
 }
 
+/* ── Fonts ─────────────────────────────────────────────────────── */
+* { font-family: 'Google Sans Flex', 'Inter', sans-serif !important; }
+code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
+
+/* ── Sidebar ────────────────────────────────────────────────────── */
 .fi-sidebar {
-    background-color: var(--brand-slate) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    background: linear-gradient(180deg, #1a2535 0%, #1e293b 100%) !important;
+    border-right: none !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.15) !important;
+    width: var(--sidebar-width) !important;
 }
 
-.fi-sidebar-nav-label,
-.fi-sidebar-nav-link-label {
-    color: #f1f5f9 !important;
+.fi-sidebar-header {
+    padding: 1.25rem 1rem !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
 }
 
+/* Nav group labels */
+.fi-sidebar-group-label,
+.fi-sidebar-nav-label {
+    color: rgba(148,163,184,0.6) !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.15em !important;
+    text-transform: uppercase !important;
+    padding-left: 0.75rem !important;
+}
+
+/* Nav links */
+.fi-sidebar-item-button,
+.fi-sidebar-nav-link {
+    color: #94a3b8 !important;
+    border-radius: 8px !important;
+    margin: 1px 8px !important;
+    padding: 0.5rem 0.75rem !important;
+    transition: all 0.15s ease !important;
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+}
+
+.fi-sidebar-item-button:hover,
 .fi-sidebar-nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.03) !important;
+    background: rgba(255,255,255,0.06) !important;
+    color: #e2e8f0 !important;
 }
 
+/* Active nav item */
+.fi-sidebar-item-button[aria-current="page"],
 .fi-sidebar-nav-link-active {
-    background-color: var(--brand-orange) !important;
+    background: var(--brand-orange-glow) !important;
+    color: var(--brand-orange) !important;
+    font-weight: 700 !important;
+    border-left: 3px solid var(--brand-orange) !important;
+    padding-left: calc(0.75rem - 3px) !important;
+}
+
+/* Nav icons */
+.fi-sidebar-item-button svg,
+.fi-sidebar-nav-link svg {
+    opacity: 0.7;
+}
+.fi-sidebar-item-button[aria-current="page"] svg,
+.fi-sidebar-nav-link-active svg {
+    opacity: 1;
+    color: var(--brand-orange) !important;
+}
+
+/* Badge (notification count) */
+.fi-sidebar-item-badge {
+    background: var(--brand-orange) !important;
     color: white !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    border-radius: 99px !important;
+    min-width: 18px !important;
+    height: 18px !important;
 }
 
+/* ── Topbar ─────────────────────────────────────────────────────── */
 .fi-topbar {
-    border-bottom: 1px solid #f1f5f9;
-    background-color: white !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
 }
 
-.fi-section {
-    border-radius: 1rem !important;
-    border: 1px solid #f1f5f9 !important;
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+/* Search */
+.fi-global-search-field input {
+    border-radius: 10px !important;
+    background: #f8fafc !important;
+    border: 1.5px solid #e2e8f0 !important;
+    font-size: 13px !important;
+}
+.fi-global-search-field input:focus {
+    border-color: var(--brand-orange) !important;
+    box-shadow: 0 0 0 3px var(--brand-orange-glow) !important;
 }
 
+/* ── Main content area ──────────────────────────────────────────── */
+.fi-main {
+    background: #f8fafc !important;
+}
+
+.fi-page-header {
+    display: none !important;
+}
+
+/* ── Stat Cards ─────────────────────────────────────────────────── */
 .fi-wi-stats-overview-stat {
-    border-radius: 1rem !important;
-    border: 1px solid #f1f5f9 !important;
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
-    background-color: white !important;
+    border-radius: 16px !important;
+    border: 1px solid #e8edf2 !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03) !important;
+    padding: 1.25rem 1.5rem !important;
+    transition: box-shadow 0.2s ease, transform 0.2s ease !important;
+    overflow: hidden;
+    position: relative;
+}
+
+.fi-wi-stats-overview-stat:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+    transform: translateY(-1px) !important;
 }
 
 .fi-wi-stats-overview-stat-value {
-    color: var(--brand-slate) !important;
-    font-weight: 700 !important;
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    letter-spacing: -0.03em !important;
+    line-height: 1.1 !important;
 }
 
 .fi-wi-stats-overview-stat-label {
-    color: var(--brand-orange) !important;
-    text-transform: uppercase;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    margin-bottom: 0.5rem !important;
 }
 
-/* Dashboard Welcome Styles */
+.fi-wi-stats-overview-stat-description {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+}
+
+/* Stat chart sparkline */
+.fi-wi-stats-overview-stat-chart {
+    opacity: 0.5;
+}
+
+/* ── Sections / Cards ───────────────────────────────────────────── */
+.fi-section,
+.fi-wi-chart,
+.fi-ta-ctn {
+    border-radius: 16px !important;
+    border: 1px solid #e8edf2 !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+
+.fi-section-header {
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 1rem 1.5rem !important;
+}
+
+.fi-section-header-heading {
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    color: #0f172a !important;
+}
+
+/* ── Tables ─────────────────────────────────────────────────────── */
+.fi-ta-header-cell {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: #64748b !important;
+}
+
+.fi-ta-row {
+    transition: background 0.1s ease !important;
+}
+
+.fi-ta-row:hover td {
+    background: #f8fafc !important;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────── */
+.fi-btn-primary {
+    background: var(--brand-orange) !important;
+    border-color: var(--brand-orange) !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    letter-spacing: 0.01em !important;
+    box-shadow: 0 2px 8px rgba(223,132,72,0.3) !important;
+    transition: all 0.2s ease !important;
+}
+
+.fi-btn-primary:hover {
+    background: var(--brand-orange-dark) !important;
+    box-shadow: 0 4px 12px rgba(223,132,72,0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* ── Forms ──────────────────────────────────────────────────────── */
+.fi-input {
+    border-radius: 10px !important;
+    border: 1.5px solid #e2e8f0 !important;
+    font-size: 13.5px !important;
+    transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+
+.fi-input:focus {
+    border-color: var(--brand-orange) !important;
+    box-shadow: 0 0 0 3px var(--brand-orange-glow) !important;
+}
+
+.fi-fo-field-wrp-label label {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+    letter-spacing: 0.02em !important;
+}
+
+/* ── Tabs ───────────────────────────────────────────────────────── */
+.fi-tabs-tab {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    transition: all 0.15s ease !important;
+}
+
+.fi-tabs-tab[aria-selected="true"] {
+    color: var(--brand-orange) !important;
+    background: var(--brand-orange-glow) !important;
+}
+
+/* ── Badges / Statuses ──────────────────────────────────────────── */
+.fi-badge {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+    letter-spacing: 0.03em !important;
+}
+
+/* ── Notifications ──────────────────────────────────────────────── */
+.fi-no-notification {
+    border-radius: 14px !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12) !important;
+}
+
+/* ── Modal ──────────────────────────────────────────────────────── */
+.fi-modal-window {
+    border-radius: 20px !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important;
+}
+
+/* ── ApexCharts ─────────────────────────────────────────────────── */
+.apexcharts-canvas { border-radius: 12px; }
+.apexcharts-toolbar { display: none !important; }
+
+/* ── Dashboard Welcome ──────────────────────────────────────────── */
 .dashboard-welcome-container {
-    background: radial-gradient(circle at top left, rgba(223, 132, 72, 0.05), transparent 40%),
-                radial-gradient(circle at bottom right, rgba(223, 132, 72, 0.03), transparent 40%);
-    border-radius: 2rem;
+    background:
+        radial-gradient(circle at top left,  rgba(223,132,72,0.06), transparent 45%),
+        radial-gradient(circle at bottom right, rgba(30,41,59,0.04), transparent 45%);
+    border-radius: 20px;
+    border: 1px solid rgba(223,132,72,0.1);
+    margin-bottom: 0 !important;
 }
 
 .dashboard-welcome-container h1 {
-    font-family: 'Google Sans Flex', sans-serif !important;
-    letter-spacing: -0.05em !important;
+    letter-spacing: -0.04em !important;
+    line-height: 1.2 !important;
 }
 
-.dashboard-welcome-container p {
-    letter-spacing: -0.02em !important;
+/* ── Quick Actions ──────────────────────────────────────────────── */
+.quick-actions-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 1rem 1.5rem 1.5rem;
 }
 
-.apexcharts-canvas {
-    border-radius: 1rem;
+.quick-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
 }
 
-.fi-wi-widget {
-    border-radius: 1rem !important;
+.quick-action-btn-primary {
+    background: var(--brand-orange);
+    color: white;
+    box-shadow: 0 2px 8px rgba(223,132,72,0.25);
+}
+
+.quick-action-btn-primary:hover {
+    background: var(--brand-orange-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(223,132,72,0.35);
+    color: white;
+    text-decoration: none;
+}
+
+.quick-action-btn-secondary {
+    background: white;
+    color: #374151;
+    border-color: #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.quick-action-btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #1e293b;
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    .fi-wi-stats-overview-stat-value { font-size: 1.6rem !important; }
 }
