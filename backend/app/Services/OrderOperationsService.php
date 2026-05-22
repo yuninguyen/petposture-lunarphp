@@ -2,7 +2,12 @@
 
 namespace App\Services;
 
+use App\Mail\CancelledOrderAdmin;
 use App\Mail\OrderCancelled;
+use App\Mail\OrderDelivered;
+use App\Mail\OrderPaymentFailed;
+use App\Mail\OrderPaymentReceived;
+use App\Mail\OrderProcessing;
 use App\Mail\OrderShipped;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -86,9 +91,12 @@ class OrderOperationsService
 
         if ($targetStatus && $refreshed->customer_reference) {
             match ($targetStatus) {
-                'shipped'    => Mail::send(new OrderShipped($refreshed)),
-                'cancelled'  => Mail::send(new OrderCancelled($refreshed)),
-                default      => null,
+                'payment-received' => Mail::send(new OrderPaymentReceived($refreshed)),
+                'processing'       => Mail::send(new OrderProcessing($refreshed)),
+                'shipped'          => Mail::send(new OrderShipped($refreshed)),
+                'delivered'        => Mail::send(new OrderDelivered($refreshed)),
+                'cancelled'        => $this->sendCancelledEmails($refreshed),
+                default            => null,
             };
         }
 
@@ -218,6 +226,10 @@ class OrderOperationsService
                 'Payment failed',
                 $eventType ?: 'Stripe reported a failed payment.'
             );
+
+            if ($order->customer_reference) {
+                Mail::send(new OrderPaymentFailed($order));
+            }
         }
 
         if ($paymentStatus === 'cancelled' && in_array($currentStatus, ['awaiting-payment', 'payment-offline'], true)) {
@@ -340,6 +352,12 @@ class OrderOperationsService
         $meta['shipments'] = array_slice($shipments, -10);
 
         return $meta;
+    }
+
+    private function sendCancelledEmails(Order $order): void
+    {
+        Mail::send(new OrderCancelled($order));
+        Mail::to(config('mail.from.address'))->send(new CancelledOrderAdmin($order));
     }
 
     private function resolveTrackingUrl(string $carrier, string $trackingNumber): ?string

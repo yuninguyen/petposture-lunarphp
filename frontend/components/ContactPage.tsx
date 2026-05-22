@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Mail, Phone, MapPin, Send, CheckCircle2 } from "lucide-react";
+import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { getApiBaseUrl } from '@/lib/api';
 
 /* ─────────────────────────────────────────────────────────────────
    DESIGN TOKENS (Synced with HomePage.tsx)
@@ -56,6 +57,21 @@ function ContactInfoItem({ icon: Icon, label, value, href, note }: { icon: React
     return href ? <a href={href} className="block no-underline">{content}</a> : content;
 }
 
+type FieldErrors = Partial<Record<'name' | 'email' | 'subject' | 'message', string>>;
+
+const MESSAGES = {
+    success: "Thank you! Your message has been sent. We'll get back to you within 24 business hours.",
+    error:   'Unable to send your message. Please try again or email us directly.',
+    sending: 'Sending your message...',
+    spam:    'Too many requests. Please wait a moment before trying again.',
+    validation: {
+        name:    'Please enter your full name.',
+        email:   'Please enter a valid email address.',
+        subject: 'Please enter a subject for your message.',
+        message: 'Please enter your message (min. 10 characters).',
+    },
+};
+
 export default function ContactPage() {
     const [formData, setFormData] = useState({
         name: '',
@@ -64,48 +80,71 @@ export default function ContactPage() {
         subject: '',
         message: ''
     });
-    const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [errorMessage, setErrorMessage] = useState('');
+    const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const validate = (): FieldErrors => {
+        const errors: FieldErrors = {};
+        if (!formData.name.trim()) errors.name = MESSAGES.validation.name;
+        if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+            errors.email = MESSAGES.validation.email;
+        if (!formData.subject.trim()) errors.subject = MESSAGES.validation.subject;
+        if (formData.message.trim().length < 10) errors.message = MESSAGES.validation.message;
+        return errors;
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const errors = validate();
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            return;
+        }
+        setFieldErrors({});
         setStatus('loading');
-        // Simulate API call
-        setTimeout(() => {
+        setErrorMessage('');
+
+        try {
+            const res = await fetch(`${getApiBaseUrl()}/api/contact`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: formData.name,
+                    email: formData.email,
+                    subject: formData.subject,
+                    message: formData.message,
+                    order_number: formData.orderNumber || undefined,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (res.status === 429) {
+                throw new Error(MESSAGES.spam);
+            }
+
+            if (!res.ok) {
+                throw new Error(data.message || MESSAGES.error);
+            }
+
             setStatus('success');
             setFormData({ name: '', email: '', orderNumber: '', subject: '', message: '' });
-        }, 1500);
+        } catch (err) {
+            setStatus('error');
+            setErrorMessage(err instanceof Error ? err.message : MESSAGES.error);
+        }
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        // Clear field error on change
+        if (fieldErrors[name as keyof FieldErrors]) {
+            setFieldErrors(prev => ({ ...prev, [name]: undefined }));
+        }
     };
-
-    if (status === 'success') {
-        return (
-            <div className="min-h-screen bg-white flex flex-col font-sans">
-                <Header />
-                <main className="flex-1 flex items-center justify-center p-6">
-                    <div className="max-w-md w-full text-center space-y-6 animate-in fade-in zoom-in duration-500">
-                        <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                            <CheckCircle2 size={40} />
-                        </div>
-                        <h2 className="text-3xl font-black uppercase tracking-widest text-[#3e4c57]">Message Sent!</h2>
-                        <p className="text-zinc-500 text-sm leading-relaxed tracking-wide">
-                            Thank you for reaching out to the PetPosture pack. We&apos;ve received your request and our support specialists will get back to you within 24 business hours.
-                        </p>
-                        <button
-                            onClick={() => setStatus('idle')}
-                            className="bg-[#df8448] text-white px-10 py-4 font-black text-[11px] uppercase tracking-[0.2em] hover:bg-[#3e4c57] transition-all transform hover:-translate-y-1 shadow-lg"
-                        >
-                            Send Another message
-                        </button>
-                    </div>
-                </main>
-                <Footer />
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-white flex flex-col font-sans">
@@ -143,36 +182,46 @@ export default function ContactPage() {
                             <p className="text-[13px] text-zinc-400 font-medium">We typically respond to all inquiries within 24 business hours.</p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-8">
+                        {/* ── Inline success notice (CF7-style) ── */}
+                        {status === 'success' && (
+                            <div className="flex items-start gap-3 p-5 mb-8 bg-green-50 border border-green-200 rounded-xl text-green-800 text-[13px] font-medium leading-relaxed">
+                                <CheckCircle2 size={18} className="shrink-0 mt-0.5 text-green-500" />
+                                <span>{MESSAGES.success}</span>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSubmit} className="space-y-8" noValidate>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Full Name */}
                                 <div className="relative group">
-                                    <label htmlFor="name" className="text-[10px] font-black uppercase tracking-[0.15em] text-[#3e4c57]/40 mb-2 block transition-colors group-focus-within:text-[#df8448]">Full Name</label>
+                                    <label htmlFor="name" className={`text-[10px] font-black uppercase tracking-[0.15em] mb-2 block transition-colors group-focus-within:text-[#df8448] ${fieldErrors.name ? 'text-red-500' : 'text-[#3e4c57]/40'}`}>Full Name *</label>
                                     <input
-                                        required
                                         type="text"
                                         id="name"
                                         name="name"
                                         value={formData.name}
                                         onChange={handleInputChange}
                                         placeholder="Enter your name"
-                                        className="w-full border-b-2 border-zinc-100 py-3 text-[13px] font-bold transition-all focus:outline-none focus:border-[#df8448] bg-transparent text-[#3e4c57] placeholder:text-zinc-200"
+                                        aria-invalid={!!fieldErrors.name}
+                                        className={`w-full border-b-2 py-3 text-[13px] font-bold transition-all focus:outline-none bg-transparent text-[#3e4c57] placeholder:text-zinc-200 ${fieldErrors.name ? 'border-red-400 focus:border-red-500' : 'border-zinc-100 focus:border-[#df8448]'}`}
                                     />
+                                    {fieldErrors.name && <p className="mt-1.5 text-[11px] font-semibold text-red-500">{fieldErrors.name}</p>}
                                 </div>
 
                                 {/* Email Address */}
                                 <div className="relative group">
-                                    <label htmlFor="email" className="text-[10px] font-black uppercase tracking-[0.15em] text-[#3e4c57]/40 mb-2 block transition-colors group-focus-within:text-[#df8448]">Email Address</label>
+                                    <label htmlFor="email" className={`text-[10px] font-black uppercase tracking-[0.15em] mb-2 block transition-colors group-focus-within:text-[#df8448] ${fieldErrors.email ? 'text-red-500' : 'text-[#3e4c57]/40'}`}>Email Address *</label>
                                     <input
-                                        required
                                         type="email"
                                         id="email"
                                         name="email"
                                         value={formData.email}
                                         onChange={handleInputChange}
                                         placeholder="example@pack.com"
-                                        className="w-full border-b-2 border-zinc-100 py-3 text-[13px] font-bold transition-all focus:outline-none focus:border-[#df8448] bg-transparent text-[#3e4c57] placeholder:text-zinc-200"
+                                        aria-invalid={!!fieldErrors.email}
+                                        className={`w-full border-b-2 py-3 text-[13px] font-bold transition-all focus:outline-none bg-transparent text-[#3e4c57] placeholder:text-zinc-200 ${fieldErrors.email ? 'border-red-400 focus:border-red-500' : 'border-zinc-100 focus:border-[#df8448]'}`}
                                     />
+                                    {fieldErrors.email && <p className="mt-1.5 text-[11px] font-semibold text-red-500">{fieldErrors.email}</p>}
                                 </div>
                             </div>
 
@@ -193,34 +242,49 @@ export default function ContactPage() {
 
                                 {/* Subject */}
                                 <div className="relative group">
-                                    <label htmlFor="subject" className="text-[10px] font-black uppercase tracking-[0.15em] text-[#3e4c57]/40 mb-2 block transition-colors group-focus-within:text-[#df8448]">Subject / Inquiry Type</label>
+                                    <label htmlFor="subject" className={`text-[10px] font-black uppercase tracking-[0.15em] mb-2 block transition-colors group-focus-within:text-[#df8448] ${fieldErrors.subject ? 'text-red-500' : 'text-[#3e4c57]/40'}`}>Subject / Inquiry Type *</label>
                                     <input
-                                        required
                                         type="text"
                                         id="subject"
                                         name="subject"
                                         value={formData.subject}
                                         onChange={handleInputChange}
                                         placeholder="How can we help?"
-                                        className="w-full border-b-2 border-zinc-100 py-3 text-[13px] font-bold transition-all focus:outline-none focus:border-[#df8448] bg-transparent text-[#3e4c57] placeholder:text-zinc-200"
+                                        aria-invalid={!!fieldErrors.subject}
+                                        className={`w-full border-b-2 py-3 text-[13px] font-bold transition-all focus:outline-none bg-transparent text-[#3e4c57] placeholder:text-zinc-200 ${fieldErrors.subject ? 'border-red-400 focus:border-red-500' : 'border-zinc-100 focus:border-[#df8448]'}`}
                                     />
+                                    {fieldErrors.subject && <p className="mt-1.5 text-[11px] font-semibold text-red-500">{fieldErrors.subject}</p>}
                                 </div>
                             </div>
 
                             {/* Message */}
                             <div className="relative group">
-                                <label htmlFor="message" className="text-[10px] font-black uppercase tracking-[0.15em] text-[#3e4c57]/40 mb-2 block transition-colors group-focus-within:text-[#df8448]">Your Message</label>
+                                <label htmlFor="message" className={`text-[10px] font-black uppercase tracking-[0.15em] mb-2 block transition-colors group-focus-within:text-[#df8448] ${fieldErrors.message ? 'text-red-500' : 'text-[#3e4c57]/40'}`}>Your Message *</label>
                                 <textarea
-                                    required
                                     id="message"
                                     name="message"
                                     rows={4}
                                     value={formData.message}
                                     onChange={handleInputChange}
                                     placeholder="Write your message here..."
-                                    className="w-full border-b-2 border-zinc-100 py-3 text-[13px] font-bold transition-all focus:outline-none focus:border-[#df8448] bg-transparent text-[#3e4c57] placeholder:text-zinc-200 resize-none"
+                                    aria-invalid={!!fieldErrors.message}
+                                    className={`w-full border-b-2 py-3 text-[13px] font-bold transition-all focus:outline-none bg-transparent text-[#3e4c57] placeholder:text-zinc-200 resize-none ${fieldErrors.message ? 'border-red-400 focus:border-red-500' : 'border-zinc-100 focus:border-[#df8448]'}`}
                                 />
+                                {fieldErrors.message && <p className="mt-1.5 text-[11px] font-semibold text-red-500">{fieldErrors.message}</p>}
                             </div>
+
+                            {/* Send error notice */}
+                            {status === 'error' && (
+                                <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[13px] font-medium">
+                                    <AlertCircle size={16} className="shrink-0" />
+                                    {errorMessage}
+                                </div>
+                            )}
+
+                            {/* Sending notice */}
+                            {status === 'loading' && (
+                                <p className="text-[12px] text-zinc-400 font-medium">{MESSAGES.sending}</p>
+                            )}
 
                             {/* Submit Button */}
                             <button

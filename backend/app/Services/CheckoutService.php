@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\NewOrderAdmin;
 use App\Mail\OrderConfirmation;
 use App\Payments\PaymentGatewayManager;
 use App\Services\SalesTaxService;
@@ -149,6 +150,7 @@ class CheckoutService
             // Queue confirmation email — non-blocking, fails silently if mail not configured
             if ($placed->customer_reference) {
                 Mail::send(new OrderConfirmation($placed));
+                Mail::to(config('mail.from.address'))->send(new NewOrderAdmin($placed));
             }
 
             return $placed;

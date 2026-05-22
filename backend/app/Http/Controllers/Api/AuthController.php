@@ -7,8 +7,10 @@ use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Resources\Api\UserResource;
 use App\Models\User;
+use App\Mail\WelcomeEmail;
 use App\Services\CartService;
 use App\Traits\HttpResponses;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -49,6 +51,8 @@ class AuthController extends Controller
         if ($customerRole) {
             $user->assignRole($customerRole);
         }
+
+        Mail::send(new WelcomeEmail($user));
 
         $plainToken = $user->createToken("Api Token of {$user->name}")->plainTextToken;
 

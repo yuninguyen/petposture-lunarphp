@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Setting;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Lunar\Models\Order;
@@ -15,13 +17,34 @@ class StripePaymentIntentService
     ) {
     }
 
+    private function stripeSecret(): string
+    {
+        return Cache::remember('stripe_secret', 300, fn () =>
+            Setting::get('stripe_secret') ?: (string) config('services.stripe.secret')
+        );
+    }
+
+    private function stripeKey(): string
+    {
+        return Cache::remember('stripe_key', 300, fn () =>
+            Setting::get('stripe_key') ?: (string) config('services.stripe.key')
+        );
+    }
+
+    private function stripeWebhookSecret(): string
+    {
+        return Cache::remember('stripe_webhook_secret', 300, fn () =>
+            Setting::get('stripe_webhook_secret') ?: (string) config('services.stripe.webhook_secret')
+        );
+    }
+
     public function create(array $payload): array
     {
         $amount = max(0, (int) ($payload['amount'] ?? 0));
         $currency = strtolower((string) ($payload['currency'] ?? 'usd'));
         $email = trim((string) ($payload['email'] ?? ''));
-        $secret = (string) config('services.stripe.secret');
-        $publishableKey = config('services.stripe.key');
+        $secret = $this->stripeSecret();
+        $publishableKey = $this->stripeKey();
 
         if ($amount <= 0) {
             throw new RuntimeException('Stripe payment intent requires a positive amount.');
@@ -108,7 +131,7 @@ class StripePaymentIntentService
 
     public function handleWebhook(string $payload, ?string $signature = null): array
     {
-        $secret = (string) config('services.stripe.webhook_secret');
+        $secret = $this->stripeWebhookSecret();
 
         if ($secret !== '') {
             $this->assertValidSignature($payload, $signature, $secret);
