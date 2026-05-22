@@ -106,7 +106,9 @@ class AdminPanelProvider extends PanelProvider
                 'gray' => Color::Slate,
             ])
             ->font('Google Sans Flex')
-            ->brandName('PetPosture Admin')
+            ->brandName('PetPosture')
+            ->brandLogo(asset('logo.png'))
+            ->brandLogoHeight('36px')
             ->navigationGroups([
                 __('lunarpanel::global.sections.catalog'),
                 __('lunarpanel::global.sections.sales'),
@@ -149,37 +151,33 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::content.before',
                 fn (): string => '
-                    <div class="dashboard-welcome-container mx-4 md:mx-6 lg:mx-8 mt-4 mb-6 px-6 py-5">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-[11px] font-black uppercase tracking-[0.2em] text-orange-400 mb-2">
-                                    ' . ucfirst(now()->translatedFormat('l, j F Y')) . '
-                                </p>
-                                <h1 class="text-2xl md:text-3xl font-black text-slate-900 leading-tight" style="letter-spacing:-0.03em">
-                                    ' . str_replace(':name', '<span style="color:var(--brand-orange)">' . auth()->user()->name . '</span>', __('admin.dashboard.welcome', ['name' => ':name'])) . '
-                                </h1>
-                                <p class="text-sm text-slate-400 mt-1 font-medium">
-                                    ' . __('admin.dashboard.subtitle') . '
-                                </p>
+                    <div class="pp-dashboard-header">
+                        <div class="pp-dashboard-header__left">
+                            <div class="pp-dashboard-header__greeting">
+                                ' . str_replace(':name', '<strong>' . auth()->user()->name . '</strong>', __('admin.dashboard.welcome', ['name' => ':name'])) . '
                             </div>
-                            <div class="flex items-center gap-3 shrink-0">
-                                <a href="/admin/products/create" class="quick-action-btn quick-action-btn-primary">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                                    Add Product
-                                </a>
-                                <a href="/admin/orders" class="quick-action-btn quick-action-btn-secondary">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                                    Orders
-                                </a>
-                                <a href="/admin/customers" class="quick-action-btn quick-action-btn-secondary">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                    Customers
-                                </a>
-                                <div class="flex items-center gap-1.5 ml-2 pl-3 border-l border-slate-200">
-                                    <div class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]"></div>
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">Live</span>
-                                </div>
+                            <div class="pp-dashboard-header__meta">
+                                <span class="pp-live-dot"></span>
+                                ' . ucfirst(now()->translatedFormat('l, j F Y')) . '
                             </div>
+                        </div>
+                        <div class="pp-dashboard-header__actions">
+                            <a href="/admin/products/create" class="pp-action pp-action--primary">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                                New Product
+                            </a>
+                            <a href="/admin/orders" class="pp-action pp-action--ghost">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                                Orders
+                            </a>
+                            <a href="/admin/customers" class="pp-action pp-action--ghost">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                Customers
+                            </a>
+                            <a href="/admin/discounts" class="pp-action pp-action--ghost">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M14.5 9.5 9.5 14.5M9.5 9.5h.01M14.5 14.5h.01"/></svg>
+                                Discounts
+                            </a>
                         </div>
                     </div>',
             )

@@ -11,7 +11,7 @@ use Lunar\Models\Product;
 
 class EcommerceStatsOverview extends BaseWidget
 {
-    protected static ?int $sort = 1;
+    protected static ?int $sort = -2;
     protected int|string|array $columnSpan = 'full';
     protected int|string|array $columns = 3;
 

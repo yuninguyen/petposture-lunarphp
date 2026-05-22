@@ -275,71 +275,123 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
 .apexcharts-canvas { border-radius: 12px; }
 .apexcharts-toolbar { display: none !important; }
 
-/* ── Dashboard Welcome ──────────────────────────────────────────── */
-.dashboard-welcome-container {
-    background:
-        radial-gradient(circle at top left,  rgba(223,132,72,0.06), transparent 45%),
-        radial-gradient(circle at bottom right, rgba(30,41,59,0.04), transparent 45%);
-    border-radius: 20px;
-    border: 1px solid rgba(223,132,72,0.1);
-    margin-bottom: 0 !important;
+/* ── Dashboard Header ───────────────────────────────────────────── */
+.pp-dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.25rem 1.5rem 1rem;
+    margin: 1rem 1.5rem 0.5rem;
+    background: white;
+    border: 1px solid #e8edf2;
+    border-radius: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
-.dashboard-welcome-container h1 {
-    letter-spacing: -0.04em !important;
-    line-height: 1.2 !important;
+.pp-dashboard-header__left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pp-dashboard-header__greeting {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+}
+
+.pp-dashboard-header__greeting strong {
+    color: var(--brand-orange);
+    font-weight: 900;
+}
+
+.pp-dashboard-header__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.pp-live-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 6px rgba(52,211,153,0.7);
+    animation: pp-pulse 2s infinite;
+}
+
+@keyframes pp-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 /* ── Quick Actions ──────────────────────────────────────────────── */
-.quick-actions-bar {
+.pp-dashboard-header__actions {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 1rem 1.5rem 1.5rem;
-}
-
-.quick-action-btn {
-    display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 9px 16px;
-    border-radius: 10px;
-    font-size: 13px;
+    flex-wrap: wrap;
+}
+
+.pp-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 9px;
+    font-size: 12.5px;
     font-weight: 700;
-    text-decoration: none;
+    text-decoration: none !important;
     transition: all 0.15s ease;
-    border: 1.5px solid transparent;
-    cursor: pointer;
     white-space: nowrap;
+    cursor: pointer;
+    letter-spacing: 0.01em;
 }
 
-.quick-action-btn-primary {
+.pp-action--primary {
     background: var(--brand-orange);
-    color: white;
-    box-shadow: 0 2px 8px rgba(223,132,72,0.25);
+    color: #fff !important;
+    box-shadow: 0 2px 8px rgba(223,132,72,0.3);
 }
 
-.quick-action-btn-primary:hover {
+.pp-action--primary:hover {
     background: var(--brand-orange-dark);
+    box-shadow: 0 4px 14px rgba(223,132,72,0.4);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(223,132,72,0.35);
-    color: white;
-    text-decoration: none;
+    color: #fff !important;
 }
 
-.quick-action-btn-secondary {
-    background: white;
-    color: #374151;
-    border-color: #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.quick-action-btn-secondary:hover {
+.pp-action--ghost {
     background: #f8fafc;
+    color: #475569 !important;
+    border: 1.5px solid #e2e8f0;
+}
+
+.pp-action--ghost:hover {
+    background: #f1f5f9;
     border-color: #cbd5e1;
-    color: #1e293b;
+    color: #1e293b !important;
     transform: translateY(-1px);
-    text-decoration: none;
+}
+
+.pp-action svg {
+    flex-shrink: 0;
+    opacity: 0.8;
+}
+
+/* ── Topbar logo ────────────────────────────────────────────────── */
+.fi-sidebar-header img {
+    max-height: 36px !important;
+    width: auto !important;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
 }
 
 /* ── Scrollbar ──────────────────────────────────────────────────── */
@@ -351,4 +403,6 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
 /* ── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
     .fi-wi-stats-overview-stat-value { font-size: 1.6rem !important; }
+    .pp-dashboard-header { flex-direction: column; align-items: flex-start; }
+    .pp-dashboard-header__actions { width: 100%; }
 }
