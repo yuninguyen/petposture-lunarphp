@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\ContentController;
+use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\NewsletterController;
 use App\Http\Controllers\Api\PasswordResetController;
@@ -17,20 +18,57 @@ use Illuminate\Support\Facades\Route;
 
 // Health check — used by uptime monitors and CI readiness probes
 Route::get('/health', function () {
-    $dbStatus = 'error';
+    $checks = [];
+    $allOk  = true;
+
+    // Database
     try {
-        if (\Illuminate\Support\Facades\DB::connection()->getPdo()) {
-            $dbStatus = 'connected';
-        }
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+        $checks['database'] = 'ok';
     } catch (\Exception $e) {
-        $dbStatus = 'disconnected';
+        $checks['database'] = 'error: ' . $e->getMessage();
+        $allOk = false;
+    }
+
+    // Cache
+    try {
+        \Illuminate\Support\Facades\Cache::put('_health_check', 1, 5);
+        $checks['cache'] = \Illuminate\Support\Facades\Cache::get('_health_check') === 1 ? 'ok' : 'error';
+    } catch (\Exception $e) {
+        $checks['cache'] = 'error';
+        $allOk = false;
+    }
+
+    // Mail configured
+    $mailMailer = config('mail.default');
+    $checks['mail'] = $mailMailer !== 'log' ? 'configured (' . $mailMailer . ')' : 'log only — not configured';
+
+    // Stripe configured
+    $stripeKey = \App\Models\Setting::get('stripe_secret') ?: config('services.stripe.secret');
+    $checks['stripe'] = $stripeKey ? (str_starts_with($stripeKey, 'sk_live_') ? 'live' : 'test') : 'not configured';
+
+    // Lunar default channel/currency
+    try {
+        $currency = \Lunar\Models\Currency::getDefault();
+        $checks['lunar_currency'] = $currency ? $currency->code : 'not set';
+    } catch (\Exception $e) {
+        $checks['lunar_currency'] = 'error';
+        $allOk = false;
+    }
+
+    // Products published
+    try {
+        $checks['products'] = \Lunar\Models\Product::where('status', 'published')->count() . ' published';
+    } catch (\Exception $e) {
+        $checks['products'] = 'error';
     }
 
     return response()->json([
-        'status' => 'ok',
-        'db'     => $dbStatus,
-        'ts'     => now()->toIso8601String(),
-    ]);
+        'status'   => $allOk ? 'ok' : 'degraded',
+        'env'      => app()->environment(),
+        'ts'       => now()->toIso8601String(),
+        'checks'   => $checks,
+    ], $allOk ? 200 : 503);
 });
 
 // Public Routes
@@ -40,6 +78,9 @@ Route::post('/register', [AuthController::class, 'register'])->middleware('throt
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/products/{slug}/reviews', [ProductController::class, 'reviews']);
+Route::get('/products/{slug}/related', [ProductController::class, 'related']);
+Route::get('/brands', [BrandController::class, 'index']);
+Route::get('/brands/{id}/products', [BrandController::class, 'products']);
 Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('throttle:api-write');
 Route::post('/orders/track', [OrderController::class, 'track']);
 Route::post('/orders/retry-payment', [OrderController::class, 'retryPayment']);

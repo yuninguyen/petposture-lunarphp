@@ -9,7 +9,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Navigation\NavigationGroup;
+
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Facades\FilamentView;
@@ -26,6 +26,7 @@ use App\Filament\Widgets\AverageOrderValueChart;
 use App\Filament\Widgets\NewVsReturningCustomersChart;
 use App\Filament\Widgets\OrdersSalesChart;
 use App\Filament\Widgets\EcommerceStatsOverview;
+use App\Filament\Widgets\OrderStatusBreakdownChart;
 use App\Filament\Widgets\OrderTotalsChart;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\LatestOrdersTable;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\PopularProductsTable;
@@ -107,7 +108,7 @@ class AdminPanelProvider extends PanelProvider
             ->font('Google Sans Flex')
             ->brandName('PetPosture')
             ->brandLogo(asset('logo.png'))
-            ->brandLogoHeight('64px')
+            ->brandLogoHeight('100px')
             ->navigationGroups([
                 __('lunarpanel::global.sections.catalog'),
                 __('lunarpanel::global.sections.sales'),
@@ -155,7 +156,7 @@ class AdminPanelProvider extends PanelProvider
                     nav.fi-sidebar,aside.fi-sidebar{background:#1a2535!important;border-right:none!important;box-shadow:2px 0 20px rgba(0,0,0,.18)!important}
                     nav.fi-sidebar *,aside.fi-sidebar *{border-color:rgba(255,255,255,.06)!important}
                     .fi-sidebar-header{padding:.875rem 1rem!important;border-bottom:1px solid rgba(255,255,255,.07)!important}
-                    .fi-sidebar-header img{height:64px!important;width:auto!important;max-width:200px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important}
+                    .fi-sidebar-header img{height:100px!important;width:auto!important;max-width:200px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important}
                     .fi-sidebar-header span{color:#f1f5f9!important}
                     [class*="fi-sidebar-group-label"],[class*="fi-sidebar-nav-label"]{color:rgba(148,163,184,.55)!important;font-size:10px!important;font-weight:800!important;letter-spacing:.18em!important;text-transform:uppercase!important;padding-left:1rem!important}
                     [class*="fi-sidebar-item"] a,[class*="fi-sidebar-item"] button{color:#94a3b8!important;border-radius:8px!important;margin:1px 6px!important;padding:.45rem .875rem!important;font-size:13px!important;font-weight:500!important;transition:background .12s,color .12s!important;display:flex!important;align-items:center!important;gap:.5rem!important}
@@ -247,7 +248,7 @@ class AdminPanelProvider extends PanelProvider
 
                             /* ── Sidebar logo ── */
                             var logo = document.querySelector(\'[class*="fi-sidebar-header"] img\');
-                            if(logo){logo.style.cssText+=";height:64px;width:auto;max-width:200px;object-fit:contain;filter:brightness(0) invert(1);";}
+                            if(logo){logo.style.cssText+=";height:100px;width:auto;max-width:200px;object-fit:contain;filter:brightness(0) invert(1);";}
 
                             /* ── Hide "Dashboard" page heading ── */
                             document.querySelectorAll(\'h1,h2\').forEach(function(el){
@@ -271,9 +272,8 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::content.before',
                 function (): string {
-                    $name  = auth()->user()->name;
-                    $date  = ucfirst(now()->translatedFormat('l, j F Y'));
-                    $hello = str_replace(':name', $name, __('admin.dashboard.welcome', ['name' => ':name']));
+                    $name = auth()->user()->name;
+                    $date = ucfirst(now()->translatedFormat('l, j F Y'));
 
                     return '
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;
@@ -337,6 +337,7 @@ class AdminPanelProvider extends PanelProvider
             // ->discoverWidgets(in: app_path('Filament\\Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 EcommerceStatsOverview::class,
+                OrderStatusBreakdownChart::class,
                 OrdersSalesChart::class,
                 OrderTotalsChart::class,
                 AverageOrderValueChart::class,

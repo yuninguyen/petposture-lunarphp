@@ -51,7 +51,7 @@ export function OrderSummary({
     finalTotal,
 }: OrderSummaryProps) {
     return (
-        <aside className="w-full border-l border-[#e8e8ea] bg-[#fafafa] px-4 py-8 md:px-8 lg:w-[440px] lg:px-10 lg:py-12">
+        <aside className="order-first w-full border-b border-[#e8e8ea] bg-[#fafafa] px-4 py-6 md:px-8 lg:order-last lg:w-[440px] lg:border-b-0 lg:border-l lg:px-10 lg:py-12">
             <div className="sticky top-12 space-y-8">
                 <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-[#df8448]">

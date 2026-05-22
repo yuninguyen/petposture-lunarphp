@@ -9,11 +9,13 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
 use Filament\Notifications\Notification;
+use Filament\Actions\Action;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 
 class ManageSettings extends Page
 {
@@ -45,13 +47,114 @@ class ManageSettings extends Page
             $data[$setting->key] = $setting->value;
         }
 
-        // Fallback to .env for Stripe if not in DB yet
         $data['stripe_key']            ??= config('services.stripe.key');
         $data['stripe_secret']         ??= config('services.stripe.secret');
         $data['stripe_webhook_secret'] ??= config('services.stripe.webhook_secret');
         $data['stripe_mode']           ??= 'live';
 
         $this->form->fill($data);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('testEmail')
+                ->label('Send Test Email')
+                ->icon('heroicon-o-paper-airplane')
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalHeading('Send Test Email')
+                ->modalDescription('This will send a test email to ' . auth()->user()->email . ' using the current SMTP settings.')
+                ->action(function () {
+                    $this->sendTestEmail();
+                }),
+
+            Action::make('testStripe')
+                ->label('Test Stripe')
+                ->icon('heroicon-o-credit-card')
+                ->color('gray')
+                ->action(function () {
+                    $this->testStripeConnection();
+                }),
+        ];
+    }
+
+    public function sendTestEmail(): void
+    {
+        try {
+            $smtpHost = Setting::get('smtp_host') ?: config('mail.mailers.smtp.host');
+
+            if (! $smtpHost) {
+                Notification::make()
+                    ->title('SMTP not configured')
+                    ->body('Please save your SMTP settings first.')
+                    ->warning()
+                    ->send();
+                return;
+            }
+
+            Mail::raw(
+                'This is a test email from PetPosture Admin. Your SMTP settings are working correctly! Sent at: ' . now()->toDateTimeString(),
+                function ($message) {
+                    $message->to(auth()->user()->email)
+                            ->subject('[PetPosture] Test Email — SMTP Working ✓');
+                }
+            );
+
+            Notification::make()
+                ->title('Test email sent!')
+                ->body('Check ' . auth()->user()->email . ' for the test message.')
+                ->success()
+                ->send();
+
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title('SMTP failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->persistent()
+                ->send();
+        }
+    }
+
+    public function testStripeConnection(): void
+    {
+        $secret = Setting::get('stripe_secret') ?: config('services.stripe.secret');
+
+        if (! $secret) {
+            Notification::make()
+                ->title('Stripe secret key not set')
+                ->body('Please enter your Stripe Secret Key in the Payment tab.')
+                ->warning()
+                ->send();
+            return;
+        }
+
+        try {
+            $response = Http::withBasicAuth($secret, '')
+                ->get('https://api.stripe.com/v1/account');
+
+            if ($response->successful()) {
+                $account = $response->json();
+                Notification::make()
+                    ->title('Stripe connected ✓')
+                    ->body('Account: ' . ($account['email'] ?? $account['id'] ?? 'verified') . ' — Mode: ' . (str_starts_with($secret, 'sk_test_') ? 'Test' : 'Live'))
+                    ->success()
+                    ->send();
+            } else {
+                Notification::make()
+                    ->title('Stripe connection failed')
+                    ->body($response->json('error.message') ?? 'Invalid API key or network error.')
+                    ->danger()
+                    ->send();
+            }
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title('Stripe connection error')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     public function form(Form $form): Form
@@ -61,7 +164,6 @@ class ManageSettings extends Page
                 Tabs::make('Settings')
                     ->tabs([
 
-                        // ── General ──────────────────────────────────────────
                         Tabs\Tab::make(__('General'))
                             ->icon('heroicon-o-cog')
                             ->schema([
@@ -77,7 +179,6 @@ class ManageSettings extends Page
                                     ->rows(3),
                             ]),
 
-                        // ── Payment / Stripe ──────────────────────────────────
                         Tabs\Tab::make(__('Payment'))
                             ->icon('heroicon-o-credit-card')
                             ->schema([
@@ -129,7 +230,6 @@ class ManageSettings extends Page
                                     ->helperText('Register this URL in your Stripe Dashboard → Developers → Webhooks.'),
                             ]),
 
-                        // ── SMTP ─────────────────────────────────────────────
                         Tabs\Tab::make(__('SMTP Settings'))
                             ->icon('heroicon-o-envelope')
                             ->schema([

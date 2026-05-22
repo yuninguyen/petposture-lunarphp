@@ -14,6 +14,7 @@ use Lunar\Models\Order;
 use Lunar\Models\Price;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
+use Illuminate\Support\Collection;
 
 class ProductController extends Controller
 {
@@ -182,6 +183,57 @@ class ProductController extends Controller
             ->paginate(10);
 
         return OrderResource::collection($orders);
+    }
+
+    public function related($slug)
+    {
+        $product = $this->resolvePublishedProduct($slug);
+
+        if (! $product) {
+            return response()->json(['data' => []]);
+        }
+
+        $collectionIds = $product->collections->pluck('id');
+        $brandId       = $product->brand_id ?? null;
+
+        $query = Product::where('status', 'published')
+            ->where('id', '!=', $product->id)
+            ->whereHas('variants')
+            ->with([
+                'variants.prices',
+                'variants.values.option',
+                'variants.images',
+                'thumbnail',
+                'images',
+                'defaultUrl',
+                'urls',
+                'collections.defaultUrl',
+                'productOptions.values',
+            ]);
+
+        // Same collection first, fall back to same brand
+        if ($collectionIds->isNotEmpty()) {
+            $query->whereHas('collections', fn ($q) => $q->whereIn('lunar_collections.id', $collectionIds));
+        } elseif ($brandId) {
+            $query->where('brand_id', $brandId);
+        }
+
+        $related = $query->inRandomOrder()->limit(8)->get();
+
+        // Pad with random products if fewer than 4
+        if ($related->count() < 4) {
+            $existing = $related->pluck('id')->push($product->id);
+            $filler = Product::where('status', 'published')
+                ->whereNotIn('id', $existing)
+                ->whereHas('variants')
+                ->with(['variants.prices', 'thumbnail', 'defaultUrl', 'urls', 'collections.defaultUrl'])
+                ->inRandomOrder()
+                ->limit(4 - $related->count())
+                ->get();
+            $related = $related->concat($filler);
+        }
+
+        return ProductResource::collection($related);
     }
 
     private function resolvePublishedProduct(string $slug): ?Product
