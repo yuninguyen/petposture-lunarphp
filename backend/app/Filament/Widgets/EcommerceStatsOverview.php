@@ -22,7 +22,13 @@ class EcommerceStatsOverview extends BaseWidget
                 ->description(__('admin.dashboard.stats.orders.description')),
             Stat::make(__('admin.dashboard.stats.products.label'), Product::where('status', 'published')->count())
                 ->description(__('admin.dashboard.stats.products.description')),
-            Stat::make(__('admin.dashboard.stats.customers.label'), User::role('customer')->count())
+            Stat::make(__('admin.dashboard.stats.customers.label'), (function() {
+                try {
+                    return User::role('customer')->count();
+                } catch (\Spatie\Permission\Exceptions\RoleDoesNotExist $e) {
+                    return User::count();
+                }
+            })())
                 ->description(__('admin.dashboard.stats.customers.description')),
         ];
     }
