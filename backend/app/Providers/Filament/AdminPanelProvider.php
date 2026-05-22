@@ -107,7 +107,7 @@ class AdminPanelProvider extends PanelProvider
             ->font('Google Sans Flex')
             ->brandName('PetPosture')
             ->brandLogo(asset('logo.png'))
-            ->brandLogoHeight('44px')
+            ->brandLogoHeight('64px')
             ->navigationGroups([
                 __('lunarpanel::global.sections.catalog'),
                 __('lunarpanel::global.sections.sales'),
@@ -155,7 +155,7 @@ class AdminPanelProvider extends PanelProvider
                     nav.fi-sidebar,aside.fi-sidebar{background:#1a2535!important;border-right:none!important;box-shadow:2px 0 20px rgba(0,0,0,.18)!important}
                     nav.fi-sidebar *,aside.fi-sidebar *{border-color:rgba(255,255,255,.06)!important}
                     .fi-sidebar-header{padding:.875rem 1rem!important;border-bottom:1px solid rgba(255,255,255,.07)!important}
-                    .fi-sidebar-header img{height:44px!important;width:auto!important;max-width:180px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important}
+                    .fi-sidebar-header img{height:64px!important;width:auto!important;max-width:200px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important}
                     .fi-sidebar-header span{color:#f1f5f9!important}
                     [class*="fi-sidebar-group-label"],[class*="fi-sidebar-nav-label"]{color:rgba(148,163,184,.55)!important;font-size:10px!important;font-weight:800!important;letter-spacing:.18em!important;text-transform:uppercase!important;padding-left:1rem!important}
                     [class*="fi-sidebar-item"] a,[class*="fi-sidebar-item"] button{color:#94a3b8!important;border-radius:8px!important;margin:1px 6px!important;padding:.45rem .875rem!important;font-size:13px!important;font-weight:500!important;transition:background .12s,color .12s!important;display:flex!important;align-items:center!important;gap:.5rem!important}
@@ -207,7 +207,66 @@ class AdminPanelProvider extends PanelProvider
                     ::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:9px}
 
                     @keyframes pp-pulse{0%,100%{opacity:1}50%{opacity:.4}}
-                    </style>',
+                    </style>
+                    <script>
+                    (function(){
+                        function applyTheme(){
+                            /* ── Sidebar dark ── */
+                            var sidebar = document.querySelector(\'[class*="fi-sidebar"]\') ||
+                                          document.querySelector(\'nav\') ||
+                                          document.getElementById(\'sidebar\');
+                            if(sidebar && !sidebar.dataset.ppStyled){
+                                sidebar.dataset.ppStyled="1";
+                                sidebar.style.cssText += ";background:linear-gradient(180deg,#1a2535,#1e293b)!important;border-right:none!important;box-shadow:3px 0 20px rgba(0,0,0,.18)!important";
+                            }
+
+                            /* ── Sidebar items ── */
+                            document.querySelectorAll(\'[class*="fi-sidebar-item"] a,[class*="fi-sidebar-item"] button\').forEach(function(el){
+                                if(el.dataset.ppStyled) return;
+                                el.dataset.ppStyled="1";
+                                el.style.cssText+= ";color:#94a3b8;border-radius:8px;margin:1px 6px;padding:6px 14px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;";
+                                if(el.getAttribute("aria-current")==="page"){
+                                    el.style.cssText+=";background:rgba(223,132,72,.14);color:#df8448;font-weight:700;border-left:3px solid #df8448;padding-left:11px;";
+                                }
+                                el.addEventListener("mouseenter",function(){if(this.getAttribute("aria-current")!=="page")this.style.background="rgba(255,255,255,.07)";});
+                                el.addEventListener("mouseleave",function(){if(this.getAttribute("aria-current")!=="page")this.style.background="";});
+                            });
+
+                            /* ── Sidebar group labels ── */
+                            document.querySelectorAll(\'[class*="fi-sidebar-group-label"],[class*="fi-sidebar-nav-label"]\').forEach(function(el){
+                                el.style.cssText+=";color:rgba(148,163,184,.55)!important;font-size:10px!important;font-weight:800!important;letter-spacing:.18em!important;text-transform:uppercase!important;";
+                            });
+
+                            /* ── Sidebar item SVG icons ── */
+                            document.querySelectorAll(\'[class*="fi-sidebar-item"] svg\').forEach(function(el){
+                                el.style.cssText+=";color:#64748b;width:15px;height:15px;";
+                            });
+                            document.querySelectorAll(\'[class*="fi-sidebar-item"] [aria-current="page"] svg\').forEach(function(el){
+                                el.style.cssText+=";color:#df8448!important;";
+                            });
+
+                            /* ── Sidebar logo ── */
+                            var logo = document.querySelector(\'[class*="fi-sidebar-header"] img\');
+                            if(logo){logo.style.cssText+=";height:64px;width:auto;max-width:200px;object-fit:contain;filter:brightness(0) invert(1);";}
+
+                            /* ── Hide "Dashboard" page heading ── */
+                            document.querySelectorAll(\'h1,h2\').forEach(function(el){
+                                var txt = el.textContent.trim();
+                                if(txt==="Dashboard"||txt==="dashboard"){el.closest(\'[class*="fi-header"],[class*="fi-page-header"],[class*="page-header"]\')
+                                    ? el.closest(\'[class*="fi-header"],[class*="fi-page-header"],[class*="page-header"]\').style.display="none"
+                                    : el.style.display="none";
+                                }
+                            });
+                        }
+
+                        /* Run immediately + on Livewire navigation */
+                        document.addEventListener("DOMContentLoaded", applyTheme);
+                        document.addEventListener("livewire:navigated", applyTheme);
+                        document.addEventListener("livewire:load", applyTheme);
+                        setTimeout(applyTheme, 300);
+                        setTimeout(applyTheme, 800);
+                    })();
+                    </script>',
             )
             ->renderHook(
                 'panels::content.before',
