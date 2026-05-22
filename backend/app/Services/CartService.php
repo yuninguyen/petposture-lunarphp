@@ -151,6 +151,9 @@ class CartService
         return [
             'token'      => $cart->meta['token'] ?? null,
             'couponCode' => $cart->coupon_code,
+            'currency'   => $currency->code,
+            'itemCount'  => (int) $cart->lines->sum('quantity'),
+            'lineCount'  => $cart->lines->count(),
             'lines'      => $lines,
             'subtotal'   => round(($cart->sub_total?->value ?? 0) / $factor, 2),
             'discount'   => round(($cart->discount_total?->value ?? 0) / $factor, 2),

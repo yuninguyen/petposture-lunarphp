@@ -23,7 +23,17 @@ class ProductController extends Controller
     {
         $query = Product::where('status', 'published')
             ->whereHas('variants')
-            ->with(['variants.prices', 'thumbnail', 'defaultUrl', 'urls', 'collections.defaultUrl']);
+            ->with([
+                'variants.prices',
+                'variants.values.option',
+                'variants.images',
+                'thumbnail',
+                'images',
+                'defaultUrl',
+                'urls',
+                'collections.defaultUrl',
+                'productOptions.values',
+            ]);
 
         // Filter by category: slug lives in lunar_urls, not lunar_collections
         if ($request->filled('category')) {
@@ -82,16 +92,18 @@ class ProductController extends Controller
         }
 
         // Skip cache for filtered/sorted requests; cache only the unfiltered first page
-        $hasFilters = $request->hasAny(['category', 'q', 'min_price', 'max_price'])
+        $perPage = min((int) $request->input('per_page', 12), 100);
+
+        $hasFilters = $request->hasAny(['category', 'q', 'min_price', 'max_price', 'per_page'])
             || ($sort !== 'newest')
             || ($request->input('page', 1) > 1);
 
         if ($hasFilters) {
-            return ProductResource::collection($query->paginate(12));
+            return ProductResource::collection($query->paginate($perPage));
         }
 
         $cacheKey = 'products:index:p1';
-        $products = Cache::remember($cacheKey, now()->addHour(), fn () => $query->paginate(12));
+        $products = Cache::remember($cacheKey, now()->addHour(), fn () => $query->paginate($perPage));
 
         return ProductResource::collection($products);
     }
@@ -174,14 +186,26 @@ class ProductController extends Controller
 
     private function resolvePublishedProduct(string $slug): ?Product
     {
-        $product = Product::with(['variants.prices', 'thumbnail', 'defaultUrl', 'urls', 'collections.defaultUrl'])
+        $with = [
+            'variants.prices',
+            'variants.values.option',
+            'variants.images',
+            'thumbnail',
+            'images',
+            'defaultUrl',
+            'urls',
+            'collections.defaultUrl',
+            'productOptions.values',
+        ];
+
+        $product = Product::with($with)
             ->where('status', 'published')
             ->whereHas('variants')
             ->whereHas('urls', fn($q) => $q->where('slug', $slug))
             ->first();
 
         if (! $product && is_numeric($slug)) {
-            $product = Product::with(['variants.prices', 'thumbnail', 'defaultUrl', 'urls', 'collections.defaultUrl'])
+            $product = Product::with($with)
                 ->where('status', 'published')
                 ->whereHas('variants')
                 ->find($slug);

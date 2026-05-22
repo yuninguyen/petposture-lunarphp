@@ -35,8 +35,12 @@ class ContentController extends Controller
 
     public function categories()
     {
-        $categories = BlogCategory::all();
-
-        return $this->success($categories);
+        return response()->json([
+            'data' => BlogCategory::all()->map(fn ($c) => [
+                'id'   => $c->id,
+                'name' => $c->name,
+                'slug' => $c->slug,
+            ])->values(),
+        ]);
     }
 }
