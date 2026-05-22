@@ -10,7 +10,8 @@ export const metadata: Metadata = {
 };
 
 async function getInitialProducts(): Promise<Product[]> {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+    const apiBaseUrl = rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl;
 
     try {
         const response = await fetch(`${apiBaseUrl}/api/products`, {

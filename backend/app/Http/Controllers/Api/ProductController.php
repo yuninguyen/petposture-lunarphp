@@ -91,7 +91,7 @@ class ProductController extends Controller
         }
 
         $cacheKey = 'products:index:p1';
-        $products  = Cache::tags(['products'])->remember($cacheKey, now()->addHour(), fn () => $query->paginate(12));
+        $products = Cache::remember($cacheKey, now()->addHour(), fn () => $query->paginate(12));
 
         return ProductResource::collection($products);
     }

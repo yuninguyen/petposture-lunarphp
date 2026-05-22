@@ -37,6 +37,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->app->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         if (class_exists(\Lunar\Facades\Telemetry::class)) {
             \Lunar\Facades\Telemetry::optOut();
         }
