@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/orders/track',
             'api/apply-coupon',
             'api/checkout/place-order',
+            'api/webhooks/stripe',
         ]);
         $middleware->alias([
             'role'               => \Spatie\Permission\Middleware\RoleMiddleware::class,

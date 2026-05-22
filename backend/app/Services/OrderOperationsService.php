@@ -86,8 +86,8 @@ class OrderOperationsService
 
         if ($targetStatus && $refreshed->customer_reference) {
             match ($targetStatus) {
-                'shipped'    => Mail::queue(new OrderShipped($refreshed)),
-                'cancelled'  => Mail::queue(new OrderCancelled($refreshed)),
+                'shipped'    => Mail::send(new OrderShipped($refreshed)),
+                'cancelled'  => Mail::send(new OrderCancelled($refreshed)),
                 default      => null,
             };
         }

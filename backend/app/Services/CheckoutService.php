@@ -148,7 +148,7 @@ class CheckoutService
 
             // Queue confirmation email — non-blocking, fails silently if mail not configured
             if ($placed->customer_reference) {
-                Mail::queue(new OrderConfirmation($placed));
+                Mail::send(new OrderConfirmation($placed));
             }
 
             return $placed;
