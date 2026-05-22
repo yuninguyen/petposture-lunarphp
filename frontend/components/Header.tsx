@@ -8,12 +8,15 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useSettings } from "@/context/SettingsContext";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const { items, setCartOpen } = useCart();
   const { user, logout } = useAuth();
+  const { shop_name, shop_logo } = useSettings();
+  const logoSrc = shop_logo || "/assets/Logo-PetPosture-1.png";
 
   const isActive = (path: string) => pathname === path;
 
@@ -61,8 +64,8 @@ export default function Header() {
           {/* Left: Logo */}
           <Link href="/" className="flex-shrink-0 flex items-center">
             <Image
-              src="/assets/Logo-PetPosture-1.png"
-              alt="PetPosture Logo"
+              src={logoSrc}
+              alt={`${shop_name} Logo`}
               width={400}
               height={140}
               priority
@@ -219,8 +222,8 @@ export default function Header() {
               <div className="flex items-center justify-between px-6 h-[80px] border-b border-zinc-100 relative">
                 <Link href="/" onClick={() => setMobileOpen(false)} className="flex-shrink-0 flex items-center">
                   <Image
-                    src="/assets/Logo-PetPosture-1.png"
-                    alt="Logo"
+                    src={logoSrc}
+                    alt={`${shop_name} Logo`}
                     width={320}
                     height={100}
                     className="h-[80px] w-auto object-contain"

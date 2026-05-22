@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Facebook, Instagram, Twitter, Mail, Plus, Minus } from "lucide-react";
 import PaymentIcons from "./PaymentIcons";
+import { useSettings } from "@/context/SettingsContext";
 
 const shopBySolution = [
   "Eating & Digestion",
@@ -103,6 +104,7 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: 
 
 export default function Footer() {
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const { description } = useSettings();
 
   const toggleSection = (section: string) => {
     setOpenSection(openSection === section ? null : section);
@@ -123,9 +125,7 @@ export default function Footer() {
               isCustomContent={
                 <div className="pb-4 lg:pb-0">
                   <p className="text-[16px] text-white/60 leading-[1.75] mb-6 max-w-sm">
-                    At PetPosture, we believe pets deserve comfort built for them.
-                    We provide ergonomic essentials designed to support your pet&apos;s
-                    unique posture and improve their health.
+                    {description}
                   </p>
                   <div className="flex gap-4">
                     {[
