@@ -16,10 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectTo('/admin/login');
         $middleware->statefulApi();
         $middleware->validateCsrfTokens(except: [
-            'api/orders/track',
-            'api/apply-coupon',
-            'api/checkout/place-order',
-            'api/webhooks/stripe',
+            'api/*',
         ]);
         $middleware->alias([
             'role'               => \Spatie\Permission\Middleware\RoleMiddleware::class,
