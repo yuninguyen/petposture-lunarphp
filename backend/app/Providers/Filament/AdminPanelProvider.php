@@ -28,7 +28,6 @@ use App\Filament\Widgets\OrdersSalesChart;
 use App\Filament\Widgets\EcommerceStatsOverview;
 use App\Filament\Widgets\OrderTotalsChart;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\LatestOrdersTable;
-use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderStatsOverview;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\PopularProductsTable;
 
 class AdminPanelProvider extends PanelProvider
@@ -146,7 +145,85 @@ class AdminPanelProvider extends PanelProvider
                     <link rel="preconnect" href="https://fonts.googleapis.com">
                     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
                     <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,100..1000&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
-                    <link rel="stylesheet" href="' . asset('css/custom-theme.css') . '">',
+                    <style>
+                    :root{--brand-slate:#1e293b;--brand-orange:#df8448;--brand-orange-dark:#c9713a;--brand-orange-glow:rgba(223,132,72,0.15);}
+                    *{font-family:"Google Sans Flex","Inter",sans-serif!important}
+                    code,pre,.font-mono{font-family:"Fira Code",monospace!important}
+
+                    /* Sidebar */
+                    .fi-sidebar{background:linear-gradient(180deg,#1a2535 0%,#1e293b 100%)!important;border-right:none!important;box-shadow:4px 0 24px rgba(0,0,0,.15)!important}
+                    .fi-sidebar-group-label,.fi-sidebar-nav-label{color:rgba(148,163,184,.6)!important;font-size:10px!important;font-weight:800!important;letter-spacing:.15em!important;text-transform:uppercase!important}
+                    .fi-sidebar-item-button,.fi-sidebar-nav-link{color:#94a3b8!important;border-radius:8px!important;margin:1px 8px!important;padding:.5rem .75rem!important;transition:all .15s ease!important;font-size:13.5px!important;font-weight:500!important}
+                    .fi-sidebar-item-button:hover,.fi-sidebar-nav-link:hover{background:rgba(255,255,255,.06)!important;color:#e2e8f0!important}
+                    .fi-sidebar-item-button[aria-current=page],.fi-sidebar-nav-link-active{background:var(--brand-orange-glow)!important;color:var(--brand-orange)!important;font-weight:700!important;border-left:3px solid var(--brand-orange)!important}
+                    .fi-sidebar-item-badge{background:var(--brand-orange)!important;color:#fff!important;font-size:10px!important;font-weight:800!important;border-radius:99px!important}
+                    .fi-sidebar-header img{max-height:32px!important;width:auto!important;filter:brightness(0) invert(1)}
+
+                    /* Topbar */
+                    .fi-topbar{background:#fff!important;border-bottom:1px solid #f1f5f9!important;box-shadow:0 1px 3px rgba(0,0,0,.04)!important}
+
+                    /* Page header — hide redundant "Dashboard" title */
+                    .fi-page-header{display:none!important}
+                    .fi-header{display:none!important}
+
+                    /* Main bg */
+                    .fi-main,.fi-main-ctn{background:#f8fafc!important}
+
+                    /* Stat cards */
+                    .fi-wi-stats-overview-stat{border-radius:14px!important;border:1px solid #e8edf2!important;background:#fff!important;box-shadow:0 1px 3px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.03)!important;transition:box-shadow .2s ease,transform .2s ease!important}
+                    .fi-wi-stats-overview-stat:hover{box-shadow:0 4px 20px rgba(0,0,0,.08)!important;transform:translateY(-1px)!important}
+                    .fi-wi-stats-overview-stat-value{font-size:2rem!important;font-weight:800!important;color:#0f172a!important;letter-spacing:-.03em!important;line-height:1.1!important}
+                    .fi-wi-stats-overview-stat-label{font-size:11.5px!important;font-weight:700!important;color:#64748b!important;text-transform:uppercase!important;letter-spacing:.08em!important}
+
+                    /* Cards / sections */
+                    .fi-section,.fi-wi-chart,.fi-ta-ctn{border-radius:14px!important;border:1px solid #e8edf2!important;background:#fff!important;box-shadow:0 1px 3px rgba(0,0,0,.04)!important}
+                    .fi-section-header-heading{font-weight:700!important;font-size:15px!important;color:#0f172a!important}
+
+                    /* Tables */
+                    .fi-ta-header-cell{font-size:11px!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:.08em!important;color:#64748b!important}
+
+                    /* Buttons */
+                    .fi-btn-primary{background:var(--brand-orange)!important;border-color:var(--brand-orange)!important;border-radius:10px!important;font-weight:700!important}
+                    .fi-btn-primary:hover{background:var(--brand-orange-dark)!important}
+
+                    /* Inputs */
+                    .fi-input{border-radius:10px!important;border:1.5px solid #e2e8f0!important}
+                    .fi-input:focus{border-color:var(--brand-orange)!important;box-shadow:0 0 0 3px var(--brand-orange-glow)!important}
+
+                    /* Tabs */
+                    .fi-tabs-tab[aria-selected=true]{color:var(--brand-orange)!important;background:var(--brand-orange-glow)!important}
+
+                    /* Badges */
+                    .fi-badge{font-size:11px!important;font-weight:700!important;border-radius:6px!important}
+
+                    /* ApexCharts */
+                    .apexcharts-toolbar{display:none!important}
+
+                    /* Dashboard header */
+                    .pp-dashboard-header{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;padding:1.1rem 1.5rem;margin:1rem 1.5rem .75rem;background:#fff;border:1px solid #e8edf2;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+                    .pp-dashboard-header__greeting{font-size:19px;font-weight:800;color:#0f172a;letter-spacing:-.03em;line-height:1.2}
+                    .pp-dashboard-header__greeting strong{color:var(--brand-orange);font-weight:900}
+                    .pp-dashboard-header__meta{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#94a3b8;margin-top:3px}
+                    .pp-live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 6px rgba(52,211,153,.7);animation:pp-pulse 2s infinite}
+                    @keyframes pp-pulse{0%,100%{opacity:1}50%{opacity:.45}}
+                    .pp-dashboard-header__actions{display:flex;align-items:center;gap:8px}
+                    .pp-action{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:9px;font-size:12.5px;font-weight:700;text-decoration:none!important;transition:all .15s ease;white-space:nowrap;cursor:pointer}
+                    .pp-action--primary{background:var(--brand-orange);color:#fff!important;box-shadow:0 2px 8px rgba(223,132,72,.3)}
+                    .pp-action--primary:hover{background:var(--brand-orange-dark);transform:translateY(-1px);box-shadow:0 4px 14px rgba(223,132,72,.4);color:#fff!important}
+                    .pp-action--ghost{background:#f8fafc;color:#475569!important;border:1.5px solid #e2e8f0}
+                    .pp-action--ghost:hover{background:#f1f5f9;border-color:#cbd5e1;color:#1e293b!important;transform:translateY(-1px)}
+                    .pp-action svg{flex-shrink:0;opacity:.8}
+
+                    /* Scrollbar */
+                    ::-webkit-scrollbar{width:5px;height:5px}
+                    ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
+                    ::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+
+                    @media(max-width:1024px){
+                        .pp-dashboard-header{flex-direction:column;align-items:flex-start}
+                        .pp-dashboard-header__actions{flex-wrap:wrap}
+                    }
+                    </style>',
             )
             ->renderHook(
                 'panels::content.before',
@@ -184,7 +261,6 @@ class AdminPanelProvider extends PanelProvider
             // ->discoverWidgets(in: app_path('Filament\\Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 EcommerceStatsOverview::class,
-                OrderStatsOverview::class,
                 OrdersSalesChart::class,
                 OrderTotalsChart::class,
                 AverageOrderValueChart::class,
