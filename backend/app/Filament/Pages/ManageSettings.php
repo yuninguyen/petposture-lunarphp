@@ -72,22 +72,6 @@ class ManageSettings extends Page
                                     ->rows(3),
                             ]),
 
-                        Tabs\Tab::make(__('Localization'))
-                            ->icon('heroicon-o-globe-alt')
-                            ->schema([
-                                Select::make('default_currency')
-                                    ->label(__('Currency'))
-                                    ->options([
-                                        'USD' => 'USD ($)',
-                                        'VND' => 'VND (đ)',
-                                        'EUR' => 'EUR (€)',
-                                    ])
-                                    ->required(),
-                                TextInput::make('currency_symbol')
-                                    ->label(__('Currency Symbol'))
-                                    ->default('$'),
-                            ])->columns(2),
-
                         Tabs\Tab::make(__('SMTP Settings'))
                             ->icon('heroicon-o-envelope')
                             ->schema([
