@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -30,11 +30,6 @@ class ProductVariant extends Model implements HasMedia
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
-    }
-
-    public function attributeValues(): BelongsToMany
-    {
-        return $this->belongsToMany(ProductAttributeValue::class, 'product_variant_attribute_value', 'variant_id', 'attribute_value_id');
     }
 
     public function registerMediaCollections(): void
