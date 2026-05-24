@@ -18,56 +18,28 @@ use Illuminate\Support\Facades\Route;
 
 // Health check — used by uptime monitors and CI readiness probes
 Route::get('/health', function () {
-    $checks = [];
-    $allOk  = true;
+    $allOk = true;
 
     // Database
     try {
         \Illuminate\Support\Facades\DB::connection()->getPdo();
-        $checks['database'] = 'ok';
     } catch (\Exception $e) {
-        $checks['database'] = 'error: ' . $e->getMessage();
         $allOk = false;
     }
 
     // Cache
     try {
         \Illuminate\Support\Facades\Cache::put('_health_check', 1, 5);
-        $checks['cache'] = \Illuminate\Support\Facades\Cache::get('_health_check') === 1 ? 'ok' : 'error';
+        if (\Illuminate\Support\Facades\Cache::get('_health_check') !== 1) {
+            $allOk = false;
+        }
     } catch (\Exception $e) {
-        $checks['cache'] = 'error';
         $allOk = false;
-    }
-
-    // Mail configured
-    $mailMailer = config('mail.default');
-    $checks['mail'] = $mailMailer !== 'log' ? 'configured (' . $mailMailer . ')' : 'log only — not configured';
-
-    // Stripe configured
-    $stripeKey = \App\Models\Setting::get('stripe_secret') ?: config('services.stripe.secret');
-    $checks['stripe'] = $stripeKey ? (str_starts_with($stripeKey, 'sk_live_') ? 'live' : 'test') : 'not configured';
-
-    // Lunar default channel/currency
-    try {
-        $currency = \Lunar\Models\Currency::getDefault();
-        $checks['lunar_currency'] = $currency ? $currency->code : 'not set';
-    } catch (\Exception $e) {
-        $checks['lunar_currency'] = 'error';
-        $allOk = false;
-    }
-
-    // Products published
-    try {
-        $checks['products'] = \Lunar\Models\Product::where('status', 'published')->count() . ' published';
-    } catch (\Exception $e) {
-        $checks['products'] = 'error';
     }
 
     return response()->json([
-        'status'   => $allOk ? 'ok' : 'degraded',
-        'env'      => app()->environment(),
-        'ts'       => now()->toIso8601String(),
-        'checks'   => $checks,
+        'status' => $allOk ? 'ok' : 'degraded',
+        'ts'     => now()->toIso8601String(),
     ], $allOk ? 200 : 503);
 });
 

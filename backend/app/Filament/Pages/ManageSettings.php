@@ -82,7 +82,7 @@ class ManageSettings extends Page
     public function sendTestEmail(): void
     {
         try {
-            $smtpHost = Setting::get('smtp_host') ?: config('mail.mailers.smtp.host');
+            $smtpHost = Setting::get('smtp_host');
 
             if (! $smtpHost) {
                 Notification::make()
@@ -93,17 +93,49 @@ class ManageSettings extends Page
                 return;
             }
 
-            Mail::raw(
-                'This is a test email from PetPosture Admin. Your SMTP settings are working correctly! Sent at: ' . now()->toDateTimeString(),
-                function ($message) {
-                    $message->to(auth()->user()->email)
-                            ->subject('[PetPosture] Test Email — SMTP Working ✓');
-                }
+            // Build a mailer from the saved DB settings so we test what was actually saved,
+            // not whatever is in the booted .env config.
+            $mailerConfig = [
+                'transport'  => 'smtp',
+                'host'       => $smtpHost,
+                'port'       => (int) (Setting::get('smtp_port') ?: 587),
+                'encryption' => Setting::get('smtp_encryption') ?: 'tls',
+                'username'   => Setting::get('smtp_user') ?: '',
+                'password'   => Setting::get('smtp_pass') ?: '',
+            ];
+
+            $fromAddress = Setting::get('mail_from_address') ?: config('mail.from.address');
+            $toAddress   = auth()->user()->email;
+
+            // ssl = implicit TLS (port 465), tls = STARTTLS negotiation (null), none = plaintext
+            $tlsMode = match ($mailerConfig['encryption']) {
+                'ssl'  => true,
+                'tls'  => null,
+                default => false,
+            };
+
+            $transport = new \Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport(
+                $mailerConfig['host'],
+                (int) $mailerConfig['port'],
+                $tlsMode
             );
+            if ($mailerConfig['username']) {
+                $transport->setUsername($mailerConfig['username']);
+                $transport->setPassword($mailerConfig['password']);
+            }
+
+            $mailer  = new \Symfony\Component\Mailer\Mailer($transport);
+            $email   = (new \Symfony\Component\Mime\Email())
+                ->from($fromAddress)
+                ->to($toAddress)
+                ->subject('[PetPosture] Test Email — SMTP Working ✓')
+                ->text('This is a test email from PetPosture Admin. Your SMTP settings are working correctly! Sent at: ' . now()->toDateTimeString());
+
+            $mailer->send($email);
 
             Notification::make()
                 ->title('Test email sent!')
-                ->body('Check ' . auth()->user()->email . ' for the test message.')
+                ->body('Check ' . $toAddress . ' for the test message.')
                 ->success()
                 ->send();
 
