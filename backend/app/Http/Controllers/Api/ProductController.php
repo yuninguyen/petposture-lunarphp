@@ -9,12 +9,14 @@ use App\Models\ProductSyncMapping;
 use App\Models\Review;
 use App\Traits\HttpResponses;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Lunar\Models\Brand;
 use Lunar\Models\Order;
 use Lunar\Models\Price;
 use Lunar\Models\Product;
+use Lunar\Models\ProductOption;
 use Lunar\Models\ProductVariant;
-use Illuminate\Support\Collection;
 
 class ProductController extends Controller
 {
@@ -42,6 +44,13 @@ class ProductController extends Controller
                 $q->whereHas('urls', fn ($q2) =>
                     $q2->where('slug', $request->input('category'))
                 )
+            );
+        }
+
+        // Filter by brand slug
+        if ($request->filled('brand')) {
+            $query->whereHas('brand', fn ($q) =>
+                $q->whereRaw('LOWER(name) = ?', [strtolower($request->input('brand'))])
             );
         }
 
@@ -73,6 +82,23 @@ class ProductController extends Controller
             );
         }
 
+        // In-stock filter
+        if ($request->boolean('in_stock')) {
+            $query->whereHas('variants', fn ($q) => $q->where('stock', '>', 0));
+        }
+
+        // Option value filter: ?option[size]=M&option[color]=Red
+        if ($request->filled('option')) {
+            foreach ((array) $request->input('option') as $optionHandle => $valueName) {
+                $query->whereHas('variants.values', fn ($q) =>
+                    $q->whereRaw('LOWER(CAST(name AS TEXT)) LIKE ?', ['%' . strtolower((string) $valueName) . '%'])
+                      ->whereHas('option', fn ($q2) =>
+                          $q2->whereRaw('LOWER(handle) = ?', [strtolower((string) $optionHandle)])
+                      )
+                );
+            }
+        }
+
         // Sort: price requires a subquery since price is on lunar_prices, not lunar_products
         $sort = $request->input('sort', 'newest');
 
@@ -95,7 +121,7 @@ class ProductController extends Controller
         // Skip cache for filtered/sorted requests; cache only the unfiltered first page
         $perPage = min((int) $request->input('per_page', 12), 100);
 
-        $hasFilters = $request->hasAny(['category', 'q', 'min_price', 'max_price', 'per_page'])
+        $hasFilters = $request->hasAny(['category', 'brand', 'q', 'min_price', 'max_price', 'per_page', 'in_stock', 'option'])
             || ($sort !== 'newest')
             || ($request->input('page', 1) > 1);
 
@@ -234,6 +260,61 @@ class ProductController extends Controller
         }
 
         return ProductResource::collection($related);
+    }
+
+    public function facets(Request $request)
+    {
+        $data = Cache::remember('products:facets', now()->addMinutes(30), function () {
+            $variantMorph = (new ProductVariant)->getMorphClass();
+
+            $priceRange = Price::query()
+                ->join('lunar_product_variants', 'lunar_product_variants.id', '=', 'lunar_prices.priceable_id')
+                ->join('lunar_products', 'lunar_products.id', '=', 'lunar_product_variants.product_id')
+                ->where('lunar_prices.priceable_type', $variantMorph)
+                ->where('lunar_products.status', 'published')
+                ->selectRaw('MIN(lunar_prices.price) as min_price, MAX(lunar_prices.price) as max_price')
+                ->first();
+
+            $brands = Brand::query()
+                ->whereHas('products', fn ($q) => $q->where('status', 'published'))
+                ->withCount(['products' => fn ($q) => $q->where('status', 'published')])
+                ->orderBy('name')
+                ->get()
+                ->map(fn ($b) => [
+                    'id'    => $b->id,
+                    'name'  => $b->name,
+                    'slug'  => \Illuminate\Support\Str::slug($b->name),
+                    'count' => $b->products_count,
+                ])
+                ->values()
+                ->all();
+
+            $options = ProductOption::query()
+                ->whereHas('products', fn ($q) => $q->where('status', 'published'))
+                ->with('values')
+                ->get()
+                ->map(fn ($opt) => [
+                    'handle' => $opt->handle ?? \Illuminate\Support\Str::slug($opt->translate('name')),
+                    'name'   => $opt->translate('name'),
+                    'values' => $opt->values->map(fn ($v) => [
+                        'id'   => $v->id,
+                        'name' => $v->translate('name'),
+                    ])->values()->all(),
+                ])
+                ->values()
+                ->all();
+
+            return [
+                'price_range' => [
+                    'min' => $priceRange ? round($priceRange->min_price / 100, 2) : 0,
+                    'max' => $priceRange ? round($priceRange->max_price / 100, 2) : 0,
+                ],
+                'brands'  => $brands,
+                'options' => $options,
+            ];
+        });
+
+        return response()->json($data);
     }
 
     private function resolvePublishedProduct(string $slug): ?Product

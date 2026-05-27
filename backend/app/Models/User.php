@@ -12,9 +12,10 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
-use Spatie\Permission\Traits\HasRoles;
-use Lunar\Base\Traits\LunarUser;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Lunar\Base\LunarUser as LunarUserInterface;
+use Lunar\Base\Traits\LunarUser;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, LunarUserInterface
 {
@@ -54,4 +55,8 @@ class User extends Authenticatable implements FilamentUser, LunarUserInterface
         ];
     }
 
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(UserAddress::class);
+    }
 }

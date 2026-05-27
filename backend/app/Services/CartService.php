@@ -11,6 +11,11 @@ use Lunar\Models\ProductVariant;
 
 class CartService
 {
+    public function __construct(
+        private readonly InventoryService $inventoryService,
+    ) {
+    }
+
     /**
      * Resolve an existing cart or create a new one.
      * Auth users are matched by user_id; guests by a UUID token stored in meta.
@@ -53,6 +58,8 @@ class CartService
     public function addLine(Cart $cart, int $variantId, int $quantity): Cart
     {
         $variant = ProductVariant::findOrFail($variantId);
+        $existingQuantity = (int) $cart->lines()->where('purchasable_id', $variantId)->sum('quantity');
+        $this->inventoryService->assertVariantCanFulfill($variant, $quantity, $existingQuantity);
         $cart->add($variant, $quantity);
         return $this->fresh($cart);
     }
@@ -67,6 +74,10 @@ class CartService
         if ($quantity <= 0) {
             $line->delete();
         } else {
+            $purchasable = $line->purchasable;
+            if ($purchasable instanceof ProductVariant) {
+                $this->inventoryService->assertVariantCanFulfill($purchasable, $quantity);
+            }
             $line->update(['quantity' => $quantity]);
         }
 
@@ -145,6 +156,7 @@ class CartService
                 'quantity'  => $line->quantity,
                 'price'     => round(($price?->getRawOriginal('price') ?? 0) / $factor, 2),
                 'total'     => round(($line->sub_total?->value ?? 0) / $factor, 2),
+                ...($purchasable instanceof ProductVariant ? $this->inventoryService->stockSnapshot($purchasable) : []),
             ];
         })->values();
 

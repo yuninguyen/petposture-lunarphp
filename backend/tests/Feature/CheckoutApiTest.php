@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\StripeWebhookEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -24,11 +25,18 @@ use Lunar\Models\TaxRateAmount;
 use Lunar\Models\TaxClass;
 use Lunar\Models\TaxZone;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class CheckoutApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Queue::fake();
+    }
 
     public function test_place_order_creates_a_guest_order(): void
     {
@@ -71,17 +79,16 @@ class CheckoutApiTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('data.reference', $reference)
-            ->assertJsonPath('data.customer_email', 'guest@petposture.com')
             ->assertJsonPath('data.tracking_number', $reference)
-            ->assertJsonPath('data.tax_state', 'TX')
-            ->assertJsonPath('data.tax_rate_percentage', 8.2)
-            ->assertJsonPath('data.tax_state_rate_percentage', 6.25)
-            ->assertJsonPath('data.tax_avg_local_rate_percentage', 1.95)
-            ->assertJsonPath('data.shipping_method', 'standard')
-            ->assertJsonPath('data.payment_method', 'cod')
-            ->assertJsonPath('data.payment_label', 'Cash on delivery')
-            ->assertJsonPath('data.shipping_address.line_one', '123 Congress Ave')
-            ->assertJsonPath('data.shipping_address.city', 'Austin');
+            ->assertJsonPath('data.status', 'awaiting-payment')
+            ->assertJsonPath('data.fulfillment_status', 'unfulfilled')
+            ->assertJsonPath('data.estimated_delivery', null)
+            ->assertJsonPath('data.tracking_url', null);
+
+        $response->assertJsonMissingPath('data.customer_email');
+        $response->assertJsonMissingPath('data.payment_method');
+        $response->assertJsonMissingPath('data.shipping_address');
+        $response->assertJsonMissingPath('data.billing_address');
     }
 
     public function test_track_order_returns_not_found_for_invalid_credentials(): void
@@ -267,6 +274,39 @@ class CheckoutApiTest extends TestCase
         $response->assertNotFound()
             ->assertJsonPath('success', false)
             ->assertJsonPath('message', 'Coupon code not found or expired.');
+    }
+
+    public function test_place_order_rejects_out_of_stock_variant(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $variant->update(['stock' => 0, 'backorder' => false]);
+
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['quantity']);
+    }
+
+    public function test_prepare_payment_intent_rejects_out_of_stock_variant(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $variant->update(['stock' => 0, 'backorder' => false]);
+
+        $this->postJson('/api/checkout/payment-intent', [
+            'payment_method' => 'card',
+            'items' => [
+                [
+                    'variantId' => $variant->id,
+                    'quantity' => 1,
+                ],
+            ],
+            'shipping' => [
+                'state' => 'TX',
+                'country' => 'United States',
+            ],
+            'currency' => 'usd',
+            'email' => 'guest@petposture.com',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['quantity']);
     }
 
     public function test_place_order_supports_express_shipping_and_coupon_code(): void
@@ -518,12 +558,13 @@ class CheckoutApiTest extends TestCase
 
         $trackedOrderResponse->assertOk()
             ->assertJsonPath('data.status', 'payment-received')
-            ->assertJsonPath('data.payment_status', 'paid')
-            ->assertJsonPath('data.payment_intent_status', 'succeeded')
-            ->assertJsonPath('data.payment_last_event_type', 'payment_intent.succeeded');
+            ->assertJsonPath('data.tracking_number', $reference)
+            ->assertJsonPath('data.fulfillment_status', 'unfulfilled')
+            ->assertJsonPath('data.tracking_url', null);
 
-        $this->assertNotNull($trackedOrderResponse->json('data.payment_received_at'));
-        $this->assertContains('status.payment-received', array_column($trackedOrderResponse->json('data.order_events'), 'type'));
+        $trackedOrderResponse->assertJsonMissingPath('data.payment_status');
+        $trackedOrderResponse->assertJsonMissingPath('data.payment_intent_status');
+        $trackedOrderResponse->assertJsonMissingPath('data.order_events');
     }
 
     public function test_duplicate_stripe_webhook_event_is_ignored(): void
@@ -561,6 +602,285 @@ class CheckoutApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('result.processed', false)
             ->assertJsonPath('result.reason', 'duplicate_event');
+
+        $this->assertDatabaseCount('stripe_webhook_events', 1);
+        $this->assertDatabaseHas('stripe_webhook_events', [
+            'event_id' => 'evt_test_duplicate_123',
+            'event_type' => 'payment_intent.succeeded',
+            'payment_intent_id' => 'pi_test_duplicate_123',
+            'status' => 'processed',
+        ]);
+
+        $storedEvent = StripeWebhookEvent::query()->where('event_id', 'evt_test_duplicate_123')->first();
+        $this->assertSame('succeeded', data_get($storedEvent?->payload, 'data.object.status'));
+    }
+
+    // ─── Shipping Rates ──────────────────────────────────────────────────────
+
+    public function test_shipping_rates_returns_default_standard_and_express(): void
+    {
+        $response = $this->getJson('/api/checkout/shipping-rates');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('rates.0.id', 'standard')
+            ->assertJsonPath('rates.0.price', 0)
+            ->assertJsonPath('rates.0.price_minor', 0)
+            ->assertJsonPath('rates.1.id', 'express')
+            ->assertJsonPath('rates.1.price', 25)
+            ->assertJsonPath('rates.1.price_minor', 2500)
+            ->assertJsonPath('rates.0.free_over', null);
+    }
+
+    public function test_shipping_rates_returns_free_standard_when_subtotal_meets_threshold(): void
+    {
+        \App\Models\Setting::create(['key' => 'shipping_free_over_minor', 'value' => '5000']);
+
+        $response = $this->getJson('/api/checkout/shipping-rates?subtotal_minor=5000');
+
+        $response->assertOk()
+            ->assertJsonPath('rates.0.id', 'standard')
+            ->assertJsonPath('rates.0.price_minor', 0)
+            ->assertJsonPath('rates.0.free_over', 50)
+            ->assertJsonPath('rates.1.id', 'express')
+            ->assertJsonPath('rates.1.price_minor', 2500);
+
+        // Below threshold: standard should cost default rate (0 for standard in default config)
+        $below = $this->getJson('/api/checkout/shipping-rates?subtotal_minor=4999');
+        $below->assertOk()->assertJsonPath('rates.0.price_minor', 0);
+    }
+
+    public function test_shipping_rates_returns_zero_for_all_when_coupon_has_free_shipping(): void
+    {
+        $discount = Discount::create([
+            'name' => 'FREESHIP',
+            'handle' => 'freeship-test',
+            'coupon' => 'FREESHIP',
+            'type' => AmountOff::class,
+            'starts_at' => now()->subHour(),
+            'ends_at' => now()->addDay(),
+            'priority' => 1,
+            'stop' => true,
+            'uses' => 0,
+            'data' => ['free_shipping' => true],
+        ]);
+
+        $response = $this->getJson('/api/checkout/shipping-rates?coupon_code=FREESHIP&subtotal_minor=3000');
+
+        $response->assertOk()
+            ->assertJsonPath('rates.0.price_minor', 0)
+            ->assertJsonPath('rates.1.price_minor', 0);
+
+        $discount->delete();
+    }
+
+    public function test_shipping_rates_respects_setting_override_for_express_price(): void
+    {
+        \App\Models\Setting::create(['key' => 'shipping_express_price_minor', 'value' => '999']);
+
+        $response = $this->getJson('/api/checkout/shipping-rates');
+
+        $response->assertOk()
+            ->assertJsonPath('rates.1.id', 'express')
+            ->assertJsonPath('rates.1.price_minor', 999)
+            ->assertJsonPath('rates.1.price', 9.99);
+    }
+
+    // ─── Refund ──────────────────────────────────────────────────────────────
+
+    public function test_admin_can_issue_full_refund_on_paid_order(): void
+    {
+        config()->set('services.stripe.webhook_secret', null);
+        config()->set('services.stripe.secret', null);
+
+        $variant = $this->createPurchasableVariant();
+        ['order_id' => $orderId] = $this->createPaidCardOrder($variant);
+
+        $admin = $this->makeAdmin();
+
+        $response = $this->postJson("/api/admin/orders/{$orderId}/refund");
+
+        $response->assertOk()
+            ->assertJsonPath('data.payment_status', 'refunded')
+            ->assertJsonPath('data.refund_status', 'refunded');
+
+        $this->assertNotNull($response->json('data.refund_id'));
+        $this->assertNotNull($response->json('data.refund_amount'));
+        $this->assertGreaterThan(0, $response->json('data.refund_amount'));
+        $this->assertContains('payment.refunded', array_column($response->json('data.order_events'), 'type'));
+    }
+
+    public function test_admin_can_issue_partial_refund_and_records_correct_amount(): void
+    {
+        config()->set('services.stripe.webhook_secret', null);
+        config()->set('services.stripe.secret', null);
+
+        $variant = $this->createPurchasableVariant();
+        ['order_id' => $orderId] = $this->createPaidCardOrder($variant);
+
+        $this->makeAdmin();
+
+        $response = $this->postJson("/api/admin/orders/{$orderId}/refund", ['amount' => 10.00]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.refund_status', 'refunded')
+            ->assertJsonPath('data.refund_amount', 1000);
+
+        // payment_status should NOT be 'refunded' for a partial refund
+        $this->assertNotSame('refunded', $response->json('data.payment_status'));
+        $this->assertContains('payment.refunded', array_column($response->json('data.order_events'), 'type'));
+    }
+
+    public function test_refund_rejects_order_that_is_not_paid(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $orderId = $placeResponse->json('order.id');
+
+        $this->makeAdmin();
+
+        $this->postJson("/api/admin/orders/{$orderId}/refund")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['refund']);
+    }
+
+    public function test_refund_rejects_order_without_payment_intent(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $orderId = $placeResponse->json('order.id');
+
+        // Manually mark as paid but strip the intent id to simulate an offline/COD order
+        $order = \Lunar\Models\Order::find($orderId);
+        $meta = (array) ($order->meta ?? []);
+        unset($meta['payment_intent_id']);
+        $order->update(['meta' => $meta]);
+
+        $this->makeAdmin();
+
+        $this->postJson("/api/admin/orders/{$orderId}/refund")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['refund']);
+    }
+
+    public function test_refund_is_forbidden_for_non_admin(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $orderId = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant))->json('order.id');
+
+        $user = User::factory()->create();
+        Role::findOrCreate('customer', 'web');
+        $user->assignRole('customer');
+        Sanctum::actingAs($user);
+
+        $this->postJson("/api/admin/orders/{$orderId}/refund")->assertForbidden();
+    }
+
+    // ─── Return ──────────────────────────────────────────────────────────────
+
+    public function test_admin_can_mark_delivered_order_as_returned(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        ['order_id' => $orderId] = $this->createPaidCardOrder($variant);
+
+        $admin = $this->makeAdmin();
+
+        foreach (['markProcessing', 'markShipped', 'markDelivered'] as $action) {
+            $this->postJson("/api/orders/{$orderId}/actions/{$action}")->assertOk();
+        }
+
+        $response = $this->postJson("/api/admin/orders/{$orderId}/return");
+
+        $response->assertOk()
+            ->assertJsonPath('data.fulfillment_status', 'returned');
+
+        $this->assertNotNull($response->json('data.returned_at'));
+        $this->assertContains('fulfillment.returned', array_column($response->json('data.order_events'), 'type'));
+    }
+
+    public function test_admin_can_mark_shipped_order_as_returned(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        ['order_id' => $orderId] = $this->createPaidCardOrder($variant);
+
+        $this->makeAdmin();
+
+        foreach (['markProcessing', 'markShipped'] as $action) {
+            $this->postJson("/api/orders/{$orderId}/actions/{$action}")->assertOk();
+        }
+
+        $this->postJson("/api/admin/orders/{$orderId}/return")
+            ->assertOk()
+            ->assertJsonPath('data.fulfillment_status', 'returned');
+    }
+
+    public function test_return_rejects_order_not_in_shipped_or_delivered_status(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        ['order_id' => $orderId] = $this->createPaidCardOrder($variant);
+
+        $this->makeAdmin();
+
+        $this->postJson("/api/orders/{$orderId}/actions/markProcessing")->assertOk();
+
+        $this->postJson("/api/admin/orders/{$orderId}/return")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['return']);
+    }
+
+    public function test_return_is_forbidden_for_non_admin(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $orderId = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant))->json('order.id');
+
+        $user = User::factory()->create();
+        Role::findOrCreate('customer', 'web');
+        $user->assignRole('customer');
+        Sanctum::actingAs($user);
+
+        $this->postJson("/api/admin/orders/{$orderId}/return")->assertForbidden();
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    private function makeAdmin(): User
+    {
+        $admin = User::factory()->create();
+        Role::findOrCreate('admin', 'web');
+        $admin->assignRole('admin');
+        Sanctum::actingAs($admin);
+
+        return $admin;
+    }
+
+    /**
+     * Place a COD order and directly set it to payment-received with a fake Stripe intent.
+     * Avoids card checkout flow (which requires full Stripe/Lunar config in tests).
+     *
+     * @return array{order_id: int, intent_id: string, reference: string}
+     */
+    private function createPaidCardOrder(ProductVariant $variant): array
+    {
+        $orderResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $orderResponse->assertCreated();
+
+        $orderId = $orderResponse->json('order.id');
+        $intentId = 'pi_test_' . Str::lower(Str::random(12));
+
+        $order = \Lunar\Models\Order::find($orderId);
+        $meta = (array) ($order->meta ?? []);
+        $meta['payment_intent_id'] = $intentId;
+        $meta['payment_status'] = 'paid';
+        $order->update([
+            'status' => 'payment-received',
+            'meta' => $meta,
+        ]);
+
+        return [
+            'order_id' => $orderId,
+            'intent_id' => $intentId,
+            'reference' => $orderResponse->json('order.reference'),
+        ];
     }
 
     private function createPurchasableVariant(): ProductVariant

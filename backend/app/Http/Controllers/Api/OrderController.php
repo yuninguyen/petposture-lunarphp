@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\OrderTrackResource;
 use App\Http\Resources\Api\OrderResource;
 use App\Services\OrderOperationsService;
 use App\Services\StripePaymentIntentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Lunar\Models\Order;
 
@@ -40,10 +42,17 @@ class OrderController extends Controller
         );
 
         if (!$order) {
+            Log::warning('Public order tracking lookup failed.', [
+                'tracking_number' => trim((string) $request->tracking_number),
+                'email' => trim((string) $request->email),
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
             return response()->json(['message' => 'No order found with these credentials.'], 404);
         }
 
-        return new OrderResource($order);
+        return new OrderTrackResource($order);
     }
 
     public function retryPayment(Request $request)
@@ -177,6 +186,42 @@ class OrderController extends Controller
         }
 
         return new OrderResource($this->orderOperationsService->createShipment($order, $validated));
+    }
+
+    public function refund(Request $request, $id)
+    {
+        if (! $this->canManageOrders($request)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $validated = Validator::make($request->all(), [
+            'amount' => 'nullable|numeric|min:0.01',
+        ])->validate();
+
+        $order = Order::with(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])->find($id);
+
+        if (! $order) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+
+        $amountMinor = isset($validated['amount']) ? (int) round((float) $validated['amount'] * 100) : null;
+
+        return new OrderResource($this->orderOperationsService->refundOrder($order, $amountMinor));
+    }
+
+    public function return(Request $request, $id)
+    {
+        if (! $this->canManageOrders($request)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $order = Order::with(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])->find($id);
+
+        if (! $order) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+
+        return new OrderResource($this->orderOperationsService->returnOrder($order));
     }
 
     private function baseOrderQuery(Request $request)

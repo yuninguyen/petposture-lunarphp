@@ -2,12 +2,11 @@
 
 namespace App\Services;
 
-use App\Mail\NewOrderAdmin;
-use App\Mail\OrderConfirmation;
+use App\Jobs\SendOrderConfirmationJob;
 use App\Payments\PaymentGatewayManager;
 use App\Services\SalesTaxService;
+use App\Services\ShippingService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Lunar\Base\ShippingManifestInterface;
 use Lunar\DataTypes\Price as PriceDataType;
 use Lunar\DataTypes\ShippingOption;
@@ -27,6 +26,8 @@ class CheckoutService
         private readonly SalesTaxService $salesTaxService,
         private readonly PaymentGatewayManager $paymentGatewayManager,
         private readonly OrderEventService $orderEventService,
+        private readonly InventoryService $inventoryService,
+        private readonly ShippingService $shippingService,
     ) {
     }
 
@@ -52,6 +53,7 @@ class CheckoutService
 
             foreach ($payload['items'] as $item) {
                 $variant = ProductVariant::findOrFail($item['variantId']);
+                $this->inventoryService->assertVariantCanFulfill($variant, (int) $item['quantity']);
                 $cart->add($variant, $item['quantity']);
             }
 
@@ -61,6 +63,7 @@ class CheckoutService
 
             $cart->save();
             $cart->calculate();
+            $this->inventoryService->assertCartCanFulfill($cart);
 
             $shippingCountry = $this->resolveCountry($shippingInput);
             $billingCountry = $this->resolveCountry($billingInput) ?? $shippingCountry;
@@ -86,7 +89,16 @@ class CheckoutService
             ) ?? $shippingOptions->first();
 
             if (!$shippingOption) {
-                $shippingOption = $this->makeFallbackShippingOption($cart, $shippingMethod);
+                $couponDiscount = !empty($payload['coupon_code'])
+                    ? Discount::active()->where('coupon', $payload['coupon_code'])->first()
+                    : null;
+                $isFreeShipping = (bool) ($couponDiscount?->data['free_shipping'] ?? false);
+                $shippingOption = $this->makeFallbackShippingOption(
+                    $cart,
+                    $shippingMethod,
+                    $this->resolveCartSubTotal($cart),
+                    $isFreeShipping,
+                );
             }
 
             // Avoid the internal refresh here so the reset breakdown survives
@@ -149,8 +161,7 @@ class CheckoutService
 
             // Queue confirmation email — non-blocking, fails silently if mail not configured
             if ($placed->customer_reference) {
-                Mail::send(new OrderConfirmation($placed));
-                Mail::to(config('mail.from.address'))->send(new NewOrderAdmin($placed));
+                SendOrderConfirmationJob::dispatch($placed->id);
             }
 
             return $placed;
@@ -167,6 +178,21 @@ class CheckoutService
      * Used by preparePaymentIntent so the Stripe amount is never client-supplied.
      * Returns total in minor currency units (cents).
      */
+    public function subtotalFor(array $items): int
+    {
+        $currency = Currency::getDefault();
+        $subTotal = 0;
+
+        foreach ($items as $item) {
+            $variant = ProductVariant::with(['prices' => fn ($q) => $q->where('currency_id', $currency->id)])
+                ->findOrFail($item['variantId']);
+            $price = $variant->prices->sortBy('min_quantity')->first();
+            $subTotal += $this->normalizeAmount($price?->price) * max(1, (int) $item['quantity']);
+        }
+
+        return $subTotal;
+    }
+
     public function calculateTotal(
         array $items,
         ?string $couponCode,
@@ -179,6 +205,7 @@ class CheckoutService
         foreach ($items as $item) {
             $variant = ProductVariant::with(['prices' => fn ($q) => $q->where('currency_id', $currency->id)])
                 ->findOrFail($item['variantId']);
+            $this->inventoryService->assertVariantCanFulfill($variant, (int) $item['quantity']);
             $price = $variant->prices->sortBy('min_quantity')->first();
             $subTotal += $this->normalizeAmount($price?->price) * max(1, (int) $item['quantity']);
         }
@@ -198,7 +225,7 @@ class CheckoutService
         }
 
         $isFreeShipping = (bool) ($discount?->data['free_shipping'] ?? false);
-        $shippingValue = (! $isFreeShipping && ($shippingMethod ?? 'standard') === 'express') ? 2500 : 0;
+        $shippingValue = $this->shippingService->rateFor($shippingMethod ?? 'standard', $subTotal, $isFreeShipping);
 
         $taxableAmount = max(0, $subTotal - $discountValue);
         $taxAmount = 0;
@@ -241,10 +268,10 @@ class CheckoutService
         ];
     }
 
-    private function makeFallbackShippingOption(Cart $cart, string $shippingMethod): ShippingOption
+    private function makeFallbackShippingOption(Cart $cart, string $shippingMethod, int $subtotalMinor = 0, bool $isFreeShipping = false): ShippingOption
     {
         $taxClass = TaxClass::first() ?? TaxClass::create(['name' => 'Default']);
-        $shippingAmount = $shippingMethod === 'express' ? 2500 : 0;
+        $shippingAmount = $this->shippingService->rateFor($shippingMethod, $subtotalMinor, $isFreeShipping);
         $shippingName = $shippingMethod === 'express'
             ? 'Express Shipping'
             : 'Standard Shipping';

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api;
 
+use App\Services\InventoryService;
 use App\Services\ProductSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -23,6 +24,8 @@ class ProductResource extends JsonResource
             ?? (string) $productId;
 
         $firstCollection = $this->collections->first();
+
+        $defaultInventory = app(InventoryService::class)->stockSnapshot($defaultVariant);
 
         return [
             'id'            => $productId,
@@ -52,17 +55,19 @@ class ProductResource extends JsonResource
             'images'        => $this->resolveImageGallery(),
 
             // Inventory (default variant)
-            'available'     => ($defaultVariant?->stock ?? 0) > 0 || (bool) ($defaultVariant?->backorder),
-            'lowStockWarning' => $defaultVariant !== null
-                && $defaultVariant->stock > 0
-                && $defaultVariant->stock <= ($defaultVariant->low_stock_threshold ?? 5),
-            'backorder'     => (bool) $defaultVariant?->backorder,
+            'available'     => $defaultInventory['available'],
+            'lowStockWarning' => $defaultInventory['lowStockWarning'],
+            'backorder'     => $defaultInventory['backorder'],
+            'stockStatus'   => $defaultInventory['stockStatus'],
 
             // Options — e.g. [{"name":"Size","values":["S","M","L"]}]
             'options'       => $this->resolveOptions(),
 
             // Variants with their selected option values
             'variants'      => $variants->map(fn ($v) => $this->formatVariant($v))->values()->all(),
+
+            // Schema.org JSON-LD for SEO (included only on single-product responses)
+            'seo' => $this->buildJsonLd($productSlug, $price),
         ];
     }
 
@@ -159,19 +164,72 @@ class ProductResource extends JsonResource
             $variantImage = $primary?->getUrl();
         }
 
+        $inventory = app(InventoryService::class)->stockSnapshot($v);
+
         return [
             'id'             => (int) $v->id,
             'sku'            => $v->sku,
             'name'           => $v->translateAttribute('name'),
             'price'          => $this->minorToDecimal($variantPrice?->getRawOriginal('price')),
             'comparePrice'   => $this->minorToDecimal($variantPrice?->getRawOriginal('compare_price')),
-            'stock'          => (int) $v->stock,
-            'available'      => $v->stock > 0 || (bool) $v->backorder,
-            'lowStockWarning'=> $v->stock > 0 && $v->stock <= ($v->low_stock_threshold ?? 5),
-            'backorder'      => (bool) $v->backorder,
+            'stock'          => $inventory['stock'],
+            'available'      => $inventory['available'],
+            'lowStockWarning'=> $inventory['lowStockWarning'],
+            'backorder'      => $inventory['backorder'],
+            'stockStatus'    => $inventory['stockStatus'],
             'image'          => $variantImage,
             'options'        => $selectedOptions,
         ];
+    }
+
+    private function buildJsonLd(string $slug, mixed $price): array
+    {
+        $name        = $this->translateAttribute('name') ?? '';
+        $description = $this->translateAttribute('description') ?? '';
+        $imageUrl    = $this->resolvePrimaryImageUrl();
+        $priceValue  = $this->minorToDecimal($price?->getRawOriginal('price'));
+        $sku         = $this->variants->first()?->sku;
+
+        $ld = [
+            '@context' => 'https://schema.org',
+            '@type'    => 'Product',
+            'name'     => $name,
+            'url'      => url('/products/' . $slug),
+        ];
+
+        if ($description) {
+            $ld['description'] = $description;
+        }
+
+        if ($imageUrl) {
+            $ld['image'] = $imageUrl;
+        }
+
+        if ($sku) {
+            $ld['sku'] = $sku;
+        }
+
+        if ($priceValue !== null) {
+            $ld['offers'] = [
+                '@type'         => 'Offer',
+                'price'         => $priceValue,
+                'priceCurrency' => 'USD',
+                'availability'  => 'https://schema.org/' . ($this->variants->first()?->stock > 0 ? 'InStock' : 'OutOfStock'),
+                'url'           => url('/products/' . $slug),
+            ];
+        }
+
+        $rating = (float) ($this->translateAttribute('rating') ?: 0);
+        $reviewCount = (int) ($this->translateAttribute('reviews') ?: 0);
+        if ($rating > 0 && $reviewCount > 0) {
+            $ld['aggregateRating'] = [
+                '@type'       => 'AggregateRating',
+                'ratingValue' => $rating,
+                'reviewCount' => $reviewCount,
+            ];
+        }
+
+        return $ld;
     }
 
     private function minorToDecimal(int|string|null $value): ?float

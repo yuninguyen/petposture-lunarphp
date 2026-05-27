@@ -61,6 +61,11 @@ class OrderResource extends JsonResource
             'shipped_at' => $meta['shipped_at'] ?? null,
             'delivered_at' => $meta['delivered_at'] ?? null,
             'cancelled_at' => $meta['cancelled_at'] ?? null,
+            'refund_status' => $meta['refund_status'] ?? null,
+            'refund_id' => $meta['refund_id'] ?? null,
+            'refund_amount' => $meta['refund_amount'] ?? null,
+            'refunded_at' => $meta['refunded_at'] ?? null,
+            'returned_at' => $meta['returned_at'] ?? null,
             'order_events' => collect(
                 $this->whenLoaded('orderEvents', fn () => $this->orderEvents->map(fn ($event) => [
                     'type' => $event->type,

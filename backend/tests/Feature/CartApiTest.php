@@ -101,6 +101,34 @@ class CartApiTest extends TestCase
             ->assertUnprocessable();
     }
 
+    public function test_guest_cannot_add_out_of_stock_variant_to_cart(): void
+    {
+        $this->variant->update(['stock' => 0, 'backorder' => false]);
+
+        $this->postJson('/api/cart/lines', [
+            'variantId' => $this->variant->id,
+            'quantity'  => 1,
+        ], ['X-Cart-Token' => \Illuminate\Support\Str::uuid()->toString()])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['quantity']);
+    }
+
+    public function test_cart_line_includes_inventory_snapshot(): void
+    {
+        $token = \Illuminate\Support\Str::uuid()->toString();
+        $this->variant->update(['stock' => 2, 'low_stock_threshold' => 5, 'backorder' => false]);
+
+        $this->postJson('/api/cart/lines', [
+            'variantId' => $this->variant->id,
+            'quantity'  => 1,
+        ], ['X-Cart-Token' => $token])
+            ->assertCreated()
+            ->assertJsonPath('lines.0.stock', 2)
+            ->assertJsonPath('lines.0.available', true)
+            ->assertJsonPath('lines.0.lowStockWarning', true)
+            ->assertJsonPath('lines.0.stockStatus', 'low_stock');
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function setUpLunarPrerequisites(): void

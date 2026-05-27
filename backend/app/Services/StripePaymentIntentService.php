@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Setting;
+use App\Models\StripeWebhookEvent;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -144,32 +145,40 @@ class StripePaymentIntentService
         $object = (array) (($event['data']['object'] ?? []) ?: []);
         $intentId = (string) ($object['id'] ?? '');
 
+        if ($eventId === '') {
+            throw new RuntimeException('Stripe webhook payload is missing event ID.');
+        }
+
         if ($intentId === '') {
             throw new RuntimeException('Stripe webhook payload is missing payment intent ID.');
         }
 
         $order = Order::query()->where('meta->payment_intent_id', $intentId)->first();
+        $eventRecord = $this->captureWebhookEvent($eventId, $type, $intentId, $order?->id, $event);
 
-        if (! $order) {
-            return [
-                'processed' => false,
-                'reason' => 'order_not_found',
-                'event_type' => $type,
-                'event_id' => $eventId,
-                'payment_intent_id' => $intentId,
-            ];
-        }
-
-        $lastEventId = (string) (($order->meta['payment_last_event_id'] ?? '') ?: '');
-
-        if ($eventId !== '' && $lastEventId === $eventId) {
+        if (! $eventRecord['created']) {
             return [
                 'processed' => false,
                 'reason' => 'duplicate_event',
                 'event_type' => $type,
                 'event_id' => $eventId,
                 'payment_intent_id' => $intentId,
-                'order_reference' => $order->reference,
+                'order_reference' => $order?->reference,
+            ];
+        }
+
+        if (! $order) {
+            $eventRecord['model']->update([
+                'status' => 'orphaned',
+                'processed_at' => now(),
+            ]);
+
+            return [
+                'processed' => false,
+                'reason' => 'order_not_found',
+                'event_type' => $type,
+                'event_id' => $eventId,
+                'payment_intent_id' => $intentId,
             ];
         }
 
@@ -187,6 +196,19 @@ class StripePaymentIntentService
             'event_id' => $eventId,
         ]);
 
+        $alertService = app(PaymentFailureAlertService::class);
+        if ($paymentStatus === 'failed') {
+            $alertService->record($updatedOrder);
+        } elseif ($paymentStatus === 'paid') {
+            $alertService->reset($updatedOrder);
+        }
+
+        $eventRecord['model']->update([
+            'order_id' => $updatedOrder->id,
+            'status' => 'processed',
+            'processed_at' => now(),
+        ]);
+
         return [
             'processed' => true,
             'event_type' => $type,
@@ -194,6 +216,83 @@ class StripePaymentIntentService
             'payment_intent_id' => $intentId,
             'order_reference' => $updatedOrder->reference,
             'payment_status' => $paymentStatus,
+        ];
+    }
+
+    /**
+     * @return array{created: bool, model: StripeWebhookEvent}
+     */
+    private function captureWebhookEvent(string $eventId, string $type, string $intentId, ?int $orderId, array $event): array
+    {
+        $existing = StripeWebhookEvent::query()->where('event_id', $eventId)->first();
+
+        if ($existing) {
+            return [
+                'created' => false,
+                'model' => $existing,
+            ];
+        }
+
+        try {
+            $created = StripeWebhookEvent::query()->create([
+                'event_id' => $eventId,
+                'event_type' => $type,
+                'payment_intent_id' => $intentId,
+                'order_id' => $orderId,
+                'status' => 'received',
+                'payload' => $event,
+            ]);
+        } catch (\Illuminate\Database\QueryException $exception) {
+            if ((string) $exception->getCode() !== '23000') {
+                throw $exception;
+            }
+
+            return [
+                'created' => false,
+                'model' => StripeWebhookEvent::query()->where('event_id', $eventId)->firstOrFail(),
+            ];
+        }
+
+        return [
+            'created' => true,
+            'model' => $created,
+        ];
+    }
+
+    public function refund(string $paymentIntentId, ?int $amountMinor = null): array
+    {
+        $secret = $this->stripeSecret();
+
+        if (! $secret) {
+            return [
+                'refund_id' => 're_placeholder_' . Str::lower(Str::random(14)),
+                'status' => 'succeeded',
+                'amount' => $amountMinor,
+                'mode' => 'placeholder',
+            ];
+        }
+
+        $params = ['payment_intent' => $paymentIntentId];
+
+        if ($amountMinor !== null) {
+            $params['amount'] = $amountMinor;
+        }
+
+        $response = Http::withBasicAuth($secret, '')
+            ->asForm()
+            ->post('https://api.stripe.com/v1/refunds', $params);
+
+        if (! $response->successful()) {
+            throw new RuntimeException(
+                $response->json('error.message') ?? 'Stripe refund failed.'
+            );
+        }
+
+        return [
+            'refund_id' => (string) $response->json('id'),
+            'status' => (string) $response->json('status'),
+            'amount' => (int) $response->json('amount'),
+            'mode' => 'configured',
         ];
     }
 

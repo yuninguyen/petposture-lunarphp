@@ -2,14 +2,8 @@
 
 namespace App\Services;
 
-use App\Mail\CancelledOrderAdmin;
-use App\Mail\OrderCancelled;
-use App\Mail\OrderDelivered;
-use App\Mail\OrderPaymentFailed;
-use App\Mail\OrderPaymentReceived;
-use App\Mail\OrderProcessing;
-use App\Mail\OrderShipped;
-use Illuminate\Support\Facades\Mail;
+use App\Jobs\DispatchOutboundWebhook;
+use App\Jobs\SendOrderLifecycleEmailJob;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use App\Support\Orders\OrderStateMachine;
@@ -23,7 +17,12 @@ class OrderOperationsService
     ) {
     }
 
-    public function update(Order $order, array $payload, bool $enforceTransitions = false): Order
+    private function stripe(): \App\Services\StripePaymentIntentService
+    {
+        return app(\App\Services\StripePaymentIntentService::class);
+    }
+
+    public function update(Order $order, array $payload, bool $enforceTransitions = true): Order
     {
         $meta = (array) ($order->meta ?? []);
         $targetStatus = ! empty($payload['status']) ? (string) $payload['status'] : null;
@@ -89,18 +88,58 @@ class OrderOperationsService
 
         $refreshed = $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
 
+        // Auto-refund via Stripe when admin cancels a paid order
+        if ($targetStatus === 'cancelled') {
+            $refreshedMeta = (array) ($refreshed->meta ?? []);
+            $paymentIntentId = (string) ($refreshedMeta['payment_intent_id'] ?? '');
+            $wasRefunded = ($refreshedMeta['refund_status'] ?? '') === 'refunded';
+
+            if ($paymentIntentId && ! $wasRefunded && ($refreshedMeta['payment_status'] ?? '') === 'paid') {
+                try {
+                    $orderTotal = $refreshed->total;
+                    $orderTotalMinor = is_object($orderTotal) && property_exists($orderTotal, 'value')
+                        ? (int) $orderTotal->value
+                        : (is_numeric($orderTotal) ? (int) $orderTotal : null);
+
+                    $refund = $this->stripe()->refund($paymentIntentId, $orderTotalMinor);
+                    $refreshedMeta['refund_status'] = 'refunded';
+                    $refreshedMeta['refund_id'] = $refund['refund_id'];
+                    $refreshedMeta['refunded_at'] = now()->toDateTimeString();
+                    $refreshedMeta['refund_amount'] = $refund['amount'];
+                    $refreshed->update(['meta' => $refreshedMeta]);
+                    $this->orderEventService->record(
+                        $refreshed,
+                        'payment.refunded',
+                        'Full refund issued',
+                        "Auto-refund issued on cancellation (ref: {$refund['refund_id']})."
+                    );
+                } catch (\Throwable) {
+                    $this->orderEventService->record(
+                        $refreshed,
+                        'payment.refund_failed',
+                        'Auto-refund failed',
+                        'Order cancelled but Stripe refund could not be issued automatically. Manual refund required.'
+                    );
+                }
+            }
+        }
+
         if ($targetStatus && $refreshed->customer_reference) {
             match ($targetStatus) {
-                'payment-received' => Mail::send(new OrderPaymentReceived($refreshed)),
-                'processing'       => Mail::send(new OrderProcessing($refreshed)),
-                'shipped'          => Mail::send(new OrderShipped($refreshed)),
-                'delivered'        => Mail::send(new OrderDelivered($refreshed)),
-                'cancelled'        => $this->sendCancelledEmails($refreshed),
+                'payment-received' => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'payment-received'),
+                'processing'       => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'processing'),
+                'shipped'          => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'shipped'),
+                'delivered'        => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'delivered'),
+                'cancelled'        => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'cancelled'),
                 default            => null,
             };
         }
 
-        return $refreshed;
+        if ($targetStatus) {
+            $this->dispatchOutboundWebhook($refreshed, $targetStatus);
+        }
+
+        return $refreshed->refresh();
     }
 
     public function performAction(Order $order, string $action, array $payload = []): Order
@@ -153,6 +192,83 @@ class OrderOperationsService
             'shipment.created',
             'Shipment created',
             "Shipment {$trackingNumber} created for carrier " . strtoupper($carrier) . '.'
+        );
+
+        return $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
+    }
+
+    public function refundOrder(Order $order, ?int $amountMinor = null): Order
+    {
+        $meta = (array) ($order->meta ?? []);
+        $paymentIntentId = (string) ($meta['payment_intent_id'] ?? '');
+
+        if (! $paymentIntentId) {
+            throw ValidationException::withMessages([
+                'refund' => ['This order has no Stripe payment intent to refund.'],
+            ]);
+        }
+
+        if (($meta['payment_status'] ?? '') !== 'paid') {
+            throw ValidationException::withMessages([
+                'refund' => ['Only paid orders can be refunded.'],
+            ]);
+        }
+
+        $isFullRefund = $amountMinor === null;
+
+        // Resolve order total for full-refund so placeholder mode records the correct amount.
+        $resolvedAmount = $amountMinor;
+        if ($isFullRefund) {
+            $raw = $order->total;
+            $resolvedAmount = is_object($raw) && property_exists($raw, 'value')
+                ? (int) $raw->value
+                : (is_numeric($raw) ? (int) $raw : null);
+        }
+
+        $refund = $this->stripe()->refund($paymentIntentId, $resolvedAmount);
+
+        $meta['refund_status'] = 'refunded';
+        $meta['refund_id'] = $refund['refund_id'];
+        $meta['refunded_at'] = now()->toDateTimeString();
+        $meta['refund_amount'] = $refund['amount'];
+
+        if ($isFullRefund) {
+            $meta['payment_status'] = 'refunded';
+        }
+
+        $order->update(['meta' => $meta]);
+
+        $label = $isFullRefund ? 'Full refund issued' : 'Partial refund issued';
+        $detail = $isFullRefund
+            ? "Full refund issued via Stripe (ref: {$refund['refund_id']})."
+            : 'Partial refund of ' . number_format($refund['amount'] / 100, 2) . " issued via Stripe (ref: {$refund['refund_id']}).";
+
+        $this->orderEventService->record($order, 'payment.refunded', $label, $detail);
+
+        return $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
+    }
+
+    public function returnOrder(Order $order): Order
+    {
+        $allowedStatuses = ['delivered', 'shipped'];
+
+        if (! in_array((string) $order->status, $allowedStatuses, true)) {
+            throw ValidationException::withMessages([
+                'return' => ['Only delivered or shipped orders can be marked as returned.'],
+            ]);
+        }
+
+        $meta = (array) ($order->meta ?? []);
+        $meta['fulfillment_status'] = 'returned';
+        $meta['returned_at'] = now()->toDateTimeString();
+
+        $order->update(['meta' => $meta]);
+
+        $this->orderEventService->record(
+            $order,
+            'fulfillment.returned',
+            'Items returned',
+            'Order items marked as returned by admin.'
         );
 
         return $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
@@ -228,7 +344,7 @@ class OrderOperationsService
             );
 
             if ($order->customer_reference) {
-                Mail::send(new OrderPaymentFailed($order));
+                SendOrderLifecycleEmailJob::dispatch($order->id, 'payment-failed');
             }
         }
 
@@ -260,6 +376,24 @@ class OrderOperationsService
         }
 
         return $status;
+    }
+
+    private function dispatchOutboundWebhook(Order $order, string $status): void
+    {
+        $meta = (array) ($order->meta ?? []);
+
+        DispatchOutboundWebhook::dispatch('order.' . $status, [
+            'order_id'        => (string) $order->id,
+            'reference'       => $order->reference,
+            'status'          => $status,
+            'customer_email'  => $order->customer_reference,
+            'total_minor'     => is_object($order->total) && property_exists($order->total, 'value')
+                ? (int) $order->total->value
+                : (is_numeric($order->total) ? (int) $order->total : null),
+            'currency'        => $order->currency_code,
+            'tracking_number' => $meta['tracking_number'] ?? null,
+            'payment_status'  => $meta['payment_status'] ?? null,
+        ]);
     }
 
     private function guardTransition(Order $order, string $targetStatus): void
@@ -349,15 +483,9 @@ class OrderOperationsService
             ], $shipmentPayload);
         }
 
-        $meta['shipments'] = array_slice($shipments, -10);
+        $meta['shipments'] = array_slice($shipments, -25);
 
         return $meta;
-    }
-
-    private function sendCancelledEmails(Order $order): void
-    {
-        Mail::send(new OrderCancelled($order));
-        Mail::to(config('mail.from.address'))->send(new CancelledOrderAdmin($order));
     }
 
     private function resolveTrackingUrl(string $carrier, string $trackingNumber): ?string

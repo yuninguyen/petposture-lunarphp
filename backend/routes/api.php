@@ -1,19 +1,19 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\CommentController;
-use App\Http\Controllers\Api\ContentController;
-use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\ContentController;
 use App\Http\Controllers\Api\NewsletterController;
-use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\SettingsController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\UserAddressController;
 use Illuminate\Support\Facades\Route;
 
 // Health check — used by uptime monitors and CI readiness probes
@@ -48,13 +48,14 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:au
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:auth');
 
 Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/facets', [ProductController::class, 'facets']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/products/{slug}/reviews', [ProductController::class, 'reviews']);
 Route::get('/products/{slug}/related', [ProductController::class, 'related']);
 Route::get('/brands', [BrandController::class, 'index']);
 Route::get('/brands/{id}/products', [BrandController::class, 'products']);
 Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('throttle:api-write');
-Route::post('/orders/track', [OrderController::class, 'track']);
+Route::post('/orders/track', [OrderController::class, 'track'])->middleware('throttle:10,1');
 Route::post('/orders/retry-payment', [OrderController::class, 'retryPayment']);
 Route::get('/api-test', function () {
     return ['status' => 'ok', 'v' => 3];
@@ -65,6 +66,11 @@ Route::post('/contact', [ContactController::class, 'submit'])->middleware('throt
 Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetLink'])->middleware('throttle:auth');
 Route::post('/auth/reset-password', [PasswordResetController::class, 'resetPassword'])->middleware('throttle:auth');
 Route::get('/checkout/payment-methods', [CheckoutController::class, 'paymentMethods']);
+Route::get('/checkout/shipping-rates', [CheckoutController::class, 'shippingRates']);
+Route::post('/checkout/session', [CheckoutController::class, 'upsertSession'])->middleware('throttle:api-write');
+Route::get('/checkout/session/{token}', [CheckoutController::class, 'showSession']);
+Route::post('/checkout/session/{token}/payment-intent', [CheckoutController::class, 'prepareSessionPaymentIntent'])->middleware('throttle:api-write');
+Route::post('/checkout/session/{token}/confirm', [CheckoutController::class, 'confirmSession'])->middleware('throttle:api-write');
 Route::post('/checkout/payment-intent', [CheckoutController::class, 'preparePaymentIntent'])->middleware('throttle:api-write');
 Route::post('/checkout/tax-quote', [CheckoutController::class, 'taxQuote'])->middleware('throttle:api-write');
 Route::post('/webhooks/stripe', [CheckoutController::class, 'stripeWebhook']);
@@ -72,7 +78,7 @@ Route::post('/webhooks/stripe', [CheckoutController::class, 'stripeWebhook']);
 Route::get('/posts', [ContentController::class, 'posts']);
 Route::get('/posts/{slug}', [ContentController::class, 'post']);
 Route::get('/posts/{slug}/comments', [CommentController::class, 'index']);
-Route::post('/posts/{slug}/comments', [CommentController::class, 'store']);
+Route::post('/posts/{slug}/comments', [CommentController::class, 'store'])->middleware('throttle:api-write');
 Route::get('/categories', [ContentController::class, 'categories']);
 Route::get('/blog/categories', [ContentController::class, 'categories']);
 
@@ -95,12 +101,21 @@ Route::prefix('/admin')
         Route::patch('/posts/{post}', [PostController::class, 'update']);
         Route::delete('/posts/{post}', [PostController::class, 'destroy']);
         Route::get('/blog/categories', [PostController::class, 'categories']);
+        Route::post('/orders/{id}/refund', [OrderController::class, 'refund']);
+        Route::post('/orders/{id}/return', [OrderController::class, 'return']);
     });
 
 // Protected Routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Address book
+    Route::get('/me/addresses', [UserAddressController::class, 'index']);
+    Route::post('/me/addresses', [UserAddressController::class, 'store']);
+    Route::put('/me/addresses/{id}', [UserAddressController::class, 'update']);
+    Route::patch('/me/addresses/{id}', [UserAddressController::class, 'update']);
+    Route::delete('/me/addresses/{id}', [UserAddressController::class, 'destroy']);
 
     // Checkout & Orders
     Route::get('/orders', [OrderController::class, 'index']);
@@ -110,4 +125,3 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/orders/{id}/shipments', [OrderController::class, 'createShipment']);
 });
 Route::post('/checkout/place-order', [CheckoutController::class, 'placeOrder'])->middleware('throttle:api-write');
-

@@ -3,24 +3,31 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\CheckoutSessionResource;
 use App\Http\Resources\Api\OrderResource;
+use App\Models\UserAddress;
 use App\Services\ApplyCouponService;
 use App\Services\CheckoutService;
+use App\Services\CheckoutSessionService;
 use App\Services\SalesTaxService;
+use App\Services\ShippingService;
 use App\Services\StripePaymentIntentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckoutController extends Controller
 {
     public function __construct(
         private readonly CheckoutService $checkoutService,
+        private readonly CheckoutSessionService $checkoutSessionService,
         private readonly ApplyCouponService $applyCouponService,
         private readonly StripePaymentIntentService $stripePaymentIntentService,
         private readonly SalesTaxService $salesTaxService,
+        private readonly ShippingService $shippingService,
     ) {
     }
 
@@ -29,21 +36,24 @@ class CheckoutController extends Controller
      */
     public function placeOrder(Request $request)
     {
+        $userId = auth('sanctum')->id();
+
         $validated = Validator::make($request->all(), [
             'items' => 'required|array',
             'items.*.variantId' => 'required|exists:lunar_product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
-            'shipping' => 'required|array',
-            'shipping.email' => 'required|email',
-            'shipping.first_name' => 'required|string|max:255',
-            'shipping.last_name' => 'required|string|max:255',
+            'shipping_address_id' => 'nullable|integer',
+            'shipping' => 'nullable|array',
+            'shipping.email' => 'nullable|email',
+            'shipping.first_name' => 'nullable|string|max:255',
+            'shipping.last_name' => 'nullable|string|max:255',
             'shipping.company' => 'nullable|string|max:255',
-            'shipping.line_one' => 'required|string|max:255',
+            'shipping.line_one' => 'nullable|string|max:255',
             'shipping.line_two' => 'nullable|string|max:255',
-            'shipping.city' => 'required|string|max:255',
-            'shipping.state' => 'required|string|max:255',
-            'shipping.postcode' => 'required|string|max:32',
-            'shipping.country' => 'required|string|max:255',
+            'shipping.city' => 'nullable|string|max:255',
+            'shipping.state' => 'nullable|string|max:255',
+            'shipping.postcode' => 'nullable|string|max:32',
+            'shipping.country' => 'nullable|string|max:255',
             'shipping.phone' => 'nullable|string|max:50',
             'billing_same_as_shipping' => 'nullable|boolean',
             'billing' => 'nullable|array',
@@ -64,6 +74,36 @@ class CheckoutController extends Controller
             'customer_note' => 'nullable|string|max:2000',
         ])->validate();
 
+        // Populate shipping from saved address when authenticated user passes shipping_address_id
+        if (! empty($validated['shipping_address_id']) && $userId) {
+            $savedAddress = UserAddress::query()
+                ->where('user_id', $userId)
+                ->find((int) $validated['shipping_address_id']);
+
+            if ($savedAddress) {
+                $validated['shipping'] = array_merge($validated['shipping'] ?? [], [
+                    'first_name' => $savedAddress->first_name,
+                    'last_name'  => $savedAddress->last_name,
+                    'line_one'   => $savedAddress->line_one,
+                    'line_two'   => $savedAddress->line_two,
+                    'city'       => $savedAddress->city,
+                    'state'      => $savedAddress->state,
+                    'postcode'   => $savedAddress->postcode,
+                    'country'    => $savedAddress->country_code,
+                    'phone'      => $savedAddress->phone,
+                ]);
+            }
+        }
+
+        // email is required; if not in shipping block, fall back to authenticated user's email
+        if (empty($validated['shipping']['email']) && $userId) {
+            $validated['shipping']['email'] = auth('sanctum')->user()?->email ?? '';
+        }
+
+        if (empty($validated['shipping']['email'])) {
+            throw ValidationException::withMessages(['shipping.email' => 'The shipping.email field is required.']);
+        }
+
         // Idempotency: client can pass Idempotency-Key header to prevent duplicate orders
         // on double-click / network retry. Key is scoped per IP+email.
         $idempotencyKey = $request->header('Idempotency-Key');
@@ -76,7 +116,7 @@ class CheckoutController extends Controller
         }
 
         try {
-            $order = $this->checkoutService->placeOrder($validated, auth('sanctum')->id());
+            $order = $this->checkoutService->placeOrder($validated, $userId);
             $result = new OrderResource($order);
 
             if ($idempotencyKey) {
@@ -84,10 +124,13 @@ class CheckoutController extends Controller
             }
 
             return response()->json(['success' => true, 'order' => $result], 201);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
-            Log::error("Checkout Failed: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
+            Log::error("Checkout Failed: {$e->getMessage()} at {$e->getFile()}:{$e->getLine()}");
 
             return response()->json([
+                'code'    => \App\Enums\ErrorCode::CHECKOUT_FAILED->value,
                 'success' => false,
                 'message' => 'Checkout failed. Please try again.',
             ], 500);
@@ -108,9 +151,10 @@ class CheckoutController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
+                'code'    => \App\Enums\ErrorCode::VALIDATION_ERROR->value,
                 'success' => false,
                 'message' => 'Invalid request data.',
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
@@ -118,9 +162,13 @@ class CheckoutController extends Controller
             $result = $this->applyCouponService->execute($validator->validated());
 
             return response()->json($result['body'], $result['status']);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
-            Log::error("Coupon Application Error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+            Log::error("Coupon Application Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
             return response()->json([
+                'code'    => \App\Enums\ErrorCode::COUPON_INVALID->value,
                 'success' => false,
                 'message' => 'Error applying coupon. Please try again.',
             ], 500);
@@ -133,6 +181,96 @@ class CheckoutController extends Controller
             'success' => true,
             'methods' => $this->checkoutService->supportedPaymentMethods(),
         ]);
+    }
+
+    public function upsertSession(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'token' => 'nullable|uuid',
+            'items' => 'nullable|array',
+            'items.*.variantId' => 'required_with:items|exists:lunar_product_variants,id',
+            'items.*.quantity' => 'required_with:items|integer|min:1',
+            'shipping' => 'nullable|array',
+            'billing_same_as_shipping' => 'nullable|boolean',
+            'billing' => 'nullable|array',
+            'shipping_method' => 'nullable|string',
+            'payment_method' => 'nullable|string',
+            'payment_context' => 'nullable|array',
+            'coupon_code' => 'nullable|string',
+            'customer_note' => 'nullable|string|max:2000',
+            'currency' => 'nullable|string|max:10',
+        ])->validate();
+
+        $session = $this->checkoutSessionService->upsert(
+            $validated['token'] ?? null,
+            $validated,
+            auth('sanctum')->id(),
+        );
+
+        return response()->json([
+            'success' => true,
+            'session' => new CheckoutSessionResource($session),
+        ]);
+    }
+
+    public function showSession(string $token)
+    {
+        return response()->json([
+            'success' => true,
+            'session' => new CheckoutSessionResource(
+                $this->checkoutSessionService->getByToken($token)
+            ),
+        ]);
+    }
+
+    public function prepareSessionPaymentIntent(string $token)
+    {
+        try {
+            $session = $this->checkoutSessionService->getByToken($token);
+            $intent  = $this->checkoutSessionService->preparePaymentIntent($session);
+
+            return response()->json([
+                'success'        => true,
+                'payment_intent' => $intent,
+                'session'        => new CheckoutSessionResource($session->fresh()),
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error("Session Payment Intent Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code'    => \App\Enums\ErrorCode::PAYMENT_INTENT_ERROR->value,
+                'success' => false,
+                'message' => 'Unable to prepare payment. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function confirmSession(string $token)
+    {
+        try {
+            $session = $this->checkoutSessionService->getByToken($token);
+            $order = $this->checkoutSessionService->confirm($session);
+
+            return response()->json([
+                'success' => true,
+                'order' => new OrderResource($order),
+                'session' => new CheckoutSessionResource($session->fresh()),
+            ], 201);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error("Checkout Session Confirmation Failed: {$e->getMessage()} at {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code'    => \App\Enums\ErrorCode::CHECKOUT_FAILED->value,
+                'success' => false,
+                'message' => 'Checkout confirmation failed. Please try again.',
+            ], 500);
+        }
     }
 
     public function preparePaymentIntent(Request $request)
@@ -168,10 +306,13 @@ class CheckoutController extends Controller
                     'email'    => $validated['email'] ?? '',
                 ]),
             ]);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
-            Log::error("Stripe Payment Intent Error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+            Log::error("Stripe Payment Intent Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
 
             return response()->json([
+                'code'    => \App\Enums\ErrorCode::PAYMENT_INTENT_ERROR->value,
                 'success' => false,
                 'message' => 'Unable to prepare payment. Please try again.',
             ], 500);
@@ -190,14 +331,39 @@ class CheckoutController extends Controller
                 'success' => true,
                 'result' => $result,
             ], Response::HTTP_OK);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Throwable $e) {
-            Log::error("Stripe Webhook Error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+            Log::error("Stripe Webhook Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
 
             return response()->json([
+                'code'    => \App\Enums\ErrorCode::PAYMENT_FAILED->value,
                 'success' => false,
                 'message' => 'Webhook processing failed.',
             ], Response::HTTP_BAD_REQUEST);
         }
+    }
+
+    public function shippingRates(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'subtotal_minor' => 'nullable|integer|min:0',
+            'coupon_code'    => 'nullable|string',
+        ])->validate();
+
+        $subtotalMinor = (int) ($validated['subtotal_minor'] ?? 0);
+        $couponCode    = $validated['coupon_code'] ?? null;
+        $isFreeShipping = false;
+
+        if ($couponCode) {
+            $discount = \Lunar\Models\Discount::active()->where('coupon', $couponCode)->first();
+            $isFreeShipping = (bool) ($discount?->data['free_shipping'] ?? false);
+        }
+
+        return response()->json([
+            'success' => true,
+            'rates'   => $this->shippingService->availableMethods($subtotalMinor, $isFreeShipping),
+        ]);
     }
 
     public function taxQuote(Request $request)
