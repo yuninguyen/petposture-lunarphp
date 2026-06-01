@@ -1,0 +1,6 @@
+# Clean .htaccess for Hostinger monorepo root
+# Main domain is handled by Node.js (Next.js frontend)
+# Subdomain is handled by PHP (Laravel backend)
+
+# Prevent directory listing for security
+Options -Indexes
