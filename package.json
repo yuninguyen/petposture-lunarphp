@@ -1,4 +1,10 @@
 {
+  "name": "petposture-monorepo",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build",
+    "start": "node frontend/server.js"
+  },
   "dependencies": {
     "@google/design.md": "^0.1.1"
   }
