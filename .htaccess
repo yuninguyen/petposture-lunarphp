@@ -1,6 +1,11 @@
-# Clean .htaccess for Hostinger monorepo root
-# Main domain is handled by Node.js (Next.js frontend)
-# Subdomain is handled by PHP (Laravel backend)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
 
-# Prevent directory listing for security
-Options -Indexes
+    # Prevent directory listing for security
+    Options -Indexes
+
+    # Route specific backend endpoints to Laravel (PHP)
+    # This bypasses the Node.js application and allows Apache to process them as PHP
+    RewriteCond %{REQUEST_URI} ^/(api|sanctum|storage|vendor|livewire|admin)
+    RewriteRule ^(.*)$ backend/public/$1 [L]
+</IfModule>

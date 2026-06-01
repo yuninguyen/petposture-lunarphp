@@ -1,3 +1,10 @@
+<IfModule mod_passenger.c>
+    PassengerEnabled off
+</IfModule>
+<IfModule passenger_module>
+    PassengerEnabled off
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
