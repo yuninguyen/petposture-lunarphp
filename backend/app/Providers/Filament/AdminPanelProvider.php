@@ -108,7 +108,7 @@ class AdminPanelProvider extends PanelProvider
             ->font('Google Sans Flex')
             ->brandName('PetPosture')
             ->brandLogo(asset('logo.png'))
-            ->brandLogoHeight('100px')
+            ->brandLogoHeight('130px')
             ->navigationGroups([
                 __('lunarpanel::global.sections.catalog'),
                 __('lunarpanel::global.sections.sales'),
@@ -156,7 +156,7 @@ class AdminPanelProvider extends PanelProvider
                     nav.fi-sidebar,aside.fi-sidebar{background:#1a2535!important;border-right:none!important;box-shadow:2px 0 20px rgba(0,0,0,.18)!important}
                     nav.fi-sidebar *,aside.fi-sidebar *{border-color:rgba(255,255,255,.06)!important}
                     .fi-sidebar-header{padding:.875rem 1rem!important;border-bottom:1px solid rgba(255,255,255,.07)!important}
-                    .fi-sidebar-header img{height:100px!important;width:auto!important;max-width:200px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important}
+                    .fi-sidebar-header img{height:130px!important;width:auto!important;max-width:200px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important;padding-top:10px!important}
                     .fi-sidebar-header span{color:#f1f5f9!important}
                     [class*="fi-sidebar-group-label"],[class*="fi-sidebar-nav-label"]{color:rgba(148,163,184,.55)!important;font-size:10px!important;font-weight:800!important;letter-spacing:.18em!important;text-transform:uppercase!important;padding-left:1rem!important}
                     [class*="fi-sidebar-item"] a,[class*="fi-sidebar-item"] button{color:#94a3b8!important;border-radius:8px!important;margin:1px 6px!important;padding:.45rem .875rem!important;font-size:13px!important;font-weight:500!important;transition:background .12s,color .12s!important;display:flex!important;align-items:center!important;gap:.5rem!important}
