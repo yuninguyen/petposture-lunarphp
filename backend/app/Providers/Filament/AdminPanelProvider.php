@@ -161,7 +161,7 @@ class AdminPanelProvider extends PanelProvider
                     nav.fi-sidebar,aside.fi-sidebar{background:#1a2535!important;border-right:none!important;box-shadow:2px 0 20px rgba(0,0,0,.18)!important}
                     nav.fi-sidebar *,aside.fi-sidebar *{border-color:rgba(255,255,255,.06)!important}
                     header.fi-sidebar-header,.fi-sidebar-header{background:#1a2535!important;height:auto!important;min-height:4rem!important;padding:.75rem 1rem!important;border-bottom:1px solid rgba(255,255,255,.07)!important;display:flex!important;align-items:center!important}
-                    img.fi-logo{height:56px!important;width:auto!important;max-width:180px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important;display:block!important}
+                    img.fi-logo{height:45px!important;width:auto!important;max-width:180px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important;display:block!important}
                     .fi-sidebar-header span{color:#f1f5f9!important}
                     [class*="fi-sidebar-group-label"],[class*="fi-sidebar-nav-label"]{color:rgba(148,163,184,.55)!important;font-size:10px!important;font-weight:800!important;letter-spacing:.18em!important;text-transform:uppercase!important;padding-left:1rem!important}
                     [class*="fi-sidebar-item"] a,[class*="fi-sidebar-item"] button{color:#94a3b8!important;border-radius:8px!important;margin:1px 6px!important;padding:.45rem .875rem!important;font-size:13px!important;font-weight:500!important;transition:background .12s,color .12s!important;display:flex!important;align-items:center!important;gap:.5rem!important}
@@ -254,7 +254,7 @@ class AdminPanelProvider extends PanelProvider
                             /* ── Sidebar logo ── */
                              var logo = document.querySelector(\'img.fi-logo\') ||
                                         document.querySelector(\'[class*="fi-sidebar-header"] img\');
-                             if(logo){logo.style.cssText+=";height:56px!important;width:auto!important;max-width:180px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important;display:block!important;";}
+                             if(logo){logo.style.cssText+=";height:45px!important;width:auto!important;max-width:180px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important;display:block!important;";}
                              var hdr = document.querySelector(\'.fi-sidebar-header\');
                              if(hdr){hdr.style.cssText+=";background:#1a2535!important;padding:.75rem 1rem!important;";}
 

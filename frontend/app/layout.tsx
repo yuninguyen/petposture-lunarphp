@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
     const res = await fetch(`${apiUrl}/api/settings`, { next: { revalidate: 3600 } });
     const json = await res.json();
     shopName = json?.data?.shop_name || shopName;
-  } catch {}
+  } catch { }
 
   return {
     title: {

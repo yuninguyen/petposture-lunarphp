@@ -69,7 +69,8 @@ export default function Header() {
               width={400}
               height={140}
               priority
-              className="h-[150px] md:h-[130px] w-auto object-contain pt-[10px]"
+              className="h-[120px] md:h-[130px] w-auto object-contain"
+              style={{ paddingTop: '10px' }}
             />
           </Link>
 
@@ -226,7 +227,8 @@ export default function Header() {
                     alt={`${shop_name} Logo`}
                     width={320}
                     height={100}
-                    className="h-[120px] w-auto object-contain pt-[10px]"
+                    className="h-[120px] w-auto object-contain"
+                    style={{ paddingTop: '10px' }}
                   />
                 </Link>
                 <button
