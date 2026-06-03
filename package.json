@@ -2,7 +2,8 @@
   "name": "petposture-monorepo",
   "version": "1.0.0",
   "scripts": {
-    "build": "cd backend && composer install --no-dev --optimize-autoloader && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan migrate --force && cd ../frontend && npm install && npm run build",
+    "build": "cd frontend && npm install && npm run build",
+    "build:production": "cd backend && composer install --no-dev --optimize-autoloader && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan migrate --force && cd ../frontend && npm install && npm run build",
     "build:backend": "cd backend && composer install --no-dev --optimize-autoloader && php artisan config:cache && php artisan route:cache && php artisan view:cache",
     "start": "node frontend/server.js"
   },
