@@ -6,7 +6,7 @@ function run(cmd, cwd) {
 
 // Backend — only composer install; artisan cache/migrate run manually on server
 try {
-  run('composer install --no-dev --optimize-autoloader', 'backend');
+  run('composer install --no-dev --optimize-autoloader --no-scripts', 'backend');
   console.log('Backend composer install complete.');
 } catch (e) {
   console.log('Backend build skipped (composer not available).');
