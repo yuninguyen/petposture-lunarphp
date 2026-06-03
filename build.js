@@ -19,7 +19,7 @@ const envLines = envKeys
   .filter(k => process.env[k] !== undefined)
   .map(k => `${k}=${process.env[k]}`);
 
-if (envLines.length > 0) {
+if (envLines.length > 0 && process.platform === 'linux') {
   fs.writeFileSync('backend/.env', envLines.join('\n') + '\n');
   console.log(`Backend .env generated (${envLines.length} variables).`);
 }
@@ -27,7 +27,9 @@ if (envLines.length > 0) {
 // Backend — composer install + wipe stale bootstrap cache
 try {
   run('composer install --no-dev --optimize-autoloader --no-scripts', 'backend');
-  run('rm -f bootstrap/cache/config.php bootstrap/cache/routes.php bootstrap/cache/routes-v7.php bootstrap/cache/packages.php bootstrap/cache/services.php', 'backend');
+  if (process.platform === 'linux') {
+    run('rm -f bootstrap/cache/config.php bootstrap/cache/routes.php bootstrap/cache/routes-v7.php bootstrap/cache/packages.php bootstrap/cache/services.php', 'backend');
+  }
   console.log('Backend composer install complete.');
 } catch (e) {
   console.log('Backend build skipped (composer not available).');
