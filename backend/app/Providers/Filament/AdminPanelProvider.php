@@ -278,57 +278,46 @@ class AdminPanelProvider extends PanelProvider
                     $date = ucfirst(now()->translatedFormat('l, j F Y'));
 
                     return '
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;
-                                background:#fff;border:1px solid #eaecf0;border-radius:14px;
-                                padding:14px 22px;margin:18px 24px 14px;
-                                box-shadow:0 1px 4px rgba(0,0,0,.05);flex-wrap:wrap;">
-                        <div>
-                            <div style="font-size:18px;font-weight:800;color:#0f172a;letter-spacing:-.03em;line-height:1.25;">
+                    <style>
+                    .pp-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#fff;border:1px solid #eaecf0;border-radius:14px;padding:14px 22px;margin:18px 24px 14px;box-shadow:0 1px 4px rgba(0,0,0,.05);flex-wrap:wrap;}
+                    .pp-banner-title{font-size:18px;font-weight:800;color:#0f172a;letter-spacing:-.03em;line-height:1.25;}
+                    .pp-banner-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;}
+                    .pp-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 14px;border-radius:9px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;transition:background .15s,transform .15s;}
+                    .pp-btn-primary{background:#df8448;color:#fff;box-shadow:0 2px 8px rgba(223,132,72,.3);}
+                    .pp-btn-secondary{background:#f8fafc;color:#374151;border:1.5px solid #e2e8f0;}
+                    @media(min-width:640px){
+                        .pp-banner{flex-wrap:nowrap;}
+                        .pp-banner-actions{display:flex;flex-wrap:wrap;width:auto;}
+                    }
+                    </style>
+                    <div class="pp-banner">
+                        <div style="min-width:0">
+                            <div class="pp-banner-title">
                                 ' . __('admin.dashboard.welcome', ['name' => '<span style="color:#df8448;">' . e($name) . '</span>']) . '
                             </div>
                             <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-                                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 6px rgba(52,211,153,.65);animation:pp-pulse 2s infinite;"></span>
+                                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 6px rgba(52,211,153,.65);animation:pp-pulse 2s infinite;flex-shrink:0"></span>
                                 <span style="font-size:12px;font-weight:600;color:#94a3b8;">' . $date . '</span>
                             </div>
                         </div>
-                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <a href="/admin/products/create"
-                               style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;
-                                      background:#df8448;color:#fff;border-radius:9px;font-size:13px;
-                                      font-weight:700;text-decoration:none;box-shadow:0 2px 8px rgba(223,132,72,.3);
-                                      transition:background .15s,transform .15s;white-space:nowrap;"
-                               onmouseover="this.style.background=\'#c9713a\';this.style.transform=\'translateY(-1px)\'"
-                               onmouseout="this.style.background=\'#df8448\';this.style.transform=\'\'">
+                        <div class="pp-banner-actions">
+                            <a href="/admin/products/create" class="pp-btn pp-btn-primary"
+                               onmouseover="this.style.background=\'#c9713a\'" onmouseout="this.style.background=\'#df8448\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 5v14M5 12h14"/></svg>
                                 ' . __('admin.dashboard.actions.new_product') . '
                             </a>
-                            <a href="/admin/orders"
-                               style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;
-                                      background:#f8fafc;color:#374151;border:1.5px solid #e2e8f0;border-radius:9px;
-                                      font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;
-                                      transition:background .15s,transform .15s;"
-                               onmouseover="this.style.background=\'#f1f5f9\';this.style.transform=\'translateY(-1px)\'"
-                               onmouseout="this.style.background=\'#f8fafc\';this.style.transform=\'\'">
+                            <a href="/admin/orders" class="pp-btn pp-btn-secondary"
+                               onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#f8fafc\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                                 ' . __('admin.dashboard.actions.orders') . '
                             </a>
-                            <a href="/admin/customers"
-                               style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;
-                                      background:#f8fafc;color:#374151;border:1.5px solid #e2e8f0;border-radius:9px;
-                                      font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;
-                                      transition:background .15s,transform .15s;"
-                               onmouseover="this.style.background=\'#f1f5f9\';this.style.transform=\'translateY(-1px)\'"
-                               onmouseout="this.style.background=\'#f8fafc\';this.style.transform=\'\'">
+                            <a href="/admin/customers" class="pp-btn pp-btn-secondary"
+                               onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#f8fafc\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                                 ' . __('admin.dashboard.actions.customers') . '
                             </a>
-                            <a href="/admin/discounts"
-                               style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;
-                                      background:#f8fafc;color:#374151;border:1.5px solid #e2e8f0;border-radius:9px;
-                                      font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;
-                                      transition:background .15s,transform .15s;"
-                               onmouseover="this.style.background=\'#f1f5f9\';this.style.transform=\'translateY(-1px)\'"
-                               onmouseout="this.style.background=\'#f8fafc\';this.style.transform=\'\'">
+                            <a href="/admin/discounts" class="pp-btn pp-btn-secondary"
+                               onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#f8fafc\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><circle cx="12" cy="12" r="10"/><path d="M14.5 9.5 9.5 14.5M9.5 9.5h.01M14.5 14.5h.01"/></svg>
                                 ' . __('admin.dashboard.actions.discounts') . '
                             </a>
