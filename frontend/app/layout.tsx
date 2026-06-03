@@ -23,10 +23,10 @@ export async function generateMetadata(): Promise<Metadata> {
     description: 'Ergonomic essentials designed for your pet\'s unique posture and health needs.',
     icons: {
       icon: [
-        { url: '/assets/Logo-PetPosture-icon-100x100.png', sizes: '32x32', type: 'image/png' },
-        { url: '/assets/Logo-PetPosture-icon-100x100.png', sizes: '192x192', type: 'image/png' },
+        { url: '/assets/Logo PetPosture-icon.png', sizes: '32x32', type: 'image/png' },
+        { url: '/assets/Logo PetPosture-icon.png', sizes: '192x192', type: 'image/png' },
       ],
-      apple: '/assets/Logo-PetPosture-icon-100x100.png',
+      apple: '/assets/Logo PetPosture-icon.png',
     },
   };
 }
