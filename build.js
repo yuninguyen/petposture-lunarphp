@@ -29,6 +29,7 @@ try {
   run('composer install --no-dev --optimize-autoloader --no-scripts 2>&1', 'backend');
   if (process.platform === 'linux') {
     run('rm -f bootstrap/cache/config.php bootstrap/cache/routes.php bootstrap/cache/routes-v7.php bootstrap/cache/packages.php bootstrap/cache/services.php', 'backend');
+    try { run('php artisan storage:link --force', 'backend'); } catch (_) {}
   }
   console.log('Backend composer install complete.');
 } catch (e) {
