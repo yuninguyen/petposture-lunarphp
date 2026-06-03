@@ -26,13 +26,13 @@ if (envLines.length > 0 && process.platform === 'linux') {
 
 // Backend — composer install + wipe stale bootstrap cache
 try {
-  run('composer install --no-dev --optimize-autoloader --no-scripts', 'backend');
+  run('composer install --no-dev --optimize-autoloader --no-scripts 2>&1', 'backend');
   if (process.platform === 'linux') {
     run('rm -f bootstrap/cache/config.php bootstrap/cache/routes.php bootstrap/cache/routes-v7.php bootstrap/cache/packages.php bootstrap/cache/services.php', 'backend');
   }
   console.log('Backend composer install complete.');
 } catch (e) {
-  console.log('Backend build skipped (composer not available).');
+  console.error('Backend composer error:', e.message);
 }
 
 // Frontend — always runs
