@@ -3,36 +3,43 @@
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-    --brand-slate:      #1e293b;
-    --brand-slate-mid:  #2c3e50;
-    --brand-slate-light:#334155;
-    --brand-orange:     #df8448;
-    --brand-orange-dark:#c9713a;
-    --brand-orange-glow:rgba(223,132,72,0.15);
-    --sidebar-width:    260px;
+    --brand-slate: #1e293b;
+    --brand-slate-mid: #2c3e50;
+    --brand-slate-light: #334155;
+    --brand-orange: #df8448;
+    --brand-orange-dark: #c9713a;
+    --brand-orange-glow: rgba(223, 132, 72, 0.15);
+    --sidebar-width: 260px;
 }
 
 /* ── Fonts ─────────────────────────────────────────────────────── */
-* { font-family: 'Google Sans Flex', 'Inter', sans-serif !important; }
-code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
+* {
+    font-family: 'Google Sans Flex', 'Inter', sans-serif !important;
+}
+
+code,
+pre,
+.font-mono {
+    font-family: 'Fira Code', monospace !important;
+}
 
 /* ── Sidebar ────────────────────────────────────────────────────── */
 .fi-sidebar {
     background: linear-gradient(180deg, #1a2535 0%, #1e293b 100%) !important;
     border-right: none !important;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.15) !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15) !important;
     width: var(--sidebar-width) !important;
 }
 
 .fi-sidebar-header {
     padding: 1.25rem 1rem !important;
-    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Nav group labels */
 .fi-sidebar-group-label,
 .fi-sidebar-nav-label {
-    color: rgba(148,163,184,0.6) !important;
+    color: rgba(148, 163, 184, 0.6) !important;
     font-size: 10px !important;
     font-weight: 800 !important;
     letter-spacing: 0.15em !important;
@@ -54,7 +61,7 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
 
 .fi-sidebar-item-button:hover,
 .fi-sidebar-nav-link:hover {
-    background: rgba(255,255,255,0.06) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
     color: #e2e8f0 !important;
 }
 
@@ -73,6 +80,7 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
 .fi-sidebar-nav-link svg {
     opacity: 0.7;
 }
+
 .fi-sidebar-item-button[aria-current="page"] svg,
 .fi-sidebar-nav-link-active svg {
     opacity: 1;
@@ -94,7 +102,7 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
 .fi-topbar {
     background: #ffffff !important;
     border-bottom: 1px solid #f1f5f9 !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
 }
 
 /* Search */
@@ -104,6 +112,7 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
     border: 1.5px solid #e2e8f0 !important;
     font-size: 13px !important;
 }
+
 .fi-global-search-field input:focus {
     border-color: var(--brand-orange) !important;
     box-shadow: 0 0 0 3px var(--brand-orange-glow) !important;
@@ -123,7 +132,7 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
     border-radius: 16px !important;
     border: 1px solid #e8edf2 !important;
     background: #ffffff !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.03) !important;
     padding: 1.25rem 1.5rem !important;
     transition: box-shadow 0.2s ease, transform 0.2s ease !important;
     overflow: hidden;
@@ -131,7 +140,7 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
 }
 
 .fi-wi-stats-overview-stat:hover {
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
     transform: translateY(-1px) !important;
 }
 
@@ -169,7 +178,7 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
     border-radius: 16px !important;
     border: 1px solid #e8edf2 !important;
     background: #ffffff !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
 }
 
 .fi-section-header {
@@ -208,13 +217,13 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
     font-weight: 700 !important;
     font-size: 13px !important;
     letter-spacing: 0.01em !important;
-    box-shadow: 0 2px 8px rgba(223,132,72,0.3) !important;
+    box-shadow: 0 2px 8px rgba(223, 132, 72, 0.3) !important;
     transition: all 0.2s ease !important;
 }
 
 .fi-btn-primary:hover {
     background: var(--brand-orange-dark) !important;
-    box-shadow: 0 4px 12px rgba(223,132,72,0.4) !important;
+    box-shadow: 0 4px 12px rgba(223, 132, 72, 0.4) !important;
     transform: translateY(-1px) !important;
 }
 
@@ -262,18 +271,23 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
 /* ── Notifications ──────────────────────────────────────────────── */
 .fi-no-notification {
     border-radius: 14px !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.12) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
 }
 
 /* ── Modal ──────────────────────────────────────────────────────── */
 .fi-modal-window {
     border-radius: 20px !important;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* ── ApexCharts ─────────────────────────────────────────────────── */
-.apexcharts-canvas { border-radius: 12px; }
-.apexcharts-toolbar { display: none !important; }
+.apexcharts-canvas {
+    border-radius: 12px;
+}
+
+.apexcharts-toolbar {
+    display: none !important;
+}
 
 /* ── Dashboard Header ───────────────────────────────────────────── */
 .pp-dashboard-header {
@@ -286,7 +300,7 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
     background: white;
     border: 1px solid #e8edf2;
     border-radius: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .pp-dashboard-header__left {
@@ -323,13 +337,20 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
     height: 7px;
     border-radius: 50%;
     background: #34d399;
-    box-shadow: 0 0 6px rgba(52,211,153,0.7);
+    box-shadow: 0 0 6px rgba(52, 211, 153, 0.7);
     animation: pp-pulse 2s infinite;
 }
 
 @keyframes pp-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 /* ── Quick Actions ──────────────────────────────────────────────── */
@@ -358,12 +379,12 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
 .pp-action--primary {
     background: var(--brand-orange);
     color: #fff !important;
-    box-shadow: 0 2px 8px rgba(223,132,72,0.3);
+    box-shadow: 0 2px 8px rgba(223, 132, 72, 0.3);
 }
 
 .pp-action--primary:hover {
     background: var(--brand-orange-dark);
-    box-shadow: 0 4px 14px rgba(223,132,72,0.4);
+    box-shadow: 0 4px 14px rgba(223, 132, 72, 0.4);
     transform: translateY(-1px);
     color: #fff !important;
 }
@@ -395,14 +416,36 @@ code, pre, .font-mono { font-family: 'Fira Code', monospace !important; }
 }
 
 /* ── Scrollbar ──────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
 
 /* ── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
-    .fi-wi-stats-overview-stat-value { font-size: 1.6rem !important; }
-    .pp-dashboard-header { flex-direction: column; align-items: flex-start; }
-    .pp-dashboard-header__actions { width: 100%; }
+    .fi-wi-stats-overview-stat-value {
+        font-size: 1.6rem !important;
+    }
+
+    .pp-dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .pp-dashboard-header__actions {
+        width: 100%;
+    }
 }
