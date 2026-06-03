@@ -109,6 +109,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('PetPosture')
             ->brandLogo(fn () => asset('logo.png'))
             ->brandLogoHeight('130px')
+            ->favicon(asset('favicon.ico'))
             ->navigationGroups([
                 __('lunarpanel::global.sections.catalog'),
                 __('lunarpanel::global.sections.sales'),
@@ -155,8 +156,8 @@ class AdminPanelProvider extends PanelProvider
                     /* ── Sidebar ── */
                     nav.fi-sidebar,aside.fi-sidebar{background:#1a2535!important;border-right:none!important;box-shadow:2px 0 20px rgba(0,0,0,.18)!important}
                     nav.fi-sidebar *,aside.fi-sidebar *{border-color:rgba(255,255,255,.06)!important}
-                    .fi-sidebar-header{padding:1.25rem 1rem .875rem!important;border-bottom:1px solid rgba(255,255,255,.07)!important}
-                    .fi-sidebar-header img{height:130px!important;width:auto!important;max-width:200px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important;padding-top:10px!important}
+                    header.fi-sidebar-header{background:#1a2535!important;height:auto!important;min-height:4rem!important;padding:1.5rem 1rem 1.25rem!important;border-bottom:1px solid rgba(255,255,255,.07)!important}
+                    img.fi-logo{height:130px!important;width:auto!important;max-width:200px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important;display:block!important;margin-top:10px!important}
                     .fi-sidebar-header span{color:#f1f5f9!important}
                     [class*="fi-sidebar-group-label"],[class*="fi-sidebar-nav-label"]{color:rgba(148,163,184,.55)!important;font-size:10px!important;font-weight:800!important;letter-spacing:.18em!important;text-transform:uppercase!important;padding-left:1rem!important}
                     [class*="fi-sidebar-item"] a,[class*="fi-sidebar-item"] button{color:#94a3b8!important;border-radius:8px!important;margin:1px 6px!important;padding:.45rem .875rem!important;font-size:13px!important;font-weight:500!important;transition:background .12s,color .12s!important;display:flex!important;align-items:center!important;gap:.5rem!important}
@@ -247,8 +248,9 @@ class AdminPanelProvider extends PanelProvider
                             });
 
                             /* ── Sidebar logo ── */
-                            var logo = document.querySelector(\'[class*="fi-sidebar-header"] img\');
-                            if(logo){logo.style.cssText+=";height:100px;width:auto;max-width:200px;object-fit:contain;filter:brightness(0) invert(1);padding-top:10px;";}
+                             var logo = document.querySelector(\'img.fi-logo\') ||
+                                        document.querySelector(\'[class*="fi-sidebar-header"] img\');
+                             if(logo){logo.style.cssText+=";height:130px!important;width:auto!important;max-width:200px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important;margin-top:12px!important;display:block!important;";}
 
                             /* ── Hide "Dashboard" page heading ── */
                             document.querySelectorAll(\'h1,h2\').forEach(function(el){

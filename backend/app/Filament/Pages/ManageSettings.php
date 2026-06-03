@@ -206,6 +206,12 @@ class ManageSettings extends Page
                                     ->label(__('Shop Logo'))
                                     ->image()
                                     ->directory('settings'),
+                                FileUpload::make('shop_favicon')
+                                    ->label(__('Favicon'))
+                                    ->image()
+                                    ->directory('settings')
+                                    ->acceptedFileTypes(['image/x-icon', 'image/png', 'image/svg+xml'])
+                                    ->helperText('Recommended: 32×32 or 64×64 px (.ico, .png, .svg)'),
                                 Textarea::make('shop_description')
                                     ->label(__('Shop Description'))
                                     ->rows(3),
