@@ -49,7 +49,7 @@ export default function Header() {
       </div>
 
       {/* Top Bar - White */}
-      <div className="bg-white h-[65px] md:h-[100px] border-b border-zinc-100 relative z-30">
+      <div className="bg-white h-[130px] md:h-[100px] border-b border-zinc-100 relative z-30">
         <div className="max-w-[1200px] mx-auto w-full px-6 flex items-center justify-between h-full gap-4 md:gap-8">
 
           {/* Mobile Menu Toggle */}
@@ -69,7 +69,7 @@ export default function Header() {
               width={400}
               height={140}
               priority
-              className="h-[75px] md:h-[130px] w-auto object-contain"
+              className="h-[120px] md:h-[130px] w-auto object-contain pt-[10px]"
             />
           </Link>
 
@@ -219,14 +219,14 @@ export default function Header() {
               className="fixed inset-y-0 left-0 w-[85%] max-w-[400px] bg-white z-[110] md:hidden flex flex-col shadow-2xl"
             >
               {/* Drawer Header */}
-              <div className="flex items-center justify-between px-6 h-[80px] border-b border-zinc-100 relative">
+              <div className="flex items-center justify-between px-6 h-[130px] border-b border-zinc-100 relative">
                 <Link href="/" onClick={() => setMobileOpen(false)} className="flex-shrink-0 flex items-center">
                   <Image
                     src={logoSrc}
                     alt={`${shop_name} Logo`}
                     width={320}
                     height={100}
-                    className="h-[80px] w-auto object-contain"
+                    className="h-[120px] w-auto object-contain pt-[10px]"
                   />
                 </Link>
                 <button
