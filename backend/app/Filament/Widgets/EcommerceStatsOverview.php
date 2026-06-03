@@ -98,14 +98,18 @@ class EcommerceStatsOverview extends BaseWidget
 
         return [
             Stat::make(__('admin.dashboard.stats.revenue.label'), '$' . number_format($revenue / 100, 2))
-                ->description(abs($revenueTrend) . '% ' . ($revenueUp ? 'increase' : 'decrease') . ' vs previous 30 days')
+                ->description($revenueUp 
+                    ? __('admin.dashboard.trend.increase', ['trend' => abs($revenueTrend)]) 
+                    : __('admin.dashboard.trend.decrease', ['trend' => abs($revenueTrend)]))
                 ->descriptionIcon($revenueUp ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->icon('heroicon-o-banknotes')
                 ->chart($revenueChart)
                 ->color('success'),
 
             Stat::make(__('admin.dashboard.stats.orders.label'), number_format($totalOrders))
-                ->description(abs($ordersTrend) . '% ' . ($ordersUp ? 'increase' : 'decrease') . ' vs previous 30 days')
+                ->description($ordersUp 
+                    ? __('admin.dashboard.trend.increase', ['trend' => abs($ordersTrend)]) 
+                    : __('admin.dashboard.trend.decrease', ['trend' => abs($ordersTrend)]))
                 ->descriptionIcon($ordersUp ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->icon('heroicon-o-shopping-bag')
                 ->chart($ordersChart)
@@ -118,19 +122,21 @@ class EcommerceStatsOverview extends BaseWidget
                 ->color('warning'),
 
             Stat::make(__('admin.dashboard.stats.customers.label'), number_format($totalCustomers))
-                ->description(abs($customersTrend) . '% ' . ($customersUp ? 'increase' : 'decrease') . ' vs previous 30 days')
+                ->description($customersUp 
+                    ? __('admin.dashboard.trend.increase', ['trend' => abs($customersTrend)]) 
+                    : __('admin.dashboard.trend.decrease', ['trend' => abs($customersTrend)]))
                 ->descriptionIcon($customersUp ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->icon('heroicon-o-user-group')
                 ->color('info'),
 
-            Stat::make("Today's Revenue", '$' . number_format($todayRevenue / 100, 2))
-                ->description('Revenue earned today')
+            Stat::make(__('admin.dashboard.stats.today_revenue.label'), '$' . number_format($todayRevenue / 100, 2))
+                ->description(__('admin.dashboard.stats.today_revenue.description'))
                 ->descriptionIcon('heroicon-m-sun')
                 ->icon('heroicon-o-currency-dollar')
                 ->color('success'),
 
-            Stat::make("Today's Orders", number_format($todayOrders))
-                ->description('Orders placed today')
+            Stat::make(__('admin.dashboard.stats.today_orders.label'), number_format($todayOrders))
+                ->description(__('admin.dashboard.stats.today_orders.description'))
                 ->descriptionIcon('heroicon-m-clock')
                 ->icon('heroicon-o-clipboard-document-list')
                 ->color('primary'),

@@ -8,31 +8,34 @@ use Lunar\Models\Order;
 class OrderStatusBreakdownChart extends ApexChartWidget
 {
     protected static ?string $chartId = 'orderStatusBreakdown';
-    protected static ?string $heading = 'Order Status Breakdown';
     protected static ?int $sort = 2;
     protected int|string|array $columnSpan = 1;
     protected static ?string $pollingInterval = '60s';
 
+    public function getHeading(): ?string
+    {
+        return __('admin.dashboard.order_status_breakdown');
+    }
+
     protected function getOptions(): array
     {
         $statuses = [
-            'awaiting-payment' => ['label' => 'Awaiting Payment', 'color' => '#f59e0b'],
-            'payment-received' => ['label' => 'Payment Received', 'color' => '#3b82f6'],
-            'processing'       => ['label' => 'Processing',       'color' => '#8b5cf6'],
-            'shipped'          => ['label' => 'Shipped',          'color' => '#df8448'],
-            'delivered'        => ['label' => 'Delivered',        'color' => '#10b981'],
-            'cancelled'        => ['label' => 'Cancelled',        'color' => '#ef4444'],
+            'awaiting-payment' => ['label' => __('admin.orders.statuses.awaiting-payment'), 'color' => '#f59e0b'],
+            'payment-received' => ['label' => __('admin.orders.statuses.payment-received'), 'color' => '#3b82f6'],
+            'processing'       => ['label' => __('admin.orders.statuses.processing'),       'color' => '#8b5cf6'],
+            'shipped'          => ['label' => __('admin.orders.statuses.shipped'),          'color' => '#df8448'],
+            'delivered'        => ['label' => __('admin.orders.statuses.delivered'),        'color' => '#10b981'],
+            'cancelled'        => ['label' => __('admin.orders.statuses.cancelled'),        'color' => '#ef4444'],
         ];
 
-        $counts = Order::selectRaw('status, COUNT(*) as total')
+        $counts = Order::selectRaw('status, COUNT(*) as status_count')
             ->groupBy('status')
-            ->pluck('total', 'status')
+            ->pluck('status_count', 'status')
             ->toArray();
 
         $labels  = [];
         $values  = [];
         $colors  = [];
-        $total   = array_sum($counts);
 
         foreach ($statuses as $key => $meta) {
             $count = $counts[$key] ?? 0;
@@ -43,7 +46,7 @@ class OrderStatusBreakdownChart extends ApexChartWidget
         }
 
         if (empty($values)) {
-            $labels = ['No Orders Yet'];
+            $labels = [__('admin.dashboard.no_orders_yet')];
             $values = [1];
             $colors = ['#e2e8f0'];
         }
@@ -73,7 +76,7 @@ class OrderStatusBreakdownChart extends ApexChartWidget
                             'show'  => true,
                             'total' => [
                                 'show'      => true,
-                                'label'     => 'Total Orders',
+                                'label'     => __('admin.dashboard.stats.orders.label'),
                                 'fontSize'  => '13px',
                                 'fontWeight'=> 700,
                                 'color'     => '#374151',
@@ -92,7 +95,9 @@ class OrderStatusBreakdownChart extends ApexChartWidget
             'stroke'     => ['width' => 2, 'colors' => ['#fff']],
             'tooltip'    => [
                 'y' => [
-                    'formatter' => "function(val){ return val + ' order' + (val !== 1 ? 's' : '') }",
+                    'formatter' => app()->getLocale() === 'vi'
+                        ? "function(val){ return val + ' đơn hàng' }"
+                        : "function(val){ return val + ' order' + (val !== 1 ? 's' : '') }",
                 ],
             ],
         ];

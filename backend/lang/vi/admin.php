@@ -27,6 +27,15 @@ return [
             'currency' => 'Tiền tệ',
             'ordered_at' => 'Thời gian đặt',
         ],
+        'statuses' => [
+            'awaiting-payment' => 'Chờ thanh toán',
+            'payment-offline'  => 'Thanh toán ngoại tuyến',
+            'payment-received' => 'Đã nhận thanh toán',
+            'processing'       => 'Đang xử lý',
+            'shipped'          => 'Đã giao cho ĐVVC',
+            'delivered'        => 'Đã giao hàng',
+            'cancelled'        => 'Đã hủy',
+        ],
     ],
     'customers' => [
         'label' => 'Khách hàng',
@@ -50,6 +59,18 @@ return [
         'welcome' => 'Chào mừng trở lại, :name!',
         'subtitle' => 'Dưới đây là thông tin tổng quan về hiệu suất của PetPosture hôm nay.',
         'overview' => 'Tổng quan',
+        'no_orders_yet' => 'Chưa có đơn hàng nào',
+        'order_status_breakdown' => 'Phân tích trạng thái đơn hàng',
+        'actions' => [
+            'new_product' => 'Sản phẩm mới',
+            'orders' => 'Đơn hàng',
+            'customers' => 'Khách hàng',
+            'discounts' => 'Khuyến mãi',
+        ],
+        'trend' => [
+            'increase' => 'Tăng :trend% so với 30 ngày trước',
+            'decrease' => 'Giảm :trend% so với 30 ngày trước',
+        ],
         'stats' => [
             'revenue' => [
                 'label' => 'Tổng doanh thu',
@@ -66,6 +87,14 @@ return [
             'customers' => [
                 'label' => 'Khách hàng',
                 'description' => 'Khách hàng đã đăng ký',
+            ],
+            'today_revenue' => [
+                'label' => 'Doanh thu hôm nay',
+                'description' => 'Doanh thu tích lũy hôm nay',
+            ],
+            'today_orders' => [
+                'label' => 'Đơn hàng hôm nay',
+                'description' => 'Đơn đặt hàng hôm nay',
             ],
         ],
     ],

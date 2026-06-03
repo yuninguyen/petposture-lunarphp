@@ -107,7 +107,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->font('Google Sans Flex')
             ->brandName('PetPosture')
-            ->brandLogo(asset('logo.png'))
+            ->brandLogo(fn () => asset('logo.png'))
             ->brandLogoHeight('130px')
             ->navigationGroups([
                 __('lunarpanel::global.sections.catalog'),
@@ -155,7 +155,7 @@ class AdminPanelProvider extends PanelProvider
                     /* ── Sidebar ── */
                     nav.fi-sidebar,aside.fi-sidebar{background:#1a2535!important;border-right:none!important;box-shadow:2px 0 20px rgba(0,0,0,.18)!important}
                     nav.fi-sidebar *,aside.fi-sidebar *{border-color:rgba(255,255,255,.06)!important}
-                    .fi-sidebar-header{padding:.875rem 1rem!important;border-bottom:1px solid rgba(255,255,255,.07)!important}
+                    .fi-sidebar-header{padding:1.25rem 1rem .875rem!important;border-bottom:1px solid rgba(255,255,255,.07)!important}
                     .fi-sidebar-header img{height:130px!important;width:auto!important;max-width:200px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important;padding-top:10px!important}
                     .fi-sidebar-header span{color:#f1f5f9!important}
                     [class*="fi-sidebar-group-label"],[class*="fi-sidebar-nav-label"]{color:rgba(148,163,184,.55)!important;font-size:10px!important;font-weight:800!important;letter-spacing:.18em!important;text-transform:uppercase!important;padding-left:1rem!important}
@@ -248,7 +248,7 @@ class AdminPanelProvider extends PanelProvider
 
                             /* ── Sidebar logo ── */
                             var logo = document.querySelector(\'[class*="fi-sidebar-header"] img\');
-                            if(logo){logo.style.cssText+=";height:100px;width:auto;max-width:200px;object-fit:contain;filter:brightness(0) invert(1);";}
+                            if(logo){logo.style.cssText+=";height:100px;width:auto;max-width:200px;object-fit:contain;filter:brightness(0) invert(1);padding-top:10px;";}
 
                             /* ── Hide "Dashboard" page heading ── */
                             document.querySelectorAll(\'h1,h2\').forEach(function(el){
@@ -282,7 +282,7 @@ class AdminPanelProvider extends PanelProvider
                                 box-shadow:0 1px 4px rgba(0,0,0,.05);flex-wrap:wrap;">
                         <div>
                             <div style="font-size:18px;font-weight:800;color:#0f172a;letter-spacing:-.03em;line-height:1.25;">
-                                Welcome back, <span style="color:#df8448;">' . $name . '</span>!
+                                ' . __('admin.dashboard.welcome', ['name' => '<span style="color:#df8448;">' . e($name) . '</span>']) . '
                             </div>
                             <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
                                 <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 6px rgba(52,211,153,.65);animation:pp-pulse 2s infinite;"></span>
@@ -298,7 +298,7 @@ class AdminPanelProvider extends PanelProvider
                                onmouseover="this.style.background=\'#c9713a\';this.style.transform=\'translateY(-1px)\'"
                                onmouseout="this.style.background=\'#df8448\';this.style.transform=\'\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 5v14M5 12h14"/></svg>
-                                New Product
+                                ' . __('admin.dashboard.actions.new_product') . '
                             </a>
                             <a href="/admin/orders"
                                style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;
@@ -308,7 +308,7 @@ class AdminPanelProvider extends PanelProvider
                                onmouseover="this.style.background=\'#f1f5f9\';this.style.transform=\'translateY(-1px)\'"
                                onmouseout="this.style.background=\'#f8fafc\';this.style.transform=\'\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                                Orders
+                                ' . __('admin.dashboard.actions.orders') . '
                             </a>
                             <a href="/admin/customers"
                                style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;
@@ -318,7 +318,7 @@ class AdminPanelProvider extends PanelProvider
                                onmouseover="this.style.background=\'#f1f5f9\';this.style.transform=\'translateY(-1px)\'"
                                onmouseout="this.style.background=\'#f8fafc\';this.style.transform=\'\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                Customers
+                                ' . __('admin.dashboard.actions.customers') . '
                             </a>
                             <a href="/admin/discounts"
                                style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;
@@ -328,7 +328,7 @@ class AdminPanelProvider extends PanelProvider
                                onmouseover="this.style.background=\'#f1f5f9\';this.style.transform=\'translateY(-1px)\'"
                                onmouseout="this.style.background=\'#f8fafc\';this.style.transform=\'\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><circle cx="12" cy="12" r="10"/><path d="M14.5 9.5 9.5 14.5M9.5 9.5h.01M14.5 14.5h.01"/></svg>
-                                Discounts
+                                ' . __('admin.dashboard.actions.discounts') . '
                             </a>
                         </div>
                     </div>';
@@ -353,13 +353,13 @@ class AdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
-                \App\Http\Middleware\SetLocale::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                \App\Http\Middleware\SetLocale::class,
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),

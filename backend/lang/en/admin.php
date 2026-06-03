@@ -27,6 +27,15 @@ return [
             'currency' => 'Currency',
             'ordered_at' => 'Order Time',
         ],
+        'statuses' => [
+            'awaiting-payment' => 'Awaiting Payment',
+            'payment-offline'  => 'Payment Offline',
+            'payment-received' => 'Payment Received',
+            'processing'       => 'Processing',
+            'shipped'          => 'Shipped',
+            'delivered'        => 'Delivered',
+            'cancelled'        => 'Cancelled',
+        ],
     ],
     'customers' => [
         'label' => 'Customer',
@@ -50,6 +59,18 @@ return [
         'welcome' => 'Welcome back, :name!',
         'subtitle' => 'Here is an overview of PetPosture\'s performance today.',
         'overview' => 'Overview',
+        'no_orders_yet' => 'No Orders Yet',
+        'order_status_breakdown' => 'Order Status Breakdown',
+        'actions' => [
+            'new_product' => 'New Product',
+            'orders' => 'Orders',
+            'customers' => 'Customers',
+            'discounts' => 'Discounts',
+        ],
+        'trend' => [
+            'increase' => ':trend% increase vs previous 30 days',
+            'decrease' => ':trend% decrease vs previous 30 days',
+        ],
         'stats' => [
             'revenue' => [
                 'label' => 'Total Revenue',
@@ -66,6 +87,14 @@ return [
             'customers' => [
                 'label' => 'Customers',
                 'description' => 'Registered customers',
+            ],
+            'today_revenue' => [
+                'label' => "Today's Revenue",
+                'description' => 'Revenue earned today',
+            ],
+            'today_orders' => [
+                'label' => "Today's Orders",
+                'description' => 'Orders placed today',
             ],
         ],
     ],
