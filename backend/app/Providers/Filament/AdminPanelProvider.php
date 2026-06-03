@@ -110,7 +110,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(fn () => \App\Models\Setting::get('shop_logo')
                 ? asset('storage/' . \App\Models\Setting::get('shop_logo'))
                 : asset('logo.png'))
-            ->brandLogoHeight('130px')
+            ->brandLogoHeight('45px')
             ->favicon(fn () => \App\Models\Setting::get('shop_favicon')
                 ? asset('storage/' . \App\Models\Setting::get('shop_favicon'))
                 : asset('favicon.ico'))
