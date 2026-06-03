@@ -49,7 +49,7 @@ export default function Header() {
       </div>
 
       {/* Top Bar - White */}
-      <div className="bg-white h-[130px] md:h-[100px] border-b border-zinc-100 relative z-30">
+      <div className="bg-white h-[160px] md:h-[100px] border-b border-zinc-100 relative z-30">
         <div className="max-w-[1200px] mx-auto w-full px-6 flex items-center justify-between h-full gap-4 md:gap-8">
 
           {/* Mobile Menu Toggle */}
@@ -69,7 +69,7 @@ export default function Header() {
               width={400}
               height={140}
               priority
-              className="h-[120px] md:h-[130px] w-auto object-contain pt-[10px]"
+              className="h-[150px] md:h-[130px] w-auto object-contain pt-[10px]"
             />
           </Link>
 
