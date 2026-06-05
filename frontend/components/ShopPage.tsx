@@ -101,34 +101,34 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
             </section>
 
             <section className="bg-[#ede5db] px-4 py-20 md:px-8">
-                <div className="mx-auto max-w-[1280px]">
-                    <div className="relative overflow-hidden rounded-[36px] border border-[#e3d6c9] bg-[#2f3d46] px-8 py-10 shadow-[0_30px_90px_rgba(24,27,29,0.20)] md:px-12 md:py-14">
-                        <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-[#df8448]/15 blur-2xl" />
-                        <div className="absolute -bottom-16 left-0 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
-                        <div className="relative z-10 flex flex-col gap-10 md:flex-row md:items-center md:justify-between">
-                            <div className="max-w-xl">
-                                <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.34em] text-[#df8448]">PetPosture Dispatch</p>
-                                <h2 className="text-[30px] font-bold leading-tight text-white md:text-[42px]">
-                                    Get new product drops and posture-focused picks before everyone else.
-                                </h2>
-                                <p className="mt-4 text-[15px] leading-7 text-white/72">
-                                    A tighter catalog deserves a tighter email list. We send launches, restocks, and practical buying guidance.
-                                </p>
+                <div className="mx-auto max-w-[1000px]">
+                    <div className="relative overflow-hidden rounded-2xl bg-[#3e4c57] p-8 text-center shadow-xl md:p-14">
+                        <div className="relative z-10">
+                            <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.34em] text-[#df8448]">
+                                PetPosture Dispatch
+                            </p>
+                            <h2 className="mb-4 text-[32px] font-bold tracking-tight text-white md:text-[36px]">
+                                Get new product drops and posture-focused picks before everyone else.
+                            </h2>
+                            <p className="mx-auto mb-8 max-w-lg text-[15px] leading-relaxed text-white/70 md:text-[16px]">
+                                A tighter catalog deserves a tighter email list. We send launches, restocks, and practical buying guidance.
+                            </p>
+                            <div className="mx-auto flex max-w-xl flex-col gap-3 md:flex-row">
+                                <input
+                                    type="email"
+                                    placeholder="Enter your email address"
+                                    className="w-full md:flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-[#3e4c57] outline-none"
+                                />
+                                <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-[#df8448] px-10 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-all hover:bg-[#c9713a]">
+                                    Subscribe Now
+                                </button>
                             </div>
-
-                            <div className="w-full max-w-[430px] rounded-[22px] bg-white p-3 shadow-2xl">
-                                <div className="flex flex-col gap-3 sm:flex-row">
-                                    <input
-                                        type="email"
-                                        placeholder="Enter your email"
-                                        className="h-[54px] w-full sm:flex-1 rounded-[16px] border border-[#e6dfd8] px-5 text-[14px] text-[#2d3a43] outline-none transition focus:border-[#df8448]"
-                                    />
-                                    <button className="h-[54px] w-full sm:w-auto rounded-[16px] bg-[#df8448] px-7 text-[11px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#c9713a]">
-                                        Subscribe
-                                    </button>
-                                </div>
-                            </div>
+                            <p className="mt-6 text-[10px] font-bold uppercase tracking-widest text-white/30">
+                                By subscribing, you agree to our privacy policy and terms.
+                            </p>
                         </div>
+                        <div className="absolute left-0 top-0 -ml-24 -mt-24 h-48 w-48 rounded-full bg-[#df8448]/10 blur-[80px]" />
+                        <div className="absolute bottom-0 right-0 -mb-24 -mr-24 h-48 w-48 rounded-full bg-white/5 blur-[80px]" />
                     </div>
                 </div>
             </section>
