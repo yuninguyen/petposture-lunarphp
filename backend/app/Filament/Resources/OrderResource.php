@@ -24,7 +24,7 @@ class OrderResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Commerce');
+        return __('lunarpanel::global.sections.sales');
     }
 
     public static function getLabel(): string
@@ -241,13 +241,15 @@ class OrderResource extends Resource
                     ->label(__('Total'))
                     ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2))
                     ->sortable(),
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label(__('Status'))
-                    ->colors([
-                        'warning' => 'payment-pending',
-                        'success' => fn($state) => in_array($state, ['payment-received', 'dispatched', 'delivered']),
-                        'danger'  => 'cancelled',
-                    ]),
+                    ->badge()
+                    ->color(fn($state) => match(true) {
+                        $state === 'payment-pending'  => 'warning',
+                        $state === 'cancelled'        => 'danger',
+                        \in_array($state, ['payment-received', 'dispatched', 'delivered']) => 'success',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('meta.payment_method')
                     ->label(__('Payment'))
                     ->default('—'),

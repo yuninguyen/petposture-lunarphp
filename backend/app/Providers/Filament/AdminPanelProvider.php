@@ -117,6 +117,7 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 __('lunarpanel::global.sections.catalog'),
                 __('lunarpanel::global.sections.sales'),
+                __('Commerce'),
                 __('Content Management'),
                 __('System'),
                 __('filament-shield::filament-shield.nav.group'),
@@ -133,7 +134,6 @@ class AdminPanelProvider extends PanelProvider
                 Resources\CurrencyResource::class,
                 Resources\DiscountResource::class,
                 Resources\LanguageResource::class,
-                Resources\OrderResource::class,
                 Resources\ProductResource::class,
                 Resources\ProductTypeResource::class,
                 Resources\ProductVariantResource::class,
