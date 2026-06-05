@@ -52,7 +52,7 @@ export default function ProductGrid() {
           <div className="w-12 h-[2px] bg-secondary mt-3" />
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {products.map((p) => (
             <div key={p.id} className="group cursor-pointer flex flex-col items-center text-center">
               {/* Image Container */}

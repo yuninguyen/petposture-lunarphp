@@ -442,9 +442,9 @@ export default function BlogPage() {
                             <input
                                 type="email"
                                 placeholder="Enter your email address"
-                                className="flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-[#3e4c57] outline-none"
+                                className="w-full md:flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-[#3e4c57] outline-none"
                             />
-                            <button className="whitespace-nowrap rounded-[3px] bg-[#df8448] px-10 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-all hover:bg-[#c9713a]">
+                            <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-[#df8448] px-10 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-all hover:bg-[#c9713a]">
                                 Subscribe Now
                             </button>
                         </div>

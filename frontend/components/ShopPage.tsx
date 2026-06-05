@@ -121,9 +121,9 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
                                     <input
                                         type="email"
                                         placeholder="Enter your email"
-                                        className="h-[54px] flex-1 rounded-[16px] border border-[#e6dfd8] px-5 text-[14px] text-[#2d3a43] outline-none transition focus:border-[#df8448]"
+                                        className="h-[54px] w-full sm:flex-1 rounded-[16px] border border-[#e6dfd8] px-5 text-[14px] text-[#2d3a43] outline-none transition focus:border-[#df8448]"
                                     />
-                                    <button className="h-[54px] rounded-[16px] bg-[#df8448] px-7 text-[11px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#c9713a]">
+                                    <button className="h-[54px] w-full sm:w-auto rounded-[16px] bg-[#df8448] px-7 text-[11px] font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#c9713a]">
                                         Subscribe
                                     </button>
                                 </div>
