@@ -34,8 +34,7 @@ const F = {
 };
 
 /* ── TypeScript Interfaces ──────────────────────────────────────── */
-const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-const apiBaseUrl = rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl;
+import { API_BASE_URL as apiBaseUrl } from '@/lib/api';
 
 interface BlogPost {
   cat: string;

@@ -25,6 +25,12 @@ if (envLines.length > 0 && process.platform === 'linux') {
   console.log(`Backend .env generated (${envLines.length} variables).`);
 }
 
+// Generate frontend .env.local so NEXT_PUBLIC_* vars are available at build time
+if (process.platform === 'linux' && process.env.NEXT_PUBLIC_API_URL) {
+  fs.writeFileSync('frontend/.env.local', `NEXT_PUBLIC_API_URL=${process.env.NEXT_PUBLIC_API_URL}\n`);
+  console.log(`Frontend .env.local generated (NEXT_PUBLIC_API_URL=${process.env.NEXT_PUBLIC_API_URL}).`);
+}
+
 // Backend — composer install + wipe stale bootstrap cache
 try {
   run('composer install --no-dev --optimize-autoloader --no-scripts 2>&1', 'backend');

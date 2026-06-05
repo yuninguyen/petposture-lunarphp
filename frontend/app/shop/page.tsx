@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { PRODUCTS as MOCK_PRODUCTS } from '@/lib/shopData';
 import { Product } from '@/types/shop';
+import { API_BASE_URL } from '@/lib/api';
 
 export const metadata: Metadata = {
     title: 'Shop | PetPosture',
@@ -10,11 +11,8 @@ export const metadata: Metadata = {
 };
 
 async function getInitialProducts(): Promise<Product[]> {
-    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-    const apiBaseUrl = rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl;
-
     try {
-        const response = await fetch(`${apiBaseUrl}/api/products`, {
+        const response = await fetch(`${API_BASE_URL}/api/products`, {
             next: { revalidate: 60 },
         });
 
