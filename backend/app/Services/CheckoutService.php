@@ -19,6 +19,7 @@ use Lunar\Models\Discount;
 use Lunar\Models\OrderLine;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
+use Lunar\Models\Transaction;
 
 class CheckoutService
 {
@@ -88,16 +89,21 @@ class CheckoutService
                 fn($option) => $option->identifier === $shippingMethod
             ) ?? $shippingOptions->first();
 
-            if (!$shippingOption) {
+            $shippingFeeOverride = isset($payload['shipping_fee_override']) && $payload['shipping_fee_override'] !== null
+                ? (int) $payload['shipping_fee_override']
+                : null;
+
+            if (!$shippingOption || $shippingFeeOverride !== null) {
                 $couponDiscount = !empty($payload['coupon_code'])
                     ? Discount::active()->where('coupon', $payload['coupon_code'])->first()
                     : null;
-                $isFreeShipping = (bool) ($couponDiscount?->data['free_shipping'] ?? false);
+                $isFreeShipping = $shippingFeeOverride === 0 || (bool) ($couponDiscount?->data['free_shipping'] ?? false);
                 $shippingOption = $this->makeFallbackShippingOption(
                     $cart,
                     $shippingMethod,
-                    $this->resolveCartSubTotal($cart),
+                    $shippingFeeOverride ?? $this->resolveCartSubTotal($cart),
                     $isFreeShipping,
+                    $shippingFeeOverride,
                 );
             }
 
@@ -125,7 +131,7 @@ class CheckoutService
             $orderMeta['shipping_method'] = $shippingMethod;
             $orderMeta['tracking_number'] = $order->reference;
             $orderMeta['customer_note'] = $customerNote;
-            $orderMeta['internal_note'] = $orderMeta['internal_note'] ?? null;
+            $orderMeta['internal_note'] = $this->nullableString($payload['internal_note'] ?? null) ?? ($orderMeta['internal_note'] ?? null);
             $orderMeta['tax_state'] = $taxContext['state_code'];
             $orderMeta['tax_rate_percentage'] = $taxContext['rate_percentage'];
             $orderMeta['tax_state_rate_percentage'] = $taxContext['state_rate_percentage'];
@@ -149,11 +155,35 @@ class CheckoutService
                 'notes' => $customerNote,
             ]);
 
+            // Manual admin card order — mark as paid immediately
+            if (!empty($payload['created_by_admin']) && ($payload['payment_method'] ?? '') === 'card') {
+                Transaction::create([
+                    'order_id'   => $order->id,
+                    'success'    => true,
+                    'type'       => 'capture',
+                    'driver'     => 'manual',
+                    'amount'     => $order->total->value ?? (int) $order->total,
+                    'reference'  => 'MANUAL-' . strtoupper($order->reference),
+                    'status'     => 'completed',
+                    'notes'      => 'Manually marked as paid by admin.',
+                ]);
+
+                $orderMeta['payment_status']    = 'paid';
+                $orderMeta['payment_method']    = 'card';
+                $orderMeta['payment_label']     = 'Credit Card';
+                $orderMeta['payment_gateway']   = 'manual';
+                $orderMeta['payment_received_at'] = now()->toIso8601String();
+                $order->update([
+                    'status' => 'payment-received',
+                    'meta'   => $orderMeta,
+                ]);
+            }
+
             $this->orderEventService->record(
                 $order,
                 'order.created',
                 'Order created',
-                'Checkout completed by customer.',
+                !empty($payload['created_by_admin']) ? 'Order created manually by admin.' : 'Checkout completed by customer.',
                 dedupeAgainstLatest: false,
             );
 
@@ -268,10 +298,12 @@ class CheckoutService
         ];
     }
 
-    private function makeFallbackShippingOption(Cart $cart, string $shippingMethod, int $subtotalMinor = 0, bool $isFreeShipping = false): ShippingOption
+    private function makeFallbackShippingOption(Cart $cart, string $shippingMethod, int $subtotalMinor = 0, bool $isFreeShipping = false, ?int $feeOverride = null): ShippingOption
     {
         $taxClass = TaxClass::first() ?? TaxClass::create(['name' => 'Default']);
-        $shippingAmount = $this->shippingService->rateFor($shippingMethod, $subtotalMinor, $isFreeShipping);
+        $shippingAmount = $feeOverride !== null
+            ? $feeOverride
+            : $this->shippingService->rateFor($shippingMethod, $subtotalMinor, $isFreeShipping);
         $shippingName = $shippingMethod === 'express'
             ? 'Express Shipping'
             : 'Standard Shipping';
