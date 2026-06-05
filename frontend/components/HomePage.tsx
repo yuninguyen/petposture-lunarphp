@@ -8,6 +8,7 @@ import Hero from '@/components/Hero';
 import Footer from '@/components/Footer';
 import { ProductCard } from '@/components/shop/ProductCard';
 import type { Product } from '@/types/shop';
+import { API_BASE_URL as apiBaseUrl } from '@/lib/api';
 
 /* ─────────────────────────────────────────────────────────────────
    DESIGN TOKENS
@@ -34,7 +35,6 @@ const F = {
 };
 
 /* ── TypeScript Interfaces ──────────────────────────────────────── */
-import { API_BASE_URL as apiBaseUrl } from '@/lib/api';
 
 interface BlogPost {
   cat: string;
