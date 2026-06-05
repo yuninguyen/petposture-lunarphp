@@ -1,5 +1,6 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
+const path = require('path');
 
 function run(cmd, cwd) {
   execSync(cmd, { cwd, stdio: 'inherit' });
@@ -29,7 +30,18 @@ try {
   run('composer install --no-dev --optimize-autoloader --no-scripts 2>&1', 'backend');
   if (process.platform === 'linux') {
     run('rm -f bootstrap/cache/config.php bootstrap/cache/routes.php bootstrap/cache/routes-v7.php bootstrap/cache/packages.php bootstrap/cache/services.php', 'backend');
-    try { run('php artisan storage:link --force', 'backend'); } catch (_) {}
+    // Sync backend to public_html/api where PHP serves from
+    const src = path.resolve('backend');
+    const dest = path.resolve('../public_html/api');
+    if (fs.existsSync(dest)) {
+      console.log(`Syncing backend to ${dest} ...`);
+      fs.cpSync(src, dest, {
+        recursive: true,
+        force: true,
+        filter: (s) => !s.includes('/.git/'),
+      });
+      console.log('Backend sync complete.');
+    }
   }
   console.log('Backend composer install complete.');
 } catch (e) {
