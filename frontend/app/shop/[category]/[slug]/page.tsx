@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Product } from '@/types/shop';
@@ -44,6 +45,14 @@ async function fetchProducts(): Promise<Product[]> {
         console.error('Failed to fetch related products:', error);
         return [];
     }
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ category: string; slug: string }> }): Promise<Metadata> {
+    const { slug } = await params;
+    const product = await fetchProduct(slug);
+    return {
+        title: product ? product.name : 'Product',
+    };
 }
 
 export default async function Page({ params }: { params: Promise<{ category: string; slug: string }> }) {
