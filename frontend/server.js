@@ -18,9 +18,7 @@ process.on('unhandledRejection', (reason) => {
 app.prepare().then(() => {
   createServer(async (req, res) => {
     try {
-      const host = req.headers.host || `localhost:${port}`
-      const parsedUrl = new URL(req.url, `http://${host}`)
-      await handle(req, res, parsedUrl)
+      await handle(req, res)
     } catch (err) {
       console.error('Error handling', req.url, err)
       res.statusCode = 500
