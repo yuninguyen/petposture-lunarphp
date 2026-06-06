@@ -12,11 +12,13 @@ class SettingsController extends Controller
     public function index()
     {
         $shopLogo = setting('shop_logo');
+        $shopFavicon = setting('shop_favicon');
 
         // Expose structured settings for frontend
         return $this->success([
             'shop_name' => setting('shop_name', 'PetPosture'),
             'shop_logo' => $this->resolveAssetUrl($shopLogo),
+            'shop_favicon' => $this->resolveAssetUrl($shopFavicon),
             'description' => setting('shop_description'),
             'localization' => [
                 'currency' => setting('default_currency', 'USD'),

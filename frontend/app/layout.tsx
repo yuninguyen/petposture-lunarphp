@@ -8,12 +8,18 @@ import { CartDrawer } from '@/components/shop/CartDrawer';
 
 export async function generateMetadata(): Promise<Metadata> {
   let shopName = 'PetPosture';
+  let shopLogo: string | null = null;
+  let shopFavicon: string | null = null;
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.petposture.com';
     const res = await fetch(`${apiUrl}/api/settings`, { next: { revalidate: 3600 } });
     const json = await res.json();
     shopName = json?.data?.shop_name || shopName;
+    shopLogo = json?.data?.shop_logo || null;
+    shopFavicon = json?.data?.shop_favicon || null;
   } catch { }
+
+  const faviconUrl = shopFavicon || '/assets/Logo PetPosture-icon.png';
 
   return {
     title: {
@@ -23,10 +29,10 @@ export async function generateMetadata(): Promise<Metadata> {
     description: 'Ergonomic essentials designed for your pet\'s unique posture and health needs.',
     icons: {
       icon: [
-        { url: '/assets/Logo PetPosture-icon.png', sizes: '32x32', type: 'image/png' },
-        { url: '/assets/Logo PetPosture-icon.png', sizes: '192x192', type: 'image/png' },
+        { url: faviconUrl, sizes: '32x32', type: 'image/png' },
+        { url: faviconUrl, sizes: '192x192', type: 'image/png' },
       ],
-      apple: '/assets/Logo PetPosture-icon.png',
+      apple: faviconUrl,
     },
   };
 }

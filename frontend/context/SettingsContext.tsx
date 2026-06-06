@@ -6,12 +6,14 @@ import { getApiBaseUrl } from "@/lib/api";
 interface ShopSettings {
     shop_name: string;
     shop_logo: string | null;
+    shop_favicon: string | null;
     description: string | null;
 }
 
 const defaults: ShopSettings = {
     shop_name: "PetPosture",
     shop_logo: null,
+    shop_favicon: null,
     description:
         "At PetPosture, we believe pets deserve comfort built for them. We provide ergonomic essentials designed to support your pet's unique posture and improve their health.",
 };
@@ -29,6 +31,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                 setSettings({
                     shop_name: d.shop_name || defaults.shop_name,
                     shop_logo: d.shop_logo || null,
+                    shop_favicon: d.shop_favicon || null,
                     description: d.description || defaults.description,
                 });
             })
