@@ -23,7 +23,12 @@ Route::get('/_setup/seed-attributes', function () {
 
     $group = $groups->first();
     if (!$group) {
-        return response()->json(['status' => 'error', 'message' => 'No AttributeGroup found']);
+        $group = \Lunar\Models\AttributeGroup::create([
+            'attributable_type' => \Lunar\Models\Product::morphName(),
+            'name'     => ['en' => 'Details'],
+            'handle'   => 'details',
+            'position' => 1,
+        ]);
     }
 
     $attr = \Lunar\Models\Attribute::create([
