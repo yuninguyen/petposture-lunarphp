@@ -307,7 +307,7 @@ class AdminPanelProvider extends PanelProvider
                             </div>
                         </div>
                         <div class="pp-banner-actions">
-                            <a href="/admin/products/create" class="pp-btn pp-btn-primary"
+                            <a href="/admin/products" class="pp-btn pp-btn-primary"
                                onmouseover="this.style.background=\'#c9713a\'" onmouseout="this.style.background=\'#df8448\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 5v14M5 12h14"/></svg>
                                 ' . __('admin.dashboard.actions.new_product') . '

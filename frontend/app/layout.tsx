@@ -29,10 +29,14 @@ export async function generateMetadata(): Promise<Metadata> {
     description: 'Ergonomic essentials designed for your pet\'s unique posture and health needs.',
     icons: {
       icon: [
+        { url: faviconUrl, sizes: '16x16', type: 'image/png' },
         { url: faviconUrl, sizes: '32x32', type: 'image/png' },
+        { url: faviconUrl, sizes: '96x96', type: 'image/png' },
         { url: faviconUrl, sizes: '192x192', type: 'image/png' },
+        { url: faviconUrl, sizes: '512x512', type: 'image/png' },
       ],
       apple: faviconUrl,
+      shortcut: faviconUrl,
     },
   };
 }
