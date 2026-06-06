@@ -18,6 +18,10 @@ process.on('unhandledRejection', (reason) => {
 app.prepare().then(() => {
   createServer(async (req, res) => {
     try {
+      const forwardedHost = req.headers['x-forwarded-host'];
+      if (forwardedHost) {
+        req.headers.host = Array.isArray(forwardedHost) ? forwardedHost[0] : forwardedHost;
+      }
       await handle(req, res)
     } catch (err) {
       console.error('Error handling', req.url, err)
