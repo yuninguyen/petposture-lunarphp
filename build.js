@@ -44,7 +44,11 @@ try {
       fs.cpSync(src, dest, {
         recursive: true,
         force: true,
-        filter: (s) => !s.includes('/.git/'),
+        filter: (s) => {
+          if (s.includes('/.git/')) return false;
+          const storageDir = path.join(src, 'storage');
+          return s !== storageDir && !s.startsWith(storageDir + path.sep);
+        },
       });
       console.log('Backend sync complete.');
     }
