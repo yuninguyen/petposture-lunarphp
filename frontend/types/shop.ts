@@ -1,3 +1,8 @@
+export interface ProductSpec {
+    label: string;
+    value: string;
+}
+
 export interface ProductOptionValue {
     id: number;
     name: string;
@@ -50,6 +55,7 @@ export interface Product {
     lowStockWarning?: boolean;
     backorder?: boolean;
     description?: string;
+    specs?: ProductSpec[];
     options?: ProductOption[];
     variants?: ProductVariant[];
 }

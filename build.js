@@ -8,7 +8,7 @@ function run(cmd, cwd) {
 
 // Generate backend .env from Hostinger environment variables (set in hPanel)
 const envKeys = [
-  'APP_NAME', 'APP_ENV', 'APP_KEY', 'APP_DEBUG', 'APP_URL',
+  'APP_NAME', 'APP_ENV', 'APP_KEY', 'APP_DEBUG', 'APP_URL', 'FRONTEND_URL',
   'DB_CONNECTION', 'DB_HOST', 'DB_PORT', 'DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD',
   'SESSION_DRIVER', 'SESSION_LIFETIME', 'CACHE_STORE', 'FILESYSTEM_DISK',
   'LOG_CHANNEL', 'LOG_LEVEL',
@@ -34,6 +34,8 @@ if (process.platform === 'linux' && process.env.NEXT_PUBLIC_API_URL) {
 // Backend — composer install + wipe stale bootstrap cache
 try {
   run('composer install --no-dev --optimize-autoloader --no-scripts 2>&1', 'backend');
+  run('npm install', 'backend');
+  run('npm run build', 'backend');
   if (process.platform === 'linux') {
     run('rm -f bootstrap/cache/config.php bootstrap/cache/routes.php bootstrap/cache/routes-v7.php bootstrap/cache/packages.php bootstrap/cache/services.php', 'backend');
     // Sync backend to public_html/api where PHP serves from

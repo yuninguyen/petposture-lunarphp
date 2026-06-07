@@ -17,7 +17,7 @@ export function ProductCard({ product }: { product: Product }) {
                         alt={product.name}
                         fill
                         sizes="(max-width: 768px) 100vw, 33vw"
-                        className="transition duration-500 group-hover:scale-[1.03]"
+                        className="object-contain p-8 transition duration-500 group-hover:scale-[1.03]"
                     />
 
                     <div className="absolute left-3 top-3">

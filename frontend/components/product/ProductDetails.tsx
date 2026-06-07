@@ -275,17 +275,16 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                             exit={{ opacity: 0, y: -10 }}
                                             className="grid grid-cols-1 gap-4"
                                         >
-                                            {[
-                                                { label: 'Material', value: 'Bio-Synthetic Ergo-Fiber' },
-                                                { label: 'Padding', value: 'Memory Foam (Veterinary Grade)' },
-                                                { label: 'Weight', value: 'Lightweight (Aerospace Aluminum)' },
-                                                { label: 'Warranty', value: 'Lifetime Health Guarantee' },
-                                            ].map((spec, i) => (
-                                                <div key={i} className="flex justify-between border-b border-zinc-50 py-3 text-[13px]">
-                                                    <span className="font-bold uppercase tracking-wide text-[#3e4c57]">{spec.label}</span>
-                                                    <span className="text-zinc-500">{spec.value}</span>
-                                                </div>
-                                            ))}
+                                            {(product.specs && product.specs.length > 0) ? (
+                                                product.specs.map((spec, i) => (
+                                                    <div key={i} className="flex justify-between border-b border-zinc-50 py-3 text-[13px]">
+                                                        <span className="font-bold uppercase tracking-wide text-[#3e4c57]">{spec.label}</span>
+                                                        <span className="text-zinc-500">{spec.value}</span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-zinc-400">No technical specifications available for this product yet.</p>
+                                            )}
                                         </motion.div>
                                     )}
                                     {activeTab === 'shipping' && (

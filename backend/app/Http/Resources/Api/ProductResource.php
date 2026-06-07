@@ -60,6 +60,9 @@ class ProductResource extends JsonResource
             'backorder'     => $defaultInventory['backorder'],
             'stockStatus'   => $defaultInventory['stockStatus'],
 
+            // Technical specs — e.g. [{"label":"Material","value":"..."}]
+            'specs'         => $this->resolveSpecs(),
+
             // Options — e.g. [{"name":"Size","values":["S","M","L"]}]
             'options'       => $this->resolveOptions(),
 
@@ -118,6 +121,27 @@ class ProductResource extends JsonResource
         }
 
         return $images;
+    }
+
+    private function resolveSpecs(): array
+    {
+        $specHandles = [
+            'material'          => 'Material',
+            'weight'            => 'Weight',
+            'dimensions'        => 'Dimensions',
+            'care_instructions' => 'Care Instructions',
+            'warranty'          => 'Warranty',
+        ];
+
+        $specs = [];
+        foreach ($specHandles as $handle => $label) {
+            $value = $this->translateAttribute($handle);
+            if ($value) {
+                $specs[] = ['label' => $label, 'value' => $value];
+            }
+        }
+
+        return $specs;
     }
 
     private function resolveOptions(): array
