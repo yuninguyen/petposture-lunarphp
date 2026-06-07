@@ -1,3 +1,36 @@
+export interface ProductOptionValue {
+    id: number;
+    name: string;
+}
+
+export interface ProductOption {
+    id: number;
+    name: string;
+    handle: string;
+    values: ProductOptionValue[];
+}
+
+export interface ProductVariantOption {
+    option: string | null;
+    valueId: number;
+    value: string;
+}
+
+export interface ProductVariant {
+    id: number;
+    sku: string | null;
+    name?: string | null;
+    price: number;
+    comparePrice?: number | null;
+    stock: number;
+    available: boolean;
+    lowStockWarning?: boolean;
+    backorder?: boolean;
+    stockStatus?: string;
+    image?: string | null;
+    options: ProductVariantOption[];
+}
+
 export interface Product {
     id: number;
     productId: number;
@@ -16,4 +49,6 @@ export interface Product {
     lowStockWarning?: boolean;
     backorder?: boolean;
     description?: string;
+    options?: ProductOption[];
+    variants?: ProductVariant[];
 }

@@ -16,6 +16,26 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('description');
     const { addItem } = useCart();
+
+    const options = product.options ?? [];
+    const variants = product.variants ?? [];
+
+    const initialVariant = variants.find((v) => v.id === product.variantId) ?? variants[0] ?? null;
+    const initialSelections: Record<string, number> = {};
+    initialVariant?.options.forEach((opt) => {
+        if (opt.option) initialSelections[opt.option] = opt.valueId;
+    });
+
+    const [selectedValues, setSelectedValues] = useState<Record<string, number>>(initialSelections);
+
+    const selectedVariant = variants.find((v) =>
+        v.options.every((opt) => !opt.option || selectedValues[opt.option] === opt.valueId)
+    ) ?? initialVariant;
+
+    const displayPrice = selectedVariant?.price ?? product.price;
+    const displayOldPrice = selectedVariant?.comparePrice ?? product.oldPrice;
+    const displayImage = selectedVariant?.image || product.image;
+    const isAvailable = selectedVariant ? selectedVariant.available : true;
     const descriptionMarkup = product.description?.trim()
         ? (product.description.includes('<') ? product.description : `<p>${product.description}</p>`)
         : '<p>Expertly crafted for superior spinal alignment and long-term pet health.</p>';
@@ -39,7 +59,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                     >
                         <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-zinc-100 bg-zinc-50 shadow-2xl shadow-zinc-100/50">
                             <Image
-                                src={product.image}
+                                src={displayImage}
                                 alt={product.name}
                                 fill
                                 sizes="(max-width: 1024px) 100vw, 50vw"
@@ -78,18 +98,51 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                     <span className="ml-1 text-[12px] font-bold text-zinc-400">({product.reviews} Verified)</span>
                                 </div>
                                 <div className="h-4 w-px bg-zinc-100"></div>
-                                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-green-600">
-                                    <ShieldCheck size={14} /> In Stock
+                                <div className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest ${isAvailable ? 'text-green-600' : 'text-zinc-400'}`}>
+                                    <ShieldCheck size={14} /> {isAvailable ? 'In Stock' : 'Out of Stock'}
                                 </div>
                             </div>
 
                             <div className="mb-4 flex items-baseline gap-4">
-                                <span className="text-[32px] font-bold text-[#df8448]">${product.price.toFixed(2)}</span>
-                                {product.oldPrice && (
-                                    <span className="text-[20px] font-medium text-zinc-300 line-through">${product.oldPrice.toFixed(2)}</span>
+                                <span className="text-[32px] font-bold text-[#df8448]">${displayPrice.toFixed(2)}</span>
+                                {displayOldPrice && (
+                                    <span className="text-[20px] font-medium text-zinc-300 line-through">${displayOldPrice.toFixed(2)}</span>
                                 )}
                             </div>
                         </div>
+
+                        {options.length > 0 && (
+                            <div className="mb-8 space-y-6">
+                                {options.map((option) => (
+                                    <div key={option.id}>
+                                        <p className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-[#3e4c57]">
+                                            {option.name}
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {option.values.map((value) => {
+                                                const isSelected = selectedValues[option.name] === value.id;
+                                                return (
+                                                    <button
+                                                        key={value.id}
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setSelectedValues((prev) => ({ ...prev, [option.name]: value.id }))
+                                                        }
+                                                        className={`rounded-[4px] border-2 px-4 py-2 text-[12px] font-bold uppercase tracking-wide transition-colors ${
+                                                            isSelected
+                                                                ? 'border-[#df8448] bg-[#df8448] text-white'
+                                                                : 'border-zinc-200 bg-white text-[#3e4c57] hover:border-[#df8448]'
+                                                        }`}
+                                                    >
+                                                        {value.name}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
                         <div className="mb-12 space-y-6 rounded-2xl border border-zinc-100 bg-zinc-50 p-8 shadow-sm shadow-zinc-200/20">
                             <div className="flex items-center gap-4">
@@ -110,11 +163,21 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                 </div>
                                 <button
                                     onClick={() => {
-                                        for (let i = 0; i < quantity; i++) addItem(product);
+                                        const itemToAdd = selectedVariant
+                                            ? {
+                                                ...product,
+                                                variantId: selectedVariant.id,
+                                                price: selectedVariant.price,
+                                                oldPrice: selectedVariant.comparePrice ?? product.oldPrice,
+                                                image: selectedVariant.image || product.image,
+                                            }
+                                            : product;
+                                        for (let i = 0; i < quantity; i++) addItem(itemToAdd);
                                     }}
-                                    className="h-[54px] flex-1 rounded-[4px] bg-[#df8448] text-[12px] font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-[#c9713a]"
+                                    disabled={!isAvailable}
+                                    className="h-[54px] flex-1 rounded-[4px] bg-[#df8448] text-[12px] font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-[#c9713a] disabled:cursor-not-allowed disabled:opacity-40"
                                 >
-                                    Add to cart
+                                    {isAvailable ? 'Add to cart' : 'Out of stock'}
                                 </button>
                             </div>
 
