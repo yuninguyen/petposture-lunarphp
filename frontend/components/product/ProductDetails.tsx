@@ -34,7 +34,20 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
     const displayPrice = selectedVariant?.price ?? product.price;
     const displayOldPrice = selectedVariant?.comparePrice ?? product.oldPrice;
-    const displayImage = selectedVariant?.image || product.image;
+    const galleryImages = (product.images && product.images.length > 0)
+        ? product.images
+        : [{ id: null, src: product.image, alt: product.name }];
+
+    const variantImageIndex = selectedVariant?.image
+        ? galleryImages.findIndex((img) => img.src === selectedVariant.image)
+        : -1;
+
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+    const displayImage = variantImageIndex >= 0
+        ? galleryImages[variantImageIndex].src
+        : (galleryImages[activeImageIndex]?.src ?? product.image);
+
     const isAvailable = selectedVariant ? selectedVariant.available : true;
     const descriptionMarkup = product.description?.trim()
         ? (product.description.includes('<') ? product.description : `<p>${product.description}</p>`)
@@ -57,19 +70,44 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                         animate={{ opacity: 1, x: 0 }}
                         className="relative lg:sticky lg:top-24"
                     >
-                        <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-zinc-100 bg-zinc-50 shadow-2xl shadow-zinc-100/50">
-                            <Image
-                                src={displayImage}
-                                alt={product.name}
-                                fill
-                                sizes="(max-width: 1024px) 100vw, 50vw"
-                                className="object-cover"
-                            />
-                            {product.badge && (
-                                <span className="absolute left-8 top-8 rounded-[2px] bg-[#df8448] px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/20">
-                                    {product.badge}
-                                </span>
+                        <div className="flex gap-3">
+                            {galleryImages.length > 1 && (
+                                <div className="flex flex-col gap-3">
+                                    {galleryImages.map((img, idx) => (
+                                        <button
+                                            key={img.id ?? idx}
+                                            type="button"
+                                            onClick={() => setActiveImageIndex(idx)}
+                                            className={`relative h-16 w-16 overflow-hidden rounded-lg border-2 bg-zinc-50 transition-colors ${
+                                                displayImage === img.src ? 'border-[#df8448]' : 'border-zinc-100 hover:border-zinc-300'
+                                            }`}
+                                        >
+                                            <Image
+                                                src={img.src}
+                                                alt={img.alt || product.name}
+                                                fill
+                                                sizes="64px"
+                                                className="object-cover"
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
                             )}
+
+                            <div className="relative aspect-square w-full max-w-[480px] overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50">
+                                <Image
+                                    src={displayImage}
+                                    alt={product.name}
+                                    fill
+                                    sizes="(max-width: 1024px) 100vw, 480px"
+                                    className="object-contain"
+                                />
+                                {product.badge && (
+                                    <span className="absolute left-6 top-6 rounded-[2px] bg-[#df8448] px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/20">
+                                        {product.badge}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </motion.div>
 

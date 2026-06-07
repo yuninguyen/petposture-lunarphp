@@ -44,6 +44,7 @@ export interface Product {
     rating: number;
     reviews: number;
     image: string;
+    images?: { id: number | null; src: string; alt?: string }[];
     badge?: string | null;
     isNew?: boolean;
     lowStockWarning?: boolean;
