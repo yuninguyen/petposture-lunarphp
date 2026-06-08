@@ -38,6 +38,22 @@ try {
   run('npm run build', 'backend');
   if (process.platform === 'linux') {
     run('rm -f bootstrap/cache/config.php bootstrap/cache/routes.php bootstrap/cache/routes-v7.php bootstrap/cache/packages.php bootstrap/cache/services.php', 'backend');
+
+    // Re-point storage/app/public at persistent storage outside the git working tree.
+    // Git checkout/clean removes this path each deploy since it's untracked, so recreate it.
+    const storagePublic = path.resolve('backend/storage/app/public');
+    const persistentPublic = path.resolve('../petposture-storage/app/public');
+    if (fs.existsSync(persistentPublic)) {
+      const isLinkToTarget = fs.existsSync(storagePublic)
+        && fs.lstatSync(storagePublic).isSymbolicLink()
+        && fs.realpathSync(storagePublic) === fs.realpathSync(persistentPublic);
+      if (!isLinkToTarget) {
+        fs.rmSync(storagePublic, { recursive: true, force: true });
+        fs.symlinkSync(persistentPublic, storagePublic);
+        console.log(`Re-created persistent storage symlink: ${storagePublic} -> ${persistentPublic}`);
+      }
+    }
+
     // Sync backend to public_html/api where PHP serves from
     const src = path.resolve('backend');
     const dest = path.resolve('../public_html/api');
