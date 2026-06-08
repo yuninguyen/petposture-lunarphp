@@ -40,7 +40,14 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            // Production deploys checkout directly into this app's git working tree,
+            // wiping untracked paths like storage/app/public on every deploy. Uploaded
+            // files (logos, favicons, media) now live outside the working tree at
+            // domains/petposture.com/petposture-storage/app/public; use it directly
+            // when present so Laravel reads/writes there without any symlink.
+            'root' => is_dir(base_path('../../petposture-storage/app/public'))
+                ? base_path('../../petposture-storage/app/public')
+                : storage_path('app/public'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,
