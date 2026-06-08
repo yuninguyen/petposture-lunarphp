@@ -8,6 +8,7 @@ use App\Payments\Gateways\CashOnDeliveryGateway;
 use App\Payments\Gateways\MockPayPalGateway;
 use App\Payments\Gateways\StripeCardGateway;
 use App\Payments\PaymentGatewayManager;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
@@ -39,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
     {
         if ($this->app->environment('production')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
+            $this->ensurePersistentStorageSymlink();
         }
 
         if (class_exists(\Lunar\Facades\Telemetry::class)) {
@@ -80,6 +82,44 @@ class AppServiceProvider extends ServiceProvider
 
         \Illuminate\Support\Facades\RateLimiter::for('auth', function (\Illuminate\Http\Request $request) {
             return \Illuminate\Cache\RateLimiting\Limit::perMinute(5)->by($request->ip());
+        });
+    }
+
+    /**
+     * Deploys checkout directly into this app's git working tree, which wipes
+     * untracked paths like storage/app/public (uploaded logos, favicons, media)
+     * each time. Storage now lives outside the working tree at
+     * domains/petposture.com/petposture-storage/app/public (two levels above
+     * this app's nodejs/backend root); recreate the symlink here so the
+     * fix survives without relying on cron (unavailable on this hosting plan).
+     * Throttled via cache so it only touches the filesystem once per minute.
+     */
+    protected function ensurePersistentStorageSymlink(): void
+    {
+        Cache::remember('persistent-storage-symlink-checked-at', 60, function () {
+            $storagePublic = storage_path('app/public');
+            $persistentPublic = base_path('../../petposture-storage/app/public');
+
+            if (! is_dir($persistentPublic)) {
+                return now()->toDateTimeString();
+            }
+
+            $isLinkToTarget = is_link($storagePublic)
+                && realpath(readlink($storagePublic) ?: '') === realpath($persistentPublic);
+
+            if (! $isLinkToTarget) {
+                if (file_exists($storagePublic) || is_link($storagePublic)) {
+                    if (is_dir($storagePublic) && ! is_link($storagePublic)) {
+                        \Illuminate\Support\Facades\File::deleteDirectory($storagePublic);
+                    } else {
+                        @unlink($storagePublic);
+                    }
+                }
+
+                symlink($persistentPublic, $storagePublic);
+            }
+
+            return now()->toDateTimeString();
         });
     }
 }
