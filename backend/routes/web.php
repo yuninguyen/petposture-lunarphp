@@ -10,9 +10,19 @@ Route::get('/', function () {
 });
 
 Route::get('/_setup/fix-attribute-config', function () {
-    $count = Attribute::whereNull('configuration')->update(['configuration' => '{}']);
+    $fixed = [];
 
-    return response()->json(['status' => 'fixed', 'updated' => $count]);
+    foreach (Attribute::all() as $attribute) {
+        if (! ($attribute->getRawOriginal('configuration'))
+            || $attribute->getRawOriginal('configuration') === 'null'
+            || $attribute->configuration === null) {
+            $attribute->configuration = collect();
+            $attribute->save();
+            $fixed[] = $attribute->handle;
+        }
+    }
+
+    return response()->json(['status' => 'fixed', 'updated' => $fixed]);
 });
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index']);
