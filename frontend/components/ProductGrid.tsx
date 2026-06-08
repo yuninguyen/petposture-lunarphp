@@ -56,7 +56,7 @@ export default function ProductGrid() {
           {products.map((p) => (
             <div key={p.id} className="group cursor-pointer flex flex-col items-center text-center">
               {/* Image Container */}
-              <div className="relative w-full bg-zinc-50 overflow-hidden mb-6 aspect-[4/5] rounded-sm group-hover:shadow-lg transition-all duration-500">
+              <div className="relative w-full bg-white overflow-hidden mb-6 aspect-[4/5] rounded-sm group-hover:shadow-lg transition-all duration-500">
                 <Image
                   src={p.image}
                   alt={p.name}

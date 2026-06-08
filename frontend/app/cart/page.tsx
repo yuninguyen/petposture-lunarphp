@@ -163,7 +163,7 @@ export default function CartPage() {
                                             </td>
                                             <td className="py-8">
                                                 <div className="flex items-center gap-6">
-                                                    <div className="relative w-[100px] h-[120px] bg-zinc-50 rounded-[4px] overflow-hidden flex-shrink-0 border border-zinc-100">
+                                                    <div className="relative w-[100px] h-[120px] bg-white rounded-[4px] overflow-hidden flex-shrink-0 border border-zinc-100">
                                                         <Image src={item.image} alt={item.name} fill sizes="100px" className="object-cover" />
                                                     </div>
                                                     <h3 className="text-[14px] font-bold text-[#3e4c57] hover:text-[#df8448] transition-colors">

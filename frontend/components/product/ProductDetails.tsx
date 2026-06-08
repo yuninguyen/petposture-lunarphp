@@ -78,7 +78,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                             key={img.id ?? idx}
                                             type="button"
                                             onClick={() => setActiveImageIndex(idx)}
-                                            className={`relative h-16 w-16 overflow-hidden rounded-lg border-2 bg-zinc-50 transition-colors ${
+                                            className={`relative h-16 w-16 overflow-hidden rounded-lg border-2 bg-white transition-colors ${
                                                 displayImage === img.src ? 'border-[#df8448]' : 'border-zinc-100 hover:border-zinc-300'
                                             }`}
                                         >
@@ -94,7 +94,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                 </div>
                             )}
 
-                            <div className="relative aspect-square w-full max-w-[480px] overflow-hidden rounded-2xl border border-zinc-100 bg-zinc-50">
+                            <div className="relative aspect-square w-full max-w-[480px] overflow-hidden rounded-2xl border border-zinc-100 bg-white">
                                 <Image
                                     src={displayImage}
                                     alt={product.name}

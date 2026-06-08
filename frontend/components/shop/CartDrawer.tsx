@@ -65,7 +65,7 @@ export function CartDrawer() {
                                 items.map(item => (
                                     <div key={item.variantId} className="flex gap-6 items-center">
                                         {/* Image */}
-                                        <div className="w-[80px] h-[100px] bg-zinc-50 rounded-[4px] overflow-hidden flex-shrink-0 border border-zinc-100 group relative">
+                                        <div className="w-[80px] h-[100px] bg-white rounded-[4px] overflow-hidden flex-shrink-0 border border-zinc-100 group relative">
                                             <Image src={item.image} alt={item.name} fill sizes="80px" className="object-cover" />
                                         </div>
 
