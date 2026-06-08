@@ -66,7 +66,10 @@ class CreateMedia extends Page
             'collection' => $data['collection'],
         ]);
 
-        $disk = config('filesystems.default', 'public');
+        // The FileUpload component above doesn't set ->disk(), so Filament stores
+        // the temp upload on its own default disk -- match that here, not the
+        // app's general filesystems.default (which is 'local' on this project).
+        $disk = config('filament.default_filesystem_disk', 'public');
 
         foreach ($data['files'] as $path) {
             $fullPath = \Illuminate\Support\Facades\Storage::disk($disk)->path($path);
