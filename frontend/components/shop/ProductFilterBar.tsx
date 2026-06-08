@@ -90,13 +90,6 @@ export function ProductFilterBar({
                         </div>
                     </div>
 
-                    <div className="rounded-[20px] bg-[#2f3d46] p-5 text-white">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#df8448]">Why this feels faster</p>
-                        <p className="mt-3 text-[13px] leading-6 text-white/78">
-                            Products are preloaded before the page paints, so the catalog no longer waits on an extra client fetch.
-                        </p>
-                    </div>
-
                     {hasActiveFilters && (
                         <button
                             onClick={clearFilters}
