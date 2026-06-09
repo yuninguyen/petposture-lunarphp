@@ -440,7 +440,7 @@ function BestSellers() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch(`${apiBaseUrl}/api/products`);
+        const response = await fetch(`${apiBaseUrl}/api/products?category=best-sellers`);
         if (!response.ok) {
           throw new Error(`Failed to fetch products: ${response.status}`);
         }

@@ -54,6 +54,12 @@ class ProductController extends Controller
             );
         }
 
+        // Filter by badge attribute (e.g. "Best Seller")
+        if ($request->filled('badge')) {
+            $badge = '%' . strtolower($request->input('badge')) . '%';
+            $query->whereRaw('LOWER(CAST(attribute_data AS TEXT)) LIKE ?', [$badge]);
+        }
+
         // Search: Lunar product names/descriptions are stored in attribute_data JSON
         if ($request->filled('q')) {
             $term = '%' . strtolower($request->input('q')) . '%';
