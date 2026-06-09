@@ -27,19 +27,6 @@ class SetLocale
             $panel = \Filament\Facades\Filament::getCurrentPanel();
             if ($panel) {
                 try {
-                    $reflector = new \ReflectionClass($panel);
-                    $prop = $reflector->getProperty('navigationGroups');
-                    $prop->setAccessible(true);
-                    $prop->setValue($panel, [
-                        __('lunarpanel::global.sections.catalog'),
-                        __('lunarpanel::global.sections.sales'),
-                        __('Content Management'),
-                        __('System'),
-                        __('filament-shield::filament-shield.nav.group'),
-                        __('lunarpanel::global.sections.settings'),
-                    ]);
-                } catch (\Exception $e) {
-                    // Fallback to standard method if reflection fails
                     $panel->navigationGroups([
                         __('lunarpanel::global.sections.catalog'),
                         __('lunarpanel::global.sections.sales'),
@@ -48,39 +35,29 @@ class SetLocale
                         __('filament-shield::filament-shield.nav.group'),
                         __('lunarpanel::global.sections.settings'),
                     ]);
+                } catch (\Throwable $e) {
+                    // silently ignore navigation group errors
                 }
             }
         }
 
         // Dynamically translate lunar order statuses labels in config
         $statuses = config('lunar.orders.statuses', []);
-        $debug = ["URL: " . request()->fullUrl()];
         foreach ($statuses as $key => $status) {
             $translationKey = "admin.orders.statuses.{$key}";
-            $hasTranslation = \Illuminate\Support\Facades\Lang::has($translationKey);
-            $translated = __($translationKey);
-            $debug[] = "$key => key: $translationKey, has: " . ($hasTranslation ? 'true' : 'false') . ", val: $translated";
-            if ($hasTranslation) {
-                $statuses[$key]['label'] = $translated;
+            if (\Illuminate\Support\Facades\Lang::has($translationKey)) {
+                $statuses[$key]['label'] = __($translationKey);
             }
         }
-        file_put_contents(storage_path('logs/set_locale_debug.log'), implode("\n", $debug), FILE_APPEND);
         config(['lunar.orders.statuses' => $statuses]);
-        file_put_contents(storage_path('logs/set_locale_debug.log'), "\nAFTER CONFIG SET: awaiting-payment.label = " . config('lunar.orders.statuses.awaiting-payment.label') . "\n", FILE_APPEND);
 
         // Reset OrderStatus static caches so they reload from the newly set config
         try {
             $reflector = new \ReflectionClass(\Lunar\Admin\Support\OrderStatus::class);
-            
-            $propLabel = $reflector->getProperty('cachedStatusLabel');
-            $propLabel->setAccessible(true);
-            $propLabel->setValue(null, []);
-
-            $propColor = $reflector->getProperty('cachedStatusColor');
-            $propColor->setAccessible(true);
-            $propColor->setValue(null, []);
-        } catch (\Exception $e) {
-            file_put_contents(storage_path('logs/set_locale_debug.log'), "\nReflection Error: " . $e->getMessage() . "\n", FILE_APPEND);
+            $reflector->getProperty('cachedStatusLabel')->setValue(null, []);
+            $reflector->getProperty('cachedStatusColor')->setValue(null, []);
+        } catch (\Throwable $e) {
+            // ignore cache reset failures
         }
         
         // Set Carbon locale for translated formats
