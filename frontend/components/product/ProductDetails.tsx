@@ -78,9 +78,8 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                             key={img.id ?? idx}
                                             type="button"
                                             onClick={() => setActiveImageIndex(idx)}
-                                            className={`relative h-16 w-16 overflow-hidden rounded-lg border-2 bg-white transition-colors ${
-                                                displayImage === img.src ? 'border-[#df8448]' : 'border-zinc-100 hover:border-zinc-300'
-                                            }`}
+                                            className={`relative h-16 w-16 overflow-hidden rounded-lg border-2 bg-white transition-colors ${displayImage === img.src ? 'border-[#df8448]' : 'border-zinc-100 hover:border-zinc-300'
+                                                }`}
                                         >
                                             <Image
                                                 src={img.src}
@@ -166,11 +165,10 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                         onClick={() =>
                                                             setSelectedValues((prev) => ({ ...prev, [option.name]: value.id }))
                                                         }
-                                                        className={`rounded-[4px] border-2 px-4 py-2 text-[12px] font-bold uppercase tracking-wide transition-colors ${
-                                                            isSelected
+                                                        className={`rounded-[4px] border-2 px-4 py-2 text-[12px] font-bold uppercase tracking-wide transition-colors ${isSelected
                                                                 ? 'border-[#df8448] bg-[#df8448] text-white'
                                                                 : 'border-zinc-200 bg-white text-[#3e4c57] hover:border-[#df8448]'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {value.name}
                                                     </button>
@@ -262,9 +260,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                 className="prose prose-zinc mb-4 max-w-none prose-headings:text-[#3e4c57] prose-p:my-0 prose-p:leading-[1.8]"
                                                 dangerouslySetInnerHTML={{ __html: descriptionMarkup }}
                                             />
-                                            <p>
-                                                Featuring our proprietary Bio-Fit technology, this product adjusts to your pet&apos;s natural posture, reducing muscular fatigue and promoting better circulation during rest or activity.
-                                            </p>
+
                                         </motion.div>
                                     )}
                                     {activeTab === 'specs' && (
