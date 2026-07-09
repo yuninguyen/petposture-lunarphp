@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: petposture-backend:prod
+    container_name: petposture-backend
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      PORT: "8001"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/storage/app/public:/app/storage/app/public
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    image: petposture-frontend:prod
+    container_name: petposture-frontend
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
