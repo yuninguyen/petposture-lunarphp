@@ -4,6 +4,6 @@ export const metadata: Metadata = {
   title: "Sign In",
 };
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function SignInLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }

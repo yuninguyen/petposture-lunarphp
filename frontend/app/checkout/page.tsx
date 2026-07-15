@@ -1140,7 +1140,7 @@ export default function CheckoutPage() {
                                     <h2 className="text-[18px] font-semibold text-[#333333]">Contact</h2>
                                 </div>
                                 <p className="text-[13px] text-[#707070]">
-                                    Already have an account? <Link href="/auth/login" className="text-[#197bbd] underline">Log in</Link>
+                                    Already have an account? <Link href="/sign-in" className="text-[#197bbd] underline">Log in</Link>
                                 </p>
                             </div>
                             <div className="space-y-3">

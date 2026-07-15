@@ -53,7 +53,7 @@ function ResetPasswordForm() {
                 <h2 className="text-[24px] font-bold text-[#3e4c57]">Password updated!</h2>
                 <p className="text-zinc-500 text-[14px]">Your password has been reset. You can now sign in with your new password.</p>
                 <button
-                    onClick={() => router.push('/auth')}
+                    onClick={() => router.push('/sign-in')}
                     className="bg-[#df8448] text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-[12px] hover:bg-[#c9713a] transition-colors"
                 >
                     Sign In

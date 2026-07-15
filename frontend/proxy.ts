@@ -10,7 +10,7 @@ export function proxy(request: NextRequest) {
     // Admin routes protection
     if (pathname.startsWith('/admin')) {
         if (!token || !userJson) {
-            return NextResponse.redirect(new URL('/auth', request.url));
+            return NextResponse.redirect(new URL('/sign-in', request.url));
         }
 
         try {
@@ -22,7 +22,14 @@ export function proxy(request: NextRequest) {
                 return NextResponse.redirect(new URL('/', request.url));
             }
         } catch (e) {
-            return NextResponse.redirect(new URL('/auth', request.url));
+            return NextResponse.redirect(new URL('/sign-in', request.url));
+        }
+    }
+
+    // Customer account dashboard protection
+    if (pathname.startsWith('/account')) {
+        if (!token || !userJson) {
+            return NextResponse.redirect(new URL('/sign-in', request.url));
         }
     }
 
@@ -30,5 +37,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/admin/:path*'],
+    matcher: ['/admin/:path*', '/account/:path*'],
 };

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { getApiBaseUrl } from '@/lib/api';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -11,8 +12,8 @@ import { User, Lock, Mail, ChevronRight, CheckCircle2 } from 'lucide-react';
 
 type Mode = 'login' | 'register' | 'forgot' | 'forgot-sent';
 
-export default function AuthPage() {
-    const [mode, setMode] = useState<Mode>('login');
+export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' }) {
+    const [mode, setMode] = useState<Mode>(initialMode);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -36,7 +37,7 @@ export default function AuthPage() {
             if (mode === 'forgot') {
                 const res = await fetch(`${base}/api/auth/forgot-password`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
                     body: JSON.stringify({ email }),
                 });
                 if (!res.ok) throw new Error('Request failed.');
@@ -48,19 +49,19 @@ export default function AuthPage() {
             const cartToken = getCartToken();
             const body = mode === 'login'
                 ? { email, password, ...(cartToken ? { cart_token: cartToken } : {}) }
-                : { name, email, password };
+                : { name, email, password, password_confirmation: password };
 
             const res = await fetch(`${base}${endpoint}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
                 body: JSON.stringify(body),
             });
 
             const data = await res.json();
 
-            if (res.ok && data.token) {
-                login(data.token, data.user);
-                router.push('/shop');
+            if (res.ok && data.data?.token) {
+                login(data.data.token, data.data.user);
+                router.push('/account');
             } else {
                 setError(data.message || (mode === 'login' ? 'Invalid credentials' : 'Registration failed'));
             }
@@ -109,20 +110,18 @@ export default function AuthPage() {
                     {mode !== 'forgot' && (
                         <div className="mb-10 text-center">
                             <div className="inline-flex overflow-hidden rounded-full border border-zinc-100 bg-[#f8f9fa] p-1 mb-8 shadow-sm">
-                                <button
-                                    type="button"
-                                    onClick={() => { setMode('login'); setError(null); }}
+                                <Link
+                                    href="/sign-in"
                                     className={`px-6 py-2 rounded-full text-[12px] font-bold uppercase tracking-widest transition-colors ${mode === 'login' ? 'bg-white shadow text-[#df8448] border border-zinc-50' : 'text-zinc-400 hover:text-[#3e4c57]'}`}
                                 >
                                     Sign In
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => { setMode('register'); setError(null); }}
+                                </Link>
+                                <Link
+                                    href="/sign-up"
                                     className={`px-6 py-2 rounded-full text-[12px] font-bold uppercase tracking-widest transition-colors ${mode === 'register' ? 'bg-white shadow text-[#df8448] border border-zinc-50' : 'text-zinc-400 hover:text-[#3e4c57]'}`}
                                 >
                                     Register
-                                </button>
+                                </Link>
                             </div>
                             <h1 className="text-[28px] font-bold text-[#3e4c57] leading-tight mb-2">
                                 {mode === 'login' ? 'Sign In' : 'Sign Up'}
@@ -150,6 +149,7 @@ export default function AuthPage() {
                                     <input
                                         type="text"
                                         required
+                                        autoComplete="name"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         className="w-full pl-12 pr-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium placeholder:text-zinc-300"
@@ -166,6 +166,7 @@ export default function AuthPage() {
                                 <input
                                     type="email"
                                     required
+                                    autoComplete="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="w-full pl-12 pr-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium placeholder:text-zinc-300"
@@ -194,6 +195,7 @@ export default function AuthPage() {
                                         type="password"
                                         required
                                         minLength={6}
+                                        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="w-full pl-12 pr-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium placeholder:text-zinc-300"

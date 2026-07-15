@@ -91,26 +91,30 @@ export default function Header() {
 
           {/* Right: Icons */}
           <div className="flex items-center gap-4 md:gap-6 text-primary flex-shrink-0">
-            <Link href="/wishlist" className="hover:text-[#df8448] transition-colors hidden sm:block">
+            <Link href="/wishlist" className="hover:text-[#df8448] transition-colors hidden sm:block" aria-label="Wishlist">
               <Heart size={22} strokeWidth={2} />
             </Link>
             {user ? (
               <div className="flex items-center gap-3">
-                <span className="text-[12px] font-bold uppercase tracking-widest text-[#df8448] hidden lg:block">
+                <Link href="/account" className="text-[12px] font-bold uppercase tracking-widest text-[#df8448] hidden lg:block hover:underline">
                   Hi, {user.name.split(' ')[0]}
-                </span>
+                </Link>
+                <Link href="/account" className="hover:text-[#df8448] transition-colors" title="My Account">
+                  <User size={22} strokeWidth={2} />
+                </Link>
                 <button onClick={logout} className="hover:text-[#df8448] transition-colors" title="Log Out">
                   <LogOut size={22} strokeWidth={2} />
                 </button>
               </div>
             ) : (
-              <Link href="/auth" className="hover:text-[#df8448] transition-colors" title="Login / Register">
+              <Link href="/sign-in" className="hover:text-[#df8448] transition-colors" title="Login / Register">
                 <User size={22} strokeWidth={2} />
               </Link>
             )}
             <button
               onClick={() => setCartOpen(true)}
               className="relative group p-1 hover:text-[#df8448] transition-colors outline-none"
+              aria-label="Shopping cart"
             >
               <ShoppingBag size={22} strokeWidth={2} />
               {items.length > 0 && (
