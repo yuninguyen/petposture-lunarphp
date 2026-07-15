@@ -35,7 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'code'    => \App\Enums\ErrorCode::VALIDATION_ERROR->value,
                     'message' => $e->getMessage(),
@@ -45,7 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'code'    => \App\Enums\ErrorCode::UNAUTHENTICATED->value,
                     'message' => 'Unauthenticated.',
@@ -54,7 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException $e, $request) {
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'code'    => \App\Enums\ErrorCode::FORBIDDEN->value,
                     'message' => 'This action is unauthorized.',
@@ -63,7 +63,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'code'    => \App\Enums\ErrorCode::NOT_FOUND->value,
                     'message' => $e->getMessage() ?: 'Not found.',
