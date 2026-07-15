@@ -21,6 +21,6 @@ class OrderCancelled extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'mail.order-cancelled');
+        return new Content(markdown: 'mail.order-cancelled');
     }
 }

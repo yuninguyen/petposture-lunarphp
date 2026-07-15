@@ -26,6 +26,6 @@ class ContactFormSubmission extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'mail.contact-form');
+        return new Content(markdown: 'mail.contact-form');
     }
 }

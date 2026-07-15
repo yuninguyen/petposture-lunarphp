@@ -21,6 +21,6 @@ class OrderShipped extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'mail.order-shipped');
+        return new Content(markdown: 'mail.order-shipped');
     }
 }

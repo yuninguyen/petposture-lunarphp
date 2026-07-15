@@ -20,6 +20,6 @@ class CancelledOrderAdmin extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'mail.cancelled-order-admin');
+        return new Content(markdown: 'mail.cancelled-order-admin');
     }
 }

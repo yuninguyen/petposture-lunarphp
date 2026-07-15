@@ -21,6 +21,6 @@ class OrderDelivered extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'mail.order-delivered');
+        return new Content(markdown: 'mail.order-delivered');
     }
 }

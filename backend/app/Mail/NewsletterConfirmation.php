@@ -20,6 +20,6 @@ class NewsletterConfirmation extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'mail.newsletter-confirmation');
+        return new Content(markdown: 'mail.newsletter-confirmation');
     }
 }

@@ -21,6 +21,6 @@ class WelcomeEmail extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'mail.welcome');
+        return new Content(markdown: 'mail.welcome');
     }
 }

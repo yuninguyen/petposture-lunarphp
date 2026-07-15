@@ -21,6 +21,6 @@ class OrderPaymentFailed extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'mail.order-payment-failed');
+        return new Content(markdown: 'mail.order-payment-failed');
     }
 }
