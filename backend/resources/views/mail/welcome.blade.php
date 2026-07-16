@@ -1,18 +1,29 @@
 <x-mail::message>
-# Welcome to {{ config('app.name') }}, {{ $user->name }}!
+<x-slot:header>
+<x-mail::header :url="config('app.frontend_url')">
+<img src="{{ config('app.frontend_url') }}/assets/Logo-PetPosture-1-e1761840892773.png" height="42" alt="{{ config('app.name') }}">
+</x-mail::header>
+</x-slot:header>
 
-Thanks for creating an account. You can now:
+# Welcome aboard, {{ $user->name }}!
 
-- Track your orders in real time
-- Save your shipping address for faster checkout
-- View your full order history
+Your {{ config('app.name') }} account has been created with the email **{{ $user->email }}**. Here's what you can do next:
+
+- Track every order in real time, from checkout to delivery
+- Save shipping addresses for faster checkout
+- Browse your full order history in one place
 
 <x-mail::button url="{{ config('app.frontend_url') }}/shop">
 Start Shopping
 </x-mail::button>
 
-If you have any questions, we're always here to help.
-
 Thanks,<br>
-{{ config('app.name') }}
+The {{ config('app.name') }} Team
+
+<x-slot:footer>
+<x-mail::footer>
+© {{ date('Y') }} {{ config('app.name') }}. All rights reserved.<br>
+This is an automated message, please don't reply directly to this email.
+</x-mail::footer>
+</x-slot:footer>
 </x-mail::message>
