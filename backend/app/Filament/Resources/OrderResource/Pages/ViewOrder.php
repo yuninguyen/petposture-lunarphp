@@ -68,6 +68,7 @@ class ViewOrder extends ViewRecord
                 ->schema([
                     Infolists\Components\RepeatableEntry::make('lines')
                         ->label('')
+                        ->state(fn($record) => $record->lines->where('type', '!=', 'shipping')->values())
                         ->schema([
                             Infolists\Components\TextEntry::make('description')
                                 ->label(__('Product')),
