@@ -34,42 +34,36 @@ class ViewOrder extends ViewRecord
                 ->schema([
                     Infolists\Components\Section::make(__('Shipping Address'))
                         ->schema([
-                            Infolists\Components\TextEntry::make('shipping_name')
-                                ->hiddenLabel()
-                                ->state(fn($record) => trim(
-                                    ($record->shippingAddress?->first_name ?? '') . ' ' . ($record->shippingAddress?->last_name ?? '')
-                                ) ?: '—'),
-                            Infolists\Components\TextEntry::make('shipping_line')
-                                ->hiddenLabel()
+                            Infolists\Components\TextEntry::make('shipping_block')
+                                ->label('')
+                                ->html()
                                 ->state(fn($record) => collect([
-                                    $record->shippingAddress?->line_one,
-                                    $record->shippingAddress?->city,
-                                    trim(($record->shippingAddress?->state ?? '') . ' ' . ($record->shippingAddress?->postcode ?? '')),
-                                    $record->shippingAddress?->country?->name,
-                                ])->filter()->implode(', ') ?: '—'),
-                            Infolists\Components\TextEntry::make('shipping_phone')
-                                ->hiddenLabel()
-                                ->state(fn($record) => $record->shippingAddress?->contact_phone ?: '—'),
+                                    trim(($record->shippingAddress?->first_name ?? '') . ' ' . ($record->shippingAddress?->last_name ?? '')),
+                                    collect([
+                                        $record->shippingAddress?->line_one,
+                                        $record->shippingAddress?->city,
+                                        trim(($record->shippingAddress?->state ?? '') . ' ' . ($record->shippingAddress?->postcode ?? '')),
+                                        $record->shippingAddress?->country?->name,
+                                    ])->filter()->implode(', '),
+                                    $record->shippingAddress?->contact_phone,
+                                ])->filter()->implode('<br>') ?: '—'),
                         ])->columnSpan(1),
 
                     Infolists\Components\Section::make(__('Billing Address'))
                         ->schema([
-                            Infolists\Components\TextEntry::make('billing_name')
-                                ->hiddenLabel()
-                                ->state(fn($record) => trim(
-                                    ($record->billingAddress?->first_name ?? '') . ' ' . ($record->billingAddress?->last_name ?? '')
-                                ) ?: '—'),
-                            Infolists\Components\TextEntry::make('billing_line')
-                                ->hiddenLabel()
+                            Infolists\Components\TextEntry::make('billing_block')
+                                ->label('')
+                                ->html()
                                 ->state(fn($record) => collect([
-                                    $record->billingAddress?->line_one,
-                                    $record->billingAddress?->city,
-                                    trim(($record->billingAddress?->state ?? '') . ' ' . ($record->billingAddress?->postcode ?? '')),
-                                    $record->billingAddress?->country?->name,
-                                ])->filter()->implode(', ') ?: '—'),
-                            Infolists\Components\TextEntry::make('billing_phone')
-                                ->hiddenLabel()
-                                ->state(fn($record) => $record->billingAddress?->contact_phone ?: '—'),
+                                    trim(($record->billingAddress?->first_name ?? '') . ' ' . ($record->billingAddress?->last_name ?? '')),
+                                    collect([
+                                        $record->billingAddress?->line_one,
+                                        $record->billingAddress?->city,
+                                        trim(($record->billingAddress?->state ?? '') . ' ' . ($record->billingAddress?->postcode ?? '')),
+                                        $record->billingAddress?->country?->name,
+                                    ])->filter()->implode(', '),
+                                    $record->billingAddress?->contact_phone,
+                                ])->filter()->implode('<br>') ?: '—'),
                         ])->columnSpan(1),
                 ]),
 
