@@ -5,6 +5,7 @@ namespace App\Filament\Resources\OrderResource\Pages;
 use App\Filament\Resources\OrderResource;
 use App\Services\OrderOperationsService;
 use Filament\Actions;
+use Filament\Forms;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
@@ -17,7 +18,7 @@ class ViewOrder extends ViewRecord
     {
         $operations = app(OrderOperationsService::class);
 
-        return collect($operations->availableActions($this->record))
+        $actions = collect($operations->availableActions($this->record))
             ->map(function (array $action) use ($operations) {
                 $isCancel = $action['action'] === 'cancelOrder';
 
@@ -32,6 +33,35 @@ class ViewOrder extends ViewRecord
                     });
             })
             ->all();
+
+        $meta = (array) ($this->record->meta ?? []);
+        $isRefundable = filled($meta['payment_intent_id'] ?? null)
+            && ($meta['payment_status'] ?? null) === 'paid'
+            && ($meta['refund_status'] ?? null) !== 'refunded';
+
+        if ($isRefundable) {
+            $actions[] = Actions\Action::make('refund')
+                ->label(__('Refund'))
+                ->color('danger')
+                ->form([
+                    Forms\Components\TextInput::make('amount')
+                        ->label(__('Amount (leave blank for full refund)'))
+                        ->numeric()
+                        ->prefix('$'),
+                ])
+                ->requiresConfirmation()
+                ->action(function (array $data) {
+                    $amountMinor = filled($data['amount'] ?? null)
+                        ? (int) round(((float) $data['amount']) * 100)
+                        : null;
+
+                    app(OrderOperationsService::class)->refundOrder($this->record, $amountMinor);
+
+                    $this->redirect(static::getUrl(['record' => $this->record]));
+                });
+        }
+
+        return $actions;
     }
 
     public function infolist(Infolist $infolist): Infolist
@@ -41,7 +71,8 @@ class ViewOrder extends ViewRecord
             Infolists\Components\Section::make(__('Order Summary'))
                 ->schema([
                     Infolists\Components\TextEntry::make('reference')
-                        ->label(__('Reference')),
+                        ->label(__('Order Number'))
+                        ->formatStateUsing(fn(string $state): string => "#{$state}"),
                     Infolists\Components\TextEntry::make('status')
                         ->label(__('Status'))
                         ->badge()
@@ -51,6 +82,44 @@ class ViewOrder extends ViewRecord
                     Infolists\Components\TextEntry::make('created_at')
                         ->label(__('Date'))
                         ->dateTime(),
+                    Infolists\Components\TextEntry::make('meta.customer_ip')
+                        ->label(__('Customer IP'))
+                        ->default('—'),
+                ])->columns(2),
+
+            Infolists\Components\Section::make(__('Order Attribution'))
+                ->schema([
+                    Infolists\Components\TextEntry::make('meta.attribution_origin')
+                        ->label(__('Origin'))
+                        ->default('—'),
+                    Infolists\Components\TextEntry::make('meta.attribution_device_type')
+                        ->label(__('Device Type'))
+                        ->default('—'),
+                    Infolists\Components\TextEntry::make('meta.attribution_session_page_views')
+                        ->label(__('Session Page Views'))
+                        ->default('—'),
+                ])->columns(3),
+
+            Infolists\Components\Section::make(__('Fraud & Risk'))
+                ->description(__('Powered by Stripe Radar — automatic on every card payment, no extra setup required.'))
+                ->visible(fn($record) => filled($record->meta['fraud_risk_level'] ?? null))
+                ->schema([
+                    Infolists\Components\TextEntry::make('meta.fraud_risk_level')
+                        ->label(__('Risk Level'))
+                        ->badge()
+                        ->formatStateUsing(fn(?string $state): string => $state ? str($state)->headline()->toString() : '—')
+                        ->color(fn(?string $state): string => match ($state) {
+                            'highest' => 'danger',
+                            'elevated' => 'warning',
+                            default => 'success',
+                        }),
+                    Infolists\Components\TextEntry::make('meta.fraud_risk_score')
+                        ->label(__('Risk Score'))
+                        ->default('—'),
+                    Infolists\Components\TextEntry::make('meta.fraud_seller_message')
+                        ->label(__('Note'))
+                        ->default('—')
+                        ->columnSpanFull(),
                 ])->columns(2),
 
             Infolists\Components\Grid::make(2)
@@ -97,17 +166,21 @@ class ViewOrder extends ViewRecord
                         ->state(fn($record) => $record->lines->where('type', '!=', 'shipping')->values())
                         ->schema([
                             Infolists\Components\TextEntry::make('description')
-                                ->label(__('Product')),
+                                ->label(__('Product'))
+                                ->columnSpan(3),
                             Infolists\Components\TextEntry::make('quantity')
-                                ->label(__('Qty')),
+                                ->label(__('Qty'))
+                                ->columnSpan(1),
                             Infolists\Components\TextEntry::make('unit_price')
                                 ->label(__('Unit Price'))
-                                ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
+                                ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2))
+                                ->columnSpan(1),
                             Infolists\Components\TextEntry::make('sub_total')
                                 ->label(__('Subtotal'))
-                                ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
+                                ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2))
+                                ->columnSpan(1),
                         ])
-                        ->columns(4)
+                        ->columns(6)
                         ->columnSpanFull(),
 
                     Infolists\Components\TextEntry::make('totals_block')
@@ -130,7 +203,6 @@ class ViewOrder extends ViewRecord
                             $rows[] = 'Shipping: ' . $money($record->shipping_total);
                             $rows[] = 'Tax: ' . $money($record->tax_total);
                             $rows[] = '<strong>Order Total: ' . $money($record->total) . '</strong>';
-                            $rows[] = '<hr style="margin: 8px 0; border-color: rgb(228 228 231);">';
 
                             $paymentMethod = match ($record->meta['payment_method'] ?? null) {
                                 'cod' => 'COD',
@@ -144,15 +216,22 @@ class ViewOrder extends ViewRecord
                                 ? str($record->meta['payment_status'])->headline()->toString()
                                 : '—';
 
-                            $rows[] = "Payment Method: {$paymentMethod}";
-                            $rows[] = "Payment Status: {$paymentStatus}";
+                            $paymentRows = [
+                                "Payment Method: {$paymentMethod}",
+                                "Payment Status: {$paymentStatus}",
+                            ];
 
                             if ($couponCode = $record->meta['coupon_code'] ?? null) {
-                                $rows[] = "Coupon: {$couponCode}";
+                                $paymentRows[] = "Coupon: {$couponCode}";
                             }
 
-                            return implode('<br>', $rows);
-                        }),
+                            return '<div style="line-height: 2; margin-right: 1.5rem;">'
+                                . implode('<br>', $rows)
+                                . '<hr style="margin: 4px 0; border-color: rgb(228 228 231);">'
+                                . implode('<br>', $paymentRows)
+                                . '</div>';
+                        })
+                        ->extraAttributes(['class' => '-mt-8']),
                 ]),
 
             Infolists\Components\Section::make(__('Notes'))

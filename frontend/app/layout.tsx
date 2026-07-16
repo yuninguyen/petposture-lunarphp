@@ -5,6 +5,7 @@ import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { SettingsProvider } from '@/context/SettingsContext';
 import { CartDrawer } from '@/components/shop/CartDrawer';
+import { AttributionTracker } from '@/components/AttributionTracker';
 
 export async function generateMetadata(): Promise<Metadata> {
   let shopName = 'PetPosture';
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SettingsProvider>
           <AuthProvider>
             <CartProvider>
+              <AttributionTracker />
               {children}
               <CartDrawer />
             </CartProvider>

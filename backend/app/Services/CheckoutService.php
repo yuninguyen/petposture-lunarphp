@@ -34,9 +34,9 @@ class CheckoutService
     ) {
     }
 
-    public function placeOrder(array $payload, ?int $userId = null): Order
+    public function placeOrder(array $payload, ?int $userId = null, ?string $customerIp = null): Order
     {
-        return DB::transaction(function () use ($payload, $userId) {
+        return DB::transaction(function () use ($payload, $userId, $customerIp) {
             /** @var \Lunar\Models\Order $order */
             $shippingMethod = $payload['shipping_method'] ?? 'standard';
             $paymentPreparation = $this->paymentGatewayManager
@@ -157,6 +157,10 @@ class CheckoutService
             $orderMeta['shipping_method'] = $shippingMethod;
             $orderMeta['tracking_number'] = $order->reference;
             $orderMeta['customer_note'] = $customerNote;
+            $orderMeta['customer_ip'] = $customerIp;
+            $orderMeta['attribution_origin'] = $payload['attribution']['origin'] ?? null;
+            $orderMeta['attribution_device_type'] = $payload['attribution']['device_type'] ?? null;
+            $orderMeta['attribution_session_page_views'] = $payload['attribution']['session_page_views'] ?? null;
             $orderMeta['internal_note'] = $this->nullableString($payload['internal_note'] ?? null) ?? ($orderMeta['internal_note'] ?? null);
             $orderMeta['tax_state'] = $taxContext['state_code'];
             $orderMeta['tax_rate_percentage'] = $taxContext['rate_percentage'];

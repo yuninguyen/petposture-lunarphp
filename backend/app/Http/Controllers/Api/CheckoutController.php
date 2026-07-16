@@ -72,7 +72,12 @@ class CheckoutController extends Controller
             'payment_context' => 'nullable|array',
             'coupon_code' => 'nullable|string',
             'customer_note' => 'nullable|string|max:2000',
+            'attribution' => 'nullable|array',
+            'attribution.origin' => 'nullable|string|max:255',
+            'attribution.session_page_views' => 'nullable|integer|min:1',
         ])->validate();
+
+        $validated['attribution']['device_type'] = $this->resolveDeviceType($request->userAgent());
 
         // Populate shipping from saved address when authenticated user passes shipping_address_id
         if (! empty($validated['shipping_address_id']) && $userId) {
@@ -116,7 +121,7 @@ class CheckoutController extends Controller
         }
 
         try {
-            $order = $this->checkoutService->placeOrder($validated, $userId);
+            $order = $this->checkoutService->placeOrder($validated, $userId, $request->ip());
             $result = new OrderResource($order);
 
             if ($idempotencyKey) {
@@ -387,4 +392,20 @@ class CheckoutController extends Controller
         ]);
     }
 
+    private function resolveDeviceType(?string $userAgent): string
+    {
+        if (! $userAgent) {
+            return 'Unknown';
+        }
+
+        if (preg_match('/tablet|ipad/i', $userAgent)) {
+            return 'Tablet';
+        }
+
+        if (preg_match('/mobile|android|iphone/i', $userAgent)) {
+            return 'Mobile';
+        }
+
+        return 'Desktop';
+    }
 }

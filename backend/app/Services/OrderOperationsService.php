@@ -288,6 +288,12 @@ class OrderOperationsService
         $meta['payment_last_event_id'] = $eventId;
         $meta['payment_webhook_processed_at'] = now()->toDateTimeString();
 
+        if (array_key_exists('fraud_risk_level', $paymentData)) {
+            $meta['fraud_risk_level'] = $paymentData['fraud_risk_level'];
+            $meta['fraud_risk_score'] = $paymentData['fraud_risk_score'] ?? null;
+            $meta['fraud_seller_message'] = $paymentData['fraud_seller_message'] ?? null;
+        }
+
         $updates = [
             'meta' => $meta,
         ];

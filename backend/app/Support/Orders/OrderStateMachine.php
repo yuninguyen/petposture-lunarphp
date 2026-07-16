@@ -115,11 +115,11 @@ class OrderStateMachine
     public function labelForAction(string $action): string
     {
         return match ($action) {
-            'markPaid' => 'Mark paid',
-            'markProcessing' => 'Mark processing',
-            'markShipped' => 'Mark shipped',
-            'markDelivered' => 'Mark delivered',
-            'cancelOrder' => 'Cancel order',
+            'markPaid' => 'Mark Paid',
+            'markProcessing' => 'Mark Processing',
+            'markShipped' => 'Mark Shipped',
+            'markDelivered' => 'Mark Delivered',
+            'cancelOrder' => 'Cancel Order',
             default => $action,
         };
     }

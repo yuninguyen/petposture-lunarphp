@@ -20,6 +20,7 @@ import { getApiBaseUrl } from '@/lib/api';
 import { OrderSummary } from '@/components/checkout/OrderSummary';
 import { ShippingMethodSelector } from '@/components/checkout/ShippingMethodSelector';
 import { getShippingAmount } from '@/lib/pricing';
+import { getAttributionData } from '@/lib/attribution';
 
 declare global {
     interface Window {
@@ -982,6 +983,7 @@ export default function CheckoutPage() {
                     payment_context: paymentContext,
                     totalAmount: finalTotal,
                     coupon_code: coupon.discountAmount > 0 ? coupon.code : null,
+                    attribution: getAttributionData(),
                 })
             });
 

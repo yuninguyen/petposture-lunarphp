@@ -94,6 +94,28 @@ class StripePaymentIntentService
         ];
     }
 
+    /**
+     * Fetches the Radar fraud outcome for a Stripe charge (risk_level/risk_score are
+     * populated by Stripe Radar automatically on every charge, free on any Stripe account).
+     */
+    private function fetchChargeOutcome(string $chargeId): ?array
+    {
+        $secret = $this->stripeSecret();
+
+        if (! $secret) {
+            return null;
+        }
+
+        $response = Http::withBasicAuth($secret, '')
+            ->get("https://api.stripe.com/v1/charges/{$chargeId}");
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        return $response->json('outcome');
+    }
+
     public function prepareRetryIntent(Order $order): array
     {
         $amount = $this->resolveOrderAmount($order);
@@ -189,12 +211,25 @@ class StripePaymentIntentService
             default => 'pending',
         };
 
-        $updatedOrder = $this->orderOperationsService->syncStripePayment($order, [
+        $paymentData = [
             'payment_status' => $paymentStatus,
             'payment_intent_status' => (string) ($object['status'] ?? ''),
             'event_type' => $type,
             'event_id' => $eventId,
-        ]);
+        ];
+
+        if ($type === 'payment_intent.succeeded') {
+            $chargeId = (string) ($object['latest_charge'] ?? '');
+            $outcome = $chargeId !== '' ? $this->fetchChargeOutcome($chargeId) : null;
+
+            if ($outcome) {
+                $paymentData['fraud_risk_level'] = $outcome['risk_level'] ?? null;
+                $paymentData['fraud_risk_score'] = $outcome['risk_score'] ?? null;
+                $paymentData['fraud_seller_message'] = $outcome['seller_message'] ?? null;
+            }
+        }
+
+        $updatedOrder = $this->orderOperationsService->syncStripePayment($order, $paymentData);
 
         $alertService = app(PaymentFailureAlertService::class);
         if ($paymentStatus === 'failed') {
