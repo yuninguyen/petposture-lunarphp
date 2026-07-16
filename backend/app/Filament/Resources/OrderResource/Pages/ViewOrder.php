@@ -91,8 +91,9 @@ class ViewOrder extends ViewRecord
                     Infolists\Components\TextEntry::make('shippingAddress.last_name')
                         ->label(__('Last Name')),
                     Infolists\Components\TextEntry::make('shippingAddress.line_one')
-                        ->label(__('Address'))
-                        ->columnSpanFull(),
+                        ->label(__('Address')),
+                    Infolists\Components\TextEntry::make('shippingAddress.country.name')
+                        ->label(__('Country')),
                     Infolists\Components\TextEntry::make('shippingAddress.city')
                         ->label(__('City')),
                     Infolists\Components\TextEntry::make('shippingAddress.state')
