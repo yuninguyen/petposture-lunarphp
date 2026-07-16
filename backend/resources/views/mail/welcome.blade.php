@@ -93,9 +93,18 @@ Your {{ config('app.name') }} account has been created with the email <strong st
 <td style="padding:36px 40px 0 40px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
-<td align="center" style="width:33.33%; padding:20px 8px; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#8b8f93;">Free Express<br>Shipping</td>
-<td align="center" style="width:33.33%; padding:20px 8px; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#8b8f93; border-left:1px solid #f0ede8; border-right:1px solid #f0ede8;">Secure<br>Checkout</td>
-<td align="center" style="width:33.33%; padding:20px 8px; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#8b8f93;">30-Day<br>Health Trial</td>
+<td align="center" style="width:33.33%; padding:20px 8px;">
+<div style="width:44px; height:44px; line-height:44px; border-radius:50%; background-color:#fdf1e7; color:#df8448; font-size:18px; margin:0 auto 10px auto;">&#128666;</div>
+<p style="margin:0; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#3e4c57;">Free Express<br>Shipping</p>
+</td>
+<td align="center" style="width:33.33%; padding:20px 8px; border-left:1px solid #f0ede8; border-right:1px solid #f0ede8;">
+<div style="width:44px; height:44px; line-height:44px; border-radius:50%; background-color:#fdf1e7; color:#df8448; font-size:18px; margin:0 auto 10px auto;">&#128274;</div>
+<p style="margin:0; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#3e4c57;">Secure<br>Checkout</p>
+</td>
+<td align="center" style="width:33.33%; padding:20px 8px;">
+<div style="width:44px; height:44px; line-height:44px; border-radius:50%; background-color:#fdf1e7; color:#df8448; font-size:18px; margin:0 auto 10px auto;">&#10084;</div>
+<p style="margin:0; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#3e4c57;">30-Day<br>Health Trial</p>
+</td>
 </tr>
 </table>
 </td>
@@ -114,9 +123,17 @@ Thanks,<br>The {{ config('app.name') }} Team
 
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; margin-top:24px;">
 <tr>
+<td align="center" style="padding-bottom:12px; font-size:12px; color:#8b8f93;">
+<a href="{{ config('app.frontend_url') }}/contact" style="color:#8b8f93; text-decoration:underline;">Contact Us</a>
+&nbsp;&middot;&nbsp;
+<a href="{{ config('app.frontend_url') }}/privacy-policy" style="color:#8b8f93; text-decoration:underline;">Privacy Policy</a>
+</td>
+</tr>
+<tr>
 <td align="center" style="font-size:12px; line-height:1.6; color:#a0a0a0;">
-&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.<br>
-This is an automated message, please don&rsquo;t reply directly to this email.
+This is an automated message, please don&rsquo;t reply directly to this email.<br>
+&copy; {{ date('Y') }} {{ config('app.name') }} LLC. All rights reserved.<br>
+123 Pet Lane, Suite 100, San Francisco, CA 94107
 </td>
 </tr>
 </table>
