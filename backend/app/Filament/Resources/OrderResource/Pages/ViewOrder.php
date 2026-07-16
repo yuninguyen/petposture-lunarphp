@@ -49,10 +49,15 @@ class ViewOrder extends ViewRecord
                         ->weight('bold'),
                     Infolists\Components\TextEntry::make('meta.payment_method')
                         ->label(__('Payment Method'))
-                        ->default('—'),
+                        ->formatStateUsing(fn(?string $state): string => match ($state) {
+                            'cod' => 'COD',
+                            'card' => 'Credit Card',
+                            'paypal' => 'PayPal',
+                            default => $state ? str($state)->headline()->toString() : '—',
+                        }),
                     Infolists\Components\TextEntry::make('meta.payment_status')
                         ->label(__('Payment Status'))
-                        ->default('—'),
+                        ->formatStateUsing(fn(?string $state): string => $state ? str($state)->headline()->toString() : '—'),
                     Infolists\Components\TextEntry::make('meta.coupon_code')
                         ->label(__('Coupon'))
                         ->default('—'),
@@ -93,7 +98,7 @@ class ViewOrder extends ViewRecord
                     Infolists\Components\TextEntry::make('shippingAddress.postcode')
                         ->label(__('Postcode')),
                     Infolists\Components\TextEntry::make('shippingAddress.contact_phone')
-                        ->label(__('Phone')),
+                        ->label(__('Phone Number')),
                 ])->columns(2),
 
             Infolists\Components\Section::make(__('Notes'))
