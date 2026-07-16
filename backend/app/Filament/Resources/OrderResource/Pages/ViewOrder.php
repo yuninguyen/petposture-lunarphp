@@ -110,37 +110,50 @@ class ViewOrder extends ViewRecord
                         ->columns(4)
                         ->columnSpanFull(),
 
-                    Infolists\Components\TextEntry::make('sub_total')
-                        ->label(__('Items Subtotal'))
-                        ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
-                    Infolists\Components\TextEntry::make('discount_total')
-                        ->label(__('Discount'))
-                        ->formatStateUsing(fn($state) => '-$' . number_format(($state->value ?? (int) $state) / 100, 2)),
-                    Infolists\Components\TextEntry::make('shipping_total')
-                        ->label(__('Shipping'))
-                        ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
-                    Infolists\Components\TextEntry::make('tax_total')
-                        ->label(__('Tax'))
-                        ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
-                    Infolists\Components\TextEntry::make('total')
-                        ->label(__('Order Total'))
-                        ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2))
-                        ->weight('bold'),
-                    Infolists\Components\TextEntry::make('meta.payment_method')
-                        ->label(__('Payment Method'))
-                        ->formatStateUsing(fn(?string $state): string => match ($state) {
-                            'cod' => 'COD',
-                            'card' => 'Credit Card',
-                            'paypal' => 'PayPal',
-                            default => $state ? str($state)->headline()->toString() : '—',
+                    Infolists\Components\TextEntry::make('totals_block')
+                        ->label('')
+                        ->alignEnd()
+                        ->html()
+                        ->columnSpanFull()
+                        ->state(function ($record) {
+                            $money = fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2);
+                            $discount = (int) ($record->discount_total->value ?? $record->discount_total ?? 0);
+
+                            $rows = [
+                                'Items Subtotal: ' . $money($record->sub_total),
+                            ];
+
+                            if ($discount > 0) {
+                                $rows[] = 'Discount: -' . $money($record->discount_total);
+                            }
+
+                            $rows[] = 'Shipping: ' . $money($record->shipping_total);
+                            $rows[] = 'Tax: ' . $money($record->tax_total);
+                            $rows[] = '<strong>Order Total: ' . $money($record->total) . '</strong>';
+                            $rows[] = '<hr style="margin: 8px 0; border-color: rgb(228 228 231);">';
+
+                            $paymentMethod = match ($record->meta['payment_method'] ?? null) {
+                                'cod' => 'COD',
+                                'card' => 'Credit Card',
+                                'paypal' => 'PayPal',
+                                default => $record->meta['payment_method'] ?? null
+                                    ? str($record->meta['payment_method'])->headline()->toString()
+                                    : '—',
+                            };
+                            $paymentStatus = ($record->meta['payment_status'] ?? null)
+                                ? str($record->meta['payment_status'])->headline()->toString()
+                                : '—';
+
+                            $rows[] = "Payment Method: {$paymentMethod}";
+                            $rows[] = "Payment Status: {$paymentStatus}";
+
+                            if ($couponCode = $record->meta['coupon_code'] ?? null) {
+                                $rows[] = "Coupon: {$couponCode}";
+                            }
+
+                            return implode('<br>', $rows);
                         }),
-                    Infolists\Components\TextEntry::make('meta.payment_status')
-                        ->label(__('Payment Status'))
-                        ->formatStateUsing(fn(?string $state): string => $state ? str($state)->headline()->toString() : '—'),
-                    Infolists\Components\TextEntry::make('meta.coupon_code')
-                        ->label(__('Coupon'))
-                        ->default('—'),
-                ])->columns(4),
+                ]),
 
             Infolists\Components\Section::make(__('Notes'))
                 ->schema([
