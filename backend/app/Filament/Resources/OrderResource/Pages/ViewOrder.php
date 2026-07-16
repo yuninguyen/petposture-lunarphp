@@ -101,9 +101,13 @@ class ViewOrder extends ViewRecord
                                     trim(($record->shippingAddress?->state ?? '') . ' ' . ($record->shippingAddress?->postcode ?? '')),
                                     $record->shippingAddress?->country?->name,
                                 ])->filter()->implode(', ') ?: '—'),
-                            Infolists\Components\TextEntry::make('shipping_phone')
+                            Infolists\Components\TextEntry::make('shipping_contact')
                                 ->hiddenLabel()
-                                ->state(fn($record) => $record->shippingAddress?->contact_phone ?: '—'),
+                                ->state(fn($record) => sprintf(
+                                    'Phone: %s | Email: %s',
+                                    $record->shippingAddress?->contact_phone ?: '—',
+                                    $record->shippingAddress?->contact_email ?: '—',
+                                )),
                         ])->columnSpan(1),
 
                     Infolists\Components\Section::make(__('Billing Address'))
@@ -121,9 +125,13 @@ class ViewOrder extends ViewRecord
                                     trim(($record->billingAddress?->state ?? '') . ' ' . ($record->billingAddress?->postcode ?? '')),
                                     $record->billingAddress?->country?->name,
                                 ])->filter()->implode(', ') ?: '—'),
-                            Infolists\Components\TextEntry::make('billing_phone')
+                            Infolists\Components\TextEntry::make('billing_contact')
                                 ->hiddenLabel()
-                                ->state(fn($record) => $record->billingAddress?->contact_phone ?: '—'),
+                                ->state(fn($record) => sprintf(
+                                    'Phone: %s | Email: %s',
+                                    $record->billingAddress?->contact_phone ?: '—',
+                                    $record->billingAddress?->contact_email ?: '—',
+                                )),
                         ])->columnSpan(1),
                 ]),
 
