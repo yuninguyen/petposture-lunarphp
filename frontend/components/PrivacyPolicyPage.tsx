@@ -224,8 +224,8 @@ export default function PrivacyPolicyPage() {
                                     <h2 className="text-[28px] font-bold text-[#3e4c57] uppercase tracking-tight mb-6">12. HOW CAN YOU CONTACT US ABOUT THIS NOTICE?</h2>
                                     <p>If you have questions or comments about this notice, you may email us at <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a> or by post to:</p>
                                     <p className="mt-4 font-bold">PetPosture LLC</p>
-                                    <p>123 Pet Lane, Suite 100</p>
-                                    <p>San Francisco, CA 94107</p>
+                                    <p>2017 I St A</p>
+                                    <p>Sacramento, CA 95811</p>
                                     <p>United States</p>
                                 </section>
 

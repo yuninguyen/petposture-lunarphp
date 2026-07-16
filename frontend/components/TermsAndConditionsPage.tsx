@@ -214,8 +214,8 @@ export default function TermsAndConditionsPage() {
                                     <h2 className="text-[28px] font-bold text-[#3e4c57] uppercase tracking-tight mb-6">19. CONTACT US</h2>
                                     <p>In order to resolve a complaint regarding the Site or to receive further information regarding use of the Site, please contact us at:</p>
                                     <p className="mt-4 font-bold">PetPosture LLC</p>
-                                    <p>123 Pet Lane, Suite 100</p>
-                                    <p>San Francisco, CA 94107</p>
+                                    <p>2017 I St A</p>
+                                    <p>Sacramento, CA 95811</p>
                                     <p>United States</p>
                                     <p className="mt-4">
                                         Email: <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a>

@@ -123,10 +123,12 @@ Thanks,<br>The {{ config('app.name') }} Team
 
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; margin-top:28px;">
 <tr>
-<td align="center" style="padding-bottom:20px;">
-<a href="#" style="display:inline-block; width:36px; height:36px; line-height:36px; border-radius:50%; border:1px solid #d8dde0; color:#8b8f93; font-size:13px; font-weight:700; text-align:center; text-decoration:none; margin:0 4px;">f</a>
-<a href="#" style="display:inline-block; width:36px; height:36px; line-height:36px; border-radius:50%; border:1px solid #d8dde0; color:#8b8f93; font-size:13px; font-weight:700; text-align:center; text-decoration:none; margin:0 4px;">IG</a>
-<a href="#" style="display:inline-block; width:36px; height:36px; line-height:36px; border-radius:50%; border:1px solid #d8dde0; color:#8b8f93; font-size:13px; font-weight:700; text-align:center; text-decoration:none; margin:0 4px;">X</a>
+<td align="center" style="padding-bottom:24px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
+<td style="padding:0 6px;"><a href="#" style="display:block; width:40px; height:40px; line-height:40px; border-radius:50%; background-color:#3e4c57; color:#ffffff; font-size:15px; font-weight:700; text-align:center; text-decoration:none; font-family:Georgia,serif;">f</a></td>
+<td style="padding:0 6px;"><a href="#" style="display:block; width:40px; height:40px; line-height:40px; border-radius:50%; background-color:#3e4c57; color:#ffffff; font-size:13px; font-weight:700; text-align:center; text-decoration:none; letter-spacing:0.5px;">IG</a></td>
+<td style="padding:0 6px;"><a href="#" style="display:block; width:40px; height:40px; line-height:40px; border-radius:50%; background-color:#3e4c57; color:#ffffff; font-size:15px; font-weight:700; text-align:center; text-decoration:none;">X</a></td>
+</tr></table>
 </td>
 </tr>
 <tr>
