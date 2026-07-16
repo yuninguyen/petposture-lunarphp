@@ -104,7 +104,7 @@ class ViewOrder extends ViewRecord
                                 ->label(__('Phone Number')),
                             Infolists\Components\TextEntry::make('shippingAddress.country.name')
                                 ->label(__('Country')),
-                        ])->columns(2),
+                        ])->columns(2)->columnSpan(1),
 
                     Infolists\Components\Section::make(__('Billing Address'))
                         ->schema([
@@ -124,7 +124,7 @@ class ViewOrder extends ViewRecord
                                 ->label(__('Phone Number')),
                             Infolists\Components\TextEntry::make('billingAddress.country.name')
                                 ->label(__('Country')),
-                        ])->columns(2),
+                        ])->columns(2)->columnSpan(1),
                 ]),
 
             Infolists\Components\Section::make(__('Notes'))
