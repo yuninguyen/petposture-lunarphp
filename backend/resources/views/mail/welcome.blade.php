@@ -121,7 +121,14 @@ Thanks,<br>The {{ config('app.name') }} Team
 
 </table>
 
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; margin-top:24px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; margin-top:28px;">
+<tr>
+<td align="center" style="padding-bottom:20px;">
+<a href="#" style="display:inline-block; width:36px; height:36px; line-height:36px; border-radius:50%; border:1px solid #d8dde0; color:#8b8f93; font-size:13px; font-weight:700; text-align:center; text-decoration:none; margin:0 4px;">f</a>
+<a href="#" style="display:inline-block; width:36px; height:36px; line-height:36px; border-radius:50%; border:1px solid #d8dde0; color:#8b8f93; font-size:13px; font-weight:700; text-align:center; text-decoration:none; margin:0 4px;">IG</a>
+<a href="#" style="display:inline-block; width:36px; height:36px; line-height:36px; border-radius:50%; border:1px solid #d8dde0; color:#8b8f93; font-size:13px; font-weight:700; text-align:center; text-decoration:none; margin:0 4px;">X</a>
+</td>
+</tr>
 <tr>
 <td align="center" style="padding-bottom:12px; font-size:12px; color:#8b8f93;">
 <a href="{{ config('app.frontend_url') }}/contact" style="color:#8b8f93; text-decoration:underline;">Contact Us</a>
