@@ -78,6 +78,7 @@ class CheckoutController extends Controller
         ])->validate();
 
         $validated['attribution']['device_type'] = $this->resolveDeviceType($request->userAgent());
+        $validated['attribution']['user_agent'] = $request->userAgent();
 
         // Populate shipping from saved address when authenticated user passes shipping_address_id
         if (! empty($validated['shipping_address_id']) && $userId) {

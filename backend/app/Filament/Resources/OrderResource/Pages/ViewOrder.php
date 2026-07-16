@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\OrderResource\Pages;
 
 use App\Filament\Resources\OrderResource;
-use App\Services\OrderEventService;
 use App\Services\OrderOperationsService;
 use Filament\Actions;
 use Filament\Forms;
@@ -62,27 +61,40 @@ class ViewOrder extends ViewRecord
                 });
         }
 
-        $actions[] = Actions\Action::make('addNote')
-            ->label(__('Add Note'))
-            ->color('gray')
-            ->form([
-                Forms\Components\Textarea::make('note')
-                    ->label(__('Note'))
-                    ->required(),
-            ])
-            ->action(function (array $data) {
-                app(OrderEventService::class)->record(
-                    $this->record,
-                    'note.private',
-                    'Private note',
-                    $data['note'],
-                    dedupeAgainstLatest: false,
-                );
-
-                $this->redirect(static::getUrl(['record' => $this->record]));
-            });
-
         return $actions;
+    }
+
+    private static function formatAddressBlock($address): string
+    {
+        if (!$address) {
+            return '—';
+        }
+
+        $lines = [
+            trim(($address->first_name ?? '') . ' ' . ($address->last_name ?? '')),
+            collect([$address->line_one, $address->line_two])->filter()->implode(', '),
+            collect([
+                $address->city,
+                trim(($address->state ?? '') . ' ' . ($address->postcode ?? '')),
+            ])->filter()->implode(', '),
+            $address->country?->name,
+            $address->contact_phone,
+        ];
+
+        return collect($lines)->filter()->implode('<br>') ?: '—';
+    }
+
+    private static function formatCustomerIpBlock(array $meta): string
+    {
+        $lines = [
+            $meta['customer_ip'] ?? null,
+            $meta['customer_ip_location'] ?? null,
+            $meta['customer_ip_isp'] ?? null,
+            $meta['customer_user_agent'] ?? null,
+            $meta['customer_ip_service_type'] ?? null,
+        ];
+
+        return collect($lines)->filter()->map(fn($line) => e($line))->implode('<br>') ?: '—';
     }
 
     public function infolist(Infolist $infolist): Infolist
@@ -105,9 +117,10 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('created_at')
                                 ->label(__('Date'))
                                 ->dateTime(),
-                            Infolists\Components\TextEntry::make('meta.customer_ip')
+                            Infolists\Components\TextEntry::make('customer_ip_block')
                                 ->label(__('Customer IP'))
-                                ->default('—'),
+                                ->html()
+                                ->state(fn($record) => static::formatCustomerIpBlock((array) ($record->meta ?? []))),
                         ])->columns(2)->columnSpan(3),
 
                     Infolists\Components\Section::make(__('Order Attribution'))
@@ -153,16 +166,7 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('shipping_block')
                                 ->label('')
                                 ->html()
-                                ->state(fn($record) => collect([
-                                    trim(($record->shippingAddress?->first_name ?? '') . ' ' . ($record->shippingAddress?->last_name ?? '')),
-                                    collect([
-                                        $record->shippingAddress?->line_one,
-                                        $record->shippingAddress?->city,
-                                        trim(($record->shippingAddress?->state ?? '') . ' ' . ($record->shippingAddress?->postcode ?? '')),
-                                        $record->shippingAddress?->country?->name,
-                                    ])->filter()->implode(', '),
-                                    $record->shippingAddress?->contact_phone,
-                                ])->filter()->implode('<br>') ?: '—'),
+                                ->state(fn($record) => static::formatAddressBlock($record->shippingAddress)),
                         ])->columnSpan(1),
 
                     Infolists\Components\Section::make(__('Billing Address'))
@@ -170,16 +174,7 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('billing_block')
                                 ->label('')
                                 ->html()
-                                ->state(fn($record) => collect([
-                                    trim(($record->billingAddress?->first_name ?? '') . ' ' . ($record->billingAddress?->last_name ?? '')),
-                                    collect([
-                                        $record->billingAddress?->line_one,
-                                        $record->billingAddress?->city,
-                                        trim(($record->billingAddress?->state ?? '') . ' ' . ($record->billingAddress?->postcode ?? '')),
-                                        $record->billingAddress?->country?->name,
-                                    ])->filter()->implode(', '),
-                                    $record->billingAddress?->contact_phone,
-                                ])->filter()->implode('<br>') ?: '—'),
+                                ->state(fn($record) => static::formatAddressBlock($record->billingAddress)),
                         ])->columnSpan(1),
                 ]),
 

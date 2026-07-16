@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\LookupOrderIpIntelligenceJob;
 use App\Jobs\SendOrderConfirmationJob;
 use App\Models\User;
 use App\Payments\PaymentGatewayManager;
@@ -182,6 +183,7 @@ class CheckoutService
             $orderMeta['tracking_number'] = $order->reference;
             $orderMeta['customer_note'] = $customerNote;
             $orderMeta['customer_ip'] = $customerIp;
+            $orderMeta['customer_user_agent'] = $payload['attribution']['user_agent'] ?? null;
             $orderMeta['attribution_origin'] = $payload['attribution']['origin'] ?? null;
             $orderMeta['attribution_device_type'] = $payload['attribution']['device_type'] ?? null;
             $orderMeta['attribution_session_page_views'] = $payload['attribution']['session_page_views'] ?? null;
@@ -246,6 +248,10 @@ class CheckoutService
             // Queue confirmation email — non-blocking, fails silently if mail not configured
             if ($placed->customer_reference) {
                 SendOrderConfirmationJob::dispatch($placed->id);
+            }
+
+            if ($customerIp) {
+                LookupOrderIpIntelligenceJob::dispatch($placed->id, $customerIp);
             }
 
             return $placed;
