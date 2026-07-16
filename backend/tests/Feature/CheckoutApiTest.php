@@ -82,13 +82,10 @@ class CheckoutApiTest extends TestCase
             ->assertJsonPath('data.tracking_number', $reference)
             ->assertJsonPath('data.status', 'awaiting-payment')
             ->assertJsonPath('data.fulfillment_status', 'unfulfilled')
-            ->assertJsonPath('data.estimated_delivery', null)
-            ->assertJsonPath('data.tracking_url', null);
-
-        $response->assertJsonMissingPath('data.customer_email');
-        $response->assertJsonMissingPath('data.payment_method');
-        $response->assertJsonMissingPath('data.shipping_address');
-        $response->assertJsonMissingPath('data.billing_address');
+            ->assertJsonPath('data.shipments', [])
+            ->assertJsonPath('data.customer_email', 'guest@petposture.com')
+            ->assertJsonPath('data.shipping_address.city', 'Austin')
+            ->assertJsonPath('data.billing_address.postcode', '78701');
     }
 
     public function test_track_order_returns_not_found_for_invalid_credentials(): void

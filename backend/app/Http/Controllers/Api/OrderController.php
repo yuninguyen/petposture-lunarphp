@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Api\OrderTrackResource;
 use App\Http\Resources\Api\OrderResource;
 use App\Services\OrderOperationsService;
 use App\Services\StripePaymentIntentService;
@@ -52,7 +51,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'No order found with these credentials.'], 404);
         }
 
-        return new OrderTrackResource($order);
+        return new OrderResource($order);
     }
 
     public function retryPayment(Request $request)
