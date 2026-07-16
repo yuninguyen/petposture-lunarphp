@@ -244,6 +244,7 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
+                    ->formatStateUsing(fn(string $state): string => str($state)->headline()->toString())
                     ->color(fn($state) => match(true) {
                         $state === 'payment-pending'  => 'warning',
                         $state === 'cancelled'        => 'danger',
@@ -252,7 +253,12 @@ class OrderResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('meta.payment_method')
                     ->label(__('Payment'))
-                    ->default('—'),
+                    ->formatStateUsing(fn(?string $state): string => match ($state) {
+                        'cod' => 'COD',
+                        'card' => 'Credit Card',
+                        'paypal' => 'PayPal',
+                        default => $state ? str($state)->headline()->toString() : '—',
+                    }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('Date'))
                     ->dateTime()

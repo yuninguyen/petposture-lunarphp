@@ -21,7 +21,8 @@ class ViewOrder extends ViewRecord
                         ->label(__('Reference')),
                     Infolists\Components\TextEntry::make('status')
                         ->label(__('Status'))
-                        ->badge(),
+                        ->badge()
+                        ->formatStateUsing(fn(string $state): string => str($state)->headline()->toString()),
                     Infolists\Components\TextEntry::make('customer_reference')
                         ->label(__('Customer Email')),
                     Infolists\Components\TextEntry::make('created_at')
