@@ -123,27 +123,6 @@ Thanks,<br>The {{ config('app.name') }} Team
 
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; margin-top:28px;">
 <tr>
-<td align="center" style="padding-bottom:24px;">
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
-<td style="padding:0 6px;">
-<a href="#" style="display:inline-block; width:40px; height:40px; border-radius:50%; background-color:#3e4c57; text-align:center; line-height:40px;">
-<img src="{{ config('app.frontend_url') }}/assets/email/icon-facebook.png" width="16" height="16" alt="Facebook" style="vertical-align:middle;">
-</a>
-</td>
-<td style="padding:0 6px;">
-<a href="#" style="display:inline-block; width:40px; height:40px; border-radius:50%; background-color:#3e4c57; text-align:center; line-height:40px;">
-<img src="{{ config('app.frontend_url') }}/assets/email/icon-instagram.png" width="17" height="17" alt="Instagram" style="vertical-align:middle;">
-</a>
-</td>
-<td style="padding:0 6px;">
-<a href="#" style="display:inline-block; width:40px; height:40px; border-radius:50%; background-color:#3e4c57; text-align:center; line-height:40px;">
-<img src="{{ config('app.frontend_url') }}/assets/email/icon-x.png" width="16" height="16" alt="X" style="vertical-align:middle;">
-</a>
-</td>
-</tr></table>
-</td>
-</tr>
-<tr>
 <td align="center" style="padding-bottom:12px; font-size:12px; color:#8b8f93;">
 <a href="{{ config('app.frontend_url') }}/contact" style="color:#8b8f93; text-decoration:underline;">Contact Us</a>
 &nbsp;&middot;&nbsp;
