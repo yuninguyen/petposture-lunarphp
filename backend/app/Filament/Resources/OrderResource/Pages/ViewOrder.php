@@ -92,8 +92,6 @@ class ViewOrder extends ViewRecord
                         ->label(__('Last Name')),
                     Infolists\Components\TextEntry::make('shippingAddress.line_one')
                         ->label(__('Address')),
-                    Infolists\Components\TextEntry::make('shippingAddress.country.name')
-                        ->label(__('Country')),
                     Infolists\Components\TextEntry::make('shippingAddress.city')
                         ->label(__('City')),
                     Infolists\Components\TextEntry::make('shippingAddress.state')
@@ -102,6 +100,8 @@ class ViewOrder extends ViewRecord
                         ->label(__('Postcode')),
                     Infolists\Components\TextEntry::make('shippingAddress.contact_phone')
                         ->label(__('Phone Number')),
+                    Infolists\Components\TextEntry::make('shippingAddress.country.name')
+                        ->label(__('Country')),
                 ])->columns(2),
 
             Infolists\Components\Section::make(__('Notes'))
