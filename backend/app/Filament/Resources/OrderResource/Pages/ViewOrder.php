@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\OrderResource\Pages;
 
 use App\Filament\Resources\OrderResource;
+use App\Services\OrderOperationsService;
+use Filament\Actions;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
@@ -10,6 +12,27 @@ use Filament\Resources\Pages\ViewRecord;
 class ViewOrder extends ViewRecord
 {
     protected static string $resource = OrderResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        $operations = app(OrderOperationsService::class);
+
+        return collect($operations->availableActions($this->record))
+            ->map(function (array $action) use ($operations) {
+                $isCancel = $action['action'] === 'cancelOrder';
+
+                return Actions\Action::make($action['action'])
+                    ->label($action['label'])
+                    ->color($isCancel ? 'danger' : 'primary')
+                    ->requiresConfirmation()
+                    ->action(function () use ($operations, $action) {
+                        $operations->performAction($this->record, $action['action']);
+
+                        $this->redirect(static::getUrl(['record' => $this->record]));
+                    });
+            })
+            ->all();
+    }
 
     public function infolist(Infolist $infolist): Infolist
     {
@@ -67,40 +90,6 @@ class ViewOrder extends ViewRecord
                         ])->columnSpan(1),
                 ]),
 
-            Infolists\Components\Section::make(__('Financials'))
-                ->schema([
-                    Infolists\Components\TextEntry::make('sub_total')
-                        ->label(__('Subtotal'))
-                        ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
-                    Infolists\Components\TextEntry::make('discount_total')
-                        ->label(__('Discount'))
-                        ->formatStateUsing(fn($state) => '-$' . number_format(($state->value ?? (int) $state) / 100, 2)),
-                    Infolists\Components\TextEntry::make('shipping_total')
-                        ->label(__('Shipping'))
-                        ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
-                    Infolists\Components\TextEntry::make('tax_total')
-                        ->label(__('Tax'))
-                        ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
-                    Infolists\Components\TextEntry::make('total')
-                        ->label(__('Total'))
-                        ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2))
-                        ->weight('bold'),
-                    Infolists\Components\TextEntry::make('meta.payment_method')
-                        ->label(__('Payment Method'))
-                        ->formatStateUsing(fn(?string $state): string => match ($state) {
-                            'cod' => 'COD',
-                            'card' => 'Credit Card',
-                            'paypal' => 'PayPal',
-                            default => $state ? str($state)->headline()->toString() : '—',
-                        }),
-                    Infolists\Components\TextEntry::make('meta.payment_status')
-                        ->label(__('Payment Status'))
-                        ->formatStateUsing(fn(?string $state): string => $state ? str($state)->headline()->toString() : '—'),
-                    Infolists\Components\TextEntry::make('meta.coupon_code')
-                        ->label(__('Coupon'))
-                        ->default('—'),
-                ])->columns(4),
-
             Infolists\Components\Section::make(__('Items'))
                 ->schema([
                     Infolists\Components\RepeatableEntry::make('lines')
@@ -118,8 +107,40 @@ class ViewOrder extends ViewRecord
                                 ->label(__('Subtotal'))
                                 ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
                         ])
-                        ->columns(4),
-                ]),
+                        ->columns(4)
+                        ->columnSpanFull(),
+
+                    Infolists\Components\TextEntry::make('sub_total')
+                        ->label(__('Items Subtotal'))
+                        ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
+                    Infolists\Components\TextEntry::make('discount_total')
+                        ->label(__('Discount'))
+                        ->formatStateUsing(fn($state) => '-$' . number_format(($state->value ?? (int) $state) / 100, 2)),
+                    Infolists\Components\TextEntry::make('shipping_total')
+                        ->label(__('Shipping'))
+                        ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
+                    Infolists\Components\TextEntry::make('tax_total')
+                        ->label(__('Tax'))
+                        ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
+                    Infolists\Components\TextEntry::make('total')
+                        ->label(__('Order Total'))
+                        ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2))
+                        ->weight('bold'),
+                    Infolists\Components\TextEntry::make('meta.payment_method')
+                        ->label(__('Payment Method'))
+                        ->formatStateUsing(fn(?string $state): string => match ($state) {
+                            'cod' => 'COD',
+                            'card' => 'Credit Card',
+                            'paypal' => 'PayPal',
+                            default => $state ? str($state)->headline()->toString() : '—',
+                        }),
+                    Infolists\Components\TextEntry::make('meta.payment_status')
+                        ->label(__('Payment Status'))
+                        ->formatStateUsing(fn(?string $state): string => $state ? str($state)->headline()->toString() : '—'),
+                    Infolists\Components\TextEntry::make('meta.coupon_code')
+                        ->label(__('Coupon'))
+                        ->default('—'),
+                ])->columns(4),
 
             Infolists\Components\Section::make(__('Notes'))
                 ->schema([
