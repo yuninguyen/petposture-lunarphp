@@ -125,9 +125,21 @@ Thanks,<br>The {{ config('app.name') }} Team
 <tr>
 <td align="center" style="padding-bottom:24px;">
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
-<td style="padding:0 6px;"><a href="#" style="display:block; width:40px; height:40px; line-height:40px; border-radius:50%; background-color:#3e4c57; color:#ffffff; font-size:15px; font-weight:700; text-align:center; text-decoration:none; font-family:Georgia,serif;">f</a></td>
-<td style="padding:0 6px;"><a href="#" style="display:block; width:40px; height:40px; line-height:40px; border-radius:50%; background-color:#3e4c57; color:#ffffff; font-size:13px; font-weight:700; text-align:center; text-decoration:none; letter-spacing:0.5px;">IG</a></td>
-<td style="padding:0 6px;"><a href="#" style="display:block; width:40px; height:40px; line-height:40px; border-radius:50%; background-color:#3e4c57; color:#ffffff; font-size:15px; font-weight:700; text-align:center; text-decoration:none;">X</a></td>
+<td style="padding:0 6px;">
+<a href="#" style="display:inline-block; width:40px; height:40px; border-radius:50%; background-color:#3e4c57; text-align:center; line-height:40px;">
+<img src="{{ config('app.frontend_url') }}/assets/email/icon-facebook.png" width="16" height="16" alt="Facebook" style="vertical-align:middle;">
+</a>
+</td>
+<td style="padding:0 6px;">
+<a href="#" style="display:inline-block; width:40px; height:40px; border-radius:50%; background-color:#3e4c57; text-align:center; line-height:40px;">
+<img src="{{ config('app.frontend_url') }}/assets/email/icon-instagram.png" width="17" height="17" alt="Instagram" style="vertical-align:middle;">
+</a>
+</td>
+<td style="padding:0 6px;">
+<a href="#" style="display:inline-block; width:40px; height:40px; border-radius:50%; background-color:#3e4c57; text-align:center; line-height:40px;">
+<img src="{{ config('app.frontend_url') }}/assets/email/icon-x.png" width="16" height="16" alt="X" style="vertical-align:middle;">
+</a>
+</td>
 </tr></table>
 </td>
 </tr>
