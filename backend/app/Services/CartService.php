@@ -24,7 +24,7 @@ class CartService
     {
         if ($userId) {
             $cart = Cart::where('user_id', $userId)
-                ->whereDoesntHave('order')
+                ->whereDoesntHave('orders')
                 ->latest()
                 ->first();
 
@@ -36,7 +36,7 @@ class CartService
         if ($token) {
             $cart = Cart::where('meta->token', $token)
                 ->whereNull('user_id')
-                ->whereDoesntHave('order')
+                ->whereDoesntHave('orders')
                 ->first();
 
             if ($cart) {
@@ -108,7 +108,7 @@ class CartService
     {
         $guestCart = Cart::where('meta->token', $guestToken)
             ->whereNull('user_id')
-            ->whereDoesntHave('order')
+            ->whereDoesntHave('orders')
             ->with('lines.purchasable')
             ->first();
 
