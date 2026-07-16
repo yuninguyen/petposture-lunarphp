@@ -54,6 +54,8 @@ class CheckoutService
                 'user_id' => $userId,
             ]);
 
+            $customer = null;
+
             if ($userId !== null) {
                 $user = User::find($userId);
                 if ($user) {
@@ -88,6 +90,20 @@ class CheckoutService
                 $this->buildAddressData($billingInput, $shippingEmail, $billingCountry),
                 ['type' => 'billing']
             ));
+
+            if ($customer) {
+                $shippingAddressData = $this->buildAddressData($shippingInput, $shippingEmail, $shippingCountry);
+                $alreadySaved = $customer->addresses()
+                    ->where('line_one', $shippingAddressData['line_one'])
+                    ->where('postcode', $shippingAddressData['postcode'])
+                    ->exists();
+
+                if (!$alreadySaved) {
+                    $customer->addresses()->create(array_merge($shippingAddressData, [
+                        'shipping_default' => !$customer->addresses()->exists(),
+                    ]));
+                }
+            }
 
             $cart->load(['shippingAddress', 'billingAddress']);
             $cart->calculate();
