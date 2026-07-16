@@ -103,6 +103,30 @@ class CheckoutService
                         'shipping_default' => !$customer->addresses()->exists(),
                     ]));
                 }
+
+                $userAddressData = [
+                    'first_name' => trim((string) ($shippingInput['first_name'] ?? 'Customer')),
+                    'last_name' => trim((string) ($shippingInput['last_name'] ?? '')),
+                    'line_one' => trim((string) ($shippingInput['line_one'] ?? '')),
+                    'line_two' => $this->nullableString($shippingInput['line_two'] ?? null),
+                    'city' => trim((string) ($shippingInput['city'] ?? '')),
+                    'state' => trim((string) ($shippingInput['state'] ?? '')),
+                    'postcode' => trim((string) ($shippingInput['postcode'] ?? '')),
+                    'country_code' => $shippingCountry?->iso2 ?? 'US',
+                    'phone' => $this->nullableString($shippingInput['phone'] ?? null),
+                ];
+
+                $alreadySavedForUser = $user->addresses()
+                    ->where('line_one', $userAddressData['line_one'])
+                    ->where('postcode', $userAddressData['postcode'])
+                    ->exists();
+
+                if (!$alreadySavedForUser) {
+                    $user->addresses()->create(array_merge($userAddressData, [
+                        'label' => 'Home',
+                        'is_default' => !$user->addresses()->exists(),
+                    ]));
+                }
             }
 
             $cart->load(['shippingAddress', 'billingAddress']);
