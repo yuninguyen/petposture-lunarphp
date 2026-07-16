@@ -11,7 +11,8 @@ RUN apk add --no-cache \
     freetype-dev \
     oniguruma-dev \
     libxml2-dev \
-    bash
+    bash \
+    supervisor
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
@@ -43,6 +44,9 @@ RUN chown -R www-data:www-data storage bootstrap/cache
 # Copy properly formatted Caddyfile
 COPY Caddyfile /etc/caddy/Caddyfile
 
+# Copy supervisor config (runs FrankenPHP + the queue worker as sibling processes)
+COPY supervisord.conf /etc/supervisord.conf
+
 # Create a startup script to handle migrations and port binding
 RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint.sh && \
     echo 'set -e' >> /usr/local/bin/docker-entrypoint.sh && \
@@ -52,9 +56,9 @@ RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint.sh && \
     echo 'php artisan route:cache' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'php artisan view:cache' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'php artisan storage:link || true' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'echo "Starting FrankenPHP on port $PORT..."' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'echo "Starting FrankenPHP + queue worker on port $PORT..."' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'export SERVER_NAME=":${PORT:-80}"' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'exec frankenphp run --config /etc/caddy/Caddyfile' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'exec supervisord -c /etc/supervisord.conf' >> /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Expose port 80 (standard for HTTP, Railway will remap)
