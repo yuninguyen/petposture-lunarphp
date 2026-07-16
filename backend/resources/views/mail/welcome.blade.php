@@ -133,7 +133,7 @@ Thanks,<br>The {{ config('app.name') }} Team
 <td align="center" style="font-size:12px; line-height:1.6; color:#a0a0a0;">
 This is an automated message, please don&rsquo;t reply directly to this email.<br>
 &copy; {{ date('Y') }} {{ config('app.name') }} LLC. All rights reserved.<br>
-123 Pet Lane, Suite 100, San Francisco, CA 94107
+2017 I St A, Sacramento, CA 95811, United States
 </td>
 </tr>
 </table>
