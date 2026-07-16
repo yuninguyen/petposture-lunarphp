@@ -84,45 +84,48 @@ class ViewOrder extends ViewRecord
                         ->columns(4),
                 ]),
 
-            Infolists\Components\Section::make(__('Shipping Address'))
+            Infolists\Components\Grid::make(2)
                 ->schema([
-                    Infolists\Components\TextEntry::make('shippingAddress.first_name')
-                        ->label(__('First Name')),
-                    Infolists\Components\TextEntry::make('shippingAddress.last_name')
-                        ->label(__('Last Name')),
-                    Infolists\Components\TextEntry::make('shippingAddress.line_one')
-                        ->label(__('Address')),
-                    Infolists\Components\TextEntry::make('shippingAddress.city')
-                        ->label(__('City')),
-                    Infolists\Components\TextEntry::make('shippingAddress.state')
-                        ->label(__('State')),
-                    Infolists\Components\TextEntry::make('shippingAddress.postcode')
-                        ->label(__('Postcode')),
-                    Infolists\Components\TextEntry::make('shippingAddress.contact_phone')
-                        ->label(__('Phone Number')),
-                    Infolists\Components\TextEntry::make('shippingAddress.country.name')
-                        ->label(__('Country')),
-                ])->columns(2),
+                    Infolists\Components\Section::make(__('Shipping Address'))
+                        ->schema([
+                            Infolists\Components\TextEntry::make('shippingAddress.first_name')
+                                ->label(__('First Name')),
+                            Infolists\Components\TextEntry::make('shippingAddress.last_name')
+                                ->label(__('Last Name')),
+                            Infolists\Components\TextEntry::make('shippingAddress.line_one')
+                                ->label(__('Address')),
+                            Infolists\Components\TextEntry::make('shippingAddress.city')
+                                ->label(__('City')),
+                            Infolists\Components\TextEntry::make('shippingAddress.state')
+                                ->label(__('State')),
+                            Infolists\Components\TextEntry::make('shippingAddress.postcode')
+                                ->label(__('Postcode')),
+                            Infolists\Components\TextEntry::make('shippingAddress.contact_phone')
+                                ->label(__('Phone Number')),
+                            Infolists\Components\TextEntry::make('shippingAddress.country.name')
+                                ->label(__('Country')),
+                        ])->columns(2),
 
-            Infolists\Components\Section::make(__('Billing Address'))
-                ->schema([
-                    Infolists\Components\TextEntry::make('billingAddress.first_name')
-                        ->label(__('First Name')),
-                    Infolists\Components\TextEntry::make('billingAddress.last_name')
-                        ->label(__('Last Name')),
-                    Infolists\Components\TextEntry::make('billingAddress.line_one')
-                        ->label(__('Address')),
-                    Infolists\Components\TextEntry::make('billingAddress.city')
-                        ->label(__('City')),
-                    Infolists\Components\TextEntry::make('billingAddress.state')
-                        ->label(__('State')),
-                    Infolists\Components\TextEntry::make('billingAddress.postcode')
-                        ->label(__('Postcode')),
-                    Infolists\Components\TextEntry::make('billingAddress.contact_phone')
-                        ->label(__('Phone Number')),
-                    Infolists\Components\TextEntry::make('billingAddress.country.name')
-                        ->label(__('Country')),
-                ])->columns(2),
+                    Infolists\Components\Section::make(__('Billing Address'))
+                        ->schema([
+                            Infolists\Components\TextEntry::make('billingAddress.first_name')
+                                ->label(__('First Name')),
+                            Infolists\Components\TextEntry::make('billingAddress.last_name')
+                                ->label(__('Last Name')),
+                            Infolists\Components\TextEntry::make('billingAddress.line_one')
+                                ->label(__('Address')),
+                            Infolists\Components\TextEntry::make('billingAddress.city')
+                                ->label(__('City')),
+                            Infolists\Components\TextEntry::make('billingAddress.state')
+                                ->label(__('State')),
+                            Infolists\Components\TextEntry::make('billingAddress.postcode')
+                                ->label(__('Postcode')),
+                            Infolists\Components\TextEntry::make('billingAddress.contact_phone')
+                                ->label(__('Phone Number')),
+                            Infolists\Components\TextEntry::make('billingAddress.country.name')
+                                ->label(__('Country')),
+                        ])->columns(2),
+                ]),
 
             Infolists\Components\Section::make(__('Notes'))
                 ->schema([
