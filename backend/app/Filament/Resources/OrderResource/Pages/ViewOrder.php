@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\OrderResource\Pages;
 
 use App\Filament\Resources\OrderResource;
+use App\Services\OrderEventService;
 use App\Services\OrderOperationsService;
 use Filament\Actions;
 use Filament\Forms;
@@ -61,6 +62,26 @@ class ViewOrder extends ViewRecord
                 });
         }
 
+        $actions[] = Actions\Action::make('addNote')
+            ->label(__('Add Note'))
+            ->color('gray')
+            ->form([
+                Forms\Components\Textarea::make('note')
+                    ->label(__('Note'))
+                    ->required(),
+            ])
+            ->action(function (array $data) {
+                app(OrderEventService::class)->record(
+                    $this->record,
+                    'note.private',
+                    'Private note',
+                    $data['note'],
+                    dedupeAgainstLatest: false,
+                );
+
+                $this->redirect(static::getUrl(['record' => $this->record]));
+            });
+
         return $actions;
     }
 
@@ -68,37 +89,40 @@ class ViewOrder extends ViewRecord
     {
         return $infolist->schema([
 
-            Infolists\Components\Section::make(__('Order Summary'))
+            Infolists\Components\Grid::make(5)
                 ->schema([
-                    Infolists\Components\TextEntry::make('reference')
-                        ->label(__('Order Number'))
-                        ->formatStateUsing(fn(string $state): string => "#{$state}"),
-                    Infolists\Components\TextEntry::make('status')
-                        ->label(__('Status'))
-                        ->badge()
-                        ->formatStateUsing(fn(string $state): string => str($state)->headline()->toString()),
-                    Infolists\Components\TextEntry::make('customer_reference')
-                        ->label(__('Customer Email')),
-                    Infolists\Components\TextEntry::make('created_at')
-                        ->label(__('Date'))
-                        ->dateTime(),
-                    Infolists\Components\TextEntry::make('meta.customer_ip')
-                        ->label(__('Customer IP'))
-                        ->default('—'),
-                ])->columns(2),
+                    Infolists\Components\Section::make(__('Order Summary'))
+                        ->schema([
+                            Infolists\Components\TextEntry::make('reference')
+                                ->label(__('Order Number'))
+                                ->formatStateUsing(fn(string $state): string => "#{$state}"),
+                            Infolists\Components\TextEntry::make('status')
+                                ->label(__('Status'))
+                                ->badge()
+                                ->formatStateUsing(fn(string $state): string => str($state)->headline()->toString()),
+                            Infolists\Components\TextEntry::make('customer_reference')
+                                ->label(__('Customer Email')),
+                            Infolists\Components\TextEntry::make('created_at')
+                                ->label(__('Date'))
+                                ->dateTime(),
+                            Infolists\Components\TextEntry::make('meta.customer_ip')
+                                ->label(__('Customer IP'))
+                                ->default('—'),
+                        ])->columns(2)->columnSpan(3),
 
-            Infolists\Components\Section::make(__('Order Attribution'))
-                ->schema([
-                    Infolists\Components\TextEntry::make('meta.attribution_origin')
-                        ->label(__('Origin'))
-                        ->default('—'),
-                    Infolists\Components\TextEntry::make('meta.attribution_device_type')
-                        ->label(__('Device Type'))
-                        ->default('—'),
-                    Infolists\Components\TextEntry::make('meta.attribution_session_page_views')
-                        ->label(__('Session Page Views'))
-                        ->default('—'),
-                ])->columns(3),
+                    Infolists\Components\Section::make(__('Order Attribution'))
+                        ->schema([
+                            Infolists\Components\TextEntry::make('meta.attribution_origin')
+                                ->label(__('Origin'))
+                                ->default('—'),
+                            Infolists\Components\TextEntry::make('meta.attribution_device_type')
+                                ->label(__('Device Type'))
+                                ->default('—'),
+                            Infolists\Components\TextEntry::make('meta.attribution_session_page_views')
+                                ->label(__('Session Page Views'))
+                                ->default('—'),
+                        ])->columnSpan(2),
+                ]),
 
             Infolists\Components\Section::make(__('Fraud & Risk'))
                 ->description(__('Powered by Stripe Radar — automatic on every card payment, no extra setup required.'))
@@ -234,15 +258,28 @@ class ViewOrder extends ViewRecord
                         ->extraAttributes(['class' => '-mt-8']),
                 ]),
 
-            Infolists\Components\Section::make(__('Notes'))
+            Infolists\Components\Section::make(__('Order Notes'))
                 ->schema([
                     Infolists\Components\TextEntry::make('notes')
                         ->label(__('Customer Note'))
                         ->default('—')
                         ->columnSpanFull(),
-                    Infolists\Components\TextEntry::make('meta.internal_note')
-                        ->label(__('Internal Note'))
-                        ->default('—')
+                    Infolists\Components\RepeatableEntry::make('orderEvents')
+                        ->label('')
+                        ->state(fn($record) => $record->orderEvents()->latest('id')->get())
+                        ->schema([
+                            Infolists\Components\TextEntry::make('title')
+                                ->label('')
+                                ->html()
+                                ->state(fn($record) => '<strong>' . e($record->title) . '</strong>'
+                                    . ($record->detail ? '<br><span style="color:#6b7280;">' . e($record->detail) . '</span>' : '')),
+                            Infolists\Components\TextEntry::make('occurred_at')
+                                ->label('')
+                                ->state(fn($record) => optional($record->occurred_at ?? $record->created_at)->format('M j, Y g:i A'))
+                                ->color('gray')
+                                ->alignEnd(),
+                        ])
+                        ->columns(2)
                         ->columnSpanFull(),
                 ]),
         ]);

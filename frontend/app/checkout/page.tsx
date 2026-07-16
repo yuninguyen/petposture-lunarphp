@@ -522,6 +522,15 @@ export default function CheckoutPage() {
     }, [activeAddressTarget, form.address1, form.billingAddress, form.billingAddress1, form.billingCountry, form.country, placesReady]);
 
     useEffect(() => {
+        if (form.billingAddress === 'same') {
+            const shippingName = `${form.firstName} ${form.lastName}`.trim();
+            setForm((prev) => (prev.cardName === shippingName ? prev : { ...prev, cardName: shippingName }));
+        } else {
+            setForm((prev) => (prev.cardName === '' ? prev : { ...prev, cardName: '' }));
+        }
+    }, [form.billingAddress, form.firstName, form.lastName]);
+
+    useEffect(() => {
         let cancelled = false;
 
         const loadTaxQuote = async () => {
@@ -614,9 +623,28 @@ export default function CheckoutPage() {
         return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
     };
 
+    const formatCardNumber = (value: string) => {
+        const cleaned = value.replace(/\D/g, '').slice(0, 19);
+        return cleaned.replace(/(.{4})/g, '$1 ').trim();
+    };
+
+    const formatExpiry = (value: string) => {
+        const cleaned = value.replace(/\D/g, '').slice(0, 4);
+        if (cleaned.length <= 2) return cleaned;
+        return `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
+    };
+
     const updateField = <K extends keyof CheckoutFormState>(key: K, value: CheckoutFormState[K]) => {
         if (key === 'phone' && typeof value === 'string') {
             setForm((prev) => ({ ...prev, [key]: formatPhoneNumber(value) }));
+            return;
+        }
+        if (key === 'cardNumber' && typeof value === 'string') {
+            setForm((prev) => ({ ...prev, [key]: formatCardNumber(value) }));
+            return;
+        }
+        if (key === 'expiry' && typeof value === 'string') {
+            setForm((prev) => ({ ...prev, [key]: formatExpiry(value) }));
             return;
         }
         setForm((prev) => ({ ...prev, [key]: value }));
