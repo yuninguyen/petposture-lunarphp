@@ -9,7 +9,9 @@ use App\Http\Resources\Api\UserResource;
 use App\Models\User;
 use App\Mail\WelcomeEmail;
 use App\Services\CartService;
+use App\Services\CustomerLinkService;
 use App\Traits\HttpResponses;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -50,6 +52,12 @@ class AuthController extends Controller
         $customerRole = Role::where('name', 'customer')->first();
         if ($customerRole) {
             $user->assignRole($customerRole);
+        }
+
+        try {
+            app(CustomerLinkService::class)->resolveForUser($user);
+        } catch (\Throwable $e) {
+            Log::error('Customer link failed for user ' . $user->id . ': ' . $e->getMessage());
         }
 
         Mail::send(new WelcomeEmail($user));

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Jobs\SendOrderConfirmationJob;
+use App\Models\User;
 use App\Payments\PaymentGatewayManager;
 use App\Services\SalesTaxService;
 use App\Services\ShippingService;
@@ -29,6 +30,7 @@ class CheckoutService
         private readonly OrderEventService $orderEventService,
         private readonly InventoryService $inventoryService,
         private readonly ShippingService $shippingService,
+        private readonly CustomerLinkService $customerLinkService,
     ) {
     }
 
@@ -51,6 +53,14 @@ class CheckoutService
                 'channel_id' => Channel::getDefault()->id,
                 'user_id' => $userId,
             ]);
+
+            if ($userId !== null) {
+                $user = User::find($userId);
+                if ($user) {
+                    $customer = $this->customerLinkService->resolveForUser($user);
+                    $cart->setCustomer($customer);
+                }
+            }
 
             foreach ($payload['items'] as $item) {
                 $variant = ProductVariant::findOrFail($item['variantId']);

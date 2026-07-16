@@ -35,6 +35,14 @@ class UserResource extends Resource
         return __('Users');
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        // Mirrors the staff role list in App\Models\User::canAccessPanel() — keep in sync.
+        return parent::getEloquentQuery()->whereHas('roles', fn (Builder $query) =>
+            $query->whereIn('name', ['super_admin', 'admin', 'staff', 'Product Manager', 'Order Manager', 'Support'])
+        );
+    }
+
     public static function form(Form $form): Form
     {
         return $form
