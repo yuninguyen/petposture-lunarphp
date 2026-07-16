@@ -30,6 +30,49 @@ class ViewOrder extends ViewRecord
                         ->dateTime(),
                 ])->columns(2),
 
+            Infolists\Components\Grid::make(2)
+                ->schema([
+                    Infolists\Components\Section::make(__('Shipping Address'))
+                        ->schema([
+                            Infolists\Components\TextEntry::make('shipping_name')
+                                ->hiddenLabel()
+                                ->state(fn($record) => trim(
+                                    ($record->shippingAddress?->first_name ?? '') . ' ' . ($record->shippingAddress?->last_name ?? '')
+                                ) ?: '—'),
+                            Infolists\Components\TextEntry::make('shipping_line')
+                                ->hiddenLabel()
+                                ->state(fn($record) => collect([
+                                    $record->shippingAddress?->line_one,
+                                    $record->shippingAddress?->city,
+                                    trim(($record->shippingAddress?->state ?? '') . ' ' . ($record->shippingAddress?->postcode ?? '')),
+                                    $record->shippingAddress?->country?->name,
+                                ])->filter()->implode(', ') ?: '—'),
+                            Infolists\Components\TextEntry::make('shipping_phone')
+                                ->hiddenLabel()
+                                ->state(fn($record) => $record->shippingAddress?->contact_phone ?: '—'),
+                        ])->columnSpan(1),
+
+                    Infolists\Components\Section::make(__('Billing Address'))
+                        ->schema([
+                            Infolists\Components\TextEntry::make('billing_name')
+                                ->hiddenLabel()
+                                ->state(fn($record) => trim(
+                                    ($record->billingAddress?->first_name ?? '') . ' ' . ($record->billingAddress?->last_name ?? '')
+                                ) ?: '—'),
+                            Infolists\Components\TextEntry::make('billing_line')
+                                ->hiddenLabel()
+                                ->state(fn($record) => collect([
+                                    $record->billingAddress?->line_one,
+                                    $record->billingAddress?->city,
+                                    trim(($record->billingAddress?->state ?? '') . ' ' . ($record->billingAddress?->postcode ?? '')),
+                                    $record->billingAddress?->country?->name,
+                                ])->filter()->implode(', ') ?: '—'),
+                            Infolists\Components\TextEntry::make('billing_phone')
+                                ->hiddenLabel()
+                                ->state(fn($record) => $record->billingAddress?->contact_phone ?: '—'),
+                        ])->columnSpan(1),
+                ]),
+
             Infolists\Components\Section::make(__('Financials'))
                 ->schema([
                     Infolists\Components\TextEntry::make('sub_total')
@@ -82,57 +125,6 @@ class ViewOrder extends ViewRecord
                                 ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2)),
                         ])
                         ->columns(4),
-                ]),
-
-            Infolists\Components\Grid::make(2)
-                ->schema([
-                    Infolists\Components\Section::make(__('Shipping Address'))
-                        ->schema([
-                            Infolists\Components\TextEntry::make('shipping_name')
-                                ->hiddenLabel()
-                                ->state(fn($record) => trim(
-                                    ($record->shippingAddress?->first_name ?? '') . ' ' . ($record->shippingAddress?->last_name ?? '')
-                                ) ?: '—'),
-                            Infolists\Components\TextEntry::make('shipping_line')
-                                ->hiddenLabel()
-                                ->state(fn($record) => collect([
-                                    $record->shippingAddress?->line_one,
-                                    $record->shippingAddress?->city,
-                                    trim(($record->shippingAddress?->state ?? '') . ' ' . ($record->shippingAddress?->postcode ?? '')),
-                                    $record->shippingAddress?->country?->name,
-                                ])->filter()->implode(', ') ?: '—'),
-                            Infolists\Components\TextEntry::make('shipping_contact')
-                                ->hiddenLabel()
-                                ->state(fn($record) => sprintf(
-                                    'Phone: %s | Email: %s',
-                                    $record->shippingAddress?->contact_phone ?: '—',
-                                    $record->shippingAddress?->contact_email ?: '—',
-                                )),
-                        ])->columnSpan(1),
-
-                    Infolists\Components\Section::make(__('Billing Address'))
-                        ->schema([
-                            Infolists\Components\TextEntry::make('billing_name')
-                                ->hiddenLabel()
-                                ->state(fn($record) => trim(
-                                    ($record->billingAddress?->first_name ?? '') . ' ' . ($record->billingAddress?->last_name ?? '')
-                                ) ?: '—'),
-                            Infolists\Components\TextEntry::make('billing_line')
-                                ->hiddenLabel()
-                                ->state(fn($record) => collect([
-                                    $record->billingAddress?->line_one,
-                                    $record->billingAddress?->city,
-                                    trim(($record->billingAddress?->state ?? '') . ' ' . ($record->billingAddress?->postcode ?? '')),
-                                    $record->billingAddress?->country?->name,
-                                ])->filter()->implode(', ') ?: '—'),
-                            Infolists\Components\TextEntry::make('billing_contact')
-                                ->hiddenLabel()
-                                ->state(fn($record) => sprintf(
-                                    'Phone: %s | Email: %s',
-                                    $record->billingAddress?->contact_phone ?: '—',
-                                    $record->billingAddress?->contact_email ?: '—',
-                                )),
-                        ])->columnSpan(1),
                 ]),
 
             Infolists\Components\Section::make(__('Notes'))
