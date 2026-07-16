@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\CustomerResource\Pages\ViewCustomer;
 use App\Filament\Resources\CustomerResource\RelationManagers\OrdersRelationManager;
 use Lunar\Admin\Filament\Resources\CustomerResource as BaseCustomerResource;
 use Lunar\Admin\Filament\Resources\CustomerResource\RelationManagers\AddressRelationManager;
@@ -24,5 +25,15 @@ class CustomerResource extends BaseCustomerResource
             AddressRelationManager::class,
             UserRelationManager::class,
         ];
+    }
+
+    public static function getDefaultPages(): array
+    {
+        return array_merge(parent::getDefaultPages(), [
+            // Lunar's own ViewCustomer page hardcodes $resource to Lunar's
+            // base CustomerResource, which bypasses getDefaultRelations()
+            // above entirely. This override points it back at this class.
+            'view' => ViewCustomer::route('/{record}'),
+        ]);
     }
 }
