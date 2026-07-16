@@ -12,8 +12,12 @@
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background-color:#ffffff; border-radius:20px; overflow:hidden; border:1px solid #eee3d7;">
 
 <tr>
-<td align="center" style="padding:40px 40px 24px 40px;">
-<img src="{{ config('app.frontend_url') }}/assets/Logo-PetPosture-1-e1761840892773.png" height="36" alt="{{ config('app.name') }}" style="display:block; height:36px; width:auto;">
+<td style="background-color:#df8448; line-height:5px; font-size:5px;" height="5">&nbsp;</td>
+</tr>
+
+<tr>
+<td align="center" style="padding:44px 40px 28px 40px;">
+<img src="{{ config('app.frontend_url') }}/assets/Logo-PetPosture-1-e1761840892773.png" height="54" alt="{{ config('app.name') }}" style="display:block; height:54px; width:auto;">
 </td>
 </tr>
 
@@ -24,39 +28,49 @@
 </tr>
 
 <tr>
-<td style="padding:36px 40px 8px 40px;">
-<p style="margin:0 0 4px 0; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#df8448;">Account Confirmed</p>
+<td align="center" style="padding:36px 40px 8px 40px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 14px auto;">
+<tr>
+<td style="background-color:#fdf1e7; border-radius:100px; padding:6px 16px; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#df8448;">&#10003; Account Confirmed</td>
+</tr>
+</table>
 <h1 style="margin:0; font-size:26px; line-height:1.3; font-weight:700; color:#3e4c57;">Welcome aboard, {{ $user->name }}!</h1>
 </td>
 </tr>
 
 <tr>
-<td style="padding:12px 40px 0 40px;">
-<p style="margin:0; font-size:15px; line-height:1.7; color:#666666;">
-Your {{ config('app.name') }} account has been created with the email <strong style="color:#3e4c57;">{{ $user->email }}</strong>. Here&rsquo;s what you can do next:
+<td align="center" style="padding:12px 40px 0 40px;">
+<p style="margin:0; font-size:15px; line-height:1.7; color:#666666; text-align:center;">
+Your {{ config('app.name') }} account has been created with the email <strong style="color:#3e4c57;">{{ $user->email }}</strong>.
 </p>
 </td>
 </tr>
 
 <tr>
-<td style="padding:24px 40px 0 40px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<td style="padding:32px 40px 0 40px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#fcfbf8; border:1px solid #eee3d7; border-radius:14px;">
 <tr>
-<td style="padding-bottom:14px; font-size:14px; color:#3e4c57;">
-<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background-color:#df8448; margin-right:12px;">&nbsp;</span>
-Track every order in real time, from checkout to delivery
+<td style="padding:24px 24px 8px 24px; font-size:14px; color:#3e4c57;">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+<td valign="top" style="width:22px; padding-top:1px;"><span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:#df8448; color:#ffffff; font-size:10px; font-weight:700; text-align:center; line-height:16px;">&#10003;</span></td>
+<td style="padding-bottom:16px;">Track every order in real time, from checkout to delivery</td>
+</tr></table>
 </td>
 </tr>
 <tr>
-<td style="padding-bottom:14px; font-size:14px; color:#3e4c57;">
-<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background-color:#df8448; margin-right:12px;">&nbsp;</span>
-Save shipping addresses for faster checkout
+<td style="padding:0 24px 8px 24px; font-size:14px; color:#3e4c57;">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+<td valign="top" style="width:22px; padding-top:1px;"><span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:#df8448; color:#ffffff; font-size:10px; font-weight:700; text-align:center; line-height:16px;">&#10003;</span></td>
+<td style="padding-bottom:16px;">Save shipping addresses for faster checkout</td>
+</tr></table>
 </td>
 </tr>
 <tr>
-<td style="font-size:14px; color:#3e4c57;">
-<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background-color:#df8448; margin-right:12px;">&nbsp;</span>
-Browse your full order history in one place
+<td style="padding:0 24px 24px 24px; font-size:14px; color:#3e4c57;">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+<td valign="top" style="width:22px; padding-top:1px;"><span style="display:inline-block; width:16px; height:16px; border-radius:50%; background-color:#df8448; color:#ffffff; font-size:10px; font-weight:700; text-align:center; line-height:16px;">&#10003;</span></td>
+<td>Browse your full order history in one place</td>
+</tr></table>
 </td>
 </tr>
 </table>
@@ -64,11 +78,11 @@ Browse your full order history in one place
 </tr>
 
 <tr>
-<td align="center" style="padding:32px 40px 40px 40px;">
+<td align="center" style="padding:32px 40px 8px 40px;">
 <table role="presentation" cellpadding="0" cellspacing="0">
 <tr>
 <td align="center" style="border-radius:6px; background-color:#df8448;">
-<a href="{{ config('app.frontend_url') }}/shop" target="_blank" style="display:inline-block; padding:16px 40px; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#ffffff; text-decoration:none;">Start Shopping</a>
+<a href="{{ config('app.frontend_url') }}/shop" target="_blank" style="display:inline-block; padding:16px 44px; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#ffffff; text-decoration:none;">Start Shopping</a>
 </td>
 </tr>
 </table>
@@ -76,7 +90,19 @@ Browse your full order history in one place
 </tr>
 
 <tr>
-<td style="padding:0 40px 40px 40px;">
+<td style="padding:36px 40px 0 40px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td align="center" style="width:33.33%; padding:20px 8px; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#8b8f93;">Free Express<br>Shipping</td>
+<td align="center" style="width:33.33%; padding:20px 8px; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#8b8f93; border-left:1px solid #f0ede8; border-right:1px solid #f0ede8;">Secure<br>Checkout</td>
+<td align="center" style="width:33.33%; padding:20px 8px; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#8b8f93;">30-Day<br>Health Trial</td>
+</tr>
+</table>
+</td>
+</tr>
+
+<tr>
+<td style="padding:8px 40px 40px 40px;">
 <div style="height:1px; background-color:#f0ede8; line-height:1px; font-size:1px; margin-bottom:24px;">&nbsp;</div>
 <p style="margin:0; font-size:13px; line-height:1.6; color:#a0a0a0;">
 Thanks,<br>The {{ config('app.name') }} Team
