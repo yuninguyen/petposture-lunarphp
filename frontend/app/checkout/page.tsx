@@ -151,6 +151,15 @@ type TaxQuote = {
     effective_date?: string | null;
 };
 
+type ShippingRate = {
+    id: string;
+    name: string;
+    price_minor: number;
+    price: number;
+    free_over_minor?: number | null;
+    free_over?: number | null;
+};
+
 type CheckoutAddressPayload = {
     firstName: string;
     lastName: string;
@@ -264,6 +273,7 @@ export default function CheckoutPage() {
     const [preparedPaymentIntent, setPreparedPaymentIntent] = useState<PreparedPaymentIntent | null>(null);
     const [paymentIntentMessage, setPaymentIntentMessage] = useState<string | null>(null);
     const [taxQuote, setTaxQuote] = useState<TaxQuote | null>(null);
+    const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
     const [stripeReady, setStripeReady] = useState(false);
     const [stripeError, setStripeError] = useState<string | null>(null);
     const [form, setForm] = useState<CheckoutFormState>({
@@ -533,6 +543,38 @@ export default function CheckoutPage() {
     useEffect(() => {
         let cancelled = false;
 
+        const loadShippingRates = async () => {
+            try {
+                const apiBase = getApiBaseUrl();
+                const params = new URLSearchParams({
+                    subtotal_minor: String(Math.round(totalAmount * 100)),
+                    ...(coupon.code ? { coupon_code: coupon.code } : {}),
+                });
+                const response = await fetch(`${apiBase}/api/checkout/shipping-rates?${params.toString()}`);
+                const data = await response.json();
+
+                if (!response.ok || !data?.rates || cancelled) {
+                    return;
+                }
+
+                setShippingRates(data.rates as ShippingRate[]);
+            } catch {
+                if (!cancelled) {
+                    setShippingRates([]);
+                }
+            }
+        };
+
+        void loadShippingRates();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [totalAmount, coupon.code]);
+
+    useEffect(() => {
+        let cancelled = false;
+
         const loadTaxQuote = async () => {
             try {
                 const apiBase = getApiBaseUrl();
@@ -574,9 +616,11 @@ export default function CheckoutPage() {
 
     const taxRate = (taxQuote?.rate_percentage ?? 0) / 100;
     const taxAmount = (taxQuote?.tax_amount ?? 0) / 100;
-    const shippingAmount = form.shippingMethod === 'express'
+    const shippingRate = shippingRates.find((rate) => rate.id === form.shippingMethod);
+    const fallbackShippingAmount = form.shippingMethod === 'express'
         ? (coupon.freeShipping ? 0 : 25)
         : getShippingAmount(totalAmount, coupon);
+    const shippingAmount = shippingRate ? shippingRate.price : fallbackShippingAmount;
     const finalTotal = Math.max(0, totalAmount - coupon.discountAmount + shippingAmount + taxAmount);
     const availablePaymentMethods = (paymentMethods.length
         ? paymentMethods
@@ -1267,8 +1311,16 @@ export default function CheckoutPage() {
                         <ShippingMethodSelector
                             value={form.shippingMethod}
                             onChange={(method) => updateField('shippingMethod', method)}
-                            standardLabel={getShippingAmount(totalAmount, coupon) === 0 ? 'Free' : `$${getShippingAmount(totalAmount, coupon).toFixed(2)}`}
-                            expressLabel={coupon.freeShipping ? 'Free' : '$25.00'}
+                            standardLabel={(() => {
+                                const rate = shippingRates.find((r) => r.id === 'standard');
+                                const price = rate ? rate.price : getShippingAmount(totalAmount, coupon);
+                                return price === 0 ? 'Free' : `$${price.toFixed(2)}`;
+                            })()}
+                            expressLabel={(() => {
+                                const rate = shippingRates.find((r) => r.id === 'express');
+                                const price = rate ? rate.price : (coupon.freeShipping ? 0 : 25);
+                                return price === 0 ? 'Free' : `$${price.toFixed(2)}`;
+                            })()}
                             onActivate={() => activateStep('shipping')}
                         />
 

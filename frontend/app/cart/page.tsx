@@ -9,20 +9,54 @@ import { useRouter } from 'next/navigation';
 import { Minus, Plus, X, ChevronRight, ArrowLeft, Tag } from 'lucide-react';
 import Link from 'next/link';
 import { getApiBaseUrl } from '@/lib/api';
-import { getOrderTotal, getShippingAmount } from '@/lib/pricing';
+import { getShippingAmount } from '@/lib/pricing';
 
 export default function CartPage() {
     const { items, updateQuantity, removeItem, totalAmount, coupon, setCoupon } = useCart();
     const router = useRouter();
     const [couponCode, setCouponCode] = useState(coupon.code);
     const [isApplying, setIsApplying] = useState(false);
+    const [standardShippingPrice, setStandardShippingPrice] = useState<number | null>(null);
 
     useEffect(() => {
         setCouponCode(coupon.code);
     }, [coupon.code]);
 
-    const shippingPrice = getShippingAmount(totalAmount, coupon);
-    const finalTotal = getOrderTotal(totalAmount, coupon);
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadShippingRate = async () => {
+            try {
+                const apiBase = getApiBaseUrl();
+                const params = new URLSearchParams({
+                    subtotal_minor: String(Math.round(totalAmount * 100)),
+                    ...(coupon.code ? { coupon_code: coupon.code } : {}),
+                });
+                const response = await fetch(`${apiBase}/api/checkout/shipping-rates?${params.toString()}`);
+                const data = await response.json();
+                const standardRate = data?.rates?.find((rate: { id: string; price: number }) => rate.id === 'standard');
+
+                if (!response.ok || !standardRate || cancelled) {
+                    return;
+                }
+
+                setStandardShippingPrice(standardRate.price);
+            } catch {
+                if (!cancelled) {
+                    setStandardShippingPrice(null);
+                }
+            }
+        };
+
+        void loadShippingRate();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [totalAmount, coupon.code]);
+
+    const shippingPrice = standardShippingPrice ?? getShippingAmount(totalAmount, coupon);
+    const finalTotal = Math.max(0, totalAmount - coupon.discountAmount + shippingPrice);
 
     const handleApplyCoupon = async () => {
         if (!couponCode.trim()) return;
