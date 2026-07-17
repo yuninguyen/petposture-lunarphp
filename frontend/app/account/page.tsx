@@ -31,12 +31,23 @@ interface OrderAddress {
     phone: string | null;
 }
 
+interface Shipment {
+    id: string;
+    tracking_number: string;
+    carrier?: string | null;
+    tracking_url?: string | null;
+    status: string;
+}
+
 interface Order {
     id: string;
     reference: string;
     status_label: string;
+    payment_status: string;
     payment_status_label: string;
     payment_label: string | null;
+    payment_method: string | null;
+    payment_instructions: string | null;
     total: { formatted: string };
     sub_total: number;
     tax_total: number;
@@ -46,6 +57,23 @@ interface Order {
     lines: OrderLine[];
     shipping_address: OrderAddress;
     billing_address: OrderAddress;
+    shipments: Shipment[];
+}
+
+function orderPaymentMessage(order: Order): string {
+    if (order.payment_status === 'paid') {
+        return 'Payment confirmed.';
+    }
+    if (order.payment_status === 'processing') {
+        return 'Payment is processing.';
+    }
+    if (order.payment_status === 'failed') {
+        return 'Payment did not go through.';
+    }
+    if (order.payment_method === 'cod') {
+        return order.payment_instructions || "You'll pay when your order is delivered.";
+    }
+    return 'Waiting for payment confirmation.';
 }
 
 interface Address {
@@ -231,7 +259,20 @@ export default function AccountPage() {
 
                                                     {isExpanded && (
                                                         <div className="border-t border-zinc-100 bg-[#fafbfc] p-4 space-y-4">
-                                                            <div className="space-y-2">
+                                                            <div className="grid sm:grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Order Number</p>
+                                                                    <p className="text-[13px] font-medium text-[#3e4c57]">#{order.reference}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Order Placed</p>
+                                                                    <p className="text-[13px] font-medium text-[#3e4c57]">
+                                                                        {new Date(order.created_at).toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-2 pt-3 border-t border-zinc-100">
                                                                 {order.lines.map((line) => (
                                                                     <div key={line.id} className="flex items-center justify-between text-[13px]">
                                                                         <span className="text-[#3e4c57]">{line.description} <span className="text-zinc-400">&times;{line.quantity}</span></span>
@@ -250,12 +291,48 @@ export default function AccountPage() {
                                                                     </p>
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Payment</p>
+                                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Billing Address</p>
                                                                     <p className="text-[13px] text-zinc-600 leading-relaxed">
-                                                                        {order.payment_label || 'N/A'}<br />
-                                                                        {order.payment_status_label}
+                                                                        {order.billing_address.first_name} {order.billing_address.last_name}<br />
+                                                                        {order.billing_address.line_one}{order.billing_address.line_two ? `, ${order.billing_address.line_two}` : ''}<br />
+                                                                        {order.billing_address.city}, {order.billing_address.state} {order.billing_address.postcode}
                                                                     </p>
                                                                 </div>
+                                                            </div>
+
+                                                            {order.shipments.length > 0 && (
+                                                                <div className="pt-3 border-t border-zinc-100">
+                                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Tracking</p>
+                                                                    {order.shipments.map((shipment) => (
+                                                                        <div key={shipment.id} className="flex items-center justify-between text-[13px] text-zinc-600">
+                                                                            <span>
+                                                                                {shipment.carrier ? `${shipment.carrier.toUpperCase()} — ` : ''}
+                                                                                {shipment.tracking_number}
+                                                                            </span>
+                                                                            {shipment.tracking_url ? (
+                                                                                <a
+                                                                                    href={shipment.tracking_url}
+                                                                                    target="_blank"
+                                                                                    rel="noreferrer"
+                                                                                    className="font-bold text-[#df8448] hover:text-[#c9713a]"
+                                                                                >
+                                                                                    Track Package
+                                                                                </a>
+                                                                            ) : (
+                                                                                <span className="text-zinc-400">{shipment.status}</span>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            <div className="pt-3 border-t border-zinc-100">
+                                                                <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Payment</p>
+                                                                <div className="flex items-center justify-between text-[13px]">
+                                                                    <span className="text-zinc-600">{order.payment_label || 'N/A'}</span>
+                                                                    <span className="text-[11px] font-bold uppercase tracking-wide text-[#df8448]">{order.payment_status_label}</span>
+                                                                </div>
+                                                                <p className="mt-1 text-[12px] text-zinc-500">{orderPaymentMessage(order)}</p>
                                                             </div>
 
                                                             <div className="pt-3 border-t border-zinc-100 space-y-1 text-[13px]">
