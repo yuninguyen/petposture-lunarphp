@@ -268,31 +268,6 @@ class ManageSettings extends Page
                                     ->helperText('Register this URL in your Stripe Dashboard → Developers → Webhooks.'),
                             ]),
 
-                        Tabs\Tab::make(__('Shipping'))
-                            ->icon('heroicon-o-truck')
-                            ->schema([
-                                Grid::make(2)->schema([
-                                    TextInput::make('shipping_standard_price_minor')
-                                        ->label(__('Standard Shipping Price (cents)'))
-                                        ->numeric()
-                                        ->minValue(0)
-                                        ->placeholder('1500')
-                                        ->helperText('Amount in cents — e.g. 1500 = $15.00. Leave blank for free.'),
-                                    TextInput::make('shipping_express_price_minor')
-                                        ->label(__('Express Shipping Price (cents)'))
-                                        ->numeric()
-                                        ->minValue(0)
-                                        ->placeholder('2500')
-                                        ->helperText('Amount in cents — e.g. 2500 = $25.00.'),
-                                ]),
-                                TextInput::make('shipping_free_over_minor')
-                                    ->label(__('Free Standard Shipping Over (cents)'))
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->placeholder('5000')
-                                    ->helperText('Standard shipping becomes free once the order subtotal reaches this amount, in cents — e.g. 5000 = $50.00. Leave blank to disable the threshold.'),
-                            ]),
-
                         Tabs\Tab::make(__('SMTP Settings'))
                             ->icon('heroicon-o-envelope')
                             ->schema([

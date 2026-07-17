@@ -2,26 +2,19 @@
 
 namespace App\Services;
 
-use App\Models\Setting;
+use App\Models\ShippingMethod;
 
 class ShippingService
 {
     private const METHODS = ['standard', 'express'];
-
-    private const DEFAULTS = [
-        'standard' => ['price_minor' => 0,    'eta' => '5-7 business days', 'name' => 'Standard Shipping'],
-        'express'  => ['price_minor' => 2500,  'eta' => '1-2 business days', 'name' => 'Express Shipping'],
-    ];
 
     /**
      * All available shipping methods with computed prices for the given subtotal.
      */
     public function availableMethods(int $subtotalMinor = 0, bool $isFreeShipping = false): array
     {
-        $freeOverMinor = $this->freeOverMinor();
-
         return array_map(
-            fn(string $m) => $this->build($m, $subtotalMinor, $isFreeShipping, $freeOverMinor),
+            fn(string $code) => $this->build($code, $subtotalMinor, $isFreeShipping),
             self::METHODS,
         );
     }
@@ -35,40 +28,43 @@ class ShippingService
             return 0;
         }
 
-        $freeOverMinor = $this->freeOverMinor();
+        $shippingMethod = $this->methodByCode($method);
+
+        if (! $shippingMethod) {
+            return 0;
+        }
+
+        $freeOverMinor = $shippingMethod->free_over !== null ? (int) round($shippingMethod->free_over * 100) : 0;
 
         if ($method === 'standard' && $freeOverMinor > 0 && $subtotalMinor >= $freeOverMinor) {
             return 0;
         }
 
-        $raw = Setting::get("shipping_{$method}_price_minor");
-
-        return $raw !== null ? (int) $raw : (int) (self::DEFAULTS[$method]['price_minor'] ?? 0);
+        return (int) round($shippingMethod->price * 100);
     }
 
     // ─── Private ─────────────────────────────────────────────────────────────
 
-    private function freeOverMinor(): int
+    private function methodByCode(string $code): ?ShippingMethod
     {
-        $raw = Setting::get('shipping_free_over_minor');
-
-        return $raw !== null ? (int) $raw : 0;
+        return ShippingMethod::query()->where('code', $code)->first();
     }
 
-    private function build(string $method, int $subtotalMinor, bool $isFreeShipping, int $freeOverMinor): array
+    private function build(string $code, int $subtotalMinor, bool $isFreeShipping): array
     {
-        $priceMinor = $this->rateFor($method, $subtotalMinor, $isFreeShipping);
-        $eta = (string) (Setting::get("shipping_{$method}_eta") ?? self::DEFAULTS[$method]['eta']);
+        $shippingMethod = $this->methodByCode($code);
+        $priceMinor = $this->rateFor($code, $subtotalMinor, $isFreeShipping);
+        $freeOverMinor = $shippingMethod?->free_over !== null ? (int) round($shippingMethod->free_over * 100) : null;
 
         return [
-            'id'              => $method,
-            'name'            => self::DEFAULTS[$method]['name'],
-            'description'     => $eta,
-            'eta'             => $eta,
+            'id'              => $code,
+            'name'            => $shippingMethod->name ?? ucfirst($code) . ' Shipping',
+            'description'     => $shippingMethod->eta ?? '',
+            'eta'             => $shippingMethod->eta ?? '',
             'price_minor'     => $priceMinor,
             'price'           => round($priceMinor / 100, 2),
-            'free_over_minor' => ($method === 'standard' && $freeOverMinor > 0) ? $freeOverMinor : null,
-            'free_over'       => ($method === 'standard' && $freeOverMinor > 0) ? round($freeOverMinor / 100, 2) : null,
+            'free_over_minor' => $code === 'standard' ? $freeOverMinor : null,
+            'free_over'       => ($code === 'standard' && $freeOverMinor) ? round($freeOverMinor / 100, 2) : null,
         ];
     }
 }

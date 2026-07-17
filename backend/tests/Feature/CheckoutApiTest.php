@@ -621,18 +621,17 @@ class CheckoutApiTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('rates.0.id', 'standard')
-            ->assertJsonPath('rates.0.price', 0)
-            ->assertJsonPath('rates.0.price_minor', 0)
+            ->assertJsonPath('rates.0.price', 15)
+            ->assertJsonPath('rates.0.price_minor', 1500)
             ->assertJsonPath('rates.1.id', 'express')
             ->assertJsonPath('rates.1.price', 25)
             ->assertJsonPath('rates.1.price_minor', 2500)
-            ->assertJsonPath('rates.0.free_over', null);
+            ->assertJsonPath('rates.0.free_over', 50);
     }
 
     public function test_shipping_rates_returns_free_standard_when_subtotal_meets_threshold(): void
     {
-        \App\Models\Setting::create(['key' => 'shipping_free_over_minor', 'value' => '5000']);
-
+        // Seeded by the shipping_methods migration: standard is $15, free over $50.
         $response = $this->getJson('/api/checkout/shipping-rates?subtotal_minor=5000');
 
         $response->assertOk()
@@ -642,9 +641,9 @@ class CheckoutApiTest extends TestCase
             ->assertJsonPath('rates.1.id', 'express')
             ->assertJsonPath('rates.1.price_minor', 2500);
 
-        // Below threshold: standard should cost default rate (0 for standard in default config)
+        // Below threshold: standard should cost the configured rate ($15).
         $below = $this->getJson('/api/checkout/shipping-rates?subtotal_minor=4999');
-        $below->assertOk()->assertJsonPath('rates.0.price_minor', 0);
+        $below->assertOk()->assertJsonPath('rates.0.price_minor', 1500);
     }
 
     public function test_shipping_rates_returns_zero_for_all_when_coupon_has_free_shipping(): void
@@ -673,7 +672,7 @@ class CheckoutApiTest extends TestCase
 
     public function test_shipping_rates_respects_setting_override_for_express_price(): void
     {
-        \App\Models\Setting::create(['key' => 'shipping_express_price_minor', 'value' => '999']);
+        \App\Models\ShippingMethod::where('code', 'express')->update(['price' => 9.99]);
 
         $response = $this->getJson('/api/checkout/shipping-rates');
 
