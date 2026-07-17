@@ -124,7 +124,7 @@ class ViewOrder extends ViewRecord
                                 ->label(__('Customer IP'))
                                 ->html()
                                 ->state(fn($record) => static::formatCustomerIpBlock((array) ($record->meta ?? []))),
-                        ])->columns(2)->columnSpan(3),
+                        ])->columns(2)->columnSpan(3)->extraAttributes(['class' => 'h-full']),
 
                     Infolists\Components\Section::make(__('Order Attribution'))
                         ->schema([
@@ -137,8 +137,8 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('meta.attribution_session_page_views')
                                 ->label(__('Session Page Views'))
                                 ->default('—'),
-                        ])->columnSpan(2),
-                ]),
+                        ])->columnSpan(2)->extraAttributes(['class' => 'h-full']),
+                ])->extraAttributes(['class' => 'items-stretch']),
 
             Infolists\Components\Section::make(__('Fraud & Risk'))
                 ->description(__('Powered by Stripe Radar — automatic on every card payment, no extra setup required.'))

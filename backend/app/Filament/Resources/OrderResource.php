@@ -22,6 +22,11 @@ class OrderResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with('shippingAddress');
+    }
+
     public static function getNavigationGroup(): ?string
     {
         return __('lunarpanel::global.sections.sales');
@@ -231,9 +236,18 @@ class OrderResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('reference')
-                    ->label(__('Reference'))
+                    ->label(__('Order Number'))
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('customer_name')
+                    ->label(__('Full Name'))
+                    ->getStateUsing(fn($record) => trim(($record->shippingAddress?->first_name ?? '') . ' ' . ($record->shippingAddress?->last_name ?? '')) ?: '—')
+                    ->searchable(query: function ($query, string $search) {
+                        $query->whereHas('shippingAddress', function ($query) use ($search) {
+                            $query->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                    }),
                 Tables\Columns\TextColumn::make('customer_reference')
                     ->label(__('Customer Email'))
                     ->searchable(),
