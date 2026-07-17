@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\OrderResource;
 use App\Http\Resources\Api\ProductResource;
-use App\Models\ProductSyncMapping;
 use App\Models\Review;
 use App\Traits\HttpResponses;
 use Illuminate\Http\Request;
@@ -160,15 +159,9 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found'], 404);
         }
 
-        $legacyProductId = $this->resolveLegacyProductId($product);
-
-        if (! $legacyProductId) {
-            return response()->json(['data' => []]);
-        }
-
         return response()->json([
             'data' => Review::query()
-                ->where('product_id', $legacyProductId)
+                ->where('lunar_product_id', $product->id)
                 ->latest()
                 ->get(),
         ]);
@@ -182,12 +175,6 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found'], 404);
         }
 
-        $legacyProductId = $this->resolveLegacyProductId($product);
-
-        if (! $legacyProductId) {
-            return response()->json(['message' => 'This product is not currently accepting reviews.'], 422);
-        }
-
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
             'rating' => 'required|integer|min:1|max:5',
@@ -195,7 +182,7 @@ class ProductController extends Controller
         ]);
 
         $review = Review::query()->create([
-            'product_id' => $legacyProductId,
+            'lunar_product_id' => $product->id,
             'customer_name' => $validated['customer_name'],
             'rating' => $validated['rating'],
             'comment' => $validated['comment'],
@@ -351,18 +338,5 @@ class ProductController extends Controller
         }
 
         return $product;
-    }
-
-    private function resolveLegacyProductId(Product $product): ?int
-    {
-        $legacyProductId = $product->translateAttribute('legacy_product_id');
-
-        if (is_numeric($legacyProductId)) {
-            return (int) $legacyProductId;
-        }
-
-        return ProductSyncMapping::query()
-            ->where('lunar_product_id', $product->id)
-            ->value('legacy_product_id');
     }
 }

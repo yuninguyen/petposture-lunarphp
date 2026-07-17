@@ -7,7 +7,6 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\ProductSyncMapping;
 use App\Models\ProductVariant;
-use App\Models\Review;
 use App\Traits\HasMetadata;
 use App\Traits\HasSeo;
 use Spatie\MediaLibrary\HasMedia;
@@ -51,11 +50,6 @@ class Product extends Model implements HasMedia
     public function brand()
     {
         return $this->belongsTo(Brand::class);
-    }
-
-    public function reviews()
-    {
-        return $this->hasMany(Review::class);
     }
 
     public function variants()

@@ -2,13 +2,14 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\ReviewResource\Pages;
 use App\Models\Review;
+use App\Filament\Resources\ReviewResource\Pages;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Lunar\Models\Product;
 
 class ReviewResource extends Resource
 {
@@ -45,12 +46,13 @@ class ReviewResource extends Resource
                 Forms\Components\Section::make(__('Review Information'))
                     ->description(__('Use this screen to moderate existing storefront reviews.'))
                     ->schema([
-                        Forms\Components\Select::make('product_id')
+                        Forms\Components\Select::make('lunar_product_id')
                             ->label(__('Product'))
-                            ->relationship('product', 'name')
+                            ->options(fn() => Product::all()->mapWithKeys(
+                                fn(Product $product) => [$product->id => $product->translateAttribute('name')]
+                            ))
                             ->required()
-                            ->searchable()
-                            ->helperText(__('Reviews remain linked to legacy authoring products while storefront products resolve through sync mappings.')),
+                            ->searchable(),
                         Forms\Components\TextInput::make('customer_name')
                             ->label(__('Customer Name'))
                             ->required()
@@ -82,12 +84,7 @@ class ReviewResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('product.name')
                     ->label(__('Product'))
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('product.syncMapping.lunar_product_id')
-                    ->label(__('Storefront Product'))
-                    ->badge()
-                    ->placeholder(__('Not synced')),
+                    ->getStateUsing(fn(Review $record) => $record->product?->translateAttribute('name') ?? '—'),
                 Tables\Columns\TextColumn::make('customer_name')
                     ->label(__('Customer'))
                     ->searchable()
@@ -105,9 +102,11 @@ class ReviewResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('product')
+                Tables\Filters\SelectFilter::make('lunar_product_id')
                     ->label(__('Product'))
-                    ->relationship('product', 'name'),
+                    ->options(fn() => Product::all()->mapWithKeys(
+                        fn(Product $product) => [$product->id => $product->translateAttribute('name')]
+                    )),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

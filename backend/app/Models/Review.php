@@ -4,14 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Legacy\Product;
+use Lunar\Models\Product;
 
 class Review extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'product_id',
+        'lunar_product_id',
         'customer_name',
         'rating',
         'comment',
@@ -20,6 +20,6 @@ class Review extends Model
 
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class, 'lunar_product_id');
     }
 }
