@@ -61,6 +61,26 @@ class ViewOrder extends ViewRecord
                 });
         }
 
+        $actions[] = Actions\Action::make('adjustShipping')
+            ->label(__('Adjust Shipping'))
+            ->color('gray')
+            ->form([
+                Forms\Components\TextInput::make('shipping_total')
+                    ->label(__('Correct Shipping Total'))
+                    ->numeric()
+                    ->minValue(0)
+                    ->prefix('$')
+                    ->required(),
+            ])
+            ->requiresConfirmation()
+            ->action(function (array $data) {
+                $shippingTotalMinor = (int) round(((float) $data['shipping_total']) * 100);
+
+                app(OrderOperationsService::class)->adjustShipping($this->record, $shippingTotalMinor);
+
+                $this->redirect(static::getUrl(['record' => $this->record]));
+            });
+
         return $actions;
     }
 

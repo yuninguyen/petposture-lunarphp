@@ -248,6 +248,49 @@ class OrderOperationsService
         return $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
     }
 
+    /**
+     * Manually correct the shipping total on an existing order (e.g. a
+     * pricing bug undercharged shipping at checkout time) and recompute
+     * the order total to match.
+     */
+    public function adjustShipping(Order $order, int $shippingTotalMinor): Order
+    {
+        $previousShippingTotal = $this->moneyToMinor($order->shipping_total);
+        $subTotal = $this->moneyToMinor($order->sub_total);
+        $discountTotal = $this->moneyToMinor($order->discount_total);
+        $taxTotal = $this->moneyToMinor($order->tax_total);
+        $newTotal = max(0, $subTotal + $shippingTotalMinor - $discountTotal + $taxTotal);
+
+        $order->update([
+            'shipping_total' => $shippingTotalMinor,
+            'total' => $newTotal,
+        ]);
+
+        $this->orderEventService->record(
+            $order,
+            'order.corrected',
+            'Shipping total corrected',
+            sprintf(
+                'Shipping total adjusted from $%s to $%s; order total is now $%s.',
+                number_format($previousShippingTotal / 100, 2),
+                number_format($shippingTotalMinor / 100, 2),
+                number_format($newTotal / 100, 2),
+            ),
+            dedupeAgainstLatest: false,
+        );
+
+        return $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
+    }
+
+    private function moneyToMinor(mixed $amount): int
+    {
+        if (is_object($amount) && property_exists($amount, 'value')) {
+            return (int) $amount->value;
+        }
+
+        return is_numeric($amount) ? (int) $amount : 0;
+    }
+
     public function returnOrder(Order $order): Order
     {
         $allowedStatuses = ['delivered', 'shipped'];
