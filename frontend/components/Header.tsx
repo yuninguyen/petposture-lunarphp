@@ -34,7 +34,7 @@ export default function Header() {
 
   const navLinkClass = (path: string) =>
     `flex items-center h-full px-6 transition-colors ${isActive(path)
-      ? "bg-[#df8448] text-white"
+      ? "bg-[#b85f2e] text-white"
       : "text-[#e8eaec] hover:text-white hover:bg-[#df8448]"
     }`;
 
@@ -82,7 +82,7 @@ export default function Header() {
                 className="flex-1 px-4 h-[44px] border-none outline-none focus:ring-0 text-[14px] text-primary bg-transparent"
               />
               <button
-                className="bg-[#df8448] text-white px-8 h-[44px] font-bold tracking-wider text-[11px] uppercase hover:bg-[#c9713a] transition-colors border-none m-0 rounded-none"
+                className="bg-[#b85f2e] text-white px-8 h-[44px] font-bold tracking-wider text-[11px] uppercase hover:bg-[#9c4f26] transition-colors border-none m-0 rounded-none"
               >
                 Search
               </button>
@@ -96,7 +96,7 @@ export default function Header() {
             </Link>
             {user ? (
               <div className="flex items-center gap-3">
-                <Link href="/account" className="text-[12px] font-bold uppercase tracking-widest text-[#df8448] hidden lg:block hover:underline">
+                <Link href="/account" className="text-[12px] font-bold uppercase tracking-widest text-[#b85f2e] hidden lg:block hover:underline">
                   Hi, {user.name.split(' ')[0]}
                 </Link>
                 <Link href="/account" className="hover:text-[#df8448] transition-colors" title="My Account">
@@ -118,7 +118,7 @@ export default function Header() {
             >
               <ShoppingBag size={22} strokeWidth={2} />
               {items.length > 0 && (
-                <span className="absolute -top-1 -right-1.5 bg-[#df8448] text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
+                <span className="absolute -top-1 -right-1.5 bg-[#b85f2e] text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
                   {items.reduce((total, item) => total + item.quantity, 0)}
                 </span>
               )}
@@ -195,7 +195,7 @@ export default function Header() {
             placeholder="Search products..."
             className="flex-1 px-3 py-2 outline-none text-[12px]"
           />
-          <button className="bg-[#df8448] px-4 text-white uppercase text-[10px] font-bold">
+          <button className="bg-[#b85f2e] px-4 text-white uppercase text-[10px] font-bold">
             Search
           </button>
         </div>
@@ -256,7 +256,7 @@ export default function Header() {
                       key={item.label}
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
-                      className={`flex items-center justify-between px-4 py-4 rounded-xl group transition-all duration-300 mb-1 ${isActive(item.href) ? "bg-[#df8448]" : "text-primary hover:bg-zinc-50"
+                      className={`flex items-center justify-between px-4 py-4 rounded-xl group transition-all duration-300 mb-1 ${isActive(item.href) ? "bg-[#b85f2e]" : "text-primary hover:bg-zinc-50"
                         }`}
                     >
                       <span className={`text-[14px] font-bold uppercase tracking-widest transition-colors duration-300 ${isActive(item.href) ? "text-white" : "group-hover:text-[#df8448]"}`}>

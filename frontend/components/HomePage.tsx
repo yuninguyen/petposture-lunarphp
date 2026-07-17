@@ -18,11 +18,13 @@ const C = {
   primaryHover: '#2c3840',
   secondary: '#df8448',
   secondaryHover: '#c9713a',
+  secondaryText: '#b85f2e',
+  secondaryTextHover: '#9c4f26',
   secondaryLight: '#fdf2ea',
   white: '#ffffff',
   grayLight: '#f4f5f6',
   grayMid: '#e8eaec',
-  grayText: '#6b7280',
+  grayText: '#4b5563',
   border: '#e2e5e8',
   borderHover: '#c8cdd2',
 };
@@ -67,18 +69,18 @@ function Btn({
     whiteSpace: 'nowrap', lineHeight: 1,
   };
   const styles: Record<string, React.CSSProperties> = {
-    solid: { background: C.secondary, borderColor: C.secondary, color: C.white },
+    solid: { background: C.secondaryText, borderColor: C.secondaryText, color: C.white },
     outline: { background: 'transparent', borderColor: C.primary, color: C.primary },
     outlineWhite: { background: 'transparent', borderColor: C.white, color: C.white },
     white: { background: C.white, borderColor: C.white, color: C.primary },
-    ghost: { background: 'transparent', borderColor: 'transparent', color: C.secondary },
+    ghost: { background: 'transparent', borderColor: 'transparent', color: C.secondaryText },
   };
   const hoverStyles: Record<string, React.CSSProperties> = {
-    solid: { background: C.secondaryHover, borderColor: C.secondaryHover },
+    solid: { background: C.secondaryTextHover, borderColor: C.secondaryTextHover },
     outline: { background: C.secondary, borderColor: C.secondary, color: C.white },
     outlineWhite: { background: 'rgba(255,255,255,0.15)' },
     white: { background: '#e8eaec', borderColor: '#e8eaec' },
-    ghost: { color: C.secondaryHover },
+    ghost: { color: C.secondaryTextHover },
   };
   return (
     <Link
@@ -237,7 +239,7 @@ function ShopCategories() {
               <div style={{
                 display: 'inline-block',
                 fontSize: 11, fontWeight: 800,
-                color: C.secondary,
+                color: C.secondaryText,
                 background: C.white,
                 border: 'none',
                 padding: '4px 10px', borderRadius: 2,
@@ -393,13 +395,13 @@ function WhyChoose() {
                 {f.icon}
               </div>
 
-              <h4 style={{
+              <h3 style={{
                 fontFamily: F.heading, fontSize: 18, fontWeight: 700,
                 color: C.primary, marginBottom: 12, textTransform: 'uppercase',
                 letterSpacing: '0.05em',
               }}>
                 {f.title}
-              </h4>
+              </h3>
               <p style={{
                 color: C.grayText, fontSize: 14, lineHeight: 1.6, margin: 0,
               }}>
@@ -555,7 +557,7 @@ function MealtimeDiff() {
             <div style={{
               display: 'inline-block',
               fontFamily: F.nav, fontSize: 10, fontWeight: 800,
-              color: C.secondary, letterSpacing: '0.14em',
+              color: C.secondaryText, letterSpacing: '0.14em',
               textTransform: 'uppercase', marginBottom: 20,
               background: C.white,
               padding: '6px 16px',
@@ -698,7 +700,7 @@ function BreedBanners() {
               <div style={{
                 display: 'inline-block',
                 fontFamily: F.nav, fontSize: 11, fontWeight: 800,
-                color: C.secondary, letterSpacing: '0.12em',
+                color: C.secondaryText, letterSpacing: '0.12em',
                 textTransform: 'uppercase', marginBottom: 14,
                 background: C.white,
                 padding: '6px 16px',
@@ -811,12 +813,12 @@ function Testimonials() {
               </div>
 
               {/* Heading */}
-              <h4 style={{
+              <h3 style={{
                 fontFamily: F.heading, fontSize: 16, fontWeight: 700,
                 color: C.primary, margin: '0 0 12px', lineHeight: 1.3,
               }}>
                 {r.heading}
-              </h4>
+              </h3>
 
               {/* Quote */}
               <p style={{
@@ -973,7 +975,7 @@ function PostCard({ post }: { post: BlogPost }) {
       {/* Category Badge */}
       <div style={{
         display: 'inline-block', fontSize: 11, fontWeight: 800,
-        color: C.secondary,
+        color: C.secondaryText,
         background: C.secondaryLight,
         border: `1px solid rgba(223,132,72,0.2)`,
         padding: '3px 10px', borderRadius: 2,
@@ -983,14 +985,14 @@ function PostCard({ post }: { post: BlogPost }) {
         {post.cat}
       </div>
 
-      <h4 style={{
+      <h3 style={{
         fontFamily: F.heading, fontSize: 16, fontWeight: 700,
         color: isHovered ? C.secondary : C.primary,
         lineHeight: 1.5, margin: '0 0 10px',
         transition: 'color 0.25s ease',
       }}>
         {post.title}
-      </h4>
+      </h3>
 
       <p style={{ fontSize: 15, color: C.grayText, margin: '0 0 12px', lineHeight: 1.6 }}>
         {post.excerpt}
@@ -1110,7 +1112,7 @@ function EmailCta() {
         {/* Eyebrow */}
         <div style={{
           fontFamily: F.nav, fontSize: 12, fontWeight: 800,
-          color: C.secondary, letterSpacing: '0.2em',
+          color: C.secondaryText, letterSpacing: '0.2em',
           textTransform: 'uppercase', marginBottom: 20,
         }}>
           Join the Pack
@@ -1166,12 +1168,12 @@ function EmailCta() {
               type="submit"
               className="px-8 py-4 sm:py-0 rounded-[2px] font-bold uppercase tracking-[0.12em] text-[15px] whitespace-nowrap transition-colors"
               style={{
-                background: C.secondary, color: C.white,
+                background: C.secondaryText, color: C.white,
                 fontFamily: F.nav,
                 cursor: 'pointer',
               }}
-              onMouseOver={(e) => e.currentTarget.style.background = C.secondaryHover}
-              onMouseOut={(e) => e.currentTarget.style.background = C.secondary}
+              onMouseOver={(e) => e.currentTarget.style.background = C.secondaryTextHover}
+              onMouseOut={(e) => e.currentTarget.style.background = C.secondaryText}
             >
               Get 10% Off
             </button>

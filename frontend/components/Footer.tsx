@@ -54,9 +54,9 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: 
         className="flex items-center justify-between w-full lg:mb-4 group text-left"
       >
         <div>
-          <h4 className="font-bold text-[16px] uppercase tracking-[0.15em] text-white inline-block">
+          <h3 className="font-bold text-[16px] uppercase tracking-[0.15em] text-white inline-block">
             {title}
-          </h4>
+          </h3>
           <div className="hidden lg:block w-8 h-[2px] bg-[#df8448] mt-3" />
         </div>
         <div className="lg:hidden text-white/40 group-hover:text-white transition-colors">
@@ -169,7 +169,7 @@ export default function Footer() {
                     <Link
                       key={link}
                       href={getLegalHref(link)}
-                      className="text-[12px] uppercase tracking-[0.08em] text-white/50 hover:text-[#df8448] transition-colors whitespace-nowrap"
+                      className="text-[12px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
                     >
                       {link}
                     </Link>
@@ -181,7 +181,7 @@ export default function Footer() {
                     <Link
                       key={link}
                       href={getLegalHref(link)}
-                      className="text-[12px] uppercase tracking-[0.08em] text-white/50 hover:text-[#df8448] transition-colors whitespace-nowrap"
+                      className="text-[12px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
                     >
                       {link}
                     </Link>
@@ -190,7 +190,7 @@ export default function Footer() {
               </div>
 
               <div className="pt-[10px] border-t border-white/10 w-full">
-                <p className="text-[13px] text-white/50 font-normal tracking-wide">
+                <p className="text-[13px] text-white/70 font-normal tracking-wide">
                   Copyright {new Date().getFullYear()} © <span className="text-white/60 font-bold">PetPosture</span>. All rights reserved.
                 </p>
               </div>
