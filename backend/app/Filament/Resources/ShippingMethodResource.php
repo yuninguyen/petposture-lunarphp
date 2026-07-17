@@ -37,9 +37,16 @@ class ShippingMethodResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\TextInput::make('code')
+                    ->label(__('Code'))
+                    ->required()
+                    ->alphaDash()
+                    ->unique(ignoreRecord: true)
+                    ->disabled(fn(string $operation) => $operation === 'edit')
+                    ->helperText(__('Used internally to match checkout selections. Cannot be changed after creation.')),
                 Forms\Components\TextInput::make('name')
                     ->label(__('Name'))
-                    ->disabled(),
+                    ->required(),
                 Forms\Components\TextInput::make('eta')
                     ->label(__('Delivery Estimate'))
                     ->placeholder('5-7 business days'),
@@ -55,8 +62,7 @@ class ShippingMethodResource extends Resource
                     ->numeric()
                     ->minValue(0)
                     ->nullable()
-                    ->helperText(__('Order subtotal at which this becomes free. Leave blank to disable.'))
-                    ->visible(fn(?ShippingMethod $record) => ($record?->code ?? '') === 'standard'),
+                    ->helperText(__('Order subtotal at which this becomes free. Leave blank to disable.')),
             ]);
     }
 
@@ -64,6 +70,8 @@ class ShippingMethodResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('code')
+                    ->label(__('Code')),
                 Tables\Columns\TextColumn::make('name')
                     ->label(__('Name')),
                 Tables\Columns\TextColumn::make('eta')
@@ -78,14 +86,21 @@ class ShippingMethodResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListShippingMethods::route('/'),
-            'edit'  => Pages\EditShippingMethod::route('/{record}/edit'),
+            'index'  => Pages\ListShippingMethods::route('/'),
+            'create' => Pages\CreateShippingMethod::route('/create'),
+            'edit'   => Pages\EditShippingMethod::route('/{record}/edit'),
         ];
     }
 }

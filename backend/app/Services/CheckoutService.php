@@ -364,9 +364,7 @@ class CheckoutService
         $shippingAmount = $feeOverride !== null
             ? $feeOverride
             : $this->shippingService->rateFor($shippingMethod, $subtotalMinor, $isFreeShipping);
-        $shippingName = $shippingMethod === 'express'
-            ? 'Express Shipping'
-            : 'Standard Shipping';
+        $shippingName = $this->shippingService->nameFor($shippingMethod);
 
         return new ShippingOption(
             $shippingName,

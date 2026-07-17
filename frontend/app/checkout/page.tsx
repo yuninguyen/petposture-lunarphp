@@ -81,7 +81,7 @@ type CheckoutFormState = {
     postalCode: string;
     phone: string;
     saveInfo: boolean;
-    shippingMethod: 'standard' | 'express';
+    shippingMethod: string;
     paymentMethod: 'cod' | 'card' | 'paypal';
     cardNumber: string;
     cardName: string;
@@ -154,6 +154,7 @@ type TaxQuote = {
 type ShippingRate = {
     id: string;
     name: string;
+    description?: string;
     price_minor: number;
     price: number;
     free_over_minor?: number | null;
@@ -1311,16 +1312,15 @@ export default function CheckoutPage() {
                         <ShippingMethodSelector
                             value={form.shippingMethod}
                             onChange={(method) => updateField('shippingMethod', method)}
-                            standardLabel={(() => {
-                                const rate = shippingRates.find((r) => r.id === 'standard');
-                                const price = rate ? rate.price : getShippingAmount(totalAmount, coupon);
-                                return price === 0 ? 'Free' : `$${price.toFixed(2)}`;
-                            })()}
-                            expressLabel={(() => {
-                                const rate = shippingRates.find((r) => r.id === 'express');
-                                const price = rate ? rate.price : (coupon.freeShipping ? 0 : 25);
-                                return price === 0 ? 'Free' : `$${price.toFixed(2)}`;
-                            })()}
+                            options={(shippingRates.length ? shippingRates : [
+                                { id: 'standard', name: 'Standard', description: '4 to 7 business days', price: getShippingAmount(totalAmount, coupon) },
+                                { id: 'express', name: 'Express', description: '1 to 2 business days', price: coupon.freeShipping ? 0 : 25 },
+                            ]).map((rate) => ({
+                                id: rate.id,
+                                name: rate.name,
+                                description: rate.description,
+                                priceLabel: rate.price === 0 ? 'Free' : `$${rate.price.toFixed(2)}`,
+                            }))}
                             onActivate={() => activateStep('shipping')}
                         />
 
