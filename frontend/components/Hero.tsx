@@ -36,7 +36,7 @@ export default function Hero() {
               <div className="flex flex-row w-full justify-center lg:justify-start gap-2 md:gap-4">
                 <Link
                   href="/shop-by-breed"
-                  className="flex-1 bg-[#a8542a] hover:bg-[#8f4620] text-white px-3 lg:px-7 py-3.5 font-bold text-[11px] md:text-[13px] uppercase tracking-[0.05em] lg:tracking-[0.12em] transition-colors rounded-sm shadow-md text-center"
+                  className="flex-1 bg-[#df8448] hover:bg-[#c9713a] text-white px-3 lg:px-7 py-3.5 font-bold text-[11px] md:text-[13px] uppercase tracking-[0.05em] lg:tracking-[0.12em] transition-colors rounded-sm shadow-md text-center"
                   style={{ fontFamily: 'var(--font-lato)', whiteSpace: 'nowrap' }}
                 >
                   Find Your Breed
