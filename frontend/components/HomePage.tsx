@@ -662,17 +662,9 @@ function BreedBanners() {
           <div
             key={breed.title}
             style={{
+              position: 'relative',
               height: 380, borderRadius: 6, overflow: 'hidden',
-              background: `linear-gradient(to top,
-                rgba(0,0,0,0.78) 0%,
-                rgba(0,0,0,0.32) 50%,
-                rgba(0,0,0,0.10) 100%),
-                ${breed.bg} url('${breed.img}') center/cover no-repeat`,
-              display: 'flex', flexDirection: 'column',
-              justifyContent: 'flex-end',
-              alignItems: breed.align,
-              textAlign: breed.textAlign,
-              padding: '44px 48px',
+              background: breed.bg,
               cursor: 'pointer',
               transition: 'transform 0.3s ease',
               transform: hovered === idx ? 'scale(1.012)' : 'scale(1)',
@@ -680,35 +672,59 @@ function BreedBanners() {
             onMouseEnter={() => setHovered(idx)}
             onMouseLeave={() => setHovered(null)}
           >
+            <Image
+              src={breed.img}
+              alt={breed.title}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
+            />
             <div style={{
-              display: 'inline-block',
-              fontFamily: F.nav, fontSize: 11, fontWeight: 800,
-              color: C.secondary, letterSpacing: '0.12em',
-              textTransform: 'uppercase', marginBottom: 14,
-              background: C.white,
-              padding: '6px 16px',
-              borderRadius: 4,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              position: 'absolute', inset: 0,
+              background: `linear-gradient(to top,
+                rgba(0,0,0,0.78) 0%,
+                rgba(0,0,0,0.32) 50%,
+                rgba(0,0,0,0.10) 100%)`,
+            }} />
+            <div style={{
+              position: 'relative',
+              height: '100%',
+              display: 'flex', flexDirection: 'column',
+              justifyContent: 'flex-end',
+              alignItems: breed.align,
+              textAlign: breed.textAlign,
+              padding: '44px 48px',
             }}>
-              {breed.eyebrow}
+              <div style={{
+                display: 'inline-block',
+                fontFamily: F.nav, fontSize: 11, fontWeight: 800,
+                color: C.secondary, letterSpacing: '0.12em',
+                textTransform: 'uppercase', marginBottom: 14,
+                background: C.white,
+                padding: '6px 16px',
+                borderRadius: 4,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              }}>
+                {breed.eyebrow}
+              </div>
+              <h3 style={{
+                fontFamily: F.heading, fontSize: 'clamp(20px, 2.5vw, 26px)',
+                fontWeight: 700, color: C.white,
+                textTransform: 'uppercase', letterSpacing: '0.05em',
+                margin: '0 0 12px', maxWidth: 320,
+              }}>
+                {breed.title}
+              </h3>
+              <p style={{
+                color: 'rgba(255,255,255,0.78)',
+                fontSize: 15, margin: '0 0 28px', maxWidth: 320, lineHeight: 1.7,
+              }}>
+                {breed.sub}
+              </p>
+              <Btn variant="solid" style={{ fontSize: 12, padding: '11px 22px' }}>
+                Shop Now →
+              </Btn>
             </div>
-            <h3 style={{
-              fontFamily: F.heading, fontSize: 'clamp(20px, 2.5vw, 26px)',
-              fontWeight: 700, color: C.white,
-              textTransform: 'uppercase', letterSpacing: '0.05em',
-              margin: '0 0 12px', maxWidth: 320,
-            }}>
-              {breed.title}
-            </h3>
-            <p style={{
-              color: 'rgba(255,255,255,0.78)',
-              fontSize: 15, margin: '0 0 28px', maxWidth: 320, lineHeight: 1.7,
-            }}>
-              {breed.sub}
-            </p>
-            <Btn variant="solid" style={{ fontSize: 12, padding: '11px 22px' }}>
-              Shop Now →
-            </Btn>
           </div>
         ))}
       </div>
