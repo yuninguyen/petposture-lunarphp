@@ -3,6 +3,11 @@
 namespace App\Models\Legacy;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\ProductSyncMapping;
+use App\Models\ProductVariant;
+use App\Models\Review;
 use App\Traits\HasMetadata;
 use App\Traits\HasSeo;
 use Spatie\MediaLibrary\HasMedia;
