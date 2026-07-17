@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Setting;
+use App\Support\ImageUploadResizer;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
@@ -205,7 +206,8 @@ class ManageSettings extends Page
                                 FileUpload::make('shop_logo')
                                     ->label(__('Shop Logo'))
                                     ->image()
-                                    ->directory('settings'),
+                                    ->directory('settings')
+                                    ->saveUploadedFileUsing(ImageUploadResizer::make(800, 800)),
                                 FileUpload::make('shop_favicon')
                                     ->label(__('Favicon'))
                                     ->image()

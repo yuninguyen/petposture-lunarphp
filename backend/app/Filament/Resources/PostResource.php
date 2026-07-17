@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PostResource\Pages;
 use App\Models\Post;
+use App\Support\ImageUploadResizer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
@@ -69,7 +70,8 @@ class PostResource extends Resource
                         Forms\Components\FileUpload::make('featured_image')
                             ->label(__('Featured Image'))
                             ->image()
-                            ->directory('blog'),
+                            ->directory('blog')
+                            ->saveUploadedFileUsing(ImageUploadResizer::make(1600, 1600)),
 
                         Forms\Components\Select::make('status')
                             ->label(__('Status'))
@@ -110,7 +112,8 @@ class PostResource extends Resource
                                         Forms\Components\FileUpload::make('seo.og_image')
                                             ->label(__('Social Image'))
                                             ->image()
-                                            ->directory('seo'),
+                                            ->directory('seo')
+                                            ->saveUploadedFileUsing(ImageUploadResizer::make(1200, 630)),
                                     ]),
                             ]),
                     ])->collapsible(),

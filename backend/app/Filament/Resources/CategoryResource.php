@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CategoryResource\Pages;
 use App\Models\Category;
+use App\Support\ImageUploadResizer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
@@ -81,7 +82,8 @@ class CategoryResource extends Resource
                                         Forms\Components\FileUpload::make('seo.og_image')
                                             ->label(__('Social Image'))
                                             ->image()
-                                            ->directory('seo'),
+                                            ->directory('seo')
+                                            ->saveUploadedFileUsing(ImageUploadResizer::make(1200, 630)),
                                     ]),
                             ]),
                     ])->collapsible(),

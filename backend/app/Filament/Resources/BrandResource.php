@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\BrandResource\Pages;
 use App\Models\Brand;
+use App\Support\ImageUploadResizer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -52,6 +53,7 @@ class BrandResource extends Resource
                             ->label(__('Brand Logo'))
                             ->image()
                             ->directory('brands')
+                            ->saveUploadedFileUsing(ImageUploadResizer::make(800, 800))
                             ->columnSpanFull(),
                         Forms\Components\Textarea::make('description')
                             ->label(__('Description'))
