@@ -87,14 +87,17 @@ class ViewOrder extends ViewRecord
     private static function formatCustomerIpBlock(array $meta): string
     {
         $lines = [
-            $meta['customer_ip'] ?? null,
-            $meta['customer_ip_location'] ?? null,
-            $meta['customer_ip_isp'] ?? null,
-            $meta['customer_user_agent'] ?? null,
-            $meta['customer_ip_service_type'] ?? null,
+            'IP' => $meta['customer_ip'] ?? null,
+            'Location' => $meta['customer_ip_location'] ?? null,
+            'ISP' => $meta['customer_ip_isp'] ?? null,
+            'User Agent' => $meta['customer_user_agent'] ?? null,
+            'Service' => $meta['customer_ip_service_type'] ?? null,
         ];
 
-        return collect($lines)->filter()->map(fn($line) => e($line))->implode('<br>') ?: '—';
+        return collect($lines)
+            ->filter()
+            ->map(fn($value, $label) => '<strong>' . e($label) . ':</strong> ' . e($value))
+            ->implode('<br>') ?: '—';
     }
 
     public function infolist(Infolist $infolist): Infolist
