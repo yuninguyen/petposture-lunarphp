@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { ShieldCheck, ShoppingBag, Tag } from 'lucide-react';
 
 interface CartItem {
@@ -65,8 +66,7 @@ export function OrderSummary({
                     {items.map((item) => (
                         <div key={item.variantId} className="flex items-center gap-4 py-1">
                             <div className="relative h-16 w-16 flex-shrink-0 rounded-[10px] border border-[#e6e6e6] bg-white">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={item.image} alt={item.name} className="h-full w-full object-contain p-1" />
+                                <Image src={item.image} alt={item.name} fill sizes="64px" className="object-contain p-1" />
                                 <span className="absolute -right-2 -top-2 z-10 flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#111827] px-1 text-[10px] font-bold text-white shadow-[0_0_0_2px_#fff]">
                                     {item.quantity}
                                 </span>

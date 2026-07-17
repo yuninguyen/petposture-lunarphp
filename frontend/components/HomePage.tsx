@@ -182,7 +182,8 @@ function ShopCategories() {
     {
       label: 'Shop by Breeds',
       desc: 'Ergonomic essentials tailored to your breed\'s unique anatomy — from flat-faced Pugs to long-backed Dachshunds.',
-      bg: `#5a6a74 url('/assets/Shop-by-Breed.jpg') center/cover no-repeat`,
+      bgColor: '#5a6a74',
+      img: '/assets/Shop-by-Breed.jpg',
       align: 'flex-end' as const,
       textAlign: 'right' as const,
       buttons: [
@@ -193,7 +194,8 @@ function ShopCategories() {
     {
       label: 'Shop by Solutions',
       desc: 'Target your pet\'s specific health concerns — digestion, mobility, joint support, and everyday comfort.',
-      bg: `#7a8a8f url('/assets/shop-by-solutions.jpg') center/cover no-repeat`,
+      bgColor: '#7a8a8f',
+      img: '/assets/shop-by-solutions.jpg',
       align: 'flex-start' as const,
       textAlign: 'left' as const,
       buttons: [
@@ -215,17 +217,10 @@ function ShopCategories() {
             <div
               key={i}
               style={{
+                position: 'relative',
                 minHeight: 340,
-                background: `linear-gradient(to bottom,
-                  rgba(30,38,44,0.38) 0%,
-                  rgba(30,38,44,0.55) 60%,
-                  rgba(30,38,44,0.75) 100%),
-                  ${p.bg}`,
-                display: 'flex', flexDirection: 'column',
-                justifyContent: 'flex-end',
-                alignItems: p.align,
-                padding: '40px 36px',
-                textAlign: p.textAlign,
+                overflow: 'hidden',
+                background: p.bgColor,
                 cursor: 'pointer',
                 transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                 transform: hoveredIdx === i ? 'translateY(-4px)' : 'none',
@@ -236,52 +231,76 @@ function ShopCategories() {
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
             >
+              <Image
+                src={p.img}
+                alt={p.label}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
+              />
               <div style={{
-                display: 'inline-block',
-                fontSize: 11, fontWeight: 800,
-                color: C.secondaryText,
-                background: C.white,
-                border: 'none',
-                padding: '4px 10px', borderRadius: 2,
-                letterSpacing: '0.14em', textTransform: 'uppercase',
-                marginBottom: 12,
+                position: 'absolute', inset: 0,
+                background: `linear-gradient(to bottom,
+                  rgba(30,38,44,0.38) 0%,
+                  rgba(30,38,44,0.55) 60%,
+                  rgba(30,38,44,0.75) 100%)`,
+              }} />
+              <div style={{
+                position: 'relative',
+                height: '100%',
+                display: 'flex', flexDirection: 'column',
+                justifyContent: 'flex-end',
+                alignItems: p.align,
+                padding: '40px 36px',
+                textAlign: p.textAlign,
               }}>
-                Browse Collection
-              </div>
-              <h3 style={{
-                fontFamily: F.heading, fontSize: 'clamp(20px, 2.5vw, 26px)',
-                fontWeight: 700, color: C.white,
-                textTransform: 'uppercase', letterSpacing: '0.06em',
-                margin: '0 0 12px', maxWidth: 340,
-                minHeight: 56, display: 'flex', alignItems: 'flex-end',
-              }}>
-                {p.label}
-              </h3>
-              <p style={{
-                color: 'rgba(255,255,255,0.82)', fontSize: 15,
-                margin: '0 0 28px', maxWidth: 360,
-                lineHeight: 1.7, letterSpacing: '0.01em',
-                minHeight: 76,
-              }}>
-                {p.desc}
-              </p>
-              <div className="flex flex-row gap-2 md:gap-3 w-full" style={{
-                justifyContent: p.align,
-                maxWidth: p.buttons.length === 2 ? 460 : 540,
-              }}>
-                {p.buttons.map(b => (
-                  <div key={b.label} style={{ flex: 1, display: 'flex' }}>
-                    <Btn variant={b.variant} href={b.href} style={{
-                      fontSize: '11px',
-                      padding: '10px 4px',
-                      width: '100%',
-                      textAlign: 'center',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {b.label}
-                    </Btn>
-                  </div>
-                ))}
+                <div style={{
+                  display: 'inline-block',
+                  fontSize: 11, fontWeight: 800,
+                  color: C.secondaryText,
+                  background: C.white,
+                  border: 'none',
+                  padding: '4px 10px', borderRadius: 2,
+                  letterSpacing: '0.14em', textTransform: 'uppercase',
+                  marginBottom: 12,
+                }}>
+                  Browse Collection
+                </div>
+                <h3 style={{
+                  fontFamily: F.heading, fontSize: 'clamp(20px, 2.5vw, 26px)',
+                  fontWeight: 700, color: C.white,
+                  textTransform: 'uppercase', letterSpacing: '0.06em',
+                  margin: '0 0 12px', maxWidth: 340,
+                  minHeight: 56, display: 'flex', alignItems: 'flex-end',
+                }}>
+                  {p.label}
+                </h3>
+                <p style={{
+                  color: 'rgba(255,255,255,0.82)', fontSize: 15,
+                  margin: '0 0 28px', maxWidth: 360,
+                  lineHeight: 1.7, letterSpacing: '0.01em',
+                  minHeight: 76,
+                }}>
+                  {p.desc}
+                </p>
+                <div className="flex flex-row gap-2 md:gap-3 w-full" style={{
+                  justifyContent: p.align,
+                  maxWidth: p.buttons.length === 2 ? 460 : 540,
+                }}>
+                  {p.buttons.map(b => (
+                    <div key={b.label} style={{ flex: 1, display: 'flex' }}>
+                      <Btn variant={b.variant} href={b.href} style={{
+                        fontSize: '11px',
+                        padding: '10px 4px',
+                        width: '100%',
+                        textAlign: 'center',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {b.label}
+                      </Btn>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           ))}

@@ -290,7 +290,8 @@ export default function ContactPage() {
                             <button
                                 type="submit"
                                 disabled={status === 'loading'}
-                                className="w-full md:w-auto bg-[#df8448] hover:bg-[#c9713a] text-white px-12 py-5 font-black text-[12px] uppercase tracking-[0.25em] transition-all transform hover:-translate-y-1 active:scale-95 shadow-xl flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group"
+                                style={{ fontFamily: 'var(--font-lato), sans-serif' }}
+                                className="w-full md:w-auto bg-[#df8448] hover:bg-[#c9713a] text-white px-12 py-5 font-bold text-[12px] uppercase tracking-[0.12em] transition-colors rounded-sm shadow-md flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group"
                             >
                                 {status === 'loading' ? (
                                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
