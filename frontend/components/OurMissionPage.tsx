@@ -97,7 +97,7 @@ export default function OurMissionPage() {
                             className="relative aspect-square md:aspect-[4/4] rounded-xl overflow-hidden shadow-2xl shadow-[#3e4c57]/10 bg-white"
                         >
                             <Image
-                                src="assets/badposture-goodposture.jpg"
+                                src="/assets/badposture-goodposture.jpg"
                                 alt="Standard vs PetPosture"
                                 fill
                                 className="object-contain p-4"
