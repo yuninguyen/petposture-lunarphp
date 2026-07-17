@@ -13,11 +13,14 @@ An e-commerce platform for pet posture products, built as a monorepo with Next.j
 |-------|------------|
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
 | Backend | Laravel 11, PHP 8.3, Lunar PHP (e-commerce engine) |
+| Backend server | FrankenPHP + Caddy (single binary, no separate PHP-FPM/Nginx) |
 | Admin Panel | Filament 3 + Filament Shield (RBAC) |
 | Auth | Laravel Sanctum |
 | Roles & Permissions | Spatie Laravel Permission |
+| Payments | Stripe (cards, incl. Radar fraud scoring) + Cash on Delivery |
 | Database | MySQL |
-| Hosting | Hostinger Business (Node.js via Passenger + PHP) |
+| Queue | Database driver, processed by a `queue:work` process (supervisord) |
+| Hosting | VPS (Docker Compose, 2 containers: backend + frontend) |
 
 ---
 
@@ -28,29 +31,34 @@ petposture/
 ├── frontend/                   # Next.js app (App Router, TypeScript)
 │   ├── app/
 │   │   ├── page.tsx            # Homepage
-│   │   ├── shop/               # Product catalog & product detail
-│   │   ├── cart/               # Shopping cart
-│   │   ├── checkout/           # Checkout + success page
-│   │   ├── blog/               # Blog listing + post detail
-│   │   ├── auth/               # Login + Register + password reset
-│   │   ├── track-order/        # Order tracking
-│   │   ├── admin/              # Frontend admin (orders, blog)
-│   │   └── [policy pages]/     # FAQ, privacy, terms, shipping, etc.
-│   ├── server.js               # Custom Next.js server (Passenger entry point)
+│   │   ├── shop/                     # Product catalog & product detail
+│   │   ├── cart/                     # Shopping cart
+│   │   ├── checkout/                 # Checkout + success page
+│   │   ├── account/                  # Customer dashboard (orders, addresses, profile)
+│   │   ├── sign-in/, sign-up/        # Auth (split from a single /auth page)
+│   │   ├── blog/                     # Blog listing + post detail
+│   │   ├── track-order/              # Guest order tracking
+│   │   ├── admin/                    # Frontend admin (orders, blog)
+│   │   └── [policy pages]/           # FAQ, privacy, terms, shipping, etc.
+│   ├── Dockerfile.prod
 │   └── next.config.ts
 ├── backend/                    # Laravel API + Filament admin
 │   ├── app/
-│   │   ├── Http/Controllers/Api/   # REST API controllers
-│   │   ├── Models/                 # Eloquent models
-│   │   ├── Filament/               # Filament resources, pages, widgets
-│   │   └── Providers/Filament/     # AdminPanelProvider (theme, layout)
+│   │   ├── Http/Controllers/Api/     # REST API controllers
+│   │   ├── Models/                   # Eloquent models (+ Models/Legacy, pre-Lunar, deprecated)
+│   │   ├── Services/                 # CheckoutService, ShippingService, OrderOperationsService, etc.
+│   │   ├── Jobs/                     # Queued jobs (emails, IP-intelligence lookup)
+│   │   ├── Lunar/ShippingModifiers/  # Registers real shipping options into Lunar's cart pipeline
+│   │   ├── Filament/                 # Filament resources, pages, widgets
+│   │   └── Providers/Filament/       # AdminPanelProvider (theme, layout)
 │   ├── database/
 │   │   ├── migrations/
 │   │   └── seeders/
+│   ├── Dockerfile
+│   ├── supervisord.conf        # Runs frankenphp + queue:work together
 │   └── routes/api.php
-├── nginx/                      # Nginx config (Docker only)
-├── docker-compose.yml
-└── .htaccess                   # Root Apache config (Passenger + HTTPS redirect)
+├── docker-compose.prod.yml     # VPS deployment (backend + frontend containers)
+└── docker-compose.yml          # Local dev
 ```
 
 ---
@@ -58,10 +66,26 @@ petposture/
 ## Features
 
 - Product catalog with categories, variants, attributes, and brands
-- Shopping cart & checkout flow
-- Order management & tracking
+- Shopping cart & checkout flow (guest + authenticated), COD and Stripe card payments
+- Customer account dashboard (`/account`): order history with expandable order detail
+  (items, shipping/billing address, tracking, payment status), saved addresses, profile info
+- Order management & tracking, with a WooCommerce-style admin order view:
+  status actions (mark paid/processing/shipped/delivered/cancel), refunds (full/partial via Stripe),
+  shipment tracking with carrier links, an auto-updating Order Notes activity timeline, and an
+  "Adjust Shipping" action for manually correcting a miscalculated order total
+- Order Attribution tracking (UTM/referrer origin, device type, session page views) — self-hosted,
+  no third-party analytics service required
+- Stripe Radar fraud/risk scoring surfaced on the order view (automatic on every card payment)
+- Customer IP intelligence on the order view (location, ISP, connection type via ip-api.com,
+  captured asynchronously at checkout so it never blocks the checkout request)
+- Shipping Cost management (Sales > Shipping Cost): full CRUD over shipping methods (price,
+  free-shipping threshold, delivery estimate) — checkout and order totals both read from the same
+  source, so what's configured in the admin is exactly what customers are charged
+- Customers are linked to real Lunar `Customer` records on signup/checkout (not just Users),
+  so Sales > Customers shows real customer data instead of an empty page
 - Blog with slug-based routing
-- Discount / coupon codes
+- Discount / coupon codes (Lunar's discount engine, incl. free-shipping coupons)
+- Product reviews (storefront submit + admin moderation)
 - Multi-language support
 - SEO metadata & automatic sitemap
 - Static policy pages (FAQ, privacy, shipping, returns, etc.)
@@ -70,38 +94,46 @@ petposture/
 
 ---
 
-## Deployment (Hostinger)
+## Deployment (VPS via Docker Compose)
 
-The monorepo is deployed to Hostinger Business via GitHub Git deploy.
+The monorepo is deployed to a VPS running two long-lived Docker containers, built from
+`backend/Dockerfile` and `frontend/Dockerfile.prod` and orchestrated by
+`docker-compose.prod.yml` (both containers run with `network_mode: host`).
 
-| Service | URL | Tech |
-|---------|-----|------|
-| Frontend (Next.js) | `petposture.com` | Node.js via Passenger |
-| Backend (Laravel) | `api.petposture.com` | PHP 8.3 |
+| Service | Container | Port | Tech |
+|---------|-----------|------|------|
+| Frontend (Next.js) | `petposture-frontend` | 3001 | Node.js |
+| Backend (Laravel) | `petposture-backend` | 8001 | FrankenPHP + Caddy, via supervisord |
 
-### How it works
+### Backend container processes (supervisord)
 
-- Hostinger pulls from `main` branch on push
-- Build command: `npm run build` (builds Next.js inside `frontend/`)
-- Entry file: `frontend/server.js` (custom Next.js HTTP server)
-- Laravel is served from `public_html/api/` pointing to `backend/public/`
-- `.env` is managed via Hostinger hPanel Environment Variables (not committed to Git)
+The backend container runs two processes side by side so queued jobs (order confirmation
+emails, lifecycle emails, IP-intelligence lookups, outbound webhooks) actually get processed
+instead of piling up unprocessed in the `jobs` table:
 
-### Required Environment Variables (hPanel)
+- `frankenphp` — serves the app
+- `php artisan queue:work` — processes the database queue
 
+The container's entrypoint also runs `php artisan migrate --force` and cache-warms
+(`config:cache`, `route:cache`, `view:cache`) on every start/restart.
+
+### Standard deploy (from a local clone with SSH access to the VPS)
+
+```bash
+ssh root@<vps-ip> "cd /opt/petposture && git pull origin main \
+  && docker compose -f docker-compose.prod.yml build backend frontend \
+  && docker compose -f docker-compose.prod.yml up -d --force-recreate backend frontend \
+  && sleep 10 \
+  && docker exec petposture-backend php artisan optimize:clear"
 ```
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://api.petposture.com
-APP_KEY=base64:...
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=u816338311_petposture
-DB_USERNAME=u816338311_petposture
-DB_PASSWORD=...
-NEXT_PUBLIC_API_URL=https://api.petposture.com
-```
+
+Build/recreate only `backend` or only `frontend` if the change is isolated to one side.
+
+### `.env` files
+
+`backend/.env` and `frontend/.env` live directly on the VPS at `/opt/petposture/` (not
+committed to Git) and are mounted into the containers via `env_file:` in
+`docker-compose.prod.yml`.
 
 ---
 
@@ -140,13 +172,15 @@ docker-compose up -d
 
 | Group | Prefix |
 |-------|--------|
-| Auth | `/api/auth/...` |
-| Products | `/api/products/...` |
+| Auth | `/api/login`, `/api/register`, `/api/auth/forgot-password`, `/api/auth/reset-password` |
+| Products & Reviews | `/api/products/...` (incl. `/api/products/{slug}/reviews`) |
 | Categories | `/api/categories/...` |
-| Cart & Checkout | `/api/cart/...`, `/api/checkout/...` |
-| Orders | `/api/orders/...` |
+| Cart & Checkout | `/api/cart/...`, `/api/checkout/place-order`, `/api/checkout/shipping-rates`, `/api/checkout/tax-quote`, `/api/checkout/payment-intent`, `/api/apply-coupon` |
+| Orders | `/api/orders/...` (authenticated, scoped to the customer), `/api/orders/track` (public, reference + email) |
+| Customer account | `/api/me/addresses` (authenticated address book) |
 | Blog / Posts | `/api/posts/...` |
 | Settings / Content | `/api/settings/...`, `/api/content/...` |
+| Stripe webhook | `/api/webhooks/stripe` |
 
 ---
 
