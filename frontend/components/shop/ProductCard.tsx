@@ -28,7 +28,7 @@ export function ProductCard({ product }: { product: Product }) {
 
                     <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
                         {product.badge && (
-                            <span className="rounded-full bg-[#df8448] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-orange-500/20">
+                            <span className="rounded-full bg-[#a8542a] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-orange-500/20">
                                 {product.badge}
                             </span>
                         )}
@@ -60,7 +60,7 @@ export function ProductCard({ product }: { product: Product }) {
                             className={i < product.rating ? "fill-[#df8448] text-[#df8448]" : "text-zinc-200"}
                         />
                     ))}
-                    <span className="ml-1 text-[10px] font-medium text-[#8b8f93]">{product.reviews} reviews</span>
+                    <span className="ml-1 text-[10px] font-medium text-[#6b6f73]">{product.reviews} reviews</span>
                 </div>
 
                 <Link href={`/shop/${product.categorySlug}/${product.slug}`} className="block">
@@ -71,7 +71,7 @@ export function ProductCard({ product }: { product: Product }) {
 
                 <div className="mt-3 flex items-end justify-between gap-3">
                     <div className="flex items-center gap-3 font-bold">
-                        <span className="text-[16px] text-[#df8448]">${product.price.toFixed(2)}</span>
+                        <span className="text-[16px] text-[#a8542a]">${product.price.toFixed(2)}</span>
                         {product.oldPrice != null && (
                             <span className="text-[12px] font-medium text-zinc-300 line-through">${product.oldPrice.toFixed(2)}</span>
                         )}
