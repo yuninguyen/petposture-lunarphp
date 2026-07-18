@@ -17,7 +17,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
         "lunarphp/lunar": "^1.0",
-        "predis/predis": "^2.3",
+        "predis/predis": "^2.3|^3.0",
         "spatie/laravel-permission": "^6.4"
     },
     "require-dev": {
