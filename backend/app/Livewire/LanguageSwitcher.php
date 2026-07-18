@@ -12,7 +12,9 @@ class LanguageSwitcher extends Component
 
     public function mount()
     {
-        $this->currentLocale = Session::get('locale', config('app.locale'));
+        // fallback_locale is never mutated (unlike app.locale, mutated per-request by
+        // SetLocale) — avoids the same cross-request locale drift in worker mode.
+        $this->currentLocale = Session::get('locale', config('app.fallback_locale', 'en'));
     }
 
     public function changeLocale(string $locale)

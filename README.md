@@ -108,9 +108,32 @@ The monorepo is deployed to a VPS running two long-lived Docker containers, buil
 | Cache/Session store | `petposture-redis` | 6379 (localhost only) | Redis 7, bound to `127.0.0.1` |
 
 FrankenPHP currently runs in **classic mode** (plain `php_server` in `Caddyfile`, no
-`laravel/octane`) — Laravel still bootstraps fresh on every request. Worker mode (persistent
-app in memory, Octane-style) is not enabled yet; it would need `laravel/octane` +
-`octane:install --server=frankenphp` + a code audit for request-scoped state leaks first.
+`laravel/octane`) — Laravel still bootstraps fresh on every request. Measured directly on the
+VPS (localhost, bypassing Cloudflare/network), a simple API call (`/api/settings`) has a TTFB
+of ~0.77–0.81s, consistent with a full framework bootstrap on every request — this is the
+main lever for reducing API latency (bigger than the Redis cache/session win). Worker mode
+(persistent app in memory, Octane-style) is not enabled yet; it would need `laravel/octane` +
+`octane:install --server=frankenphp`.
+
+Two request-scoped state leaks were identified and fixed in `SetLocale` and a new
+`ResetPermissionCache` middleware (both registered in `bootstrap/app.php`) as prerequisites for
+worker mode — a persistent app container would otherwise let locale/permission state leak
+across requests on the same worker:
+
+- `SetLocale` (and `LanguageSwitcher`) used `config('app.locale')` — which `SetLocale` mutates
+  every request — as their own fallback default, causing the "default" locale to drift to
+  whatever the last request set it to. Fixed both to fall back to the never-mutated
+  `config('app.fallback_locale')` instead.
+- Spatie `PermissionRegistrar` keeps a local in-memory reference to roles/permissions for the
+  process lifetime; a role/permission change wouldn't be reflected on a persistent worker until
+  restart. Fixed by adding `ResetPermissionCache` (calls `clearPermissionsCollection()` — the
+  method the package itself documents for Octane/Swoole-style persistent workers) to both the
+  `web` and `api` middleware groups. Deliberately *not* `forgetCachedPermissions()`, which also
+  deletes the shared cross-request cache store entry and would force a full DB rebuild on every
+  single request, negating the point of caching permissions at all.
+
+A further code audit for other request-scoped state leaks is still needed before actually
+enabling worker mode.
 
 ### Backend container processes (supervisord)
 

@@ -29,8 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
         $middleware->appendToGroup('api', \App\Http\Middleware\SetRequestId::class);
+        $middleware->appendToGroup('api', \App\Http\Middleware\ResetPermissionCache::class);
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
+            \App\Http\Middleware\ResetPermissionCache::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

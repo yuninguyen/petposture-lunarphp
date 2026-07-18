@@ -17,7 +17,10 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = Session::get('locale', config('app.locale'));
+        // Use fallback_locale (never mutated) instead of app.locale (mutated below) as the
+        // default — otherwise app.locale drifts to whatever locale the last request set it to,
+        // which would leak across requests in a persistent worker process (FrankenPHP worker mode).
+        $locale = Session::get('locale', config('app.fallback_locale', 'en'));
         
         App::setLocale($locale);
         config(['app.locale' => $locale]);
