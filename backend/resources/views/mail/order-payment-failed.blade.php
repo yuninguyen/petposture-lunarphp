@@ -1,4 +1,4 @@
-<x-mail::message>
+<x-mail::message :message="$message ?? null">
 # Payment Failed — Action Required
 
 Hi {{ $order->shippingAddress?->first_name ?? 'there' }},

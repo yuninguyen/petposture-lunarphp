@@ -1,4 +1,4 @@
-<x-mail::message>
+<x-mail::message :message="$message ?? null">
 # New Order Received — #{{ $order->reference }}
 
 A new order has been placed on {{ config('app.name') }}.

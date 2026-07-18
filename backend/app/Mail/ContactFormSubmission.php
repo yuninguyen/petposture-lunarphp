@@ -12,7 +12,7 @@ class ContactFormSubmission extends Mailable
         public readonly string $senderName,
         public readonly string $senderEmail,
         public readonly string $messageSubject,
-        public readonly string $message,
+        public readonly string $messageBody,
         public readonly ?string $orderNumber = null,
     ) {}
 

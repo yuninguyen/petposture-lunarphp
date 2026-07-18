@@ -1,4 +1,4 @@
-<x-mail::message>
+<x-mail::message :message="$message ?? null">
 # We got your message, {{ $senderName }}!
 
 Thanks for reaching out to {{ config('app.name') }}. We've received your message about **"{{ $originalSubject }}"** and our support team will get back to you within **24 business hours**.

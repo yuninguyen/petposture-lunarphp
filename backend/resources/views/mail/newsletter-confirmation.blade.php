@@ -1,4 +1,4 @@
-<x-mail::message>
+<x-mail::message :message="$message ?? null">
 # You're in! 🎉
 
 Thanks for subscribing to {{ config('app.name') }} updates.

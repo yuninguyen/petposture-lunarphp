@@ -1,4 +1,4 @@
-<x-mail::message>
+<x-mail::message :message="$message ?? null">
 # We're Preparing Your Order 📦
 
 Hi {{ $order->shippingAddress?->first_name ?? 'there' }},

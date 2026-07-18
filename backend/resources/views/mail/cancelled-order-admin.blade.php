@@ -1,4 +1,4 @@
-<x-mail::message>
+<x-mail::message :message="$message ?? null">
 # Order Cancelled — #{{ $order->reference }}
 
 An order has been cancelled on {{ config('app.name') }}.

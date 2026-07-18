@@ -1,4 +1,4 @@
-<x-mail::message>
+<x-mail::message :message="$message ?? null">
 # Your Order Has Been Delivered! 🎉
 
 Hi {{ $order->shippingAddress?->first_name ?? 'there' }},

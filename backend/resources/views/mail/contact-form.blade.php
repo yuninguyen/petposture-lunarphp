@@ -1,4 +1,4 @@
-<x-mail::message>
+<x-mail::message :message="$message ?? null">
 # New Contact Form Submission
 
 **From:** {{ $senderName }} &lt;{{ $senderEmail }}&gt;
@@ -9,7 +9,7 @@
 
 ---
 
-{{ $message }}
+{{ $messageBody }}
 
 ---
 

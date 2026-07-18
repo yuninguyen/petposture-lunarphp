@@ -1,4 +1,4 @@
-<x-mail::message>
+<x-mail::message :message="$message ?? null">
 # Order Confirmed — #{{ $order->reference }}
 
 Hi {{ $order->shippingAddress?->first_name ?? 'there' }},
