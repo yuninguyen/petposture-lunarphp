@@ -270,6 +270,32 @@ class ManageSettings extends Page
                                     ->helperText('Register this URL in your Stripe Dashboard → Developers → Webhooks.'),
                             ]),
 
+                        Tabs\Tab::make(__('SEO & Social'))
+                            ->icon('heroicon-o-globe-alt')
+                            ->schema([
+                                Grid::make(2)->schema([
+                                    TextInput::make('social_facebook')
+                                        ->label(__('Facebook URL'))
+                                        ->url()
+                                        ->placeholder('https://facebook.com/yourpage'),
+                                    TextInput::make('social_instagram')
+                                        ->label(__('Instagram URL'))
+                                        ->url()
+                                        ->placeholder('https://instagram.com/yourpage'),
+                                    TextInput::make('social_twitter')
+                                        ->label(__('Twitter / X URL'))
+                                        ->url()
+                                        ->placeholder('https://x.com/yourpage'),
+                                    TextInput::make('business_phone')
+                                        ->label(__('Business Phone'))
+                                        ->tel(),
+                                ]),
+                                Textarea::make('business_address')
+                                    ->label(__('Business Address'))
+                                    ->rows(2)
+                                    ->helperText('Used for search engine business info (Organization schema).'),
+                            ]),
+
                         Tabs\Tab::make(__('SMTP Settings'))
                             ->icon('heroicon-o-envelope')
                             ->schema([

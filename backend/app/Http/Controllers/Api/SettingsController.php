@@ -23,7 +23,16 @@ class SettingsController extends Controller
             'localization' => [
                 'currency' => setting('default_currency', 'USD'),
                 'symbol' => setting('currency_symbol', '$'),
-            ]
+            ],
+            'social' => [
+                'facebook' => setting('social_facebook'),
+                'instagram' => setting('social_instagram'),
+                'twitter' => setting('social_twitter'),
+            ],
+            'contact' => [
+                'phone' => setting('business_phone'),
+                'address' => setting('business_address'),
+            ],
         ]);
     }
 
