@@ -154,6 +154,20 @@ The container's entrypoint also runs `php artisan migrate --force` and cache-war
 Laravel connects to it via `predis/predis` (`REDIS_CLIENT=predis` in `backend/.env`) and uses
 it for both `CACHE_STORE` and `SESSION_DRIVER`.
 
+### Stripe config: DB `Setting` overrides `.env`
+
+Stripe credentials can be set two ways: `backend/.env` (`STRIPE_KEY`/`STRIPE_SECRET`/
+`STRIPE_WEBHOOK_SECRET`) or the Admin Settings UI (Filament → Manage Settings → Payment tab),
+which writes to the `settings` DB table and takes priority. **Every Stripe-reading class must
+resolve credentials the same way** — `Setting::get('stripe_key') ?: config('services.stripe.key')`
+(and same for `stripe_secret`/`stripe_webhook_secret`), cached for 5 minutes under cache keys
+`stripe_key`/`stripe_secret`/`stripe_webhook_secret` (invalidated on Settings save). Both
+`StripePaymentIntentService` and `StripeCardGateway` follow this pattern now — `StripeCardGateway`
+used to read `config()` directly, which meant `/api/checkout/payment-methods` reported
+`mode: placeholder` (no live Stripe.js/card Element mounted) even though credentials were saved
+in the DB and payment-intent creation succeeded, breaking checkout with "Stripe card form is not
+ready yet." If you add another Stripe-touching class, follow the same DB-first pattern.
+
 ### Standard deploy (from a local clone with SSH access to the VPS)
 
 ```bash
@@ -217,6 +231,7 @@ docker-compose up -d
 | Customer account | `/api/me/addresses` (authenticated address book) |
 | Blog / Posts | `/api/posts/...` |
 | Settings / Content | `/api/settings/...`, `/api/content/...` |
+| Newsletter | `/api/newsletter/subscribe` (fired from the checkout "email me with news and offers" opt-in) |
 | Stripe webhook | `/api/webhooks/stripe` |
 
 ---

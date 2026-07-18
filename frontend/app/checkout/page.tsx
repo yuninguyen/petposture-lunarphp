@@ -1105,6 +1105,14 @@ export default function CheckoutPage() {
                     }
                 }
 
+                if (form.saveInfo && form.email) {
+                    fetch(`${apiBase}/api/newsletter/subscribe`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: form.email }),
+                    }).catch(() => undefined);
+                }
+
                 localStorage.removeItem('petposture_cart');
                 localStorage.removeItem('petposture_cart_coupon');
                 clearCoupon();
