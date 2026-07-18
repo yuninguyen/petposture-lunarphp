@@ -17,7 +17,7 @@
 
 <tr>
 <td align="center" style="padding:44px 40px 28px 40px;">
-<img src="{{ config('app.frontend_url') }}/assets/Logo-PetPosture-1-e1761840892773.png" height="54" alt="{{ config('app.name') }}" style="display:block; height:54px; width:auto;">
+<img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('logo.png'))) }}" height="54" alt="{{ config('app.name') }}" style="display:block; height:54px; width:auto;">
 </td>
 </tr>
 
