@@ -19,8 +19,9 @@ An e-commerce platform for pet posture products, built as a monorepo with Next.j
 | Roles & Permissions | Spatie Laravel Permission |
 | Payments | Stripe (cards, incl. Radar fraud scoring) + Cash on Delivery |
 | Database | MySQL |
+| Cache & Session | Redis (via `predis/predis`) |
 | Queue | Database driver, processed by a `queue:work` process (supervisord) |
-| Hosting | VPS (Docker Compose, 2 containers: backend + frontend) |
+| Hosting | VPS (Docker Compose, 3 containers: backend + frontend + redis) |
 
 ---
 
@@ -104,6 +105,12 @@ The monorepo is deployed to a VPS running two long-lived Docker containers, buil
 |---------|-----------|------|------|
 | Frontend (Next.js) | `petposture-frontend` | 3001 | Node.js |
 | Backend (Laravel) | `petposture-backend` | 8001 | FrankenPHP + Caddy, via supervisord |
+| Cache/Session store | `petposture-redis` | 6379 (localhost only) | Redis 7, bound to `127.0.0.1` |
+
+FrankenPHP currently runs in **classic mode** (plain `php_server` in `Caddyfile`, no
+`laravel/octane`) — Laravel still bootstraps fresh on every request. Worker mode (persistent
+app in memory, Octane-style) is not enabled yet; it would need `laravel/octane` +
+`octane:install --server=frankenphp` + a code audit for request-scoped state leaks first.
 
 ### Backend container processes (supervisord)
 
@@ -115,7 +122,14 @@ instead of piling up unprocessed in the `jobs` table:
 - `php artisan queue:work` — processes the database queue
 
 The container's entrypoint also runs `php artisan migrate --force` and cache-warms
-(`config:cache`, `route:cache`, `view:cache`) on every start/restart.
+(`config:cache`, `route:cache`, `view:cache`, `event:cache`) on every start/restart.
+
+### Redis
+
+`docker-compose.prod.yml` runs a `redis:7-alpine` container (`petposture-redis`), bound to
+`127.0.0.1` only (not exposed publicly), with a named volume (`redis_data`) for persistence.
+Laravel connects to it via `predis/predis` (`REDIS_CLIENT=predis` in `backend/.env`) and uses
+it for both `CACHE_STORE` and `SESSION_DRIVER`.
 
 ### Standard deploy (from a local clone with SSH access to the VPS)
 
