@@ -55,6 +55,7 @@ RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint.sh && \
     echo 'php artisan config:cache' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'php artisan route:cache' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'php artisan view:cache' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'php artisan event:cache' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'php artisan storage:link || true' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'echo "Starting FrankenPHP + queue worker on port $PORT..."' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'export SERVER_NAME=":${PORT:-80}"' >> /usr/local/bin/docker-entrypoint.sh && \
