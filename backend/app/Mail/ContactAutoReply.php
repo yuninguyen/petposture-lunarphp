@@ -10,7 +10,7 @@ class ContactAutoReply extends Mailable
 {
     public function __construct(
         public readonly string $senderName,
-        public readonly string $subject,
+        public readonly string $originalSubject,
     ) {}
 
     public function envelope(): Envelope

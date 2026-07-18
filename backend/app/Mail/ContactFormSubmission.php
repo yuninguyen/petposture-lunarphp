@@ -11,7 +11,7 @@ class ContactFormSubmission extends Mailable
     public function __construct(
         public readonly string $senderName,
         public readonly string $senderEmail,
-        public readonly string $subject,
+        public readonly string $messageSubject,
         public readonly string $message,
         public readonly ?string $orderNumber = null,
     ) {}
@@ -19,7 +19,7 @@ class ContactFormSubmission extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "[Contact] {$this->subject}",
+            subject: "[Contact] {$this->messageSubject}",
             replyTo: [$this->senderEmail],
         );
     }

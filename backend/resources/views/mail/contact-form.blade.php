@@ -2,7 +2,7 @@
 # New Contact Form Submission
 
 **From:** {{ $senderName }} &lt;{{ $senderEmail }}&gt;
-**Subject:** {{ $subject }}
+**Subject:** {{ $messageSubject }}
 @if($orderNumber)
 **Order #:** {{ $orderNumber }}
 @endif

@@ -28,17 +28,17 @@ class ContactController extends Controller
         try {
             // Notify admin
             Mail::to($adminEmail)->send(new ContactFormSubmission(
-                senderName:  $validated['name'],
-                senderEmail: $validated['email'],
-                subject:     $validated['subject'],
-                message:     $validated['message'],
-                orderNumber: $validated['order_number'] ?? null,
+                senderName:     $validated['name'],
+                senderEmail:    $validated['email'],
+                messageSubject: $validated['subject'],
+                message:        $validated['message'],
+                orderNumber:    $validated['order_number'] ?? null,
             ));
 
             // Auto-reply to customer
             Mail::to($validated['email'])->send(new ContactAutoReply(
-                senderName: $validated['name'],
-                subject:    $validated['subject'],
+                senderName:      $validated['name'],
+                originalSubject: $validated['subject'],
             ));
         } catch (\Throwable $e) {
             Log::error('Contact form mail failed: ' . $e->getMessage());

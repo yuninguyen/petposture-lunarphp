@@ -1,7 +1,7 @@
 <x-mail::message>
 # We got your message, {{ $senderName }}!
 
-Thanks for reaching out to {{ config('app.name') }}. We've received your message about **"{{ $subject }}"** and our support team will get back to you within **24 business hours**.
+Thanks for reaching out to {{ config('app.name') }}. We've received your message about **"{{ $originalSubject }}"** and our support team will get back to you within **24 business hours**.
 
 In the meantime, you might find answers in our help resources:
 
