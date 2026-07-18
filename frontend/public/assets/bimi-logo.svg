@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny-ps" viewBox="0 0 512 512">
+  <title>PetPosture</title>
+  <rect width="512" height="512" fill="#ffffff"/>
+  <ellipse cx="256" cy="172" rx="58" ry="76" fill="#48606e" transform="rotate(0 256 172)"/>
+  <ellipse cx="140" cy="235" rx="50" ry="65" fill="#df8448" transform="rotate(-20 140 235)"/>
+  <ellipse cx="372" cy="235" rx="50" ry="65" fill="#df8448" transform="rotate(20 372 235)"/>
+  <path d="M256 300
+           C 300 300 320 320 336 355
+           C 352 388 356 415 336 440
+           C 318 462 292 452 268 448
+           C 260 446.5 252 446.5 244 448
+           C 220 452 194 462 176 440
+           C 156 415 160 388 176 355
+           C 192 320 212 300 256 300 Z"
+        fill="#48606e"/>
+</svg>
