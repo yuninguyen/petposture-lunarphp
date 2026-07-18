@@ -95,6 +95,26 @@ petposture/
 
 ---
 
+## Email deliverability & branding (DNS)
+
+`no-reply@petposture.com` sends through Hostinger SMTP (`smtp.hostinger.com`), with SPF and
+DKIM (`hostingermail-a/b/c._domainkey`) already aligned to that relay.
+
+- **BIMI**: `default._bimi.petposture.com` TXT record points at
+  `https://petposture.com/assets/bimi-logo.svg` (a hand-built SVG Tiny PS reproduction of the
+  paw icon mark — square viewBox, no scripts/external refs, per BIMI's spec). This is what lets
+  Gmail/Yahoo show the brand logo next to the sender name, instead of a generic avatar.
+- **DMARC** was raised from `p=none` (monitor-only) to `p=quarantine; pct=25` — required by
+  Gmail for BIMI to take effect at all. `pct=25` staggers enforcement to a quarter of mail
+  rather than jumping straight to 100%, specifically to limit blast radius while monitoring
+  aggregate reports (`rua=mailto:no-reply@petposture.com`) for a few weeks before considering
+  `pct=100`. If deliverability problems show up, roll back to `p=none` first and investigate.
+- Both DNS changes propagate on their own schedule (TTL 3600s) and Gmail may take additional
+  days beyond that to crawl and start showing the BIMI logo — absence right after the DNS
+  change lands is expected, not a sign of misconfiguration.
+
+---
+
 ## Deployment (VPS via Docker Compose)
 
 The monorepo is deployed to a VPS running two long-lived Docker containers, built from
