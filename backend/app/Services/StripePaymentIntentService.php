@@ -95,10 +95,11 @@ class StripePaymentIntentService
     }
 
     /**
-     * Fetches the Radar fraud outcome for a Stripe charge (risk_level/risk_score are
-     * populated by Stripe Radar automatically on every charge, free on any Stripe account).
+     * Fetches the full Stripe charge object — used for the Radar fraud outcome
+     * (risk_level/risk_score, populated automatically on every charge, free on any
+     * Stripe account) and the card brand/last4 shown on the order receipt.
      */
-    private function fetchChargeOutcome(string $chargeId): ?array
+    private function fetchCharge(string $chargeId): ?array
     {
         $secret = $this->stripeSecret();
 
@@ -113,7 +114,7 @@ class StripePaymentIntentService
             return null;
         }
 
-        return $response->json('outcome');
+        return $response->json();
     }
 
     public function prepareRetryIntent(Order $order): array
@@ -220,12 +221,28 @@ class StripePaymentIntentService
 
         if ($type === 'payment_intent.succeeded') {
             $chargeId = (string) ($object['latest_charge'] ?? '');
-            $outcome = $chargeId !== '' ? $this->fetchChargeOutcome($chargeId) : null;
+            $charge = $chargeId !== '' ? $this->fetchCharge($chargeId) : null;
 
-            if ($outcome) {
-                $paymentData['fraud_risk_level'] = $outcome['risk_level'] ?? null;
-                $paymentData['fraud_risk_score'] = $outcome['risk_score'] ?? null;
-                $paymentData['fraud_seller_message'] = $outcome['seller_message'] ?? null;
+            if ($charge) {
+                $outcome = $charge['outcome'] ?? null;
+
+                if ($outcome) {
+                    $paymentData['fraud_risk_level'] = $outcome['risk_level'] ?? null;
+                    $paymentData['fraud_risk_score'] = $outcome['risk_score'] ?? null;
+                    $paymentData['fraud_seller_message'] = $outcome['seller_message'] ?? null;
+                }
+
+                $card = $charge['payment_method_details']['card'] ?? null;
+
+                if ($card) {
+                    $paymentData['card_brand'] = $card['brand'] ?? null;
+                    $paymentData['card_last4'] = $card['last4'] ?? null;
+                }
+
+                if (isset($charge['amount'])) {
+                    $paymentData['amount_charged'] = ((int) $charge['amount']) / 100;
+                    $paymentData['amount_charged_currency'] = strtoupper((string) ($charge['currency'] ?? ''));
+                }
             }
         }
 

@@ -337,6 +337,16 @@ class OrderOperationsService
             $meta['fraud_seller_message'] = $paymentData['fraud_seller_message'] ?? null;
         }
 
+        if (array_key_exists('card_brand', $paymentData)) {
+            $meta['card_brand'] = $paymentData['card_brand'];
+            $meta['card_last4'] = $paymentData['card_last4'] ?? null;
+        }
+
+        if (array_key_exists('amount_charged', $paymentData)) {
+            $meta['amount_charged'] = $paymentData['amount_charged'];
+            $meta['amount_charged_currency'] = $paymentData['amount_charged_currency'] ?? null;
+        }
+
         $updates = [
             'meta' => $meta,
         ];

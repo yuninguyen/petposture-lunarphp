@@ -18,6 +18,7 @@ import RetryPaymentPanel from "@/components/orders/RetryPaymentPanel";
 /* ─────────────────────────── Types ─────────────────────────── */
 interface OrderLine {
     id: number;
+    type: string;
     description: string;
     quantity: number;
     unit_price: string;
@@ -46,18 +47,15 @@ interface OrderData {
     payment_label?: string | null;
     payment_intent_status?: string | null;
     payment_last_event_type?: string | null;
+    card_brand?: string | null;
+    card_last4?: string | null;
+    amount_charged?: number | null;
     payment_instructions?: string | null;
     payment_received_at?: string | null;
     processing_started_at?: string | null;
     shipped_at?: string | null;
     delivered_at?: string | null;
     cancelled_at?: string | null;
-    order_events?: Array<{
-        type: string;
-        title: string;
-        detail?: string | null;
-        created_at: string;
-    }>;
     shipments?: Array<{
         id: string;
         tracking_number: string;
@@ -109,6 +107,22 @@ function paymentTone(status?: string | null) {
             return "bg-[#fff1f1] text-[#c03d3d]";
         default:
             return "bg-[#fff3eb] text-[#df8448]";
+    }
+}
+
+function cardBrandBadge(brand?: string | null): { label: string; className: string } | null {
+    switch ((brand || "").toLowerCase()) {
+        case "visa":
+            return { label: "VISA", className: "border border-[#e8e8ea] bg-white text-[#1a1f71]" };
+        case "mastercard":
+            return { label: "MC", className: "border border-[#e8e8ea] bg-white text-[#eb001b]" };
+        case "amex":
+        case "american_express":
+            return { label: "AMEX", className: "bg-[#2e77bc] text-white" };
+        case "discover":
+            return { label: "DISC", className: "border border-[#e8e8ea] bg-white text-[#ff6000]" };
+        default:
+            return null;
     }
 }
 
@@ -419,13 +433,12 @@ function OrderSuccessContent() {
 
     const shippingMethod = formatMethodLabel(order.shipping_method || "standard");
     const paymentMethod = formatMethodLabel(order.payment_label || order.payment_method || "card");
-    const productLines = order.lines.filter((l) => l.quantity > 0);
+    const productLines = order.lines.filter((l) => l.quantity > 0 && l.type !== 'shipping');
     const orderTotal = order.total.decimal.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     });
     const timeline = buildOrderTimeline(order);
-    const recentEvents = [...(order.order_events || [])].reverse().slice(0, 4);
     const shipment = latestShipment(order);
 
     return (
@@ -642,58 +655,39 @@ function OrderSuccessContent() {
                             </h2>
                         </div>
                         <div className="flex items-center gap-3 px-6 py-5">
-                            <div className="flex h-8 w-12 items-center justify-center rounded-[5px] border border-[#e8e8ea] bg-[#faf9f8]">
-                                <CreditCard size={16} className="text-[#9ca3af]" />
-                            </div>
-                            <div className="min-w-0">
+                            {(() => {
+                                const badge = cardBrandBadge(order.card_brand);
+                                return badge ? (
+                                    <div className={`flex h-8 w-12 flex-shrink-0 items-center justify-center rounded-[5px] text-[10px] font-bold tracking-wide ${badge.className}`}>
+                                        {badge.label}
+                                    </div>
+                                ) : (
+                                    <div className="flex h-8 w-12 flex-shrink-0 items-center justify-center rounded-[5px] border border-[#e8e8ea] bg-[#faf9f8]">
+                                        <CreditCard size={16} className="text-[#9ca3af]" />
+                                    </div>
+                                );
+                            })()}
+                            <div className="min-w-0 flex-1">
                                 <p className="text-[13.5px] font-medium text-[#555555]">
                                     {paymentMethod}
+                                    {order.card_last4 ? ` •••• ${order.card_last4}` : ""}
                                 </p>
                                 <p className="mt-0.5 text-[12.5px] leading-[1.6] text-[#707070]">
                                     {paymentMessage(order)}
                                 </p>
                             </div>
-                            <span className={`ml-auto whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${paymentTone(order.payment_status)}`}>
-                                {order.payment_status_label}
-                            </span>
+                            <div className="flex flex-col items-end gap-1.5">
+                                <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${paymentTone(order.payment_status)}`}>
+                                    {order.payment_status_label}
+                                </span>
+                                {order.amount_charged != null ? (
+                                    <span className="text-[12.5px] font-semibold text-[#1a1a1a]">
+                                        ${order.amount_charged.toFixed(2)} USD
+                                    </span>
+                                ) : null}
+                            </div>
                         </div>
                     </div>
-
-                    {recentEvents.length > 0 ? (
-                        <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
-                            <div className="border-b border-[#f3f3f5] px-6 py-4">
-                                <h2 className="text-[14px] font-semibold text-[#1a1a1a]">
-                                    Recent updates
-                                </h2>
-                            </div>
-                            <div className="space-y-3 px-6 py-5">
-                                {recentEvents.map((event, index) => (
-                                    <div key={`${event.type}-${event.created_at}-${index}`} className="rounded-[8px] border border-[#f1f2f4] bg-[#faf9f8] px-4 py-3">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div>
-                                                <p className="text-[13px] font-medium text-[#1a1a1a]">
-                                                    {event.title}
-                                                </p>
-                                                {event.detail ? (
-                                                    <p className="mt-1 text-[12.5px] leading-[1.65] text-[#707070]">
-                                                        {event.detail}
-                                                    </p>
-                                                ) : null}
-                                            </div>
-                                            <p className="whitespace-nowrap text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#9ca3af]">
-                                                {new Date(event.created_at).toLocaleString("en-US", {
-                                                    month: "short",
-                                                    day: "numeric",
-                                                    hour: "numeric",
-                                                    minute: "2-digit",
-                                                })}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ) : null}
 
                     <RetryPaymentPanel
                         reference={order.reference}
@@ -751,7 +745,7 @@ function OrderSuccessContent() {
                                         </span>
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="line-clamp-2 text-[13px] font-medium leading-[1.5] text-[#1a1a1a]">
+                                        <p className="text-[13px] font-medium leading-[1.5] text-[#1a1a1a]">
                                             {line.description}
                                         </p>
                                     </div>
