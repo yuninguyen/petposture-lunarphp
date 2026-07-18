@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { getApiBaseUrl } from '@/lib/api';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { User, Lock, Mail, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { User, Lock, Mail, ChevronRight, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 type Mode = 'login' | 'register' | 'forgot' | 'forgot-sent';
 
@@ -17,6 +17,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -192,15 +193,23 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                                 <div className="relative">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                                     <input
-                                        type="password"
+                                        type={showPassword ? 'text' : 'password'}
                                         required
                                         minLength={6}
                                         autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full pl-12 pr-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium placeholder:text-zinc-300"
+                                        className="w-full pl-12 pr-12 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium placeholder:text-zinc-300"
                                         placeholder="••••••••"
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((v) => !v)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
                                 </div>
                             </div>
                         )}

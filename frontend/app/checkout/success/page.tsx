@@ -630,23 +630,6 @@ function OrderSuccessContent() {
                         </div>
                     </div>
 
-                    {/* Addresses */}
-                    <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
-                        <div className="border-b border-[#f3f3f5] px-6 py-4">
-                            <h2 className="text-[14px] font-semibold text-[#1a1a1a]">
-                                Shipping &amp; billing
-                            </h2>
-                        </div>
-                        <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-                            <div className="px-6 py-5">
-                                <AddressBlock title="Shipping address" address={order.shipping_address} />
-                            </div>
-                            <div className="px-6 py-5">
-                                <AddressBlock title="Billing address" address={order.billing_address} />
-                            </div>
-                        </div>
-                    </div>
-
                     {/* Payment */}
                     <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
                         <div className="border-b border-[#f3f3f5] px-6 py-4">
@@ -685,6 +668,23 @@ function OrderSuccessContent() {
                                         ${order.amount_charged.toFixed(2)} USD
                                     </span>
                                 ) : null}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Addresses */}
+                    <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
+                        <div className="border-b border-[#f3f3f5] px-6 py-4">
+                            <h2 className="text-[14px] font-semibold text-[#1a1a1a]">
+                                Shipping &amp; billing
+                            </h2>
+                        </div>
+                        <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                            <div className="px-6 py-5">
+                                <AddressBlock title="Shipping address" address={order.shipping_address} />
+                            </div>
+                            <div className="px-6 py-5">
+                                <AddressBlock title="Billing address" address={order.billing_address} />
                             </div>
                         </div>
                     </div>
