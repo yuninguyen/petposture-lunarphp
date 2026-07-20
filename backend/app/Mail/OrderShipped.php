@@ -15,12 +15,12 @@ class OrderShipped extends Mailable
     {
         return new Envelope(
             to:      $this->order->customer_reference,
-            subject: "Your order has shipped — #{$this->order->reference}",
+            subject: "A shipment from order #{$this->order->reference} is on the way",
         );
     }
 
     public function content(): Content
     {
-        return new Content(markdown: 'mail.order-shipped');
+        return new Content(view: 'mail.order-shipped');
     }
 }
