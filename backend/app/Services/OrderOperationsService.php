@@ -125,9 +125,10 @@ class OrderOperationsService
         }
 
         if ($targetStatus && $refreshed->customer_reference) {
+            // Customer only gets emailed on order confirmation, shipped, delivered, or
+            // cancelled — payment-received/processing/payment-failed are internal status
+            // transitions with no customer-facing email by design.
             match ($targetStatus) {
-                'payment-received' => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'payment-received'),
-                'processing'       => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'processing'),
                 'shipped'          => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'shipped'),
                 'delivered'        => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'delivered'),
                 'cancelled'        => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'cancelled'),
@@ -402,9 +403,8 @@ class OrderOperationsService
                 $eventType ?: 'Stripe reported a failed payment.'
             );
 
-            if ($order->customer_reference) {
-                SendOrderLifecycleEmailJob::dispatch($order->id, 'payment-failed');
-            }
+            // No customer email for payment-failed by design — see the note above the
+            // targetStatus match() earlier in this class.
         }
 
         if ($paymentStatus === 'cancelled' && in_array($currentStatus, ['awaiting-payment', 'payment-offline'], true)) {

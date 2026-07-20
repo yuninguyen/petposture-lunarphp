@@ -34,7 +34,7 @@ return [
          * If the length specified below is smaller than the length
          * of the Order ID, then no padding will take place.
          */
-        'length' => 8,
+        'length' => 5,
     ],
 
     /*

@@ -40,7 +40,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ config('app.name') }}</title>
 </head>
-<body style="margin:0; padding:0; background-color:#ffffff; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<body style="margin:0; padding:0; background-color:#ffffff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;">
 <tr>
 <td align="center" style="padding:40px 16px;">
@@ -51,7 +51,7 @@
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td valign="middle">
-<img src="{{ isset($message) ? $message->embed(public_path('logo.png')) : 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('logo.png'))) }}" height="32" alt="{{ config('app.name') }}" style="display:block; height:32px; width:auto;">
+<img src="{{ isset($message) ? $message->embed(public_path('logo.png')) : 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('logo.png'))) }}" height="44" alt="{{ config('app.name') }}" style="display:block; height:44px; width:auto;">
 </td>
 <td valign="middle" align="right" style="font-size:13px; letter-spacing:0.5px; color:#9a9a9a; text-transform:uppercase;">
 Order {{ $order->reference }}
@@ -224,7 +224,7 @@ To view our return policy, <a href="{{ rtrim(config('app.frontend_url'), '/') }}
 <tr>
 <td style="padding-top:16px;">
 <p style="margin:0; font-size:13px; color:#9a9a9a;">
-If you have any questions, contact us at <span style="color:#1a1a1a;">support@petposture.com</span>
+If you have any questions, contact us at <a href="mailto:support@petposture.com" style="color:#1a1a1a; text-decoration:none;">support@petposture.com</a>
 </p>
 </td>
 </tr>
