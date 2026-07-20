@@ -15,12 +15,12 @@ class OrderCancelled extends Mailable
     {
         return new Envelope(
             to:      $this->order->customer_reference,
-            subject: "Order Cancelled — #{$this->order->reference}",
+            subject: "Order #{$this->order->reference} has been canceled",
         );
     }
 
     public function content(): Content
     {
-        return new Content(markdown: 'mail.order-cancelled');
+        return new Content(view: 'mail.order-cancelled');
     }
 }
