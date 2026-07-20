@@ -122,7 +122,7 @@ ${{ number_format($lineTotal, 2) }}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td></td>
-<td width="80%" valign="top">
+<td width="260" valign="top">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Subtotal</td>
@@ -154,7 +154,7 @@ ${{ number_format($lineTotal, 2) }}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td></td>
-<td width="80%" valign="top" style="border-top:1px solid #ececec; border-bottom:1px solid #ececec; padding:16px 0;">
+<td width="260" valign="top" style="border-top:1px solid #ececec; border-bottom:1px solid #ececec; padding:16px 0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:15px; font-weight:700; color:#1a1a1a;">Total</td>
