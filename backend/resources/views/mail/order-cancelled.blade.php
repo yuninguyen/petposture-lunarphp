@@ -84,12 +84,18 @@ Thank you!
 
 @foreach($productLines as $line)
 @php
-    $imageUrl = \App\Services\ProductSyncService::normalizePublicImageUrl(
-        $line->getRelationValue('purchasable')?->product?->translateAttribute('image_url')
-    );
-    if (str_starts_with($imageUrl, '/')) {
-        $imageUrl = rtrim(config('app.frontend_url'), '/') . $imageUrl;
+    $purchasable = $line->getRelationValue('purchasable');
+    $media = null;
+    if ($purchasable) {
+        $variantImages = $purchasable->images;
+        $media = $variantImages->first(fn ($m) => (bool) ($m->pivot->primary ?? false)) ?? $variantImages->first();
+        if (!$media && $purchasable->product) {
+            $media = $purchasable->product->images->first();
+        }
     }
+    $imageUrl = $media
+        ? $media->getUrl()
+        : rtrim(config('app.frontend_url'), '/') . \App\Services\ProductSyncService::normalizePublicImageUrl(null);
     $lineTotal = $moneyValue($line->total);
 @endphp
 <tr>

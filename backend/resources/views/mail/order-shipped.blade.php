@@ -85,12 +85,18 @@ or <a href="{{ rtrim(config('app.frontend_url'), '/') }}/shop" style="font-famil
 
 @foreach($productLines as $line)
 @php
-    $imageUrl = \App\Services\ProductSyncService::normalizePublicImageUrl(
-        $line->getRelationValue('purchasable')?->product?->translateAttribute('image_url')
-    );
-    if (str_starts_with($imageUrl, '/')) {
-        $imageUrl = rtrim(config('app.frontend_url'), '/') . $imageUrl;
+    $purchasable = $line->getRelationValue('purchasable');
+    $media = null;
+    if ($purchasable) {
+        $variantImages = $purchasable->images;
+        $media = $variantImages->first(fn ($m) => (bool) ($m->pivot->primary ?? false)) ?? $variantImages->first();
+        if (!$media && $purchasable->product) {
+            $media = $purchasable->product->images->first();
+        }
     }
+    $imageUrl = $media
+        ? $media->getUrl()
+        : rtrim(config('app.frontend_url'), '/') . \App\Services\ProductSyncService::normalizePublicImageUrl(null);
 @endphp
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:20px 0; border-bottom:1px solid #f2f2f2;">
