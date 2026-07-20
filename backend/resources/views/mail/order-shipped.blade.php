@@ -93,7 +93,7 @@ or <a href="{{ rtrim(config('app.frontend_url'), '/') }}/shop" style="font-famil
     }
 @endphp
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:16px 0; border-bottom:1px solid #f2f2f2;">
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:20px 0; border-bottom:1px solid #f2f2f2;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td width="56" valign="top">
@@ -112,7 +112,7 @@ or <a href="{{ rtrim(config('app.frontend_url'), '/') }}/shop" style="font-famil
 @endforeach
 
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; border-top:1px solid #ececec; padding-top:24px; padding-bottom:8px;">
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:40px;">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:13px; color:#9a9a9a;">
 If you have any questions, contact us at <a href="mailto:support@petposture.com" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; color:#1a1a1a; text-decoration:none;">support@petposture.com</a>
 </p>
