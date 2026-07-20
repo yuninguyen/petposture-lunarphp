@@ -165,11 +165,11 @@ ${{ number_format($lineTotal, 2) }}
 </tr>
 
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; border-top:1px solid #ececec; padding-top:16px; padding-bottom:24px;">
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td></td>
-<td width="260" valign="top">
+<td width="260" valign="top" style="border-top:1px solid #ececec; border-bottom:1px solid #ececec; padding:16px 0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:15px; font-weight:700; color:#1a1a1a;">Total</td>
@@ -183,7 +183,7 @@ ${{ number_format($lineTotal, 2) }}
 </tr>
 
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; border-top:1px solid #ececec; padding-top:28px; padding-bottom:16px;">
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:24px; padding-bottom:16px;">
 <h2 style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:19px; font-weight:500; color:#1a1a1a;">Customer information</h2>
 </td>
 </tr>
