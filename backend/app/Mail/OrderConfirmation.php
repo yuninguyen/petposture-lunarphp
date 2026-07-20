@@ -15,12 +15,12 @@ class OrderConfirmation extends Mailable
     {
         return new Envelope(
             to:      $this->order->customer_reference,
-            subject: "Order Confirmed — #{$this->order->reference}",
+            subject: "Your " . config('app.name') . " Order #{$this->order->reference} Confirmed",
         );
     }
 
     public function content(): Content
     {
-        return new Content(markdown: 'mail.order-confirmation');
+        return new Content(view: 'mail.order-confirmation');
     }
 }
