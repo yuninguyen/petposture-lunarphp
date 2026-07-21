@@ -39,12 +39,10 @@ class AfterShipService
 
         try {
             $response = Http::withHeaders(['as-api-key' => $this->apiKey()])
-                ->post('https://api.aftership.com/v4/trackings', [
-                    'tracking' => array_filter([
-                        'tracking_number' => $trackingNumber,
-                        'slug' => $slug,
-                    ]),
-                ]);
+                ->post('https://api.aftership.com/tracking/2026-07/trackings', array_filter([
+                    'tracking_number' => $trackingNumber,
+                    'slug' => $slug,
+                ]));
 
             if (! $response->successful()) {
                 Log::warning('AfterShip tracking registration failed', [
