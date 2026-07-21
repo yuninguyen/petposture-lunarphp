@@ -5,9 +5,6 @@ namespace App\Jobs;
 use App\Mail\CancelledOrderAdmin;
 use App\Mail\OrderCancelled;
 use App\Mail\OrderDelivered;
-use App\Mail\OrderPaymentFailed;
-use App\Mail\OrderPaymentReceived;
-use App\Mail\OrderProcessing;
 use App\Mail\OrderShipped;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -40,11 +37,8 @@ class SendOrderLifecycleEmailJob implements ShouldQueue
         }
 
         match ($this->event) {
-            'payment-received' => $this->sendCustomer($order, new OrderPaymentReceived($order)),
-            'processing' => $this->sendCustomer($order, new OrderProcessing($order)),
             'shipped' => $this->sendCustomer($order, new OrderShipped($order)),
             'delivered' => $this->sendCustomer($order, new OrderDelivered($order)),
-            'payment-failed' => $this->sendCustomer($order, new OrderPaymentFailed($order)),
             'cancelled' => $this->sendCancelled($order),
             default => null,
         };
