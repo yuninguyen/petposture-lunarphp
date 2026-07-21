@@ -136,6 +136,18 @@ class OrderOperationsService
             };
         }
 
+        if ($targetStatus === 'shipped') {
+            $refreshedMeta = (array) ($refreshed->meta ?? []);
+            $trackingNumber = (string) ($refreshedMeta['tracking_number'] ?? '');
+
+            if ($trackingNumber !== '') {
+                app(AfterShipService::class)->createTracking(
+                    $trackingNumber,
+                    $refreshedMeta['shipment_carrier'] ?? null
+                );
+            }
+        }
+
         if ($targetStatus) {
             $this->dispatchOutboundWebhook($refreshed, $targetStatus);
         }

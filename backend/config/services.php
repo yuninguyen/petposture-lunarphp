@@ -44,4 +44,9 @@ return [
         ],
     ],
 
+    'aftership' => [
+        'api_key' => env('AFTERSHIP_API_KEY'),
+        'webhook_secret' => env('AFTERSHIP_WEBHOOK_SECRET'),
+    ],
+
 ];

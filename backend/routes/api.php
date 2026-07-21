@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AfterShipWebhookController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\CartController;
@@ -74,6 +75,7 @@ Route::post('/checkout/session/{token}/confirm', [CheckoutController::class, 'co
 Route::post('/checkout/payment-intent', [CheckoutController::class, 'preparePaymentIntent'])->middleware('throttle:api-write');
 Route::post('/checkout/tax-quote', [CheckoutController::class, 'taxQuote'])->middleware('throttle:api-write');
 Route::post('/webhooks/stripe', [CheckoutController::class, 'stripeWebhook']);
+Route::post('/webhooks/aftership', [AfterShipWebhookController::class, 'handle']);
 
 Route::get('/posts', [ContentController::class, 'posts']);
 Route::get('/posts/{slug}', [ContentController::class, 'post']);
