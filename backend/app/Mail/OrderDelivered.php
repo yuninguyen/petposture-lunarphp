@@ -15,12 +15,12 @@ class OrderDelivered extends Mailable
     {
         return new Envelope(
             to:      $this->order->customer_reference,
-            subject: "Your order has been delivered — #{$this->order->reference}",
+            subject: "Your " . config('app.name') . " Order #{$this->order->reference} has been delivered!",
         );
     }
 
     public function content(): Content
     {
-        return new Content(markdown: 'mail.order-delivered');
+        return new Content(view: 'mail.order-delivered');
     }
 }
