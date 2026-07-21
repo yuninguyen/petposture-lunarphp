@@ -151,8 +151,8 @@ Your order #{{ $order->reference }} has been delivered. We hope you love your ne
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:4px 0 0; font-size:13px; color:#9a9a9a;">{{ $line->option }}</p>
 @endif
 @if($trackingNumber)
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:6px 0 0; font-size:12px;">
-<a href="{{ $trackingUrl ?: $viewOrderUrl }}" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; color:#df8448; text-decoration:underline; font-weight:600;">Track your package: {{ $trackingNumber }}</a>
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:6px 0 0; font-size:12px; color:#1a1a1a;">
+Track your package: <a href="{{ $trackingUrl ?: $viewOrderUrl }}" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; color:#df8448; text-decoration:underline; font-weight:600;">{{ $trackingNumber }}</a>
 </p>
 @endif
 </td>
