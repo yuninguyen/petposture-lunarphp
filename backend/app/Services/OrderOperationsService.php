@@ -258,6 +258,10 @@ class OrderOperationsService
 
         $this->orderEventService->record($order, 'payment.refunded', $label, $detail);
 
+        if ($order->customer_reference) {
+            SendOrderLifecycleEmailJob::dispatch($order->id, 'refunded');
+        }
+
         return $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
     }
 
@@ -326,6 +330,10 @@ class OrderOperationsService
             'Items returned',
             'Order items marked as returned by admin.'
         );
+
+        if ($order->customer_reference) {
+            SendOrderLifecycleEmailJob::dispatch($order->id, 'returned');
+        }
 
         return $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
     }

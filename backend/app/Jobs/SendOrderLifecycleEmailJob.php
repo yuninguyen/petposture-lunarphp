@@ -4,7 +4,9 @@ namespace App\Jobs;
 
 use App\Mail\CancelledOrderAdmin;
 use App\Mail\OrderCancelled;
+use App\Mail\OrderCreditProcessed;
 use App\Mail\OrderDelivered;
+use App\Mail\OrderReturned;
 use App\Mail\OrderShipped;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -40,6 +42,8 @@ class SendOrderLifecycleEmailJob implements ShouldQueue
             'shipped' => $this->sendCustomer($order, new OrderShipped($order)),
             'delivered' => $this->sendCustomer($order, new OrderDelivered($order)),
             'cancelled' => $this->sendCancelled($order),
+            'returned' => $this->sendCustomer($order, new OrderReturned($order)),
+            'refunded' => $this->sendCustomer($order, new OrderCreditProcessed($order)),
             default => null,
         };
     }

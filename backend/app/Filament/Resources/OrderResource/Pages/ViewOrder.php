@@ -35,6 +35,23 @@ class ViewOrder extends ViewRecord
             ->all();
 
         $meta = (array) ($this->record->meta ?? []);
+
+        $isReturnable = in_array((string) $this->record->status, ['delivered', 'shipped'], true)
+            && ($meta['fulfillment_status'] ?? null) !== 'returned';
+
+        if ($isReturnable) {
+            $actions[] = Actions\Action::make('markReturned')
+                ->label(__('Mark Returned'))
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalDescription(__('This notifies the customer that their return has been received. It does not issue a refund — use the Refund action separately once you\'ve inspected the returned item(s).'))
+                ->action(function () {
+                    app(OrderOperationsService::class)->returnOrder($this->record);
+
+                    $this->redirect(static::getUrl(['record' => $this->record]));
+                });
+        }
+
         $isRefundable = filled($meta['payment_intent_id'] ?? null)
             && ($meta['payment_status'] ?? null) === 'paid'
             && ($meta['refund_status'] ?? null) !== 'refunded';
