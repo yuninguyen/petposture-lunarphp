@@ -167,7 +167,7 @@ export default function ShippingPolicyPage() {
                                     </p>
                                     <ul className="list-disc pl-6 space-y-4 mt-6">
                                         <li>
-                                            <strong>Tracking shows &ldquo;Delivered&rdquo; but you haven&apos;t received it:</strong> Please wait 24&ndash;48 hours, as carriers sometimes scan a package as delivered slightly before it physically arrives. Check with neighbors or your building&apos;s front desk/mailroom.
+                                            <strong>Tracking shows &ldquo;Delivered&rdquo; but you haven&apos;t received it:</strong>{" "}Please wait 24&ndash;48 hours, as carriers sometimes scan a package as delivered slightly before it physically arrives. Check with neighbors or your building&apos;s front desk/mailroom.
                                         </li>
                                         <li>
                                             <strong>Contact us within 7 days:</strong> If the package still hasn&apos;t turned up, email <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a> with your order number. We will open an investigation/claim with the carrier.

@@ -17,6 +17,8 @@ class OrderReturnRequestResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-uturn-left';
 
+    protected static ?int $navigationSort = 4;
+
     public static function getNavigationGroup(): ?string
     {
         return __('lunarpanel::global.sections.sales');
