@@ -39,9 +39,23 @@
 - A stray test `OrderReturnRequest` (id may vary) may still exist on production against order `#00000014` in `approved` status from manual QA — harmless (it's the standing test order), but worth clearing before that order is used for anything else.
 - Cloudflare edge cache (`s-maxage=3600`) means any Shipping/Return Policy content edit takes up to 1 hour to show for cached visitors unless manually purged — no Cloudflare API access was available this session to purge on demand.
 
-## Next steps (pick up here)
+## Immediate follow-ups (small, next session)
 
 1. Write Feature tests for `ReturnRequestService` (create/approve/reject/complete + the 30-day-window rejection) and a Feature test hitting `POST /api/orders/return-requests` end-to-end.
-2. Decide whether to build Phase 2 (server-computed refund amount per restocking-fee policy) or leave refund amount fully manual as-is.
-3. Consider adding a "Request a Return" entry point from the guest `/track-order` results panel (currently only linked from Account page + Footer), so a guest who just tracked an order doesn't have to navigate away and re-enter their details.
-4. No other explicitly outstanding user requests as of this handoff — everything asked for today has been delivered and deployed.
+2. **Email template audit** — verify each one still renders/sends correctly, testing in prod via the usual tinker-script pattern:
+   - `OrderReturnApproved` — done, verified today.
+   - `OrderReturnRejected` — not yet tested end-to-end.
+   - `NewsletterConfirmation`
+   - `ContactFormSubmission` (internal — sent to admin)
+   - `ContactAutoReply` (sent to the customer when they submit the contact form)
+   - `NewOrderAdmin` (internal)
+   - `CancelledOrderAdmin` (internal)
+3. **Verify Hostinger `no-reply@` mailbox is actually receiving every internal/admin notification** the system is supposed to send (New Order Admin, Cancelled Order Admin, Contact Form Submission, etc.) — confirm nothing is silently failing or landing in spam.
+4. Consider adding a "Request a Return" entry point from the guest `/track-order` results panel (currently only linked from Account page + Footer), so a guest who just tracked an order doesn't have to navigate away and re-enter their details.
+
+## Backlog / bigger asks (need scoping before starting)
+
+- **Return Request Phase 2** — server-computed refund amount per the restocking-fee policy (currently fully manual admin entry).
+- **Return Request Phase 3** — auto-generated prepaid return shipping label via a carrier API (UPS/FedEx Returns), replacing the manual RMA-address-in-email step.
+- **PayPal payment gateway** — net-new integration alongside the existing custom Stripe integration (no `laravel/cashier` — see `RULES.md`); needs its own scoping pass (checkout UI, webhook handling, refund flow parity with Stripe) before implementation starts.
+- **Shop by Solution / Shop by Breed re-think** — this is a *product/catalog strategy* question (which categories actually map to real inventory and customer intent), not an engineering task with a ready answer. Needs a decision from the business side on target categories before any code changes to `shopBySolution`/`shopByBreed` (`frontend/components/Footer.tsx`) or the underlying category data.
