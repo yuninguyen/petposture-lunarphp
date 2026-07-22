@@ -19,7 +19,7 @@ class OrderReturnRequestResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Orders');
+        return __('lunarpanel::global.sections.sales');
     }
 
     public static function getLabel(): string
