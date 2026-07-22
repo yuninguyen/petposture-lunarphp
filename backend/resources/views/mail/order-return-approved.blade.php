@@ -106,7 +106,7 @@ Hi {{ $order->shippingAddress?->first_name ?? 'there' }}, good news &mdash; your
 
 @if($returnRequest->admin_note)
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:24px; padding-bottom:24px;">
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:24px; padding-bottom:12px;">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#707070;">
 <strong style="color:#1a1a1a;">Note from our team:</strong> {{ $returnRequest->admin_note }}
 </p>
