@@ -13,6 +13,7 @@ type Tab = 'orders' | 'addresses' | 'profile';
 
 interface OrderLine {
     id: number;
+    type: string;
     description: string;
     quantity: number;
     unit_price: number;
@@ -275,13 +276,13 @@ export default function AccountPage() {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="space-y-2 pt-3 border-t border-zinc-100">
-                                                                {order.lines.map((line) => (
-                                                                    <div key={line.id} className="flex items-center justify-between text-[13px]">
-                                                                        <span className="text-[#3e4c57]">{line.description} <span className="text-zinc-400">&times;{line.quantity}</span></span>
-                                                                        <span className="font-medium text-[#3e4c57]">${line.sub_total.toFixed(2)}</span>
-                                                                    </div>
-                                                                ))}
+                                                            <div className="pt-3 border-t border-zinc-100">
+                                                                <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Payment</p>
+                                                                <div className="flex items-center justify-between text-[13px]">
+                                                                    <span className="text-zinc-600">{order.payment_label || 'N/A'}</span>
+                                                                    <span className="text-[11px] font-bold uppercase tracking-wide text-[#df8448]">{order.payment_status_label}</span>
+                                                                </div>
+                                                                <p className="mt-1 text-[12px] text-zinc-500">{orderPaymentMessage(order)}</p>
                                                             </div>
 
                                                             <div className="grid sm:grid-cols-2 gap-4 pt-3 border-t border-zinc-100">
@@ -329,13 +330,13 @@ export default function AccountPage() {
                                                                 </div>
                                                             )}
 
-                                                            <div className="pt-3 border-t border-zinc-100">
-                                                                <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Payment</p>
-                                                                <div className="flex items-center justify-between text-[13px]">
-                                                                    <span className="text-zinc-600">{order.payment_label || 'N/A'}</span>
-                                                                    <span className="text-[11px] font-bold uppercase tracking-wide text-[#df8448]">{order.payment_status_label}</span>
-                                                                </div>
-                                                                <p className="mt-1 text-[12px] text-zinc-500">{orderPaymentMessage(order)}</p>
+                                                            <div className="space-y-2 pt-3 border-t border-zinc-100">
+                                                                {order.lines.filter((line) => line.type !== 'shipping').map((line) => (
+                                                                    <div key={line.id} className="flex items-center justify-between text-[13px]">
+                                                                        <span className="text-[#3e4c57]">{line.description} <span className="text-zinc-400">&times;{line.quantity}</span></span>
+                                                                        <span className="font-medium text-[#3e4c57]">${line.sub_total.toFixed(2)}</span>
+                                                                    </div>
+                                                                ))}
                                                             </div>
 
                                                             <div className="pt-3 border-t border-zinc-100 space-y-1 text-[13px]">
