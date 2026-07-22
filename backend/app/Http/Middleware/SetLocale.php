@@ -44,8 +44,13 @@ class SetLocale
             }
         }
 
-        // Dynamically translate lunar order statuses labels in config
-        $statuses = config('lunar.orders.statuses', []);
+        // Dynamically translate lunar order statuses labels in config. Re-read the
+        // pristine labels straight from the published config file (not
+        // config('lunar.orders.statuses')) each time — reading from the live config
+        // store would chain off whatever locale mutated it last, permanently keeping
+        // a stale-locale label for any key without a translation for the current
+        // locale, which would leak across requests in a persistent worker process.
+        $statuses = (require config_path('lunar/orders.php'))['statuses'] ?? [];
         foreach ($statuses as $key => $status) {
             $translationKey = "admin.orders.statuses.{$key}";
             if (\Illuminate\Support\Facades\Lang::has($translationKey)) {

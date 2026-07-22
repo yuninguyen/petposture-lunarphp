@@ -8,6 +8,7 @@ use App\Mail\OrderCreditProcessed;
 use App\Mail\OrderDelivered;
 use App\Mail\OrderReturned;
 use App\Mail\OrderShipped;
+use App\Support\MailConfigSync;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -32,6 +33,11 @@ class SendOrderLifecycleEmailJob implements ShouldQueue
 
     public function handle(): void
     {
+        // The queue worker is a long-lived process (supervisord) — it never runs
+        // RefreshMailConfig (HTTP middleware only), so admin SMTP-setting changes
+        // wouldn't reach queued mail until worker restart without this.
+        MailConfigSync::run();
+
         $order = Order::query()->with(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])->find($this->orderId);
 
         if (! $order) {

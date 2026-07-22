@@ -29,10 +29,18 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
         $middleware->appendToGroup('api', \App\Http\Middleware\SetRequestId::class);
+        // SetLocale's global side effects (Carbon::setLocale, PHP setlocale(), the
+        // MySQL session's lc_time_names) are process-wide, not request-scoped — API
+        // requests need it too, or a request right after a 'vi' web request would
+        // silently inherit Vietnamese-formatted dates on the same worker. Its
+        // Filament-navigation-group block already no-ops outside a Filament request.
+        $middleware->appendToGroup('api', \App\Http\Middleware\SetLocale::class);
         $middleware->appendToGroup('api', \App\Http\Middleware\ResetPermissionCache::class);
+        $middleware->appendToGroup('api', \App\Http\Middleware\RefreshMailConfig::class);
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\ResetPermissionCache::class,
+            \App\Http\Middleware\RefreshMailConfig::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
