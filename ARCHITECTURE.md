@@ -1,187 +1,77 @@
-# PetPosture Architecture Overview
+# PetPosture — Architecture
 
-This document provides a high-level overview of the PetPosture application architecture, which combines a modern Next.js frontend with a Laravel backend API.
+Headless e-commerce: **Next.js 16 (App Router)** storefront + **Laravel 11 / Lunar PHP** commerce API, both deployed as separate Docker containers on a single VPS behind Cloudflare. No Vercel, no separate CI service — a `build.js` script run on `git push` is the entire deploy pipeline.
 
-## System Architecture
+## System diagram
 
 ```mermaid
 graph TB
-    subgraph Client["Client Layer"]
-        Browser["Web Browser"]
-        Mobile["Mobile Client"]
+    Browser["Browser"]
+    CF["Cloudflare (DNS, cache, BIC, DMARC)"]
+
+    subgraph VPS["VPS — docker-compose.prod.yml (network_mode: host)"]
+        FE["frontend container<br/>Next.js server.js :3001"]
+        BE["backend container<br/>FrankenPHP + Caddy :8001<br/>+ supervisord queue worker"]
+        Redis["redis:7-alpine :6379<br/>(127.0.0.1 only)"]
+        MySQL["MySQL (external/managed)"]
     end
-    
-    subgraph Frontend["Frontend - Next.js<br/>(TypeScript/JavaScript/HTML)"]
-        UI["React Components"]
-        Pages["App Router Pages"]
-        API["API Client Layer"]
-        State["State Management"]
-    end
-    
-    subgraph CDN["CDN / Hosting"]
-        Vercel["Vercel Platform"]
-    end
-    
-    subgraph Backend["Backend - Laravel<br/>(PHP/Blade)"]
-        Routes["API Routes"]
-        Controllers["Controllers"]
-        Models["Eloquent Models"]
-        Services["Business Logic"]
-        Middleware["Middleware"]
-    end
-    
-    subgraph Database["Data Layer"]
-        DB["Database"]
-        Cache["Cache Layer"]
-    end
-    
-    subgraph External["External Services"]
-        Auth["Authentication"]
-        Storage["File Storage"]
-    end
-    
-    Browser -->|HTTP/HTTPS| Vercel
-    Mobile -->|HTTP/HTTPS| Vercel
-    Vercel -->|Serves| Frontend
-    
-    UI -->|Uses| Pages
-    Pages -->|Calls| API
-    API -->|REST Requests| Routes
-    
-    Routes -->|Route to| Controllers
-    Middleware -->|Validates| Controllers
-    Controllers -->|Orchestrates| Services
-    Controllers -->|Query| Models
-    
-    Services -->|Business Logic| Models
-    Models -->|ORM| DB
-    Models -->|Cache| Cache
-    
-    Controllers -->|External APIs| Auth
-    Controllers -->|External APIs| Storage
-    
-    State -->|Manages| UI
-    
-    style Client fill:#e1f5ff
-    style Frontend fill:#f3e5f5
-    style Backend fill:#fff3e0
-    style Database fill:#e8f5e9
-    style External fill:#fce4ec
+
+    Stripe["Stripe API"]
+    AfterShip["AfterShip API"]
+
+    Browser -->|HTTPS petposture.com| CF --> FE
+    Browser -->|HTTPS api.petposture.com| CF --> BE
+    FE -->|fetch, getApiBaseUrl()| BE
+    BE --> MySQL
+    BE --> Redis
+    BE -->|payment intents, refunds| Stripe
+    BE -->|tracking webhooks| AfterShip
+    Stripe -->|webhook| BE
+    AfterShip -->|webhook| BE
 ```
 
-## Technology Stack
+## Frontend — `frontend/`
 
-### Frontend
-- **Framework**: [Next.js](https://nextjs.org/) - React-based full-stack framework
-- **Language**: TypeScript (23.2%), JavaScript (23%), HTML (23%)
-- **Deployment**: [Vercel](https://vercel.com/) (homepage: https://petposture-lunarphp.vercel.app)
-- **Features**:
-  - Server-side rendering (SSR)
-  - Static site generation (SSG)
-  - API routes for backend integration
-  - Optimized image and font loading
+- **Next.js 16.2.3, React 19.2.4**, App Router only (`app/`), TypeScript strict mode.
+- **No state library, no axios/swr/react-query.** Every API call is a plain `fetch()` against `getApiBaseUrl()` (`frontend/lib/api.ts`), which resolves the backend origin from `NEXT_PUBLIC_API_URL` (prod) or `127.0.0.1:8000` (local dev).
+- Pages live in `app/<route>/page.tsx` and are thin — they just import and render a matching component from `components/` (e.g. `app/returns/page.tsx` → `components/RequestReturnPage.tsx`). All real UI logic lives in `components/`.
+- `components/` is flat for top-level pages (`ShopPage.tsx`, `RequestReturnPage.tsx`, `ReturnRefundPolicyPage.tsx`, …) with subfolders for cross-cutting concerns: `components/auth/`, `components/checkout/`, `components/orders/`, `components/product/`, `components/shop/`.
+- Auth: Sanctum bearer token issued by the backend, stored client-side via `context/AuthContext`, also mirrored into an httpOnly `petposture_token` cookie by the backend on login.
+- Pages that read `useSearchParams()` (e.g. `checkout/success`, `returns`) always wrap the content in `<Suspense>` at the default-export level — required by the App Router, not optional.
+- Styling: Tailwind v4, no CSS-in-JS. Animation: `framer-motion`. Icons: `lucide-react`.
+- Production runs a custom `server.js` (not `next start`) inside `Dockerfile.prod` — single-stage Node 20 Alpine image, `npm run build` at image build time.
+- **`frontend/AGENTS.md` is load-bearing, not boilerplate**: this Next.js/React version is newer than most training data — read `node_modules/next/dist/docs/` before writing anything non-trivial.
 
-### Backend
-- **Framework**: [Laravel](https://laravel.com/) - PHP web framework
-- **Language**: PHP (17.8%), Blade templating engine (2.4%)
-- **Key Components**:
-  - RESTful API endpoints
-  - Eloquent ORM for database abstraction
-  - Laravel middleware for request/response handling
-  - Service layer for business logic
-  - Built-in authentication & authorization
+## Backend — `backend/`
 
-### Data Layer
-- Database (specific engine to be determined)
-- Cache layer support (Redis, Memcached, etc.)
+- **Laravel 11**, PHP 8.3, no `Kernel.php` (`bootstrap/app.php`-based config). **Lunar PHP 1.x** is the commerce core (`Order`, `OrderLine`, `Customer`, `Product` models come from `Lunar\Models\*`, not app-owned models).
+- **App-owned commerce logic sits in `app/Services/*.php`**, one class per concern (`OrderOperationsService`, `ReturnRequestService`, `CheckoutService`, `StripePaymentIntentService`, `AfterShipService`, `ShippingService`, `SalesTaxService`, …). Controllers stay thin: validate → call a service → return a `JsonResource`.
+- Order lifecycle state machine lives in `app/Support/Orders/OrderStateMachine.php` — the single source of truth for allowed status transitions (`awaiting-payment → payment-offline/payment-received/cancelled → processing → shipped → delivered`). Never hand-roll a status transition; go through `OrderOperationsService::update()`/`performAction()`, which calls the state machine and fires the matching customer email + webhook.
+- Order metadata (payment/refund/shipment/fulfillment state, timestamps) is stored in the `lunar_orders.meta` JSON column, not new columns — this is the established extension point for anything scalar/mutable on an order. New **relational, multi-row, audited** concepts (e.g. `order_events`, `order_return_requests` + `order_return_request_items`) get their own migration/table instead.
+- **Admin panel = Filament 3**, auto-discovered from `app/Filament/Resources/*.php` (no manual registration). Resources are grouped via `getNavigationGroup()`; commerce resources (Orders, Return Requests, Shipping Costs, Discounts, Customer Groups, Customers, Reviews) all share the `lunarpanel::global.sections.sales` group — don't invent a new group name for a new commerce resource.
+- **API auth**: Laravel Sanctum, backed by the app's own `User` model (not `Lunar\Models\Customer` directly) — `CustomerLinkService` links a `User` to a Lunar `Customer` on registration. Guest flows (checkout, order tracking, return requests) resolve by `(order reference OR meta->tracking_number) + customer_reference email`, no auth required, always throttled.
+- **Transactional email**: custom Blade views under `resources/views/mail/*.blade.php` (not Laravel's markdown mail for anything customer-facing today — those were migrated off markdown to full custom HTML for design control). Every mail view needs the font-family inline on *every* element (no CSS inliner runs for `Content(view: …)` mailables) and the logo via `$message->embed()` for real `Content-ID` embedding — Gmail strips `data:` URIs and hosted-URL images get blocked by BIC in some clients.
+- **Payments**: Stripe, custom integration (no `laravel/cashier`) via `StripePaymentIntentService` + `Payments/Gateways/StripeCardGateway.php`. Stripe keys/webhook secret are DB `Setting` values (5-min cache), falling back to `.env` — always read both places the same way `StripePaymentIntentService` does, or checkout breaks silently.
+- **Shipment tracking**: AfterShip webhook (`/api/webhooks/aftership`) auto-marks orders delivered; HMAC-verified, no auth middleware (self-verifying).
 
-### Additional Languages
-- **Python** (9%) - Likely used for backend utilities, data processing, or deployment scripts
+## Data flow: adding a customer-facing feature (reference shape)
 
-## Directory Structure
+The "Request a Return" feature (Phase 1) is the current reference implementation for this shape — new features should follow it:
 
-```
-petposture-lunarphp/
-├── frontend/               # Next.js application
-│   ├── app/               # App Router pages and layouts
-│   ├── components/        # Reusable React components
-│   ├── lib/               # Utility functions and API clients
-│   └── public/            # Static assets
-│
-├── backend/               # Laravel application
-│   ├── app/
-│   │   ├── Http/          # Controllers, Middleware, Requests
-│   │   ├── Models/        # Eloquent models
-│   │   ├── Services/      # Business logic layer
-│   │   └── Jobs/          # Queue jobs
-│   ├── routes/            # API route definitions
-│   ├── database/          # Migrations and seeders
-│   └── config/            # Configuration files
-│
-└── docs/                  # Documentation
-```
-
-## Communication Flow
-
-### Request/Response Cycle
-
-1. **Client Request**: User interacts with frontend → Next.js component dispatches API call
-2. **Frontend Processing**: API client layer formats request with headers, authentication
-3. **Network Transit**: HTTPS request sent to Laravel backend
-4. **Backend Processing**:
-   - Route matching
-   - Middleware processing (CORS, authentication, validation)
-   - Controller execution
-   - Service layer business logic
-   - Database queries via Eloquent ORM
-5. **Database Operations**: Query execution, caching
-6. **Response Creation**: JSON response formatted by controller
-7. **Frontend Reception**: React component receives data, updates state
-8. **UI Rendering**: Component re-renders with new data
-
-## Key Features & Services
-
-### Authentication & Authorization
-- Handled primarily by Laravel backend
-- JWT or session-based authentication
-- Protected routes and API endpoints
-
-### API Communication
-- RESTful endpoints exposed by Laravel
-- Consumed by Next.js frontend
-- JSON request/response format
-
-### State Management
-- Frontend: React hooks, Context API, or state management library
-- Backend: Session/Cache layer for session state
-
-### Data Persistence
-- Primary: Relational database
-- Secondary: Cache layer for performance optimization
+1. Migration + model(s) in `app/Models/` (dedicated table if the data is relational/audited, `meta` JSON if it's scalar order state).
+2. A single `App\Services\*Service` class owns all mutation + validation logic (`ValidationException::withMessages()` for business-rule rejections) and fires customer email(s) directly (`Mail::to(...)->send(...)`) — no queued job unless the trigger is a webhook/background event.
+3. `App\Http\Resources\Api\*Resource` (`JsonResource`) for the API shape; controller stays a thin validate-then-delegate layer.
+4. Routes: public/guest routes at top level of `routes/api.php` (throttled), admin routes inside the existing `Route::prefix('/admin')->middleware(['auth:sanctum', 'role:...'])` group, authenticated-customer routes inside the existing bare `auth:sanctum` group.
+5. Filament `Resource` for admin review/action if staff need to work the queue (approve/reject/complete-style actions as `Tables\Actions\Action::make()` with a `->form([...])` modal, not a full edit page).
+6. Frontend: a `components/<Name>Page.tsx` + thin `app/<route>/page.tsx`, reusing the existing guest-lookup pattern (`/api/orders/track`-style reference+email lookup) rather than inventing a new one.
+7. Deploy: `git push` (runs `build.js`) → SSH to VPS → `git pull && docker compose -f docker-compose.prod.yml build <service> && up -d --force-recreate <service>` → `php artisan migrate --force` runs automatically via the backend container's entrypoint on every start.
 
 ## Deployment
 
-- **Frontend**: Hosted on Vercel platform
-- **Backend**: Deployed separately (on traditional server, cloud platform, or containerized)
-- **Database**: Cloud-hosted or self-managed database service
-
-## Development Workflow
-
-1. Frontend development with `npm run dev` (Next.js dev server on localhost:3000)
-2. Backend development with Laravel development server
-3. API client makes requests to backend during development
-4. Production deployment:
-   - Frontend: Automatic deployment to Vercel
-   - Backend: Manual or CI/CD deployment
-
-## Performance Considerations
-
-- Next.js optimization of fonts and images
-- Frontend caching strategies
-- Backend query optimization
-- Database indexing and caching
-- CDN delivery via Vercel
+- **No CI service.** `build.js` at the repo root runs on `git push` (see `RULES.md` for exact steps) — it installs deps and runs both production builds locally as a push-time smoke test. It does **not** run tests or linters.
+- **Production**: single VPS, `docker-compose.prod.yml`, three services (`redis`, `backend`, `frontend`), all `network_mode: host` — no bridge networking, no port-mapping section, ports are just whatever `$PORT` each app binds to.
+- Manual deploy after every merge: SSH in, `git pull`, `docker compose build` the changed service(s), `up -d --force-recreate`. Migrations run automatically on backend container start (baked into the Docker entrypoint), but hotpatching a single file via `docker cp` for a quick test does **not** persist — always follow up with the real `git pull` + rebuild, or the next deploy silently reverts the hotpatch.
+- GitNexus (`npx gitnexus analyze`) reindexes the code graph — run it after every deploy per root `CLAUDE.md`.
 
 ---
-
-*For more information on specific components, see README files in the `frontend/` and `backend/` directories.*
+*Superseded content removed: this file previously described a generic Vercel-hosted Next.js + "database TBD" architecture that never reflected this project. See `backend/README.md` / `frontend/README.md` for narrower per-app notes.*

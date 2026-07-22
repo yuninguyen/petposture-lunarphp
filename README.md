@@ -86,6 +86,14 @@ petposture/
   so Sales > Customers shows real customer data instead of an empty page
 - Blog with slug-based routing
 - Discount / coupon codes (Lunar's discount engine, incl. free-shipping coupons)
+- Self-service order returns (`/returns`): guest lookup by order number + email, item/quantity
+  selection, reason and note — reviewed in Filament (Sales > Return Requests) with
+  approve (RMA address + estimated refund, emails the customer), reject (with a reason), or mark
+  received actions. The 30-day return window from the published Return & Refund Policy is
+  enforced both in the UI (dimmed/disabled past the window) and server-side on submission.
+  Refunding is still a separate, manual action on the order itself — nothing here auto-triggers it.
+- Automatic "delivered" detection via an AfterShip tracking webhook (`/api/webhooks/aftership`,
+  HMAC-verified) — no more manually checking carrier tracking pages to close out an order
 - Product reviews (storefront submit + admin moderation)
 - Multi-language support
 - SEO metadata & automatic sitemap
@@ -248,11 +256,13 @@ docker-compose up -d
 | Categories | `/api/categories/...` |
 | Cart & Checkout | `/api/cart/...`, `/api/checkout/place-order`, `/api/checkout/shipping-rates`, `/api/checkout/tax-quote`, `/api/checkout/payment-intent`, `/api/apply-coupon` |
 | Orders | `/api/orders/...` (authenticated, scoped to the customer), `/api/orders/track` (public, reference + email) |
+| Return Requests | `/api/orders/return-requests` (public, create), `/api/admin/return-requests/...` (list/approve/reject/complete) |
 | Customer account | `/api/me/addresses` (authenticated address book) |
 | Blog / Posts | `/api/posts/...` |
 | Settings / Content | `/api/settings/...`, `/api/content/...` |
 | Newsletter | `/api/newsletter/subscribe` (fired from the checkout "email me with news and offers" opt-in) |
 | Stripe webhook | `/api/webhooks/stripe` |
+| AfterShip webhook | `/api/webhooks/aftership` (HMAC-verified, auto-marks orders delivered) |
 
 ---
 
