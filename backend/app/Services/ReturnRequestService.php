@@ -13,6 +13,8 @@ use Lunar\Models\Order;
 
 class ReturnRequestService
 {
+    private const RETURN_WINDOW_DAYS = 30;
+
     public function __construct(
         private readonly OrderOperationsService $orderOperations,
         private readonly OrderEventService $orderEventService,
@@ -28,6 +30,20 @@ class ReturnRequestService
             throw ValidationException::withMessages([
                 'order' => ['Only delivered or shipped orders are eligible for a return request.'],
             ]);
+        }
+
+        $deliveredAt = (array_key_exists('delivered_at', (array) ($order->meta ?? [])))
+            ? ($order->meta['delivered_at'] ?? null)
+            : null;
+
+        if ($order->status === 'delivered' && $deliveredAt) {
+            $deadline = \Illuminate\Support\Carbon::parse($deliveredAt)->addDays(self::RETURN_WINDOW_DAYS);
+
+            if (now()->greaterThan($deadline)) {
+                throw ValidationException::withMessages([
+                    'order' => ['This order is outside our ' . self::RETURN_WINDOW_DAYS . '-day return window.'],
+                ]);
+            }
         }
 
         $hasActiveRequest = OrderReturnRequest::query()

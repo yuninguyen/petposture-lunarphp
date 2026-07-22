@@ -82,6 +82,12 @@ class OrderResource extends JsonResource
                 ->all(),
             'shipments' => collect($meta['shipments'] ?? [])
                 ->filter(fn ($shipment) => is_array($shipment))
+                // Placeholder shipments created when an admin changes status without
+                // entering a real tracking number (carrier=manual, tracking_number
+                // defaults to the order reference) aren't real tracking info — don't
+                // surface them to the customer.
+                ->reject(fn ($shipment) => ($shipment['carrier'] ?? null) === 'manual'
+                    && ($shipment['tracking_number'] ?? null) === $this->reference)
                 ->map(fn ($shipment) => array_merge([
                     'tracking_url' => null,
                 ], $shipment))

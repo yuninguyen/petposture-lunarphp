@@ -52,6 +52,8 @@ interface Order {
     payment_label: string | null;
     payment_method: string | null;
     payment_instructions: string | null;
+    shipping_label: string;
+    delivered_at: string | null;
     total: { formatted: string };
     sub_total: number;
     tax_total: number;
@@ -62,6 +64,23 @@ interface Order {
     shipping_address: OrderAddress;
     billing_address: OrderAddress;
     shipments: Shipment[];
+}
+
+const RETURN_WINDOW_DAYS = 30;
+
+function returnEligibility(order: Order): 'open' | 'closed' | null {
+    if (order.status === 'shipped') {
+        return 'open';
+    }
+    if (order.status !== 'delivered') {
+        return null;
+    }
+    if (!order.delivered_at) {
+        return 'open';
+    }
+    const deadline = new Date(order.delivered_at);
+    deadline.setDate(deadline.getDate() + RETURN_WINDOW_DAYS);
+    return new Date() <= deadline ? 'open' : 'closed';
 }
 
 function orderPaymentMessage(order: Order): string {
@@ -344,12 +363,12 @@ export default function AccountPage() {
                                                                 {order.discount_total > 0 && (
                                                                     <div className="flex justify-between text-zinc-500"><span>Discount</span><span>-${order.discount_total.toFixed(2)}</span></div>
                                                                 )}
-                                                                <div className="flex justify-between text-zinc-500"><span>Shipping</span><span>{order.shipping_total === 0 ? 'Free' : `$${order.shipping_total.toFixed(2)}`}</span></div>
+                                                                <div className="flex justify-between text-zinc-500"><span>Shipping - {order.shipping_label}</span><span>{order.shipping_total === 0 ? 'Free' : `$${order.shipping_total.toFixed(2)}`}</span></div>
                                                                 <div className="flex justify-between text-zinc-500"><span>Tax</span><span>${order.tax_total.toFixed(2)}</span></div>
                                                                 <div className="flex justify-between font-bold text-[#3e4c57] pt-1"><span>Total</span><span>{order.total.formatted}</span></div>
                                                             </div>
 
-                                                            {(order.status === 'delivered' || order.status === 'shipped') && (
+                                                            {returnEligibility(order) === 'open' && (
                                                                 <div className="pt-3 border-t border-zinc-100">
                                                                     <Link
                                                                         href={`/returns?ref=${encodeURIComponent(order.reference)}&email=${encodeURIComponent(order.customer_email)}`}
@@ -357,6 +376,16 @@ export default function AccountPage() {
                                                                     >
                                                                         Request a Return
                                                                     </Link>
+                                                                </div>
+                                                            )}
+                                                            {returnEligibility(order) === 'closed' && (
+                                                                <div className="pt-3 border-t border-zinc-100">
+                                                                    <p className="text-[13px] font-bold text-zinc-300 cursor-not-allowed">
+                                                                        Request a Return
+                                                                    </p>
+                                                                    <p className="mt-1 text-[12px] text-zinc-400">
+                                                                        This order is outside our {RETURN_WINDOW_DAYS}-day return window.
+                                                                    </p>
                                                                 </div>
                                                             )}
                                                         </div>
