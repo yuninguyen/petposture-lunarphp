@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search, ChevronRight, ArrowLeft, CheckCircle2 } from "lucide-react";
 import Header from "./Header";
@@ -35,9 +36,13 @@ const fadeUp = {
     animate: { opacity: 1, y: 0, transition: { duration: 0.6 } }
 };
 
-export default function RequestReturnPage() {
-    const [orderReference, setOrderReference] = useState("");
-    const [email, setEmail] = useState("");
+function RequestReturnContent() {
+    const searchParams = useSearchParams();
+    const prefillRef = searchParams.get("ref") ?? "";
+    const prefillEmail = searchParams.get("email") ?? "";
+
+    const [orderReference, setOrderReference] = useState(prefillRef);
+    const [email, setEmail] = useState(prefillEmail);
     const [order, setOrder] = useState<LookedUpOrder | null>(null);
     const [lookupError, setLookupError] = useState<string | null>(null);
     const [isLookingUp, setIsLookingUp] = useState(false);
@@ -49,8 +54,7 @@ export default function RequestReturnPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
 
-    const handleLookup = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const lookupOrder = async (reference: string, orderEmail: string) => {
         setIsLookingUp(true);
         setLookupError(null);
         setOrder(null);
@@ -61,8 +65,8 @@ export default function RequestReturnPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    tracking_number: orderReference.trim(),
-                    email: email.trim(),
+                    tracking_number: reference.trim(),
+                    email: orderEmail.trim(),
                 }),
             });
 
@@ -84,6 +88,18 @@ export default function RequestReturnPage() {
         } finally {
             setIsLookingUp(false);
         }
+    };
+
+    useEffect(() => {
+        if (prefillRef && prefillEmail) {
+            void lookupOrder(prefillRef, prefillEmail);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleLookup = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await lookupOrder(orderReference, email);
     };
 
     const productLines = order?.lines.filter((line) => line.type !== "shipping") ?? [];
@@ -343,5 +359,13 @@ export default function RequestReturnPage() {
 
             <Footer />
         </div>
+    );
+}
+
+export default function RequestReturnPage() {
+    return (
+        <Suspense fallback={null}>
+            <RequestReturnContent />
+        </Suspense>
     );
 }

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { getApiBaseUrl } from '@/lib/api';
 import Header from '@/components/Header';
@@ -42,7 +43,9 @@ interface Shipment {
 interface Order {
     id: string;
     reference: string;
+    status: string;
     status_label: string;
+    customer_email: string;
     payment_status: string;
     payment_status_label: string;
     payment_label: string | null;
@@ -344,6 +347,17 @@ export default function AccountPage() {
                                                                 <div className="flex justify-between text-zinc-500"><span>Tax</span><span>${order.tax_total.toFixed(2)}</span></div>
                                                                 <div className="flex justify-between font-bold text-[#3e4c57] pt-1"><span>Total</span><span>{order.total.formatted}</span></div>
                                                             </div>
+
+                                                            {(order.status === 'delivered' || order.status === 'shipped') && (
+                                                                <div className="pt-3 border-t border-zinc-100">
+                                                                    <Link
+                                                                        href={`/returns?ref=${encodeURIComponent(order.reference)}&email=${encodeURIComponent(order.customer_email)}`}
+                                                                        className="text-[13px] font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
+                                                                    >
+                                                                        Request a Return
+                                                                    </Link>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>

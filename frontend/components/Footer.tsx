@@ -19,6 +19,7 @@ const customerService = [
   "Return & Refund Policy",
   "FAQs",
   "Track Your Order",
+  "Request a Return",
 ];
 const legalLinks = [
   "Privacy Policy",
@@ -81,6 +82,7 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: 
                         item === "Return & Refund Policy" ? "/return-refund-policy" :
                           item === "FAQs" ? "/faqs" :
                             item === "Track Your Order" ? "/track-order" :
+                              item === "Request a Return" ? "/returns" :
                               item === "Eating & Digestion" ? "/shop?category=Bowls" :
                                 item === "Mobility & Support" ? "/shop?category=Ramps" :
                                   item === "Comfort & Safety" ? "/shop?category=Beds" :
