@@ -59,11 +59,22 @@ class SetLocale
         }
         config(['lunar.orders.statuses' => $statuses]);
 
-        // Reset OrderStatus static caches so they reload from the newly set config
+        // Reset Lunar admin static label/color caches so they reload under the
+        // current locale — same leak class as OrderStatus: both memoize __()
+        // output in a static array that's never invalidated by Lunar itself.
         try {
             $reflector = new \ReflectionClass(\Lunar\Admin\Support\OrderStatus::class);
             $reflector->getProperty('cachedStatusLabel')->setValue(null, []);
             $reflector->getProperty('cachedStatusColor')->setValue(null, []);
+        } catch (\Throwable $e) {
+            // ignore cache reset failures
+        }
+
+        try {
+            $reflector = new \ReflectionClass(\Lunar\Admin\Support\CustomerStatus::class);
+            $reflector->getProperty('cachedStatusLabel')->setValue(null, []);
+            $reflector->getProperty('cachedStatusColor')->setValue(null, []);
+            $reflector->getProperty('cachedStatusIcon')->setValue(null, []);
         } catch (\Throwable $e) {
             // ignore cache reset failures
         }
