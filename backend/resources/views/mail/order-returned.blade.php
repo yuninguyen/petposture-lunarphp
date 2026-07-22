@@ -1,4 +1,5 @@
 @php
+    $productLines = $order->lines->where('type', '!=', 'shipping');
     $moneyValue = function ($amount) {
         if (is_object($amount) && method_exists($amount, 'decimal')) {
             return (float) $amount->decimal();
@@ -8,8 +9,9 @@
         }
         return 0.0;
     };
-
-    $productLines = $order->lines->where('type', '!=', 'shipping');
+    $meta = (array) ($order->meta ?? []);
+    $returnedAt = $meta['returned_at'] ?? null;
+    $returnedAtLabel = $returnedAt ? \Illuminate\Support\Carbon::parse($returnedAt)->format('M d, Y') : now()->format('M d, Y');
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -41,15 +43,27 @@ Order {{ $order->reference }}
 
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-bottom:12px;">
-<h1 style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:24px; line-height:1.3; font-weight:500; color:#1a1a1a;">We&rsquo;ve received your return</h1>
+<h1 style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:24px; line-height:1.3; font-weight:500; color:#1a1a1a;">Return Confirmation</h1>
 </td>
 </tr>
 
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-bottom:32px;">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#707070;">
-Hi {{ $order->shippingAddress?->first_name ?? 'there' }}, we&rsquo;ve received the returned item(s) for order #{{ $order->reference }}. Your refund will be processed shortly and you&rsquo;ll get a separate email once it&rsquo;s issued.
+Hi {{ $order->shippingAddress?->first_name ?? 'there' }}, thanks for shopping at {{ config('app.name') }}! The following item(s) from your order #{{ $order->reference }} has been received and processed.
 </p>
+</td>
+</tr>
+
+<tr>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-bottom:32px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf9f8; border-radius:8px;">
+<tr>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:24px;">
+<p style="margin:0; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Return processed on:</strong> <span style="color:#707070;">{{ $returnedAtLabel }}</span></p>
+</td>
+</tr>
+</table>
 </td>
 </tr>
 
@@ -99,7 +113,36 @@ ${{ number_format($lineTotal, 2) }}
 @endforeach
 
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:40px;">
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:32px;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 16px; font-size:15px; line-height:1.6; color:#707070;">
+We&rsquo;re sorry this purchase didn&rsquo;t work out for you. Your refund will be processed shortly and you&rsquo;ll get a separate email once it&rsquo;s issued.
+</p>
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#707070;">
+If you returned additional items from your order, you will receive another Return Confirmation email for those items once they have been processed.
+</p>
+</td>
+</tr>
+
+<tr>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:32px; padding-bottom:32px;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 16px; font-size:14px; line-height:1.6; color:#707070;">
+Not sure what happens next? Our team is happy to help.
+</p>
+<table role="presentation" cellpadding="0" cellspacing="0">
+<tr>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; border-radius:6px; background-color:#df8448;">
+<a href="mailto:support@petposture.com" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:inline-block; padding:15px 32px; font-size:14px; font-weight:600; color:#ffffff; text-decoration:none;">Contact support</a>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+
+<tr>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:40px; border-top:1px solid #ececec;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 8px; font-size:15px; line-height:1.6; color:#1a1a1a;">
+Thank you,<br>{{ config('app.name') }}
+</p>
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:13px; color:#9a9a9a;">
 If you have any questions, contact us at <a href="mailto:support@petposture.com" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; color:#1a1a1a; text-decoration:none;">support@petposture.com</a>
 </p>

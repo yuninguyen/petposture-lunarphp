@@ -22,7 +22,7 @@
 
 <tr>
 <td align="center" style="{{ $font }} padding-bottom:36px;">
-<img src="{{ isset($message) ? $message->embed(public_path('logo.png')) : 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('logo.png'))) }}" height="44" alt="{{ config('app.name') }}" style="{{ $font }} display:block; height:44px; width:auto;">
+<img src="{{ isset($message) ? $message->embed(public_path('logo.png')) : 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('logo.png'))) }}" height="52" alt="{{ config('app.name') }}" style="{{ $font }} display:block; height:52px; width:auto;">
 </td>
 </tr>
 
@@ -58,7 +58,7 @@ If you have further questions on your {{ config('app.name') }}.com order, please
 
 <tr>
 <td align="center" style="{{ $font }} padding-bottom:16px;">
-<p style="{{ $font }} margin:0; font-size:11px; font-weight:700; letter-spacing:1px; color:#9a9a9a; text-transform:uppercase;">Customer support</p>
+<p style="{{ $font }} margin:0; font-size:17px; font-weight:700; letter-spacing:1px; color:#9a9a9a; text-transform:uppercase;">Customer support</p>
 </td>
 </tr>
 
@@ -96,11 +96,11 @@ If you have further questions on your {{ config('app.name') }}.com order, please
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td align="center" style="{{ $font }} font-size:12px; color:#9a9a9a; line-height:2;">
-<a href="{{ rtrim(config('app.frontend_url'), '/') }}/return-refund-policy" style="{{ $font }} color:#9a9a9a; text-decoration:none;">Return &amp; Refund Policy</a>
+<a href="{{ rtrim(config('app.frontend_url'), '/') }}/return-refund-policy" style="{{ $font }} color:#9a9a9a; text-decoration:underline;">Return &amp; Refund Policy</a>
 &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-<a href="{{ rtrim(config('app.frontend_url'), '/') }}/privacy-policy" style="{{ $font }} color:#9a9a9a; text-decoration:none;">Privacy Policy</a>
+<a href="{{ rtrim(config('app.frontend_url'), '/') }}/privacy-policy" style="{{ $font }} color:#9a9a9a; text-decoration:underline;">Privacy Policy</a>
 &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-<a href="{{ rtrim(config('app.frontend_url'), '/') }}/terms-and-conditions" style="{{ $font }} color:#9a9a9a; text-decoration:none;">Terms of Use</a>
+<a href="{{ rtrim(config('app.frontend_url'), '/') }}/terms-and-conditions" style="{{ $font }} color:#9a9a9a; text-decoration:underline;">Terms of Use</a>
 </td>
 </tr>
 </table>

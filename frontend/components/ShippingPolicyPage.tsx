@@ -16,8 +16,9 @@ const SECTIONS = [
     { id: "shipping-time", title: "2. SHIPPING TIME & ZONES" },
     { id: "rates", title: "3. SHIPPING RATES" },
     { id: "tracking", title: "4. TRACKING & WAREHOUSES" },
-    { id: "contact", title: "5. CONTACT INFORMATION" },
-    { id: "faq", title: "6. FREQUENTLY ASKED QUESTIONS" },
+    { id: "lost-packages", title: "5. LOST OR UNDELIVERED PACKAGES" },
+    { id: "contact", title: "6. CONTACT INFORMATION" },
+    { id: "faq", title: "7. FREQUENTLY ASKED QUESTIONS" },
 ];
 
 export default function ShippingPolicyPage() {
@@ -159,8 +160,29 @@ export default function ShippingPolicyPage() {
                                     </p>
                                 </section>
 
+                                <section id="lost-packages">
+                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">5. LOST OR UNDELIVERED PACKAGES</h2>
+                                    <p>
+                                        Occasionally a package may be marked as delivered by the carrier but not received, or delayed significantly beyond the estimated delivery window. If this happens:
+                                    </p>
+                                    <ul className="list-disc pl-6 space-y-4 mt-6">
+                                        <li>
+                                            <strong>Tracking shows &ldquo;Delivered&rdquo; but you haven&apos;t received it:</strong> Please wait 24&ndash;48 hours, as carriers sometimes scan a package as delivered slightly before it physically arrives. Check with neighbors or your building&apos;s front desk/mailroom.
+                                        </li>
+                                        <li>
+                                            <strong>Contact us within 7 days:</strong> If the package still hasn&apos;t turned up, email <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a> with your order number. We will open an investigation/claim with the carrier.
+                                        </li>
+                                        <li>
+                                            <strong>Resolution:</strong> Once the carrier confirms the package is lost, we will send a free replacement or issue a full refund, at your choice &mdash; no restocking fee applies, since this isn&apos;t a return.
+                                        </li>
+                                        <li>
+                                            Orders significantly delayed beyond the estimated delivery window (see Section 2) can also be reported to our support team for a status update.
+                                        </li>
+                                    </ul>
+                                </section>
+
                                 <section id="contact">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">5. CONTACT INFORMATION</h2>
+                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">6. CONTACT INFORMATION</h2>
                                     <p>Our dedicated support team is here to help with any shipping-related questions or concerns:</p>
                                     <div className="mt-6 bg-[#f8f9fa] p-8 rounded-xl space-y-3">
                                         <p><strong>Email:</strong> <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a></p>
