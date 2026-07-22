@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ReturnRequestController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\UserAddressController;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +59,7 @@ Route::get('/brands/{id}/products', [BrandController::class, 'products']);
 Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('throttle:api-write');
 Route::post('/orders/track', [OrderController::class, 'track'])->middleware('throttle:10,1');
 Route::post('/orders/retry-payment', [OrderController::class, 'retryPayment']);
+Route::post('/orders/return-requests', [ReturnRequestController::class, 'store'])->middleware('throttle:10,1');
 Route::get('/api-test', function () {
     return ['status' => 'ok', 'v' => 3];
 });
@@ -105,6 +107,11 @@ Route::prefix('/admin')
         Route::get('/blog/categories', [PostController::class, 'categories']);
         Route::post('/orders/{id}/refund', [OrderController::class, 'refund']);
         Route::post('/orders/{id}/return', [OrderController::class, 'return']);
+        Route::get('/return-requests', [ReturnRequestController::class, 'index']);
+        Route::get('/return-requests/{id}', [ReturnRequestController::class, 'show']);
+        Route::post('/return-requests/{id}/approve', [ReturnRequestController::class, 'approve']);
+        Route::post('/return-requests/{id}/reject', [ReturnRequestController::class, 'reject']);
+        Route::post('/return-requests/{id}/complete', [ReturnRequestController::class, 'complete']);
     });
 
 // Protected Routes
