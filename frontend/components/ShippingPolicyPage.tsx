@@ -173,7 +173,7 @@ export default function ShippingPolicyPage() {
                                             <strong>Contact us within 7 days:</strong> If the package still hasn&apos;t turned up, email <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a> with your order number. We will open an investigation/claim with the carrier.
                                         </li>
                                         <li>
-                                            <strong>Resolution:</strong> Once the carrier confirms the package is lost, we will send a free replacement or issue a full refund, at your choice &mdash; no restocking fee applies, since this isn&apos;t a return.
+                                            <strong>Resolution:</strong>{" "}Once the carrier confirms the package is lost, we will send a free replacement or issue a full refund, at your choice &mdash; no restocking fee applies, since this isn&apos;t a return.
                                         </li>
                                         <li>
                                             Orders significantly delayed beyond the estimated delivery window (see Section 2) can also be reported to our support team for a status update.
