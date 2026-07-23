@@ -160,8 +160,36 @@ across requests on the same worker:
   deletes the shared cross-request cache store entry and would force a full DB rebuild on every
   single request, negating the point of caching permissions at all.
 
-A further code audit for other request-scoped state leaks is still needed before actually
-enabling worker mode.
+A follow-up audit found and fixed 3 more request-scoped state leaks (`SetLocale` mutating
+`lunar.orders.statuses` off its own previous output instead of the pristine config file;
+`SetLocale` only running on the `web` middleware group while its global side effects — Carbon
+locale, PHP `setlocale()`, the MySQL session's `lc_time_names` — are process-wide, so `api`
+requests need it too; and `Lunar\Admin\Support\CustomerStatus` having the same locale-memoization
+bug as `OrderStatus`). Worker mode is still **not enabled** — see "Cloudflare edge caching"
+below for the approach actually adopted instead. Revisit worker mode only if checkout/account
+TTFB specifically becomes a measured problem; this audit work carries over if so.
+
+### Cloudflare edge caching (adopted instead of worker mode, for now)
+
+Rather than accept worker mode's state-leak risk class for a payment-handling site, the
+highest-traffic, non-personalized part of the API (product/brand/post/content catalog reads) is
+cached at Cloudflare's edge instead — checkout/cart/account/admin are untouched and still hit
+Laravel on every request.
+
+- **Cache Rule** on the `petposture.com` zone caches `GET` requests to `/api/products*`,
+  `/api/brands*`, `/api/posts*`, `/api/settings`, `/api/categories`, `/api/blog/categories`, and
+  `/api/checkout/payment-methods` — 5 min edge TTL, 60s browser TTL, `override_origin` (Laravel
+  sends `Cache-Control: private` by default, so the rule must explicitly override it).
+- **Purge on write**: `App\Services\CloudflareCacheService::purgeAll()` runs whenever a Product,
+  Brand, Post, or Setting is saved/deleted (via 4 model observers). It calls Cloudflare's
+  `purge_everything`, not a targeted per-URL purge — purging by specific URL (`files` array) was
+  verified in production to silently do nothing for entries cached via `override_origin` when
+  the origin sends `Cache-Control: private` (undocumented by Cloudflare; found by testing).
+  Admin saves are infrequent, so a full-zone purge's cost is negligible.
+- `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ZONE_ID` live only in the VPS's `backend/.env` (see
+  `.env.example` for how to generate a token — Cloudflare only shows it once, at creation).
+  Without them set, `CloudflareCacheService` no-ops safely.
+- **Never add a personalized/authenticated endpoint to this Cache Rule.**
 
 ### Backend container processes (supervisord)
 
