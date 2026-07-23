@@ -26,20 +26,21 @@ It was still using `Content(markdown: ...)`, which `RULES.md` explicitly bans fo
 **Fixed a recurring production error: blog endpoints querying a nonexistent `posts.is_published` column**
 `ContentController::posts()`/`post()` queried `where('is_published', true)`, but the `posts` table has only ever had a `status` string column (`draft`/`published`, per the 2026-04-19 migration and `PostResource`/Filament usage) — this has been throwing a `QueryException` on every hit to the public blog endpoints since the table was created. Explains the "every ~1 hour" pattern noticed in yesterday's log audit: the frontend's `/blog` page has a 1-hour ISR `revalidate`, so Next.js was silently hitting a broken endpoint on every regeneration. Fixed both queries to `where('status', 'published')` (commit `37763b1`), ran `gitnexus_impact` first (LOW risk, single caller `routes/api.php`) and `gitnexus_detect_changes` before committing per `CLAUDE.md`. Deployed; `curl http://127.0.0.1:8001/api/posts` now returns `200` instead of `500`.
 
+**Added Feature test coverage for the return-request flow (`tests/Feature/ReturnRequestApiTest.php`)**
+18 new tests covering: guest `POST /api/orders/return-requests` (delivered order, shipped order without `delivered_at`, unknown credentials → 404, missing fields → 422, order not delivered/shipped → 422, duplicate active request → 422, outside/inside the 30-day window), a direct `ReturnRequestService::create()` call for the empty-items rejection (unreachable via HTTP since the controller's own validation already requires `items: min:1`), and the full admin surface (`index`/`show`/`approve`/`reject`/`complete`, status guards, non-admin `403`). Found and fixed one real bug while writing them: `OrderReturnRequestResource` responses are wrapped in Laravel's default `data` key — worth remembering for any future test against a bare (non-`::collection()`) `JsonResource` return in this app. Full suite: 47 passed / 24 failed, same 24 pre-existing unrelated failures as documented below — no regressions.
+
 ## Known gaps / not done
 
 - **Hostinger Mail trial expires 2026-08-15** (23 days from today) — must upgrade to a paid plan before then or every mailbox on the domain (including the just-fixed `no-reply@`/`support@`/`accounts@`/`hello@` aliases) stops working again.
-- **No automated test coverage** for `ReturnRequestService`/`ReturnRequestController` (carried over from 2026-07-23, still true).
 - **`OrderReturnRejected` email** — not yet verified end-to-end in production (carried over from 2026-07-23).
 - Phase 2/3 of the return-request roadmap (auto-calculated refund, auto-generated return label) — still deferred, not started.
 - 2 unrelated uncommitted files sitting in the working tree since before today's session (`AGENTS.md`, `CLAUDE.md`, small 2-line diffs each, likely GitNexus index-count auto-updates) — not investigated or committed today.
 
 ## Immediate follow-ups (small, next session)
 
-1. Write Feature tests for `ReturnRequestService` (create/approve/reject/complete + the 30-day-window rejection) and a Feature test hitting `POST /api/orders/return-requests` end-to-end.
-2. Finish the email template audit from 2026-07-23: `OrderReturnRejected`, `NewsletterConfirmation`, `ContactFormSubmission`, `NewOrderAdmin`, `CancelledOrderAdmin` (`ContactAutoReply` done today) — now that mail delivery itself is confirmed working, worth re-verifying these actually land now (some may have been silently failing to deliver this whole time given the MX issue, even though queue/logs showed no errors).
-3. Consider adding a "Request a Return" entry point from the guest `/track-order` results panel.
-4. **Upgrade Hostinger Mail before 2026-08-15** or schedule a reminder — see Known gaps. (Explicitly deprioritized by Yuni today — not urgent yet, but don't let it slip past the deadline.)
+1. Finish the email template audit from 2026-07-23: `OrderReturnRejected`, `NewsletterConfirmation`, `ContactFormSubmission`, `NewOrderAdmin`, `CancelledOrderAdmin` (`ContactAutoReply` done today) — now that mail delivery itself is confirmed working, worth re-verifying these actually land now (some may have been silently failing to deliver this whole time given the MX issue, even though queue/logs showed no errors).
+2. Consider adding a "Request a Return" entry point from the guest `/track-order` results panel.
+3. **Upgrade Hostinger Mail before 2026-08-15** or schedule a reminder — see Known gaps. (Explicitly deprioritized by Yuni today — not urgent yet, but don't let it slip past the deadline.)
 
 ## Backlog / bigger asks (need scoping before starting)
 
