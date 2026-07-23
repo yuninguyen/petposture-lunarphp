@@ -105,21 +105,59 @@ petposture/
 
 ## Email deliverability & branding (DNS)
 
-`no-reply@petposture.com` sends through Hostinger SMTP (`smtp.hostinger.com`), with SPF and
-DKIM (`hostingermail-a/b/c._domainkey`) already aligned to that relay.
+**DNS is authoritative on Cloudflare, not Hostinger's own panel.** `petposture.com`'s
+nameservers point at Cloudflare (`nelly.ns.cloudflare.com` / `sam.ns.cloudflare.com`), so all
+mail DNS records (MX, DKIM, SPF, DMARC, BIMI) must live in the **Cloudflare zone**
+(Zone ID `7c77d5e7f534eb3da62f474ec3c88e0a`). Hostinger's own DNS panel shows what Hostinger
+*expects* for its mail product, but records entered there are not live on the internet unless
+also present in Cloudflare — this exact gap caused a same-day production incident where the
+domain had **no MX record at all** (found 2026-07-24; see `handoff.md` for the full writeup).
+**Never add a Hostinger Email Routing setup to this zone** — it locks the zone's MX/DKIM/SPF to
+Cloudflare's own routing service and is incompatible with routing mail to Hostinger mailboxes.
 
+- **Live records in the Cloudflare zone**: MX (`mx1`/`mx2.hostinger.com`, priority 5/10), 3 DKIM
+  CNAMEs (`hostingermail-a/b/c._domainkey`), `autodiscover`/`autoconfig` CNAMEs, SPF
+  (`v=spf1 include:_spf.mail.hostinger.com ~all`), and BIMI/DMARC below.
 - **BIMI**: `default._bimi.petposture.com` TXT record points at
   `https://petposture.com/assets/bimi-logo.svg` (a hand-built SVG Tiny PS reproduction of the
   paw icon mark — square viewBox, no scripts/external refs, per BIMI's spec). This is what lets
   Gmail/Yahoo show the brand logo next to the sender name, instead of a generic avatar.
-- **DMARC** was raised from `p=none` (monitor-only) to `p=quarantine; pct=25` — required by
-  Gmail for BIMI to take effect at all. `pct=25` staggers enforcement to a quarter of mail
-  rather than jumping straight to 100%, specifically to limit blast radius while monitoring
-  aggregate reports (`rua=mailto:no-reply@petposture.com`) for a few weeks before considering
-  `pct=100`. If deliverability problems show up, roll back to `p=none` first and investigate.
+- **DMARC** is `p=quarantine; pct=25` — required by Gmail for BIMI to take effect at all.
+  `pct=25` staggers enforcement to a quarter of mail rather than jumping straight to 100%,
+  specifically to limit blast radius while monitoring aggregate reports
+  (`rua=mailto:no-reply@petposture.com`) for a few weeks before considering `pct=100`. If
+  deliverability problems show up, roll back to `p=none` first and investigate.
 - Both DNS changes propagate on their own schedule (TTL 3600s) and Gmail may take additional
   days beyond that to crawl and start showing the BIMI logo — absence right after the DNS
   change lands is expected, not a sign of misconfiguration.
+- To verify what's *actually* live (not just what a DNS panel shows), query a public
+  DNS-over-HTTPS resolver directly, e.g.
+  `curl -s "https://cloudflare-dns.com/dns-query?name=petposture.com&type=MX" -H "accept: application/dns-json"`
+  — this bypasses any panel/caching confusion and hits the real authoritative answer.
+
+### Sender identity (4 mailboxes, one Hostinger account, free aliases)
+
+Adopted 2026-07-24 to match how larger ecommerce sites separate sender identities. All 4 share
+one Hostinger mailbox/inbox via free email aliases (hPanel → Email → Bí danh email) — no extra
+paid mailbox needed.
+
+| Address | Role | Used by |
+|---|---|---|
+| `support@petposture.com` | **Primary** mailbox (SMTP login credential). The address customers see and can reply to. | `Reply-To` on `WelcomeEmail`, `ContactAutoReply` |
+| `no-reply@petposture.com` | Alias. Send-only default sender (`MAIL_FROM_ADDRESS`); also receives internal admin notifications. | `OrderConfirmation`, `NewOrderAdmin`, `CancelledOrderAdmin`, `ContactFormSubmission`, `NewsletterConfirmation`, DMARC `rua` reports |
+| `accounts@petposture.com` | Alias. Isolates the security-sensitive reset flow from general transactional mail. | `PasswordResetEmail` |
+| `hello@petposture.com` | Alias. Friendlier sender for the first touchpoint. | `WelcomeEmail` |
+
+`backend/.env` `MAIL_USERNAME` is `support@petposture.com` (matches the primary mailbox);
+`MAIL_FROM_ADDRESS` stays `no-reply@petposture.com` (default sender for everything not listed
+above). Changing which Hostinger mailbox is primary requires updating `MAIL_USERNAME` and
+recreating the backend container (`docker compose up -d --force-recreate backend`) — editing
+`.env` alone doesn't reach an already-running container, since Docker injects `env_file` values
+as real process env vars at container start.
+
+Domain sending reputation is brand-new as of the 2026-07-24 DNS fix — if messages from
+`accounts@`/`hello@` start landing in spam, that's the first thing to suspect (reputation not
+yet built up for those specific senders) before assuming a config regression.
 
 ---
 

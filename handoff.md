@@ -1,81 +1,46 @@
-# Handoff — 2026-07-23
+# Handoff — 2026-07-24
 
 ## Shipped today (all deployed to production, verified working)
 
-**Cloudflare edge caching for public catalog/content API endpoints**
-Chose this over enabling FrankenPHP worker mode (see the worker-mode audit below) as the lower-risk way to cut TTFB for the highest-traffic part of the site — catalog browsing — without touching checkout/cart/account, which stay on classic PHP as-is.
-- New Cache Rule on the `petposture.com` zone (rule 3 in the existing `http_request_cache_settings` ruleset, doesn't conflict with the pre-existing "Cache HTML pages" / static-asset rules): caches `GET` requests to `/api/settings`, `/api/checkout/payment-methods`, `/api/categories`, `/api/blog/categories`, and everything under `/api/products*`, `/api/brands*`, `/api/posts*` — 5 min edge TTL, 60s browser TTL, `override_origin` (needed since Laravel sends `Cache-Control: private` by default).
-- New `App\Services\CloudflareCacheService::purgeAll()` + 4 new observers (`ProductCacheObserver`, `BrandCacheObserver`, `PostCacheObserver`, `SettingCacheObserver`) that purge the Cloudflare cache whenever an admin saves/deletes a Product, Brand, Post, or Setting. Soft-fails like `AfterShipService` if `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ZONE_ID` aren't set.
-- **Important finding, saved you from a false sense of security**: originally built to purge *specific* URLs (`files` array) rather than the whole zone — verified in production this **silently does nothing** for entries cached via a Cache Rule's `override_origin` when the origin sent `Cache-Control: private` (reproduced 3x with a 30s wait; not documented anywhere in Cloudflare's docs). `purge_everything` worked reliably every time in the same tests, so that's what's actually deployed. Since admin saves are infrequent, a full-zone purge's cost (next visitor to any page pays one origin round-trip) is negligible.
-- Verified end-to-end live on production: warmed `/api/settings` to a `HIT`, triggered a real `Setting::set()` save via tinker, confirmed the very next request came back `MISS`.
-- Credentials live only in the VPS's `backend/.env` (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`) — never committed to git. `.env.example` documents how to generate a new token if it's ever rotated (Cloudflare only shows a token once at creation).
+**Fixed a critical mail-delivery outage: `@petposture.com` had no working MX record**
+Investigating "does the `no-reply@` mailbox actually receive admin notification emails" (a follow-up from 2026-07-23) surfaced that it did not — and neither would any other address on the domain.
+- **Root cause**: `petposture.com`'s nameservers point at Cloudflare (`nelly.ns.cloudflare.com` / `sam.ns.cloudflare.com`), so Cloudflare's zone is authoritative — not Hostinger's own DNS panel. The Hostinger panel showed correct MX/DKIM/SPF/DMARC records, but those were sitting in Hostinger's *inactive* zone and were never live on the internet. Confirmed via DNS-over-HTTPS (`cloudflare-dns.com/dns-query`) against the real authoritative zone: **no MX record existed at all**, the DKIM CNAME was NXDOMAIN, SPF pointed at the wrong include (`_spf.reach.hostinger.com` instead of `_spf.mail.hostinger.com`), and DMARC had reverted to `p=none` instead of the documented `p=quarantine; pct=25`.
+- **Compounding factor found mid-fix**: Cloudflare **Email Routing** had been enabled for the zone that same day (mid-investigation), which locks the zone's MX/DKIM/SPF records to Cloudflare's own routing service (`route1-3.mx.cloudflare.net`) and is incompatible with routing mail straight to Hostinger mailboxes. Disabled it (Cloudflare dashboard → Email Routing → Settings → Disable) before re-adding the correct records.
+- **Fix**: added the missing records directly to the live Cloudflare zone (Zone ID `7c77d5e7f534eb3da62f474ec3c88e0a`) — 2 MX (`mx1`/`mx2.hostinger.com`, priority 5/10), 3 DKIM CNAMEs, `autodiscover`/`autoconfig` CNAMEs, BIMI TXT, corrected SPF, corrected DMARC. Verified all live via DNS-over-HTTPS, then confirmed actual delivery by sending a real test email and visually checking it landed in the Hostinger webmail inbox (twice — once pre-fix showing nothing arrived, once post-fix showing it arrived correctly).
+- **Tooling note**: a Cloudflare API token with `dns_records:edit` was used for read-only verification throughout, but Claude Code's own auto-mode classifier blocked every DNS-mutating `curl` call regardless of token scope — all actual record changes were made manually in the Cloudflare dashboard by Yuni, with Claude verifying before/after via read-only DNS queries. If this comes up again, budget for manual dashboard work, not API automation.
 
-**Email system polish**
-- Redesigned `OrderReturned` to match a Skechers reference (item rows, order-summary box, CTA, footer), fixed subject line to "Has Been Returned".
-- Polished `OrderCreditProcessed` (logo size, "Customer support" label weight/size, underlined footer policy links).
-- Fixed a recurring border/spacing bug pattern in mail Blade views: `border-top` paints at a `<td>`'s top edge, unaffected by *that* `<td>`'s own `padding-top` — the fix is always `padding-bottom` on the **previous** row.
-
-**Shipping Policy page**
-- Added a new "5. Lost or Undelivered Packages" section (leverages the AfterShip tracking work from an earlier session), renumbered Contact/FAQ to 6/7.
-- Fixed two collapsed-whitespace bugs in that section (`</strong>Text` missing its space in the production HTML build — forced explicit `{" "}` JSX text nodes to fix; verified via `.next/server/app/shipping-policy.html`).
-
-**Phase 1 "Request a Return" feature — built end-to-end today**
-- New tables: `order_return_requests`, `order_return_request_items` (migration `2026_07_23_000001_...`).
-- New models: `OrderReturnRequest`, `OrderReturnRequestItem`.
-- New service: `App\Services\ReturnRequestService` — `create()`/`approve()`/`reject()`/`complete()`. `complete()` deliberately reuses `OrderOperationsService::returnOrder()` so both entry points (old "Mark Returned" Filament action, new Return Request flow) stay in sync and fire the same `OrderReturned` email.
-- 3 new mailables + Blade views: `OrderReturnRequested`, `OrderReturnApproved` (carries RMA address + estimated refund), `OrderReturnRejected`.
-- New API: public `POST /api/orders/return-requests` (guest lookup by reference+email, throttled); admin `GET/POST /api/admin/return-requests*` (list/show/approve/reject/complete).
-- New Filament resource `OrderReturnRequestResource`, filed under the same `lunarpanel::global.sections.sales` nav group as Orders/Reviews/etc., `navigationSort = 4` (lands between Customers and Reviews per explicit request).
-- New frontend page `/returns` (`RequestReturnPage.tsx`) — guest order lookup, item/qty selection, reason, note. Reads `?ref=&email=` query params to auto-run the lookup when linked from elsewhere.
-- Surfaced the flow: "Request a Return" link added to each eligible order in the Account page, and to the Footer's customer-service column for guests.
-- **30-day return window** (per the published Return & Refund Policy) is enforced in two places: dimmed/disabled in the Account UI with an explanatory line, and rejected server-side in `ReturnRequestService::create()` — not just a cosmetic frontend check.
-- Refund is still a fully separate, manual action on the order itself — nothing in this feature auto-triggers `OrderCreditProcessed`.
-
-**Bug fixes found/fixed along the way**
-- `OrderResource`'s `shipments` array was leaking internal placeholder entries (`carrier: manual`, `tracking_number` defaulting to the order reference) into the customer-facing tracking list — now filtered out server-side (benefits both Account page and Track Order page, same resource).
-- Account page's "Shipping" line item now shows the shipping method label (`shipping_label`, already existed in the API, just wasn't consumed).
-- Account page order-detail section reordered per request: Payment → Shipping/Billing Address → Tracking → Items → Totals → Request a Return.
-
-**Docs**
-- `ARCHITECTURE.md` — full rewrite, replacing generic/placeholder content with the actual headless-commerce shape (Lunar PHP, FrankenPHP+Caddy, Docker Compose `network_mode: host`, no CI service, `build.js` push-time pipeline, Sanctum auth, `meta`-JSON vs. dedicated-table data-modeling convention).
-- `RULES.md` — new, concise conventions doc for coding style, error handling, Docker/deploy, and forbidden libraries/patterns.
-
-**FrankenPHP worker-mode prep (full audit + fixes)**
-Ran a full state-leak audit of the backend (container singletons, `spatie/laravel-blink` usage, static properties, runtime `config()` mutations, auth/user caching, risky facades, the queue worker) ahead of ever enabling FrankenPHP worker mode. Found and fixed 4 real issues, one of which was already live in production today regardless of worker mode:
-- **Live bug, fixed**: `SendOrderConfirmationJob`/`SendOrderLifecycleEmailJob` never refreshed SMTP config — the queue worker is already a long-lived supervisord process, so an admin's SMTP setting change wouldn't reach queued mail until the worker restarted. Both jobs now call `MailConfigSync::run()` at the top of `handle()`.
-- **Worker-mode risk, fixed**: `SetLocale` was mutating `config('lunar.orders.statuses')` by reading its own previous output as the base — any status key without a translation for the current locale would keep whichever label the *previous* request's locale left behind, forever. Now re-reads the pristine labels straight from `config/lunar/orders.php` every request.
-- **Worker-mode risk, fixed**: `SetLocale` was only in the `web` middleware group; its global side effects (`Carbon::setLocale()`, PHP `setlocale()`, the MySQL session's `lc_time_names`) are process-wide, not request-scoped, so an `api` request right after a `vi` `web` request on the same worker would have silently inherited Vietnamese date formatting. Added to the `api` group too (confirmed safe — its Filament-navigation-group block already no-ops outside a Filament request, and `statefulApi()` means `Session` is available on `api` routes).
-- **Worker-mode risk, fixed**: found a second Lunar vendor class with the exact same locale-memoization bug as the already-known `OrderStatus` — `Lunar\Admin\Support\CustomerStatus` (label/color/icon cached via `??=`, never invalidated). Grepped the rest of `lunarphp/core` and `lunarphp/lunar` for the same pattern; these two classes are the only occurrences. Added the same reflection-based cache reset for it in `SetLocale`.
-- **Documented, not fixed (third-party, no code change available)**: web-researched Livewire 3 + Octane/persistent-worker compatibility. Known issues worth re-checking if worker mode is ever actually enabled: (1) stale persistent Redis connections reused by workers can throw mid-request errors — relevant since this app uses `predis/predis` for cache/session; (2) `wire:stream` is reported to still have problems specifically under FrankenPHP (this app's server); (3) intermittent "unresolvable dependency" errors on Livewire components under Octane; (4) 419/CSRF session-token-mismatch reports with Livewire+Filament+Octane, particularly around file uploads. None of these are things to fix now — they're read-before-you-flip-the-switch risks for whoever actually enables worker mode later.
-- **Production incident during this work (self-caused, self-fixed)**: rebuilding the backend container to deploy fix #1 above returned 500 on every request — `App\Http\Middleware\RefreshMailConfig` (and its `App\Support\MailConfigSync` dependency) turned out to have **never been committed to git** from an earlier session, despite already being wired into `bootstrap/app.php` and working fine as uncommitted files sitting in the old container. A fresh `git`-based image rebuild exposed it immediately. Added both files to git and redeployed; confirmed healthy (`/api/settings` → 200) within a few minutes. **Worth a trust check**: if these two files existed uncommitted, it's worth a quick `git status` sweep for anything else that might be sitting uncommitted-but-load-bearing.
-- Full app test suite run before/after (via `composer test`): identical 24 failed / 29 passed both times (confirmed via `git stash`) — pre-existing environment issues (`RoleAlreadyExists`, `UniqueConstraintViolationException`, a stale `App\Models\Product` reference in `ProductCatalogApiTest`), unrelated to any of this work. Worth cleaning up separately.
+**Adopted a 4-mailbox sender-identity architecture (mirrors what large ecommerce sites do)**
+- `no-reply@petposture.com` — transactional (order confirmation, invoice, tracking), internal admin notifications (`NewOrderAdmin`, `CancelledOrderAdmin`, `ContactFormSubmission`), and `NewsletterConfirmation`. Send-only, no one reads it, no Reply-To.
+- `support@petposture.com` — the address customers actually see/reply to. Set as **primary** Hostinger mailbox (SMTP login credential); the other three are aliases sharing the same inbox. Not a helpdesk yet (Zendesk/Freshdesk) — at current 1-person scale it's just the inbox Yuni checks directly, which works because aliases share one inbox regardless of which is "primary".
+- `accounts@petposture.com` — sender for `PasswordResetEmail`, isolates the security-sensitive reset flow from general transactional mail.
+- `hello@petposture.com` — sender for `WelcomeEmail`, with `Reply-To: support@petposture.com` to invite engagement on signup.
+- All 4 addresses are free Hostinger email aliases under the single mailbox (no extra paid mailbox needed) — created via hPanel → Email → Bí danh email (3/5 aliases now used).
+- **Backend credential change**: `backend/.env` `MAIL_USERNAME` changed from `no-reply@petposture.com` to `support@petposture.com` to match the new primary mailbox (same password — Hostinger keeps the account password when you promote an alias to primary). `MAIL_FROM_ADDRESS` unchanged (`no-reply@petposture.com`), since that's still the default sender for transactional mail. Backend container was recreated (not just `config:clear`) because Docker injects `env_file` values as real process env vars at container start — editing `.env` on the host doesn't reach an already-running container.
+- **Code changes** (commit `72c8c70`): added `from`/`replyTo` to the `Envelope` of `WelcomeEmail`, `ContactAutoReply`, `PasswordResetEmail`. `NewsletterConfirmation`, `ContactFormSubmission`, `NewOrderAdmin`, `CancelledOrderAdmin` deliberately left untouched — they're either internal-only or low-value-to-reply-to, so `no-reply@` is fine for them.
+- **Deliberately deferred, not done today**: splitting `support@` into a real helpdesk (Zendesk/Freshdesk) — revisit once there's more than one person handling support. Domain reputation is also brand-new as of today's DNS fix, so spreading sender identity across 4 addresses immediately carries some deliverability risk until the domain has a sending history; if spam-folder issues show up in the next few weeks, the first thing to check is whether `accounts@`/`hello@` need to warm up separately or should temporarily fold back into `no-reply@`.
 
 ## Known gaps / not done
 
-- **No automated test coverage** for anything shipped today — `ReturnRequestService`/`ReturnRequestController` have zero tests. `backend/tests/` has partial Feature coverage for Auth/Cart/Checkout/ProductCatalog only; frontend has no tests at all.
-- Phase 2/3 of the return-request roadmap (auto-calculated refund amount, auto-generated prepaid return label via carrier API) — deliberately deferred, not started.
-- A stray test `OrderReturnRequest` (id may vary) may still exist on production against order `#00000014` in `approved` status from manual QA — harmless (it's the standing test order), but worth clearing before that order is used for anything else.
-- Cloudflare edge cache (`s-maxage=3600`) means any Shipping/Return Policy content edit takes up to 1 hour to show for cached visitors unless manually purged — no Cloudflare API access was available this session to purge on demand.
+- **Hostinger Mail trial expires 2026-08-15** (23 days from today) — must upgrade to a paid plan before then or every mailbox on the domain (including the just-fixed `no-reply@`/`support@`/`accounts@`/`hello@` aliases) stops working again.
+- **Recurring unrelated production error found during today's log audit**: `SQLSTATE[42S22]: Column not found: 1054 Unknown column 'is_published' in 'where clause'` on the `posts` table, firing roughly every hour throughout 2026-07-23 — looks like a scheduled job querying a column that doesn't exist. Not investigated or fixed today; worth a dedicated look.
+- **No automated test coverage** for `ReturnRequestService`/`ReturnRequestController` (carried over from 2026-07-23, still true).
+- **`OrderReturnRejected` email** — not yet verified end-to-end in production (carried over from 2026-07-23).
+- Phase 2/3 of the return-request roadmap (auto-calculated refund, auto-generated return label) — still deferred, not started.
+- 2 unrelated uncommitted files sitting in the working tree since before today's session (`AGENTS.md`, `CLAUDE.md`, small 2-line diffs each, likely GitNexus index-count auto-updates) — not investigated or committed today.
 
 ## Immediate follow-ups (small, next session)
 
-1. Write Feature tests for `ReturnRequestService` (create/approve/reject/complete + the 30-day-window rejection) and a Feature test hitting `POST /api/orders/return-requests` end-to-end.
-2. **Email template audit** — verify each one still renders/sends correctly, testing in prod via the usual tinker-script pattern:
-   - `OrderReturnApproved` — done, verified today.
-   - `OrderReturnRejected` — not yet tested end-to-end.
-   - `NewsletterConfirmation`
-   - `ContactFormSubmission` (internal — sent to admin)
-   - `ContactAutoReply` (sent to the customer when they submit the contact form)
-   - `NewOrderAdmin` (internal)
-   - `CancelledOrderAdmin` (internal)
-3. **Verify Hostinger `no-reply@` mailbox is actually receiving every internal/admin notification** the system is supposed to send (New Order Admin, Cancelled Order Admin, Contact Form Submission, etc.) — confirm nothing is silently failing or landing in spam.
-4. Consider adding a "Request a Return" entry point from the guest `/track-order` results panel (currently only linked from Account page + Footer), so a guest who just tracked an order doesn't have to navigate away and re-enter their details.
-5. **Fix the pre-existing failing test suite** (24 failed / 29 passed, confirmed unrelated to today's work) — `RoleAlreadyExists` (Auth tests), `UniqueConstraintViolationException` (Cart tests), and a stale `App\Models\Product` reference in `ProductCatalogApiTest` that should probably be `Lunar\Models\Product` or whatever the current legacy-sync model is called.
-6. Double-check for any other uncommitted-but-load-bearing files like the `RefreshMailConfig`/`MailConfigSync` incident above — a quick `git status` audit against what's actually referenced in `bootstrap/app.php`/service providers would catch this class of bug before the next container rebuild does.
+1. **Send real WelcomeEmail / ContactAutoReply / PasswordResetEmail through their actual app triggers** (sign up a test account, submit the contact form, request a password reset) and visually confirm in a real mail client that From/Reply-To render as intended (`hello@`/`support@` reply-to, `accounts@` for reset) — today's verification confirmed the code deployed and the container is healthy, but not a real end-user send through each of these 3 flows specifically.
+2. Write Feature tests for `ReturnRequestService` (create/approve/reject/complete + the 30-day-window rejection) and a Feature test hitting `POST /api/orders/return-requests` end-to-end.
+3. Finish the email template audit from 2026-07-23: `OrderReturnRejected`, `NewsletterConfirmation`, `ContactFormSubmission`, `ContactAutoReply`, `NewOrderAdmin`, `CancelledOrderAdmin` — now that mail delivery itself is confirmed working, worth re-verifying these actually land now (some may have been silently failing to deliver this whole time given the MX issue, even though queue/logs showed no errors).
+4. Investigate the `posts.is_published` recurring error (see Known gaps above).
+5. Consider adding a "Request a Return" entry point from the guest `/track-order` results panel.
+6. **Upgrade Hostinger Mail before 2026-08-15** or schedule a reminder — see Known gaps.
 
 ## Backlog / bigger asks (need scoping before starting)
 
-- **Return Request Phase 2** — server-computed refund amount per the restocking-fee policy (currently fully manual admin entry).
-- **Return Request Phase 3** — auto-generated prepaid return shipping label via a carrier API (UPS/FedEx Returns), replacing the manual RMA-address-in-email step.
-- **PayPal payment gateway** — net-new integration alongside the existing custom Stripe integration (no `laravel/cashier` — see `RULES.md`); needs its own scoping pass (checkout UI, webhook handling, refund flow parity with Stripe) before implementation starts.
-- **Shop by Solution / Shop by Breed re-think** — this is a *product/catalog strategy* question (which categories actually map to real inventory and customer intent), not an engineering task with a ready answer. Needs a decision from the business side on target categories before any code changes to `shopBySolution`/`shopByBreed` (`frontend/components/Footer.tsx`) or the underlying category data.
+- **Return Request Phase 2** — server-computed refund amount per the restocking-fee policy.
+- **Return Request Phase 3** — auto-generated prepaid return shipping label via a carrier API.
+- **PayPal payment gateway** — net-new integration alongside the existing custom Stripe integration.
+- **Shop by Solution / Shop by Breed re-think** — needs a business-side decision on target categories first.
+- **Support helpdesk tooling** (Zendesk/Freshdesk/shared inbox) for `support@petposture.com` — only worth it once there's more than one person handling customer replies.
