@@ -2,6 +2,14 @@
 
 ## Shipped today (all deployed to production, verified working)
 
+**Cloudflare edge caching for public catalog/content API endpoints**
+Chose this over enabling FrankenPHP worker mode (see the worker-mode audit below) as the lower-risk way to cut TTFB for the highest-traffic part of the site — catalog browsing — without touching checkout/cart/account, which stay on classic PHP as-is.
+- New Cache Rule on the `petposture.com` zone (rule 3 in the existing `http_request_cache_settings` ruleset, doesn't conflict with the pre-existing "Cache HTML pages" / static-asset rules): caches `GET` requests to `/api/settings`, `/api/checkout/payment-methods`, `/api/categories`, `/api/blog/categories`, and everything under `/api/products*`, `/api/brands*`, `/api/posts*` — 5 min edge TTL, 60s browser TTL, `override_origin` (needed since Laravel sends `Cache-Control: private` by default).
+- New `App\Services\CloudflareCacheService::purgeAll()` + 4 new observers (`ProductCacheObserver`, `BrandCacheObserver`, `PostCacheObserver`, `SettingCacheObserver`) that purge the Cloudflare cache whenever an admin saves/deletes a Product, Brand, Post, or Setting. Soft-fails like `AfterShipService` if `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ZONE_ID` aren't set.
+- **Important finding, saved you from a false sense of security**: originally built to purge *specific* URLs (`files` array) rather than the whole zone — verified in production this **silently does nothing** for entries cached via a Cache Rule's `override_origin` when the origin sent `Cache-Control: private` (reproduced 3x with a 30s wait; not documented anywhere in Cloudflare's docs). `purge_everything` worked reliably every time in the same tests, so that's what's actually deployed. Since admin saves are infrequent, a full-zone purge's cost (next visitor to any page pays one origin round-trip) is negligible.
+- Verified end-to-end live on production: warmed `/api/settings` to a `HIT`, triggered a real `Setting::set()` save via tinker, confirmed the very next request came back `MISS`.
+- Credentials live only in the VPS's `backend/.env` (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`) — never committed to git. `.env.example` documents how to generate a new token if it's ever rotated (Cloudflare only shows a token once at creation).
+
 **Email system polish**
 - Redesigned `OrderReturned` to match a Skechers reference (item rows, order-summary box, CTA, footer), fixed subject line to "Has Been Returned".
 - Polished `OrderCreditProcessed` (logo size, "Customer support" label weight/size, underlined footer policy links).
