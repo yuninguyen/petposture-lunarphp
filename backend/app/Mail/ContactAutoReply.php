@@ -23,6 +23,6 @@ class ContactAutoReply extends Mailable
 
     public function content(): Content
     {
-        return new Content(markdown: 'mail.contact-auto-reply');
+        return new Content(view: 'mail.contact-auto-reply');
     }
 }
