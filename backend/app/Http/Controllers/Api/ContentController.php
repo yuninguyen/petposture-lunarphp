@@ -14,7 +14,7 @@ class ContentController extends Controller
 
     public function posts()
     {
-        $posts = Post::where('is_published', true)
+        $posts = Post::where('status', 'published')
             ->where('published_at', '<=', now())
             ->with('blogCategory')
             ->latest()
@@ -26,7 +26,7 @@ class ContentController extends Controller
     public function post($slug)
     {
         $post = Post::where('slug', $slug)
-            ->where('is_published', true)
+            ->where('status', 'published')
             ->with('blogCategory')
             ->firstOrFail();
 
