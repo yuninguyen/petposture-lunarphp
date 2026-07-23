@@ -8,11 +8,11 @@ class PostCacheObserver
 {
     public function saved(): void
     {
-        app(CloudflareCacheService::class)->purgePaths(['/api/posts', '/api/blog/categories', '/api/categories']);
+        app(CloudflareCacheService::class)->purgeAll();
     }
 
     public function deleted(): void
     {
-        app(CloudflareCacheService::class)->purgePaths(['/api/posts', '/api/blog/categories', '/api/categories']);
+        app(CloudflareCacheService::class)->purgeAll();
     }
 }

@@ -8,11 +8,11 @@ class ProductCacheObserver
 {
     public function saved(): void
     {
-        app(CloudflareCacheService::class)->purgePaths(['/api/products', '/api/products/facets']);
+        app(CloudflareCacheService::class)->purgeAll();
     }
 
     public function deleted(): void
     {
-        app(CloudflareCacheService::class)->purgePaths(['/api/products', '/api/products/facets']);
+        app(CloudflareCacheService::class)->purgeAll();
     }
 }

@@ -8,11 +8,11 @@ class SettingCacheObserver
 {
     public function saved(): void
     {
-        app(CloudflareCacheService::class)->purgePaths(['/api/settings', '/api/checkout/payment-methods']);
+        app(CloudflareCacheService::class)->purgeAll();
     }
 
     public function deleted(): void
     {
-        app(CloudflareCacheService::class)->purgePaths(['/api/settings', '/api/checkout/payment-methods']);
+        app(CloudflareCacheService::class)->purgeAll();
     }
 }
