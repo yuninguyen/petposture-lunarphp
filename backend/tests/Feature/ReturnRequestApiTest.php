@@ -289,9 +289,10 @@ class ReturnRequestApiTest extends TestCase
             'refund_amount' => 25.50,
         ]);
 
-        // Explicit refund_amount overrides the computed estimate, but the fee is still recorded for audit.
+        // Explicit refund_amount overrides the computed estimate; the recorded fee is the
+        // one implied by that override (subtotal + tax - refund), not the frozen 25% suggestion.
         $response->assertOk()
-            ->assertJsonPath('data.restocking_fee', 22.5)
+            ->assertJsonPath('data.restocking_fee', 71.87)
             ->assertJsonPath('data.refund_amount', 25.5);
     }
 

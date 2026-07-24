@@ -153,11 +153,20 @@ class ReturnRequestService
 
         $estimate = $this->calculateRefundEstimate($returnRequest, $feeWaived);
 
+        $refundAmountMinor = $refundAmountMinorOverride ?? $estimate['refund_amount_minor'];
+
+        // When the admin overrides the amount, record the fee actually implied by that
+        // override (subtotal + tax - refund) rather than the frozen 25% suggestion, so
+        // restocking_fee_minor always reconciles with refund_amount_minor later.
+        $restockingFeeMinor = $refundAmountMinorOverride !== null
+            ? max(0, $estimate['item_subtotal_minor'] + $estimate['tax_minor'] - $refundAmountMinorOverride)
+            : $estimate['restocking_fee_minor'];
+
         $returnRequest->update([
             'status' => OrderReturnRequest::STATUS_APPROVED,
             'rma_address' => $rmaAddress,
-            'refund_amount_minor' => $refundAmountMinorOverride ?? $estimate['refund_amount_minor'],
-            'restocking_fee_minor' => $estimate['restocking_fee_minor'],
+            'refund_amount_minor' => $refundAmountMinor,
+            'restocking_fee_minor' => $restockingFeeMinor,
             'fee_waived' => $feeWaived,
             'admin_note' => $adminNote,
             'approved_at' => now(),
