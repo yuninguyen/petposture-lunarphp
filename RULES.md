@@ -11,7 +11,9 @@ Read this before touching code. See `ARCHITECTURE.md` for the why; this file is 
 - One class per concern in `app/Services/*.php`. Controllers validate + delegate to a service; they do not contain business logic.
 - Business-rule rejections throw `ValidationException::withMessages([...])` from the **service**, not the controller — let Laravel's default handler format the 422.
 - Never mutate order status by hand (`$order->update(['status' => ...])`). Always go through `OrderOperationsService::update()`/`performAction()` so the state machine, emails, and webhooks stay in sync.
-- New scalar/mutable order state → `meta` JSON key. New relational/audited data (multiple rows, own lifecycle) → its own migration + model, matching the `order_events` / `order_return_requests` precedent.
+- New scalar/mutable order state → `meta` JSON key. New relational/audited data (multiple rows, own lifecycle) → its own migration + model, matching the `order_events` / `order_return_requests` / `order_shipments` precedent.
+- Shipment tracking numbers are **required**, never silently defaulted (no "fall back to the order reference" placeholder) — `OrderOperationsService::update()`/`recordShipment()` both throw `ValidationException` on a blank `tracking_number` rather than inventing one.
+- Adding a `Schedule::command(...)` to `routes/console.php` does nothing by itself — `supervisord.conf` must also run `php artisan schedule:work` (there's no OS cron in the container). Always add/verify both together.
 - Comments: sparse, by convention. Only for non-obvious *why* (a workaround, a hidden constraint). Never restate what the code already says.
 - Filament resources: auto-discovered, no manual registration. Commerce resources go in `getNavigationGroup() { return __('lunarpanel::global.sections.sales'); }` — don't invent a new nav group.
 
@@ -33,7 +35,7 @@ Read this before touching code. See `ARCHITECTURE.md` for the why; this file is 
 
 ## Docker / deploy
 
-- Backend image: `dunglas/frankenphp:1.2-php8.3-alpine`, `composer install --no-dev --optimize-autoloader --no-scripts`, supervisord runs FrankenPHP + queue worker together. Migrations run automatically on container start — don't add a manual migrate step to the deploy script.
+- Backend image: `dunglas/frankenphp:1.2-php8.3-alpine`, `composer install --no-dev --optimize-autoloader --no-scripts`, supervisord runs FrankenPHP + queue worker + scheduler (`schedule:work`) together. Migrations run automatically on container start — don't add a manual migrate step to the deploy script.
 - Frontend image (`Dockerfile.prod`): single-stage `node:20-alpine`, `npm ci && npm run build`, runs custom `server.js` (not `next start`).
 - `docker-compose.prod.yml`: all three services (`redis`, `backend`, `frontend`) use `network_mode: host`. Don't add a bridge network or a `ports:` section — that's not how this stack is wired.
 - Deploy = SSH to VPS → `git pull` → `docker compose -f docker-compose.prod.yml build <service>` → `up -d --force-recreate <service>`. There is no CI pipeline; `build.js` (repo root, runs on `git push`) is a local push-time smoke build only — it does **not** run on the VPS and does **not** run tests/lint.

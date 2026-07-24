@@ -1,120 +1,110 @@
-# Handoff — 2026-07-24
+# Handoff — 2026-07-25
 
 ## Shipped today, deployed to production, verified working
 
-**Added a honeypot field + submission logging to the `/contact` form** (commit `658a826`, deploy
-verified via `curl` against the live backend and a real Hostinger-inbox send)
-A hidden `website` field bots tend to autofill: if present, the endpoint returns `200` (no error
-that tells the bot it was caught) and logs `Contact form spam blocked (honeypot)` instead of
-sending mail. Every real submission now logs IP + email domain, since the endpoint previously had
-no audit trail at all. Not enough production traffic yet to know if the spam bot from
-2026-07-23/24 gets stopped by it — see Known gaps below.
+**Admin Order View overhaul (Filament)** — commits `eebcea8`, `6ef44bc`, `869f44e`, `33b6eb7`
+Fixed a real bug found while addressing a UX complaint: `OrderStateMachine::canTransition()` treated
+a same-status transition as valid (used elsewhere to allow meta-only updates), but `availableActions()`
+reused that same check to decide which header buttons to show — so an already-`shipped` order kept
+showing "Mark Shipped" alongside "Mark Delivered", and re-clicking it would have re-sent the shipped
+email and re-registered AfterShip tracking. Fixed by excluding same-status transitions from the button
+list specifically. Also: secondary actions (Mark Returned, Refund) moved into an outlined "More
+Actions" dropdown instead of loose buttons; removed the rarely-used "Adjust Shipping" action entirely
+(and its now-orphaned service method — zero other callers, confirmed via `gitnexus_impact`); Order
+Summary / Order Attribution / Fraud & Risk now sit in one row (6:3:3); Customer IP block now spans
+full width instead of wrapping narrowly; the Items table's Shipping line now shows the actual method
+name (e.g. "Shipping - Standard Shipping") via `ShippingService::nameFor()` instead of just a dollar
+amount.
 
-## Shipped today, deployed to production (commit `38204a5`), verified via curl — not yet via a real end-to-end guest submission
+**Multi-shipment / per-item tracking** — commits `34956e0`, `1b593bb`, deployed and verified
+(container healthy, `order_shipments` backfill produced 3 real rows from 11 candidate orders as
+predicted, `Mark Shipped` → item picker → per-item tracking display all confirmed working via
+screenshot, spacing polish applied)
+An order can now ship in more than one package. New `order_shipments` + `order_shipment_items`
+tables (mirrors the `order_return_requests` shape) let admin pick which items/quantities are in
+each shipment — defaults to "everything remaining," so the common single-package case needs zero
+extra clicks. Each order line on the admin view shows its own tracking. Backend changes:
+- `OrderOperationsService::recordShipment()` replaces the old (zero-caller, dead) `createShipment()`
+  — validates items belong to the order and don't exceed remaining shippable quantity (summed
+  against prior shipments on that line).
+- **Tracking numbers are now required everywhere** — no more silent fallback to the order reference
+  as a placeholder. This was a deliberate call after finding the *old* system already had to work
+  around this (`OrderResource.php` had a comment-documented filter hiding "placeholder shipments"
+  from customers) — decided to stop generating the placeholder in the first place instead of
+  filtering it after the fact. The backfill migration also skips these legacy placeholder entries.
+- AfterShip webhook rewritten to match a specific shipment by tracking number (not just "the order"),
+  and only auto-marks the **order** delivered once **every** shipment on it reports delivered.
+- "Order Shipped" customer email now fires once per shipment (not just the first), showing that
+  shipment's own items — per Yuni's choice (vs. batching into one email once everything ships).
+- `OrderController::createShipment()` (the endpoint the separate Next.js `/admin/orders/[id]` admin
+  page calls) now delegates to the same `recordShipment()` — **this was a real bug caught during
+  review**: the method it used to call was deleted during the refactor and would have 500'd on that
+  route until caught and fixed pre-deploy.
+- **Known accepted gap**: that same Next.js page can also `PATCH /api/orders/{id}` with a tracking
+  number but no status change — that path still only updates the legacy `meta.shipments[]` array,
+  it does **not** create an `order_shipments` row. No crash, just a quantity-accounting blind spot
+  on that specific secondary surface. Left as-is since Yuni confirmed Filament is the real admin
+  workflow, not this page.
+- **Found in production data while verifying**: two old orders (`11` and `14`) share the exact same
+  backfilled tracking number (`1Z999AA10123456784`, an obviously-fake format) — looks like leftover
+  test data, not a real customer collision, and doesn't currently cause a problem (order 14 was
+  already `delivered`). Flagged to Yuni; not cleaned up.
 
-**Return Request Phase 2: auto-computed refund estimate on approval**
-Previously the admin typed a raw dollar guess into "Estimated Refund Amount" with zero
-calculation. Now `ReturnRequestService::calculateRefundEstimate()`/`previewRefundEstimate()`
-compute a 25% restocking fee on the pre-tax item subtotal (prorated for partial-quantity
-returns, tax refunded in full), the admin can waive the fee for a confirmed defective/wrong-item
-case (explicit toggle — never inferred from the customer's free-text reason) or override the
-final number, and `restocking_fee_minor` always reconciles with whatever `refund_amount_minor`
-actually gets approved (recomputed from the override itself when one is given, not left as a
-stale 25%-of-subtotal figure). The real Stripe refund is still a separate manual step on the
-Order page, unchanged — this only automates the *estimate*, not the money movement.
-- Migration: `restocking_fee_minor` + `fee_waived` columns on `order_return_requests`.
-- Found and fixed 3 real gaps surfaced by adding real money math to this flow (previously
-  harmless since the admin always typed the amount by hand): `create()` didn't check an
-  `order_line_id` belonged to the order being returned, didn't cap quantity against what was
-  purchased, and didn't sum quantity across duplicate `order_line_id` entries in one request or
-  across a *prior completed* return request for the same line — all four now validated.
-- New guest-facing `POST /api/orders/return-requests/preview` (no side effects) powers a live
-  "Estimated refund: $X" preview on the `/returns` form as items are selected.
-- `POST /api/orders/track` now also returns `has_active_return_request`, so `/returns` can block
-  the lookup early with a friendly message instead of letting the customer fill out the whole
-  form before hitting a 422 at submit time.
-- `/returns` also gained: a 25%-restocking-fee disclosure note linking to the policy page, and
-  days-remaining-in-the-30-day-window messaging (mirrors what the Account page already showed;
-  the guest page previously had neither).
-- Admin's Return Requests table gained Refund/Fee columns (previously only visible via the API
-  or the approval email), and the Approve form warns (⚠️) when a manual override deviates from
-  the computed estimate.
-- 29 tests in `ReturnRequestApiTest.php` (up from 18), all passing. Verified end-to-end with
-  Playwright screenshots against a throwaway local test order (created and deleted via tinker,
-  never touched production) — every piece of new UI confirmed rendering/working for real, not
-  just reviewed as code.
-- **Local-dev gotcha hit while verifying** (documented in `README.md` → Local Setup now): a
-  stale `bootstrap/cache/filament` component cache silently 404'd the whole Return Requests admin
-  resource until `php artisan filament:optimize-clear`. Not a code bug — local environment state,
-  not committed anywhere. (Also hit `APP_URL` pointing at the production domain while running
-  `php artisan serve` locally — that's intentional config, not a bug, it just means a
-  Filament-generated sidebar link followed to production instead of staying on localhost during
-  manual browser verification.)
-- **Deployed**: pushed, pulled, rebuilt `backend`+`frontend`, recreated — both containers healthy
-  on commit `38204a5`. Spot-checked live: `POST /api/orders/return-requests/preview` and
-  `POST /api/orders/track` both return the expected JSON (not a routing-level 404), confirming
-  the new routes are actually wired up in production.
-- **Not yet done: a real end-to-end guest submission through `https://petposture.com/returns`**
-  with a real order. The known stray test order `#00000014` can't be reused for this — it already
-  has an active return request (id `2`, approved), and its only real product line was already
-  fully consumed by that request, so even completing it would hit the new
-  already-fully-returned-line guard. Blocked on finding/being given a different real
-  `delivered`/`shipped` order + email with no return history — querying/listing production orders
-  in bulk to find one myself was (correctly) blocked as a PII bulk-read. **Deferred by Yuni to a
-  later session** — do this the next time there's a suitable order reference + email on hand.
-
-**Fixed a critical mail-delivery outage: `@petposture.com` had no working MX record**
-Investigating "does the `no-reply@` mailbox actually receive admin notification emails" (a follow-up from 2026-07-23) surfaced that it did not — and neither would any other address on the domain.
-- **Root cause**: `petposture.com`'s nameservers point at Cloudflare (`nelly.ns.cloudflare.com` / `sam.ns.cloudflare.com`), so Cloudflare's zone is authoritative — not Hostinger's own DNS panel. The Hostinger panel showed correct MX/DKIM/SPF/DMARC records, but those were sitting in Hostinger's *inactive* zone and were never live on the internet. Confirmed via DNS-over-HTTPS (`cloudflare-dns.com/dns-query`) against the real authoritative zone: **no MX record existed at all**, the DKIM CNAME was NXDOMAIN, SPF pointed at the wrong include (`_spf.reach.hostinger.com` instead of `_spf.mail.hostinger.com`), and DMARC had reverted to `p=none` instead of the documented `p=quarantine; pct=25`.
-- **Compounding factor found mid-fix**: Cloudflare **Email Routing** had been enabled for the zone that same day (mid-investigation), which locks the zone's MX/DKIM/SPF records to Cloudflare's own routing service (`route1-3.mx.cloudflare.net`) and is incompatible with routing mail straight to Hostinger mailboxes. Disabled it (Cloudflare dashboard → Email Routing → Settings → Disable) before re-adding the correct records.
-- **Fix**: added the missing records directly to the live Cloudflare zone (Zone ID `7c77d5e7f534eb3da62f474ec3c88e0a`) — 2 MX (`mx1`/`mx2.hostinger.com`, priority 5/10), 3 DKIM CNAMEs, `autodiscover`/`autoconfig` CNAMEs, BIMI TXT, corrected SPF, corrected DMARC. Verified all live via DNS-over-HTTPS, then confirmed actual delivery by sending a real test email and visually checking it landed in the Hostinger webmail inbox (twice — once pre-fix showing nothing arrived, once post-fix showing it arrived correctly).
-- **Tooling note**: a Cloudflare API token with `dns_records:edit` was used for read-only verification throughout, but Claude Code's own auto-mode classifier blocked every DNS-mutating `curl` call regardless of token scope — all actual record changes were made manually in the Cloudflare dashboard by Yuni, with Claude verifying before/after via read-only DNS queries. If this comes up again, budget for manual dashboard work, not API automation.
-
-**Adopted a 4-mailbox sender-identity architecture (mirrors what large ecommerce sites do)**
-- `no-reply@petposture.com` — transactional (order confirmation, invoice, tracking), internal admin notifications (`NewOrderAdmin`, `CancelledOrderAdmin`, `ContactFormSubmission`), and `NewsletterConfirmation`. Send-only, no one reads it, no Reply-To.
-- `support@petposture.com` — the address customers actually see/reply to. Set as **primary** Hostinger mailbox (SMTP login credential); the other three are aliases sharing the same inbox. Not a helpdesk yet (Zendesk/Freshdesk) — at current 1-person scale it's just the inbox Yuni checks directly, which works because aliases share one inbox regardless of which is "primary".
-- `accounts@petposture.com` — sender for `PasswordResetEmail`, isolates the security-sensitive reset flow from general transactional mail.
-- `hello@petposture.com` — sender for `WelcomeEmail`, with `Reply-To: support@petposture.com` to invite engagement on signup.
-- All 4 addresses are free Hostinger email aliases under the single mailbox (no extra paid mailbox needed) — created via hPanel → Email → Bí danh email (3/5 aliases now used).
-- **Backend credential change**: `backend/.env` `MAIL_USERNAME` changed from `no-reply@petposture.com` to `support@petposture.com` to match the new primary mailbox (same password — Hostinger keeps the account password when you promote an alias to primary). `MAIL_FROM_ADDRESS` unchanged (`no-reply@petposture.com`), since that's still the default sender for transactional mail. Backend container was recreated (not just `config:clear`) because Docker injects `env_file` values as real process env vars at container start — editing `.env` on the host doesn't reach an already-running container.
-- **Code changes** (commit `72c8c70`): added `from`/`replyTo` to the `Envelope` of `WelcomeEmail`, `ContactAutoReply`, `PasswordResetEmail`. `NewsletterConfirmation`, `ContactFormSubmission`, `NewOrderAdmin`, `CancelledOrderAdmin` deliberately left untouched — they're either internal-only or low-value-to-reply-to, so `no-reply@` is fine for them.
-- **Deliberately deferred, not done today**: splitting `support@` into a real helpdesk (Zendesk/Freshdesk) — revisit once there's more than one person handling support. Domain reputation is also brand-new as of today's DNS fix, so spreading sender identity across 4 addresses immediately carries some deliverability risk until the domain has a sending history; if spam-folder issues show up in the next few weeks, the first thing to check is whether `accounts@`/`hello@` need to warm up separately or should temporarily fold back into `no-reply@`.
-- Visually verified all 3 (`WelcomeEmail`, `ContactAutoReply`, `PasswordResetEmail`) via real sends to the Hostinger inbox (through `Mail::send()` in tinker, not the actual HTTP endpoints) — From/Reply-To render as intended.
-
-**Redesigned `ContactAutoReply` from a markdown Mailable to a branded custom Blade view**
-It was still using `Content(markdown: ...)`, which `RULES.md` explicitly bans for customer-facing mail — and it looked it (generic Laravel markdown styling, "please don't reply" boilerplate that directly contradicted the new `Reply-To: support@` behavior). Rebuilt `resources/views/mail/contact-auto-reply.blade.php` to match the `WelcomeEmail`/`PasswordResetEmail` branded HTML structure (logo, orange badge, checklist card, CTA button), with a footer that invites replying instead of forbidding it. Hotpatched to preview before committing (per Yuni's request), caught mid-preview that PHP OPcache was serving a stale compiled class after the hotpatch — `php artisan view:clear` alone doesn't clear OPcache, needed a container restart (`docker restart petposture-backend`) to actually see the new template. Confirmed correct on second send, then committed (`29a28c1`) and did a real `git pull` + rebuild + recreate deploy.
-
-**Fixed a recurring production error: blog endpoints querying a nonexistent `posts.is_published` column**
-`ContentController::posts()`/`post()` queried `where('is_published', true)`, but the `posts` table has only ever had a `status` string column (`draft`/`published`, per the 2026-04-19 migration and `PostResource`/Filament usage) — this has been throwing a `QueryException` on every hit to the public blog endpoints since the table was created. Explains the "every ~1 hour" pattern noticed in yesterday's log audit: the frontend's `/blog` page has a 1-hour ISR `revalidate`, so Next.js was silently hitting a broken endpoint on every regeneration. Fixed both queries to `where('status', 'published')` (commit `37763b1`), ran `gitnexus_impact` first (LOW risk, single caller `routes/api.php`) and `gitnexus_detect_changes` before committing per `CLAUDE.md`. Deployed; `curl http://127.0.0.1:8001/api/posts` now returns `200` instead of `500`.
-
-**Added Feature test coverage for the return-request flow (`tests/Feature/ReturnRequestApiTest.php`)**
-18 new tests covering: guest `POST /api/orders/return-requests` (delivered order, shipped order without `delivered_at`, unknown credentials → 404, missing fields → 422, order not delivered/shipped → 422, duplicate active request → 422, outside/inside the 30-day window), a direct `ReturnRequestService::create()` call for the empty-items rejection (unreachable via HTTP since the controller's own validation already requires `items: min:1`), and the full admin surface (`index`/`show`/`approve`/`reject`/`complete`, status guards, non-admin `403`). Found and fixed one real bug while writing them: `OrderReturnRequestResource` responses are wrapped in Laravel's default `data` key — worth remembering for any future test against a bare (non-`::collection()`) `JsonResource` return in this app. Full suite: 47 passed / 24 failed, same 24 pre-existing unrelated failures as documented below — no regressions.
-
-**Unified return-request lifecycle email subjects, added a Contact-support CTA to `OrderReturnApproved`, verified `OrderReturnRejected`/`OrderReturnApproved` end-to-end**
-`OrderReturnApproved`'s subject didn't even say "Approved" ("Your Return for Order #{ref}") and `OrderReturnRejected` used a different sentence structure entirely ("Update on Your Order #{ref} Return Request") — neither matched `OrderReturnRequested`'s established "Your Return Request for Order #{ref} Has Been [status]" pattern. Unified all three. Also gave `OrderReturnApproved` a "Contact support" button + lead-in line (it only had a plain-text mailto link, inconsistent with `OrderReturnRejected`'s styled button). Verified both against the real stray test order `#00000014` (return request id `2`, status `approved`) by constructing the Mailables directly from that persisted record and sending to its real `customer_reference` — confirms both templates render correctly with real data, not just synthetic fixtures.
-
-**Audited the remaining 4 untested email templates (`NewsletterConfirmation`, `ContactFormSubmission`, `NewOrderAdmin`, `CancelledOrderAdmin`) — redesigned 2, found and fixed a real spam-triggering bug**
-- `NewsletterConfirmation` (customer-facing) and `ContactFormSubmission` (internal) were both redesigned from `Content(markdown: ...)` to the branded custom Blade style. `NewOrderAdmin`/`CancelledOrderAdmin` were initially left as markdown (RULES.md's markdown ban is specifically for customer-facing mail) but redesigned later the same session per Yuni's request for visual consistency (commit `8a2f958`) — now match `OrderConfirmation`'s level of detail (per-line item images, full subtotal/discount/shipping/tax/total breakdown, both shipping and billing addresses, shipping method), reordered so "Customer information" comes before "Order summary" per feedback, plus a footer.
-- **Found via raw header inspection of 2 real test sends that both landed in Thư rác (Spam)**: `ContactFormSubmission`'s `Reply-To` was set to the *customer's own email* (a different domain than `From: no-reply@petposture.com`) — a classic phishing/BEC signal spam filters flag on, regardless of DKIM/SPF/DMARC all passing (which they did, both times — this was never a deliverability/DNS issue). Confirmed independently that Hostinger webmail doesn't even honor `Reply-To` on its Reply button (it always quotes/replies to the original `From`), so the header was simultaneously non-functional *and* actively harmful. Removed it entirely (commit `1d98bec`); admin can still read/copy the customer's email from the "From:" line rendered in the email body.
-- General lesson for any future Mailable: **a `Reply-To` pointing to a different domain than `From` is a spam-filter red flag** — only safe to use when Reply-To shares the sending domain (as `support@petposture.com` does on `WelcomeEmail`/`ContactAutoReply`).
+**Return Request: tracking note + 7-day auto-expiry** — commits `1b2c1fe`, `325b9de`, deployed and
+verified (`ps aux` inside the container confirms `schedule:work` running alongside `frankenphp` and
+`queue:work`)
+- New "Add Return Tracking" admin action captures the customer's own return-shipment tracking
+  (`return_tracking_number`/`return_carrier`/`package_received_at` on `order_return_requests`) —
+  informational only (a 🚚/📦 note/badge on the table), does **not** auto-drive the return's status.
+  Deliberately not wired to a webhook yet — physical arrival ≠ verified contents, so admin still has
+  to manually confirm via the existing "Mark Item Received" action.
+- An approved return request with no tracking number gets **7 days** (down from an initial 14,
+  shortened per Yuni) after `approved_at` before it auto-expires (new `expired` status) and emails
+  the customer (`OrderReturnExpired`) — a scheduled daily job (`returns:expire-overdue`).
+  Deliberately independent of the original 30-day return-eligibility window, which only gates
+  whether a request can be *created* — a return approved on day 28 still gets a fresh 7 days to
+  ship, not "2 days left of 30."
+- **Infra addition**: this project had never run the Laravel scheduler before — no OS cron, no
+  `Schedule::` calls anywhere. Added `php artisan schedule:work` as a third supervisord process.
+  `README.md`/`ARCHITECTURE.md`/`RULES.md` all updated to document this (a `Schedule::command()`
+  registration silently does nothing without this process running).
 
 ## Known gaps / not done
 
-- **Hostinger Mail trial expires 2026-08-15** (23 days from today) — must upgrade to a paid plan before then or every mailbox on the domain (including the just-fixed `no-reply@`/`support@`/`accounts@`/`hello@` aliases) stops working again.
-- `/contact` honeypot + logging is deployed but **not yet proven against the real bot** seen on 2026-07-23/24 — no repeat spam-flagged submission since deploy to confirm it actually stops that traffic. Check back in a week or two; add a captcha only if spam still gets through.
-- **Return Request Phase 2 is deployed but not yet confirmed via a real guest submission** on `https://petposture.com/returns` — see "Not yet done" note above. Only curl/route-level checks done so far.
-- Return Request Phase 3 (auto-generated prepaid return label via a carrier API) — still not started.
-- Return Request has no cumulative-quantity tracking gap left (Phase 2 closed it), but there's still no admin UI to see remaining-returnable-quantity per line at a glance — not blocking, just a nice-to-have if return volume grows.
+- **Refund Reason select** — proposed by Yuni (add a reason dropdown to the order-level Refund
+  action, e.g. "Low value — no return required," to create an audit trail for refund-without-return
+  cases, which also doubles as a paper trail for filing supplier claims on the dropship side).
+  Discussed, not yet built — awaiting go-ahead.
+- **Low-value auto-waive-return threshold** — idea surfaced while discussing dropshipping return
+  patterns (refund outright below some $ threshold instead of requiring the item back). Not
+  scoped, no dollar amount decided, not built.
+- **No deadline on the `requested` (pre-approval) return status** — only the post-approval tracking
+  window (7 days) auto-expires; if admin is slow to review a fresh request, it just sits there with
+  no reminder or auto-action. Raised, not decided whether it's worth building.
+- **AfterShip end-to-end not yet confirmed with a real carrier tracking number** — all verification
+  so far used obviously-fake tracking numbers (`1Z999AA...`), so the *code path* (webhook → shipment
+  match → aggregate delivered check → status update → email) is verified, but a real UPS/USPS/FedEx/
+  DHL delivery scan has not yet been observed triggering it end-to-end in production.
+- Carried over from 2026-07-24, still open: **Hostinger Mail trial expires 2026-08-15** — must
+  upgrade before then; `/contact` honeypot still not proven against a repeat spam bot; a real guest
+  return submission through `https://petposture.com/returns` (not just curl/route checks) is still
+  pending a suitable real order+email from Yuni.
 
-## Immediate follow-ups (small, next session)
+## Immediate follow-ups (next session)
 
-1. **Do a real end-to-end guest submission through `https://petposture.com/returns`** once there's a suitable real order (delivered/shipped, no prior return request) to use — see "Not yet done" note above. Deferred by Yuni.
-2. Watch `/contact` for repeat spam-bot submissions post-honeypot-deploy (see Known gaps).
-3. **Upgrade Hostinger Mail before 2026-08-15** or schedule a reminder — see Known gaps. (Explicitly deprioritized by Yuni — not urgent yet, but don't let it slip past the deadline.)
+1. Decide on the Refund Reason select (see Known gaps) and build it if wanted — small, low-risk.
+2. Decide on a low-value no-return-required threshold, if any.
+3. Watch for the next real "delivered" AfterShip webhook hit to confirm the new per-shipment
+   matching logic end-to-end with real carrier data (not test tracking numbers).
+4. Still pending from before: upgrade Hostinger Mail before 2026-08-15; a real end-to-end guest
+   return submission once Yuni has a suitable order+email on hand.
 
 ## Backlog / bigger asks (need scoping before starting)
 
-- **Return Request Phase 3** — auto-generated prepaid return shipping label via a carrier API. (Phase 2 — server-computed refund amount — shipped today, see above.)
+- **Return Request Phase 3** — auto-generated prepaid return shipping label via a carrier API.
+  Discussed today: likely makes most sense paired with a low-value no-return-required rule (only
+  bother generating labels for items worth the return-shipping cost) rather than building both
+  independently.
 - **PayPal payment gateway** — net-new integration alongside the existing custom Stripe integration.
 - **Shop by Solution / Shop by Breed re-think** — needs a business-side decision on target categories first.
 - **Support helpdesk tooling** (Zendesk/Freshdesk/shared inbox) for `support@petposture.com` — only worth it once there's more than one person handling customer replies.

@@ -73,8 +73,14 @@ petposture/
   (items, shipping/billing address, tracking, payment status), saved addresses, profile info
 - Order management & tracking, with a WooCommerce-style admin order view:
   status actions (mark paid/processing/shipped/delivered/cancel), refunds (full/partial via Stripe),
-  shipment tracking with carrier links, an auto-updating Order Notes activity timeline, and an
-  "Adjust Shipping" action for manually correcting a miscalculated order total
+  and an auto-updating Order Notes activity timeline
+- Multi-shipment tracking (added 2026-07-25): an order can ship in more than one package —
+  admin picks which items/quantities go in each shipment when marking an order shipped (or
+  adding another package to an already-shipped order), each with its own required tracking
+  number and carrier (no placeholder/auto-generated tracking allowed). Each order line shows
+  its own tracking on the order view. The AfterShip webhook matches per-shipment and only
+  auto-marks the whole order delivered once every shipment on it reports delivered; the
+  "Order Shipped" customer email fires once per shipment with that shipment's own items.
 - Order Attribution tracking (UTM/referrer origin, device type, session page views) — self-hosted,
   no third-party analytics service required
 - Stripe Radar fraud/risk scoring surfaced on the order view (automatic on every card payment)
@@ -107,8 +113,11 @@ petposture/
   lookup early with a friendly message if the order already has a return in progress. Admin's
   Return Requests table surfaces the resulting Refund/Fee amounts, and the Approve form warns if
   a manually-entered override deviates from the computed estimate.
-- Automatic "delivered" detection via an AfterShip tracking webhook (`/api/webhooks/aftership`,
-  HMAC-verified) — no more manually checking carrier tracking pages to close out an order
+  Once approved, admin can separately record the customer's own return-shipment tracking number
+  (a note/badge on the table — informational only, doesn't drive status). An approved request
+  with no tracking number 7 days after approval auto-expires and emails the customer (daily
+  scheduled job — independent of, and unrelated to, the original 30-day return-eligibility
+  window above, which only gates whether a request can be created in the first place).
 - Contact form (`/contact` → `POST /api/contact`) has a hidden honeypot field — a filled
   `website` field silently no-ops (200 response, no mail sent) instead of erroring, so bots
   don't learn they were caught — and every real submission is logged (IP + email domain) for
