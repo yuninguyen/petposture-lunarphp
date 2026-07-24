@@ -179,7 +179,7 @@ class ViewOrder extends ViewRecord
                                 ->columnSpanFull(),
                         ])->columns(2)->columnSpan(3)->extraAttributes(['class' => 'h-full']),
 
-                    Infolists\Components\Grid::make(1)
+                    Infolists\Components\Grid::make(2)
                         ->schema([
                             Infolists\Components\Section::make(__('Order Attribution'))
                                 ->schema([
@@ -214,7 +214,7 @@ class ViewOrder extends ViewRecord
                                         ->label(__('Note'))
                                         ->default('—')
                                         ->columnSpanFull(),
-                                ])->columns(2),
+                                ]),
                         ])->columnSpan(2),
                 ])->extraAttributes(['class' => 'items-stretch']),
 
