@@ -20,6 +20,6 @@ class NewOrderAdmin extends Mailable
 
     public function content(): Content
     {
-        return new Content(markdown: 'mail.new-order-admin');
+        return new Content(view: 'mail.new-order-admin');
     }
 }
