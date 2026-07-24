@@ -349,9 +349,7 @@ class OrderOperationsService
         $meta['refunded_at'] = now()->toDateTimeString();
         $meta['refund_amount'] = $refund['amount'];
 
-        if ($isFullRefund) {
-            $meta['payment_status'] = 'refunded';
-        }
+        $meta['payment_status'] = $isFullRefund ? 'refunded' : 'partially-refunded';
 
         if ($reason !== null) {
             $meta['refund_reason'] = $reason;
