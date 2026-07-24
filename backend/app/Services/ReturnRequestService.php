@@ -65,18 +65,23 @@ class ReturnRequestService
             ]);
         }
 
+        $quantityByLine = [];
         foreach ($items as $item) {
-            $line = $order->lines->firstWhere('id', $item['order_line_id']);
+            $quantityByLine[$item['order_line_id']] = ($quantityByLine[$item['order_line_id']] ?? 0) + $item['quantity'];
+        }
+
+        foreach ($quantityByLine as $orderLineId => $totalQuantity) {
+            $line = $order->lines->firstWhere('id', $orderLineId);
 
             if (! $line) {
                 throw ValidationException::withMessages([
-                    'items' => ["Order line {$item['order_line_id']} does not belong to this order."],
+                    'items' => ["Order line {$orderLineId} does not belong to this order."],
                 ]);
             }
 
-            if ($item['quantity'] > $line->quantity) {
+            if ($totalQuantity > $line->quantity) {
                 throw ValidationException::withMessages([
-                    'items' => ["Cannot return more than the purchased quantity for order line {$item['order_line_id']}."],
+                    'items' => ["Cannot return more than the purchased quantity for order line {$orderLineId}."],
                 ]);
             }
         }

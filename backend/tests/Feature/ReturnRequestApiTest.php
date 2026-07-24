@@ -139,6 +139,22 @@ class ReturnRequestApiTest extends TestCase
             ->assertJsonValidationErrors(['items']);
     }
 
+    public function test_return_request_rejects_duplicate_line_quantity_exceeding_purchased_quantity(): void
+    {
+        ['reference' => $reference, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
+
+        $payload = $this->returnRequestPayload($reference, $lineId);
+        // Same order_line_id split across two items — quantities must be summed, not checked independently.
+        $payload['items'] = [
+            ['order_line_id' => $lineId, 'quantity' => 1],
+            ['order_line_id' => $lineId, 'quantity' => 1],
+        ];
+
+        $this->postJson('/api/orders/return-requests', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['items']);
+    }
+
     public function test_return_request_rejects_when_outside_30_day_window(): void
     {
         ['order_id' => $orderId, 'reference' => $reference, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
