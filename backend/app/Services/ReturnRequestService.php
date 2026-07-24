@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Mail\OrderReturnApproved;
+use App\Mail\OrderReturnExpired;
 use App\Mail\OrderReturnRejected;
 use App\Mail\OrderReturnRequested;
 use App\Models\OrderReturnRequest;
@@ -17,6 +18,12 @@ class ReturnRequestService
     private const RETURN_WINDOW_DAYS = 30;
 
     private const RESTOCKING_FEE_PERCENT = 25;
+
+    /**
+     * Days after approval the customer has to ship the item back and supply
+     * a tracking number before the approved return authorization expires.
+     */
+    private const TRACKING_SUBMISSION_WINDOW_DAYS = 14;
 
     public function __construct(
         private readonly OrderOperationsService $orderOperations,
@@ -287,6 +294,44 @@ class ReturnRequestService
         );
 
         return $returnRequest->refresh();
+    }
+
+    /**
+     * Expire approved return requests where the customer never supplied a
+     * return tracking number within the submission window. Intended to run
+     * on a daily schedule. Returns the number of requests expired.
+     */
+    public function expireOverdueRequests(): int
+    {
+        $overdue = OrderReturnRequest::query()
+            ->where('status', OrderReturnRequest::STATUS_APPROVED)
+            ->whereNull('return_tracking_number')
+            ->where('approved_at', '<=', now()->subDays(self::TRACKING_SUBMISSION_WINDOW_DAYS))
+            ->with('order')
+            ->get();
+
+        foreach ($overdue as $returnRequest) {
+            $returnRequest->update([
+                'status' => OrderReturnRequest::STATUS_EXPIRED,
+                'expired_at' => now(),
+            ]);
+
+            $this->orderEventService->record(
+                $returnRequest->order,
+                'return_request.expired',
+                'Return request expired',
+                sprintf(
+                    'No return tracking was provided within %d days of approval.',
+                    self::TRACKING_SUBMISSION_WINDOW_DAYS
+                )
+            );
+
+            if ($returnRequest->order->customer_reference) {
+                Mail::to($returnRequest->order->customer_reference)->send(new OrderReturnExpired($returnRequest));
+            }
+        }
+
+        return $overdue->count();
     }
 
     public function complete(OrderReturnRequest $returnRequest): OrderReturnRequest

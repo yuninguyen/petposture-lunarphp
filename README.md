@@ -21,6 +21,7 @@ An e-commerce platform for pet posture products, built as a monorepo with Next.j
 | Database | MySQL |
 | Cache & Session | Redis (via `predis/predis`) |
 | Queue | Database driver, processed by a `queue:work` process (supervisord) |
+| Scheduler | Laravel scheduler, driven by a `schedule:work` process (supervisord) |
 | Hosting | VPS (Docker Compose, 3 containers: backend + frontend + redis) |
 
 ---
@@ -56,7 +57,7 @@ petposture/
 │   │   ├── migrations/
 │   │   └── seeders/
 │   ├── Dockerfile
-│   ├── supervisord.conf        # Runs frankenphp + queue:work together
+│   ├── supervisord.conf        # Runs frankenphp + queue:work + schedule:work together
 │   └── routes/api.php
 ├── docker-compose.prod.yml     # VPS deployment (backend + frontend containers)
 └── docker-compose.yml          # Local dev
@@ -249,12 +250,16 @@ Laravel on every request.
 
 ### Backend container processes (supervisord)
 
-The backend container runs two processes side by side so queued jobs (order confirmation
-emails, lifecycle emails, IP-intelligence lookups, outbound webhooks) actually get processed
-instead of piling up unprocessed in the `jobs` table:
+The backend container runs three processes side by side:
 
 - `frankenphp` — serves the app
-- `php artisan queue:work` — processes the database queue
+- `php artisan queue:work` — processes the database queue, so queued jobs (order confirmation
+  emails, lifecycle emails, IP-intelligence lookups, outbound webhooks) actually get processed
+  instead of piling up unprocessed in the `jobs` table
+- `php artisan schedule:work` — runs Laravel's scheduler (added 2026-07-25 alongside
+  `returns:expire-overdue`, the first scheduled command in the project — see `routes/console.php`).
+  Without this process, anything registered via `Schedule::command()` silently never runs; there's
+  no OS-level cron on the container, so this long-running process is the only thing driving it.
 
 The container's entrypoint also runs `php artisan migrate --force` and cache-warms
 (`config:cache`, `route:cache`, `view:cache`, `event:cache`) on every start/restart.

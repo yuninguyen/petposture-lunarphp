@@ -60,6 +60,7 @@ class OrderReturnRequestResource extends Resource
                         'approved' => 'info',
                         'rejected' => 'danger',
                         'completed' => 'success',
+                        'expired' => 'gray',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => str($state)->headline()->toString()),
@@ -101,6 +102,7 @@ class OrderReturnRequestResource extends Resource
                         'approved' => __('Approved'),
                         'rejected' => __('Rejected'),
                         'completed' => __('Completed'),
+                        'expired' => __('Expired'),
                     ]),
             ])
             ->actions([

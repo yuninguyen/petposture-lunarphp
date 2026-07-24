@@ -17,6 +17,8 @@ class OrderReturnRequest extends Model
 
     public const STATUS_COMPLETED = 'completed';
 
+    public const STATUS_EXPIRED = 'expired';
+
     protected $fillable = [
         'order_id',
         'status',
@@ -35,6 +37,7 @@ class OrderReturnRequest extends Model
         'approved_at',
         'rejected_at',
         'completed_at',
+        'expired_at',
         'meta',
     ];
 
@@ -46,6 +49,7 @@ class OrderReturnRequest extends Model
         'rejected_at' => 'datetime',
         'completed_at' => 'datetime',
         'package_received_at' => 'datetime',
+        'expired_at' => 'datetime',
     ];
 
     public function order(): BelongsTo
