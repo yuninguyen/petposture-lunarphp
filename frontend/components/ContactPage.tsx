@@ -78,7 +78,8 @@ export default function ContactPage() {
         email: '',
         orderNumber: '',
         subject: '',
-        message: ''
+        message: '',
+        website: '' // honeypot: hidden from real users, bots tend to fill every field
     });
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
@@ -116,6 +117,7 @@ export default function ContactPage() {
                     subject: formData.subject,
                     message: formData.message,
                     order_number: formData.orderNumber || undefined,
+                    website: formData.website,
                 }),
             });
 
@@ -191,6 +193,17 @@ export default function ContactPage() {
                         )}
 
                         <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+                            {/* Honeypot: hidden from real users, off-screen for bots that ignore CSS */}
+                            <input
+                                type="text"
+                                name="website"
+                                value={formData.website}
+                                onChange={handleInputChange}
+                                tabIndex={-1}
+                                autoComplete="off"
+                                aria-hidden="true"
+                                className="absolute -left-[9999px] w-px h-px opacity-0"
+                            />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Full Name */}
                                 <div className="relative group">

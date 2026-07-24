@@ -21,7 +21,19 @@ class ContactController extends Controller
             'subject'      => 'required|string|max:255',
             'message'      => 'required|string|max:5000',
             'order_number' => 'nullable|string|max:100',
+            'website'      => 'nullable|string|max:255', // honeypot: real users never see/fill this field
         ])->validate();
+
+        if (! empty($validated['website'])) {
+            Log::info('Contact form spam blocked (honeypot)', ['ip' => $request->ip(), 'email' => $validated['email']]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Your message has been sent. We\'ll get back to you within 24 hours.',
+            ]);
+        }
+
+        Log::info('Contact form submission', ['ip' => $request->ip(), 'email_domain' => substr(strrchr($validated['email'], '@'), 1)]);
 
         $adminEmail = 'support@petposture.com';
 
