@@ -39,7 +39,7 @@ class OrderStateMachine
     public function availableActions(string $status): array
     {
         return collect(self::ACTION_STATUS_MAP)
-            ->filter(fn (string $targetStatus) => $this->canTransition($status, $targetStatus))
+            ->filter(fn (string $targetStatus) => $targetStatus !== $status && $this->canTransition($status, $targetStatus))
             ->map(fn (string $targetStatus, string $action) => [
                 'action' => $action,
                 'target_status' => $targetStatus,

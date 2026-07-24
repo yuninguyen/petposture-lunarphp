@@ -21,18 +21,43 @@ class ViewOrder extends ViewRecord
         $actions = collect($operations->availableActions($this->record))
             ->map(function (array $action) use ($operations) {
                 $isCancel = $action['action'] === 'cancelOrder';
+                $isShipped = $action['action'] === 'markShipped';
 
-                return Actions\Action::make($action['action'])
+                $builder = Actions\Action::make($action['action'])
                     ->label($action['label'])
                     ->color($isCancel ? 'danger' : 'primary')
-                    ->requiresConfirmation()
-                    ->action(function () use ($operations, $action) {
-                        $operations->performAction($this->record, $action['action']);
+                    ->requiresConfirmation();
 
-                        $this->redirect(static::getUrl(['record' => $this->record]));
-                    });
+                if ($isShipped) {
+                    $builder = $builder
+                        ->modalDescription(__('Enter the tracking number so the customer can track their shipment and AfterShip can auto-update delivery status.'))
+                        ->form([
+                            Forms\Components\TextInput::make('tracking_number')
+                                ->label(__('Tracking Number'))
+                                ->maxLength(255),
+                            Forms\Components\Select::make('shipment_carrier')
+                                ->label(__('Carrier'))
+                                ->native(false)
+                                ->options([
+                                    'ups' => 'UPS',
+                                    'usps' => 'USPS',
+                                    'fedex' => 'FedEx',
+                                    'dhl' => 'DHL',
+                                    'manual' => 'Other / Manual',
+                                ])
+                                ->default('manual'),
+                        ]);
+                }
+
+                return $builder->action(function (array $data = []) use ($operations, $action) {
+                    $operations->performAction($this->record, $action['action'], $data);
+
+                    $this->redirect(static::getUrl(['record' => $this->record]));
+                });
             })
             ->all();
+
+        $secondaryActions = [];
 
         $meta = (array) ($this->record->meta ?? []);
 
@@ -40,7 +65,7 @@ class ViewOrder extends ViewRecord
             && ($meta['fulfillment_status'] ?? null) !== 'returned';
 
         if ($isReturnable) {
-            $actions[] = Actions\Action::make('markReturned')
+            $secondaryActions[] = Actions\Action::make('markReturned')
                 ->label(__('Mark Returned'))
                 ->color('gray')
                 ->requiresConfirmation()
@@ -57,7 +82,7 @@ class ViewOrder extends ViewRecord
             && ($meta['refund_status'] ?? null) !== 'refunded';
 
         if ($isRefundable) {
-            $actions[] = Actions\Action::make('refund')
+            $secondaryActions[] = Actions\Action::make('refund')
                 ->label(__('Refund'))
                 ->color('danger')
                 ->form([
@@ -78,25 +103,12 @@ class ViewOrder extends ViewRecord
                 });
         }
 
-        $actions[] = Actions\Action::make('adjustShipping')
-            ->label(__('Adjust Shipping'))
-            ->color('gray')
-            ->form([
-                Forms\Components\TextInput::make('shipping_total')
-                    ->label(__('Correct Shipping Total'))
-                    ->numeric()
-                    ->minValue(0)
-                    ->prefix('$')
-                    ->required(),
-            ])
-            ->requiresConfirmation()
-            ->action(function (array $data) {
-                $shippingTotalMinor = (int) round(((float) $data['shipping_total']) * 100);
-
-                app(OrderOperationsService::class)->adjustShipping($this->record, $shippingTotalMinor);
-
-                $this->redirect(static::getUrl(['record' => $this->record]));
-            });
+        if ($secondaryActions !== []) {
+            $actions[] = Actions\ActionGroup::make($secondaryActions)
+                ->label(__('More Actions'))
+                ->icon('heroicon-o-ellipsis-vertical')
+                ->color('gray');
+        }
 
         return $actions;
     }
@@ -163,41 +175,44 @@ class ViewOrder extends ViewRecord
                                 ->state(fn($record) => static::formatCustomerIpBlock((array) ($record->meta ?? []))),
                         ])->columns(2)->columnSpan(3)->extraAttributes(['class' => 'h-full']),
 
-                    Infolists\Components\Section::make(__('Order Attribution'))
+                    Infolists\Components\Grid::make(1)
                         ->schema([
-                            Infolists\Components\TextEntry::make('meta.attribution_origin')
-                                ->label(__('Origin'))
-                                ->default('—'),
-                            Infolists\Components\TextEntry::make('meta.attribution_device_type')
-                                ->label(__('Device Type'))
-                                ->default('—'),
-                            Infolists\Components\TextEntry::make('meta.attribution_session_page_views')
-                                ->label(__('Session Page Views'))
-                                ->default('—'),
-                        ])->columnSpan(2)->extraAttributes(['class' => 'h-full']),
-                ])->extraAttributes(['class' => 'items-stretch']),
+                            Infolists\Components\Section::make(__('Order Attribution'))
+                                ->schema([
+                                    Infolists\Components\TextEntry::make('meta.attribution_origin')
+                                        ->label(__('Origin'))
+                                        ->default('—'),
+                                    Infolists\Components\TextEntry::make('meta.attribution_device_type')
+                                        ->label(__('Device Type'))
+                                        ->default('—'),
+                                    Infolists\Components\TextEntry::make('meta.attribution_session_page_views')
+                                        ->label(__('Session Page Views'))
+                                        ->default('—'),
+                                ]),
 
-            Infolists\Components\Section::make(__('Fraud & Risk'))
-                ->description(__('Powered by Stripe Radar — automatic on every card payment, no extra setup required.'))
-                ->visible(fn($record) => filled($record->meta['fraud_risk_level'] ?? null))
-                ->schema([
-                    Infolists\Components\TextEntry::make('meta.fraud_risk_level')
-                        ->label(__('Risk Level'))
-                        ->badge()
-                        ->formatStateUsing(fn(?string $state): string => $state ? str($state)->headline()->toString() : '—')
-                        ->color(fn(?string $state): string => match ($state) {
-                            'highest' => 'danger',
-                            'elevated' => 'warning',
-                            default => 'success',
-                        }),
-                    Infolists\Components\TextEntry::make('meta.fraud_risk_score')
-                        ->label(__('Risk Score'))
-                        ->default('—'),
-                    Infolists\Components\TextEntry::make('meta.fraud_seller_message')
-                        ->label(__('Note'))
-                        ->default('—')
-                        ->columnSpanFull(),
-                ])->columns(2),
+                            Infolists\Components\Section::make(__('Fraud & Risk'))
+                                ->description(__('Powered by Stripe Radar — automatic on every card payment, no extra setup required.'))
+                                ->visible(fn($record) => filled($record->meta['fraud_risk_level'] ?? null))
+                                ->schema([
+                                    Infolists\Components\TextEntry::make('meta.fraud_risk_level')
+                                        ->label(__('Risk Level'))
+                                        ->badge()
+                                        ->formatStateUsing(fn(?string $state): string => $state ? str($state)->headline()->toString() : '—')
+                                        ->color(fn(?string $state): string => match ($state) {
+                                            'highest' => 'danger',
+                                            'elevated' => 'warning',
+                                            default => 'success',
+                                        }),
+                                    Infolists\Components\TextEntry::make('meta.fraud_risk_score')
+                                        ->label(__('Risk Score'))
+                                        ->default('—'),
+                                    Infolists\Components\TextEntry::make('meta.fraud_seller_message')
+                                        ->label(__('Note'))
+                                        ->default('—')
+                                        ->columnSpanFull(),
+                                ])->columns(2),
+                        ])->columnSpan(2),
+                ])->extraAttributes(['class' => 'items-stretch']),
 
             Infolists\Components\Grid::make(2)
                 ->schema([
@@ -259,7 +274,9 @@ class ViewOrder extends ViewRecord
                                 $rows[] = 'Discount: -' . $money($record->discount_total);
                             }
 
-                            $rows[] = 'Shipping: ' . $money($record->shipping_total);
+                            $shippingMethodName = app(\App\Services\ShippingService::class)
+                                ->nameFor((string) ($record->meta['shipping_method'] ?? 'standard'));
+                            $rows[] = "Shipping - {$shippingMethodName}: " . $money($record->shipping_total);
                             $rows[] = 'Tax: ' . $money($record->tax_total);
                             $rows[] = '<strong>Order Total: ' . $money($record->total) . '</strong>';
 
