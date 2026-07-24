@@ -23,7 +23,7 @@ class ReturnRequestService
      * Days after approval the customer has to ship the item back and supply
      * a tracking number before the approved return authorization expires.
      */
-    private const TRACKING_SUBMISSION_WINDOW_DAYS = 14;
+    private const TRACKING_SUBMISSION_WINDOW_DAYS = 7;
 
     public function __construct(
         private readonly OrderOperationsService $orderOperations,
