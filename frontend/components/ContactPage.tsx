@@ -132,7 +132,7 @@ export default function ContactPage() {
             }
 
             setStatus('success');
-            setFormData({ name: '', email: '', orderNumber: '', subject: '', message: '' });
+            setFormData({ name: '', email: '', orderNumber: '', subject: '', message: '', website: '' });
         } catch (err) {
             setStatus('error');
             setErrorMessage(err instanceof Error ? err.message : MESSAGES.error);
