@@ -337,7 +337,8 @@ class ViewOrder extends ViewRecord
                                 ->html()
                                 ->visible(fn($record) => static::formatLineTracking($record) !== null)
                                 ->state(fn($record) => static::formatLineTracking($record))
-                                ->columnSpanFull(),
+                                ->columnSpanFull()
+                                ->extraAttributes(['class' => '-mt-4']),
                         ])
                         ->columns(6)
                         ->columnSpanFull(),
