@@ -18,6 +18,8 @@ class OrderReturnRequestResource extends JsonResource
             'admin_note' => $this->admin_note,
             'rma_address' => $this->rma_address,
             'refund_amount' => $this->refund_amount_minor !== null ? $this->refund_amount_minor / 100 : null,
+            'restocking_fee' => $this->restocking_fee_minor !== null ? $this->restocking_fee_minor / 100 : null,
+            'fee_waived' => (bool) $this->fee_waived,
             'requested_at' => $this->requested_at?->toIso8601String(),
             'approved_at' => $this->approved_at?->toIso8601String(),
             'rejected_at' => $this->rejected_at?->toIso8601String(),

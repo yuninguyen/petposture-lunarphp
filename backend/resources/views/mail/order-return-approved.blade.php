@@ -55,7 +55,12 @@ Hi {{ $order->shippingAddress?->first_name ?? 'there' }}, good news &mdash; your
 <span style="color:#707070; white-space:pre-line;">{{ $returnRequest->rma_address }}</span>
 </p>
 @if($refundAmount !== null)
-<p style="margin:0; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Estimated refund:</strong> <span style="color:#707070;">${{ number_format($refundAmount, 2) }}</span></p>
+@if($returnRequest->restocking_fee_minor !== null)
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 6px; font-size:13px; line-height:1.6; color:#707070;">
+Restocking fee: {{ $returnRequest->fee_waived ? 'Waived' : '$' . number_format($returnRequest->restocking_fee_minor / 100, 2) . ' (25%)' }}
+</p>
+@endif
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Estimated refund:</strong> <span style="color:#707070;">${{ number_format($refundAmount, 2) }}</span></p>
 @endif
 </td>
 </tr>

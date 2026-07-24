@@ -204,6 +204,59 @@ class ReturnRequestApiTest extends TestCase
         Mail::assertSent(OrderReturnApproved::class);
     }
 
+    public function test_admin_approve_auto_computes_restocking_fee_when_not_waived(): void
+    {
+        $returnRequestId = $this->createReturnRequestViaApi()['id'];
+
+        $this->makeAdmin();
+
+        $response = $this->postJson("/api/admin/return-requests/{$returnRequestId}/approve", [
+            'rma_address' => '123 Warehouse Rd, Austin, TX 78701',
+        ]);
+
+        // Line price is $89.99: 25% restocking fee on the pre-tax subtotal = $22.50.
+        // Refund = subtotal + tax - fee = $89.99 + tax - $22.50.
+        $response->assertOk()
+            ->assertJsonPath('data.restocking_fee', 22.5)
+            ->assertJsonPath('data.fee_waived', false)
+            ->assertJsonPath('data.refund_amount', 74.87);
+    }
+
+    public function test_admin_approve_waives_restocking_fee_when_requested(): void
+    {
+        $returnRequestId = $this->createReturnRequestViaApi()['id'];
+
+        $this->makeAdmin();
+
+        $response = $this->postJson("/api/admin/return-requests/{$returnRequestId}/approve", [
+            'rma_address' => '123 Warehouse Rd, Austin, TX 78701',
+            'fee_waived' => true,
+        ]);
+
+        // Fee waived: refund = full subtotal + tax, no restocking deduction.
+        $response->assertOk()
+            ->assertJsonPath('data.restocking_fee', 0)
+            ->assertJsonPath('data.fee_waived', true)
+            ->assertJsonPath('data.refund_amount', 97.37);
+    }
+
+    public function test_admin_can_override_computed_refund_amount(): void
+    {
+        $returnRequestId = $this->createReturnRequestViaApi()['id'];
+
+        $this->makeAdmin();
+
+        $response = $this->postJson("/api/admin/return-requests/{$returnRequestId}/approve", [
+            'rma_address' => '123 Warehouse Rd, Austin, TX 78701',
+            'refund_amount' => 25.50,
+        ]);
+
+        // Explicit refund_amount overrides the computed estimate, but the fee is still recorded for audit.
+        $response->assertOk()
+            ->assertJsonPath('data.restocking_fee', 22.5)
+            ->assertJsonPath('data.refund_amount', 25.5);
+    }
+
     public function test_admin_can_reject_return_request(): void
     {
         $returnRequestId = $this->createReturnRequestViaApi()['id'];

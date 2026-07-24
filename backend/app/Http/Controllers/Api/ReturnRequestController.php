@@ -15,8 +15,7 @@ class ReturnRequestController extends Controller
 {
     public function __construct(
         private readonly ReturnRequestService $returnRequestService,
-    ) {
-    }
+    ) {}
 
     /**
      * Submit a new return request (guest lookup via order reference + email).
@@ -99,6 +98,7 @@ class ReturnRequestController extends Controller
 
         $validated = Validator::make($request->all(), [
             'rma_address' => 'required|string|max:2000',
+            'fee_waived' => 'nullable|boolean',
             'refund_amount' => 'nullable|numeric|min:0',
             'admin_note' => 'nullable|string|max:2000',
         ])->validate();
@@ -109,7 +109,7 @@ class ReturnRequestController extends Controller
             return response()->json(['message' => 'Return request not found'], 404);
         }
 
-        $refundAmountMinor = isset($validated['refund_amount'])
+        $refundAmountOverrideMinor = isset($validated['refund_amount'])
             ? (int) round((float) $validated['refund_amount'] * 100)
             : null;
 
@@ -117,7 +117,8 @@ class ReturnRequestController extends Controller
             $returnRequest = $this->returnRequestService->approve(
                 $returnRequest,
                 $validated['rma_address'],
-                $refundAmountMinor,
+                (bool) ($validated['fee_waived'] ?? false),
+                $refundAmountOverrideMinor,
                 $validated['admin_note'] ?? null,
             );
         } catch (ValidationException $e) {

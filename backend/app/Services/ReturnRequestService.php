@@ -7,6 +7,7 @@ use App\Mail\OrderReturnRejected;
 use App\Mail\OrderReturnRequested;
 use App\Models\OrderReturnRequest;
 use App\Models\OrderReturnRequestItem;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Lunar\Models\Order;
@@ -15,14 +16,15 @@ class ReturnRequestService
 {
     private const RETURN_WINDOW_DAYS = 30;
 
+    private const RESTOCKING_FEE_PERCENT = 25;
+
     public function __construct(
         private readonly OrderOperationsService $orderOperations,
         private readonly OrderEventService $orderEventService,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array<int, array{order_line_id: int, quantity: int}> $items
+     * @param  array<int, array{order_line_id: int, quantity: int}>  $items
      */
     public function create(Order $order, array $items, string $reason, ?string $customerNote): OrderReturnRequest
     {
@@ -37,11 +39,11 @@ class ReturnRequestService
             : null;
 
         if ($order->status === 'delivered' && $deliveredAt) {
-            $deadline = \Illuminate\Support\Carbon::parse($deliveredAt)->addDays(self::RETURN_WINDOW_DAYS);
+            $deadline = Carbon::parse($deliveredAt)->addDays(self::RETURN_WINDOW_DAYS);
 
             if (now()->greaterThan($deadline)) {
                 throw ValidationException::withMessages([
-                    'order' => ['This order is outside our ' . self::RETURN_WINDOW_DAYS . '-day return window.'],
+                    'order' => ['This order is outside our '.self::RETURN_WINDOW_DAYS.'-day return window.'],
                 ]);
             }
         }
@@ -93,14 +95,49 @@ class ReturnRequestService
         return $returnRequest->refresh()->loadMissing(['order', 'items.orderLine']);
     }
 
-    public function approve(OrderReturnRequest $returnRequest, string $rmaAddress, ?int $refundAmountMinor, ?string $adminNote): OrderReturnRequest
+    /**
+     * @return array{item_subtotal_minor: int, tax_minor: int, restocking_fee_minor: int, refund_amount_minor: int}
+     */
+    public function calculateRefundEstimate(OrderReturnRequest $returnRequest, bool $feeWaived): array
+    {
+        $itemSubtotalMinor = 0;
+        $taxMinor = 0;
+
+        foreach ($returnRequest->items()->with('orderLine')->get() as $item) {
+            $line = $item->orderLine;
+
+            if (! $line || $line->quantity <= 0) {
+                continue;
+            }
+
+            $ratio = $item->quantity / $line->quantity;
+            $itemSubtotalMinor += (int) round($this->moneyToMinor($line->sub_total) * $ratio);
+            $taxMinor += (int) round($this->moneyToMinor($line->tax_total) * $ratio);
+        }
+
+        $restockingFeeMinor = $feeWaived ? 0 : (int) round($itemSubtotalMinor * self::RESTOCKING_FEE_PERCENT / 100);
+        $refundAmountMinor = max(0, $itemSubtotalMinor + $taxMinor - $restockingFeeMinor);
+
+        return [
+            'item_subtotal_minor' => $itemSubtotalMinor,
+            'tax_minor' => $taxMinor,
+            'restocking_fee_minor' => $restockingFeeMinor,
+            'refund_amount_minor' => $refundAmountMinor,
+        ];
+    }
+
+    public function approve(OrderReturnRequest $returnRequest, string $rmaAddress, bool $feeWaived, ?int $refundAmountMinorOverride, ?string $adminNote): OrderReturnRequest
     {
         $this->guardStatus($returnRequest, OrderReturnRequest::STATUS_REQUESTED);
+
+        $estimate = $this->calculateRefundEstimate($returnRequest, $feeWaived);
 
         $returnRequest->update([
             'status' => OrderReturnRequest::STATUS_APPROVED,
             'rma_address' => $rmaAddress,
-            'refund_amount_minor' => $refundAmountMinor,
+            'refund_amount_minor' => $refundAmountMinorOverride ?? $estimate['refund_amount_minor'],
+            'restocking_fee_minor' => $estimate['restocking_fee_minor'],
+            'fee_waived' => $feeWaived,
             'admin_note' => $adminNote,
             'approved_at' => now(),
         ]);
@@ -157,6 +194,15 @@ class ReturnRequestService
         $this->orderOperations->returnOrder($returnRequest->order);
 
         return $returnRequest->refresh()->loadMissing(['order', 'items.orderLine']);
+    }
+
+    private function moneyToMinor(mixed $amount): int
+    {
+        if (is_object($amount) && property_exists($amount, 'value')) {
+            return (int) $amount->value;
+        }
+
+        return is_numeric($amount) ? (int) $amount : 0;
     }
 
     private function guardStatus(OrderReturnRequest $returnRequest, string $expected): void

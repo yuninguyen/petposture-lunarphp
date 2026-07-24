@@ -10,8 +10,11 @@ use Lunar\Models\Order;
 class OrderReturnRequest extends Model
 {
     public const STATUS_REQUESTED = 'requested';
+
     public const STATUS_APPROVED = 'approved';
+
     public const STATUS_REJECTED = 'rejected';
+
     public const STATUS_COMPLETED = 'completed';
 
     protected $fillable = [
@@ -22,6 +25,8 @@ class OrderReturnRequest extends Model
         'admin_note',
         'rma_address',
         'refund_amount_minor',
+        'restocking_fee_minor',
+        'fee_waived',
         'requested_at',
         'approved_at',
         'rejected_at',
@@ -31,6 +36,7 @@ class OrderReturnRequest extends Model
 
     protected $casts = [
         'meta' => 'array',
+        'fee_waived' => 'boolean',
         'requested_at' => 'datetime',
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',

@@ -7,6 +7,7 @@ use App\Models\OrderReturnRequest;
 use App\Services\ReturnRequestService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -45,7 +46,7 @@ class OrderReturnRequestResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('order.reference')
                     ->label(__('Order'))
-                    ->formatStateUsing(fn(?string $state): string => $state ? "#{$state}" : '—')
+                    ->formatStateUsing(fn (?string $state): string => $state ? "#{$state}" : '—')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('reason')
@@ -54,14 +55,14 @@ class OrderReturnRequestResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'requested' => 'warning',
                         'approved' => 'info',
                         'rejected' => 'danger',
                         'completed' => 'success',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => str($state)->headline()->toString()),
+                    ->formatStateUsing(fn (string $state): string => str($state)->headline()->toString()),
                 Tables\Columns\TextColumn::make('items_count')
                     ->label(__('Items'))
                     ->counts('items'),
@@ -85,13 +86,28 @@ class OrderReturnRequestResource extends Resource
                     ->label(__('Approve'))
                     ->icon('heroicon-o-check')
                     ->color('success')
-                    ->visible(fn(OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_REQUESTED)
+                    ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_REQUESTED)
                     ->form([
                         Forms\Components\Textarea::make('rma_address')
                             ->label(__('RMA Return Address'))
                             ->required(),
-                        Forms\Components\TextInput::make('refund_amount')
-                            ->label(__('Estimated Refund Amount (leave blank if unknown yet)'))
+                        Forms\Components\Toggle::make('fee_waived')
+                            ->label(__('Waive 25% restocking fee (defective/wrong item)'))
+                            ->live(),
+                        Forms\Components\Placeholder::make('refund_estimate')
+                            ->label(__('Computed refund estimate'))
+                            ->content(function (Get $get, OrderReturnRequest $record): string {
+                                $estimate = app(ReturnRequestService::class)->calculateRefundEstimate($record, (bool) $get('fee_waived'));
+
+                                return sprintf(
+                                    'Item value: $%.2f — Restocking fee: $%.2f — Estimated refund: $%.2f',
+                                    $estimate['item_subtotal_minor'] / 100,
+                                    $estimate['restocking_fee_minor'] / 100,
+                                    $estimate['refund_amount_minor'] / 100,
+                                );
+                            }),
+                        Forms\Components\TextInput::make('refund_amount_override')
+                            ->label(__('Override refund amount (optional, leave blank to use the computed estimate above)'))
                             ->numeric()
                             ->prefix('$'),
                         Forms\Components\Textarea::make('admin_note')
@@ -99,14 +115,15 @@ class OrderReturnRequestResource extends Resource
                     ])
                     ->requiresConfirmation()
                     ->action(function (OrderReturnRequest $record, array $data) {
-                        $refundAmountMinor = filled($data['refund_amount'] ?? null)
-                            ? (int) round(((float) $data['refund_amount']) * 100)
+                        $refundAmountOverrideMinor = filled($data['refund_amount_override'] ?? null)
+                            ? (int) round(((float) $data['refund_amount_override']) * 100)
                             : null;
 
                         app(ReturnRequestService::class)->approve(
                             $record,
                             $data['rma_address'],
-                            $refundAmountMinor,
+                            (bool) ($data['fee_waived'] ?? false),
+                            $refundAmountOverrideMinor,
                             $data['admin_note'] ?? null,
                         );
                     }),
@@ -114,22 +131,22 @@ class OrderReturnRequestResource extends Resource
                     ->label(__('Reject'))
                     ->icon('heroicon-o-x-mark')
                     ->color('danger')
-                    ->visible(fn(OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_REQUESTED)
+                    ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_REQUESTED)
                     ->form([
                         Forms\Components\Textarea::make('admin_note')
                             ->label(__('Reason for rejection'))
                             ->required(),
                     ])
                     ->requiresConfirmation()
-                    ->action(fn(OrderReturnRequest $record, array $data) => app(ReturnRequestService::class)->reject($record, $data['admin_note'])),
+                    ->action(fn (OrderReturnRequest $record, array $data) => app(ReturnRequestService::class)->reject($record, $data['admin_note'])),
                 Tables\Actions\Action::make('complete')
                     ->label(__('Mark Item Received'))
                     ->icon('heroicon-o-inbox-arrow-down')
                     ->color('gray')
-                    ->visible(fn(OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_APPROVED)
+                    ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_APPROVED)
                     ->requiresConfirmation()
                     ->modalDescription(__('This confirms the returned item(s) have been received and notifies the customer. Use the Refund action on the order separately once inspected.'))
-                    ->action(fn(OrderReturnRequest $record) => app(ReturnRequestService::class)->complete($record)),
+                    ->action(fn (OrderReturnRequest $record) => app(ReturnRequestService::class)->complete($record)),
             ]);
     }
 
