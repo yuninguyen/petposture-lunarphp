@@ -88,10 +88,17 @@ petposture/
 - Discount / coupon codes (Lunar's discount engine, incl. free-shipping coupons)
 - Self-service order returns (`/returns`): guest lookup by order number + email, item/quantity
   selection, reason and note — reviewed in Filament (Sales > Return Requests) with
-  approve (RMA address + estimated refund, emails the customer), reject (with a reason), or mark
-  received actions. The 30-day return window from the published Return & Refund Policy is
-  enforced both in the UI (dimmed/disabled past the window) and server-side on submission.
-  Refunding is still a separate, manual action on the order itself — nothing here auto-triggers it.
+  approve (RMA address, emails the customer), reject (with a reason), or mark received actions.
+  The 30-day return window from the published Return & Refund Policy is enforced both in the UI
+  (dimmed/disabled past the window) and server-side on submission. Server-side validation also
+  rejects an `order_line_id` that doesn't belong to the order, and caps requested quantity
+  (summed across duplicate line entries and prior *completed* return requests for that line)
+  against what was actually purchased.
+  On approval, the refund amount is auto-computed (25% restocking fee on the pre-tax item
+  subtotal, prorated for partial-quantity returns, tax refunded in full) — the admin can waive
+  the fee for a confirmed defective/wrong-item case or override the final amount, and the
+  approval email shows the fee/refund breakdown. Refunding is still a separate, manual action on
+  the order itself — nothing here auto-triggers the actual Stripe refund.
 - Automatic "delivered" detection via an AfterShip tracking webhook (`/api/webhooks/aftership`,
   HMAC-verified) — no more manually checking carrier tracking pages to close out an order
 - Product reviews (storefront submit + admin moderation)
