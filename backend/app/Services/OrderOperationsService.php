@@ -29,10 +29,14 @@ class OrderOperationsService
         $eventsToRecord = [];
 
         if (array_key_exists('tracking_number', $payload)) {
-            $previousTrackingNumber = $meta['tracking_number'] ?? $order->reference;
-            $meta['tracking_number'] = filled($payload['tracking_number'])
-                ? trim((string) $payload['tracking_number'])
-                : $order->reference;
+            if (blank($payload['tracking_number'])) {
+                throw ValidationException::withMessages([
+                    'tracking_number' => ['A tracking number is required.'],
+                ]);
+            }
+
+            $previousTrackingNumber = $meta['tracking_number'] ?? null;
+            $meta['tracking_number'] = trim((string) $payload['tracking_number']);
 
             if ($meta['tracking_number'] !== $previousTrackingNumber) {
                 $eventsToRecord[] = ['tracking.updated', 'Tracking number updated', $meta['tracking_number']];
@@ -124,28 +128,23 @@ class OrderOperationsService
             }
         }
 
-        if ($targetStatus && $refreshed->customer_reference) {
-            // Customer only gets emailed on order confirmation, shipped, delivered, or
+        if ($targetStatus && $targetStatus !== 'shipped' && $refreshed->customer_reference) {
+            // Customer only gets emailed on order confirmation, delivered, or
             // cancelled — payment-received/processing/payment-failed are internal status
-            // transitions with no customer-facing email by design.
+            // transitions with no customer-facing email by design. "shipped" is handled by
+            // recordShipment() below (or by the caller directly) so the email always carries
+            // real tracking/item data instead of firing ahead of it.
             match ($targetStatus) {
-                'shipped'          => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'shipped'),
                 'delivered'        => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'delivered'),
                 'cancelled'        => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'cancelled'),
                 default            => null,
             };
         }
 
-        if ($targetStatus === 'shipped') {
-            $refreshedMeta = (array) ($refreshed->meta ?? []);
-            $trackingNumber = (string) ($refreshedMeta['tracking_number'] ?? '');
-
-            if ($trackingNumber !== '') {
-                app(AfterShipService::class)->createTracking(
-                    $trackingNumber,
-                    $refreshedMeta['shipment_carrier'] ?? null
-                );
-            }
+        if ($targetStatus === 'shipped' && array_key_exists('tracking_number', $payload)) {
+            // Legacy combined call (status + tracking in one payload, e.g. the admin API) —
+            // treat it as shipping every remaining item in one package.
+            $refreshed = $this->recordShipment($refreshed, $payload);
         }
 
         if ($targetStatus) {
@@ -163,52 +162,141 @@ class OrderOperationsService
         return $this->update($order, $actionPayload, true);
     }
 
-    public function createShipment(Order $order, array $payload): Order
+    /**
+     * Remaining shippable quantity per order line (purchased minus already
+     * covered by any existing OrderShipment), keyed by order_line_id.
+     *
+     * @return array<int, int>
+     */
+    public function remainingShippableQuantities(Order $order): array
     {
-        $meta = (array) ($order->meta ?? []);
-        $shipments = array_values(array_filter((array) ($meta['shipments'] ?? []), 'is_array'));
-        $trackingNumber = trim((string) ($payload['tracking_number'] ?? ''));
+        $lines = $order->lines()->where('type', '!=', 'shipping')->get();
+
+        $shippedByLine = \App\Models\OrderShipmentItem::query()
+            ->whereHas('shipment', fn ($q) => $q->where('order_id', $order->id))
+            ->selectRaw('order_line_id, sum(quantity) as shipped_qty')
+            ->groupBy('order_line_id')
+            ->pluck('shipped_qty', 'order_line_id');
+
+        return $lines->mapWithKeys(fn ($line) => [
+            $line->id => max(0, (int) $line->quantity - (int) ($shippedByLine[$line->id] ?? 0)),
+        ])->all();
+    }
+
+    /**
+     * Create a shipment covering one or more order lines (partial quantities
+     * allowed) and notify the customer. `items` in $payload is an array of
+     * ['order_line_id' => int, 'quantity' => int]; omit it to ship everything
+     * still remaining on the order.
+     */
+    public function recordShipment(Order $order, array $payload): Order
+    {
         $carrier = filled($payload['shipment_carrier'] ?? null)
             ? Str::slug((string) $payload['shipment_carrier'], '_')
             : 'manual';
+        $trackingNumber = trim((string) ($payload['tracking_number'] ?? ''));
+
+        if ($trackingNumber === '') {
+            throw ValidationException::withMessages([
+                'tracking_number' => ['A tracking number is required.'],
+            ]);
+        }
+
         $trackingUrl = filled($payload['shipment_tracking_url'] ?? null)
             ? trim((string) $payload['shipment_tracking_url'])
             : $this->resolveTrackingUrl($carrier, $trackingNumber);
-        $timestamp = now()->toDateTimeString();
-        $status = in_array((string) $order->status, ['shipped', 'delivered'], true)
-            ? 'in_transit'
-            : 'label_created';
 
-        $shipments[] = [
-            'id' => 'shp_' . Str::lower(Str::random(10)),
+        $remaining = $this->remainingShippableQuantities($order);
+        $requestedItems = $payload['items'] ?? null;
+
+        if ($requestedItems === null) {
+            $validItems = collect($remaining)
+                ->filter(fn ($qty) => $qty > 0)
+                ->map(fn ($qty, $lineId) => ['order_line_id' => (int) $lineId, 'quantity' => $qty])
+                ->values()
+                ->all();
+        } else {
+            $lines = $order->lines()->where('type', '!=', 'shipping')->get()->keyBy('id');
+            $validItems = [];
+
+            foreach ($requestedItems as $item) {
+                $lineId = (int) ($item['order_line_id'] ?? 0);
+                $quantity = (int) ($item['quantity'] ?? 0);
+
+                if ($quantity <= 0) {
+                    continue;
+                }
+
+                $line = $lines->get($lineId);
+
+                if (! $line) {
+                    throw ValidationException::withMessages([
+                        'items' => ["Item does not belong to this order."],
+                    ]);
+                }
+
+                if ($quantity > ($remaining[$lineId] ?? 0)) {
+                    throw ValidationException::withMessages([
+                        'items' => ["Cannot ship {$quantity} of \"{$line->description}\" — only " . ($remaining[$lineId] ?? 0) . ' remaining to ship.'],
+                    ]);
+                }
+
+                $validItems[] = ['order_line_id' => $lineId, 'quantity' => $quantity];
+            }
+        }
+
+        if ($validItems === []) {
+            throw ValidationException::withMessages([
+                'items' => ['Select at least one item to ship.'],
+            ]);
+        }
+
+        $shipment = \App\Models\OrderShipment::create([
+            'order_id' => $order->id,
             'tracking_number' => $trackingNumber,
             'carrier' => $carrier,
             'tracking_url' => $trackingUrl,
-            'status' => $status,
-            'created_at' => $timestamp,
-            'updated_at' => $timestamp,
-            'shipped_at' => (string) $order->status === 'shipped' ? ($meta['shipped_at'] ?? $timestamp) : null,
-            'delivered_at' => (string) $order->status === 'delivered' ? ($meta['delivered_at'] ?? $timestamp) : null,
-        ];
+            'status' => in_array((string) $order->status, ['shipped', 'delivered'], true) ? 'in_transit' : 'label_created',
+            'shipped_at' => now(),
+        ]);
 
-        $meta['shipments'] = array_slice($shipments, -25);
+        foreach ($validItems as $item) {
+            \App\Models\OrderShipmentItem::create([
+                'order_shipment_id' => $shipment->id,
+                'order_line_id' => $item['order_line_id'],
+                'quantity' => $item['quantity'],
+            ]);
+        }
+
+        $meta = (array) ($order->meta ?? []);
         $meta['tracking_number'] = $trackingNumber;
         $meta['shipment_carrier'] = $carrier;
         $meta['shipment_tracking_url'] = $trackingUrl;
+        // Keep meta.shipments[] in sync for now — OrderResource (admin API /
+        // Next.js admin page) still reads shipment history from there, not
+        // from the order_shipments table.
+        $meta = $this->syncShipmentRecords($meta, (string) $order->status);
+        $order->update(['meta' => $meta]);
 
-        $order->update([
-            'meta' => $meta,
-        ]);
-
+        $itemCount = count($validItems);
         $this->orderEventService->record(
             $order,
             'shipment.created',
             'Shipment created',
-            "Shipment {$trackingNumber} created for carrier " . strtoupper($carrier) . '.'
+            "Shipment {$trackingNumber} created for carrier " . strtoupper($carrier) . " covering {$itemCount} item(s)."
         );
+
+        if ($order->customer_reference) {
+            SendOrderLifecycleEmailJob::dispatch($order->id, 'shipped', $shipment->id);
+        }
+
+        if ($trackingNumber !== '') {
+            app(AfterShipService::class)->createTracking($trackingNumber, $carrier);
+        }
 
         return $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
     }
+
 
     public function refundOrder(Order $order, ?int $amountMinor = null): Order
     {

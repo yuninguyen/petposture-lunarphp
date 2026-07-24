@@ -61,6 +61,9 @@ class AppServiceProvider extends ServiceProvider
         Order::resolveRelationUsing('orderEvents', function (Order $order) {
             return $order->hasMany(OrderEvent::class, 'order_id')->orderBy('occurred_at');
         });
+        Order::resolveRelationUsing('shipments', function (Order $order) {
+            return $order->hasMany(\App\Models\OrderShipment::class, 'order_id');
+        });
 
         $legacyVariantMorph = ProductVariant::class;
         $currentVariantMorph = (new ProductVariant)->getMorphClass();

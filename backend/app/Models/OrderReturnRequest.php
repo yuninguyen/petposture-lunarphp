@@ -24,6 +24,10 @@ class OrderReturnRequest extends Model
         'customer_note',
         'admin_note',
         'rma_address',
+        'return_tracking_number',
+        'return_carrier',
+        'return_tracking_url',
+        'package_received_at',
         'refund_amount_minor',
         'restocking_fee_minor',
         'fee_waived',
@@ -41,6 +45,7 @@ class OrderReturnRequest extends Model
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
         'completed_at' => 'datetime',
+        'package_received_at' => 'datetime',
     ];
 
     public function order(): BelongsTo

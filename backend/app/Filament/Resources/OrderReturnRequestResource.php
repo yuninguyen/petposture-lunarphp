@@ -80,6 +80,18 @@ class OrderReturnRequestResource extends Resource
                     ->label(__('Requested'))
                     ->dateTime()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('return_tracking_number')
+                    ->label(__('Return Tracking'))
+                    ->formatStateUsing(fn (?string $state, OrderReturnRequest $record): string => match (true) {
+                        $state === null => '—',
+                        $record->package_received_at !== null => "📦 Received · {$state}",
+                        default => "🚚 {$state}",
+                    })
+                    ->color(fn (?string $state, OrderReturnRequest $record): string => match (true) {
+                        $state === null => 'gray',
+                        $record->package_received_at !== null => 'success',
+                        default => 'warning',
+                    }),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -173,6 +185,33 @@ class OrderReturnRequestResource extends Resource
                     ])
                     ->requiresConfirmation()
                     ->action(fn (OrderReturnRequest $record, array $data) => app(ReturnRequestService::class)->reject($record, $data['admin_note'])),
+                Tables\Actions\Action::make('addReturnTracking')
+                    ->label(__('Add Return Tracking'))
+                    ->icon('heroicon-o-truck')
+                    ->color('gray')
+                    ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_APPROVED
+                        && blank($record->return_tracking_number))
+                    ->form([
+                        Forms\Components\TextInput::make('tracking_number')
+                            ->label(__('Tracking Number'))
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\Select::make('carrier')
+                            ->label(__('Carrier'))
+                            ->native(false)
+                            ->options([
+                                'ups' => 'UPS',
+                                'usps' => 'USPS',
+                                'fedex' => 'FedEx',
+                                'dhl' => 'DHL',
+                                'manual' => 'Other / Manual',
+                            ])
+                            ->default('manual'),
+                    ])
+                    ->modalDescription(__('This is the tracking number for the customer\'s return shipment back to you — not related to the original delivery.'))
+                    ->requiresConfirmation()
+                    ->action(fn (OrderReturnRequest $record, array $data) => app(ReturnRequestService::class)
+                        ->addTracking($record, $data['tracking_number'], $data['carrier'] ?? null)),
                 Tables\Actions\Action::make('complete')
                     ->label(__('Mark Item Received'))
                     ->icon('heroicon-o-inbox-arrow-down')

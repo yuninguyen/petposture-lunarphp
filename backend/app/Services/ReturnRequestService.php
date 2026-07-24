@@ -261,6 +261,34 @@ class ReturnRequestService
         return $returnRequest->refresh()->loadMissing(['order', 'items.orderLine']);
     }
 
+    public function addTracking(OrderReturnRequest $returnRequest, string $trackingNumber, ?string $carrier): OrderReturnRequest
+    {
+        $this->guardStatus($returnRequest, OrderReturnRequest::STATUS_APPROVED);
+
+        $carrier = $carrier ?: 'manual';
+        $trackingUrls = [
+            'ups' => 'https://www.ups.com/track?tracknum=' . urlencode($trackingNumber),
+            'usps' => 'https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=' . urlencode($trackingNumber),
+            'fedex' => 'https://www.fedex.com/fedextrack/?trknbr=' . urlencode($trackingNumber),
+            'dhl' => 'https://www.dhl.com/us-en/home/tracking/tracking-express.html?submit=1&tracking-id=' . urlencode($trackingNumber),
+        ];
+
+        $returnRequest->update([
+            'return_tracking_number' => $trackingNumber,
+            'return_carrier' => $carrier,
+            'return_tracking_url' => $trackingUrls[$carrier] ?? null,
+        ]);
+
+        $this->orderEventService->record(
+            $returnRequest->order,
+            'return_request.tracking_added',
+            'Return tracking added',
+            "Customer's return shipment tracking: {$trackingNumber} (" . strtoupper($carrier) . ')'
+        );
+
+        return $returnRequest->refresh();
+    }
+
     public function complete(OrderReturnRequest $returnRequest): OrderReturnRequest
     {
         $this->guardStatus($returnRequest, OrderReturnRequest::STATUS_APPROVED);

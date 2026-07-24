@@ -27,6 +27,7 @@ class SendOrderLifecycleEmailJob implements ShouldQueue
     public function __construct(
         public readonly int $orderId,
         public readonly string $event,
+        public readonly ?int $shipmentId = null,
     ) {
         $this->afterCommit = true;
     }
@@ -44,8 +45,12 @@ class SendOrderLifecycleEmailJob implements ShouldQueue
             return;
         }
 
+        $shipment = $this->shipmentId
+            ? \App\Models\OrderShipment::with('items')->find($this->shipmentId)
+            : null;
+
         match ($this->event) {
-            'shipped' => $this->sendCustomer($order, new OrderShipped($order)),
+            'shipped' => $this->sendCustomer($order, new OrderShipped($order, $shipment)),
             'delivered' => $this->sendCustomer($order, new OrderDelivered($order)),
             'cancelled' => $this->sendCancelled($order),
             'returned' => $this->sendCustomer($order, new OrderReturned($order)),

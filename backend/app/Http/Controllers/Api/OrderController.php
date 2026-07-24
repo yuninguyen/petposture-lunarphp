@@ -191,7 +191,7 @@ class OrderController extends Controller
             return response()->json(['message' => 'Order not found'], 404);
         }
 
-        return new OrderResource($this->orderOperationsService->createShipment($order, $validated));
+        return new OrderResource($this->orderOperationsService->recordShipment($order, $validated));
     }
 
     public function refund(Request $request, $id)

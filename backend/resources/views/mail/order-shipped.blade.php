@@ -1,8 +1,23 @@
 @php
-    $productLines = $order->lines->where('type', '!=', 'shipping');
-    $trackingNumber = $order->meta['tracking_number'] ?? null;
-    $carrier = $order->meta['shipment_carrier'] ?? null;
-    $trackingUrl = $order->meta['shipment_tracking_url'] ?? null;
+    $allProductLines = $order->lines->where('type', '!=', 'shipping');
+
+    if ($shipment) {
+        $trackingNumber = $shipment->tracking_number;
+        $carrier = $shipment->carrier;
+        $trackingUrl = $shipment->tracking_url;
+        $shippedLineIds = $shipment->items->pluck('order_line_id')->all();
+        $shippedQuantities = $shipment->items->pluck('quantity', 'order_line_id');
+        $productLines = $allProductLines->whereIn('id', $shippedLineIds);
+        $isPartialShipment = $productLines->count() < $allProductLines->count();
+    } else {
+        $trackingNumber = $order->meta['tracking_number'] ?? null;
+        $carrier = $order->meta['shipment_carrier'] ?? null;
+        $trackingUrl = $order->meta['shipment_tracking_url'] ?? null;
+        $shippedQuantities = null;
+        $productLines = $allProductLines;
+        $isPartialShipment = false;
+    }
+
     $trackingLabel = $carrier ? strtoupper(str_replace(['_', '-'], ' ', $carrier)) . ' tracking number' : 'Tracking number';
 
     $viewOrderUrl = $trackingUrl ?: (rtrim(config('app.frontend_url'), '/') . '/checkout/success?ref=' . urlencode($order->reference) . '&email=' . urlencode($order->customer_reference ?? ''));
@@ -83,6 +98,16 @@ or <a href="{{ rtrim(config('app.frontend_url'), '/') }}/shop" style="font-famil
 </td>
 </tr>
 
+@if($isPartialShipment)
+<tr>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-bottom:12px;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:13px; color:#9a9a9a;">
+This is part of your order — the rest will ship separately.
+</p>
+</td>
+</tr>
+@endif
+
 @foreach($productLines as $line)
 @php
     $purchasable = $line->getRelationValue('purchasable');
@@ -106,7 +131,7 @@ or <a href="{{ rtrim(config('app.frontend_url'), '/') }}/shop" style="font-famil
 <img src="{{ $imageUrl }}" width="48" height="48" alt="" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:block; width:48px; height:48px; border-radius:6px; object-fit:cover; border:1px solid #ececec;">
 </td>
 <td valign="top" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-left:12px;">
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; font-weight:600; color:#1a1a1a;">{{ $line->description }} &times; {{ $line->quantity }}</p>
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; font-weight:600; color:#1a1a1a;">{{ $line->description }} &times; {{ $shippedQuantities[$line->id] ?? $line->quantity }}</p>
 @if($line->option)
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:4px 0 0; font-size:13px; color:#9a9a9a;">{{ $line->option }}</p>
 @endif

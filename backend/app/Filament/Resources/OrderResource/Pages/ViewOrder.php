@@ -19,43 +19,86 @@ class ViewOrder extends ViewRecord
         $operations = app(OrderOperationsService::class);
 
         $actions = collect($operations->availableActions($this->record))
-            ->map(function (array $action) use ($operations) {
+            ->reject(fn (array $action) => $action['action'] === 'markShipped')
+            ->map(function (array $action) {
                 $isCancel = $action['action'] === 'cancelOrder';
-                $isShipped = $action['action'] === 'markShipped';
 
-                $builder = Actions\Action::make($action['action'])
+                return Actions\Action::make($action['action'])
                     ->label($action['label'])
                     ->color($isCancel ? 'danger' : 'primary')
-                    ->requiresConfirmation();
+                    ->requiresConfirmation()
+                    ->action(function () use ($action) {
+                        app(OrderOperationsService::class)->performAction($this->record, $action['action']);
 
-                if ($isShipped) {
-                    $builder = $builder
-                        ->modalDescription(__('Enter the tracking number so the customer can track their shipment and AfterShip can auto-update delivery status.'))
-                        ->form([
-                            Forms\Components\TextInput::make('tracking_number')
-                                ->label(__('Tracking Number'))
-                                ->maxLength(255),
-                            Forms\Components\Select::make('shipment_carrier')
-                                ->label(__('Carrier'))
-                                ->native(false)
-                                ->options([
-                                    'ups' => 'UPS',
-                                    'usps' => 'USPS',
-                                    'fedex' => 'FedEx',
-                                    'dhl' => 'DHL',
-                                    'manual' => 'Other / Manual',
-                                ])
-                                ->default('manual'),
-                        ]);
-                }
+                        $this->redirect(static::getUrl(['record' => $this->record]));
+                    });
+            })
+            ->all();
 
-                return $builder->action(function (array $data = []) use ($operations, $action) {
-                    $operations->performAction($this->record, $action['action'], $data);
+        $remainingQuantities = $operations->remainingShippableQuantities($this->record);
+        $shippableLines = $this->record->lines->where('type', '!=', 'shipping')
+            ->filter(fn ($line) => ($remainingQuantities[$line->id] ?? 0) > 0);
+        $isFirstShipment = (string) $this->record->status === 'processing';
+        $canShip = $shippableLines->isNotEmpty()
+            && in_array((string) $this->record->status, ['processing', 'shipped'], true);
+
+        if ($canShip) {
+            $lineOptions = $shippableLines->mapWithKeys(fn ($line) => [
+                $line->id => $line->description . ' (remaining: ' . $remainingQuantities[$line->id] . ')',
+            ])->all();
+            $defaultItems = $shippableLines->map(fn ($line) => [
+                'order_line_id' => $line->id,
+                'quantity' => $remainingQuantities[$line->id],
+            ])->values()->all();
+
+            $actions[] = Actions\Action::make('shipItems')
+                ->label($isFirstShipment ? __('Mark Shipped') : __('Add Shipment'))
+                ->color($isFirstShipment ? 'primary' : 'gray')
+                ->requiresConfirmation()
+                ->modalDescription(__('Select which items are in this package and enter its tracking number so the customer can track it and AfterShip can auto-update delivery status.'))
+                ->form([
+                    Forms\Components\TextInput::make('tracking_number')
+                        ->label(__('Tracking Number'))
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\Select::make('shipment_carrier')
+                        ->label(__('Carrier'))
+                        ->native(false)
+                        ->options([
+                            'ups' => 'UPS',
+                            'usps' => 'USPS',
+                            'fedex' => 'FedEx',
+                            'dhl' => 'DHL',
+                            'manual' => 'Other / Manual',
+                        ])
+                        ->default('manual'),
+                    Forms\Components\Repeater::make('items')
+                        ->label(__('Items in this package'))
+                        ->schema([
+                            Forms\Components\Select::make('order_line_id')
+                                ->label(__('Item'))
+                                ->options($lineOptions)
+                                ->required(),
+                            Forms\Components\TextInput::make('quantity')
+                                ->label(__('Qty'))
+                                ->numeric()
+                                ->minValue(1)
+                                ->required(),
+                        ])
+                        ->columns(2)
+                        ->default($defaultItems)
+                        ->addActionLabel(__('Add another item')),
+                ])
+                ->action(function (array $data) use ($operations) {
+                    if ((string) $this->record->status === 'processing') {
+                        $operations->performAction($this->record, 'markShipped', []);
+                    }
+
+                    $operations->recordShipment($this->record->fresh(), $data);
 
                     $this->redirect(static::getUrl(['record' => $this->record]));
                 });
-            })
-            ->all();
+        }
 
         $secondaryActions = [];
 
@@ -152,34 +195,39 @@ class ViewOrder extends ViewRecord
             ->implode('<br>') ?: '—';
     }
 
-    private static function formatTrackingBlock(array $meta): string
+    private static array $carrierLabels = [
+        'ups' => 'UPS',
+        'usps' => 'USPS',
+        'fedex' => 'FedEx',
+        'dhl' => 'DHL',
+        'manual' => 'Other / Manual',
+    ];
+
+    private static function formatLineTracking(\Lunar\Models\OrderLine $line): ?string
     {
-        $trackingNumber = (string) ($meta['tracking_number'] ?? '');
+        $shipmentItems = \App\Models\OrderShipmentItem::query()
+            ->where('order_line_id', $line->id)
+            ->with('shipment')
+            ->get()
+            ->filter(fn ($item) => $item->shipment !== null);
 
-        if ($trackingNumber === '') {
-            return '—';
+        if ($shipmentItems->isEmpty()) {
+            return null;
         }
 
-        $carrierLabels = [
-            'ups' => 'UPS',
-            'usps' => 'USPS',
-            'fedex' => 'FedEx',
-            'dhl' => 'DHL',
-            'manual' => 'Other / Manual',
-        ];
-        $carrierLabel = $carrierLabels[$meta['shipment_carrier'] ?? 'manual'] ?? str($meta['shipment_carrier'] ?? 'manual')->headline()->toString();
+        $rows = $shipmentItems->map(function ($item) {
+            $shipment = $item->shipment;
+            $carrierLabel = static::$carrierLabels[$shipment->carrier] ?? str($shipment->carrier)->headline()->toString();
+            $display = e($shipment->tracking_number) . ' &times; ' . $item->quantity;
 
-        $trackingDisplay = e($trackingNumber);
+            if ($shipment->tracking_url) {
+                $display = '<a href="' . e($shipment->tracking_url) . '" target="_blank" rel="noopener" style="text-decoration: underline;">' . $display . '</a>';
+            }
 
-        $shipments = array_values(array_filter((array) ($meta['shipments'] ?? []), 'is_array'));
-        $latestShipment = $shipments[array_key_last($shipments)] ?? [];
-        $url = $meta['shipment_tracking_url'] ?? $latestShipment['tracking_url'] ?? null;
+            return "<strong>{$carrierLabel}:</strong> {$display}";
+        });
 
-        if ($url) {
-            $trackingDisplay = '<a href="' . e($url) . '" target="_blank" rel="noopener" style="text-decoration: underline;">' . $trackingDisplay . '</a>';
-        }
-
-        return "<strong>{$carrierLabel}:</strong> {$trackingDisplay}";
+        return '<span style="font-size: 12px; color: #9a9a9a;">' . $rows->implode(' &nbsp;|&nbsp; ') . '</span>';
     }
 
     public function infolist(Infolist $infolist): Infolist
@@ -202,11 +250,6 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('created_at')
                                 ->label(__('Date'))
                                 ->dateTime(),
-                            Infolists\Components\TextEntry::make('tracking_block')
-                                ->label(__('Tracking'))
-                                ->html()
-                                ->visible(fn($record) => filled($record->meta['tracking_number'] ?? null))
-                                ->state(fn($record) => static::formatTrackingBlock((array) ($record->meta ?? []))),
                             Infolists\Components\TextEntry::make('customer_ip_block')
                                 ->label(__('Customer IP'))
                                 ->html()
@@ -289,6 +332,12 @@ class ViewOrder extends ViewRecord
                                 ->label(__('Subtotal'))
                                 ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2))
                                 ->columnSpan(1),
+                            Infolists\Components\TextEntry::make('shipment_tracking')
+                                ->label('')
+                                ->html()
+                                ->visible(fn($record) => static::formatLineTracking($record) !== null)
+                                ->state(fn($record) => static::formatLineTracking($record))
+                                ->columnSpanFull(),
                         ])
                         ->columns(6)
                         ->columnSpanFull(),

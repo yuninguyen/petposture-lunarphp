@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\OrderShipment;
 use App\Services\AfterShipService;
 use App\Services\OrderOperationsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Lunar\Models\Order;
 
 class AfterShipWebhookController extends Controller
 {
@@ -37,13 +37,15 @@ class AfterShipWebhookController extends Controller
             return response()->json(['message' => 'Ignored (not a delivered event)']);
         }
 
-        $order = Order::query()->where('meta->tracking_number', $trackingNumber)->first();
+        $shipment = OrderShipment::query()->where('tracking_number', $trackingNumber)->first();
 
-        if (! $order) {
-            Log::info('AfterShip delivered webhook: no matching order', ['tracking_number' => $trackingNumber]);
+        if (! $shipment) {
+            Log::info('AfterShip delivered webhook: no matching shipment', ['tracking_number' => $trackingNumber]);
 
-            return response()->json(['message' => 'No matching order']);
+            return response()->json(['message' => 'No matching shipment']);
         }
+
+        $order = $shipment->order;
 
         if ($order->status === 'delivered') {
             return response()->json(['message' => 'Already delivered']);
@@ -56,6 +58,16 @@ class AfterShipWebhookController extends Controller
             ]);
 
             return response()->json(['message' => 'Order not shipped yet, ignoring']);
+        }
+
+        if ($shipment->status !== 'delivered') {
+            $shipment->update(['status' => 'delivered', 'delivered_at' => now()]);
+        }
+
+        $allShipmentsDelivered = ! $order->shipments()->where('status', '!=', 'delivered')->exists();
+
+        if (! $allShipmentsDelivered) {
+            return response()->json(['message' => 'Shipment delivered, awaiting remaining package(s)']);
         }
 
         $this->orderOperationsService->update($order, ['status' => 'delivered']);

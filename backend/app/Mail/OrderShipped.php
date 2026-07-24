@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\OrderShipment;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -9,7 +10,10 @@ use Lunar\Models\Order;
 
 class OrderShipped extends Mailable
 {
-    public function __construct(public readonly Order $order) {}
+    public function __construct(
+        public readonly Order $order,
+        public readonly ?OrderShipment $shipment = null,
+    ) {}
 
     public function envelope(): Envelope
     {
@@ -21,6 +25,8 @@ class OrderShipped extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'mail.order-shipped');
+        return new Content(view: 'mail.order-shipped', with: [
+            'shipment' => $this->shipment,
+        ]);
     }
 }
