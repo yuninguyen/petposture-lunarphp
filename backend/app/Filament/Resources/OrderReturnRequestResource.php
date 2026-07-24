@@ -66,6 +66,16 @@ class OrderReturnRequestResource extends Resource
                 Tables\Columns\TextColumn::make('items_count')
                     ->label(__('Items'))
                     ->counts('items'),
+                Tables\Columns\TextColumn::make('refund_amount_minor')
+                    ->label(__('Refund'))
+                    ->formatStateUsing(fn (?int $state): string => $state !== null ? '$'.number_format($state / 100, 2) : '—'),
+                Tables\Columns\TextColumn::make('restocking_fee_minor')
+                    ->label(__('Fee'))
+                    ->formatStateUsing(fn (?int $state, OrderReturnRequest $record): string => match (true) {
+                        $state === null => '—',
+                        $record->fee_waived => 'Waived',
+                        default => '$'.number_format($state / 100, 2),
+                    }),
                 Tables\Columns\TextColumn::make('requested_at')
                     ->label(__('Requested'))
                     ->dateTime()
@@ -109,7 +119,31 @@ class OrderReturnRequestResource extends Resource
                         Forms\Components\TextInput::make('refund_amount_override')
                             ->label(__('Override refund amount (optional, leave blank to use the computed estimate above)'))
                             ->numeric()
-                            ->prefix('$'),
+                            ->prefix('$')
+                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('override_warning')
+                            ->label('')
+                            ->visible(function (Get $get, OrderReturnRequest $record): bool {
+                                if (! filled($get('refund_amount_override'))) {
+                                    return false;
+                                }
+
+                                $estimate = app(ReturnRequestService::class)->calculateRefundEstimate($record, (bool) $get('fee_waived'));
+                                $overrideMinor = (int) round(((float) $get('refund_amount_override')) * 100);
+
+                                return $overrideMinor !== $estimate['refund_amount_minor'];
+                            })
+                            ->content(function (Get $get, OrderReturnRequest $record): string {
+                                $estimate = app(ReturnRequestService::class)->calculateRefundEstimate($record, (bool) $get('fee_waived'));
+                                $overrideMinor = (int) round(((float) $get('refund_amount_override')) * 100);
+                                $diff = ($overrideMinor - $estimate['refund_amount_minor']) / 100;
+
+                                return sprintf(
+                                    '⚠️ This differs from the computed estimate by %s$%.2f.',
+                                    $diff >= 0 ? '+' : '-',
+                                    abs($diff),
+                                );
+                            }),
                         Forms\Components\Textarea::make('admin_note')
                             ->label(__('Note to customer (optional)')),
                     ])

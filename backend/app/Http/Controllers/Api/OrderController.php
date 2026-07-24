@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\OrderResource;
+use App\Models\OrderReturnRequest;
 use App\Services\OrderOperationsService;
 use App\Services\StripePaymentIntentService;
 use Illuminate\Http\Request;
@@ -18,8 +19,7 @@ class OrderController extends Controller
     public function __construct(
         private readonly OrderOperationsService $orderOperationsService,
         private readonly StripePaymentIntentService $stripePaymentIntentService,
-    ) {
-    }
+    ) {}
 
     /**
      * Track an order via Number and Email (Public).
@@ -40,7 +40,7 @@ class OrderController extends Controller
             trim((string) $request->email),
         );
 
-        if (!$order) {
+        if (! $order) {
             Log::warning('Public order tracking lookup failed.', [
                 'tracking_number' => trim((string) $request->tracking_number),
                 'email' => trim((string) $request->email),
@@ -51,7 +51,14 @@ class OrderController extends Controller
             return response()->json(['message' => 'No order found with these credentials.'], 404);
         }
 
-        return new OrderResource($order);
+        $hasActiveReturnRequest = OrderReturnRequest::query()
+            ->where('order_id', $order->id)
+            ->whereIn('status', [OrderReturnRequest::STATUS_REQUESTED, OrderReturnRequest::STATUS_APPROVED])
+            ->exists();
+
+        return (new OrderResource($order))->additional([
+            'has_active_return_request' => $hasActiveReturnRequest,
+        ]);
     }
 
     public function retryPayment(Request $request)
@@ -112,7 +119,7 @@ class OrderController extends Controller
             ->with(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])
             ->find($id);
 
-        if (!$order) {
+        if (! $order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
 
@@ -123,21 +130,21 @@ class OrderController extends Controller
 
     public function update(Request $request, $id)
     {
-        if (!$this->canManageOrders($request)) {
+        if (! $this->canManageOrders($request)) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
         $validated = Validator::make($request->all(), [
             'status' => 'nullable|string|in:awaiting-payment,payment-offline,payment-received,processing,shipped,delivered,cancelled',
             'tracking_number' => 'nullable|string|max:255',
-            'shipment_carrier' => 'nullable|string|in:' . self::SHIPMENT_CARRIERS,
+            'shipment_carrier' => 'nullable|string|in:'.self::SHIPMENT_CARRIERS,
             'shipment_tracking_url' => 'nullable|url|max:2000',
             'internal_note' => 'nullable|string|max:4000',
         ])->validate();
 
         $order = Order::with(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])->find($id);
 
-        if (!$order) {
+        if (! $order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
 
@@ -146,20 +153,20 @@ class OrderController extends Controller
 
     public function performAction(Request $request, $id, string $action)
     {
-        if (!$this->canManageOrders($request)) {
+        if (! $this->canManageOrders($request)) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
         $validated = Validator::make($request->all(), [
             'tracking_number' => 'nullable|string|max:255',
-            'shipment_carrier' => 'nullable|string|in:' . self::SHIPMENT_CARRIERS,
+            'shipment_carrier' => 'nullable|string|in:'.self::SHIPMENT_CARRIERS,
             'shipment_tracking_url' => 'nullable|url|max:2000',
             'internal_note' => 'nullable|string|max:4000',
         ])->validate();
 
         $order = Order::with(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])->find($id);
 
-        if (!$order) {
+        if (! $order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
 
@@ -168,19 +175,19 @@ class OrderController extends Controller
 
     public function createShipment(Request $request, $id)
     {
-        if (!$this->canManageOrders($request)) {
+        if (! $this->canManageOrders($request)) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
         $validated = Validator::make($request->all(), [
             'tracking_number' => 'required|string|max:255',
-            'shipment_carrier' => 'nullable|string|in:' . self::SHIPMENT_CARRIERS,
+            'shipment_carrier' => 'nullable|string|in:'.self::SHIPMENT_CARRIERS,
             'shipment_tracking_url' => 'nullable|url|max:2000',
         ])->validate();
 
         $order = Order::with(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])->find($id);
 
-        if (!$order) {
+        if (! $order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
 

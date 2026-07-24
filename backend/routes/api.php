@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReturnRequestController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\UserAddressController;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 // Health check — used by uptime monitors and CI readiness probes
@@ -24,24 +26,24 @@ Route::get('/health', function () {
 
     // Database
     try {
-        \Illuminate\Support\Facades\DB::connection()->getPdo();
-    } catch (\Exception $e) {
+        DB::connection()->getPdo();
+    } catch (Exception $e) {
         $allOk = false;
     }
 
     // Cache
     try {
-        \Illuminate\Support\Facades\Cache::put('_health_check', 1, 5);
-        if (\Illuminate\Support\Facades\Cache::get('_health_check') !== 1) {
+        Cache::put('_health_check', 1, 5);
+        if (Cache::get('_health_check') !== 1) {
             $allOk = false;
         }
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         $allOk = false;
     }
 
     return response()->json([
         'status' => $allOk ? 'ok' : 'degraded',
-        'ts'     => now()->toIso8601String(),
+        'ts' => now()->toIso8601String(),
     ], $allOk ? 200 : 503);
 });
 
@@ -60,6 +62,7 @@ Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview'
 Route::post('/orders/track', [OrderController::class, 'track'])->middleware('throttle:10,1');
 Route::post('/orders/retry-payment', [OrderController::class, 'retryPayment']);
 Route::post('/orders/return-requests', [ReturnRequestController::class, 'store'])->middleware('throttle:10,1');
+Route::post('/orders/return-requests/preview', [ReturnRequestController::class, 'preview'])->middleware('throttle:api-write');
 Route::get('/api-test', function () {
     return ['status' => 'ok', 'v' => 3];
 });

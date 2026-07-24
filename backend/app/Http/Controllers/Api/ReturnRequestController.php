@@ -56,6 +56,38 @@ class ReturnRequestController extends Controller
     }
 
     /**
+     * Preview the refund estimate for selected items before submitting (guest, no side effects).
+     */
+    public function preview(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'order_reference' => 'required|string',
+            'email' => 'required|email',
+            'items' => 'required|array|min:1',
+            'items.*.order_line_id' => 'required|integer',
+            'items.*.quantity' => 'required|integer|min:1',
+        ])->validate();
+
+        $order = $this->findPublicOrderByCredentials(
+            trim((string) $validated['order_reference']),
+            trim((string) $validated['email']),
+        );
+
+        if (! $order) {
+            return response()->json(['message' => 'No order found with these credentials.'], 404);
+        }
+
+        $estimate = $this->returnRequestService->previewRefundEstimate($order, $validated['items']);
+
+        return response()->json([
+            'item_subtotal' => $estimate['item_subtotal_minor'] / 100,
+            'tax' => $estimate['tax_minor'] / 100,
+            'restocking_fee' => $estimate['restocking_fee_minor'] / 100,
+            'estimated_refund' => $estimate['refund_amount_minor'] / 100,
+        ]);
+    }
+
+    /**
      * List return requests (Admin).
      */
     public function index(Request $request)

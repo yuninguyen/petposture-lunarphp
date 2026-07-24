@@ -197,6 +197,64 @@ class ReturnRequestApiTest extends TestCase
             ->assertCreated();
     }
 
+    // ─── POST /api/orders/track (active-return flag) ───────────────────────
+
+    public function test_track_flags_order_with_an_active_return_request(): void
+    {
+        ['reference' => $reference, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
+
+        $this->postJson('/api/orders/return-requests', $this->returnRequestPayload($reference, $lineId))
+            ->assertCreated();
+
+        $this->postJson('/api/orders/track', [
+            'tracking_number' => $reference,
+            'email' => 'guest@petposture.com',
+        ])->assertOk()->assertJsonPath('has_active_return_request', true);
+    }
+
+    public function test_track_does_not_flag_order_without_a_return_request(): void
+    {
+        ['reference' => $reference] = $this->placeDeliveredOrder();
+
+        $this->postJson('/api/orders/track', [
+            'tracking_number' => $reference,
+            'email' => 'guest@petposture.com',
+        ])->assertOk()->assertJsonPath('has_active_return_request', false);
+    }
+
+    // ─── POST /api/orders/return-requests/preview ───────────────────────────
+
+    public function test_preview_computes_refund_estimate_without_creating_a_request(): void
+    {
+        ['reference' => $reference, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
+
+        $response = $this->postJson('/api/orders/return-requests/preview', [
+            'order_reference' => $reference,
+            'email' => 'guest@petposture.com',
+            'items' => [
+                ['order_line_id' => $lineId, 'quantity' => 1],
+            ],
+        ]);
+
+        // Same fixture as the approve-estimate tests: $89.99 subtotal, 25% fee = $22.50.
+        $response->assertOk()
+            ->assertJsonPath('restocking_fee', 22.5)
+            ->assertJsonPath('estimated_refund', 74.87);
+
+        $this->assertDatabaseCount('order_return_requests', 0);
+    }
+
+    public function test_preview_returns_not_found_for_unknown_credentials(): void
+    {
+        $this->postJson('/api/orders/return-requests/preview', [
+            'order_reference' => 'MISSING-REF',
+            'email' => 'guest@petposture.com',
+            'items' => [
+                ['order_line_id' => 1, 'quantity' => 1],
+            ],
+        ])->assertNotFound();
+    }
+
     // ─── ReturnRequestService (direct) ──────────────────────────────────────
 
     public function test_service_rejects_empty_items_array(): void
