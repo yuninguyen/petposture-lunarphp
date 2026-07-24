@@ -117,6 +117,28 @@ class ReturnRequestApiTest extends TestCase
             ->assertJsonValidationErrors(['order']);
     }
 
+    public function test_return_request_rejects_order_line_not_belonging_to_order(): void
+    {
+        ['reference' => $reference] = $this->placeDeliveredOrder();
+        ['order_line_id' => $otherOrderLineId] = $this->placeDeliveredOrder();
+
+        $this->postJson('/api/orders/return-requests', $this->returnRequestPayload($reference, $otherOrderLineId))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['items']);
+    }
+
+    public function test_return_request_rejects_quantity_exceeding_purchased_quantity(): void
+    {
+        ['reference' => $reference, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
+
+        $payload = $this->returnRequestPayload($reference, $lineId);
+        $payload['items'][0]['quantity'] = 999;
+
+        $this->postJson('/api/orders/return-requests', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['items']);
+    }
+
     public function test_return_request_rejects_when_outside_30_day_window(): void
     {
         ['order_id' => $orderId, 'reference' => $reference, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();

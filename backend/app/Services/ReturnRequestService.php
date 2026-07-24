@@ -65,6 +65,22 @@ class ReturnRequestService
             ]);
         }
 
+        foreach ($items as $item) {
+            $line = $order->lines->firstWhere('id', $item['order_line_id']);
+
+            if (! $line) {
+                throw ValidationException::withMessages([
+                    'items' => ["Order line {$item['order_line_id']} does not belong to this order."],
+                ]);
+            }
+
+            if ($item['quantity'] > $line->quantity) {
+                throw ValidationException::withMessages([
+                    'items' => ["Cannot return more than the purchased quantity for order line {$item['order_line_id']}."],
+                ]);
+            }
+        }
+
         $returnRequest = OrderReturnRequest::create([
             'order_id' => $order->id,
             'status' => OrderReturnRequest::STATUS_REQUESTED,
