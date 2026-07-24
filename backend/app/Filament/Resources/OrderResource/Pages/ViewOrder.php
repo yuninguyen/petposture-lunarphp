@@ -107,7 +107,10 @@ class ViewOrder extends ViewRecord
             $actions[] = Actions\ActionGroup::make($secondaryActions)
                 ->label(__('More Actions'))
                 ->icon('heroicon-o-ellipsis-vertical')
-                ->color('gray');
+                ->color('gray')
+                ->button()
+                ->outlined()
+                ->dropdownPlacement('bottom-end');
         }
 
         return $actions;
@@ -172,7 +175,8 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('customer_ip_block')
                                 ->label(__('Customer IP'))
                                 ->html()
-                                ->state(fn($record) => static::formatCustomerIpBlock((array) ($record->meta ?? []))),
+                                ->state(fn($record) => static::formatCustomerIpBlock((array) ($record->meta ?? [])))
+                                ->columnSpanFull(),
                         ])->columns(2)->columnSpan(3)->extraAttributes(['class' => 'h-full']),
 
                     Infolists\Components\Grid::make(1)
