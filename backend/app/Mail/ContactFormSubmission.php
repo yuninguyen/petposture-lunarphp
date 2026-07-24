@@ -20,7 +20,6 @@ class ContactFormSubmission extends Mailable
     {
         return new Envelope(
             subject: "[Contact] {$this->messageSubject}",
-            replyTo: [$this->senderEmail],
         );
     }
 
