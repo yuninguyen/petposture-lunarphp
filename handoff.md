@@ -29,18 +29,27 @@ It was still using `Content(markdown: ...)`, which `RULES.md` explicitly bans fo
 **Added Feature test coverage for the return-request flow (`tests/Feature/ReturnRequestApiTest.php`)**
 18 new tests covering: guest `POST /api/orders/return-requests` (delivered order, shipped order without `delivered_at`, unknown credentials → 404, missing fields → 422, order not delivered/shipped → 422, duplicate active request → 422, outside/inside the 30-day window), a direct `ReturnRequestService::create()` call for the empty-items rejection (unreachable via HTTP since the controller's own validation already requires `items: min:1`), and the full admin surface (`index`/`show`/`approve`/`reject`/`complete`, status guards, non-admin `403`). Found and fixed one real bug while writing them: `OrderReturnRequestResource` responses are wrapped in Laravel's default `data` key — worth remembering for any future test against a bare (non-`::collection()`) `JsonResource` return in this app. Full suite: 47 passed / 24 failed, same 24 pre-existing unrelated failures as documented below — no regressions.
 
+**Unified return-request lifecycle email subjects, added a Contact-support CTA to `OrderReturnApproved`, verified `OrderReturnRejected`/`OrderReturnApproved` end-to-end**
+`OrderReturnApproved`'s subject didn't even say "Approved" ("Your Return for Order #{ref}") and `OrderReturnRejected` used a different sentence structure entirely ("Update on Your Order #{ref} Return Request") — neither matched `OrderReturnRequested`'s established "Your Return Request for Order #{ref} Has Been [status]" pattern. Unified all three. Also gave `OrderReturnApproved` a "Contact support" button + lead-in line (it only had a plain-text mailto link, inconsistent with `OrderReturnRejected`'s styled button). Verified both against the real stray test order `#00000014` (return request id `2`, status `approved`) by constructing the Mailables directly from that persisted record and sending to its real `customer_reference` — confirms both templates render correctly with real data, not just synthetic fixtures.
+
+**Audited the remaining 4 untested email templates (`NewsletterConfirmation`, `ContactFormSubmission`, `NewOrderAdmin`, `CancelledOrderAdmin`) — redesigned 2, found and fixed a real spam-triggering bug**
+- `NewsletterConfirmation` (customer-facing) and `ContactFormSubmission` (internal) were both redesigned from `Content(markdown: ...)` to the branded custom Blade style. `NewOrderAdmin`/`CancelledOrderAdmin` (internal-only) left as markdown — RULES.md's markdown ban is specifically for customer-facing mail.
+- **Found via raw header inspection of 2 real test sends that both landed in Thư rác (Spam)**: `ContactFormSubmission`'s `Reply-To` was set to the *customer's own email* (a different domain than `From: no-reply@petposture.com`) — a classic phishing/BEC signal spam filters flag on, regardless of DKIM/SPF/DMARC all passing (which they did, both times — this was never a deliverability/DNS issue). Confirmed independently that Hostinger webmail doesn't even honor `Reply-To` on its Reply button (it always quotes/replies to the original `From`), so the header was simultaneously non-functional *and* actively harmful. Removed it entirely (commit `1d98bec`); admin can still read/copy the customer's email from the "From:" line rendered in the email body.
+- General lesson for any future Mailable: **a `Reply-To` pointing to a different domain than `From` is a spam-filter red flag** — only safe to use when Reply-To shares the sending domain (as `support@petposture.com` does on `WelcomeEmail`/`ContactAutoReply`).
+
 ## Known gaps / not done
 
 - **Hostinger Mail trial expires 2026-08-15** (23 days from today) — must upgrade to a paid plan before then or every mailbox on the domain (including the just-fixed `no-reply@`/`support@`/`accounts@`/`hello@` aliases) stops working again.
-- **`OrderReturnRejected` email** — not yet verified end-to-end in production (carried over from 2026-07-23).
+- The live public `/contact` form may be getting scanned by spam bots (one of the two spam-flagged test sends turned out to be a real external submission from a suspicious domain, not one of today's manual tests) — worth adding a honeypot/captcha if this recurs.
 - Phase 2/3 of the return-request roadmap (auto-calculated refund, auto-generated return label) — still deferred, not started.
 - 2 unrelated uncommitted files sitting in the working tree since before today's session (`AGENTS.md`, `CLAUDE.md`, small 2-line diffs each, likely GitNexus index-count auto-updates) — not investigated or committed today.
 
 ## Immediate follow-ups (small, next session)
 
-1. Finish the email template audit from 2026-07-23: `OrderReturnRejected`, `NewsletterConfirmation`, `ContactFormSubmission`, `NewOrderAdmin`, `CancelledOrderAdmin` (`ContactAutoReply` done today) — now that mail delivery itself is confirmed working, worth re-verifying these actually land now (some may have been silently failing to deliver this whole time given the MX issue, even though queue/logs showed no errors).
+1. Email template audit from 2026-07-23 is now fully done (`OrderReturnRejected`, `OrderReturnApproved`, `NewsletterConfirmation`, `ContactFormSubmission`, `NewOrderAdmin`, `CancelledOrderAdmin`, `ContactAutoReply` all verified/fixed today).
 2. Consider adding a "Request a Return" entry point from the guest `/track-order` results panel.
 3. **Upgrade Hostinger Mail before 2026-08-15** or schedule a reminder — see Known gaps. (Explicitly deprioritized by Yuni today — not urgent yet, but don't let it slip past the deadline.)
+4. Watch the `/contact` form for repeat spam-bot submissions (see Known gaps) — add a honeypot field or simple captcha if it keeps happening.
 
 ## Backlog / bigger asks (need scoping before starting)
 
