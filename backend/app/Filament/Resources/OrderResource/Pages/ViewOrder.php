@@ -152,6 +152,36 @@ class ViewOrder extends ViewRecord
             ->implode('<br>') ?: '—';
     }
 
+    private static function formatTrackingBlock(array $meta): string
+    {
+        $trackingNumber = (string) ($meta['tracking_number'] ?? '');
+
+        if ($trackingNumber === '') {
+            return '—';
+        }
+
+        $carrierLabels = [
+            'ups' => 'UPS',
+            'usps' => 'USPS',
+            'fedex' => 'FedEx',
+            'dhl' => 'DHL',
+            'manual' => 'Other / Manual',
+        ];
+        $carrierLabel = $carrierLabels[$meta['shipment_carrier'] ?? 'manual'] ?? str($meta['shipment_carrier'] ?? 'manual')->headline()->toString();
+
+        $trackingDisplay = e($trackingNumber);
+
+        $shipments = array_values(array_filter((array) ($meta['shipments'] ?? []), 'is_array'));
+        $latestShipment = $shipments[array_key_last($shipments)] ?? [];
+        $url = $meta['shipment_tracking_url'] ?? $latestShipment['tracking_url'] ?? null;
+
+        if ($url) {
+            $trackingDisplay = '<a href="' . e($url) . '" target="_blank" rel="noopener" style="text-decoration: underline;">' . $trackingDisplay . '</a>';
+        }
+
+        return "<strong>{$carrierLabel}:</strong> {$trackingDisplay}";
+    }
+
     public function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([
@@ -172,6 +202,11 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('created_at')
                                 ->label(__('Date'))
                                 ->dateTime(),
+                            Infolists\Components\TextEntry::make('tracking_block')
+                                ->label(__('Tracking'))
+                                ->html()
+                                ->visible(fn($record) => filled($record->meta['tracking_number'] ?? null))
+                                ->state(fn($record) => static::formatTrackingBlock((array) ($record->meta ?? []))),
                             Infolists\Components\TextEntry::make('customer_ip_block')
                                 ->label(__('Customer IP'))
                                 ->html()
