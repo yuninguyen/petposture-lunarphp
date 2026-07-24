@@ -96,11 +96,22 @@ petposture/
   against what was actually purchased.
   On approval, the refund amount is auto-computed (25% restocking fee on the pre-tax item
   subtotal, prorated for partial-quantity returns, tax refunded in full) — the admin can waive
-  the fee for a confirmed defective/wrong-item case or override the final amount, and the
-  approval email shows the fee/refund breakdown. Refunding is still a separate, manual action on
-  the order itself — nothing here auto-triggers the actual Stripe refund.
+  the fee for a confirmed defective/wrong-item case or override the final amount (the recorded
+  fee reconciles with whatever amount is actually approved), and the approval email shows the
+  fee/refund breakdown. Refunding is still a separate, manual action on the order itself —
+  nothing here auto-triggers the actual Stripe refund.
+  The `/returns` form itself shows a live estimated-refund preview (`POST
+  /api/orders/return-requests/preview`, no side effects) as items are selected, a restocking-fee
+  disclosure linking to the policy page, days-remaining-in-window messaging, and blocks the
+  lookup early with a friendly message if the order already has a return in progress. Admin's
+  Return Requests table surfaces the resulting Refund/Fee amounts, and the Approve form warns if
+  a manually-entered override deviates from the computed estimate.
 - Automatic "delivered" detection via an AfterShip tracking webhook (`/api/webhooks/aftership`,
   HMAC-verified) — no more manually checking carrier tracking pages to close out an order
+- Contact form (`/contact` → `POST /api/contact`) has a hidden honeypot field — a filled
+  `website` field silently no-ops (200 response, no mail sent) instead of erroring, so bots
+  don't learn they were caught — and every real submission is logged (IP + email domain) for
+  future spam-pattern audits
 - Product reviews (storefront submit + admin moderation)
 - Multi-language support
 - SEO metadata & automatic sitemap
@@ -311,6 +322,14 @@ npm run dev
 ```
 
 Frontend runs at `http://localhost:3000`, backend at `http://localhost:8000`.
+
+**Troubleshooting a local admin panel resource that 404s or is missing from the sidebar**: try
+`php artisan filament:optimize-clear`, which clears a stale `bootstrap/cache/filament` component
+cache that can silently hide/404 a resource added or changed since the cache was last built.
+(`APP_URL` intentionally stays pointed at the production domain even in local `.env` — it's only
+used for generating absolute URLs, e.g. in emails; if you click a Filament-generated sidebar link
+while running `php artisan serve` locally, it'll follow `APP_URL` to production instead of
+staying local — expected, not a bug.)
 
 ### Docker
 

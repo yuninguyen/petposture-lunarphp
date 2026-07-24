@@ -1,6 +1,57 @@
 # Handoff — 2026-07-24
 
-## Shipped today (all deployed to production, verified working)
+## Shipped today, deployed to production, verified working
+
+**Added a honeypot field + submission logging to the `/contact` form** (commit `658a826`, deploy
+verified via `curl` against the live backend and a real Hostinger-inbox send)
+A hidden `website` field bots tend to autofill: if present, the endpoint returns `200` (no error
+that tells the bot it was caught) and logs `Contact form spam blocked (honeypot)` instead of
+sending mail. Every real submission now logs IP + email domain, since the endpoint previously had
+no audit trail at all. Not enough production traffic yet to know if the spam bot from
+2026-07-23/24 gets stopped by it — see Known gaps below.
+
+## Shipped today, committed locally only — NOT yet deployed
+
+**Return Request Phase 2: auto-computed refund estimate on approval**
+Previously the admin typed a raw dollar guess into "Estimated Refund Amount" with zero
+calculation. Now `ReturnRequestService::calculateRefundEstimate()`/`previewRefundEstimate()`
+compute a 25% restocking fee on the pre-tax item subtotal (prorated for partial-quantity
+returns, tax refunded in full), the admin can waive the fee for a confirmed defective/wrong-item
+case (explicit toggle — never inferred from the customer's free-text reason) or override the
+final number, and `restocking_fee_minor` always reconciles with whatever `refund_amount_minor`
+actually gets approved (recomputed from the override itself when one is given, not left as a
+stale 25%-of-subtotal figure). The real Stripe refund is still a separate manual step on the
+Order page, unchanged — this only automates the *estimate*, not the money movement.
+- Migration: `restocking_fee_minor` + `fee_waived` columns on `order_return_requests`.
+- Found and fixed 3 real gaps surfaced by adding real money math to this flow (previously
+  harmless since the admin always typed the amount by hand): `create()` didn't check an
+  `order_line_id` belonged to the order being returned, didn't cap quantity against what was
+  purchased, and didn't sum quantity across duplicate `order_line_id` entries in one request or
+  across a *prior completed* return request for the same line — all four now validated.
+- New guest-facing `POST /api/orders/return-requests/preview` (no side effects) powers a live
+  "Estimated refund: $X" preview on the `/returns` form as items are selected.
+- `POST /api/orders/track` now also returns `has_active_return_request`, so `/returns` can block
+  the lookup early with a friendly message instead of letting the customer fill out the whole
+  form before hitting a 422 at submit time.
+- `/returns` also gained: a 25%-restocking-fee disclosure note linking to the policy page, and
+  days-remaining-in-the-30-day-window messaging (mirrors what the Account page already showed;
+  the guest page previously had neither).
+- Admin's Return Requests table gained Refund/Fee columns (previously only visible via the API
+  or the approval email), and the Approve form warns (⚠️) when a manual override deviates from
+  the computed estimate.
+- 29 tests in `ReturnRequestApiTest.php` (up from 18), all passing. Verified end-to-end with
+  Playwright screenshots against a throwaway local test order (created and deleted via tinker,
+  never touched production) — every piece of new UI confirmed rendering/working for real, not
+  just reviewed as code.
+- **Local-dev gotcha hit while verifying** (documented in `README.md` → Local Setup now): a
+  stale `bootstrap/cache/filament` component cache silently 404'd the whole Return Requests admin
+  resource until `php artisan filament:optimize-clear`. Not a code bug — local environment state,
+  not committed anywhere. (Also hit `APP_URL` pointing at the production domain while running
+  `php artisan serve` locally — that's intentional config, not a bug, it just means a
+  Filament-generated sidebar link followed to production instead of staying on localhost during
+  manual browser verification.)
+- **Deploy still pending** — needs `git push` → SSH to VPS → `git pull` + rebuild `backend` +
+  `php artisan migrate --force` (automatic on container start) before any of this is live.
 
 **Fixed a critical mail-delivery outage: `@petposture.com` had no working MX record**
 Investigating "does the `no-reply@` mailbox actually receive admin notification emails" (a follow-up from 2026-07-23) surfaced that it did not — and neither would any other address on the domain.
@@ -40,21 +91,20 @@ It was still using `Content(markdown: ...)`, which `RULES.md` explicitly bans fo
 ## Known gaps / not done
 
 - **Hostinger Mail trial expires 2026-08-15** (23 days from today) — must upgrade to a paid plan before then or every mailbox on the domain (including the just-fixed `no-reply@`/`support@`/`accounts@`/`hello@` aliases) stops working again.
-- The live public `/contact` form may be getting scanned by spam bots (one of the two spam-flagged test sends turned out to be a real external submission from a suspicious domain, not one of today's manual tests) — worth adding a honeypot/captcha if this recurs.
-- Phase 2/3 of the return-request roadmap (auto-calculated refund, auto-generated return label) — still deferred, not started.
-- 2 unrelated uncommitted files sitting in the working tree since before today's session (`AGENTS.md`, `CLAUDE.md`, small 2-line diffs each, likely GitNexus index-count auto-updates) — not investigated or committed today.
+- `/contact` honeypot + logging is deployed but **not yet proven against the real bot** seen on 2026-07-23/24 — no repeat spam-flagged submission since deploy to confirm it actually stops that traffic. Check back in a week or two; add a captcha only if spam still gets through.
+- **Return Request Phase 2 is done but not deployed** — see the "committed locally only" section above. Needs a real deploy before it's live.
+- Return Request Phase 3 (auto-generated prepaid return label via a carrier API) — still not started.
+- Return Request has no cumulative-quantity tracking gap left (Phase 2 closed it), but there's still no admin UI to see remaining-returnable-quantity per line at a glance — not blocking, just a nice-to-have if return volume grows.
 
 ## Immediate follow-ups (small, next session)
 
-1. Email template audit from 2026-07-23 is now fully done (`OrderReturnRejected`, `OrderReturnApproved`, `NewsletterConfirmation`, `ContactFormSubmission`, `NewOrderAdmin`, `CancelledOrderAdmin`, `ContactAutoReply` all verified/fixed today).
-2. Done today: added a "Request a Return" entry point to the guest `/track-order` results panel (`frontend/components/TrackOrderPage.tsx`, commit `9546232`) — shows next to `RetryPaymentPanel` when `status` is `shipped`/`delivered`, links to `/returns?ref=&email=` (same pattern Account page already used). Doesn't reproduce the Account page's 30-day-window messaging since `TrackedOrder` (the `/api/orders/track` response type) has no `delivered_at` field — `/returns` still enforces the real 30-day cutoff server-side, so this is a safe simplification, not a missing check.
-3. **Upgrade Hostinger Mail before 2026-08-15** or schedule a reminder — see Known gaps. (Explicitly deprioritized by Yuni today — not urgent yet, but don't let it slip past the deadline.)
-4. Watch the `/contact` form for repeat spam-bot submissions (see Known gaps) — add a honeypot field or simple captcha if it keeps happening.
+1. **Deploy today's local-only Return Request Phase 2 work** (see above) — `git push` → SSH to VPS → `git pull` + rebuild `backend` + `up -d --force-recreate backend`. Migration runs automatically.
+2. Watch `/contact` for repeat spam-bot submissions post-honeypot-deploy (see Known gaps).
+3. **Upgrade Hostinger Mail before 2026-08-15** or schedule a reminder — see Known gaps. (Explicitly deprioritized by Yuni — not urgent yet, but don't let it slip past the deadline.)
 
 ## Backlog / bigger asks (need scoping before starting)
 
-- **Return Request Phase 2** — server-computed refund amount per the restocking-fee policy.
-- **Return Request Phase 3** — auto-generated prepaid return shipping label via a carrier API.
+- **Return Request Phase 3** — auto-generated prepaid return shipping label via a carrier API. (Phase 2 — server-computed refund amount — shipped today, see above.)
 - **PayPal payment gateway** — net-new integration alongside the existing custom Stripe integration.
 - **Shop by Solution / Shop by Breed re-think** — needs a business-side decision on target categories first.
 - **Support helpdesk tooling** (Zendesk/Freshdesk/shared inbox) for `support@petposture.com` — only worth it once there's more than one person handling customer replies.
