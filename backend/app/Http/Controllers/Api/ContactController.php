@@ -23,7 +23,7 @@ class ContactController extends Controller
             'order_number' => 'nullable|string|max:100',
         ])->validate();
 
-        $adminEmail = config('mail.from.address');
+        $adminEmail = 'support@petposture.com';
 
         try {
             // Notify admin
