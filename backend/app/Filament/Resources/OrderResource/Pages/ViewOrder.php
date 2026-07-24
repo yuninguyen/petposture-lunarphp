@@ -156,7 +156,7 @@ class ViewOrder extends ViewRecord
     {
         return $infolist->schema([
 
-            Infolists\Components\Grid::make(5)
+            Infolists\Components\Grid::make(12)
                 ->schema([
                     Infolists\Components\Section::make(__('Order Summary'))
                         ->schema([
@@ -177,45 +177,42 @@ class ViewOrder extends ViewRecord
                                 ->html()
                                 ->state(fn($record) => static::formatCustomerIpBlock((array) ($record->meta ?? [])))
                                 ->columnSpanFull(),
-                        ])->columns(2)->columnSpan(3)->extraAttributes(['class' => 'h-full']),
+                        ])->columns(2)->columnSpan(6)->extraAttributes(['class' => 'h-full']),
 
-                    Infolists\Components\Grid::make(2)
+                    Infolists\Components\Section::make(__('Order Attribution'))
                         ->schema([
-                            Infolists\Components\Section::make(__('Order Attribution'))
-                                ->schema([
-                                    Infolists\Components\TextEntry::make('meta.attribution_origin')
-                                        ->label(__('Origin'))
-                                        ->default('—'),
-                                    Infolists\Components\TextEntry::make('meta.attribution_device_type')
-                                        ->label(__('Device Type'))
-                                        ->default('—'),
-                                    Infolists\Components\TextEntry::make('meta.attribution_session_page_views')
-                                        ->label(__('Session Page Views'))
-                                        ->default('—'),
-                                ]),
+                            Infolists\Components\TextEntry::make('meta.attribution_origin')
+                                ->label(__('Origin'))
+                                ->default('—'),
+                            Infolists\Components\TextEntry::make('meta.attribution_device_type')
+                                ->label(__('Device Type'))
+                                ->default('—'),
+                            Infolists\Components\TextEntry::make('meta.attribution_session_page_views')
+                                ->label(__('Session Page Views'))
+                                ->default('—'),
+                        ])->columnSpan(3)->extraAttributes(['class' => 'h-full']),
 
-                            Infolists\Components\Section::make(__('Fraud & Risk'))
-                                ->description(__('Powered by Stripe Radar — automatic on every card payment, no extra setup required.'))
-                                ->visible(fn($record) => filled($record->meta['fraud_risk_level'] ?? null))
-                                ->schema([
-                                    Infolists\Components\TextEntry::make('meta.fraud_risk_level')
-                                        ->label(__('Risk Level'))
-                                        ->badge()
-                                        ->formatStateUsing(fn(?string $state): string => $state ? str($state)->headline()->toString() : '—')
-                                        ->color(fn(?string $state): string => match ($state) {
-                                            'highest' => 'danger',
-                                            'elevated' => 'warning',
-                                            default => 'success',
-                                        }),
-                                    Infolists\Components\TextEntry::make('meta.fraud_risk_score')
-                                        ->label(__('Risk Score'))
-                                        ->default('—'),
-                                    Infolists\Components\TextEntry::make('meta.fraud_seller_message')
-                                        ->label(__('Note'))
-                                        ->default('—')
-                                        ->columnSpanFull(),
-                                ]),
-                        ])->columnSpan(2),
+                    Infolists\Components\Section::make(__('Fraud & Risk'))
+                        ->description(__('Powered by Stripe Radar — automatic on every card payment, no extra setup required.'))
+                        ->visible(fn($record) => filled($record->meta['fraud_risk_level'] ?? null))
+                        ->schema([
+                            Infolists\Components\TextEntry::make('meta.fraud_risk_level')
+                                ->label(__('Risk Level'))
+                                ->badge()
+                                ->formatStateUsing(fn(?string $state): string => $state ? str($state)->headline()->toString() : '—')
+                                ->color(fn(?string $state): string => match ($state) {
+                                    'highest' => 'danger',
+                                    'elevated' => 'warning',
+                                    default => 'success',
+                                }),
+                            Infolists\Components\TextEntry::make('meta.fraud_risk_score')
+                                ->label(__('Risk Score'))
+                                ->default('—'),
+                            Infolists\Components\TextEntry::make('meta.fraud_seller_message')
+                                ->label(__('Note'))
+                                ->default('—')
+                                ->columnSpanFull(),
+                        ])->columnSpan(3)->extraAttributes(['class' => 'h-full']),
                 ])->extraAttributes(['class' => 'items-stretch']),
 
             Infolists\Components\Grid::make(2)
