@@ -13,6 +13,7 @@ Read this before touching code. See `ARCHITECTURE.md` for the why; this file is 
 - Never mutate order status by hand (`$order->update(['status' => ...])`). Always go through `OrderOperationsService::update()`/`performAction()` so the state machine, emails, and webhooks stay in sync.
 - New scalar/mutable order state → `meta` JSON key. New relational/audited data (multiple rows, own lifecycle) → its own migration + model, matching the `order_events` / `order_return_requests` / `order_shipments` precedent.
 - Shipment tracking numbers are **required**, never silently defaulted (no "fall back to the order reference" placeholder) — `OrderOperationsService::update()`/`recordShipment()` both throw `ValidationException` on a blank `tracking_number` rather than inventing one.
+- Refund reasons are a fixed select (`OrderOperationsService::REFUND_REASON_LABELS`), not free text — keeps refund-without-return cases reportable/auditable. Add new reasons to that const, don't accept an arbitrary string.
 - Adding a `Schedule::command(...)` to `routes/console.php` does nothing by itself — `supervisord.conf` must also run `php artisan schedule:work` (there's no OS cron in the container). Always add/verify both together.
 - Comments: sparse, by convention. Only for non-obvious *why* (a workaround, a hidden constraint). Never restate what the code already says.
 - Filament resources: auto-discovered, no manual registration. Commerce resources go in `getNavigationGroup() { return __('lunarpanel::global.sections.sales'); }` — don't invent a new nav group.

@@ -69,12 +69,25 @@ verified (`ps aux` inside the container confirms `schedule:work` running alongsi
   `README.md`/`ARCHITECTURE.md`/`RULES.md` all updated to document this (a `Schedule::command()`
   registration silently does nothing without this process running).
 
+**Refund Reason select + Partially Refunded status** — commits `d7c042c`, `b0eee73` (pushed, **not
+yet deployed** — build/rebuild not run for this pair as of session end)
+- The order-level Refund action now requires a Reason (`OrderOperationsService::REFUND_REASON_LABELS`:
+  Defective/Damaged, Wrong Item Shipped, Low-Value — No Return Required, Customer Changed Mind,
+  Duplicate/Accidental Order, Approved Return Request, Other) — a fixed select, not free text, so
+  it stays reportable. Stored in `meta.refund_reason`, shown in the order's payment info block and
+  logged as an Order Note event. This doubles as the audit trail for the "refund without requiring
+  the item back" pattern discussed today (useful for filing supplier claims on the dropship side).
+- Found and fixed a follow-on gap the same conversation surfaced: a **partial** refund left
+  `meta.payment_status` at `"paid"` — Yuni noticed the Payment Status line still said "Paid" right
+  after refunding. Partial refunds now set `payment_status` to `"partially-refunded"` (full refunds
+  still set `"refunded"` as before); existing generic label formatters (`Str::headline()`/
+  `formatStatusLabel()`) render it correctly with zero frontend changes needed. This value is also
+  customer-facing (`/account`, `/checkout/success` read the same `payment_status` field) — same
+  transparency a full refund already gets, just extended consistently to partial ones.
+- **Not deployed this session** — verify + deploy next session before relying on this in production.
+
 ## Known gaps / not done
 
-- **Refund Reason select** — proposed by Yuni (add a reason dropdown to the order-level Refund
-  action, e.g. "Low value — no return required," to create an audit trail for refund-without-return
-  cases, which also doubles as a paper trail for filing supplier claims on the dropship side).
-  Discussed, not yet built — awaiting go-ahead.
 - **Low-value auto-waive-return threshold** — idea surfaced while discussing dropshipping return
   patterns (refund outright below some $ threshold instead of requiring the item back). Not
   scoped, no dollar amount decided, not built.
@@ -92,7 +105,8 @@ verified (`ps aux` inside the container confirms `schedule:work` running alongsi
 
 ## Immediate follow-ups (next session)
 
-1. Decide on the Refund Reason select (see Known gaps) and build it if wanted — small, low-risk.
+1. **Deploy `d7c042c`/`b0eee73` (Refund Reason + Partially Refunded)** — pushed but not deployed
+   this session; do this first before anything else touches the order/refund flow.
 2. Decide on a low-value no-return-required threshold, if any.
 3. Watch for the next real "delivered" AfterShip webhook hit to confirm the new per-shipment
    matching logic end-to-end with real carrier data (not test tracking numbers).

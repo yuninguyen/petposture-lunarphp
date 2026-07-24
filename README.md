@@ -72,8 +72,12 @@ petposture/
 - Customer account dashboard (`/account`): order history with expandable order detail
   (items, shipping/billing address, tracking, payment status), saved addresses, profile info
 - Order management & tracking, with a WooCommerce-style admin order view:
-  status actions (mark paid/processing/shipped/delivered/cancel), refunds (full/partial via Stripe),
-  and an auto-updating Order Notes activity timeline
+  status actions (mark paid/processing/shipped/delivered/cancel), refunds (full/partial via Stripe)
+  with a required Reason select (Defective, Wrong Item, Low-Value — No Return Required, Customer
+  Changed Mind, Duplicate Order, Approved Return Request, Other) so a refund issued outside the
+  Return Request flow still leaves an audit trail, and an auto-updating Order Notes activity
+  timeline. Payment status distinguishes "Partially Refunded" from "Paid"/"Refunded" so a partial
+  refund is visible at a glance instead of still reading "Paid".
 - Multi-shipment tracking (added 2026-07-25): an order can ship in more than one package —
   admin picks which items/quantities go in each shipment when marking an order shipped (or
   adding another package to an already-shipped order), each with its own required tracking
