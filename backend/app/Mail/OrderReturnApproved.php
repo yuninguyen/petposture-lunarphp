@@ -15,7 +15,7 @@ class OrderReturnApproved extends Mailable
     {
         return new Envelope(
             to:      $this->returnRequest->order->customer_reference,
-            subject: "Your Return for " . config('app.name') . " Order #{$this->returnRequest->order->reference}",
+            subject: "Your Return Request for " . config('app.name') . " Order #{$this->returnRequest->order->reference} Has Been Approved",
         );
     }
 

@@ -15,7 +15,7 @@ class OrderReturnRejected extends Mailable
     {
         return new Envelope(
             to:      $this->returnRequest->order->customer_reference,
-            subject: "Update on Your " . config('app.name') . " Order #{$this->returnRequest->order->reference} Return Request",
+            subject: "Your Return Request for " . config('app.name') . " Order #{$this->returnRequest->order->reference} Has Been Rejected",
         );
     }
 
