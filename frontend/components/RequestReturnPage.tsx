@@ -21,7 +21,25 @@ type LookedUpOrder = {
     reference: string;
     status: string;
     lines: OrderLine[];
+    delivered_at: string | null;
 };
+
+const RETURN_WINDOW_DAYS = 30;
+
+function getReturnWindowMessage(order: LookedUpOrder): { text: string; expired: boolean } | null {
+    if (order.status !== "delivered" || !order.delivered_at) {
+        return null;
+    }
+
+    const deadline = new Date(order.delivered_at).getTime() + RETURN_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    const daysLeft = Math.ceil((deadline - Date.now()) / (24 * 60 * 60 * 1000));
+
+    if (daysLeft <= 0) {
+        return { text: "This order is outside our 30-day return window.", expired: true };
+    }
+
+    return { text: `${daysLeft} day${daysLeft === 1 ? "" : "s"} left in the 30-day return window.`, expired: false };
+}
 
 const REASONS = [
     "Doesn't fit",
@@ -54,6 +72,9 @@ function RequestReturnContent() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
 
+    const [estimate, setEstimate] = useState<{ restocking_fee: number; estimated_refund: number } | null>(null);
+    const [isEstimating, setIsEstimating] = useState(false);
+
     const lookupOrder = async (reference: string, orderEmail: string) => {
         setIsLookingUp(true);
         setLookupError(null);
@@ -82,6 +103,10 @@ function RequestReturnContent() {
                 throw new Error("This order isn't eligible for a return yet. Returns can be requested once an order has shipped or been delivered.");
             }
 
+            if (data?.has_active_return_request) {
+                throw new Error("You already have a return request in progress for this order. Check your email for updates from our team.");
+            }
+
             setOrder(foundOrder);
         } catch (err) {
             setLookupError(err instanceof Error ? err.message : "Could not connect to the server. Please try again.");
@@ -103,6 +128,45 @@ function RequestReturnContent() {
     };
 
     const productLines = order?.lines.filter((line) => line.type !== "shipping") ?? [];
+
+    const selectedQuantitiesKey = JSON.stringify(selectedQuantities);
+
+    useEffect(() => {
+        if (!order || Object.keys(selectedQuantities).length === 0) {
+            setEstimate(null);
+            return;
+        }
+
+        const timeout = setTimeout(async () => {
+            setIsEstimating(true);
+            try {
+                const apiBase = getApiBaseUrl();
+                const items = Object.entries(selectedQuantities).map(([lineId, quantity]) => ({
+                    order_line_id: Number(lineId),
+                    quantity,
+                }));
+
+                const res = await fetch(`${apiBase}/api/orders/return-requests/preview`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        order_reference: orderReference.trim(),
+                        email: email.trim(),
+                        items,
+                    }),
+                });
+
+                setEstimate(res.ok ? await res.json() : null);
+            } catch {
+                setEstimate(null);
+            } finally {
+                setIsEstimating(false);
+            }
+        }, 400);
+
+        return () => clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedQuantitiesKey, order]);
 
     const toggleItem = (lineId: number, maxQuantity: number) => {
         setSelectedQuantities((prev) => {
@@ -275,6 +339,15 @@ function RequestReturnContent() {
                                     <div>
                                         <h2 className="text-[24px] font-bold text-[#3e4c57]">Order #{order.reference}</h2>
                                         <p className="text-zinc-500 text-[14px] mt-2">Select the item(s) you&rsquo;d like to return.</p>
+                                        {(() => {
+                                            const windowMessage = getReturnWindowMessage(order);
+                                            if (!windowMessage) return null;
+                                            return (
+                                                <p className={`text-[12px] font-semibold mt-2 ${windowMessage.expired ? "text-red-500" : "text-[#df8448]"}`}>
+                                                    {windowMessage.text}
+                                                </p>
+                                            );
+                                        })()}
                                     </div>
 
                                     <div className="space-y-4">
@@ -335,6 +408,27 @@ function RequestReturnContent() {
                                             className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium resize-none"
                                         />
                                     </div>
+
+                                    {isEstimating ? (
+                                        <p className="text-[12px] text-zinc-400">Calculating estimated refund…</p>
+                                    ) : estimate ? (
+                                        <div className="p-4 bg-[#fdf2ea] border border-[#df8448]/20 rounded-xl">
+                                            <p className="text-[14px] font-bold text-[#3e4c57]">
+                                                Estimated refund: ${estimate.estimated_refund.toFixed(2)}
+                                            </p>
+                                            <p className="text-[11px] text-zinc-400 mt-1">
+                                                Includes a ${estimate.restocking_fee.toFixed(2)} restocking fee (25%). Final amount confirmed after inspection.
+                                            </p>
+                                        </div>
+                                    ) : null}
+
+                                    <p className="text-[12px] text-zinc-400 leading-relaxed">
+                                        Approved returns are refunded minus a 25% restocking fee and original shipping cost. See our{" "}
+                                        <Link href="/return-refund-policy" className="text-[#df8448] font-semibold underline underline-offset-2" target="_blank">
+                                            Return &amp; Refund Policy
+                                        </Link>{" "}
+                                        for full details.
+                                    </p>
 
                                     {submitError && (
                                         <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-[13px] font-medium">
