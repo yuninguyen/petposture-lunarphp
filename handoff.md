@@ -10,7 +10,7 @@ sending mail. Every real submission now logs IP + email domain, since the endpoi
 no audit trail at all. Not enough production traffic yet to know if the spam bot from
 2026-07-23/24 gets stopped by it — see Known gaps below.
 
-## Shipped today, committed locally only — NOT yet deployed
+## Shipped today, deployed to production (commit `38204a5`), verified via curl — not yet via a real end-to-end guest submission
 
 **Return Request Phase 2: auto-computed refund estimate on approval**
 Previously the admin typed a raw dollar guess into "Estimated Refund Amount" with zero
@@ -50,8 +50,18 @@ Order page, unchanged — this only automates the *estimate*, not the money move
   `php artisan serve` locally — that's intentional config, not a bug, it just means a
   Filament-generated sidebar link followed to production instead of staying on localhost during
   manual browser verification.)
-- **Deploy still pending** — needs `git push` → SSH to VPS → `git pull` + rebuild `backend` +
-  `php artisan migrate --force` (automatic on container start) before any of this is live.
+- **Deployed**: pushed, pulled, rebuilt `backend`+`frontend`, recreated — both containers healthy
+  on commit `38204a5`. Spot-checked live: `POST /api/orders/return-requests/preview` and
+  `POST /api/orders/track` both return the expected JSON (not a routing-level 404), confirming
+  the new routes are actually wired up in production.
+- **Not yet done: a real end-to-end guest submission through `https://petposture.com/returns`**
+  with a real order. The known stray test order `#00000014` can't be reused for this — it already
+  has an active return request (id `2`, approved), and its only real product line was already
+  fully consumed by that request, so even completing it would hit the new
+  already-fully-returned-line guard. Blocked on finding/being given a different real
+  `delivered`/`shipped` order + email with no return history — querying/listing production orders
+  in bulk to find one myself was (correctly) blocked as a PII bulk-read. **Deferred by Yuni to a
+  later session** — do this the next time there's a suitable order reference + email on hand.
 
 **Fixed a critical mail-delivery outage: `@petposture.com` had no working MX record**
 Investigating "does the `no-reply@` mailbox actually receive admin notification emails" (a follow-up from 2026-07-23) surfaced that it did not — and neither would any other address on the domain.
@@ -92,13 +102,13 @@ It was still using `Content(markdown: ...)`, which `RULES.md` explicitly bans fo
 
 - **Hostinger Mail trial expires 2026-08-15** (23 days from today) — must upgrade to a paid plan before then or every mailbox on the domain (including the just-fixed `no-reply@`/`support@`/`accounts@`/`hello@` aliases) stops working again.
 - `/contact` honeypot + logging is deployed but **not yet proven against the real bot** seen on 2026-07-23/24 — no repeat spam-flagged submission since deploy to confirm it actually stops that traffic. Check back in a week or two; add a captcha only if spam still gets through.
-- **Return Request Phase 2 is done but not deployed** — see the "committed locally only" section above. Needs a real deploy before it's live.
+- **Return Request Phase 2 is deployed but not yet confirmed via a real guest submission** on `https://petposture.com/returns` — see "Not yet done" note above. Only curl/route-level checks done so far.
 - Return Request Phase 3 (auto-generated prepaid return label via a carrier API) — still not started.
 - Return Request has no cumulative-quantity tracking gap left (Phase 2 closed it), but there's still no admin UI to see remaining-returnable-quantity per line at a glance — not blocking, just a nice-to-have if return volume grows.
 
 ## Immediate follow-ups (small, next session)
 
-1. **Deploy today's local-only Return Request Phase 2 work** (see above) — `git push` → SSH to VPS → `git pull` + rebuild `backend` + `up -d --force-recreate backend`. Migration runs automatically.
+1. **Do a real end-to-end guest submission through `https://petposture.com/returns`** once there's a suitable real order (delivered/shipped, no prior return request) to use — see "Not yet done" note above. Deferred by Yuni.
 2. Watch `/contact` for repeat spam-bot submissions post-honeypot-deploy (see Known gaps).
 3. **Upgrade Hostinger Mail before 2026-08-15** or schedule a reminder — see Known gaps. (Explicitly deprioritized by Yuni — not urgent yet, but don't let it slip past the deadline.)
 
