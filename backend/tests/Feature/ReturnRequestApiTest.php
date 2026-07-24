@@ -117,6 +117,27 @@ class ReturnRequestApiTest extends TestCase
             ->assertJsonValidationErrors(['order']);
     }
 
+    public function test_return_request_rejects_line_already_returned_in_a_completed_request(): void
+    {
+        ['reference' => $reference, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
+
+        $firstResponse = $this->postJson('/api/orders/return-requests', $this->returnRequestPayload($reference, $lineId));
+        $firstResponse->assertCreated();
+        $firstReturnRequestId = $firstResponse->json('data.id');
+
+        $this->makeAdmin();
+        $this->postJson("/api/admin/return-requests/{$firstReturnRequestId}/approve", [
+            'rma_address' => '123 Warehouse Rd',
+        ])->assertOk();
+        $this->postJson("/api/admin/return-requests/{$firstReturnRequestId}/complete")->assertOk();
+
+        // The line's full purchased quantity was already returned and completed —
+        // a brand new return request for the same line must not be creatable again.
+        $this->postJson('/api/orders/return-requests', $this->returnRequestPayload($reference, $lineId))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['items']);
+    }
+
     public function test_return_request_rejects_order_line_not_belonging_to_order(): void
     {
         ['reference' => $reference] = $this->placeDeliveredOrder();

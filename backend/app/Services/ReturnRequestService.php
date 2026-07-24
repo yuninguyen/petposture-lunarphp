@@ -70,6 +70,18 @@ class ReturnRequestService
             $quantityByLine[$item['order_line_id']] = ($quantityByLine[$item['order_line_id']] ?? 0) + $item['quantity'];
         }
 
+        // Quantity already consumed by a prior completed return request for this order,
+        // per line — the active-request check above only rules out a concurrent
+        // requested/approved one, so a line that was already fully returned in a past
+        // completed request would otherwise be returnable again.
+        $alreadyReturnedByLine = OrderReturnRequestItem::query()
+            ->whereHas('returnRequest', fn ($query) => $query
+                ->where('order_id', $order->id)
+                ->where('status', OrderReturnRequest::STATUS_COMPLETED))
+            ->selectRaw('order_line_id, SUM(quantity) as total_quantity')
+            ->groupBy('order_line_id')
+            ->pluck('total_quantity', 'order_line_id');
+
         foreach ($quantityByLine as $orderLineId => $totalQuantity) {
             $line = $order->lines->firstWhere('id', $orderLineId);
 
@@ -79,7 +91,9 @@ class ReturnRequestService
                 ]);
             }
 
-            if ($totalQuantity > $line->quantity) {
+            $alreadyReturned = (int) ($alreadyReturnedByLine[$orderLineId] ?? 0);
+
+            if ($alreadyReturned + $totalQuantity > $line->quantity) {
                 throw ValidationException::withMessages([
                     'items' => ["Cannot return more than the purchased quantity for order line {$orderLineId}."],
                 ]);
