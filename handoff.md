@@ -47,7 +47,7 @@ It was still using `Content(markdown: ...)`, which `RULES.md` explicitly bans fo
 ## Immediate follow-ups (small, next session)
 
 1. Email template audit from 2026-07-23 is now fully done (`OrderReturnRejected`, `OrderReturnApproved`, `NewsletterConfirmation`, `ContactFormSubmission`, `NewOrderAdmin`, `CancelledOrderAdmin`, `ContactAutoReply` all verified/fixed today).
-2. Consider adding a "Request a Return" entry point from the guest `/track-order` results panel.
+2. Done today: added a "Request a Return" entry point to the guest `/track-order` results panel (`frontend/components/TrackOrderPage.tsx`, commit `9546232`) — shows next to `RetryPaymentPanel` when `status` is `shipped`/`delivered`, links to `/returns?ref=&email=` (same pattern Account page already used). Doesn't reproduce the Account page's 30-day-window messaging since `TrackedOrder` (the `/api/orders/track` response type) has no `delivered_at` field — `/returns` still enforces the real 30-day cutoff server-side, so this is a safe simplification, not a missing check.
 3. **Upgrade Hostinger Mail before 2026-08-15** or schedule a reminder — see Known gaps. (Explicitly deprioritized by Yuni today — not urgent yet, but don't let it slip past the deadline.)
 4. Watch the `/contact` form for repeat spam-bot submissions (see Known gaps) — add a honeypot field or simple captcha if it keeps happening.
 
