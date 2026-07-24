@@ -336,6 +336,20 @@ export default function TrackOrderPage() {
                                                 });
                                             }}
                                         />
+                                        {(statusData.status === "delivered" || statusData.status === "shipped") && (
+                                            <div className="rounded-2xl border border-[#df8448]/20 bg-white p-6 shadow-sm flex items-center justify-between gap-4">
+                                                <div>
+                                                    <p className="text-[13px] font-bold text-[#3e4c57]">Need to send something back?</p>
+                                                    <p className="mt-1 text-[12px] text-zinc-500">Request a return for this order.</p>
+                                                </div>
+                                                <Link
+                                                    href={`/returns?ref=${encodeURIComponent(statusData.reference)}&email=${encodeURIComponent(email)}`}
+                                                    className="whitespace-nowrap text-[13px] font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
+                                                >
+                                                    Request a Return
+                                                </Link>
+                                            </div>
+                                        )}
                                     </motion.div>
                                 )}
                             </motion.div>
