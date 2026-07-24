@@ -133,6 +133,11 @@ class ViewOrder extends ViewRecord
                         ->label(__('Amount (leave blank for full refund)'))
                         ->numeric()
                         ->prefix('$'),
+                    Forms\Components\Select::make('reason')
+                        ->label(__('Reason'))
+                        ->options(OrderOperationsService::REFUND_REASON_LABELS)
+                        ->native(false)
+                        ->required(),
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
@@ -140,7 +145,7 @@ class ViewOrder extends ViewRecord
                         ? (int) round(((float) $data['amount']) * 100)
                         : null;
 
-                    app(OrderOperationsService::class)->refundOrder($this->record, $amountMinor);
+                    app(OrderOperationsService::class)->refundOrder($this->record, $amountMinor, $data['reason']);
 
                     $this->redirect(static::getUrl(['record' => $this->record]));
                 });
@@ -385,6 +390,10 @@ class ViewOrder extends ViewRecord
 
                             if ($couponCode = $record->meta['coupon_code'] ?? null) {
                                 $paymentRows[] = "Coupon: {$couponCode}";
+                            }
+
+                            if ($refundReason = $record->meta['refund_reason'] ?? null) {
+                                $paymentRows[] = 'Refund Reason: ' . (OrderOperationsService::REFUND_REASON_LABELS[$refundReason] ?? $refundReason);
                             }
 
                             return '<div style="line-height: 2; margin-right: 1.5rem;">'

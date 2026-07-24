@@ -11,6 +11,22 @@ use Lunar\Models\Order;
 
 class OrderOperationsService
 {
+    /**
+     * Options for the admin's Refund "Reason" field — kept fixed/select-only
+     * (not free text) so refund reasons stay reportable/auditable, and so a
+     * refund issued outside the Return Request flow (e.g. a low-value item
+     * refunded without requiring it back) still leaves a clear paper trail.
+     */
+    public const REFUND_REASON_LABELS = [
+        'return_approved' => 'Approved Return Request',
+        'defective' => 'Defective / Damaged Item',
+        'wrong_item' => 'Wrong Item Shipped',
+        'no_return_required' => 'Low-Value — No Return Required',
+        'customer_request' => 'Customer Changed Mind / Cancelled',
+        'duplicate_order' => 'Duplicate / Accidental Order',
+        'other' => 'Other',
+    ];
+
     public function __construct(
         private readonly OrderEventService $orderEventService,
         private readonly OrderStateMachine $stateMachine,
@@ -298,7 +314,7 @@ class OrderOperationsService
     }
 
 
-    public function refundOrder(Order $order, ?int $amountMinor = null): Order
+    public function refundOrder(Order $order, ?int $amountMinor = null, ?string $reason = null): Order
     {
         $meta = (array) ($order->meta ?? []);
         $paymentIntentId = (string) ($meta['payment_intent_id'] ?? '');
@@ -337,12 +353,20 @@ class OrderOperationsService
             $meta['payment_status'] = 'refunded';
         }
 
+        if ($reason !== null) {
+            $meta['refund_reason'] = $reason;
+        }
+
         $order->update(['meta' => $meta]);
 
         $label = $isFullRefund ? 'Full refund issued' : 'Partial refund issued';
         $detail = $isFullRefund
             ? "Full refund issued via Stripe (ref: {$refund['refund_id']})."
             : 'Partial refund of ' . number_format($refund['amount'] / 100, 2) . " issued via Stripe (ref: {$refund['refund_id']}).";
+
+        if ($reason !== null) {
+            $detail .= ' Reason: ' . (self::REFUND_REASON_LABELS[$reason] ?? $reason);
+        }
 
         $this->orderEventService->record($order, 'payment.refunded', $label, $detail);
 
