@@ -39,7 +39,7 @@ export default function ReturnRefundPolicyPage() {
         {
             id: 2,
             question: "How do I return items from different brands?",
-            answer: "You must contact us for an RMA number. Because items ship from different warehouses, we will provide you with separate return addresses and RMA numbers for each item. Please do not send items back without authorization."
+            answer: "Submit a return request online at petposture.com/returns for each item. Because items ship from different warehouses, we will assign a separate RMA number and return address for each one once approved. Please do not send items back without an approved RMA number."
         }
     ];
 
@@ -126,18 +126,21 @@ export default function ReturnRefundPolicyPage() {
                                     <div className="mt-6 bg-[#fff8f4] border-l-4 border-[#df8448] p-6">
                                         <p className="font-bold text-[#3e4c57]">Important regarding Damaged or Defective items:</p>
                                         <p className="mt-2 text-[#4a4a4a]">
-                                            Any items that arrive damaged or defective must be reported to our support team within **7 days** of delivery. Reporting within this timeframe ensures you are eligible for pre-paid return shipping or direct reimbursement.
+                                            Any items that arrive damaged or defective must be reported to our support team within **7 days** of delivery. Reporting within this timeframe ensures you are eligible for return shipping reimbursement.
                                         </p>
                                     </div>
                                 </section>
 
                                 <section id="rma">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">2. RMA REQUIREMENT</h2>
+                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">2. HOW TO REQUEST A RETURN</h2>
                                     <p>
-                                        To ensure a smooth process, all returns **must** have a **Return Merchandise Authorization (RMA)** number before being shipped back to our warehouses.
+                                        Start your return online at <a href="/returns" className="text-[#df8448] hover:underline font-medium">petposture.com/returns</a> using your order number and the email address from checkout. Select the item(s), quantity, and reason for the return.
                                     </p>
                                     <p className="mt-4">
-                                        Please do not ship items back without an authorized RMA number, as these shipments cannot be tracked by our system and will not be eligible for a refund. To obtain an RMA, please contact us at <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline font-medium">support@petposture.com</a>.
+                                        Once approved, you&apos;ll receive an email with your <strong>Return Merchandise Authorization (RMA)</strong> number and the correct return address for that item. You&apos;ll then have <strong>7 days</strong> from approval to ship the item back and enter your return tracking number.
+                                    </p>
+                                    <p className="mt-4">
+                                        Please do not ship items back without an approved RMA number, as these shipments cannot be tracked by our system and will not be eligible for a refund.
                                     </p>
                                 </section>
 
@@ -167,7 +170,7 @@ export default function ReturnRefundPolicyPage() {
                                                 Original shipping charges are **non-refundable**.
                                             </p>
                                             <p className="mt-2">
-                                                For &quot;Buyer&apos;s Remorse&quot; returns (e.g., changed mind, wrong size/color), the customer is responsible for the return shipping costs. For confirmed defective or incorrect items reported within 7 days, PetPosture will provide a pre-paid label.
+                                                For &quot;Buyer&apos;s Remorse&quot; returns (e.g., changed mind, wrong size/color), the customer is responsible for the return shipping costs. For confirmed defective or incorrect items reported within 7 days, contact us at <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline font-medium">support@petposture.com</a> and we will reimburse your return shipping cost.
                                             </p>
                                         </div>
                                     </div>
