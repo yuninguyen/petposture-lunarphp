@@ -1,16 +1,19 @@
 # Handoff — 2026-07-26
 
-## Order Summary: removed forced full-height stretch — deployed
+## Order Summary height: tried removing the forced stretch, reverted — open problem
 
-Yuni sent a screenshot after the 8/4 width deploy: Order Summary had a large ugly empty gap below
-the Customer IP block. Root cause: `->extraAttributes(['class' => 'h-full'])` on the Order Summary
-Section (plus `items-stretch` on the parent Grid) force-stretched it to match the height of
-whichever was taller — its own content or the Attribution+Fraud & Risk stack on the right — so on
-orders where the right stack was taller, Order Summary's box kept its border/background stretched
-down with nothing in it. Removed both: Order Summary now sizes to its own content only, no forced
-matching height against the sibling column. This was leftover from the original three-box (6:3:3)
-layout where forcing equal heights made sense visually; it stopped making sense once Order Summary
-became a single tall box next to a differently-shaped 2-box stack.
+Tried two approaches for the "empty gap below Customer IP" complaint, neither landed:
+1. Kept `h-full`/`items-stretch` (matched height against the Attribution+Fraud & Risk stack) —
+   Yuni: "hơi xấu" (empty gap *inside* the Order Summary box when the right stack is taller).
+2. Removed `h-full`/`items-stretch` (commit `a0f6c08`) so Order Summary sizes to its own content —
+   Yuni: "quá xấu" (worse) — now the two columns end at visibly different heights, box edges don't
+   align, which reads as more broken than a padded-out box.
+Reverted back to option 1 (`h-full` + `items-stretch` restored) per Yuni's explicit call — this is
+the lesser-bad of the two, not a real fix. **Still an open cosmetic problem.**
+Ideas not yet tried: distribute the empty space as spacing *between* the existing fields instead of
+one gap at the bottom (would need custom flex classes on the Group wrapper, not just column/height
+props); or reconsider whether Order Attribution + Fraud & Risk really need to be a stacked 2-box
+column at all vs. some other arrangement that doesn't create a height mismatch in the first place.
 Verified via VPS throwaway checkout: Pint clean, PHPStan clean (`[OK] No errors`). Deployed:
 backend container rebuilt, healthy, `optimize:clear` run.
 

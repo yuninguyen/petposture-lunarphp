@@ -330,7 +330,7 @@ class ViewOrder extends ViewRecord
                                         ? (OrderOperationsService::REFUND_REASON_LABELS[$state] ?? $state)
                                         : '—'),
                             ]),
-                        ])->columns(2)->columnSpan(8),
+                        ])->columns(2)->columnSpan(8)->extraAttributes(['class' => 'h-full']),
 
                     Infolists\Components\Grid::make(1)
                         ->schema([
@@ -369,7 +369,7 @@ class ViewOrder extends ViewRecord
                                         ->columnSpanFull(),
                                 ]),
                         ])->columnSpan(4),
-                ]),
+                ])->extraAttributes(['class' => 'items-stretch']),
 
             Infolists\Components\Grid::make(2)
                 ->schema([
