@@ -38,7 +38,6 @@ class CheckoutService
     public function placeOrder(array $payload, ?int $userId = null, ?string $customerIp = null): Order
     {
         return DB::transaction(function () use ($payload, $userId, $customerIp) {
-            /** @var \Lunar\Models\Order $order */
             $shippingMethod = $payload['shipping_method'] ?? 'standard';
             $paymentPreparation = $this->paymentGatewayManager
                 ->forMethod($payload['payment_method'] ?? 'cod')

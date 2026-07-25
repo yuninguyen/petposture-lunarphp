@@ -61,6 +61,7 @@ class OrderReturnRequestResource extends Resource
                         'rejected' => 'danger',
                         'completed' => 'success',
                         'expired' => 'gray',
+                        'waived' => 'success',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => str($state)->headline()->toString()),
@@ -103,9 +104,31 @@ class OrderReturnRequestResource extends Resource
                         'rejected' => __('Rejected'),
                         'completed' => __('Completed'),
                         'expired' => __('Expired'),
+                        'waived' => __('Waived'),
                     ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('approveLowValueWaiver')
+                    ->label(__('Refund — No Return Required'))
+                    ->icon('heroicon-o-bolt')
+                    ->color('success')
+                    ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_REQUESTED
+                        && (bool) ($record->meta['low_value_auto_waive_eligible'] ?? false))
+                    ->form([
+                        Forms\Components\Placeholder::make('waiver_estimate')
+                            ->label(__('Refund amount'))
+                            ->content(function (OrderReturnRequest $record): string {
+                                $estimate = app(ReturnRequestService::class)->calculateRefundEstimate($record, feeWaived: true);
+
+                                return sprintf('$%.2f (restocking fee waived, no return required)', $estimate['refund_amount_minor'] / 100);
+                            }),
+                        Forms\Components\Textarea::make('admin_note')
+                            ->label(__('Note (optional)')),
+                    ])
+                    ->requiresConfirmation()
+                    ->modalDescription(__('Issues a full refund immediately via Stripe — the customer will not be asked to ship the item back.'))
+                    ->action(fn (OrderReturnRequest $record, array $data) => app(ReturnRequestService::class)
+                        ->approveLowValueWaiver($record, $data['admin_note'] ?? null)),
                 Tables\Actions\Action::make('approve')
                     ->label(__('Approve'))
                     ->icon('heroicon-o-check')

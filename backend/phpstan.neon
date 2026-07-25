@@ -10,5 +10,7 @@ parameters:
         - '#Access to an undefined property Lunar\\Models\\[a-zA-Z]+::#'
         # Lunar uses dynamic relations resolved at runtime
         - '#Call to an undefined method Lunar\\Models\\[a-zA-Z]+::#'
-    checkMissingIterableValueType: false
+        # Same magic-property pattern, but on relations Larastan can't resolve to a
+        # concrete model class and falls back to the generic Eloquent base class.
+        - '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model::#'
     reportUnmatchedIgnoredErrors: false

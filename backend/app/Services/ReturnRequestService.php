@@ -6,9 +6,12 @@ use App\Mail\OrderReturnApproved;
 use App\Mail\OrderReturnExpired;
 use App\Mail\OrderReturnRejected;
 use App\Mail\OrderReturnRequested;
+use App\Mail\OrderReturnWaived;
 use App\Models\OrderReturnRequest;
 use App\Models\OrderReturnRequestItem;
+use App\Models\Setting;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Lunar\Models\Order;
@@ -107,12 +110,17 @@ class ReturnRequestService
             }
         }
 
+        $estimate = $this->previewRefundEstimate($order, $items);
+        $lowValueEligible = $estimate['item_subtotal_minor'] <= $this->lowValueReturnThresholdMinor()
+            && ! $this->customerAlreadyWaived((string) $order->customer_reference);
+
         $returnRequest = OrderReturnRequest::create([
             'order_id' => $order->id,
             'status' => OrderReturnRequest::STATUS_REQUESTED,
             'reason' => $reason,
             'customer_note' => $customerNote,
             'requested_at' => now(),
+            'meta' => ['low_value_auto_waive_eligible' => $lowValueEligible],
         ]);
 
         foreach ($items as $item) {
@@ -244,6 +252,43 @@ class ReturnRequestService
         return $returnRequest->refresh()->loadMissing(['order', 'items.orderLine']);
     }
 
+    /**
+     * Refund a low-value return request in full, without requiring the item to be
+     * shipped back — the fast path surfaced to admins when the request was flagged
+     * eligible at submission time (see create()).
+     */
+    public function approveLowValueWaiver(OrderReturnRequest $returnRequest, ?string $adminNote): OrderReturnRequest
+    {
+        $this->guardStatus($returnRequest, OrderReturnRequest::STATUS_REQUESTED);
+
+        $estimate = $this->calculateRefundEstimate($returnRequest, feeWaived: true);
+
+        $returnRequest->update([
+            'status' => OrderReturnRequest::STATUS_WAIVED,
+            'refund_amount_minor' => $estimate['refund_amount_minor'],
+            'restocking_fee_minor' => 0,
+            'fee_waived' => true,
+            'admin_note' => $adminNote,
+            'approved_at' => now(),
+            'completed_at' => now(),
+        ]);
+
+        $this->orderOperations->refundOrder($returnRequest->order, $estimate['refund_amount_minor'], 'no_return_required');
+
+        $this->orderEventService->record(
+            $returnRequest->order,
+            'return_request.waived',
+            'Return waived, refunded without return',
+            'Low-value item refunded without requiring the item back.'
+        );
+
+        if ($returnRequest->order->customer_reference) {
+            Mail::to($returnRequest->order->customer_reference)->send(new OrderReturnWaived($returnRequest));
+        }
+
+        return $returnRequest->refresh()->loadMissing(['order', 'items.orderLine']);
+    }
+
     public function reject(OrderReturnRequest $returnRequest, ?string $adminNote): OrderReturnRequest
     {
         $this->guardStatus($returnRequest, OrderReturnRequest::STATUS_REQUESTED);
@@ -274,10 +319,10 @@ class ReturnRequestService
 
         $carrier = $carrier ?: 'manual';
         $trackingUrls = [
-            'ups' => 'https://www.ups.com/track?tracknum=' . urlencode($trackingNumber),
-            'usps' => 'https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=' . urlencode($trackingNumber),
-            'fedex' => 'https://www.fedex.com/fedextrack/?trknbr=' . urlencode($trackingNumber),
-            'dhl' => 'https://www.dhl.com/us-en/home/tracking/tracking-express.html?submit=1&tracking-id=' . urlencode($trackingNumber),
+            'ups' => 'https://www.ups.com/track?tracknum='.urlencode($trackingNumber),
+            'usps' => 'https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1='.urlencode($trackingNumber),
+            'fedex' => 'https://www.fedex.com/fedextrack/?trknbr='.urlencode($trackingNumber),
+            'dhl' => 'https://www.dhl.com/us-en/home/tracking/tracking-express.html?submit=1&tracking-id='.urlencode($trackingNumber),
         ];
 
         $returnRequest->update([
@@ -290,7 +335,7 @@ class ReturnRequestService
             $returnRequest->order,
             'return_request.tracking_added',
             'Return tracking added',
-            "Customer's return shipment tracking: {$trackingNumber} (" . strtoupper($carrier) . ')'
+            "Customer's return shipment tracking: {$trackingNumber} (".strtoupper($carrier).')'
         );
 
         return $returnRequest->refresh();
@@ -348,6 +393,30 @@ class ReturnRequestService
         $this->orderOperations->returnOrder($returnRequest->order);
 
         return $returnRequest->refresh()->loadMissing(['order', 'items.orderLine']);
+    }
+
+    private function lowValueReturnThresholdMinor(): int
+    {
+        $dollars = Cache::remember('low_value_return_threshold', 300, fn () => (float) (Setting::get('low_value_return_threshold') ?? 30));
+
+        return (int) round($dollars * 100);
+    }
+
+    /**
+     * A customer only gets the low-value auto-waive fast path once — this is the
+     * abuse guard: repeat low-value claims from the same email always fall back to
+     * the normal ship-back flow, regardless of item value.
+     */
+    private function customerAlreadyWaived(string $customerReference): bool
+    {
+        if ($customerReference === '') {
+            return false;
+        }
+
+        return OrderReturnRequest::query()
+            ->whereHas('order', fn ($query) => $query->where('customer_reference', $customerReference))
+            ->where('status', OrderReturnRequest::STATUS_WAIVED)
+            ->exists();
     }
 
     private function moneyToMinor(mixed $amount): int

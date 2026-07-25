@@ -19,6 +19,8 @@ class OrderReturnRequest extends Model
 
     public const STATUS_EXPIRED = 'expired';
 
+    public const STATUS_WAIVED = 'waived';
+
     protected $fillable = [
         'order_id',
         'status',

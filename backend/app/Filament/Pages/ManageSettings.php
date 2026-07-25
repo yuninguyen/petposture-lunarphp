@@ -4,19 +4,21 @@ namespace App\Filament\Pages;
 
 use App\Models\Setting;
 use App\Support\ImageUploadResizer;
+use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
-use Filament\Pages\Page;
 use Filament\Notifications\Notification;
-use Filament\Actions\Action;
+use Filament\Pages\Page;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Mail;
+use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
+use Symfony\Component\Mime\Email;
 
 class ManageSettings extends Page
 {
@@ -48,10 +50,11 @@ class ManageSettings extends Page
             $data[$setting->key] = $setting->value;
         }
 
-        $data['stripe_key']            ??= config('services.stripe.key');
-        $data['stripe_secret']         ??= config('services.stripe.secret');
+        $data['stripe_key'] ??= config('services.stripe.key');
+        $data['stripe_secret'] ??= config('services.stripe.secret');
         $data['stripe_webhook_secret'] ??= config('services.stripe.webhook_secret');
-        $data['stripe_mode']           ??= 'live';
+        $data['stripe_mode'] ??= 'live';
+        $data['low_value_return_threshold'] ??= 30;
 
         $this->form->fill($data);
     }
@@ -65,7 +68,7 @@ class ManageSettings extends Page
                 ->color('gray')
                 ->requiresConfirmation()
                 ->modalHeading('Send Test Email')
-                ->modalDescription('This will send a test email to ' . auth()->user()->email . ' using the current SMTP settings.')
+                ->modalDescription('This will send a test email to '.auth()->user()->email.' using the current SMTP settings.')
                 ->action(function () {
                     $this->sendTestEmail();
                 }),
@@ -91,31 +94,32 @@ class ManageSettings extends Page
                     ->body('Please save your SMTP settings first.')
                     ->warning()
                     ->send();
+
                 return;
             }
 
             // Build a mailer from the saved DB settings so we test what was actually saved,
             // not whatever is in the booted .env config.
             $mailerConfig = [
-                'transport'  => 'smtp',
-                'host'       => $smtpHost,
-                'port'       => (int) (Setting::get('smtp_port') ?: 587),
+                'transport' => 'smtp',
+                'host' => $smtpHost,
+                'port' => (int) (Setting::get('smtp_port') ?: 587),
                 'encryption' => Setting::get('smtp_encryption') ?: 'tls',
-                'username'   => Setting::get('smtp_user') ?: '',
-                'password'   => Setting::get('smtp_pass') ?: '',
+                'username' => Setting::get('smtp_user') ?: '',
+                'password' => Setting::get('smtp_pass') ?: '',
             ];
 
             $fromAddress = Setting::get('mail_from_address') ?: config('mail.from.address');
-            $toAddress   = auth()->user()->email;
+            $toAddress = auth()->user()->email;
 
             // ssl = implicit TLS (port 465), tls = STARTTLS negotiation (null), none = plaintext
             $tlsMode = match ($mailerConfig['encryption']) {
-                'ssl'  => true,
-                'tls'  => null,
+                'ssl' => true,
+                'tls' => null,
                 default => false,
             };
 
-            $transport = new \Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport(
+            $transport = new EsmtpTransport(
                 $mailerConfig['host'],
                 (int) $mailerConfig['port'],
                 $tlsMode
@@ -125,18 +129,18 @@ class ManageSettings extends Page
                 $transport->setPassword($mailerConfig['password']);
             }
 
-            $mailer  = new \Symfony\Component\Mailer\Mailer($transport);
-            $email   = (new \Symfony\Component\Mime\Email())
+            $mailer = new Mailer($transport);
+            $email = (new Email)
                 ->from($fromAddress)
                 ->to($toAddress)
                 ->subject('[PetPosture] Test Email — SMTP Working ✓')
-                ->text('This is a test email from PetPosture Admin. Your SMTP settings are working correctly! Sent at: ' . now()->toDateTimeString());
+                ->text('This is a test email from PetPosture Admin. Your SMTP settings are working correctly! Sent at: '.now()->toDateTimeString());
 
             $mailer->send($email);
 
             Notification::make()
                 ->title('Test email sent!')
-                ->body('Check ' . $toAddress . ' for the test message.')
+                ->body('Check '.$toAddress.' for the test message.')
                 ->success()
                 ->send();
 
@@ -160,6 +164,7 @@ class ManageSettings extends Page
                 ->body('Please enter your Stripe Secret Key in the Payment tab.')
                 ->warning()
                 ->send();
+
             return;
         }
 
@@ -171,7 +176,7 @@ class ManageSettings extends Page
                 $account = $response->json();
                 Notification::make()
                     ->title('Stripe connected ✓')
-                    ->body('Account: ' . ($account['email'] ?? $account['id'] ?? 'verified') . ' — Mode: ' . (str_starts_with($secret, 'sk_test_') ? 'Test' : 'Live'))
+                    ->body('Account: '.($account['email'] ?? $account['id'] ?? 'verified').' — Mode: '.(str_starts_with($secret, 'sk_test_') ? 'Test' : 'Live'))
                     ->success()
                     ->send();
             } else {
@@ -296,6 +301,16 @@ class ManageSettings extends Page
                                     ->helperText('Used for search engine business info (Organization schema).'),
                             ]),
 
+                        Tabs\Tab::make(__('Returns'))
+                            ->icon('heroicon-o-arrow-uturn-left')
+                            ->schema([
+                                TextInput::make('low_value_return_threshold')
+                                    ->label(__('Low-Value Auto-Waive Threshold'))
+                                    ->numeric()
+                                    ->prefix('$')
+                                    ->helperText('Return requests for items at or under this amount are flagged for the admin as eligible for an instant refund without requiring the item shipped back.'),
+                            ]),
+
                         Tabs\Tab::make(__('SMTP Settings'))
                             ->icon('heroicon-o-envelope')
                             ->schema([
@@ -316,8 +331,8 @@ class ManageSettings extends Page
                                     Select::make('smtp_encryption')
                                         ->label(__('Encryption'))
                                         ->options([
-                                            'tls'  => 'TLS',
-                                            'ssl'  => 'SSL',
+                                            'tls' => 'TLS',
+                                            'ssl' => 'SSL',
                                             'none' => 'None',
                                         ]),
                                     TextInput::make('mail_from_address')
@@ -344,7 +359,7 @@ class ManageSettings extends Page
                 ['key' => $key],
                 [
                     'value' => $value,
-                    'type'  => $this->guessType($value),
+                    'type' => $this->guessType($value),
                     'group' => $this->guessGroup($key),
                 ]
             );
@@ -353,6 +368,7 @@ class ManageSettings extends Page
         Cache::forget('stripe_key');
         Cache::forget('stripe_secret');
         Cache::forget('stripe_webhook_secret');
+        Cache::forget('low_value_return_threshold');
 
         Notification::make()
             ->title('Settings saved successfully!')
@@ -362,16 +378,28 @@ class ManageSettings extends Page
 
     protected function guessType(mixed $value): string
     {
-        if (is_bool($value)) return 'bool';
-        if (is_array($value)) return 'json';
-        if (is_numeric($value)) return 'int';
+        if (is_bool($value)) {
+            return 'bool';
+        }
+        if (is_array($value)) {
+            return 'json';
+        }
+        if (is_numeric($value)) {
+            return 'int';
+        }
+
         return 'string';
     }
 
     protected function guessGroup(string $key): string
     {
-        if (str_starts_with($key, 'smtp_') || $key === 'mail_from_address') return 'email';
-        if (str_starts_with($key, 'stripe_')) return 'payment';
+        if (str_starts_with($key, 'smtp_') || $key === 'mail_from_address') {
+            return 'email';
+        }
+        if (str_starts_with($key, 'stripe_')) {
+            return 'payment';
+        }
+
         return 'general';
     }
 }
