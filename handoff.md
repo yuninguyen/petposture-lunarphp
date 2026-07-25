@@ -17,12 +17,11 @@ column at all vs. some other arrangement that doesn't create a height mismatch i
 Verified via VPS throwaway checkout: Pint clean, PHPStan clean (`[OK] No errors`). Deployed:
 backend container rebuilt, healthy, `optimize:clear` run.
 
-## Order Summary follow-up: widths + card funding type — deployed, awaiting visual confirmation
+## Order Summary follow-up: widths + card funding type — deployed and confirmed correct
 
-Yuni reviewed the layout above and asked for two more changes before confirming visually
-(confirmed the 8/4 width narrows Attribution+Fraud & Risk as intended — the previous round's
-confusion was Yuni looking at production, which still had the old 6/6 layout since this change
-hadn't been deployed yet at the time):
+Yuni reviewed the layout and asked for two more changes, both confirmed correct via screenshot
+after deploy (the only remaining complaint was the height/gap issue captured in the section above,
+which is a separate, still-open cosmetic problem):
 - **Widths**: Order Summary 8/12, the stacked Attribution+Fraud&Risk column 4/12 (was 6/6).
 - **Payment Method now shows Credit/Debit/Prepaid, not just the brand** — e.g.
   "Credit Card - Visa •••• 4242" / "Debit Card - Mastercard •••• 1111" — using Stripe's own
@@ -47,8 +46,8 @@ hadn't been deployed yet at the time):
   pre-existing style debt, not from this change), PHPStan `[OK] No errors`. Manually traced the
   new formatter logic against order #14's real data before deploying, since there was no way to
   trigger a real Stripe charge with `card_funding` set without an actual payment.
-- Deployed: backend container rebuilt, healthy, `optimize:clear` run. Still awaiting Yuni's visual
-  confirmation of the new width + card funding label in the actual admin UI.
+- Deployed: backend container rebuilt, healthy, `optimize:clear` run. Confirmed correct via
+  screenshot (order #14: "Card - Visa •••• 4242" showing, 8/4 width visibly narrower on the right).
 
 ## Order Summary layout rework — commit `ee18be8`, deployed, awaiting Yuni's visual confirmation
 
@@ -291,10 +290,10 @@ test environment:
   shipment marked delivered → all-shipments-delivered check → order status update → queued customer
   email → email sent successfully.
 
-## In progress (uncommitted) — held back to batch with more work before deploy
+## Committed, pushed, deployed — commit `c1f696c`
 
 **PHPStan cleanup for `OrderResource.php`/`ViewOrder.php`** — the 12 pre-existing errors noted
-above are now fixed locally, confirmed by re-running `composer analyse` on the VPS throwaway
+above are now fixed, confirmed by re-running `composer analyse` on the VPS throwaway
 checkout (`[OK] No errors`). No behavior change, all type-safety only:
 - `OrderResource.php`: the product-name lookup (`$variant->product?->translateAttribute(...)`)
   now assigns `$variant->product` to a `/** @var Product|null */`-annotated local first — the
@@ -332,10 +331,16 @@ discussed above (PATCH tracking number there only wrote `meta.shipments[]`, neve
   Left them in place anyway: removing API surface is a bigger, separate decision (an external
   integration outside this repo could theoretically still call them), and out of scope for what
   Yuni asked for this round.
-- **Not committed/pushed/deployed yet** — holding to batch with further work this session per Yuni.
+- Deployed: backend + frontend containers rebuilt, both healthy, `optimize:clear` run. Verified
+  `https://petposture.com/admin/orders/15` no longer resolves (redirects to `/sign-in` like any
+  other unknown route) and the real site/Filament login both still work normally.
 
 ## Known gaps / not done
 
+- **Order Summary cosmetic gap** (see top of this file) — accepted as-is per Yuni's call, the
+  "lesser-bad" of two tried options. Open if anyone wants to take another pass at it later (would
+  need a custom Blade view override to distribute space between fields — not reachable through
+  Filament's normal component API, see notes above).
 - **A real carrier delivery scan reaching our webhook is still unconfirmed** — the entire *our-side*
   pipeline (signature verify → shipment match → status update → email) is now verified end-to-end
   against production with a simulated-but-correctly-signed webhook call (see above); the only thing
@@ -351,8 +356,6 @@ discussed above (PATCH tracking number there only wrote `meta.shipments[]`, neve
    matching logic end-to-end with real carrier data (not test tracking numbers).
 2. Still pending from before: upgrade Hostinger Mail before 2026-08-15; a real end-to-end guest
    return submission once Yuni has a suitable order+email on hand.
-3. Commit + push + deploy the PHPStan cleanup above (currently local-only, held back to batch with
-   more work this session).
 
 ## Backlog / bigger asks (need scoping before starting)
 
