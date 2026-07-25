@@ -255,92 +255,107 @@ class ViewOrder extends ViewRecord
                 ->schema([
                     Infolists\Components\Section::make(__('Order Summary'))
                         ->schema([
-                            Infolists\Components\TextEntry::make('reference')
-                                ->label(__('Order Number'))
-                                ->formatStateUsing(fn (string $state): string => "#{$state}"),
-                            Infolists\Components\TextEntry::make('status')
-                                ->label(__('Order Status'))
-                                ->badge()
-                                ->formatStateUsing(fn (string $state): string => str($state)->headline()->toString())
-                                ->color(fn (string $state): string => match (true) {
-                                    \in_array($state, ['awaiting-payment', 'payment-offline']) => 'warning',
-                                    $state === 'cancelled' => 'danger',
-                                    \in_array($state, ['payment-received', 'processing', 'shipped']) => 'info',
-                                    $state === 'delivered' => 'success',
-                                    default => 'gray',
-                                }),
-                            Infolists\Components\TextEntry::make('meta.payment_status')
-                                ->label(__('Payment Status'))
-                                ->badge()
-                                ->formatStateUsing(fn (?string $state): string => $state ? str($state)->headline()->toString() : '—')
-                                ->color(fn (?string $state): string => match ($state) {
-                                    'paid' => 'success',
-                                    'partially-refunded' => 'warning',
-                                    'refunded' => 'gray',
-                                    'failed' => 'danger',
-                                    'pending' => 'warning',
-                                    default => 'gray',
-                                }),
-                            Infolists\Components\TextEntry::make('meta.payment_method')
-                                ->label(__('Payment Method'))
-                                ->formatStateUsing(fn (?string $state): string => match ($state) {
-                                    'cod' => 'COD',
-                                    'card' => 'Credit Card',
-                                    'paypal' => 'PayPal',
-                                    default => $state ? str($state)->headline()->toString() : '—',
-                                }),
-                            Infolists\Components\TextEntry::make('meta.refund_reason')
-                                ->label(__('Refund Reason'))
-                                ->visible(fn ($record) => filled($record->meta['refund_reason'] ?? null))
-                                ->formatStateUsing(fn (?string $state): string => $state
-                                    ? (OrderOperationsService::REFUND_REASON_LABELS[$state] ?? $state)
-                                    : '—'),
-                            Infolists\Components\TextEntry::make('customer_reference')
-                                ->label(__('Customer Email')),
-                            Infolists\Components\TextEntry::make('created_at')
-                                ->label(__('Date'))
-                                ->dateTime(),
-                            Infolists\Components\TextEntry::make('customer_ip_block')
-                                ->label(__('Customer IP'))
-                                ->html()
-                                ->state(fn ($record) => self::formatCustomerIpBlock((array) ($record->meta ?? [])))
-                                ->columnSpanFull(),
+                            Infolists\Components\Group::make([
+                                Infolists\Components\TextEntry::make('created_at')
+                                    ->label(__('Date'))
+                                    ->dateTime(),
+                                Infolists\Components\TextEntry::make('reference')
+                                    ->label(__('Order Number'))
+                                    ->formatStateUsing(fn (string $state): string => "#{$state}"),
+                                Infolists\Components\TextEntry::make('customer_reference')
+                                    ->label(__('Customer Email')),
+                                Infolists\Components\TextEntry::make('customer_ip_block')
+                                    ->label(__('Customer IP'))
+                                    ->html()
+                                    ->state(fn ($record) => self::formatCustomerIpBlock((array) ($record->meta ?? []))),
+                            ]),
+                            Infolists\Components\Group::make([
+                                Infolists\Components\TextEntry::make('meta.payment_method')
+                                    ->label(__('Payment Method'))
+                                    ->formatStateUsing(function (?string $state, $record): string {
+                                        if ($state === 'card') {
+                                            $brand = $record->meta['card_brand'] ?? null;
+                                            $last4 = $record->meta['card_last4'] ?? null;
+                                            $label = $brand ? str($brand)->headline()->toString() : 'Credit Card';
+
+                                            return $last4 ? "{$label} •••• {$last4}" : $label;
+                                        }
+
+                                        return match ($state) {
+                                            'cod' => 'COD',
+                                            'paypal' => 'PayPal',
+                                            default => $state ? str($state)->headline()->toString() : '—',
+                                        };
+                                    }),
+                                Infolists\Components\TextEntry::make('status')
+                                    ->label(__('Order Status'))
+                                    ->badge()
+                                    ->formatStateUsing(fn (string $state): string => str($state)->headline()->toString())
+                                    ->color(fn (string $state): string => match (true) {
+                                        \in_array($state, ['awaiting-payment', 'payment-offline']) => 'warning',
+                                        $state === 'cancelled' => 'danger',
+                                        \in_array($state, ['payment-received', 'processing', 'shipped']) => 'info',
+                                        $state === 'delivered' => 'success',
+                                        default => 'gray',
+                                    }),
+                                Infolists\Components\TextEntry::make('meta.payment_status')
+                                    ->label(__('Payment Status'))
+                                    ->badge()
+                                    ->formatStateUsing(fn (?string $state): string => $state ? str($state)->headline()->toString() : '—')
+                                    ->color(fn (?string $state): string => match ($state) {
+                                        'paid' => 'success',
+                                        'partially-refunded' => 'warning',
+                                        'refunded' => 'gray',
+                                        'failed' => 'danger',
+                                        'pending' => 'warning',
+                                        default => 'gray',
+                                    }),
+                                Infolists\Components\TextEntry::make('meta.refund_reason')
+                                    ->label(__('Refund Reason'))
+                                    ->visible(fn ($record) => filled($record->meta['refund_reason'] ?? null))
+                                    ->formatStateUsing(fn (?string $state): string => $state
+                                        ? (OrderOperationsService::REFUND_REASON_LABELS[$state] ?? $state)
+                                        : '—'),
+                            ]),
                         ])->columns(2)->columnSpan(6)->extraAttributes(['class' => 'h-full']),
 
-                    Infolists\Components\Section::make(__('Order Attribution'))
+                    Infolists\Components\Grid::make(1)
                         ->schema([
-                            Infolists\Components\TextEntry::make('meta.attribution_origin')
-                                ->label(__('Origin'))
-                                ->default('—'),
-                            Infolists\Components\TextEntry::make('meta.attribution_device_type')
-                                ->label(__('Device Type'))
-                                ->default('—'),
-                            Infolists\Components\TextEntry::make('meta.attribution_session_page_views')
-                                ->label(__('Session Page Views'))
-                                ->default('—'),
-                        ])->columnSpan(3)->extraAttributes(['class' => 'h-full']),
+                            Infolists\Components\Section::make(__('Order Attribution'))
+                                ->schema([
+                                    Infolists\Components\TextEntry::make('meta.attribution_origin')
+                                        ->label(__('Origin'))
+                                        ->default('—'),
+                                    Infolists\Components\TextEntry::make('meta.attribution_device_type')
+                                        ->label(__('Device Type'))
+                                        ->default('—'),
+                                    Infolists\Components\TextEntry::make('meta.attribution_session_page_views')
+                                        ->label(__('Session Page Views'))
+                                        ->default('—'),
+                                ]),
 
-                    Infolists\Components\Section::make(__('Fraud & Risk'))
-                        ->description(__('Powered by Stripe Radar — automatic on every card payment, no extra setup required.'))
-                        ->visible(fn ($record) => filled($record->meta['fraud_risk_level'] ?? null))
-                        ->schema([
-                            Infolists\Components\TextEntry::make('meta.fraud_risk_level')
-                                ->label(__('Risk Level'))
-                                ->badge()
-                                ->formatStateUsing(fn (?string $state): string => $state ? str($state)->headline()->toString() : '—')
-                                ->color(fn (?string $state): string => match ($state) {
-                                    'highest' => 'danger',
-                                    'elevated' => 'warning',
-                                    default => 'success',
-                                }),
-                            Infolists\Components\TextEntry::make('meta.fraud_risk_score')
-                                ->label(__('Risk Score'))
-                                ->default('—'),
-                            Infolists\Components\TextEntry::make('meta.fraud_seller_message')
-                                ->label(__('Note'))
-                                ->default('—')
-                                ->columnSpanFull(),
-                        ])->columnSpan(3)->extraAttributes(['class' => 'h-full']),
+                            Infolists\Components\Section::make(__('Fraud & Risk'))
+                                ->description(__('Powered by Stripe Radar — automatic on every card payment, no extra setup required.'))
+                                ->visible(fn ($record) => filled($record->meta['fraud_risk_level'] ?? null))
+                                ->schema([
+                                    Infolists\Components\TextEntry::make('meta.fraud_risk_level')
+                                        ->label(__('Risk Level'))
+                                        ->badge()
+                                        ->formatStateUsing(fn (?string $state): string => $state ? str($state)->headline()->toString() : '—')
+                                        ->color(fn (?string $state): string => match ($state) {
+                                            'highest' => 'danger',
+                                            'elevated' => 'warning',
+                                            default => 'success',
+                                        }),
+                                    Infolists\Components\TextEntry::make('meta.fraud_risk_score')
+                                        ->label(__('Risk Score'))
+                                        ->default('—'),
+                                    Infolists\Components\TextEntry::make('meta.fraud_seller_message')
+                                        ->label(__('Note'))
+                                        ->default('—')
+                                        ->columnSpanFull(),
+                                ]),
+                        ])->columnSpan(6),
                 ])->extraAttributes(['class' => 'items-stretch']),
 
             Infolists\Components\Grid::make(2)

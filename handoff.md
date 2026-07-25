@@ -1,5 +1,27 @@
 # Handoff — 2026-07-26
 
+## In progress (uncommitted) — Order Summary layout rework
+
+**`ViewOrder.php` Order Summary reorganized per Yuni's explicit spec** — two-column layout inside
+the Order Summary box (`Infolists\Components\Group` per column, no behavior change to any field's
+logic, just placement):
+- Left: Date, Order Number, Customer Email, Customer IP.
+- Right: Payment Method, Order Status, Payment Status, Refund Reason (still only shown when set).
+- **Payment Method now shows the card brand when paying by card** — e.g. "Visa •••• 4242" instead
+  of a flat "Credit Card" — using `meta.card_brand`/`meta.card_last4`, already captured by
+  `StripePaymentIntentService` from the Stripe charge but not previously surfaced here (only used
+  on the customer-facing `/checkout/success` page before). Falls back to "Credit Card" if Stripe
+  didn't return brand/last4 for some reason, COD/PayPal unchanged.
+- **Layout**: outer grid is now `Order Summary` (columnSpan 6) beside a nested `Grid::make(1)`
+  (columnSpan 6) containing `Order Attribution` stacked above `Fraud & Risk` — instead of the
+  previous three-box-in-a-row (6:3:3) layout. Order Summary visually spans the height of both
+  stacked boxes on the right simply by having more content (8 fields vs the two smaller boxes),
+  not an explicit CSS row-span — didn't want to fight Filament's grid abstraction for a purely
+  visual effect achievable by nesting.
+- Verified via VPS throwaway checkout: Pint clean, PHPStan clean (`[OK] No errors`).
+- **Not yet committed/deployed** — layout changes are best judged visually; will deploy and ask
+  Yuni to confirm in the actual admin UI rather than assume the CSS grid math renders as intended.
+
 ## Shipped today (2026-07-26), deployed to production, verified working
 
 **Admin Order view: Order Status vs Payment Status clarity fix**
