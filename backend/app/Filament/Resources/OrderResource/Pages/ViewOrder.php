@@ -11,11 +11,20 @@ use Filament\Forms;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
+use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
 
 class ViewOrder extends ViewRecord
 {
     protected static string $resource = OrderResource::class;
+
+    private function order(): Order
+    {
+        /** @var Order $record */
+        $record = $this->record;
+
+        return $record;
+    }
 
     protected function getHeaderActions(): array
     {
@@ -39,11 +48,11 @@ class ViewOrder extends ViewRecord
             ->all();
 
         $remainingQuantities = $operations->remainingShippableQuantities($this->record);
-        $shippableLines = $this->record->lines->where('type', '!=', 'shipping')
+        $shippableLines = $this->order()->lines->where('type', '!=', 'shipping')
             ->filter(fn ($line) => ($remainingQuantities[$line->id] ?? 0) > 0);
-        $isFirstShipment = (string) $this->record->status === 'processing';
+        $isFirstShipment = (string) $this->order()->status === 'processing';
         $canShip = $shippableLines->isNotEmpty()
-            && in_array((string) $this->record->status, ['processing', 'shipped'], true);
+            && in_array((string) $this->order()->status, ['processing', 'shipped'], true);
 
         if ($canShip) {
             $lineOptions = $shippableLines->mapWithKeys(fn ($line) => [
@@ -93,7 +102,7 @@ class ViewOrder extends ViewRecord
                         ->addActionLabel(__('Add another item')),
                 ])
                 ->action(function (array $data) use ($operations) {
-                    if ((string) $this->record->status === 'processing') {
+                    if ((string) $this->order()->status === 'processing') {
                         $operations->performAction($this->record, 'markShipped', []);
                     }
 
@@ -107,7 +116,7 @@ class ViewOrder extends ViewRecord
 
         $meta = (array) ($this->record->meta ?? []);
 
-        $isReturnable = in_array((string) $this->record->status, ['delivered', 'shipped'], true)
+        $isReturnable = in_array((string) $this->order()->status, ['delivered', 'shipped'], true)
             && ($meta['fulfillment_status'] ?? null) !== 'returned';
 
         if ($isReturnable) {
@@ -225,7 +234,7 @@ class ViewOrder extends ViewRecord
 
         $rows = $shipmentItems->map(function ($item) {
             $shipment = $item->shipment;
-            $carrierLabel = static::$carrierLabels[$shipment->carrier] ?? str($shipment->carrier)->headline()->toString();
+            $carrierLabel = self::$carrierLabels[$shipment->carrier] ?? str($shipment->carrier)->headline()->toString();
             $display = e($shipment->tracking_number).' &times; '.$item->quantity;
 
             if ($shipment->tracking_url) {
@@ -294,7 +303,7 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('customer_ip_block')
                                 ->label(__('Customer IP'))
                                 ->html()
-                                ->state(fn ($record) => static::formatCustomerIpBlock((array) ($record->meta ?? [])))
+                                ->state(fn ($record) => self::formatCustomerIpBlock((array) ($record->meta ?? [])))
                                 ->columnSpanFull(),
                         ])->columns(2)->columnSpan(6)->extraAttributes(['class' => 'h-full']),
 
@@ -341,7 +350,7 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('shipping_block')
                                 ->label('')
                                 ->html()
-                                ->state(fn ($record) => static::formatAddressBlock($record->shippingAddress)),
+                                ->state(fn ($record) => self::formatAddressBlock($record->shippingAddress)),
                         ])->columnSpan(1),
 
                     Infolists\Components\Section::make(__('Billing Address'))
@@ -349,7 +358,7 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('billing_block')
                                 ->label('')
                                 ->html()
-                                ->state(fn ($record) => static::formatAddressBlock($record->billingAddress)),
+                                ->state(fn ($record) => self::formatAddressBlock($record->billingAddress)),
                         ])->columnSpan(1),
                 ]),
 
@@ -376,8 +385,8 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('shipment_tracking')
                                 ->label('')
                                 ->html()
-                                ->visible(fn ($record) => static::formatLineTracking($record) !== null)
-                                ->state(fn ($record) => static::formatLineTracking($record))
+                                ->visible(fn ($record) => self::formatLineTracking($record) !== null)
+                                ->state(fn ($record) => self::formatLineTracking($record))
                                 ->columnSpanFull()
                                 ->extraAttributes(['class' => '-mt-4']),
                         ])

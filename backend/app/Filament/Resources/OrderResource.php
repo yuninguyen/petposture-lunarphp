@@ -13,6 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Lunar\Models\Order;
+use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
 
 class OrderResource extends Resource
@@ -78,7 +79,9 @@ class OrderResource extends Resource
                                     return ProductVariant::with(['product', 'prices'])
                                         ->get()
                                         ->mapWithKeys(function ($variant) {
-                                            $name = $variant->product?->translateAttribute('name') ?? 'Product';
+                                            /** @var Product|null $product */
+                                            $product = $variant->product;
+                                            $name = $product?->translateAttribute('name') ?? 'Product';
                                             $sku = $variant->sku ? " [{$variant->sku}]" : '';
 
                                             return [$variant->id => $name.$sku];

@@ -176,16 +176,101 @@ so nothing about the request's status/emails/behavior changes.
 - Caught by PHPStan during the format/analyse pass (see below): `getNavigationBadge()` called
   a private static method via `static::` instead of `self::` — fixed before deploy.
 
+**`/contact` honeypot verified against simulated spam-bot behavior** — no code change, verification
+only, via `curl` against production (`https://api.petposture.com/api/contact`):
+- Submission with the hidden `website` field filled (what a naive bot that blindly fills every
+  `<input>` does) → 200 fake-success response (so the bot thinks it worked), confirmed via
+  `storage/logs/laravel.log`: logs `Contact form spam blocked (honeypot)` and never reaches the
+  `Mail::send` calls — no email sent.
+- Submission with `website` empty (legit path) → confirmed via log (`Contact form submission`,
+  no `mail failed` line) that real submissions still go through normally, i.e. the honeypot has no
+  false-positive risk for real users. **Sent 2 real test emails to `support@petposture.com`**
+  (admin notification + auto-reply, since the test used that address as the "customer" email to
+  avoid spamming a stranger) — subject `[TEST] Honeypot false-positive check`, safe to ignore/delete.
+- Rate limiting (`throttle:api-write`, 20 req/min/IP): fired 25 rapid honeypot-filled requests —
+  first 20 returned 200, requests 21–25 returned 429. Confirms a basic flood bot gets cut off.
+- **Known limitation, not a bug**: this is a CSS-positioning honeypot (off-screen, `tabIndex={-1}`,
+  `aria-hidden`) — it only stops bots that don't evaluate CSS/JS before filling forms (the common
+  case: simple scripts/curl-based spam). A sophisticated headless-browser bot that renders the page
+  and checks visibility before filling fields could still bypass it. Not worth a stronger mechanism
+  (e.g. CAPTCHA) unless real bypass spam is actually observed — would add friction for real
+  customers otherwise.
+
+**AfterShip delivered-webhook pipeline verified end-to-end against production** — no code change,
+verification only. A real UPS/USPS/FedEx/DHL delivery scan still hasn't been observed triggering
+this (that part depends on AfterShip itself, not testable by us), but everything *our* code does in
+response is now confirmed working on live production data, not just fake tracking numbers in a
+test environment:
+- Crafted a real AfterShip-shaped webhook payload (`{"msg":{"tracking_number":"TESTTRACK00015",
+  "tag":"Delivered"}}`), signed it with the real `AFTERSHIP_WEBHOOK_SECRET` (HMAC-SHA256, base64),
+  and POSTed it to `https://api.petposture.com/api/webhooks/aftership` — used order #15's existing
+  test shipment (`TESTTRACK00015`, the same order used to test the low-value waiver earlier) rather
+  than a real customer's shipment.
+- Response: `{"message":"Order marked as delivered"}`. Confirmed via DB: `order_shipments` row
+  updated to `status=delivered`, `lunar_orders.status` flipped `shipped` → `delivered`,
+  `meta.fulfillment_status` synced to `delivered`.
+- **Real side effect — flagged to Yuni**: this permanently changed order #15's status in production
+  and queued a genuine "Order Delivered" email to `nemalipuriarmando814@gmail.com` via
+  `SendOrderLifecycleEmailJob` — confirmed sent (`0` pending jobs, no `failed_jobs` row after).
+  Acceptable since #15 was already Yuni's own test order/email, not a real customer, but worth
+  knowing this test order is now sitting as "delivered" in the admin panel.
+- Full chain confirmed working: HMAC signature verification → shipment lookup by tracking number →
+  shipment marked delivered → all-shipments-delivered check → order status update → queued customer
+  email → email sent successfully.
+
+## In progress (uncommitted) — held back to batch with more work before deploy
+
+**PHPStan cleanup for `OrderResource.php`/`ViewOrder.php`** — the 12 pre-existing errors noted
+above are now fixed locally, confirmed by re-running `composer analyse` on the VPS throwaway
+checkout (`[OK] No errors`). No behavior change, all type-safety only:
+- `OrderResource.php`: the product-name lookup (`$variant->product?->translateAttribute(...)`)
+  now assigns `$variant->product` to a `/** @var Product|null */`-annotated local first — the
+  eager-loaded relation is still accessed the same way (no extra query), just typed.
+- `ViewOrder.php`: added a private `order(): Order` accessor that narrows `$this->record`
+  (Filament's `ViewRecord::$record` is typed `Model|int|string`, always resolved to an `Order` by
+  the time these methods run) — replaces the 5 flagged `$this->record->lines`/`->status` accesses.
+  The other 6 errors were `static::` calls to `private` methods/properties (`$carrierLabels`,
+  `formatCustomerIpBlock()`, `formatAddressBlock()` x2, `formatLineTracking()` x2) — changed to
+  `self::`, same fix pattern as the `getNavigationBadge()` bug caught above.
+- Pint pass: clean, no reformatting needed.
+
+**Removed the orphaned Next.js admin section** (`frontend/app/admin/orders/*`,
+`frontend/app/admin/blog/*`) — this is the "legacy admin page" behind the tracking-number gap
+discussed above (PATCH tracking number there only wrote `meta.shipments[]`, never created an
+`order_shipments` row, so AfterShip couldn't match it). Investigated first rather than assuming:
+- No link to it anywhere in the app's real UI (Header, Footer, account, dashboards) — only
+  reachable by typing the exact URL. No client-side auth guard either (relied entirely on the
+  backend API returning 403 for non-admins).
+- Git history: only 3 commits total, all from the initial buildout (2026-04-20 → 2026-06-06),
+  nothing since — ~7 weeks untouched as of today.
+- Publishing blog posts is unaffected: Filament's `PostResource` (Create/Edit/List) is the real
+  write path, and the public `/blog` pages read the same `/api/posts` endpoint regardless of which
+  admin UI created the post — the deleted pages were just a second, unused way to write to the same
+  table.
+- `gitnexus_impact` on all 4 page components (`AdminOrderDetailPage`, `AdminOrdersPage`,
+  `AdminBlogDashboard`, `CreatePostPage`) confirmed 0 upstream callers before deleting. `npm run
+  build` passes clean afterward (had to clear a stale `.next/` route-types cache first, unrelated
+  to the deletion itself) — route list confirms `/admin/*` is gone, 26 routes remain, nothing else
+  broke.
+- Deliberately did **not** touch the backend API routes/controller methods these pages called
+  (`OrderController::update()`/`performAction()`/`createShipment()`, the admin posts endpoints).
+  Filament doesn't call these — it goes straight to `OrderOperationsService` — so with the frontend
+  gone, grepping the repo now shows **no remaining caller of `PATCH /api/orders/{id}` at all**.
+  Left them in place anyway: removing API surface is a bigger, separate decision (an external
+  integration outside this repo could theoretically still call them), and out of scope for what
+  Yuni asked for this round.
+- **Not committed/pushed/deployed yet** — holding to batch with further work this session per Yuni.
+
 ## Known gaps / not done
 
-- **AfterShip end-to-end not yet confirmed with a real carrier tracking number** — all verification
-  so far used obviously-fake tracking numbers (`1Z999AA...`), so the *code path* (webhook → shipment
-  match → aggregate delivered check → status update → email) is verified, but a real UPS/USPS/FedEx/
-  DHL delivery scan has not yet been observed triggering it end-to-end in production.
+- **A real carrier delivery scan reaching our webhook is still unconfirmed** — the entire *our-side*
+  pipeline (signature verify → shipment match → status update → email) is now verified end-to-end
+  against production with a simulated-but-correctly-signed webhook call (see above); the only thing
+  left unconfirmed is whether AfterShip itself reliably calls our webhook when a real UPS/USPS/
+  FedEx/DHL scan happens — that's outside our code, can only be observed, not tested.
 - Carried over from 2026-07-24, still open: **Hostinger Mail trial expires 2026-08-15** — must
-  upgrade before then; `/contact` honeypot still not proven against a repeat spam bot; a real guest
-  return submission through `https://petposture.com/returns` (not just curl/route checks) is still
-  pending a suitable real order+email from Yuni.
+  upgrade before then; a real guest return submission through `https://petposture.com/returns`
+  (not just curl/route checks) is still pending a suitable real order+email from Yuni.
 
 ## Immediate follow-ups (next session)
 
@@ -193,9 +278,8 @@ so nothing about the request's status/emails/behavior changes.
    matching logic end-to-end with real carrier data (not test tracking numbers).
 2. Still pending from before: upgrade Hostinger Mail before 2026-08-15; a real end-to-end guest
    return submission once Yuni has a suitable order+email on hand.
-3. The 12 pre-existing PHPStan errors in `OrderResource.php`/`ViewOrder.php` (found while checking
-   this session's changes, left alone as out of scope) are still there — not urgent, but worth a
-   cleanup pass sometime since `composer analyse` isn't actually clean on these two files.
+3. Commit + push + deploy the PHPStan cleanup above (currently local-only, held back to batch with
+   more work this session).
 
 ## Backlog / bigger asks (need scoping before starting)
 
