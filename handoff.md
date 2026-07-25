@@ -1,6 +1,6 @@
 # Handoff — 2026-07-26
 
-## In progress today (2026-07-26) — local changes, not yet committed/deployed
+## Shipped today (2026-07-26), deployed to production, verified working
 
 **Admin Order view: Order Status vs Payment Status clarity fix**
 Triggered by Yuni testing a low-value-waiver refund (order #15, `nemalipuriarmando814@gmail.com`)
@@ -37,9 +37,14 @@ like there was only one status.
   order top to bottom: Items Subtotal → Discount (coupon) → Shipping → Tax → Order Total, with
   nothing below Total anymore. The old below-Total divider (`<hr>` + Payment Method/Refund
   Reason/Coupon lines) is gone entirely — those three moved elsewhere or up into this list.
-- Not committed yet this session — `php -l` syntax-checked all files;
-  `composer format`/`composer analyse` could not be run locally (dev deps not installed in this
-  checkout's `vendor/`), should be run in the container before merging.
+- Commits `86efcdc` (feature) and `adbac92` (Pint formatting). `composer format`/`composer analyse`
+  couldn't run locally (dev deps not installed in this checkout's `vendor/`), so both were run
+  against a throwaway `composer install` (with dev deps) on the VPS host instead: Pint reformatted
+  the two files (whitespace/operator style only — they hadn't been run through Pint in a while, so
+  it touched pre-existing code too, not just the new additions); PHPStan reported 12 pre-existing
+  errors, none on any of the newly added/changed lines, left alone as out of scope. Deployed:
+  pushed to `origin/main`, `git pull` + `docker compose build backend` +
+  `up -d --force-recreate backend` on the VPS, container healthy, `php artisan optimize:clear` run.
 
 **Docs sync (committed, `c625f34`)**: confirmed via direct VPS check
 (`ssh root@94.72.123.183`, `/opt/petposture`) that the entire 2026-07-25 session — Refund
@@ -171,12 +176,13 @@ clean at that commit)
 
 ## Immediate follow-ups (next session)
 
-1. Commit + deploy the Order Status/Payment Status badge fix above (run `composer format`/
-   `composer analyse` in the container first — couldn't run either locally this session).
-2. Watch for the next real "delivered" AfterShip webhook hit to confirm the new per-shipment
+1. Watch for the next real "delivered" AfterShip webhook hit to confirm the new per-shipment
    matching logic end-to-end with real carrier data (not test tracking numbers).
-3. Still pending from before: upgrade Hostinger Mail before 2026-08-15; a real end-to-end guest
+2. Still pending from before: upgrade Hostinger Mail before 2026-08-15; a real end-to-end guest
    return submission once Yuni has a suitable order+email on hand.
+3. The 12 pre-existing PHPStan errors in `OrderResource.php`/`ViewOrder.php` (found while checking
+   this session's changes, left alone as out of scope) are still there — not urgent, but worth a
+   cleanup pass sometime since `composer analyse` isn't actually clean on these two files.
 
 ## Backlog / bigger asks (need scoping before starting)
 
