@@ -1,6 +1,6 @@
 # Handoff — 2026-07-26
 
-## In progress (uncommitted) — Order Summary layout rework
+## Order Summary layout rework — commit `ee18be8`, deployed, awaiting Yuni's visual confirmation
 
 **`ViewOrder.php` Order Summary reorganized per Yuni's explicit spec** — two-column layout inside
 the Order Summary box (`Infolists\Components\Group` per column, no behavior change to any field's
@@ -19,8 +19,9 @@ logic, just placement):
   not an explicit CSS row-span — didn't want to fight Filament's grid abstraction for a purely
   visual effect achievable by nesting.
 - Verified via VPS throwaway checkout: Pint clean, PHPStan clean (`[OK] No errors`).
-- **Not yet committed/deployed** — layout changes are best judged visually; will deploy and ask
-  Yuni to confirm in the actual admin UI rather than assume the CSS grid math renders as intended.
+- Deployed: backend container rebuilt, `healthy`, `optimize:clear` run. **Layout not yet visually
+  confirmed by Yuni** — CSS grid nesting should render as intended (Order Summary tall on the left,
+  Attribution/Fraud & Risk stacked on the right) but hasn't been eyeballed in the actual admin UI.
 
 ## Shipped today (2026-07-26), deployed to production, verified working
 
