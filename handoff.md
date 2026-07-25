@@ -69,8 +69,8 @@ verified (`ps aux` inside the container confirms `schedule:work` running alongsi
   `README.md`/`ARCHITECTURE.md`/`RULES.md` all updated to document this (a `Schedule::command()`
   registration silently does nothing without this process running).
 
-**Refund Reason select + Partially Refunded status** — commits `d7c042c`, `b0eee73` (pushed, **not
-yet deployed** — build/rebuild not run for this pair as of session end)
+**Refund Reason select + Partially Refunded status** — commits `d7c042c`, `b0eee73`, deployed and
+verified (VPS `git log -1` + backend container rebuild timestamp both confirm this pair is live)
 - The order-level Refund action now requires a Reason (`OrderOperationsService::REFUND_REASON_LABELS`:
   Defective/Damaged, Wrong Item Shipped, Low-Value — No Return Required, Customer Changed Mind,
   Duplicate/Accidental Order, Approved Return Request, Other) — a fixed select, not free text, so
@@ -84,13 +84,31 @@ yet deployed** — build/rebuild not run for this pair as of session end)
   `formatStatusLabel()`) render it correctly with zero frontend changes needed. This value is also
   customer-facing (`/account`, `/checkout/success` read the same `payment_status` field) — same
   transparency a full refund already gets, just extended consistently to partial ones.
-- **Not deployed this session** — verify + deploy next session before relying on this in production.
+**Auto-waive low-value returns** — commits `46f61de`, `73202da`, `98235dd`, deployed and verified
+(VPS backend container rebuilt at 2026-07-25 19:27 +07, right after `98235dd`; working tree on VPS
+clean at that commit)
+- New admin-configurable threshold (Settings, default **$30**): return request items at or under
+  the threshold are flagged eligible for a one-click "Waive & Refund" action instead of the full
+  ship-back/receive flow — `ReturnRequestService::approveLowValueWaiver()`. Threshold lives in
+  `ManageSettings.php` alongside the other Stripe/SMTP settings.
+- **Fraud guard**: a customer only gets the fast path once — a repeat low-value claim from the
+  same email always falls back to the normal ship-back flow (`OrderReturnRequestResource.php`
+  enforces this before showing the waiver action).
+- New `OrderReturnWaived` mail notifies the customer when a waiver is approved.
+- Fixed same-day: `approveLowValueWaiver()` now passes a null amount (full refund) instead of an
+  explicit partial amount when the waived item covers the entire order — previously this left
+  `payment_status` at `"partially-refunded"` even for a 100%-covered order (`73202da`).
+- Fixed same-day: the status update (`waived`) and the Stripe `refundOrder()` call now share a DB
+  transaction — previously a Stripe failure (bad payment intent, decline, network error) left the
+  request stuck showing `waived` with no actual refund and no retry path, since `guardStatus()`
+  requires `requested` status. Found while testing the real refund path against a live Stripe
+  test-mode payment on production (`98235dd`).
+- Also fixed along the way: `phpstan.neon` updated for the installed PHPStan 2.x/Larastan 3.x
+  (removed a dropped parameter, broadened the magic-property ignore pattern to the generic
+  Eloquent `Model` class).
 
 ## Known gaps / not done
 
-- **Low-value auto-waive-return threshold** — idea surfaced while discussing dropshipping return
-  patterns (refund outright below some $ threshold instead of requiring the item back). Not
-  scoped, no dollar amount decided, not built.
 - **No deadline on the `requested` (pre-approval) return status** — only the post-approval tracking
   window (7 days) auto-expires; if admin is slow to review a fresh request, it just sits there with
   no reminder or auto-action. Raised, not decided whether it's worth building.
@@ -105,20 +123,17 @@ yet deployed** — build/rebuild not run for this pair as of session end)
 
 ## Immediate follow-ups (next session)
 
-1. **Deploy `d7c042c`/`b0eee73` (Refund Reason + Partially Refunded)** — pushed but not deployed
-   this session; do this first before anything else touches the order/refund flow.
-2. Decide on a low-value no-return-required threshold, if any.
-3. Watch for the next real "delivered" AfterShip webhook hit to confirm the new per-shipment
+1. Watch for the next real "delivered" AfterShip webhook hit to confirm the new per-shipment
    matching logic end-to-end with real carrier data (not test tracking numbers).
-4. Still pending from before: upgrade Hostinger Mail before 2026-08-15; a real end-to-end guest
+2. Still pending from before: upgrade Hostinger Mail before 2026-08-15; a real end-to-end guest
    return submission once Yuni has a suitable order+email on hand.
 
 ## Backlog / bigger asks (need scoping before starting)
 
 - **Return Request Phase 3** — auto-generated prepaid return shipping label via a carrier API.
-  Discussed today: likely makes most sense paired with a low-value no-return-required rule (only
-  bother generating labels for items worth the return-shipping cost) rather than building both
-  independently.
+  The low-value no-return-required rule it was waiting on (auto-waive, above) has since shipped,
+  but Phase 3 itself is deliberately deferred until the site scales — don't re-propose without a
+  fresh ask.
 - **PayPal payment gateway** — net-new integration alongside the existing custom Stripe integration.
 - **Shop by Solution / Shop by Breed re-think** — needs a business-side decision on target categories first.
 - **Support helpdesk tooling** (Zendesk/Freshdesk/shared inbox) for `support@petposture.com` — only worth it once there's more than one person handling customer replies.

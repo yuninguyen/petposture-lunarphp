@@ -111,6 +111,12 @@ petposture/
   fee reconciles with whatever amount is actually approved), and the approval email shows the
   fee/refund breakdown. Refunding is still a separate, manual action on the order itself —
   nothing here auto-triggers the actual Stripe refund.
+  Low-value items (at or under an admin-configurable threshold, default $30, set in Settings) get
+  a faster path instead: a one-click "Waive & Refund" action skips the ship-back/receive flow
+  entirely and refunds via Stripe directly (full refund if the waived item covers the whole
+  order, otherwise partial), emailing the customer (`OrderReturnWaived`). A fraud guard limits
+  this fast path to once per customer email — repeat low-value claims fall back to the normal
+  return flow.
   The `/returns` form itself shows a live estimated-refund preview (`POST
   /api/orders/return-requests/preview`, no side effects) as items are selected, a restocking-fee
   disclosure linking to the policy page, days-remaining-in-window messaging, and blocks the
