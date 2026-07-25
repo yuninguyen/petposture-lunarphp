@@ -12,6 +12,7 @@ use App\Models\OrderReturnRequestItem;
 use App\Models\Setting;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Lunar\Models\Order;
@@ -263,24 +264,29 @@ class ReturnRequestService
 
         $estimate = $this->calculateRefundEstimate($returnRequest, feeWaived: true);
 
-        $returnRequest->update([
-            'status' => OrderReturnRequest::STATUS_WAIVED,
-            'refund_amount_minor' => $estimate['refund_amount_minor'],
-            'restocking_fee_minor' => 0,
-            'fee_waived' => true,
-            'admin_note' => $adminNote,
-            'approved_at' => now(),
-            'completed_at' => now(),
-        ]);
+        // Wrapped in a transaction so a Stripe failure (invalid intent, decline, network
+        // error) rolls the status change back too — otherwise the request would be stuck
+        // showing "waived" with no way to retry even though no refund actually went through.
+        DB::transaction(function () use ($returnRequest, $estimate, $adminNote) {
+            $returnRequest->update([
+                'status' => OrderReturnRequest::STATUS_WAIVED,
+                'refund_amount_minor' => $estimate['refund_amount_minor'],
+                'restocking_fee_minor' => 0,
+                'fee_waived' => true,
+                'admin_note' => $adminNote,
+                'approved_at' => now(),
+                'completed_at' => now(),
+            ]);
 
-        // Pass null (not the explicit amount) when the waiver happens to cover the order's
-        // entire value, so refundOrder() records it as a full refund (payment_status =
-        // 'refunded') rather than 'partially-refunded' — same full-vs-partial convention
-        // the manual Refund action on the order uses (blank amount = full refund).
-        $orderTotalMinor = $this->moneyToMinor($returnRequest->order->total);
-        $refundAmountForOrder = $estimate['refund_amount_minor'] === $orderTotalMinor ? null : $estimate['refund_amount_minor'];
+            // Pass null (not the explicit amount) when the waiver happens to cover the order's
+            // entire value, so refundOrder() records it as a full refund (payment_status =
+            // 'refunded') rather than 'partially-refunded' — same full-vs-partial convention
+            // the manual Refund action on the order uses (blank amount = full refund).
+            $orderTotalMinor = $this->moneyToMinor($returnRequest->order->total);
+            $refundAmountForOrder = $estimate['refund_amount_minor'] === $orderTotalMinor ? null : $estimate['refund_amount_minor'];
 
-        $this->orderOperations->refundOrder($returnRequest->order, $refundAmountForOrder, 'no_return_required');
+            $this->orderOperations->refundOrder($returnRequest->order, $refundAmountForOrder, 'no_return_required');
+        });
 
         $this->orderEventService->record(
             $returnRequest->order,
