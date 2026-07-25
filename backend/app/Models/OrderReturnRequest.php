@@ -21,6 +21,8 @@ class OrderReturnRequest extends Model
 
     public const STATUS_WAIVED = 'waived';
 
+    public const PENDING_REVIEW_REMINDER_DAYS = 2;
+
     protected $fillable = [
         'order_id',
         'status',
@@ -62,5 +64,12 @@ class OrderReturnRequest extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderReturnRequestItem::class, 'return_request_id');
+    }
+
+    public function isPendingReviewOverdue(): bool
+    {
+        return $this->status === self::STATUS_REQUESTED
+            && $this->requested_at !== null
+            && $this->requested_at->lt(now()->subDays(self::PENDING_REVIEW_REMINDER_DAYS));
     }
 }

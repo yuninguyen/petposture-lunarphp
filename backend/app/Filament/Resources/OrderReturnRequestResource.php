@@ -35,6 +35,31 @@ class OrderReturnRequestResource extends Resource
         return __('Return Requests');
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        $count = self::getOverdueCount();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'danger';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return __('Return requests pending review for :days+ days', ['days' => OrderReturnRequest::PENDING_REVIEW_REMINDER_DAYS]);
+    }
+
+    private static function getOverdueCount(): int
+    {
+        return OrderReturnRequest::query()
+            ->where('status', OrderReturnRequest::STATUS_REQUESTED)
+            ->where('requested_at', '<', now()->subDays(OrderReturnRequest::PENDING_REVIEW_REMINDER_DAYS))
+            ->count();
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([]);
@@ -81,6 +106,10 @@ class OrderReturnRequestResource extends Resource
                 Tables\Columns\TextColumn::make('requested_at')
                     ->label(__('Requested'))
                     ->dateTime()
+                    ->description(fn (OrderReturnRequest $record): ?string => $record->isPendingReviewOverdue()
+                        ? '⚠️ '.(int) $record->requested_at->diffInDays(now()).' days pending review'
+                        : null)
+                    ->color(fn (OrderReturnRequest $record): ?string => $record->isPendingReviewOverdue() ? 'danger' : null)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('return_tracking_number')
                     ->label(__('Return Tracking'))
