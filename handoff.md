@@ -1,5 +1,19 @@
 # Handoff — 2026-07-26
 
+## Order Summary: removed forced full-height stretch — deployed
+
+Yuni sent a screenshot after the 8/4 width deploy: Order Summary had a large ugly empty gap below
+the Customer IP block. Root cause: `->extraAttributes(['class' => 'h-full'])` on the Order Summary
+Section (plus `items-stretch` on the parent Grid) force-stretched it to match the height of
+whichever was taller — its own content or the Attribution+Fraud & Risk stack on the right — so on
+orders where the right stack was taller, Order Summary's box kept its border/background stretched
+down with nothing in it. Removed both: Order Summary now sizes to its own content only, no forced
+matching height against the sibling column. This was leftover from the original three-box (6:3:3)
+layout where forcing equal heights made sense visually; it stopped making sense once Order Summary
+became a single tall box next to a differently-shaped 2-box stack.
+Verified via VPS throwaway checkout: Pint clean, PHPStan clean (`[OK] No errors`). Deployed:
+backend container rebuilt, healthy, `optimize:clear` run.
+
 ## Order Summary follow-up: widths + card funding type — deployed, awaiting visual confirmation
 
 Yuni reviewed the layout above and asked for two more changes before confirming visually
