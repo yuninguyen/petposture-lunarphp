@@ -160,11 +160,24 @@ clean at that commit)
   (removed a dropped parameter, broadened the magic-property ignore pattern to the generic
   Eloquent `Model` class).
 
+**Overdue pending-review reminder for return requests** — commit `9feb9d4`, deployed and verified
+(backend container healthy after rebuild)
+Closes the gap noted below in previous handoffs: a fresh return request (`requested` status, before
+any admin action) had no deadline or reminder at all — only post-approval tracking had the 7-day
+auto-expire. Deliberately chose a **passive reminder over auto-action** (Yuni's call): auto-expiring
+an unreviewed request risks rejecting something that deserved approval just because admin was slow,
+so nothing about the request's status/emails/behavior changes.
+- `OrderReturnRequest::isPendingReviewOverdue()` — true when still `requested` and
+  `requested_at` is older than the new `PENDING_REVIEW_REMINDER_DAYS` constant (**2 days**, Yuni's
+  call).
+- `OrderReturnRequestResource`: the `requested_at` column turns red with a "⚠️ N days pending
+  review" note for overdue rows; the Return Requests nav item shows a red count badge
+  (`getNavigationBadge()`) of overdue requests, visible without opening the page.
+- Caught by PHPStan during the format/analyse pass (see below): `getNavigationBadge()` called
+  a private static method via `static::` instead of `self::` — fixed before deploy.
+
 ## Known gaps / not done
 
-- **No deadline on the `requested` (pre-approval) return status** — only the post-approval tracking
-  window (7 days) auto-expires; if admin is slow to review a fresh request, it just sits there with
-  no reminder or auto-action. Raised, not decided whether it's worth building.
 - **AfterShip end-to-end not yet confirmed with a real carrier tracking number** — all verification
   so far used obviously-fake tracking numbers (`1Z999AA...`), so the *code path* (webhook → shipment
   match → aggregate delivered check → status update → email) is verified, but a real UPS/USPS/FedEx/
