@@ -11,6 +11,7 @@ use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Lunar\Models\Order;
 use Lunar\Models\ProductVariant;
 
@@ -22,7 +23,7 @@ class OrderResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with('shippingAddress');
     }
@@ -79,14 +80,17 @@ class OrderResource extends Resource
                                         ->mapWithKeys(function ($variant) {
                                             $name = $variant->product?->translateAttribute('name') ?? 'Product';
                                             $sku = $variant->sku ? " [{$variant->sku}]" : '';
-                                            return [$variant->id => $name . $sku];
+
+                                            return [$variant->id => $name.$sku];
                                         });
                                 })
                                 ->searchable()
                                 ->required()
                                 ->reactive()
                                 ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                    if (!$state) return;
+                                    if (! $state) {
+                                        return;
+                                    }
                                     $variant = ProductVariant::with(['prices.currency'])->find($state);
                                     $price = $variant?->prices->sortBy('min_quantity')->first();
                                     $amount = $price ? ($price->price->value ?? $price->price) / 100 : 0;
@@ -154,38 +158,38 @@ class OrderResource extends Resource
                     Forms\Components\TextInput::make('billing_first_name')
                         ->label(__('First Name'))
                         ->maxLength(255)
-                        ->hidden(fn(Get $get) => $get('billing_same_as_shipping')),
+                        ->hidden(fn (Get $get) => $get('billing_same_as_shipping')),
                     Forms\Components\TextInput::make('billing_last_name')
                         ->label(__('Last Name'))
                         ->maxLength(255)
-                        ->hidden(fn(Get $get) => $get('billing_same_as_shipping')),
+                        ->hidden(fn (Get $get) => $get('billing_same_as_shipping')),
                     Forms\Components\TextInput::make('billing_line_one')
                         ->label(__('Address Line 1'))
                         ->maxLength(255)
                         ->columnSpanFull()
-                        ->hidden(fn(Get $get) => $get('billing_same_as_shipping')),
+                        ->hidden(fn (Get $get) => $get('billing_same_as_shipping')),
                     Forms\Components\TextInput::make('billing_line_two')
                         ->label(__('Address Line 2'))
                         ->maxLength(255)
                         ->columnSpanFull()
-                        ->hidden(fn(Get $get) => $get('billing_same_as_shipping')),
+                        ->hidden(fn (Get $get) => $get('billing_same_as_shipping')),
                     Forms\Components\TextInput::make('billing_city')
                         ->label(__('City'))
                         ->maxLength(100)
-                        ->hidden(fn(Get $get) => $get('billing_same_as_shipping')),
+                        ->hidden(fn (Get $get) => $get('billing_same_as_shipping')),
                     Forms\Components\TextInput::make('billing_state')
                         ->label(__('State'))
                         ->maxLength(100)
-                        ->hidden(fn(Get $get) => $get('billing_same_as_shipping')),
+                        ->hidden(fn (Get $get) => $get('billing_same_as_shipping')),
                     Forms\Components\TextInput::make('billing_postcode')
                         ->label(__('Postcode'))
                         ->maxLength(20)
-                        ->hidden(fn(Get $get) => $get('billing_same_as_shipping')),
+                        ->hidden(fn (Get $get) => $get('billing_same_as_shipping')),
                     Forms\Components\TextInput::make('billing_country')
                         ->label(__('Country'))
                         ->default('US')
                         ->maxLength(10)
-                        ->hidden(fn(Get $get) => $get('billing_same_as_shipping')),
+                        ->hidden(fn (Get $get) => $get('billing_same_as_shipping')),
                 ])->columns(2),
 
             Forms\Components\Section::make(__('Order Settings'))
@@ -193,7 +197,7 @@ class OrderResource extends Resource
                     Forms\Components\Select::make('payment_method')
                         ->label(__('Payment Method'))
                         ->options([
-                            'cod'  => __('Cash on Delivery'),
+                            'cod' => __('Cash on Delivery'),
                             'card' => __('Credit Card (Paid)'),
                         ])
                         ->default('cod')
@@ -202,7 +206,7 @@ class OrderResource extends Resource
                         ->label(__('Shipping Method'))
                         ->options([
                             'standard' => __('Standard'),
-                            'express'  => __('Express'),
+                            'express' => __('Express'),
                         ])
                         ->default('standard')
                         ->required(),
@@ -241,7 +245,7 @@ class OrderResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('customer_name')
                     ->label(__('Full Name'))
-                    ->getStateUsing(fn($record) => trim(($record->shippingAddress?->first_name ?? '') . ' ' . ($record->shippingAddress?->last_name ?? '')) ?: '—')
+                    ->getStateUsing(fn ($record) => trim(($record->shippingAddress?->first_name ?? '').' '.($record->shippingAddress?->last_name ?? '')) ?: '—')
                     ->searchable(query: function ($query, string $search) {
                         $query->whereHas('shippingAddress', function ($query) use ($search) {
                             $query->where('first_name', 'like', "%{$search}%")
@@ -253,22 +257,22 @@ class OrderResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('total')
                     ->label(__('Total'))
-                    ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2))
+                    ->formatStateUsing(fn ($state) => '$'.number_format(($state->value ?? (int) $state) / 100, 2))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('Order Status'))
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => str($state)->headline()->toString())
-                    ->color(fn($state) => match(true) {
+                    ->formatStateUsing(fn (string $state): string => str($state)->headline()->toString())
+                    ->color(fn ($state) => match (true) {
                         \in_array($state, ['awaiting-payment', 'payment-offline']) => 'warning',
-                        $state === 'cancelled'        => 'danger',
+                        $state === 'cancelled' => 'danger',
                         \in_array($state, ['payment-received', 'processing', 'shipped']) => 'info',
-                        $state === 'delivered'        => 'success',
+                        $state === 'delivered' => 'success',
                         default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('meta.payment_method')
                     ->label(__('Payment'))
-                    ->formatStateUsing(fn(?string $state): string => match ($state) {
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'cod' => 'COD',
                         'card' => 'Credit Card',
                         'paypal' => 'PayPal',
@@ -288,9 +292,9 @@ class OrderResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListOrders::route('/'),
+            'index' => ListOrders::route('/'),
             'create' => CreateOrder::route('/create'),
-            'view'   => ViewOrder::route('/{record}'),
+            'view' => ViewOrder::route('/{record}'),
         ];
     }
 }

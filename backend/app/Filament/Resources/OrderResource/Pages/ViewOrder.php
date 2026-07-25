@@ -3,12 +3,15 @@
 namespace App\Filament\Resources\OrderResource\Pages;
 
 use App\Filament\Resources\OrderResource;
+use App\Models\OrderShipmentItem;
 use App\Services\OrderOperationsService;
+use App\Services\ShippingService;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
+use Lunar\Models\OrderLine;
 
 class ViewOrder extends ViewRecord
 {
@@ -44,7 +47,7 @@ class ViewOrder extends ViewRecord
 
         if ($canShip) {
             $lineOptions = $shippableLines->mapWithKeys(fn ($line) => [
-                $line->id => $line->description . ' (remaining: ' . $remainingQuantities[$line->id] . ')',
+                $line->id => $line->description.' (remaining: '.$remainingQuantities[$line->id].')',
             ])->all();
             $defaultItems = $shippableLines->map(fn ($line) => [
                 'order_line_id' => $line->id,
@@ -166,16 +169,16 @@ class ViewOrder extends ViewRecord
 
     private static function formatAddressBlock($address): string
     {
-        if (!$address) {
+        if (! $address) {
             return '—';
         }
 
         $lines = [
-            trim(($address->first_name ?? '') . ' ' . ($address->last_name ?? '')),
+            trim(($address->first_name ?? '').' '.($address->last_name ?? '')),
             collect([$address->line_one, $address->line_two])->filter()->implode(', '),
             collect([
                 $address->city,
-                trim(($address->state ?? '') . ' ' . ($address->postcode ?? '')),
+                trim(($address->state ?? '').' '.($address->postcode ?? '')),
             ])->filter()->implode(', '),
             $address->country?->name,
             $address->contact_phone,
@@ -196,7 +199,7 @@ class ViewOrder extends ViewRecord
 
         return collect($lines)
             ->filter()
-            ->map(fn($value, $label) => '<strong>' . e($label) . ':</strong> ' . e($value))
+            ->map(fn ($value, $label) => '<strong>'.e($label).':</strong> '.e($value))
             ->implode('<br>') ?: '—';
     }
 
@@ -208,9 +211,9 @@ class ViewOrder extends ViewRecord
         'manual' => 'Other / Manual',
     ];
 
-    private static function formatLineTracking(\Lunar\Models\OrderLine $line): ?string
+    private static function formatLineTracking(OrderLine $line): ?string
     {
-        $shipmentItems = \App\Models\OrderShipmentItem::query()
+        $shipmentItems = OrderShipmentItem::query()
             ->where('order_line_id', $line->id)
             ->with('shipment')
             ->get()
@@ -223,16 +226,16 @@ class ViewOrder extends ViewRecord
         $rows = $shipmentItems->map(function ($item) {
             $shipment = $item->shipment;
             $carrierLabel = static::$carrierLabels[$shipment->carrier] ?? str($shipment->carrier)->headline()->toString();
-            $display = e($shipment->tracking_number) . ' &times; ' . $item->quantity;
+            $display = e($shipment->tracking_number).' &times; '.$item->quantity;
 
             if ($shipment->tracking_url) {
-                $display = '<a href="' . e($shipment->tracking_url) . '" target="_blank" rel="noopener" style="text-decoration: underline;">' . $display . '</a>';
+                $display = '<a href="'.e($shipment->tracking_url).'" target="_blank" rel="noopener" style="text-decoration: underline;">'.$display.'</a>';
             }
 
             return "<strong>{$carrierLabel}:</strong> {$display}";
         });
 
-        return '<span style="font-size: 12px; color: #9a9a9a;">' . $rows->implode(' &nbsp;|&nbsp; ') . '</span>';
+        return '<span style="font-size: 12px; color: #9a9a9a;">'.$rows->implode(' &nbsp;|&nbsp; ').'</span>';
     }
 
     public function infolist(Infolist $infolist): Infolist
@@ -245,12 +248,12 @@ class ViewOrder extends ViewRecord
                         ->schema([
                             Infolists\Components\TextEntry::make('reference')
                                 ->label(__('Order Number'))
-                                ->formatStateUsing(fn(string $state): string => "#{$state}"),
+                                ->formatStateUsing(fn (string $state): string => "#{$state}"),
                             Infolists\Components\TextEntry::make('status')
                                 ->label(__('Order Status'))
                                 ->badge()
-                                ->formatStateUsing(fn(string $state): string => str($state)->headline()->toString())
-                                ->color(fn(string $state): string => match(true) {
+                                ->formatStateUsing(fn (string $state): string => str($state)->headline()->toString())
+                                ->color(fn (string $state): string => match (true) {
                                     \in_array($state, ['awaiting-payment', 'payment-offline']) => 'warning',
                                     $state === 'cancelled' => 'danger',
                                     \in_array($state, ['payment-received', 'processing', 'shipped']) => 'info',
@@ -260,8 +263,8 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('meta.payment_status')
                                 ->label(__('Payment Status'))
                                 ->badge()
-                                ->formatStateUsing(fn(?string $state): string => $state ? str($state)->headline()->toString() : '—')
-                                ->color(fn(?string $state): string => match ($state) {
+                                ->formatStateUsing(fn (?string $state): string => $state ? str($state)->headline()->toString() : '—')
+                                ->color(fn (?string $state): string => match ($state) {
                                     'paid' => 'success',
                                     'partially-refunded' => 'warning',
                                     'refunded' => 'gray',
@@ -271,7 +274,7 @@ class ViewOrder extends ViewRecord
                                 }),
                             Infolists\Components\TextEntry::make('meta.payment_method')
                                 ->label(__('Payment Method'))
-                                ->formatStateUsing(fn(?string $state): string => match ($state) {
+                                ->formatStateUsing(fn (?string $state): string => match ($state) {
                                     'cod' => 'COD',
                                     'card' => 'Credit Card',
                                     'paypal' => 'PayPal',
@@ -279,8 +282,8 @@ class ViewOrder extends ViewRecord
                                 }),
                             Infolists\Components\TextEntry::make('meta.refund_reason')
                                 ->label(__('Refund Reason'))
-                                ->visible(fn($record) => filled($record->meta['refund_reason'] ?? null))
-                                ->formatStateUsing(fn(?string $state): string => $state
+                                ->visible(fn ($record) => filled($record->meta['refund_reason'] ?? null))
+                                ->formatStateUsing(fn (?string $state): string => $state
                                     ? (OrderOperationsService::REFUND_REASON_LABELS[$state] ?? $state)
                                     : '—'),
                             Infolists\Components\TextEntry::make('customer_reference')
@@ -291,7 +294,7 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('customer_ip_block')
                                 ->label(__('Customer IP'))
                                 ->html()
-                                ->state(fn($record) => static::formatCustomerIpBlock((array) ($record->meta ?? [])))
+                                ->state(fn ($record) => static::formatCustomerIpBlock((array) ($record->meta ?? [])))
                                 ->columnSpanFull(),
                         ])->columns(2)->columnSpan(6)->extraAttributes(['class' => 'h-full']),
 
@@ -310,13 +313,13 @@ class ViewOrder extends ViewRecord
 
                     Infolists\Components\Section::make(__('Fraud & Risk'))
                         ->description(__('Powered by Stripe Radar — automatic on every card payment, no extra setup required.'))
-                        ->visible(fn($record) => filled($record->meta['fraud_risk_level'] ?? null))
+                        ->visible(fn ($record) => filled($record->meta['fraud_risk_level'] ?? null))
                         ->schema([
                             Infolists\Components\TextEntry::make('meta.fraud_risk_level')
                                 ->label(__('Risk Level'))
                                 ->badge()
-                                ->formatStateUsing(fn(?string $state): string => $state ? str($state)->headline()->toString() : '—')
-                                ->color(fn(?string $state): string => match ($state) {
+                                ->formatStateUsing(fn (?string $state): string => $state ? str($state)->headline()->toString() : '—')
+                                ->color(fn (?string $state): string => match ($state) {
                                     'highest' => 'danger',
                                     'elevated' => 'warning',
                                     default => 'success',
@@ -338,7 +341,7 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('shipping_block')
                                 ->label('')
                                 ->html()
-                                ->state(fn($record) => static::formatAddressBlock($record->shippingAddress)),
+                                ->state(fn ($record) => static::formatAddressBlock($record->shippingAddress)),
                         ])->columnSpan(1),
 
                     Infolists\Components\Section::make(__('Billing Address'))
@@ -346,7 +349,7 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\TextEntry::make('billing_block')
                                 ->label('')
                                 ->html()
-                                ->state(fn($record) => static::formatAddressBlock($record->billingAddress)),
+                                ->state(fn ($record) => static::formatAddressBlock($record->billingAddress)),
                         ])->columnSpan(1),
                 ]),
 
@@ -354,7 +357,7 @@ class ViewOrder extends ViewRecord
                 ->schema([
                     Infolists\Components\RepeatableEntry::make('lines')
                         ->label('')
-                        ->state(fn($record) => $record->lines->where('type', '!=', 'shipping')->values())
+                        ->state(fn ($record) => $record->lines->where('type', '!=', 'shipping')->values())
                         ->schema([
                             Infolists\Components\TextEntry::make('description')
                                 ->label(__('Product'))
@@ -364,17 +367,17 @@ class ViewOrder extends ViewRecord
                                 ->columnSpan(1),
                             Infolists\Components\TextEntry::make('unit_price')
                                 ->label(__('Unit Price'))
-                                ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2))
+                                ->formatStateUsing(fn ($state) => '$'.number_format(($state->value ?? (int) $state) / 100, 2))
                                 ->columnSpan(1),
                             Infolists\Components\TextEntry::make('sub_total')
                                 ->label(__('Subtotal'))
-                                ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2))
+                                ->formatStateUsing(fn ($state) => '$'.number_format(($state->value ?? (int) $state) / 100, 2))
                                 ->columnSpan(1),
                             Infolists\Components\TextEntry::make('shipment_tracking')
                                 ->label('')
                                 ->html()
-                                ->visible(fn($record) => static::formatLineTracking($record) !== null)
-                                ->state(fn($record) => static::formatLineTracking($record))
+                                ->visible(fn ($record) => static::formatLineTracking($record) !== null)
+                                ->state(fn ($record) => static::formatLineTracking($record))
                                 ->columnSpanFull()
                                 ->extraAttributes(['class' => '-mt-4']),
                         ])
@@ -387,30 +390,30 @@ class ViewOrder extends ViewRecord
                         ->html()
                         ->columnSpanFull()
                         ->state(function ($record) {
-                            $money = fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2);
+                            $money = fn ($state) => '$'.number_format(($state->value ?? (int) $state) / 100, 2);
                             $discount = (int) ($record->discount_total->value ?? $record->discount_total ?? 0);
 
                             $rows = [
-                                'Items Subtotal: ' . $money($record->sub_total),
+                                'Items Subtotal: '.$money($record->sub_total),
                             ];
 
                             $couponCode = $record->meta['coupon_code'] ?? null;
 
                             if ($discount > 0) {
-                                $rows[] = 'Discount: -' . $money($record->discount_total) . ($couponCode ? " ({$couponCode})" : '');
+                                $rows[] = 'Discount: -'.$money($record->discount_total).($couponCode ? " ({$couponCode})" : '');
                             } elseif ($couponCode) {
                                 $rows[] = "Coupon: {$couponCode}";
                             }
 
-                            $shippingMethodName = app(\App\Services\ShippingService::class)
+                            $shippingMethodName = app(ShippingService::class)
                                 ->nameFor((string) ($record->meta['shipping_method'] ?? 'standard'));
-                            $rows[] = "Shipping - {$shippingMethodName}: " . $money($record->shipping_total);
-                            $rows[] = 'Tax: ' . $money($record->tax_total);
-                            $rows[] = '<strong>Order Total: ' . $money($record->total) . '</strong>';
+                            $rows[] = "Shipping - {$shippingMethodName}: ".$money($record->shipping_total);
+                            $rows[] = 'Tax: '.$money($record->tax_total);
+                            $rows[] = '<strong>Order Total: '.$money($record->total).'</strong>';
 
                             return '<div style="line-height: 2; margin-right: 1.5rem;">'
-                                . implode('<br>', $rows)
-                                . '</div>';
+                                .implode('<br>', $rows)
+                                .'</div>';
                         })
                         ->extraAttributes(['class' => '-mt-8']),
                 ]),
@@ -423,16 +426,16 @@ class ViewOrder extends ViewRecord
                         ->columnSpanFull(),
                     Infolists\Components\RepeatableEntry::make('orderEvents')
                         ->label('')
-                        ->state(fn($record) => $record->orderEvents()->latest('id')->get())
+                        ->state(fn ($record) => $record->orderEvents()->latest('id')->get())
                         ->schema([
                             Infolists\Components\TextEntry::make('title')
                                 ->label('')
                                 ->html()
-                                ->state(fn($record) => '<strong>' . e($record->title) . '</strong>'
-                                    . ($record->detail ? '<br><span style="color:#6b7280;">' . e($record->detail) . '</span>' : '')),
+                                ->state(fn ($record) => '<strong>'.e($record->title).'</strong>'
+                                    .($record->detail ? '<br><span style="color:#6b7280;">'.e($record->detail).'</span>' : '')),
                             Infolists\Components\TextEntry::make('occurred_at')
                                 ->label('')
-                                ->state(fn($record) => optional($record->occurred_at ?? $record->created_at)->format('M j, Y g:i A'))
+                                ->state(fn ($record) => optional($record->occurred_at ?? $record->created_at)->format('M j, Y g:i A'))
                                 ->color('gray')
                                 ->alignEnd(),
                         ])
