@@ -428,6 +428,7 @@ class OrderOperationsService
         if (array_key_exists('card_brand', $paymentData)) {
             $meta['card_brand'] = $paymentData['card_brand'];
             $meta['card_last4'] = $paymentData['card_last4'] ?? null;
+            $meta['card_funding'] = $paymentData['card_funding'] ?? null;
         }
 
         if (array_key_exists('amount_charged', $paymentData)) {

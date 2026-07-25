@@ -276,7 +276,20 @@ class ViewOrder extends ViewRecord
                                         if ($state === 'card') {
                                             $brand = $record->meta['card_brand'] ?? null;
                                             $last4 = $record->meta['card_last4'] ?? null;
-                                            $label = $brand ? str($brand)->headline()->toString() : 'Credit Card';
+                                            $funding = $record->meta['card_funding'] ?? null;
+
+                                            $cardType = match ($funding) {
+                                                'credit' => 'Credit Card',
+                                                'debit' => 'Debit Card',
+                                                'prepaid' => 'Prepaid Card',
+                                                default => 'Card',
+                                            };
+
+                                            if (! $brand) {
+                                                return $cardType;
+                                            }
+
+                                            $label = "{$cardType} - ".str($brand)->headline()->toString();
 
                                             return $last4 ? "{$label} •••• {$last4}" : $label;
                                         }
@@ -317,7 +330,7 @@ class ViewOrder extends ViewRecord
                                         ? (OrderOperationsService::REFUND_REASON_LABELS[$state] ?? $state)
                                         : '—'),
                             ]),
-                        ])->columns(2)->columnSpan(6)->extraAttributes(['class' => 'h-full']),
+                        ])->columns(2)->columnSpan(8)->extraAttributes(['class' => 'h-full']),
 
                     Infolists\Components\Grid::make(1)
                         ->schema([
@@ -355,7 +368,7 @@ class ViewOrder extends ViewRecord
                                         ->default('—')
                                         ->columnSpanFull(),
                                 ]),
-                        ])->columnSpan(6),
+                        ])->columnSpan(4),
                 ])->extraAttributes(['class' => 'items-stretch']),
 
             Infolists\Components\Grid::make(2)

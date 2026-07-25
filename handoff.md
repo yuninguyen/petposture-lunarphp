@@ -1,5 +1,38 @@
 # Handoff — 2026-07-26
 
+## Order Summary follow-up: widths + card funding type — deployed, awaiting visual confirmation
+
+Yuni reviewed the layout above and asked for two more changes before confirming visually
+(confirmed the 8/4 width narrows Attribution+Fraud & Risk as intended — the previous round's
+confusion was Yuni looking at production, which still had the old 6/6 layout since this change
+hadn't been deployed yet at the time):
+- **Widths**: Order Summary 8/12, the stacked Attribution+Fraud&Risk column 4/12 (was 6/6).
+- **Payment Method now shows Credit/Debit/Prepaid, not just the brand** — e.g.
+  "Credit Card - Visa •••• 4242" / "Debit Card - Mastercard •••• 1111" — using Stripe's own
+  `payment_method_details.card.funding` field (`credit`/`debit`/`prepaid`/`unknown`), captured
+  from the *same* charge object already fetched for brand/last4/fraud data, no extra API call.
+  Deliberately **did not** build a separate BIN-lookup service — Stripe already determines this
+  from the issuing bank's BIN and returns it for free; a third-party BIN database would be less
+  accurate and more moving parts for no benefit. Confirmed with Yuni before implementing.
+  - New `meta.card_funding` field: captured in `StripePaymentIntentService::handleWebhook()`
+    (alongside `card_brand`/`card_last4`) and persisted in `OrderOperationsService::syncStripePayment()`.
+  - **Existing paid orders won't have this** — only new payments from this point forward. Order
+    #14 (real `card_brand=visa`, `card_last4=4242`, `card_funding=NULL`) was checked directly in
+    the DB to confirm the fallback: shows "Card - Visa •••• 4242" (generic "Card" instead of
+    Credit/Debit) rather than erroring or showing nothing.
+  - **PayPal stays a flat "PayPal" label, no account/email shown** — confirmed with Yuni that
+    `MockPayPalGateway` is a placeholder only ("PayPal redirect is not connected yet"), so there's
+    no real payer email/account ever captured to show. Not worth inventing a fake field for an
+    integration that doesn't exist yet (see PayPal gateway in the backlog below).
+- Verified via VPS throwaway checkout before committing (per Yuni's request to test first):
+  `php -l` clean on all 3 files, Pint clean (had to pull back a reformatted
+  `StripePaymentIntentService.php` — that file had never been run through Pint before, unrelated
+  pre-existing style debt, not from this change), PHPStan `[OK] No errors`. Manually traced the
+  new formatter logic against order #14's real data before deploying, since there was no way to
+  trigger a real Stripe charge with `card_funding` set without an actual payment.
+- Deployed: backend container rebuilt, healthy, `optimize:clear` run. Still awaiting Yuni's visual
+  confirmation of the new width + card funding label in the actual admin UI.
+
 ## Order Summary layout rework — commit `ee18be8`, deployed, awaiting Yuni's visual confirmation
 
 **`ViewOrder.php` Order Summary reorganized per Yuni's explicit spec** — two-column layout inside

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Setting;
 use App\Models\StripeWebhookEvent;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -15,27 +16,23 @@ class StripePaymentIntentService
     public function __construct(
         private readonly OrderOperationsService $orderOperationsService,
         private readonly OrderEventService $orderEventService,
-    ) {
-    }
+    ) {}
 
     private function stripeSecret(): string
     {
-        return Cache::remember('stripe_secret', 300, fn () =>
-            Setting::get('stripe_secret') ?: (string) config('services.stripe.secret')
+        return Cache::remember('stripe_secret', 300, fn () => Setting::get('stripe_secret') ?: (string) config('services.stripe.secret')
         );
     }
 
     private function stripeKey(): string
     {
-        return Cache::remember('stripe_key', 300, fn () =>
-            Setting::get('stripe_key') ?: (string) config('services.stripe.key')
+        return Cache::remember('stripe_key', 300, fn () => Setting::get('stripe_key') ?: (string) config('services.stripe.key')
         );
     }
 
     private function stripeWebhookSecret(): string
     {
-        return Cache::remember('stripe_webhook_secret', 300, fn () =>
-            Setting::get('stripe_webhook_secret') ?: (string) config('services.stripe.webhook_secret')
+        return Cache::remember('stripe_webhook_secret', 300, fn () => Setting::get('stripe_webhook_secret') ?: (string) config('services.stripe.webhook_secret')
         );
     }
 
@@ -53,8 +50,8 @@ class StripePaymentIntentService
 
         if (! $secret) {
             return [
-                'intent_id' => 'pi_placeholder_' . Str::lower(Str::random(14)),
-                'client_secret' => 'pi_placeholder_secret_' . Str::lower(Str::random(24)),
+                'intent_id' => 'pi_placeholder_'.Str::lower(Str::random(14)),
+                'client_secret' => 'pi_placeholder_secret_'.Str::lower(Str::random(24)),
                 'amount' => $amount,
                 'currency' => strtoupper($currency),
                 'status' => 'requires_payment_method',
@@ -237,6 +234,7 @@ class StripePaymentIntentService
                 if ($card) {
                     $paymentData['card_brand'] = $card['brand'] ?? null;
                     $paymentData['card_last4'] = $card['last4'] ?? null;
+                    $paymentData['card_funding'] = $card['funding'] ?? null;
                 }
 
                 if (isset($charge['amount'])) {
@@ -294,7 +292,7 @@ class StripePaymentIntentService
                 'status' => 'received',
                 'payload' => $event,
             ]);
-        } catch (\Illuminate\Database\QueryException $exception) {
+        } catch (QueryException $exception) {
             if ((string) $exception->getCode() !== '23000') {
                 throw $exception;
             }
@@ -317,7 +315,7 @@ class StripePaymentIntentService
 
         if (! $secret) {
             return [
-                'refund_id' => 're_placeholder_' . Str::lower(Str::random(14)),
+                'refund_id' => 're_placeholder_'.Str::lower(Str::random(14)),
                 'status' => 'succeeded',
                 'amount' => $amountMinor,
                 'mode' => 'placeholder',
@@ -371,7 +369,7 @@ class StripePaymentIntentService
             throw new RuntimeException('Invalid Stripe signature header.');
         }
 
-        $expected = hash_hmac('sha256', $timestamp . '.' . $payload, $secret);
+        $expected = hash_hmac('sha256', $timestamp.'.'.$payload, $secret);
 
         if (! hash_equals($expected, $hash)) {
             throw new RuntimeException('Invalid Stripe webhook signature.');
