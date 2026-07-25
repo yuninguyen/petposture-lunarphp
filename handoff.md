@@ -1,6 +1,54 @@
-# Handoff — 2026-07-25
+# Handoff — 2026-07-26
 
-## Shipped today, deployed to production, verified working
+## In progress today (2026-07-26) — local changes, not yet committed/deployed
+
+**Admin Order view: Order Status vs Payment Status clarity fix**
+Triggered by Yuni testing a low-value-waiver refund (order #15, `nemalipuriarmando814@gmail.com`)
+and asking why the header still showed "Shipped" instead of "Refunded" — turned out to be working
+as designed (fulfillment `status` and `meta.payment_status` are intentionally separate fields, see
+`ARCHITECTURE.md`), but the UI made that split hard to see: "Payment Status" was buried as a plain
+text line inside the totals block, not a badge, while "Status" was a prominent badge — so it read
+like there was only one status.
+- `ViewOrder.php` (Order Summary section): added a new `meta.payment_status` badge right next to
+  the existing status badge, color-coded (`paid`=success, `partially-refunded`/`pending`=warning,
+  `refunded`=gray, `failed`=danger). Removed the old plain-text "Payment Status: ..." line from the
+  totals block now that it's a badge (avoids showing it twice).
+- Renamed the `status` badge label from "Status" to **"Order Status"** in both `OrderResource.php`
+  (list table column) and `ViewOrder.php` (detail page) — first tried "Fulfillment Status", but
+  caught mid-session that this collides with an existing, different, customer-facing field:
+  `meta.fulfillment_status` (derived by `OrderStateMachine::applyDerivedStatuses()`, values
+  `unfulfilled/processing/shipped/delivered/cancelled/returned`, exposed via `Api\OrderResource`
+  to `/account`). Settled on "Order Status" instead, which matches how `status`'s state machine is
+  already referred to elsewhere in the codebase and doesn't overload either name.
+- **Found and fixed a real bug while doing this**: the list-table badge color match
+  (`OrderResource.php`) checked for `'payment-pending'` and `'dispatched'`, but those strings don't
+  exist anywhere in `OrderStateMachine::ALLOWED_TRANSITIONS` — the real values are
+  `awaiting-payment`/`payment-offline` and `shipped`. So almost every order badge silently fell
+  through to the gray default color regardless of actual status. Fixed to match real status values
+  (`awaiting-payment`/`payment-offline`=warning, `cancelled`=danger,
+  `payment-received`/`processing`/`shipped`=info, `delivered`=success), and added the same
+  color-coding to the detail-page badge (previously had none).
+- Also moved **Payment Method** and **Refund Reason** up into the Order Summary section as their
+  own labeled fields (next to Order Status/Payment Status), instead of being buried as plain-text
+  lines at the bottom of the Items totals block. Refund Reason only shows when the order actually
+  has one (`meta.refund_reason` set). Folded **Coupon** into the totals block's Discount row instead
+  (`Discount: -$X (CODE)`, or a standalone `Coupon: CODE` line when a coupon applies with no
+  discount amount — e.g. free-shipping coupons) so the totals block now reads in one straight
+  order top to bottom: Items Subtotal → Discount (coupon) → Shipping → Tax → Order Total, with
+  nothing below Total anymore. The old below-Total divider (`<hr>` + Payment Method/Refund
+  Reason/Coupon lines) is gone entirely — those three moved elsewhere or up into this list.
+- Not committed yet this session — `php -l` syntax-checked all files;
+  `composer format`/`composer analyse` could not be run locally (dev deps not installed in this
+  checkout's `vendor/`), should be run in the container before merging.
+
+**Docs sync (committed, `c625f34`)**: confirmed via direct VPS check
+(`ssh root@94.72.123.183`, `/opt/petposture`) that the entire 2026-07-25 session — Refund
+Reason/Partially Refunded (`d7c042c`/`b0eee73`) *and* the auto-waive low-value return work
+(`46f61de`/`73202da`/`98235dd`) — was in fact already deployed (backend container rebuilt
+2026-07-25 19:27 +07, right after the last of those commits). `handoff.md` and `README.md` had
+been left describing some of this as pending; both updated to reflect reality.
+
+## Shipped 2026-07-25, deployed to production, verified working
 
 **Admin Order View overhaul (Filament)** — commits `eebcea8`, `6ef44bc`, `869f44e`, `33b6eb7`
 Fixed a real bug found while addressing a UX complaint: `OrderStateMachine::canTransition()` treated
@@ -123,9 +171,11 @@ clean at that commit)
 
 ## Immediate follow-ups (next session)
 
-1. Watch for the next real "delivered" AfterShip webhook hit to confirm the new per-shipment
+1. Commit + deploy the Order Status/Payment Status badge fix above (run `composer format`/
+   `composer analyse` in the container first — couldn't run either locally this session).
+2. Watch for the next real "delivered" AfterShip webhook hit to confirm the new per-shipment
    matching logic end-to-end with real carrier data (not test tracking numbers).
-2. Still pending from before: upgrade Hostinger Mail before 2026-08-15; a real end-to-end guest
+3. Still pending from before: upgrade Hostinger Mail before 2026-08-15; a real end-to-end guest
    return submission once Yuni has a suitable order+email on hand.
 
 ## Backlog / bigger asks (need scoping before starting)

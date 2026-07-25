@@ -17,6 +17,7 @@ Read this before touching code. See `ARCHITECTURE.md` for the why; this file is 
 - Adding a `Schedule::command(...)` to `routes/console.php` does nothing by itself — `supervisord.conf` must also run `php artisan schedule:work` (there's no OS cron in the container). Always add/verify both together.
 - Comments: sparse, by convention. Only for non-obvious *why* (a workaround, a hidden constraint). Never restate what the code already says.
 - Filament resources: auto-discovered, no manual registration. Commerce resources go in `getNavigationGroup() { return __('lunarpanel::global.sections.sales'); }` — don't invent a new nav group.
+- Order has three distinct status fields (`status`, `meta.payment_status`, `meta.fulfillment_status` — see `ARCHITECTURE.md`) with overlapping but different value sets. Never label a badge/column ambiguously as just "Status" or "Fulfillment Status" — use "Order Status" for the `status` column specifically; `meta.fulfillment_status` already owns the "Fulfillment Status" name (it's customer-facing via `Api\OrderResource`) and must not be reused for something else in the admin panel.
 
 **TypeScript/React (frontend)**
 - `"use client"` is the literal first line of the file, no blank line before it, blank line after, then imports.

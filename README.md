@@ -76,8 +76,15 @@ petposture/
   with a required Reason select (Defective, Wrong Item, Low-Value — No Return Required, Customer
   Changed Mind, Duplicate Order, Approved Return Request, Other) so a refund issued outside the
   Return Request flow still leaves an audit trail, and an auto-updating Order Notes activity
-  timeline. Payment status distinguishes "Partially Refunded" from "Paid"/"Refunded" so a partial
-  refund is visible at a glance instead of still reading "Paid".
+  timeline. **Order Status** (the fulfillment state machine: awaiting-payment → processing →
+  shipped → delivered/cancelled) and **Payment Status** (paid/partially-refunded/refunded/failed —
+  tracked independently, since a refund never rewrites the fulfillment state) show as two separate
+  color-coded badges side by side, so a partially-refunded order still reads "Shipped" for
+  fulfillment while clearly showing "Partially Refunded" for payment, instead of one field hiding
+  the other. Payment Method and Refund Reason (when a refund was issued) also live in the Order
+  Summary block alongside these two statuses, rather than at the bottom of the item totals — the
+  item totals block itself now reads straight top to bottom as Items Subtotal → Discount (with the
+  coupon code inline) → Shipping → Tax → Order Total, nothing extra below.
 - Multi-shipment tracking (added 2026-07-25): an order can ship in more than one package —
   admin picks which items/quantities go in each shipment when marking an order shipped (or
   adding another package to an already-shipped order), each with its own required tracking

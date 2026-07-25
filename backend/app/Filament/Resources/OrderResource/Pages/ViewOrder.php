@@ -247,9 +247,42 @@ class ViewOrder extends ViewRecord
                                 ->label(__('Order Number'))
                                 ->formatStateUsing(fn(string $state): string => "#{$state}"),
                             Infolists\Components\TextEntry::make('status')
-                                ->label(__('Status'))
+                                ->label(__('Order Status'))
                                 ->badge()
-                                ->formatStateUsing(fn(string $state): string => str($state)->headline()->toString()),
+                                ->formatStateUsing(fn(string $state): string => str($state)->headline()->toString())
+                                ->color(fn(string $state): string => match(true) {
+                                    \in_array($state, ['awaiting-payment', 'payment-offline']) => 'warning',
+                                    $state === 'cancelled' => 'danger',
+                                    \in_array($state, ['payment-received', 'processing', 'shipped']) => 'info',
+                                    $state === 'delivered' => 'success',
+                                    default => 'gray',
+                                }),
+                            Infolists\Components\TextEntry::make('meta.payment_status')
+                                ->label(__('Payment Status'))
+                                ->badge()
+                                ->formatStateUsing(fn(?string $state): string => $state ? str($state)->headline()->toString() : '—')
+                                ->color(fn(?string $state): string => match ($state) {
+                                    'paid' => 'success',
+                                    'partially-refunded' => 'warning',
+                                    'refunded' => 'gray',
+                                    'failed' => 'danger',
+                                    'pending' => 'warning',
+                                    default => 'gray',
+                                }),
+                            Infolists\Components\TextEntry::make('meta.payment_method')
+                                ->label(__('Payment Method'))
+                                ->formatStateUsing(fn(?string $state): string => match ($state) {
+                                    'cod' => 'COD',
+                                    'card' => 'Credit Card',
+                                    'paypal' => 'PayPal',
+                                    default => $state ? str($state)->headline()->toString() : '—',
+                                }),
+                            Infolists\Components\TextEntry::make('meta.refund_reason')
+                                ->label(__('Refund Reason'))
+                                ->visible(fn($record) => filled($record->meta['refund_reason'] ?? null))
+                                ->formatStateUsing(fn(?string $state): string => $state
+                                    ? (OrderOperationsService::REFUND_REASON_LABELS[$state] ?? $state)
+                                    : '—'),
                             Infolists\Components\TextEntry::make('customer_reference')
                                 ->label(__('Customer Email')),
                             Infolists\Components\TextEntry::make('created_at')
@@ -361,8 +394,12 @@ class ViewOrder extends ViewRecord
                                 'Items Subtotal: ' . $money($record->sub_total),
                             ];
 
+                            $couponCode = $record->meta['coupon_code'] ?? null;
+
                             if ($discount > 0) {
-                                $rows[] = 'Discount: -' . $money($record->discount_total);
+                                $rows[] = 'Discount: -' . $money($record->discount_total) . ($couponCode ? " ({$couponCode})" : '');
+                            } elseif ($couponCode) {
+                                $rows[] = "Coupon: {$couponCode}";
                             }
 
                             $shippingMethodName = app(\App\Services\ShippingService::class)
@@ -371,35 +408,8 @@ class ViewOrder extends ViewRecord
                             $rows[] = 'Tax: ' . $money($record->tax_total);
                             $rows[] = '<strong>Order Total: ' . $money($record->total) . '</strong>';
 
-                            $paymentMethod = match ($record->meta['payment_method'] ?? null) {
-                                'cod' => 'COD',
-                                'card' => 'Credit Card',
-                                'paypal' => 'PayPal',
-                                default => $record->meta['payment_method'] ?? null
-                                    ? str($record->meta['payment_method'])->headline()->toString()
-                                    : '—',
-                            };
-                            $paymentStatus = ($record->meta['payment_status'] ?? null)
-                                ? str($record->meta['payment_status'])->headline()->toString()
-                                : '—';
-
-                            $paymentRows = [
-                                "Payment Method: {$paymentMethod}",
-                                "Payment Status: {$paymentStatus}",
-                            ];
-
-                            if ($couponCode = $record->meta['coupon_code'] ?? null) {
-                                $paymentRows[] = "Coupon: {$couponCode}";
-                            }
-
-                            if ($refundReason = $record->meta['refund_reason'] ?? null) {
-                                $paymentRows[] = 'Refund Reason: ' . (OrderOperationsService::REFUND_REASON_LABELS[$refundReason] ?? $refundReason);
-                            }
-
                             return '<div style="line-height: 2; margin-right: 1.5rem;">'
                                 . implode('<br>', $rows)
-                                . '<hr style="margin: 4px 0; border-color: rgb(228 228 231);">'
-                                . implode('<br>', $paymentRows)
                                 . '</div>';
                         })
                         ->extraAttributes(['class' => '-mt-8']),

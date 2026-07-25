@@ -256,13 +256,14 @@ class OrderResource extends Resource
                     ->formatStateUsing(fn($state) => '$' . number_format(($state->value ?? (int) $state) / 100, 2))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
-                    ->label(__('Status'))
+                    ->label(__('Order Status'))
                     ->badge()
                     ->formatStateUsing(fn(string $state): string => str($state)->headline()->toString())
                     ->color(fn($state) => match(true) {
-                        $state === 'payment-pending'  => 'warning',
+                        \in_array($state, ['awaiting-payment', 'payment-offline']) => 'warning',
                         $state === 'cancelled'        => 'danger',
-                        \in_array($state, ['payment-received', 'dispatched', 'delivered']) => 'success',
+                        \in_array($state, ['payment-received', 'processing', 'shipped']) => 'info',
+                        $state === 'delivered'        => 'success',
                         default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('meta.payment_method')
