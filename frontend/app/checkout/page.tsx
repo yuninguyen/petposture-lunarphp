@@ -989,7 +989,7 @@ export default function CheckoutPage() {
 
         if (method.method === 'paypal') {
             return (
-                <div className="flex h-[16px] w-[62px] items-center overflow-hidden">
+                <div className="flex h-[22px] w-[85px] items-center overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src="https://www.paypalobjects.com/webstatic/mktg/Logo/pp-logo-100px.png"
