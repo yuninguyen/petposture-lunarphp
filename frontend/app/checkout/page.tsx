@@ -1366,7 +1366,7 @@ export default function CheckoutPage() {
                             />
                         </Link>
 
-                        <nav className="flex items-center gap-2 text-[12px] text-[#707070]">
+                        <nav className="flex items-center gap-2 text-[14px] text-[#707070]">
                             <Link href="/cart" className="hover:text-[#333333]">Cart</Link>
                             <ChevronLeft size={10} className="rotate-180 opacity-50" />
                             <button

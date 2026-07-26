@@ -1,6 +1,8 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
 import Image from 'next/image';
-import { ShieldCheck, ShoppingBag, Tag } from 'lucide-react';
+import { HelpCircle, ShieldCheck, ShoppingBag, Tag, X } from 'lucide-react';
 
 interface CartItem {
     variantId: number;
@@ -51,6 +53,8 @@ export function OrderSummary({
     taxQuote,
     finalTotal,
 }: OrderSummaryProps) {
+    const [showShippingInfo, setShowShippingInfo] = useState(false);
+
     return (
         <aside className="order-first w-full border-b border-[#e8e8ea] bg-[#fafafa] px-4 py-6 md:px-8 lg:order-last lg:w-[440px] lg:border-b-0 lg:border-l lg:px-10 lg:py-12">
             <div className="sticky top-12 space-y-8">
@@ -112,13 +116,13 @@ export function OrderSummary({
 
                 {/* Price breakdown */}
                 <div className="space-y-3 border-t border-[#e6e6e6] pt-6">
-                    <div className="flex items-center justify-between text-[13px] text-[#333333]">
+                    <div className="flex items-center justify-between text-[14px] text-[#333333]">
                         <span>Subtotal</span>
                         <span className="font-medium">${totalAmount.toFixed(2)}</span>
                     </div>
 
                     {coupon.discountAmount > 0 && (
-                        <div className="flex items-center justify-between text-[13px] text-[#0f9f61]">
+                        <div className="flex items-center justify-between text-[14px] text-[#0f9f61]">
                             <div className="flex items-center gap-1.5">
                                 <Tag size={14} />
                                 <span>Discount ({coupon.code})</span>
@@ -127,15 +131,25 @@ export function OrderSummary({
                         </div>
                     )}
 
-                    <div className="flex items-center justify-between text-[13px] text-[#333333]">
-                        <span>Shipping</span>
+                    <div className="flex items-center justify-between text-[14px] text-[#333333]">
+                        <div className="flex items-center gap-1.5">
+                            <span>Shipping</span>
+                            <button
+                                type="button"
+                                onClick={() => setShowShippingInfo(true)}
+                                aria-label="Shipping details"
+                                className="text-[#9aa1a9] transition hover:text-[#707070]"
+                            >
+                                <HelpCircle size={14} />
+                            </button>
+                        </div>
                         <span className="font-medium">
                             {shippingAmount === 0 ? 'Free' : `$${shippingAmount.toFixed(2)}`}
                         </span>
                     </div>
 
                     {taxAmount > 0 && (
-                        <div className="flex items-center justify-between text-[13px] text-[#333333]">
+                        <div className="flex items-center justify-between text-[14px] text-[#333333]">
                             <div className="pr-3">
                                 <span>
                                     Estimated tax ({(taxRate * 100).toFixed(taxRate * 100 % 1 === 0 ? 0 : 2)}%)
@@ -165,6 +179,45 @@ export function OrderSummary({
                     </div>
                 </div>
             </div>
+
+            {showShippingInfo && (
+                <div
+                    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 px-4"
+                    onClick={() => setShowShippingInfo(false)}
+                >
+                    <div
+                        className="max-h-[80vh] w-full max-w-[420px] overflow-y-auto rounded-[16px] bg-white p-6 shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="mb-4 flex items-center justify-between">
+                            <h3 className="text-[16px] font-semibold text-[#1c1c1f]">Shipping</h3>
+                            <button
+                                type="button"
+                                onClick={() => setShowShippingInfo(false)}
+                                aria-label="Close"
+                                className="text-[#707070] transition hover:text-[#333333]"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <div className="space-y-4 text-[13px] leading-[1.6] text-[#4a4a4a]">
+                            <p>We currently ship to the 48 contiguous United States only — no Alaska, Hawaii, P.O. Boxes, or APO/FPO addresses.</p>
+                            <p><strong className="text-[#1c1c1f]">Processing:</strong> 2–4 business days before your order ships.</p>
+                            <p><strong className="text-[#1c1c1f]">Transit:</strong> 3–8 business days once shipped, for a total of about 7–10 business days from order to delivery.</p>
+                            <p><strong className="text-[#1c1c1f]">Rates:</strong> calculated at checkout based on cart weight and delivery destination.</p>
+                            <p>Your order may arrive in more than one package if items ship from different warehouses — each package gets its own tracking number.</p>
+                            <a
+                                href="/shipping-policy"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-block font-medium text-[#df8448] hover:underline"
+                            >
+                                Read the full shipping policy →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            )}
         </aside>
     );
 }
