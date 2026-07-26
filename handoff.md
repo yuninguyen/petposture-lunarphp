@@ -1,5 +1,33 @@
 # Handoff — 2026-07-27
 
+## PayPal webhook table-name bug fixed + PayPal test coverage + payment-failure alert email + admin address view — commit `a256e23`
+
+Writing the first real test coverage for the PayPal gateway (12 tests: prepare/place/capture/
+webhook/refund) uncovered a **live production bug**: `PayPalWebhookEvent` had no `$table`
+override, so Eloquent's naming convention resolved the model to `pay_pal_webhook_events`
+(PayPal's two adjacent capitals split into "pay_pal") instead of the migration's actual
+`paypal_webhook_events` table. Every real PayPal webhook (async capture confirmation, refunds,
+disputes) has been silently 500ing since the gateway shipped — caught by the controller's generic
+`catch (\Throwable)`, logged, never surfaced. Fixed with `protected $table = 'paypal_webhook_events';`,
+verified against the live table on the VPS after deploy. The immediate-capture path (checkout's
+own `paypal-capture` call) was never affected — only the async webhook confirmation was broken.
+
+Also shipped in the same commit:
+- **Payment failure alert now actually notifies someone.** `PaymentFailureAlertService::record()`
+  previously only did `Log::critical()` + an order event when the failure threshold was hit — no
+  real-time channel. Added `SendPaymentFailureAlertJob` + `PaymentFailureAlertAdmin` mailable
+  (mirrors the existing `NewOrderAdmin`/`CancelledOrderAdmin` admin-mail pattern, sent to
+  `config('mail.from.address')`), dispatched right alongside the existing log/event calls.
+- **`UserAddressResource`** (Filament, Sales nav group, read-only + delete) — admins can now see
+  which customers have saved addresses. This data has existed since `/api/me/addresses` shipped
+  and grew again with checkout's "save this information" checkbox, but had zero admin visibility
+  until now.
+
+All three came from a self-audit (asked "what's the highest-value non-feature work left") rather
+than a specific bug report — worth repeating: **writing tests for an already-shipped feature is a
+good way to catch this class of silent-failure bug**, especially anything involving Eloquent's
+automatic table-name guessing on multi-capital class names.
+
 ## Checkout UI polish + guest/account "save address" — commits `2ef89d2`, `ab843f4`
 
 Font-size bumps (breadcrumb `12px→14px`, Order Summary Subtotal/Discount/Shipping/Tax rows
