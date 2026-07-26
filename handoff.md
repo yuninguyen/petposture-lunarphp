@@ -1,21 +1,34 @@
 # Handoff — 2026-07-26
 
-## Order Summary height: tried removing the forced stretch, reverted — open problem
+## Order Summary height: no-Fraud-Risk case fixed and confirmed — commits `ddcae9e`, `4462442`
 
-Tried two approaches for the "empty gap below Customer IP" complaint, neither landed:
-1. Kept `h-full`/`items-stretch` (matched height against the Attribution+Fraud & Risk stack) —
-   Yuni: "hơi xấu" (empty gap *inside* the Order Summary box when the right stack is taller).
-2. Removed `h-full`/`items-stretch` (commit `a0f6c08`) so Order Summary sizes to its own content —
-   Yuni: "quá xấu" (worse) — now the two columns end at visibly different heights, box edges don't
-   align, which reads as more broken than a padded-out box.
-Reverted back to option 1 (`h-full` + `items-stretch` restored) per Yuni's explicit call — this is
-the lesser-bad of the two, not a real fix. **Still an open cosmetic problem.**
-Ideas not yet tried: distribute the empty space as spacing *between* the existing fields instead of
-one gap at the bottom (would need custom flex classes on the Group wrapper, not just column/height
-props); or reconsider whether Order Attribution + Fraud & Risk really need to be a stacked 2-box
-column at all vs. some other arrangement that doesn't create a height mismatch in the first place.
-Verified via VPS throwaway checkout: Pint clean, PHPStan clean (`[OK] No errors`). Deployed:
-backend container rebuilt, healthy, `optimize:clear` run.
+Original complaint: an empty gap under Customer IP whenever the right-side column (Order
+Attribution [+ Fraud & Risk]) is shorter than Order Summary. Two earlier attempts at a generic
+fix both failed (`h-full`+`items-stretch` on the whole stack = gap moves *inside* Order Summary
+when the right stack is taller; removing it = mismatched box edges, judged worse) — reverted back
+to the `h-full`+`items-stretch` baseline as the accepted "lesser-bad" default.
+
+Yuni's follow-up ask: specifically handle the case where **Fraud & Risk isn't shown at all**
+(COD/PayPal/non-Stripe payments have no `meta.fraud_risk_level`) — then Order Attribution is the
+*only* box on the right and was left visibly short next to Order Summary (confirmed via
+screenshot of order #15, COD). Fixed in two passes:
+1. First attempt (`ddcae9e`): nested `h-full` one level inside the existing `Grid::make(1)`
+   wrapper — did **not** work, confirmed via screenshot (box stayed the same short height).
+   Root cause: Filament's `Grid` renders CSS Grid rows sized to content (auto), so a nested
+   `h-full` doesn't inherit the outer grid's stretched height through an intermediate grid
+   container — percentage heights need every ancestor in the chain to have a definite size, not
+   just the outermost one.
+2. Working fix (`4462442`): when `hasFraudRiskData()` is false, skip the `Grid::make(1)` wrapper
+   entirely and place `Order Attribution` directly as a sibling column in the outer
+   `Grid::make(12)` (same level as Order Summary, `columnSpan(4)` + `h-full`) — reusing the exact
+   pattern that already works for Order Summary itself. When Fraud & Risk **is** present, the
+   original stacked two-box column is untouched.
+- **Confirmed correct by Yuni via screenshot** of order #15 (COD, no fraud data): Order Attribution
+  now matches Order Summary's height exactly, no gap.
+- The **original stacked case (Fraud & Risk present, e.g. card payments)** is unchanged — still
+  the "lesser-bad" `h-full`/`items-stretch` baseline from before, not revisited this round.
+- Verified via VPS throwaway checkout both passes: Pint clean, PHPStan clean (`[OK] No errors`).
+  Deployed both times: backend container rebuilt, healthy, `optimize:clear` run.
 
 ## Order Summary follow-up: widths + card funding type — deployed and confirmed correct
 
@@ -337,10 +350,12 @@ discussed above (PATCH tracking number there only wrote `meta.shipments[]`, neve
 
 ## Known gaps / not done
 
-- **Order Summary cosmetic gap** (see top of this file) — accepted as-is per Yuni's call, the
-  "lesser-bad" of two tried options. Open if anyone wants to take another pass at it later (would
-  need a custom Blade view override to distribute space between fields — not reachable through
-  Filament's normal component API, see notes above).
+- **Order Summary cosmetic gap — no-Fraud-Risk case fixed** (see top of this file, commits
+  `ddcae9e`/`4462442`), confirmed correct by Yuni. The **Fraud & Risk-present stacked case**
+  (card payments) is still the accepted "lesser-bad" `h-full`/`items-stretch` baseline from
+  before — open if anyone wants to take another pass at it (would need a custom Blade view
+  override to distribute space between fields — not reachable through Filament's normal
+  component API, see notes above).
 - **A real carrier delivery scan reaching our webhook is still unconfirmed** — the entire *our-side*
   pipeline (signature verify → shipment match → status update → email) is now verified end-to-end
   against production with a simulated-but-correctly-signed webhook call (see above); the only thing
