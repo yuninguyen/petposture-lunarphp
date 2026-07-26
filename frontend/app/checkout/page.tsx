@@ -1769,7 +1769,7 @@ export default function CheckoutPage() {
                     </form>
 
                     <footer className="mt-16 border-t border-[#e6e6e6] pt-8">
-                        <div className="flex flex-wrap gap-x-6 gap-y-3 text-[11px] text-[#707070]">
+                        <div className="flex flex-wrap gap-x-6 gap-y-3 text-[13px] text-[#707070]">
                             <Link href="/return-refund-policy" className="hover:underline">Refund policy</Link>
                             <Link href="/shipping-policy" className="hover:underline">Shipping policy</Link>
                             <Link href="/privacy-policy" className="hover:underline">Privacy policy</Link>
