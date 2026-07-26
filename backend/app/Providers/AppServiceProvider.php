@@ -2,19 +2,38 @@
 
 namespace App\Providers;
 
-use App\Models\OrderEvent;
-use App\Support\MailConfigSync;
+use App\Lunar\DiscountTypes\FixedAmountOffPerUnit;
 use App\Lunar\ShippingModifiers\DefaultShippingModifier;
+use App\Models\OrderEvent;
+use App\Models\OrderShipment;
+use App\Models\Post;
+use App\Models\Setting;
+use App\Observers\BrandCacheObserver;
+use App\Observers\LegacyProductObserver;
+use App\Observers\OrderObserver;
+use App\Observers\PostCacheObserver;
+use App\Observers\ProductCacheObserver;
+use App\Observers\ProductVariantObserver;
+use App\Observers\SettingCacheObserver;
 use App\Payments\Gateways\CashOnDeliveryGateway;
-use App\Payments\Gateways\MockPayPalGateway;
+use App\Payments\Gateways\PayPalGateway;
 use App\Payments\Gateways\StripeCardGateway;
 use App\Payments\PaymentGatewayManager;
+use App\Support\MailConfigSync;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
-use Lunar\Models\Order;
+use Lunar\Base\DiscountManagerInterface;
 use Lunar\Base\ShippingModifiers;
+use Lunar\Facades\Telemetry;
+use Lunar\Models\Brand;
+use Lunar\Models\Order;
+use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
 
 class AppServiceProvider extends ServiceProvider
@@ -24,11 +43,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(PaymentGatewayManager::class, function () {
+        $this->app->singleton(PaymentGatewayManager::class, function ($app) {
             return new PaymentGatewayManager([
-                new CashOnDeliveryGateway(),
-                new StripeCardGateway(),
-                new MockPayPalGateway(),
+                new CashOnDeliveryGateway,
+                new StripeCardGateway,
+                $app->make(PayPalGateway::class),
             ]);
         });
     }
@@ -39,30 +58,30 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->environment('production')) {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
+            URL::forceScheme('https');
         }
 
-        if (class_exists(\Lunar\Facades\Telemetry::class)) {
-            \Lunar\Facades\Telemetry::optOut();
+        if (class_exists(Telemetry::class)) {
+            Telemetry::optOut();
         }
 
-        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+        Gate::before(function ($user, $ability) {
             return $user->hasRole('super_admin') ? true : null;
         });
 
-        Order::observe(\App\Observers\OrderObserver::class);
-        ProductVariant::observe(\App\Observers\ProductVariantObserver::class);
-        \App\Models\Legacy\Product::observe(\App\Observers\LegacyProductObserver::class);
-        \Lunar\Models\Product::observe(\App\Observers\ProductCacheObserver::class);
-        \Lunar\Models\Brand::observe(\App\Observers\BrandCacheObserver::class);
-        \App\Models\Post::observe(\App\Observers\PostCacheObserver::class);
-        \App\Models\Setting::observe(\App\Observers\SettingCacheObserver::class);
+        Order::observe(OrderObserver::class);
+        ProductVariant::observe(ProductVariantObserver::class);
+        \App\Models\Legacy\Product::observe(LegacyProductObserver::class);
+        Product::observe(ProductCacheObserver::class);
+        Brand::observe(BrandCacheObserver::class);
+        Post::observe(PostCacheObserver::class);
+        Setting::observe(SettingCacheObserver::class);
         $this->app->make(ShippingModifiers::class)->add(DefaultShippingModifier::class);
         Order::resolveRelationUsing('orderEvents', function (Order $order) {
             return $order->hasMany(OrderEvent::class, 'order_id')->orderBy('occurred_at');
         });
         Order::resolveRelationUsing('shipments', function (Order $order) {
-            return $order->hasMany(\App\Models\OrderShipment::class, 'order_id');
+            return $order->hasMany(OrderShipment::class, 'order_id');
         });
 
         $legacyVariantMorph = ProductVariant::class;
@@ -75,19 +94,19 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // Register custom discount type
-        $this->app->make(\Lunar\Base\DiscountManagerInterface::class)
-            ->addType(\App\Lunar\DiscountTypes\FixedAmountOffPerUnit::class);
+        $this->app->make(DiscountManagerInterface::class)
+            ->addType(FixedAmountOffPerUnit::class);
 
-        \Illuminate\Support\Facades\RateLimiter::for('api', function (\Illuminate\Http\Request $request) {
-            return \Illuminate\Cache\RateLimiting\Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
-        \Illuminate\Support\Facades\RateLimiter::for('api-write', function (\Illuminate\Http\Request $request) {
-            return \Illuminate\Cache\RateLimiting\Limit::perMinute(20)->by($request->ip());
+        RateLimiter::for('api-write', function (Request $request) {
+            return Limit::perMinute(20)->by($request->ip());
         });
 
-        \Illuminate\Support\Facades\RateLimiter::for('auth', function (\Illuminate\Http\Request $request) {
-            return \Illuminate\Cache\RateLimiting\Limit::perMinute(5)->by($request->ip());
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
         });
 
         MailConfigSync::run();

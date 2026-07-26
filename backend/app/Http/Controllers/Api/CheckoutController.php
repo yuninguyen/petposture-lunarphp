@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\CheckoutSessionResource;
 use App\Http\Resources\Api\OrderResource;
@@ -9,14 +10,19 @@ use App\Models\UserAddress;
 use App\Services\ApplyCouponService;
 use App\Services\CheckoutService;
 use App\Services\CheckoutSessionService;
+use App\Services\OrderOperationsService;
+use App\Services\PayPalService;
 use App\Services\SalesTaxService;
 use App\Services\ShippingService;
 use App\Services\StripePaymentIntentService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Lunar\Models\Discount;
+use Lunar\Models\Order;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckoutController extends Controller
@@ -26,10 +32,11 @@ class CheckoutController extends Controller
         private readonly CheckoutSessionService $checkoutSessionService,
         private readonly ApplyCouponService $applyCouponService,
         private readonly StripePaymentIntentService $stripePaymentIntentService,
+        private readonly PayPalService $payPalService,
+        private readonly OrderOperationsService $orderOperationsService,
         private readonly SalesTaxService $salesTaxService,
         private readonly ShippingService $shippingService,
-    ) {
-    }
+    ) {}
 
     /**
      * Replaces the old OrderController::store to use Lunar logic.
@@ -89,14 +96,14 @@ class CheckoutController extends Controller
             if ($savedAddress) {
                 $validated['shipping'] = array_merge($validated['shipping'] ?? [], [
                     'first_name' => $savedAddress->first_name,
-                    'last_name'  => $savedAddress->last_name,
-                    'line_one'   => $savedAddress->line_one,
-                    'line_two'   => $savedAddress->line_two,
-                    'city'       => $savedAddress->city,
-                    'state'      => $savedAddress->state,
-                    'postcode'   => $savedAddress->postcode,
-                    'country'    => $savedAddress->country_code,
-                    'phone'      => $savedAddress->phone,
+                    'last_name' => $savedAddress->last_name,
+                    'line_one' => $savedAddress->line_one,
+                    'line_two' => $savedAddress->line_two,
+                    'city' => $savedAddress->city,
+                    'state' => $savedAddress->state,
+                    'postcode' => $savedAddress->postcode,
+                    'country' => $savedAddress->country_code,
+                    'phone' => $savedAddress->phone,
                 ]);
             }
         }
@@ -114,8 +121,8 @@ class CheckoutController extends Controller
         // on double-click / network retry. Key is scoped per IP+email.
         $idempotencyKey = $request->header('Idempotency-Key');
         if ($idempotencyKey) {
-            $cacheKey = 'checkout:idem:' . md5($idempotencyKey . ($validated['shipping']['email'] ?? ''));
-            $cached   = Cache::get($cacheKey);
+            $cacheKey = 'checkout:idem:'.md5($idempotencyKey.($validated['shipping']['email'] ?? ''));
+            $cached = Cache::get($cacheKey);
             if ($cached) {
                 return response()->json(['success' => true, 'order' => $cached, '_idempotent' => true], 201);
             }
@@ -136,7 +143,7 @@ class CheckoutController extends Controller
             Log::error("Checkout Failed: {$e->getMessage()} at {$e->getFile()}:{$e->getLine()}");
 
             return response()->json([
-                'code'    => \App\Enums\ErrorCode::CHECKOUT_FAILED->value,
+                'code' => ErrorCode::CHECKOUT_FAILED->value,
                 'success' => false,
                 'message' => 'Checkout failed. Please try again.',
             ], 500);
@@ -157,10 +164,10 @@ class CheckoutController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'code'    => \App\Enums\ErrorCode::VALIDATION_ERROR->value,
+                'code' => ErrorCode::VALIDATION_ERROR->value,
                 'success' => false,
                 'message' => 'Invalid request data.',
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -174,7 +181,7 @@ class CheckoutController extends Controller
             Log::error("Coupon Application Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
 
             return response()->json([
-                'code'    => \App\Enums\ErrorCode::COUPON_INVALID->value,
+                'code' => ErrorCode::COUPON_INVALID->value,
                 'success' => false,
                 'message' => 'Error applying coupon. Please try again.',
             ], 500);
@@ -233,20 +240,20 @@ class CheckoutController extends Controller
     {
         try {
             $session = $this->checkoutSessionService->getByToken($token);
-            $intent  = $this->checkoutSessionService->preparePaymentIntent($session);
+            $intent = $this->checkoutSessionService->preparePaymentIntent($session);
 
             return response()->json([
-                'success'        => true,
+                'success' => true,
                 'payment_intent' => $intent,
-                'session'        => new CheckoutSessionResource($session->fresh()),
+                'session' => new CheckoutSessionResource($session->fresh()),
             ]);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             throw $e;
         } catch (\Throwable $e) {
             Log::error("Session Payment Intent Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
 
             return response()->json([
-                'code'    => \App\Enums\ErrorCode::PAYMENT_INTENT_ERROR->value,
+                'code' => ErrorCode::PAYMENT_INTENT_ERROR->value,
                 'success' => false,
                 'message' => 'Unable to prepare payment. Please try again.',
             ], 500);
@@ -266,13 +273,13 @@ class CheckoutController extends Controller
             ], 201);
         } catch (ValidationException $e) {
             throw $e;
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             throw $e;
         } catch (\Throwable $e) {
             Log::error("Checkout Session Confirmation Failed: {$e->getMessage()} at {$e->getFile()}:{$e->getLine()}");
 
             return response()->json([
-                'code'    => \App\Enums\ErrorCode::CHECKOUT_FAILED->value,
+                'code' => ErrorCode::CHECKOUT_FAILED->value,
                 'success' => false,
                 'message' => 'Checkout confirmation failed. Please try again.',
             ], 500);
@@ -282,18 +289,18 @@ class CheckoutController extends Controller
     public function preparePaymentIntent(Request $request)
     {
         $validated = Validator::make($request->all(), [
-            'payment_method'        => 'required|string|in:card',
-            'items'                 => 'required|array|min:1',
-            'items.*.variantId'     => 'required|exists:lunar_product_variants,id',
-            'items.*.quantity'      => 'required|integer|min:1',
-            'coupon_code'           => 'nullable|string',
-            'shipping_method'       => 'nullable|string',
-            'shipping.state'        => 'nullable|string|max:255',
-            'shipping.country'      => 'nullable|string|max:255',
-            'shipping.city'         => 'nullable|string|max:255',
-            'shipping.postcode'     => 'nullable|string|max:32',
-            'currency'              => 'nullable|string|max:10',
-            'email'                 => 'nullable|email',
+            'payment_method' => 'required|string|in:card',
+            'items' => 'required|array|min:1',
+            'items.*.variantId' => 'required|exists:lunar_product_variants,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'coupon_code' => 'nullable|string',
+            'shipping_method' => 'nullable|string',
+            'shipping.state' => 'nullable|string|max:255',
+            'shipping.country' => 'nullable|string|max:255',
+            'shipping.city' => 'nullable|string|max:255',
+            'shipping.postcode' => 'nullable|string|max:32',
+            'currency' => 'nullable|string|max:10',
+            'email' => 'nullable|email',
         ])->validate();
 
         try {
@@ -307,9 +314,9 @@ class CheckoutController extends Controller
             return response()->json([
                 'success' => true,
                 'payment_intent' => $this->stripePaymentIntentService->create([
-                    'amount'   => $amount,
+                    'amount' => $amount,
                     'currency' => $validated['currency'] ?? 'usd',
-                    'email'    => $validated['email'] ?? '',
+                    'email' => $validated['email'] ?? '',
                 ]),
             ]);
         } catch (ValidationException $e) {
@@ -318,7 +325,7 @@ class CheckoutController extends Controller
             Log::error("Stripe Payment Intent Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
 
             return response()->json([
-                'code'    => \App\Enums\ErrorCode::PAYMENT_INTENT_ERROR->value,
+                'code' => ErrorCode::PAYMENT_INTENT_ERROR->value,
                 'success' => false,
                 'message' => 'Unable to prepare payment. Please try again.',
             ], 500);
@@ -343,7 +350,124 @@ class CheckoutController extends Controller
             Log::error("Stripe Webhook Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
 
             return response()->json([
-                'code'    => \App\Enums\ErrorCode::PAYMENT_FAILED->value,
+                'code' => ErrorCode::PAYMENT_FAILED->value,
+                'success' => false,
+                'message' => 'Webhook processing failed.',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function preparePayPalOrder(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'payment_method' => 'required|string|in:paypal',
+            'items' => 'required|array|min:1',
+            'items.*.variantId' => 'required|exists:lunar_product_variants,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'coupon_code' => 'nullable|string',
+            'shipping_method' => 'nullable|string',
+            'shipping.state' => 'nullable|string|max:255',
+            'shipping.country' => 'nullable|string|max:255',
+            'shipping.city' => 'nullable|string|max:255',
+            'shipping.postcode' => 'nullable|string|max:32',
+            'currency' => 'nullable|string|max:10',
+        ])->validate();
+
+        try {
+            $amount = $this->checkoutService->calculateTotal(
+                $validated['items'],
+                $validated['coupon_code'] ?? null,
+                $validated['shipping'] ?? null,
+                $validated['shipping_method'] ?? null,
+            );
+
+            return response()->json([
+                'success' => true,
+                'paypal_order' => $this->payPalService->createOrder(
+                    $amount,
+                    $validated['currency'] ?? 'usd',
+                ),
+            ]);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error("PayPal Order Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code' => ErrorCode::PAYMENT_INTENT_ERROR->value,
+                'success' => false,
+                'message' => 'Unable to prepare PayPal payment. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function capturePayPalOrder(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'paypal_order_id' => 'required|string',
+        ])->validate();
+
+        try {
+            $order = Order::query()
+                ->where('meta->paypal_order_id', $validated['paypal_order_id'])
+                ->firstOrFail();
+
+            $capture = $this->payPalService->captureOrder($validated['paypal_order_id']);
+
+            $paymentStatus = match ($capture['status']) {
+                'COMPLETED' => 'paid',
+                'DECLINED', 'FAILED' => 'failed',
+                default => 'pending',
+            };
+
+            $updatedOrder = $this->orderOperationsService->syncPayPalPayment($order, [
+                'payment_status' => $paymentStatus,
+                'event_type' => 'checkout.capture',
+                'payer_email' => $capture['payer_email'],
+                'capture_id' => $capture['capture_id'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'order' => new OrderResource($updatedOrder),
+                'capture' => $capture,
+            ]);
+        } catch (ModelNotFoundException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error("PayPal Capture Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code' => ErrorCode::PAYMENT_FAILED->value,
+                'success' => false,
+                'message' => 'PayPal payment could not be captured. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function paypalWebhook(Request $request)
+    {
+        try {
+            $result = $this->payPalService->handleWebhook(
+                (string) $request->getContent(),
+                [
+                    'auth_algo' => $request->header('PAYPAL-AUTH-ALGO'),
+                    'cert_url' => $request->header('PAYPAL-CERT-URL'),
+                    'transmission_id' => $request->header('PAYPAL-TRANSMISSION-ID'),
+                    'transmission_sig' => $request->header('PAYPAL-TRANSMISSION-SIG'),
+                    'transmission_time' => $request->header('PAYPAL-TRANSMISSION-TIME'),
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'result' => $result,
+            ], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            Log::error("PayPal Webhook Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code' => ErrorCode::PAYMENT_FAILED->value,
                 'success' => false,
                 'message' => 'Webhook processing failed.',
             ], Response::HTTP_BAD_REQUEST);
@@ -354,21 +478,21 @@ class CheckoutController extends Controller
     {
         $validated = Validator::make($request->all(), [
             'subtotal_minor' => 'nullable|integer|min:0',
-            'coupon_code'    => 'nullable|string',
+            'coupon_code' => 'nullable|string',
         ])->validate();
 
         $subtotalMinor = (int) ($validated['subtotal_minor'] ?? 0);
-        $couponCode    = $validated['coupon_code'] ?? null;
+        $couponCode = $validated['coupon_code'] ?? null;
         $isFreeShipping = false;
 
         if ($couponCode) {
-            $discount = \Lunar\Models\Discount::active()->where('coupon', $couponCode)->first();
+            $discount = Discount::active()->where('coupon', $couponCode)->first();
             $isFreeShipping = (bool) ($discount?->data['free_shipping'] ?? false);
         }
 
         return response()->json([
             'success' => true,
-            'rates'   => $this->shippingService->availableMethods($subtotalMinor, $isFreeShipping),
+            'rates' => $this->shippingService->availableMethods($subtotalMinor, $isFreeShipping),
         ]);
     }
 

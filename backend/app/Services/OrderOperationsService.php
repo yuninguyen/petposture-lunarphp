@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Jobs\DispatchOutboundWebhook;
 use App\Jobs\SendOrderLifecycleEmailJob;
+use App\Models\OrderShipment;
+use App\Models\OrderShipmentItem;
+use App\Support\Orders\OrderStateMachine;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use App\Support\Orders\OrderStateMachine;
 use Lunar\Models\Order;
 
 class OrderOperationsService
@@ -30,12 +32,16 @@ class OrderOperationsService
     public function __construct(
         private readonly OrderEventService $orderEventService,
         private readonly OrderStateMachine $stateMachine,
-    ) {
+    ) {}
+
+    private function stripe(): StripePaymentIntentService
+    {
+        return app(StripePaymentIntentService::class);
     }
 
-    private function stripe(): \App\Services\StripePaymentIntentService
+    private function paypal(): PayPalService
     {
-        return app(\App\Services\StripePaymentIntentService::class);
+        return app(PayPalService::class);
     }
 
     public function update(Order $order, array $payload, bool $enforceTransitions = true): Order
@@ -96,7 +102,7 @@ class OrderOperationsService
             $meta = $this->applyStatusTimestamps($meta, (string) $order->status, $targetStatus);
             $meta = $this->stateMachine->applyDerivedStatuses($meta, (string) $order->status, $targetStatus);
             $meta = $this->syncShipmentRecords($meta, $targetStatus);
-            $eventsToRecord[] = ['status.' . $targetStatus, $this->stateMachine->statusTitle($targetStatus), 'Order moved to ' . str($targetStatus)->replace('-', ' ')->title()->toString() . '.'];
+            $eventsToRecord[] = ['status.'.$targetStatus, $this->stateMachine->statusTitle($targetStatus), 'Order moved to '.str($targetStatus)->replace('-', ' ')->title()->toString().'.'];
             $updates['meta'] = $meta;
         }
 
@@ -108,20 +114,27 @@ class OrderOperationsService
 
         $refreshed = $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
 
-        // Auto-refund via Stripe when admin cancels a paid order
+        // Auto-refund when admin cancels a paid order
         if ($targetStatus === 'cancelled') {
             $refreshedMeta = (array) ($refreshed->meta ?? []);
-            $paymentIntentId = (string) ($refreshedMeta['payment_intent_id'] ?? '');
+            $isPayPal = ($refreshedMeta['payment_gateway'] ?? '') === 'paypal';
+            $paymentReference = $isPayPal
+                ? (string) ($refreshedMeta['paypal_capture_id'] ?? '')
+                : (string) ($refreshedMeta['payment_intent_id'] ?? '');
             $wasRefunded = ($refreshedMeta['refund_status'] ?? '') === 'refunded';
 
-            if ($paymentIntentId && ! $wasRefunded && ($refreshedMeta['payment_status'] ?? '') === 'paid') {
+            if ($paymentReference && ! $wasRefunded && ($refreshedMeta['payment_status'] ?? '') === 'paid') {
+                $gatewayLabel = $isPayPal ? 'PayPal' : 'Stripe';
+
                 try {
                     $orderTotal = $refreshed->total;
                     $orderTotalMinor = is_object($orderTotal) && property_exists($orderTotal, 'value')
                         ? (int) $orderTotal->value
                         : (is_numeric($orderTotal) ? (int) $orderTotal : null);
 
-                    $refund = $this->stripe()->refund($paymentIntentId, $orderTotalMinor);
+                    $refund = $isPayPal
+                        ? $this->paypal()->refund($paymentReference, $orderTotalMinor, (string) ($refreshed->currency_code ?: 'USD'))
+                        : $this->stripe()->refund($paymentReference, $orderTotalMinor);
                     $refreshedMeta['refund_status'] = 'refunded';
                     $refreshedMeta['refund_id'] = $refund['refund_id'];
                     $refreshedMeta['refunded_at'] = now()->toDateTimeString();
@@ -131,14 +144,14 @@ class OrderOperationsService
                         $refreshed,
                         'payment.refunded',
                         'Full refund issued',
-                        "Auto-refund issued on cancellation (ref: {$refund['refund_id']})."
+                        "Auto-refund issued via {$gatewayLabel} on cancellation (ref: {$refund['refund_id']})."
                     );
                 } catch (\Throwable) {
                     $this->orderEventService->record(
                         $refreshed,
                         'payment.refund_failed',
                         'Auto-refund failed',
-                        'Order cancelled but Stripe refund could not be issued automatically. Manual refund required.'
+                        "Order cancelled but {$gatewayLabel} refund could not be issued automatically. Manual refund required."
                     );
                 }
             }
@@ -151,9 +164,9 @@ class OrderOperationsService
             // recordShipment() below (or by the caller directly) so the email always carries
             // real tracking/item data instead of firing ahead of it.
             match ($targetStatus) {
-                'delivered'        => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'delivered'),
-                'cancelled'        => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'cancelled'),
-                default            => null,
+                'delivered' => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'delivered'),
+                'cancelled' => SendOrderLifecycleEmailJob::dispatch($refreshed->id, 'cancelled'),
+                default => null,
             };
         }
 
@@ -188,7 +201,7 @@ class OrderOperationsService
     {
         $lines = $order->lines()->where('type', '!=', 'shipping')->get();
 
-        $shippedByLine = \App\Models\OrderShipmentItem::query()
+        $shippedByLine = OrderShipmentItem::query()
             ->whereHas('shipment', fn ($q) => $q->where('order_id', $order->id))
             ->selectRaw('order_line_id, sum(quantity) as shipped_qty')
             ->groupBy('order_line_id')
@@ -247,13 +260,13 @@ class OrderOperationsService
 
                 if (! $line) {
                     throw ValidationException::withMessages([
-                        'items' => ["Item does not belong to this order."],
+                        'items' => ['Item does not belong to this order.'],
                     ]);
                 }
 
                 if ($quantity > ($remaining[$lineId] ?? 0)) {
                     throw ValidationException::withMessages([
-                        'items' => ["Cannot ship {$quantity} of \"{$line->description}\" — only " . ($remaining[$lineId] ?? 0) . ' remaining to ship.'],
+                        'items' => ["Cannot ship {$quantity} of \"{$line->description}\" — only ".($remaining[$lineId] ?? 0).' remaining to ship.'],
                     ]);
                 }
 
@@ -267,7 +280,7 @@ class OrderOperationsService
             ]);
         }
 
-        $shipment = \App\Models\OrderShipment::create([
+        $shipment = OrderShipment::create([
             'order_id' => $order->id,
             'tracking_number' => $trackingNumber,
             'carrier' => $carrier,
@@ -277,7 +290,7 @@ class OrderOperationsService
         ]);
 
         foreach ($validItems as $item) {
-            \App\Models\OrderShipmentItem::create([
+            OrderShipmentItem::create([
                 'order_shipment_id' => $shipment->id,
                 'order_line_id' => $item['order_line_id'],
                 'quantity' => $item['quantity'],
@@ -299,7 +312,7 @@ class OrderOperationsService
             $order,
             'shipment.created',
             'Shipment created',
-            "Shipment {$trackingNumber} created for carrier " . strtoupper($carrier) . " covering {$itemCount} item(s)."
+            "Shipment {$trackingNumber} created for carrier ".strtoupper($carrier)." covering {$itemCount} item(s)."
         );
 
         if ($order->customer_reference) {
@@ -313,13 +326,22 @@ class OrderOperationsService
         return $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
     }
 
-
     public function refundOrder(Order $order, ?int $amountMinor = null, ?string $reason = null): Order
     {
         $meta = (array) ($order->meta ?? []);
-        $paymentIntentId = (string) ($meta['payment_intent_id'] ?? '');
+        $gateway = (string) ($meta['payment_gateway'] ?? '');
+        $isPayPal = $gateway === 'paypal';
 
-        if (! $paymentIntentId) {
+        $paymentIntentId = (string) ($meta['payment_intent_id'] ?? '');
+        $paypalCaptureId = (string) ($meta['paypal_capture_id'] ?? '');
+
+        if ($isPayPal && ! $paypalCaptureId) {
+            throw ValidationException::withMessages([
+                'refund' => ['This order has no PayPal capture to refund.'],
+            ]);
+        }
+
+        if (! $isPayPal && ! $paymentIntentId) {
             throw ValidationException::withMessages([
                 'refund' => ['This order has no Stripe payment intent to refund.'],
             ]);
@@ -342,7 +364,10 @@ class OrderOperationsService
                 : (is_numeric($raw) ? (int) $raw : null);
         }
 
-        $refund = $this->stripe()->refund($paymentIntentId, $resolvedAmount);
+        $gatewayLabel = $isPayPal ? 'PayPal' : 'Stripe';
+        $refund = $isPayPal
+            ? $this->paypal()->refund($paypalCaptureId, $resolvedAmount, (string) ($order->currency_code ?: 'USD'))
+            : $this->stripe()->refund($paymentIntentId, $resolvedAmount);
 
         $meta['refund_status'] = 'refunded';
         $meta['refund_id'] = $refund['refund_id'];
@@ -359,11 +384,11 @@ class OrderOperationsService
 
         $label = $isFullRefund ? 'Full refund issued' : 'Partial refund issued';
         $detail = $isFullRefund
-            ? "Full refund issued via Stripe (ref: {$refund['refund_id']})."
-            : 'Partial refund of ' . number_format($refund['amount'] / 100, 2) . " issued via Stripe (ref: {$refund['refund_id']}).";
+            ? "Full refund issued via {$gatewayLabel} (ref: {$refund['refund_id']})."
+            : 'Partial refund of '.number_format($refund['amount'] / 100, 2)." issued via {$gatewayLabel} (ref: {$refund['refund_id']}).";
 
         if ($reason !== null) {
-            $detail .= ' Reason: ' . (self::REFUND_REASON_LABELS[$reason] ?? $reason);
+            $detail .= ' Reason: '.(self::REFUND_REASON_LABELS[$reason] ?? $reason);
         }
 
         $this->orderEventService->record($order, 'payment.refunded', $label, $detail);
@@ -436,6 +461,39 @@ class OrderOperationsService
             $meta['amount_charged_currency'] = $paymentData['amount_charged_currency'] ?? null;
         }
 
+        return $this->applyPaymentStatusTransition($order, $meta, $paymentStatus, $eventType, 'Stripe');
+    }
+
+    public function syncPayPalPayment(Order $order, array $paymentData): Order
+    {
+        $meta = (array) ($order->meta ?? []);
+        $paymentStatus = (string) ($paymentData['payment_status'] ?? ($meta['payment_status'] ?? 'pending'));
+        $eventType = $paymentData['event_type'] ?? null;
+        $eventId = $paymentData['event_id'] ?? null;
+
+        $meta['payment_status'] = $paymentStatus;
+        $meta['payment_last_event_type'] = $eventType;
+        $meta['payment_last_event_id'] = $eventId;
+        $meta['payment_webhook_processed_at'] = now()->toDateTimeString();
+
+        if (array_key_exists('payer_email', $paymentData)) {
+            $meta['paypal_payer_email'] = $paymentData['payer_email'];
+        }
+
+        if (array_key_exists('capture_id', $paymentData)) {
+            $meta['paypal_capture_id'] = $paymentData['capture_id'];
+        }
+
+        return $this->applyPaymentStatusTransition($order, $meta, $paymentStatus, $eventType, 'PayPal');
+    }
+
+    /**
+     * Shared order-lifecycle side effects (status transitions + order events) fired whenever a
+     * gateway (Stripe webhook, PayPal capture/webhook) reports a payment status change — kept in
+     * one place so every gateway drives the same state machine instead of re-implementing it.
+     */
+    private function applyPaymentStatusTransition(Order $order, array $meta, string $paymentStatus, ?string $eventType, string $gatewayLabel): Order
+    {
         $updates = [
             'meta' => $meta,
         ];
@@ -488,7 +546,7 @@ class OrderOperationsService
                 $order,
                 'payment.failed',
                 'Payment failed',
-                $eventType ?: 'Stripe reported a failed payment.'
+                $eventType ?: "{$gatewayLabel} reported a failed payment."
             );
 
             // No customer email for payment-failed by design — see the note above the
@@ -529,17 +587,17 @@ class OrderOperationsService
     {
         $meta = (array) ($order->meta ?? []);
 
-        DispatchOutboundWebhook::dispatch('order.' . $status, [
-            'order_id'        => (string) $order->id,
-            'reference'       => $order->reference,
-            'status'          => $status,
-            'customer_email'  => $order->customer_reference,
-            'total_minor'     => is_object($order->total) && property_exists($order->total, 'value')
+        DispatchOutboundWebhook::dispatch('order.'.$status, [
+            'order_id' => (string) $order->id,
+            'reference' => $order->reference,
+            'status' => $status,
+            'customer_email' => $order->customer_reference,
+            'total_minor' => is_object($order->total) && property_exists($order->total, 'value')
                 ? (int) $order->total->value
                 : (is_numeric($order->total) ? (int) $order->total : null),
-            'currency'        => $order->currency_code,
+            'currency' => $order->currency_code,
             'tracking_number' => $meta['tracking_number'] ?? null,
-            'payment_status'  => $meta['payment_status'] ?? null,
+            'payment_status' => $meta['payment_status'] ?? null,
         ]);
     }
 
@@ -589,7 +647,6 @@ class OrderOperationsService
         return $meta;
     }
 
-
     private function syncShipmentRecords(array $meta, string $status): array
     {
         $trackingNumber = (string) (($meta['tracking_number'] ?? '') ?: '');
@@ -625,7 +682,7 @@ class OrderOperationsService
             $shipments[$latestIndex] = array_merge($latest, $shipmentPayload);
         } else {
             $shipments[] = array_merge([
-                'id' => 'shp_' . Str::lower(Str::random(10)),
+                'id' => 'shp_'.Str::lower(Str::random(10)),
                 'created_at' => now()->toDateTimeString(),
             ], $shipmentPayload);
         }
@@ -644,10 +701,10 @@ class OrderOperationsService
         }
 
         return match ($carrier) {
-            'ups' => 'https://www.ups.com/track?tracknum=' . urlencode($trackingNumber),
-            'usps' => 'https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=' . urlencode($trackingNumber),
-            'fedex' => 'https://www.fedex.com/fedextrack/?trknbr=' . urlencode($trackingNumber),
-            'dhl' => 'https://www.dhl.com/us-en/home/tracking/tracking-express.html?submit=1&tracking-id=' . urlencode($trackingNumber),
+            'ups' => 'https://www.ups.com/track?tracknum='.urlencode($trackingNumber),
+            'usps' => 'https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1='.urlencode($trackingNumber),
+            'fedex' => 'https://www.fedex.com/fedextrack/?trknbr='.urlencode($trackingNumber),
+            'dhl' => 'https://www.dhl.com/us-en/home/tracking/tracking-express.html?submit=1&tracking-id='.urlencode($trackingNumber),
             default => null,
         };
     }

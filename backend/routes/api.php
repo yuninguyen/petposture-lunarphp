@@ -78,8 +78,11 @@ Route::get('/checkout/session/{token}', [CheckoutController::class, 'showSession
 Route::post('/checkout/session/{token}/payment-intent', [CheckoutController::class, 'prepareSessionPaymentIntent'])->middleware('throttle:api-write');
 Route::post('/checkout/session/{token}/confirm', [CheckoutController::class, 'confirmSession'])->middleware('throttle:api-write');
 Route::post('/checkout/payment-intent', [CheckoutController::class, 'preparePaymentIntent'])->middleware('throttle:api-write');
+Route::post('/checkout/paypal-order', [CheckoutController::class, 'preparePayPalOrder'])->middleware('throttle:api-write');
+Route::post('/checkout/paypal-capture', [CheckoutController::class, 'capturePayPalOrder'])->middleware('throttle:api-write');
 Route::post('/checkout/tax-quote', [CheckoutController::class, 'taxQuote'])->middleware('throttle:api-write');
 Route::post('/webhooks/stripe', [CheckoutController::class, 'stripeWebhook']);
+Route::post('/webhooks/paypal', [CheckoutController::class, 'paypalWebhook']);
 Route::post('/webhooks/aftership', [AfterShipWebhookController::class, 'handle']);
 
 Route::get('/posts', [ContentController::class, 'posts']);

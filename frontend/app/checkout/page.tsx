@@ -43,6 +43,17 @@ declare global {
                 paymentIntent?: { status?: string };
             }>;
         };
+        paypal?: {
+            Buttons: (options: {
+                style?: Record<string, unknown>;
+                createOrder: () => Promise<string>;
+                onApprove: (data: { orderID: string }) => Promise<void>;
+                onError?: (error: unknown) => void;
+                onCancel?: () => void;
+            }) => {
+                render: (container: string | HTMLElement) => void;
+            };
+        };
         google?: {
             maps?: {
                 places?: {
@@ -102,6 +113,7 @@ const countryOptions = ['United States'];
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const googleMapsScriptId = 'petposture-google-places';
 const stripeJsScriptId = 'petposture-stripe-js';
+const paypalJsScriptId = 'petposture-paypal-js';
 const paymentMethodOrder = { card: 0, paypal: 1, cod: 2 } as const;
 
 type AddressTarget = 'shipping' | 'billing';
@@ -125,6 +137,7 @@ type PaymentMethodOption = {
     mode?: string;
     brands?: string[];
     publishable_key?: string | null;
+    client_id?: string | null;
 };
 
 type PreparedPaymentIntent = {
@@ -255,6 +268,7 @@ export default function CheckoutPage() {
     const stripeInstanceRef = useRef<ReturnType<NonNullable<typeof window.Stripe>> | null>(null);
     const stripeElementsRef = useRef<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>['elements']> | null>(null);
     const stripeCardElementRef = useRef<ReturnType<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>['elements']>['create']> | null>(null);
+    const paypalContainerRef = useRef<HTMLDivElement | null>(null);
     const autocompleteServiceRef = useRef<{
         getPlacePredictions: (
             request: Record<string, unknown>,
@@ -277,6 +291,8 @@ export default function CheckoutPage() {
     const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
     const [stripeReady, setStripeReady] = useState(false);
     const [stripeError, setStripeError] = useState<string | null>(null);
+    const [paypalReady, setPaypalReady] = useState(false);
+    const [paypalError, setPaypalError] = useState<string | null>(null);
     const [form, setForm] = useState<CheckoutFormState>({
         email: user?.email || 'guest@petposture.com',
         country: 'United States',
@@ -318,6 +334,18 @@ export default function CheckoutPage() {
     const stripeLiveMode = form.paymentMethod === 'card'
         && selectedCardMethod.mode === 'configured'
         && Boolean(selectedCardMethod.publishable_key);
+    const selectedPayPalMethod = paymentMethods.find((method) => method.method === 'paypal') ?? {
+        method: 'paypal' as const,
+        label: 'PayPal',
+        gateway: 'paypal',
+        collection: 'popup',
+        enabled: true,
+        mode: 'placeholder',
+        client_id: null,
+    };
+    const paypalLiveMode = form.paymentMethod === 'paypal'
+        && selectedPayPalMethod.mode === 'configured'
+        && Boolean(selectedPayPalMethod.client_id);
 
     useEffect(() => {
         setCouponCode(coupon.code);
@@ -448,6 +476,45 @@ export default function CheckoutPage() {
     }, [selectedCardMethod?.publishable_key, stripeLiveMode]);
 
     useEffect(() => {
+        if (typeof window === 'undefined' || !paypalLiveMode || !selectedPayPalMethod?.client_id) {
+            setPaypalReady(false);
+            setPaypalError(null);
+            return;
+        }
+
+        const clientId = selectedPayPalMethod.client_id;
+
+        const markReady = () => {
+            if (!window.paypal) {
+                setPaypalError('PayPal.js could not be loaded.');
+                return;
+            }
+
+            setPaypalReady(true);
+            setPaypalError(null);
+        };
+
+        if (window.paypal) {
+            markReady();
+            return;
+        }
+
+        const existingScript = document.getElementById(paypalJsScriptId) as HTMLScriptElement | null;
+
+        if (existingScript) {
+            existingScript.addEventListener('load', markReady, { once: true });
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.id = paypalJsScriptId;
+        script.async = true;
+        script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=USD&intent=capture`;
+        script.addEventListener('load', markReady, { once: true });
+        document.head.appendChild(script);
+    }, [selectedPayPalMethod?.client_id, paypalLiveMode]);
+
+    useEffect(() => {
         if (!stripeLiveMode || !stripeReady || !stripeElementsRef.current || !stripeCardMountRef.current) {
             return;
         }
@@ -478,6 +545,41 @@ export default function CheckoutPage() {
             stripeCardElementRef.current = null;
         };
     }, [stripeLiveMode, stripeReady]);
+
+    useEffect(() => {
+        if (!paypalLiveMode || !paypalReady || !window.paypal || !paypalContainerRef.current) {
+            return;
+        }
+
+        const container = paypalContainerRef.current;
+        container.innerHTML = '';
+
+        const buttons = window.paypal.Buttons({
+            style: { layout: 'vertical', label: 'paypal' },
+            createOrder: async () => {
+                try {
+                    return await preparePayPalOrder();
+                } catch (err) {
+                    setPaypalError(err instanceof Error ? err.message : 'Unable to start PayPal checkout.');
+                    throw err;
+                }
+            },
+            onApprove: async (data) => {
+                await finishPayPalOrder(data.orderID);
+            },
+            onError: (err) => {
+                console.error(err);
+                setPaypalError('PayPal checkout failed. Please try again.');
+            },
+        });
+
+        buttons.render(container);
+
+        return () => {
+            container.innerHTML = '';
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [paypalLiveMode, paypalReady]);
 
     useEffect(() => {
         if (!placesReady || !autocompleteServiceRef.current || !activeAddressTarget) {
@@ -640,8 +742,8 @@ export default function CheckoutPage() {
                 method: 'paypal',
                 label: 'PayPal',
                 gateway: 'paypal',
-                collection: 'redirect',
-                description: 'Redirect customers to PayPal for approval before returning to the store.',
+                collection: 'popup',
+                description: 'Pay with your PayPal balance, bank account, or linked card.',
                 enabled: true,
                 mode: 'placeholder',
                 brands: ['paypal'],
@@ -945,6 +1047,38 @@ export default function CheckoutPage() {
         return intent;
     };
 
+    const preparePayPalOrder = async (): Promise<string> => {
+        const apiBase = getApiBaseUrl();
+        const response = await fetch(`${apiBase}/api/checkout/paypal-order`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+                payment_method: 'paypal',
+                items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+                coupon_code: coupon.code || null,
+                shipping_method: form.shippingMethod,
+                shipping: {
+                    state: form.province,
+                    country: form.country,
+                    city: form.city,
+                    postcode: form.postalCode,
+                },
+                currency: 'usd',
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data?.paypal_order?.paypal_order_id) {
+            throw new Error(data?.message || 'Failed to prepare PayPal payment.');
+        }
+
+        return data.paypal_order.paypal_order_id as string;
+    };
+
     const handleApplyCoupon = async () => {
         if (!couponCode.trim()) return;
 
@@ -1001,127 +1135,184 @@ export default function CheckoutPage() {
         }
     };
 
+    const buildOrderAddresses = () => {
+        const shippingAddress = buildAddressPayload({
+            firstName: form.firstName,
+            lastName: form.lastName,
+            company: form.company,
+            address1: form.address1,
+            address2: form.address2,
+            city: form.city,
+            province: form.province,
+            postalCode: form.postalCode,
+            country: form.country,
+            phone: form.phone,
+        });
+
+        const billingAddress = form.billingAddress === 'same'
+            ? shippingAddress
+            : buildAddressPayload({
+                firstName: form.billingFirstName,
+                lastName: form.billingLastName,
+                address1: form.billingAddress1,
+                address2: form.billingAddress2,
+                city: form.billingCity,
+                province: form.billingProvince,
+                postalCode: form.billingPostalCode,
+                country: form.billingCountry,
+            });
+
+        return { shippingAddress, billingAddress };
+    };
+
+    const placeOrder = async (paymentContext: Record<string, unknown> | null): Promise<string> => {
+        const apiBase = getApiBaseUrl();
+        const { shippingAddress, billingAddress } = buildOrderAddresses();
+
+        const res = await fetch(`${apiBase}/api/checkout/place-order`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+                items: items.map(i => ({ variantId: i.variantId, quantity: i.quantity })),
+                shipping: {
+                    email: form.email,
+                    ...shippingAddress,
+                },
+                billing_same_as_shipping: form.billingAddress === 'same',
+                billing: billingAddress,
+                shipping_method: form.shippingMethod,
+                payment_method: form.paymentMethod,
+                payment_context: paymentContext,
+                totalAmount: finalTotal,
+                coupon_code: coupon.discountAmount > 0 ? coupon.code : null,
+                attribution: getAttributionData(),
+            })
+        });
+
+        const raw = await res.text();
+        let data: { message?: string; order?: { reference?: string } } | null = null;
+
+        if (raw) {
+            try {
+                data = JSON.parse(raw);
+            } catch {
+                throw new Error(`Checkout response was not valid JSON: ${raw.slice(0, 180)}`);
+            }
+        }
+
+        if (res.status !== 201 || !data?.order?.reference) {
+            throw new Error(data?.message || 'Checkout failed. Please try again.');
+        }
+
+        return data.order.reference;
+    };
+
+    const finishSuccessSideEffectsAndRedirect = (reference: string) => {
+        const apiBase = getApiBaseUrl();
+
+        if (form.saveInfo && form.email) {
+            fetch(`${apiBase}/api/newsletter/subscribe`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: form.email }),
+            }).catch(() => undefined);
+        }
+
+        localStorage.removeItem('petposture_cart');
+        localStorage.removeItem('petposture_cart_coupon');
+        clearCoupon();
+
+        router.push(`/checkout/success?ref=${reference}&email=${encodeURIComponent(form.email)}`);
+    };
+
+    const finishPayPalOrder = async (paypalOrderId: string) => {
+        setIsLoading(true);
+        setPaypalError(null);
+
+        try {
+            const reference = await placeOrder({ paypal_order_id: paypalOrderId });
+
+            const apiBase = getApiBaseUrl();
+            const captureRes = await fetch(`${apiBase}/api/checkout/paypal-capture`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({ paypal_order_id: paypalOrderId }),
+            });
+
+            const captureData = await captureRes.json();
+
+            if (!captureRes.ok) {
+                throw new Error(captureData?.message || 'PayPal payment could not be captured.');
+            }
+
+            finishSuccessSideEffectsAndRedirect(reference);
+        } catch (err) {
+            console.error(err);
+            setPaypalError(err instanceof Error ? err.message : 'PayPal checkout failed. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (form.paymentMethod === 'paypal' && paypalLiveMode) {
+            // A real PayPal button is rendered below and completes the order via its own
+            // createOrder/onApprove flow — this form submit only applies in placeholder mode.
+            return;
+        }
+
         setIsLoading(true);
         setPaymentIntentMessage(null);
 
         try {
-            const shippingAddress = buildAddressPayload({
-                firstName: form.firstName,
-                lastName: form.lastName,
-                company: form.company,
-                address1: form.address1,
-                address2: form.address2,
-                city: form.city,
-                province: form.province,
-                postalCode: form.postalCode,
-                country: form.country,
-                phone: form.phone,
-            });
-
-            const billingAddress = form.billingAddress === 'same'
-                ? shippingAddress
-                : buildAddressPayload({
-                    firstName: form.billingFirstName,
-                    lastName: form.billingLastName,
-                    address1: form.billingAddress1,
-                    address2: form.billingAddress2,
-                    city: form.billingCity,
-                    province: form.billingProvince,
-                    postalCode: form.billingPostalCode,
-                    country: form.billingCountry,
-                });
-
-            const apiBase = getApiBaseUrl();
             const paymentContext = form.paymentMethod === 'card'
                 ? await prepareCardPaymentIntent()
                 : null;
-            const res = await fetch(`${apiBase}/api/checkout/place-order`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({
-                    items: items.map(i => ({ variantId: i.variantId, quantity: i.quantity })),
-                    shipping: {
-                        email: form.email,
-                        ...shippingAddress,
-                    },
-                    billing_same_as_shipping: form.billingAddress === 'same',
-                    billing: billingAddress,
-                    shipping_method: form.shippingMethod,
-                    payment_method: form.paymentMethod,
-                    payment_context: paymentContext,
-                    totalAmount: finalTotal,
-                    coupon_code: coupon.discountAmount > 0 ? coupon.code : null,
-                    attribution: getAttributionData(),
-                })
-            });
 
-            const raw = await res.text();
-            let data: { message?: string; order?: { reference?: string } } | null = null;
+            const reference = await placeOrder(paymentContext);
 
-            if (raw) {
-                try {
-                    data = JSON.parse(raw);
-                } catch {
-                    throw new Error(`Checkout response was not valid JSON: ${raw.slice(0, 180)}`);
+            if (form.paymentMethod === 'card' && paymentContext?.mode === 'configured') {
+                if (!stripeInstanceRef.current || !stripeCardElementRef.current) {
+                    throw new Error('Stripe card form is not ready yet.');
                 }
-            }
 
-            if (res.status === 201 && data?.order?.reference) {
-                if (form.paymentMethod === 'card' && paymentContext?.mode === 'configured') {
-                    if (!stripeInstanceRef.current || !stripeCardElementRef.current) {
-                        throw new Error('Stripe card form is not ready yet.');
-                    }
-
-                    const confirmation = await stripeInstanceRef.current.confirmCardPayment(paymentContext.client_secret, {
-                        payment_method: {
-                            card: stripeCardElementRef.current,
-                            billing_details: {
-                                name: form.cardName.trim() || `${form.firstName} ${form.lastName}`.trim(),
-                                email: form.email,
-                                phone: form.phone || undefined,
-                            },
+                const confirmation = await stripeInstanceRef.current.confirmCardPayment(paymentContext.client_secret, {
+                    payment_method: {
+                        card: stripeCardElementRef.current,
+                        billing_details: {
+                            name: form.cardName.trim() || `${form.firstName} ${form.lastName}`.trim(),
+                            email: form.email,
+                            phone: form.phone || undefined,
                         },
-                    });
+                    },
+                });
 
-                    if (confirmation.error?.message) {
-                        throw new Error(confirmation.error.message);
-                    }
-
-                    const paymentIntentStatus = confirmation.paymentIntent?.status;
-
-                    if (paymentIntentStatus === 'succeeded') {
-                        setPaymentIntentMessage('Payment confirmed successfully. Redirecting to your order confirmation.');
-                    } else if (paymentIntentStatus === 'processing') {
-                        setPaymentIntentMessage('Payment is processing. We will update the order status as soon as Stripe confirms it.');
-                    } else if (paymentIntentStatus === 'requires_action') {
-                        setPaymentIntentMessage('Additional authentication was requested. Stripe will continue the confirmation flow.');
-                    } else if (paymentIntentStatus && paymentIntentStatus !== 'requires_payment_method') {
-                        throw new Error(`Stripe returned payment status: ${paymentIntentStatus}`);
-                    }
+                if (confirmation.error?.message) {
+                    throw new Error(confirmation.error.message);
                 }
 
-                if (form.saveInfo && form.email) {
-                    fetch(`${apiBase}/api/newsletter/subscribe`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: form.email }),
-                    }).catch(() => undefined);
+                const paymentIntentStatus = confirmation.paymentIntent?.status;
+
+                if (paymentIntentStatus === 'succeeded') {
+                    setPaymentIntentMessage('Payment confirmed successfully. Redirecting to your order confirmation.');
+                } else if (paymentIntentStatus === 'processing') {
+                    setPaymentIntentMessage('Payment is processing. We will update the order status as soon as Stripe confirms it.');
+                } else if (paymentIntentStatus === 'requires_action') {
+                    setPaymentIntentMessage('Additional authentication was requested. Stripe will continue the confirmation flow.');
+                } else if (paymentIntentStatus && paymentIntentStatus !== 'requires_payment_method') {
+                    throw new Error(`Stripe returned payment status: ${paymentIntentStatus}`);
                 }
-
-                localStorage.removeItem('petposture_cart');
-                localStorage.removeItem('petposture_cart_coupon');
-                clearCoupon();
-
-                // Redirect to success page
-                router.push(`/checkout/success?ref=${data.order.reference}&email=${encodeURIComponent(form.email)}`);
-            } else {
-                alert("Checkout failed: " + (data?.message || 'Unknown error'));
             }
+
+            finishSuccessSideEffectsAndRedirect(reference);
         } catch (err) {
             console.error(err);
             alert(err instanceof Error ? err.message : "Network error processing your checkout.");
@@ -1377,7 +1568,7 @@ export default function CheckoutPage() {
                                                         <p className="mt-1 pr-2 text-[12px] leading-[1.45] text-[#6f7782]">{method.description}</p>
                                                     ) : null}
                                                     {method.mode === 'placeholder' && method.method === 'paypal' ? (
-                                                        <p className="mt-1 text-[11px] font-medium text-[#8a5a34]">PayPal redirect is scaffolded but not connected yet.</p>
+                                                        <p className="mt-1 text-[11px] font-medium text-[#8a5a34]">PayPal is not configured yet — placeholder mode.</p>
                                                     ) : null}
                                                     {method.mode === 'manual' && method.method === 'cod' ? (
                                                         <p className="mt-1 text-[11px] font-medium text-[#8a5a34]">Offline/manual method for testing only.</p>
@@ -1533,6 +1724,24 @@ export default function CheckoutPage() {
                                                 )}
                                             </div>
                                         )}
+
+                                        {method.method === 'paypal' && form.paymentMethod === 'paypal' && (
+                                            <div className="grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3">
+                                                {paypalLiveMode ? (
+                                                    <>
+                                                        <div ref={paypalContainerRef} />
+                                                        {!paypalReady ? (
+                                                            <p className="text-[12px] leading-[1.45] text-[#6f7782]">Loading PayPal…</p>
+                                                        ) : null}
+                                                    </>
+                                                ) : (
+                                                    <p className="text-[12px] leading-[1.45] text-[#6f7782]">PayPal is running in placeholder mode — click &quot;Complete order&quot; below to simulate a PayPal order without a live PayPal account.</p>
+                                                )}
+                                                {paypalError ? (
+                                                    <p className="text-[12px] font-medium text-[#b42318]">{paypalError}</p>
+                                                ) : null}
+                                            </div>
+                                        )}
                                     </React.Fragment>
                                 ))}
 
@@ -1540,21 +1749,23 @@ export default function CheckoutPage() {
                             </div>
                         </section>
 
-                        <div className="pt-6">
-                            <button
-                                disabled={isLoading || items.length === 0}
-                                className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#df8448] px-6 text-[15px] font-bold text-white shadow-[0_14px_30px_rgba(223,132,72,0.22)] transition hover:bg-[#c9713a] disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {isLoading ? (
-                                    'Processing...'
-                                ) : (
-                                    <>
-                                        <Lock size={16} />
-                                        Complete order
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                        {!(form.paymentMethod === 'paypal' && paypalLiveMode) && (
+                            <div className="pt-6">
+                                <button
+                                    disabled={isLoading || items.length === 0}
+                                    className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#df8448] px-6 text-[15px] font-bold text-white shadow-[0_14px_30px_rgba(223,132,72,0.22)] transition hover:bg-[#c9713a] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {isLoading ? (
+                                        'Processing...'
+                                    ) : (
+                                        <>
+                                            <Lock size={16} />
+                                            Complete order
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        )}
                     </form>
 
                     <footer className="mt-16 border-t border-[#e6e6e6] pt-8">
