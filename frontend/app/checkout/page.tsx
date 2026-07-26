@@ -92,6 +92,7 @@ type CheckoutFormState = {
     postalCode: string;
     phone: string;
     saveInfo: boolean;
+    saveDelivery: boolean;
     shippingMethod: string;
     paymentMethod: 'cod' | 'card' | 'paypal';
     cardNumber: string;
@@ -306,6 +307,7 @@ export default function CheckoutPage() {
         postalCode: '',
         phone: '',
         saveInfo: true,
+        saveDelivery: true,
         shippingMethod: 'standard',
         paymentMethod: 'cod',
         cardNumber: '',
@@ -395,6 +397,56 @@ export default function CheckoutPage() {
             email: user?.email || prev.email || 'guest@petposture.com',
         }));
     }, [user?.email]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const prefillSavedAddress = async () => {
+            if (token) {
+                try {
+                    const apiBase = getApiBaseUrl();
+                    const response = await fetch(`${apiBase}/api/me/addresses`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    const data = await response.json();
+                    const address = Array.isArray(data?.data) ? data.data[0] : null;
+
+                    if (!cancelled && address) {
+                        setForm((prev) => (prev.address1 ? prev : {
+                            ...prev,
+                            firstName: address.first_name || prev.firstName,
+                            lastName: address.last_name || prev.lastName,
+                            address1: address.line_one || prev.address1,
+                            address2: address.line_two || prev.address2,
+                            city: address.city || prev.city,
+                            province: address.state || prev.province,
+                            postalCode: address.postcode || prev.postalCode,
+                            phone: address.phone || prev.phone,
+                        }));
+                    }
+                } catch {
+                    // prefill is a convenience, not required
+                }
+                return;
+            }
+
+            try {
+                const saved = localStorage.getItem('petposture_guest_address');
+                if (saved && !cancelled) {
+                    const address = JSON.parse(saved) as Partial<CheckoutFormState>;
+                    setForm((prev) => (prev.address1 ? prev : { ...prev, ...address }));
+                }
+            } catch {
+                // ignore malformed storage
+            }
+        };
+
+        void prefillSavedAddress();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [token]);
 
     useEffect(() => {
         if (!googleMapsApiKey || typeof window === 'undefined') {
@@ -1221,6 +1273,44 @@ export default function CheckoutPage() {
             }).catch(() => undefined);
         }
 
+        if (form.saveDelivery) {
+            if (token) {
+                fetch(`${apiBase}/api/me/addresses`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        first_name: form.firstName,
+                        last_name: form.lastName,
+                        line_one: form.address1,
+                        line_two: form.address2 || null,
+                        city: form.city,
+                        state: form.province,
+                        postcode: form.postalCode,
+                        phone: form.phone || null,
+                        is_default: true,
+                    }),
+                }).catch(() => undefined);
+            } else {
+                try {
+                    localStorage.setItem('petposture_guest_address', JSON.stringify({
+                        firstName: form.firstName,
+                        lastName: form.lastName,
+                        address1: form.address1,
+                        address2: form.address2,
+                        city: form.city,
+                        province: form.province,
+                        postalCode: form.postalCode,
+                        phone: form.phone,
+                    }));
+                } catch {
+                    // storage unavailable — skip silently
+                }
+            }
+        }
+
         localStorage.removeItem('petposture_cart');
         localStorage.removeItem('petposture_cart_coupon');
         clearCoupon();
@@ -1502,7 +1592,13 @@ export default function CheckoutPage() {
                                 <input name="phone" autoComplete="shipping tel" placeholder="Phone" value={form.phone} onChange={(e) => updateField('phone', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]" />
 
                                 <div className="flex items-center gap-3 py-1">
-                                    <input type="checkbox" id="saveDelivery" className="h-4 w-4 rounded border-[#d9d9d9] text-[#197bbd] focus:ring-[#197bbd]" />
+                                    <input
+                                        type="checkbox"
+                                        id="saveDelivery"
+                                        checked={form.saveDelivery}
+                                        onChange={(e) => updateField('saveDelivery', e.target.checked)}
+                                        className="h-4 w-4 rounded border-[#d9d9d9] text-[#197bbd] focus:ring-[#197bbd]"
+                                    />
                                     <label htmlFor="saveDelivery" className="text-[13px] text-[#333333]">Save this information for next time</label>
                                 </div>
                             </div>
