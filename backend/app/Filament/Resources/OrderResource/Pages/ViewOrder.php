@@ -333,8 +333,12 @@ class ViewOrder extends ViewRecord
                         ])->columns(2)->columnSpan(8)->extraAttributes(['class' => 'h-full']),
 
                     Infolists\Components\Grid::make(1)
+                        ->extraAttributes(['class' => 'h-full'])
                         ->schema([
                             Infolists\Components\Section::make(__('Order Attribution'))
+                                ->extraAttributes(fn ($record): array => filled($record->meta['fraud_risk_level'] ?? null)
+                                    ? []
+                                    : ['class' => 'h-full'])
                                 ->schema([
                                     Infolists\Components\TextEntry::make('meta.attribution_origin')
                                         ->label(__('Origin'))
