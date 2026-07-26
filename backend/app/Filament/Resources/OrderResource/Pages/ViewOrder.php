@@ -26,6 +26,11 @@ class ViewOrder extends ViewRecord
         return $record;
     }
 
+    private function hasFraudRiskData(): bool
+    {
+        return filled($this->order()->meta['fraud_risk_level'] ?? null);
+    }
+
     protected function getHeaderActions(): array
     {
         $operations = app(OrderOperationsService::class);
@@ -332,13 +337,48 @@ class ViewOrder extends ViewRecord
                             ]),
                         ])->columns(2)->columnSpan(8)->extraAttributes(['class' => 'h-full']),
 
-                    Infolists\Components\Grid::make(1)
-                        ->extraAttributes(['class' => 'h-full'])
-                        ->schema([
+                    ...($this->hasFraudRiskData()
+                        ? [
+                            Infolists\Components\Grid::make(1)
+                                ->schema([
+                                    Infolists\Components\Section::make(__('Order Attribution'))
+                                        ->schema([
+                                            Infolists\Components\TextEntry::make('meta.attribution_origin')
+                                                ->label(__('Origin'))
+                                                ->default('—'),
+                                            Infolists\Components\TextEntry::make('meta.attribution_device_type')
+                                                ->label(__('Device Type'))
+                                                ->default('—'),
+                                            Infolists\Components\TextEntry::make('meta.attribution_session_page_views')
+                                                ->label(__('Session Page Views'))
+                                                ->default('—'),
+                                        ]),
+
+                                    Infolists\Components\Section::make(__('Fraud & Risk'))
+                                        ->description(__('Powered by Stripe Radar — automatic on every card payment, no extra setup required.'))
+                                        ->schema([
+                                            Infolists\Components\TextEntry::make('meta.fraud_risk_level')
+                                                ->label(__('Risk Level'))
+                                                ->badge()
+                                                ->formatStateUsing(fn (?string $state): string => $state ? str($state)->headline()->toString() : '—')
+                                                ->color(fn (?string $state): string => match ($state) {
+                                                    'highest' => 'danger',
+                                                    'elevated' => 'warning',
+                                                    default => 'success',
+                                                }),
+                                            Infolists\Components\TextEntry::make('meta.fraud_risk_score')
+                                                ->label(__('Risk Score'))
+                                                ->default('—'),
+                                            Infolists\Components\TextEntry::make('meta.fraud_seller_message')
+                                                ->label(__('Note'))
+                                                ->default('—')
+                                                ->columnSpanFull(),
+                                        ]),
+                                ])->columnSpan(4),
+                        ]
+                        : [
                             Infolists\Components\Section::make(__('Order Attribution'))
-                                ->extraAttributes(fn ($record): array => filled($record->meta['fraud_risk_level'] ?? null)
-                                    ? []
-                                    : ['class' => 'h-full'])
+                                ->extraAttributes(['class' => 'h-full'])
                                 ->schema([
                                     Infolists\Components\TextEntry::make('meta.attribution_origin')
                                         ->label(__('Origin'))
@@ -349,30 +389,9 @@ class ViewOrder extends ViewRecord
                                     Infolists\Components\TextEntry::make('meta.attribution_session_page_views')
                                         ->label(__('Session Page Views'))
                                         ->default('—'),
-                                ]),
-
-                            Infolists\Components\Section::make(__('Fraud & Risk'))
-                                ->description(__('Powered by Stripe Radar — automatic on every card payment, no extra setup required.'))
-                                ->visible(fn ($record) => filled($record->meta['fraud_risk_level'] ?? null))
-                                ->schema([
-                                    Infolists\Components\TextEntry::make('meta.fraud_risk_level')
-                                        ->label(__('Risk Level'))
-                                        ->badge()
-                                        ->formatStateUsing(fn (?string $state): string => $state ? str($state)->headline()->toString() : '—')
-                                        ->color(fn (?string $state): string => match ($state) {
-                                            'highest' => 'danger',
-                                            'elevated' => 'warning',
-                                            default => 'success',
-                                        }),
-                                    Infolists\Components\TextEntry::make('meta.fraud_risk_score')
-                                        ->label(__('Risk Score'))
-                                        ->default('—'),
-                                    Infolists\Components\TextEntry::make('meta.fraud_seller_message')
-                                        ->label(__('Note'))
-                                        ->default('—')
-                                        ->columnSpanFull(),
-                                ]),
-                        ])->columnSpan(4),
+                                ])->columnSpan(4),
+                        ]
+                    ),
                 ])->extraAttributes(['class' => 'items-stretch']),
 
             Infolists\Components\Grid::make(2)
