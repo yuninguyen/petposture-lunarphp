@@ -989,10 +989,10 @@ export default function CheckoutPage() {
 
         if (method.method === 'paypal') {
             return (
-                <div className="flex h-[21px] w-[48px] items-center overflow-hidden">
+                <div className="flex h-[16px] w-[62px] items-center overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                        src="https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/paypal-logo.Q2f7XzPy.svg"
+                        src="https://www.paypalobjects.com/webstatic/mktg/Logo/pp-logo-100px.png"
                         alt="PayPal"
                         className="h-full w-full object-contain"
                     />
