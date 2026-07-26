@@ -9,6 +9,8 @@ class PayPalWebhookEvent extends Model
 {
     use HasFactory;
 
+    protected $table = 'paypal_webhook_events';
+
     protected $fillable = [
         'event_id',
         'event_type',
