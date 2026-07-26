@@ -1,5 +1,41 @@
 # Handoff — 2026-07-26
 
+## Real PayPal gateway built and deployed — commits `7bbdb07`, `918dbe3`
+
+Replaced `MockPayPalGateway` with a working integration mirroring the Stripe pattern:
+`PayPalService` (OAuth, create/capture/refund via Orders API v2, webhook signature
+verification), `PayPalGateway` implementing `PaymentGatewayInterface`, `OrderOperationsService::
+refundOrder()` and the auto-refund-on-cancel path in `update()` now branch by
+`meta.payment_gateway` (stripe vs paypal) instead of assuming Stripe everywhere, new
+`syncPayPalPayment()` sharing the same status-transition logic as `syncStripePayment()` via an
+extracted `applyPaymentStatusTransition()` helper. Frontend renders PayPal Smart Buttons inline
+in checkout (popup approval, matching how Shopify does it) driven by `createOrder`/`onApprove`,
+replacing the old static "redirect" placeholder. Admin Settings → Payment tab got Client ID/
+Secret/Mode fields + a "Test PayPal" connection check, mirroring Stripe's.
+**Still placeholder mode** — needs a real PayPal Developer sandbox app (Client ID/Secret)
+entered in Settings before this can be tested live; code path is fully wired but unverified
+against a real PayPal sandbox transaction. Pint clean, PHPStan introduces zero new errors
+(verified on VPS throwaway checkout), `npm run build`/`tsc --noEmit`/lint clean locally.
+
+**Found and fixed along the way**: the PayPal logo badge next to the payment method row was
+hotlinking a Shopify checkout-web SVG asset (`viewBox 38x9`) into a differently-proportioned
+48x21 box, rendering with dropped/garbled letters — confirmed via a Playwright screenshot.
+Switched to PayPal's own hosted logo (`paypalobjects.com/webstatic/mktg/Logo/pp-logo-100px.png`,
+100x26) with a matching 62x16 container (commit `918dbe3`).
+
+**Real deploy gotcha hit during this session — worth knowing for next time**: after rebuilding
+and recreating both containers, Yuni still saw the *old* checkout page (old placeholder text,
+old logo) even though the frontend container itself was serving the new HTML correctly when
+curled directly on the VPS (`127.0.0.1:3001`). Root cause: **Cloudflare was caching the
+`/checkout` page itself** — despite `ARCHITECTURE.md`'s Cache Rule only being documented to
+target specific `/api/*` GET paths (catalog/content endpoints), not full HTML pages, and
+explicitly saying checkout must never be cached this way. Fixed by manually triggering
+`app(App\Services\CloudflareCacheService::class)->purgeAll()` via tinker, confirmed the origin
+and the public URL matched afterward. **Not yet root-caused *why* `/checkout` got cached** — the
+documented Cache Rule shouldn't apply to it. Worth checking the actual Cloudflare Cache
+Rules/Page Rules config directly (dashboard) next time deploys don't seem to take effect, rather
+than assuming a bad build — this may bite future frontend deploys too, not just this one.
+
 ## Order Summary height: no-Fraud-Risk case fixed and confirmed — commits `ddcae9e`, `4462442`
 
 Original complaint: an empty gap under Customer IP whenever the right-side column (Order
