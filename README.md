@@ -17,7 +17,7 @@ An e-commerce platform for pet posture products, built as a monorepo with Next.j
 | Admin Panel | Filament 3 + Filament Shield (RBAC) |
 | Auth | Laravel Sanctum |
 | Roles & Permissions | Spatie Laravel Permission |
-| Payments | Stripe (cards, incl. Radar fraud scoring) + Cash on Delivery |
+| Payments | Stripe (cards, incl. Radar fraud scoring) + PayPal (Smart Buttons, popup approval) + Cash on Delivery |
 | Database | MySQL |
 | Cache & Session | Redis (via `predis/predis`) |
 | Queue | Database driver, processed by a `queue:work` process (supervisord) |
@@ -68,11 +68,18 @@ petposture/
 ## Features
 
 - Product catalog with categories, variants, attributes, and brands
-- Shopping cart & checkout flow (guest + authenticated), COD and Stripe card payments
+- Shopping cart & checkout flow (guest + authenticated), COD, Stripe card, and PayPal (Smart
+  Buttons rendered inline, popup approval — not a full-page redirect) payments. A "Save this
+  information for next time" checkout checkbox saves the shipping address for next time: to the
+  customer's account (`/api/me/addresses`, authenticated) if logged in, or to `localStorage`
+  (same-device only) for guest checkouts — guest addresses are deliberately not matched by email
+  across devices, since that would let anyone probe a stranger's address just by typing their
+  email at checkout.
 - Customer account dashboard (`/account`): order history with expandable order detail
   (items, shipping/billing address, tracking, payment status), saved addresses, profile info
 - Order management & tracking, with a WooCommerce-style admin order view:
-  status actions (mark paid/processing/shipped/delivered/cancel), refunds (full/partial via Stripe)
+  status actions (mark paid/processing/shipped/delivered/cancel), refunds (full/partial, via
+  Stripe or PayPal depending on which gateway the order was paid through)
   with a required Reason select (Defective, Wrong Item, Low-Value — No Return Required, Customer
   Changed Mind, Duplicate Order, Approved Return Request, Other) so a refund issued outside the
   Return Request flow still leaves an audit trail, and an auto-updating Order Notes activity
@@ -311,6 +318,17 @@ used to read `config()` directly, which meant `/api/checkout/payment-methods` re
 in the DB and payment-intent creation succeeded, breaking checkout with "Stripe card form is not
 ready yet." If you add another Stripe-touching class, follow the same DB-first pattern.
 
+### PayPal config: DB `Setting` overrides `.env` (same pattern as Stripe)
+
+PayPal credentials follow the exact same DB-first pattern as Stripe: `backend/.env`
+(`PAYPAL_MODE`/`PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET`/`PAYPAL_WEBHOOK_ID`) or the Admin
+Settings UI (Filament → Manage Settings → Payment tab), which writes to the `settings` DB table
+and takes priority. `PayPalService` resolves `client_id`/`client_secret`/`mode`/`webhook_id` via
+`Setting::get('paypal_*') ?: config('services.paypal.*')`, cached 5 minutes (invalidated on
+Settings save). Without real sandbox credentials entered, checkout falls back to a placeholder
+mode (fake `PAYPAL-PLACEHOLDER-...`/`CAPTURE-PLACEHOLDER-...` IDs, no real PayPal Smart Buttons
+rendered) so the checkout flow still works end-to-end for testing other payment methods.
+
 ### Standard deploy (from a local clone with SSH access to the VPS)
 
 ```bash
@@ -377,7 +395,7 @@ docker-compose up -d
 | Auth | `/api/login`, `/api/register`, `/api/auth/forgot-password`, `/api/auth/reset-password` |
 | Products & Reviews | `/api/products/...` (incl. `/api/products/{slug}/reviews`) |
 | Categories | `/api/categories/...` |
-| Cart & Checkout | `/api/cart/...`, `/api/checkout/place-order`, `/api/checkout/shipping-rates`, `/api/checkout/tax-quote`, `/api/checkout/payment-intent`, `/api/apply-coupon` |
+| Cart & Checkout | `/api/cart/...`, `/api/checkout/place-order`, `/api/checkout/shipping-rates`, `/api/checkout/tax-quote`, `/api/checkout/payment-intent`, `/api/checkout/paypal-order`, `/api/checkout/paypal-capture`, `/api/apply-coupon` |
 | Orders | `/api/orders/...` (authenticated, scoped to the customer), `/api/orders/track` (public, reference + email) |
 | Return Requests | `/api/orders/return-requests` (public, create), `/api/admin/return-requests/...` (list/approve/reject/complete) |
 | Customer account | `/api/me/addresses` (authenticated address book) |
@@ -385,6 +403,7 @@ docker-compose up -d
 | Settings / Content | `/api/settings/...`, `/api/content/...` |
 | Newsletter | `/api/newsletter/subscribe` (fired from the checkout "email me with news and offers" opt-in) |
 | Stripe webhook | `/api/webhooks/stripe` |
+| PayPal webhook | `/api/webhooks/paypal` |
 | AfterShip webhook | `/api/webhooks/aftership` (HMAC-verified, auto-marks orders delivered) |
 
 ---

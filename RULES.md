@@ -43,10 +43,12 @@ Read this before touching code. See `ARCHITECTURE.md` for the why; this file is 
 - Deploy = SSH to VPS → `git pull` → `docker compose -f docker-compose.prod.yml build <service>` → `up -d --force-recreate <service>`. There is no CI pipeline; `build.js` (repo root, runs on `git push`) is a local push-time smoke build only — it does **not** run on the VPS and does **not** run tests/lint.
 - **Never leave a hotpatch (`docker cp` into a running container) undeployed.** It's for same-session testing only — the next real deploy (`git pull` + rebuild) silently overwrites it. Always follow up with a real commit + push + redeploy once a change is approved.
 - After every deploy: run `npx gitnexus analyze` (per root `CLAUDE.md`) and run `php artisan optimize:clear` inside the backend container.
+- After every **frontend** deploy: also manually purge Cloudflare (`docker exec petposture-backend php artisan tinker --execute='app(App\Services\CloudflareCacheService::class)->purgeAll();'`) and verify with a public `curl` — `/checkout` has been observed served stale from the edge otherwise (see `ARCHITECTURE.md` known-gap note). Don't assume the deploy took effect just because the container restarted cleanly.
 
 ## Forbidden / avoid
 
 - `laravel/cashier` — Stripe is integrated by hand (`StripePaymentIntentService` + custom gateway). Don't introduce Cashier.
+- A third-party PayPal SDK package (`srmklive/paypal`, `paypal/paypal-checkout-sdk`, etc.) — PayPal is integrated by hand (`PayPalService` + `Payments/Gateways/PayPalGateway.php`), mirroring the Stripe pattern. Don't introduce a PayPal SDK package.
 - Any frontend state library (Redux, Zustand, Jotai, etc.) or data-fetching library (axios, SWR, React Query) — not present, not wanted. Plain `fetch()`.
 - Prettier — no config exists; don't add one, ESLint is the single source of formatting truth on the frontend.
 - Markdown-based Mailables (`Content(markdown: ...)`) for anything customer-facing — all customer emails are custom `Content(view: ...)` Blade for design control. New customer emails follow that pattern, not Lunar's/Laravel's default markdown mail.

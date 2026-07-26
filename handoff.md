@@ -1,4 +1,23 @@
-# Handoff — 2026-07-26
+# Handoff — 2026-07-27
+
+## Checkout UI polish + guest/account "save address" — commits `2ef89d2`, `ab843f4`
+
+Font-size bumps (breadcrumb `12px→14px`, Order Summary Subtotal/Discount/Shipping/Tax rows
+`13px→14px`, footer policy links `11px→13px` — matching a competitor-store checkout screenshot
+Yuni referenced for readability/professionalism) plus a "?" `HelpCircle` icon next to "Shipping"
+in `OrderSummary.tsx` that opens a modal with processing/transit/rates copy sourced from the real
+`/shipping-policy` page.
+
+Wired up the previously-decorative "Save this information for next time" checkbox
+(`checkout/page.tsx`, `id="saveDelivery"` — had zero `checked`/`onChange` before this): logged-in
+users get the address saved via `POST /api/me/addresses` (marked default) and prefilled from
+`GET /api/me/addresses` on return visits; guests get it saved to `localStorage`
+(`petposture_guest_address`, same-device only) and prefilled from there. Deliberately **not**
+matched by email across devices for guests — that would let anyone probe a stranger's saved
+address just by typing their email at checkout (see `ARCHITECTURE.md`/README for the full
+writeup). Verified via Playwright (prefill from seeded `localStorage` renders correctly, checkbox
+state toggles), `tsc --noEmit` and `npm run lint` clean, deployed + Cloudflare-purged + verified
+live via public `curl`.
 
 ## Real PayPal gateway built and deployed — commits `7bbdb07`, `918dbe3`
 
@@ -414,6 +433,5 @@ discussed above (PATCH tracking number there only wrote `meta.shipments[]`, neve
   The low-value no-return-required rule it was waiting on (auto-waive, above) has since shipped,
   but Phase 3 itself is deliberately deferred until the site scales — don't re-propose without a
   fresh ask.
-- **PayPal payment gateway** — net-new integration alongside the existing custom Stripe integration.
 - **Shop by Solution / Shop by Breed re-think** — needs a business-side decision on target categories first.
 - **Support helpdesk tooling** (Zendesk/Freshdesk/shared inbox) for `support@petposture.com` — only worth it once there's more than one person handling customer replies.
