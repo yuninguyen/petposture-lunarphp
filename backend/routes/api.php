@@ -60,14 +60,14 @@ Route::get('/brands', [BrandController::class, 'index']);
 Route::get('/brands/{id}/products', [BrandController::class, 'products']);
 Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('throttle:api-write');
 Route::post('/orders/track', [OrderController::class, 'track'])->middleware('throttle:10,1');
-Route::post('/orders/retry-payment', [OrderController::class, 'retryPayment']);
+Route::post('/orders/retry-payment', [OrderController::class, 'retryPayment'])->middleware('throttle:10,1');
 Route::post('/orders/return-requests', [ReturnRequestController::class, 'store'])->middleware('throttle:10,1');
 Route::post('/orders/return-requests/preview', [ReturnRequestController::class, 'preview'])->middleware('throttle:api-write');
 Route::get('/api-test', function () {
     return ['status' => 'ok', 'v' => 3];
 });
 Route::post('/apply-coupon', [CheckoutController::class, 'applyCoupon'])->middleware('throttle:api-write');
-Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->middleware('throttle:api-write');
 Route::post('/contact', [ContactController::class, 'submit'])->middleware('throttle:api-write');
 Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendResetLink'])->middleware('throttle:auth');
 Route::post('/auth/reset-password', [PasswordResetController::class, 'resetPassword'])->middleware('throttle:auth');
