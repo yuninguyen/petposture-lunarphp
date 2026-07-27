@@ -1,5 +1,39 @@
 # Handoff — 2026-07-27
 
+## Customer got 403'd site-wide by fail2ban (collateral from our own audit) — real customer report, resolved
+
+Yuni reported `petposture.com/wishlist` and a favicon URL returning `403 Forbidden` and Google Search
+Console showing indexing failures. First hypothesis (Cloudflare BIC/bot-fight blocking) was wrong —
+the actual 403 page was a raw `nginx` error page, not Cloudflare's. Traced it to previously-undocumented
+infra: a **host-level nginx (not containerized) + fail2ban** sits between Cloudflare and the Docker
+containers (see `ARCHITECTURE.md` Deployment section for the full writeup) — `fail2ban`'s
+`nginx-badbots` jail permanently `deny`s any IP that matches a scanner-probe pattern once, for 7 days,
+across every path and every site on the VPS (this VPS also hosts an unrelated `rebateops.online`).
+
+Root cause of *this specific* incident: earlier in this same session, a security audit ran `curl`
+against `/.env`, `/api/.env`, etc. to verify those paths were properly blocked — legitimate defensive
+testing, but it happened to run from an IP that turned out to be shared with Yuni's own residential
+connection (Vietnam ISP, likely CGNAT). fail2ban correctly flagged the scanning *pattern* (that part
+worked as designed) but banned the whole IP for 7 days, collaterally locking out the real customer
+sharing it. Confirmed via `fail2ban-client status nginx-badbots` (found the exact IP in the 76-entry
+ban list) and `grep '<ip>' /var/log/nginx/access.log` (showed the exact `curl/8.18.0` requests that
+triggered it). Unbanned via `fail2ban-client set nginx-badbots unbanip <ip>`, verified `/`, `/favicon.ico`
+back to 200 and `/wishlist` correctly 404 (that route was never built — not a bug, just doesn't exist).
+
+**Changed**: `bantime` in `/etc/fail2ban/jail.d/nginx-badbots.conf` dropped from `604800` (7 days) to
+`86400` (24h) to shrink the blast radius of the next false positive — a single flagged request
+shouldn't be able to lock a shared-IP customer out for a week. Left `maxretry=1` alone (the filter
+patterns — `.env`, `wp-login.php`, `.git/config`, etc. — are specific enough that real traffic
+shouldn't trigger them at all; the risk was duration, not sensitivity). This VPS-level config change
+isn't tracked in git (fail2ban configs live outside the app repo) — noted here since it's the only
+record of it.
+
+**Lesson for future audits on this project**: any external HTTP probing against the *live* domain
+(not localhost/origin-only) risks tripping this same jail from whatever IP the probing runs from.
+Prefer probing `127.0.0.1:8001`/`:3001` directly on the VPS (bypasses both Cloudflare and this nginx
+layer) when checking for exposed files/paths, unless specifically testing the edge-blocking behavior
+itself.
+
 ## Two public endpoints had no rate limit at all — fixed, commit `48b0c49`
 
 Same audit pass, next finding after the data-leak fix below: a systematic read of every route in

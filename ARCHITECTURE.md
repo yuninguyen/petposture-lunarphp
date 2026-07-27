@@ -10,6 +10,7 @@ graph TB
     CF["Cloudflare (DNS, BIC, DMARC,<br/>edge Cache Rules for safe GET /api/* paths)"]
 
     subgraph VPS["VPS — docker-compose.prod.yml (network_mode: host)"]
+        Nginx["host nginx :80/:443<br/>(NOT containerized) + fail2ban"]
         FE["frontend container<br/>Next.js server.js :3001"]
         BE["backend container<br/>FrankenPHP + Caddy :8001<br/>+ supervisord queue worker + scheduler"]
         Redis["redis:7-alpine :6379<br/>(127.0.0.1 only)"]
@@ -20,8 +21,8 @@ graph TB
     PayPal["PayPal API"]
     AfterShip["AfterShip API"]
 
-    Browser -->|HTTPS petposture.com| CF --> FE
-    Browser -->|HTTPS api.petposture.com| CF --> BE
+    Browser -->|HTTPS petposture.com| CF --> Nginx -->|proxy_pass| FE
+    Browser -->|HTTPS api.petposture.com| CF --> Nginx -->|proxy_pass| BE
     FE -->|fetch, getApiBaseUrl()| BE
     FE -->|Smart Buttons JS SDK, popup approval| PayPal
     BE --> MySQL
@@ -85,6 +86,8 @@ The "Request a Return" feature (Phase 1) is the current reference implementation
 - **Production**: single VPS, `docker-compose.prod.yml`, three services (`redis`, `backend`, `frontend`), all `network_mode: host` — no bridge networking, no port-mapping section, ports are just whatever `$PORT` each app binds to.
 - Manual deploy after every merge: SSH in, `git pull`, `docker compose build` the changed service(s), `up -d --force-recreate`. Migrations run automatically on backend container start (baked into the Docker entrypoint), but hotpatching a single file via `docker cp` for a quick test does **not** persist — always follow up with the real `git pull` + rebuild, or the next deploy silently reverts the hotpatch.
 - GitNexus (`npx gitnexus analyze`) reindexes the code graph — run it after every deploy per root `CLAUDE.md`.
+- **Host-level nginx + fail2ban (found 2026-07-27, previously undocumented)**: a system `nginx` (not containerized, not in `docker-compose.prod.yml`) actually terminates :80/:443 on the VPS and `proxy_pass`es to the `frontend`/`backend` containers by `server_name` — Cloudflare proxies to *this*, not directly to the Docker containers. This same nginx also fronts an unrelated second site (`rebateops.online`) on the same VPS. `fail2ban` (`nginx-badbots` jail, `/etc/fail2ban/jail.d/nginx-badbots.conf`) tails `/var/log/nginx/access.log` and permanently `deny`s (via `/etc/nginx/conf.d/fail2ban-autoban.conf`) any IP that matches a known scanner-probe pattern (`.env`, `wp-login.php`, `.git/config`, etc.) — **one match bans the IP from every path on every site on this nginx for 24h** (`bantime`, lowered from the original 7 days 2026-07-27 — see below). A banned IP gets a raw `403 Forbidden` / `nginx` page that never reaches Cloudflare's or Laravel's own error handling, so it's easy to mistake for a site outage or a Cloudflare block when it's actually this layer.
+  **Real incident**: a customer (residential Vietnam ISP, likely CGNAT-shared IP) got 403'd site-wide after this same IP happened to run `.env`-probing `curl` commands during an unrelated security audit in this same session — a stray audit request, not malicious customer behavior, triggered a week-long ban that would have collaterally blocked anyone sharing that IP. Unbanned via `fail2ban-client set nginx-badbots unbanip <ip>`; `bantime` dropped from `604800` to `86400` to shrink the blast radius of any future false positive (`maxretry` deliberately left at `1` — the filter patterns are specific enough that legitimate traffic shouldn't match them at all). If this happens again: `fail2ban-client status nginx-badbots` lists currently-banned IPs; `grep '<ip>' /var/log/nginx/access.log` shows what request actually triggered it.
 
 ---
 *Superseded content removed: this file previously described a generic Vercel-hosted Next.js + "database TBD" architecture that never reflected this project. See `backend/README.md` / `frontend/README.md` for narrower per-app notes.*
