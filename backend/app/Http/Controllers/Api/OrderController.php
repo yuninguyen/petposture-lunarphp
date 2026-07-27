@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\OrderPublicResource;
 use App\Http\Resources\Api\OrderResource;
 use App\Models\OrderReturnRequest;
 use App\Services\OrderOperationsService;
@@ -56,7 +57,7 @@ class OrderController extends Controller
             ->whereIn('status', [OrderReturnRequest::STATUS_REQUESTED, OrderReturnRequest::STATUS_APPROVED])
             ->exists();
 
-        return (new OrderResource($order))->additional([
+        return (new OrderPublicResource($order))->additional([
             'has_active_return_request' => $hasActiveReturnRequest,
         ]);
     }
@@ -93,7 +94,7 @@ class OrderController extends Controller
         return response()->json([
             'success' => true,
             'payment_intent' => $paymentIntent,
-            'order' => new OrderResource($order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])),
+            'order' => new OrderPublicResource($order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])),
         ]);
     }
 

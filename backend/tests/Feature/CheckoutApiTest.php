@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\ShippingMethod;
 use App\Models\StripeWebhookEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Lunar\DiscountTypes\AmountOff;
@@ -16,16 +18,16 @@ use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Discount;
 use Lunar\Models\Language;
+use Lunar\Models\Order;
+use Lunar\Models\Price;
 use Lunar\Models\Product;
 use Lunar\Models\ProductType;
 use Lunar\Models\ProductVariant;
-use Lunar\Models\Price;
+use Lunar\Models\TaxClass;
 use Lunar\Models\TaxRate;
 use Lunar\Models\TaxRateAmount;
-use Lunar\Models\TaxClass;
 use Lunar\Models\TaxZone;
 use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class CheckoutApiTest extends TestCase
@@ -557,11 +559,14 @@ class CheckoutApiTest extends TestCase
             ->assertJsonPath('data.status', 'payment-received')
             ->assertJsonPath('data.tracking_number', $reference)
             ->assertJsonPath('data.fulfillment_status', 'unfulfilled')
-            ->assertJsonPath('data.tracking_url', null);
+            ->assertJsonPath('data.payment_status', 'paid');
 
-        $trackedOrderResponse->assertJsonMissingPath('data.payment_status');
-        $trackedOrderResponse->assertJsonMissingPath('data.payment_intent_status');
+        // Public tracking endpoint: staff-only/internal fields must never leak here.
+        $trackedOrderResponse->assertJsonMissingPath('data.internal_note');
+        $trackedOrderResponse->assertJsonMissingPath('data.payment_intent_id');
         $trackedOrderResponse->assertJsonMissingPath('data.order_events');
+        $trackedOrderResponse->assertJsonMissingPath('data.available_actions');
+        $trackedOrderResponse->assertJsonMissingPath('data.refund_status');
     }
 
     public function test_duplicate_stripe_webhook_event_is_ignored(): void
@@ -672,7 +677,7 @@ class CheckoutApiTest extends TestCase
 
     public function test_shipping_rates_respects_setting_override_for_express_price(): void
     {
-        \App\Models\ShippingMethod::where('code', 'express')->update(['price' => 9.99]);
+        ShippingMethod::where('code', 'express')->update(['price' => 9.99]);
 
         $response = $this->getJson('/api/checkout/shipping-rates');
 
@@ -747,7 +752,7 @@ class CheckoutApiTest extends TestCase
         $orderId = $placeResponse->json('order.id');
 
         // Manually mark as paid but strip the intent id to simulate an offline/COD order
-        $order = \Lunar\Models\Order::find($orderId);
+        $order = Order::find($orderId);
         $meta = (array) ($order->meta ?? []);
         unset($meta['payment_intent_id']);
         $order->update(['meta' => $meta]);
@@ -861,9 +866,9 @@ class CheckoutApiTest extends TestCase
         $orderResponse->assertCreated();
 
         $orderId = $orderResponse->json('order.id');
-        $intentId = 'pi_test_' . Str::lower(Str::random(12));
+        $intentId = 'pi_test_'.Str::lower(Str::random(12));
 
-        $order = \Lunar\Models\Order::find($orderId);
+        $order = Order::find($orderId);
         $meta = (array) ($order->meta ?? []);
         $meta['payment_intent_id'] = $intentId;
         $meta['payment_status'] = 'paid';
@@ -912,7 +917,7 @@ class CheckoutApiTest extends TestCase
         $variant = ProductVariant::create([
             'product_id' => $product->id,
             'tax_class_id' => $taxClass->id,
-            'sku' => 'TEST-BED-' . Str::upper(Str::random(6)),
+            'sku' => 'TEST-BED-'.Str::upper(Str::random(6)),
             'stock' => 25,
             'shippable' => true,
         ]);

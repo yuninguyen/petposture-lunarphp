@@ -1,0 +1,304 @@
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
+use Lunar\FieldTypes\Text;
+use Lunar\Models\Channel;
+use Lunar\Models\Country;
+use Lunar\Models\Currency;
+use Lunar\Models\CustomerGroup;
+use Lunar\Models\Language;
+use Lunar\Models\Order;
+use Lunar\Models\Price;
+use Lunar\Models\Product;
+use Lunar\Models\ProductType;
+use Lunar\Models\ProductVariant;
+use Lunar\Models\TaxClass;
+use Lunar\Models\TaxRate;
+use Lunar\Models\TaxRateAmount;
+use Lunar\Models\TaxZone;
+use Tests\TestCase;
+
+/**
+ * /api/orders/track and /api/orders/retry-payment are public — gated only by
+ * tracking_number + email, no auth. They must never leak staff-only or internal
+ * gateway/refund bookkeeping data (regression coverage for the OrderResource ->
+ * OrderPublicResource split — see commit history around bdf9bf9, which switched
+ * /orders/track to the full admin-facing OrderResource).
+ */
+class OrderPublicResourceTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Queue::fake();
+        config()->set('services.stripe.secret', null);
+        config()->set('services.stripe.webhook_secret', null);
+    }
+
+    public function test_track_endpoint_never_leaks_internal_or_staff_only_fields(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $placeResponse->assertCreated();
+
+        $orderId = $placeResponse->json('order.id');
+        $order = Order::find($orderId);
+        $meta = (array) ($order->meta ?? []);
+        $meta['internal_note'] = 'Flagged for review — repeat chargeback risk.';
+        $meta['payment_intent_id'] = 'pi_should_not_leak';
+        $meta['refund_status'] = 'refunded';
+        $meta['refund_id'] = 're_should_not_leak';
+        $meta['refund_amount'] = 500;
+        $order->update(['meta' => $meta]);
+
+        $response = $this->postJson('/api/orders/track', [
+            'tracking_number' => $placeResponse->json('order.reference'),
+            'email' => 'guest@petposture.com',
+        ]);
+
+        $response->assertOk();
+
+        $response->assertJsonMissingPath('data.internal_note');
+        $response->assertJsonMissingPath('data.payment_intent_id');
+        $response->assertJsonMissingPath('data.payment_gateway');
+        $response->assertJsonMissingPath('data.payment_collection');
+        $response->assertJsonMissingPath('data.payment_last_event_type');
+        $response->assertJsonMissingPath('data.refund_status');
+        $response->assertJsonMissingPath('data.refund_id');
+        $response->assertJsonMissingPath('data.refund_amount');
+        $response->assertJsonMissingPath('data.refunded_at');
+        $response->assertJsonMissingPath('data.returned_at');
+        $response->assertJsonMissingPath('data.order_events');
+        $response->assertJsonMissingPath('data.available_actions');
+        $response->assertJsonMissingPath('data.tax_provider');
+
+        // Fields the frontend (checkout/success + track-order pages) actually renders
+        // must still be present — this must not regress into the old crash bug.
+        $response->assertJsonPath('data.reference', $placeResponse->json('order.reference'))
+            ->assertJsonPath('data.payment_status', 'pending')
+            ->assertJsonPath('data.payment_method', 'cod')
+            ->assertJsonStructure([
+                'data' => ['shipping_address', 'billing_address', 'lines', 'total', 'shipments'],
+            ]);
+    }
+
+    public function test_retry_payment_endpoint_never_leaks_internal_or_staff_only_fields(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'card',
+            'payment_context' => [
+                'intent_id' => 'pi_test_retry_123',
+                'client_secret' => 'pi_test_retry_123_secret',
+                'status' => 'requires_payment_method',
+            ],
+        ]));
+        $placeResponse->assertCreated();
+
+        $order = Order::find($placeResponse->json('order.id'));
+        $meta = (array) ($order->meta ?? []);
+        $meta['internal_note'] = 'Do not disclose to customer.';
+        $order->update(['meta' => $meta]);
+
+        $response = $this->postJson('/api/orders/retry-payment', [
+            'tracking_number' => $placeResponse->json('order.reference'),
+            'email' => 'guest@petposture.com',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonMissingPath('order.internal_note');
+        $response->assertJsonMissingPath('order.order_events');
+        $response->assertJsonMissingPath('order.available_actions');
+    }
+
+    private function createPurchasableVariant(): ProductVariant
+    {
+        $this->setUpLunarPrerequisites();
+
+        $productType = ProductType::firstOrCreate(['name' => 'General']);
+        $taxClass = TaxClass::firstOrCreate(['name' => 'Default'], ['default' => true]);
+        $channel = Channel::getDefault();
+        $customerGroup = CustomerGroup::query()->where('default', true)->first();
+        $currency = Currency::getDefault();
+
+        $product = Product::create([
+            'product_type_id' => $productType->id,
+            'status' => 'published',
+            'attribute_data' => [
+                'name' => new Text('Test Pet Bed'),
+                'description' => new Text('Supportive orthopedic pet bed'),
+                'image_url' => new Text('/assets/Pug-Dog-Bed.jpg'),
+            ],
+        ]);
+
+        $product->channels()->syncWithPivotValues([$channel->id], [
+            'enabled' => true,
+            'starts_at' => now(),
+        ], false);
+
+        $product->customerGroups()->syncWithPivotValues([$customerGroup->id], [
+            'enabled' => true,
+            'starts_at' => now(),
+        ], false);
+
+        $variant = ProductVariant::create([
+            'product_id' => $product->id,
+            'tax_class_id' => $taxClass->id,
+            'sku' => 'TEST-BED-'.Str::upper(Str::random(6)),
+            'stock' => 25,
+            'shippable' => true,
+        ]);
+
+        Price::create([
+            'customer_group_id' => null,
+            'currency_id' => $currency->id,
+            'priceable_type' => $variant->getMorphClass(),
+            'priceable_id' => $variant->id,
+            'price' => 8999,
+            'min_quantity' => 1,
+        ]);
+
+        return $variant;
+    }
+
+    private function setUpLunarPrerequisites(): void
+    {
+        $language = Language::firstOrCreate(
+            ['code' => 'en'],
+            ['name' => 'English', 'default' => true]
+        );
+        if (! $language->default) {
+            $language->forceFill(['default' => true])->save();
+        }
+
+        $currency = Currency::firstOrCreate(
+            ['code' => 'USD'],
+            [
+                'name' => 'US Dollar',
+                'decimal_places' => 2,
+                'default' => true,
+                'enabled' => true,
+                'exchange_rate' => 1,
+            ]
+        );
+        if (! $currency->default || ! $currency->enabled) {
+            $currency->forceFill(['default' => true, 'enabled' => true])->save();
+        }
+
+        $channel = Channel::firstOrCreate(
+            ['handle' => 'webstore'],
+            [
+                'name' => 'Webstore',
+                'default' => true,
+                'url' => 'http://localhost',
+            ]
+        );
+        if (! $channel->default) {
+            $channel->forceFill(['default' => true])->save();
+        }
+
+        $customerGroup = CustomerGroup::firstOrCreate(
+            ['handle' => 'retail'],
+            [
+                'name' => 'Retail',
+                'default' => true,
+            ]
+        );
+        if (! $customerGroup->default) {
+            $customerGroup->forceFill(['default' => true])->save();
+        }
+
+        $country = Country::firstOrCreate(
+            ['iso2' => 'US'],
+            [
+                'name' => 'United States',
+                'iso3' => 'USA',
+                'phonecode' => '1',
+                'capital' => 'Washington',
+                'currency' => 'USD',
+                'native' => 'United States',
+                'emoji' => 'US',
+                'emoji_u' => 'U+1F1FA U+1F1F8',
+            ]
+        );
+
+        $taxClass = TaxClass::firstOrCreate(
+            ['name' => 'Default'],
+            ['default' => true]
+        );
+        if (! $taxClass->default) {
+            $taxClass->forceFill(['default' => true])->save();
+        }
+
+        $taxZone = TaxZone::firstOrCreate(
+            ['name' => 'Default Tax Zone'],
+            [
+                'zone_type' => 'country',
+                'price_display' => 'tax_exclusive',
+                'active' => true,
+                'default' => true,
+            ]
+        );
+        if (! $taxZone->default || ! $taxZone->active) {
+            $taxZone->forceFill(['default' => true, 'active' => true])->save();
+        }
+
+        if (! $taxZone->countries()->where('country_id', $country->id)->exists()) {
+            $taxZone->countries()->create([
+                'country_id' => $country->id,
+            ]);
+        }
+
+        $taxRate = TaxRate::firstOrCreate(
+            ['name' => 'Default Tax Rate'],
+            [
+                'tax_zone_id' => $taxZone->id,
+                'priority' => 1,
+            ]
+        );
+
+        TaxRateAmount::firstOrCreate(
+            [
+                'tax_rate_id' => $taxRate->id,
+                'tax_class_id' => $taxClass->id,
+            ],
+            [
+                'percentage' => 0,
+            ]
+        );
+    }
+
+    private function checkoutPayload(ProductVariant $variant, array $overrides = []): array
+    {
+        return array_replace_recursive([
+            'items' => [
+                [
+                    'variantId' => $variant->id,
+                    'quantity' => 1,
+                ],
+            ],
+            'shipping' => [
+                'email' => 'guest@petposture.com',
+                'first_name' => 'Jane',
+                'last_name' => 'Doe',
+                'company' => null,
+                'line_one' => '123 Congress Ave',
+                'line_two' => 'Unit 4B',
+                'city' => 'Austin',
+                'state' => 'TX',
+                'postcode' => '78701',
+                'country' => 'United States',
+                'phone' => '5125550101',
+            ],
+            'billing_same_as_shipping' => true,
+            'shipping_method' => 'standard',
+            'payment_method' => 'cod',
+        ], $overrides);
+    }
+}
