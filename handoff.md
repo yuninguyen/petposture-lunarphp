@@ -1,5 +1,34 @@
 # Handoff — 2026-07-27
 
+## Two public endpoints had no rate limit at all — fixed, commit `48b0c49`
+
+Same audit pass, next finding after the data-leak fix below: a systematic read of every route in
+`routes/api.php` not behind `auth:sanctum` found two public write endpoints with **zero**
+throttle middleware, unlike every sibling public endpoint in the file:
+
+- `POST /orders/retry-payment` — gated only by tracking_number+email (like `/orders/track`, which
+  already has `throttle:10,1`), but calls the real Stripe API on every hit. Unthrottled, it's both
+  a way to hammer Stripe and a much faster brute-force surface against a known tracking number
+  than its sibling `/orders/track` allows. Now matches it: `throttle:10,1`.
+- `POST /newsletter/subscribe` — sends a real confirmation email synchronously on every "new
+  subscribe"/"resubscribe" hit, no rate limit at all. Unthrottled, this is an email-bombing vector
+  against an arbitrary third-party address, and would burn through the mail provider's sending
+  quota fast (relevant given the Hostinger Mail trial). Added `throttle:api-write` (20/min/IP),
+  matching `/contact` and `/apply-coupon`.
+
+Verified live on production: 11th request to `/orders/retry-payment` within a minute now returns
+429 (curl loop, see session). No test changes needed — existing tests only call each route once.
+
+Also checked and ruled out during this pass: IDOR on `OrderController` (`baseOrderQuery()` scopes
+non-staff users to `where('user_id', ...)`, confirmed correct on `show`/`index`; `update`/
+`performAction`/`createShipment` all explicitly gate on `canManageOrders()`) and the admin-only
+`created_by_admin` checkout flag (impossible to set via the public API — it's not in
+`CheckoutController::placeOrder()`'s validated field list, only ever set server-side by the
+Filament `CreateOrder` page). Noted but not fixed: a harmless duplicate `return new
+OrderResource($order);` (dead code, second one unreachable) in `OrderController::show()`, and a
+leftover `/api-test` debug route (returns a static `{status: ok, v: 3}`, no data exposure) — both
+cosmetic, not worth a dedicated commit.
+
 ## Public order-tracking endpoints were leaking internal/staff-only data — fixed, commit `e8ddcf1`
 
 Found during a targeted post-mortem audit (same session as the PayPal webhook table-name bug
