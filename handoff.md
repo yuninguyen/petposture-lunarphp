@@ -1,5 +1,41 @@
 # Handoff — 2026-07-27
 
+## Public order-tracking endpoints were leaking internal/staff-only data — fixed, commit `e8ddcf1`
+
+Found during a targeted post-mortem audit (same session as the PayPal webhook table-name bug
+below — asked "what else looks like this class of bug"). `/api/orders/track` (throttled 10/min,
+no auth) and `/api/orders/retry-payment` (**no throttle at all**, no auth) — both gated only by
+knowing/guessing a `tracking_number` + `email` pair — were returning the **full** admin-facing
+`OrderResource`, including `internal_note` (staff-only commentary on the order), `payment_intent_id`,
+`refund_id`/`refund_amount`/`refund_status`, the full `order_events` audit trail, and
+`available_actions`.
+
+Root cause: commit `bdf9bf9` (2026-07-17, before this session) switched both endpoints from a slim
+`OrderTrackResource` to the full `OrderResource` to fix a real crash (`shipping_address`/`lines`/
+`total` were missing, breaking `checkout/success` and the track-order page) — but over-corrected by
+exposing everything instead of just what those two pages actually render.
+
+Fixed with `OrderPublicResource` (extends `OrderResource`, strips the internal/sensitive keys) —
+confirmed via `grep` exactly which `order.*` fields `TrackOrderPage.tsx` and `checkout/success/
+page.tsx` consume (both hit the same `/api/orders/track` endpoint) before deciding what to keep:
+shipping/billing address, `payment_status`, `card_brand`/`card_last4`, `amount_charged`, `shipments`,
+totals all stay; `internal_note`/`payment_intent_id`/refund internals/`order_events`/
+`available_actions` are gone. `test_stripe_webhook_marks_card_order_as_paid`'s tracking assertions
+were also stale leftovers from before `bdf9bf9` (asserted `payment_status` missing and a
+`tracking_url` field that hasn't existed on this resource in months) — corrected to match reality.
+
+New `OrderPublicResourceTest` — verified meaningful by reverting the controller fix via `git stash`
+and confirming both new tests fail, then re-applying and confirming they pass. GitNexus flagged
+this as **HIGH risk** (both endpoints are entry points to 6 execution flows) — expected, since the
+whole point was changing their public response shape; mitigated by the before/after test proof
+above. Pint/PHPStan clean (same 6 pre-existing `orderEvents`-relation false positives as before,
+zero new). Deployed, verified live via `curl` against `/api/orders/track`.
+
+**Worth internalizing**: this and the PayPal webhook table-name bug were both found by testing
+already-shipped code, not by a bug report. A slim, security-conscious "what does this public
+endpoint actually need to return" review is worth doing any time a resource shared between an
+admin/authenticated context and a public/guest context gets its shape changed.
+
 ## PayPal webhook table-name bug fixed + PayPal test coverage + payment-failure alert email + admin address view — commit `a256e23`
 
 Writing the first real test coverage for the PayPal gateway (12 tests: prepare/place/capture/
