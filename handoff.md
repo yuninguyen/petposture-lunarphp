@@ -1,5 +1,39 @@
 # Handoff — 2026-07-27
 
+## Follow-up sweep of the fail2ban ban list — no other false positives found
+
+After fixing the customer's collateral ban (below), Yuni asked to check whether any other
+currently-banned IP was a similar false positive. Cross-referenced all 75 remaining bans against
+`nginx`'s rotated/gzipped access logs (`zgrep` across `access.log{,.1,.*.gz}`) to see the exact
+request that triggered each one.
+
+Most are genuine WordPress-targeting scanners (`/xmlrpc.php`, `/wp-login.php`, `/wp-json/`,
+`wlwmanifest.xml`) — this VPS also hosts an unrelated `rebateops.online`, so a lot of this traffic
+is opportunistic scanning of the shared IP, not anything aimed at petposture.com specifically.
+
+Four bans looked at first glance like good bots caught in the crossfire ("bingbot" x2,
+"Google-CloudVertexBot", "ClaudeBot" — all hitting `/.git/config`). **Verified via IP ownership,
+not the User-Agent string** (`curl "http://ip-api.com/json/<ip>?fields=isp,org,as,reverse"` — no
+`whois` binary needed): all four resolved to generic hosting providers (Limestone Networks,
+Infraly LLC), not Microsoft/Google/Anthropic. These are scanners **spoofing well-known good-bot UA
+strings** specifically to blend in with legitimate crawler traffic — confirmed by a broader log
+sweep showing the same fake-Googlebot/bingbot UAs requesting `/serviceAccountKey.json`,
+`/.aws/credentials`, `/terraform.tfvars`, `/amplifyconfiguration.json`, etc. — no real search
+engine crawler behaves like that. fail2ban banning these was correct, not a false positive.
+
+Three more bans were on IPs in Telegram's real IP block (`149.154.161.204/230/248`, confirmed via
+the same IP-org lookup — AS62041 Telegram Messenger Inc, PTR `*.ptr.telegram.org`) — genuinely
+Telegram-owned, but requesting `/wp-admin/install.php`, which Telegram's actual link-preview
+fetcher would never generate on its own (it only fetches the exact URL someone shared in a chat).
+Left banned; they'll self-expire under the new 24h `bantime`. Not touched further, but flagged as a
+judgment call if Telegram link-preview functionality for real shared petposture.com links is ever
+reported broken — that would be the first thing to check.
+
+**Net result: no additional customer-impacting false positives.** The only real incident was the
+CGNAT-collateral one below, already fixed. Added a `RULES.md` note: never probe the live public
+domain with scripted requests (use `127.0.0.1:8001`/`:3001` on the VPS instead), and never treat a
+"Googlebot"/"bingbot" UA string as proof of the real crawler — always verify IP ownership first.
+
 ## Customer got 403'd site-wide by fail2ban (collateral from our own audit) — real customer report, resolved
 
 Yuni reported `petposture.com/wishlist` and a favicon URL returning `403 Forbidden` and Google Search
