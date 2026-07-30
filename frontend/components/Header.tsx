@@ -230,7 +230,7 @@ export default function Header() {
                     alt={`${shop_name} Logo`}
                     width={320}
                     height={100}
-                    className="h-[50px] w-auto object-contain"
+                    className="h-[38px] w-auto object-contain"
                   />
                 </Link>
                 <button
