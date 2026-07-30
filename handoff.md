@@ -1,4 +1,54 @@
-# Handoff — 2026-07-27
+# Handoff — 2026-07-31
+
+## Mobile text-size sweep (storefront) + mobile-responsive email templates — commits `b32317c`..`d3823aa`
+
+Yuni reviewed the site on a phone and felt text was too small in general. Code audit confirmed it:
+widespread arbitrary `text-[8px]`–`text-[13px]` classes with zero responsive breakpoints across the
+frontend, instead of the project's own design-token scale. Delegated the full fix (all ~365 real
+occurrences across 45 files, once a background agent's thorough grep found more than the initial
+251-count estimate) to a background Agent, then iterated with Yuni against real screenshots:
+
+- **First broad pass overshot on desktop.** Some bumped spots (Header's `hidden md:block` secondary
+  nav, footer legal links, `ProductCard` badges) are desktop-only and never needed a mobile bump in
+  the first place — screenshots at desktop width showed them now "hơi to." Selectively reverted those
+  three to smaller values (`13px`/`13px`/`10px`) while keeping the real mobile-only fixes.
+- **Topbar text wrap on phone**: `Free Shipping on all us orders over $50` was wrapping "$50" onto
+  its own line — root cause was letter-spacing (`tracking-[0.2em]`), not text length. Fixed with
+  `tracking-[0.03em] md:tracking-[0.2em]` + `whitespace-nowrap`.
+- **Mobile logo oversized in two separate places** — the topbar logo and the mobile drawer's own
+  independent logo instance both needed their own fix (`h-[50px]` → `h-[38px]` on mobile, `md:`
+  breakpoint keeps desktop at `60px`/`50px`).
+- **Footer section labels** (`FooterSection`'s `<h3>`, `Footer.tsx:58`) went through two rounds of
+  direct user calibration: `16px` (original, felt fine on desktop but small on mobile) → `13px`
+  (first mobile fix) → Yuni said that read as "hơi nhỏ" → settled on **`text-[14px] md:text-[16px]`**.
+- **Contact page labels**: `font-black` → `font-semibold` (weight looked too heavy) and
+  `tracking-[0.15em]` → `tracking-[0.08em]` (letter-spacing made labels look oddly far apart).
+- **Removed the mobile hamburger drawer's "Shop the Collection" CTA button** (`Header.tsx`) —
+  Yuni's call after I flagged it as redundant with the drawer's own nav links one tap above it.
+
+**Transactional emails had zero `@media` queries at all** (confirmed via `rg "@media"` before/after,
+not assumed) — fixed across all 19 templates in the same sweep, at Yuni's explicit "sửa toàn bộ 19
+template cùng lúc." 11 templates needed real layout fixes (2-column-on-mobile → stacked, fixed
+padding → responsive `mail-px`), the other 8 (`order-delivered`, `order-shipped`, `order-returned`,
+the 5 return-status emails) have no fixed-width/2-column pattern and were confirmed fine as-is. See
+`ARCHITECTURE.md`'s Transactional email section for the exact class pattern and the "additive only,
+never replace an inline style" rule (now also in `RULES.md`) — the "no CSS inliner runs on these
+mailables" constraint means every base style has to stay inline, `@media` can only add classes on top.
+
+All 19 templates were rendered and screenshotted at a real mobile viewport using real/synthetic data
+(a `DB::beginTransaction()` + rollback script created temporary `OrderReturnRequest`/`OrderShipment`
+rows against a real local order so every Mailable could render its real relational data, then rolled
+back — nothing persisted). One false-positive bug I initially reported and then retracted: 6 templates
+appeared to show hardcoded "Laravel" branding — actually just local `.env`'s `APP_NAME=Laravel`
+default; the templates correctly use `{{ config('app.name') }}`, confirmed both by `grep`ing the
+`.blade.php` source (no hardcoded "Laravel" string) and by checking production's `config('app.name')`
+via tinker (`PetPosture`, correct).
+
+Every change went through the full deploy cycle (typecheck → Playwright screenshot at mobile
+viewport → commit → `gitnexus analyze` → push → SSH deploy + container rebuild → Cloudflare purge →
+verify live via `curl`) per Yuni's standing workflow requirement — no shortcuts. Final state confirmed
+live via `curl` against `petposture.com`: footer label class present, "Shop the Collection" text
+count 0.
 
 ## Follow-up sweep of the fail2ban ban list — no other false positives found
 

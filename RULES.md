@@ -18,6 +18,7 @@ Read this before touching code. See `ARCHITECTURE.md` for the why; this file is 
 - Comments: sparse, by convention. Only for non-obvious *why* (a workaround, a hidden constraint). Never restate what the code already says.
 - Filament resources: auto-discovered, no manual registration. Commerce resources go in `getNavigationGroup() { return __('lunarpanel::global.sections.sales'); }` — don't invent a new nav group.
 - Order has three distinct status fields (`status`, `meta.payment_status`, `meta.fulfillment_status` — see `ARCHITECTURE.md`) with overlapping but different value sets. Never label a badge/column ambiguously as just "Status" or "Fulfillment Status" — use "Order Status" for the `status` column specifically; `meta.fulfillment_status` already owns the "Fulfillment Status" name (it's customer-facing via `Api\OrderResource`) and must not be reused for something else in the admin panel.
+- Mail Blade views (`resources/views/mail/*.blade.php`) have no CSS inliner — every base style must stay inline on the element. `@media` breakpoints are **additive only**: add classes alongside the existing inline styles (see the `.stack-col`/`.stack-gap`/`.full-col`/`.mail-px` pattern, `ARCHITECTURE.md`), never delete or replace an inline style to "clean up," since non-`@media`-aware clients (older Outlook) only ever see the inline styles.
 
 **TypeScript/React (frontend)**
 - `"use client"` is the literal first line of the file, no blank line before it, blank line after, then imports.
@@ -26,6 +27,7 @@ Read this before touching code. See `ARCHITECTURE.md` for the why; this file is 
 - Any component using `useSearchParams()` must wrap its default export in `<Suspense>` — the App Router build fails otherwise.
 - ESLint flat config (`eslint-config-next`) — run `npm run lint`. No Prettier; ESLint is the only formatter config present, don't add one.
 - **Read `frontend/AGENTS.md` before writing non-trivial Next.js/React code.** This Next.js/React version postdates most model training data; check `node_modules/next/dist/docs/` for APIs you're unsure about instead of assuming.
+- Body/label text should use the design-token scale (`text-xs`/`text-sm`/etc., `tailwind.config.ts`) where possible, not arbitrary `text-[Npx]` values — a repo-wide sweep (2026-07-30) found ~365 hardcoded-px text sizes with no responsive breakpoint, several unreadably small on mobile. When a spot genuinely needs a value off the token scale, pair it with a `md:` breakpoint (e.g. `text-[13px] md:text-[16px]`) rather than one fixed size for every viewport — desktop-only elements (`hidden md:block` nav, etc.) don't need a mobile variant at all.
 
 ## Error handling
 
