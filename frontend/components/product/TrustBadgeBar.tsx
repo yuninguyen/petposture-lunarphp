@@ -20,8 +20,8 @@ export function TrustBadgeBar() {
                             {badge.icon}
                         </div>
                         <div>
-                            <p className="text-[11px] font-black text-[#3e4c57] uppercase tracking-wider mb-1">{badge.label}</p>
-                            <p className="text-zinc-400 text-[10px] font-medium tracking-wide uppercase">{badge.sub}</p>
+                            <p className="text-xs font-black text-[#3e4c57] uppercase tracking-wider mb-1">{badge.label}</p>
+                            <p className="text-zinc-400 text-xs font-medium tracking-wide uppercase">{badge.sub}</p>
                         </div>
                     </div>
                 ))}

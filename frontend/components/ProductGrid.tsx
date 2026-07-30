@@ -46,7 +46,7 @@ export default function ProductGrid() {
     <section className="py-24 px-4 md:px-8 bg-white border-b border-zinc-50">
       <div className="container mx-auto max-w-6xl">
         <div className="flex flex-col items-center mb-16">
-          <h2 className="text-center text-[13px] font-bold uppercase tracking-[0.4em] text-primary">
+          <h2 className="text-center text-xs font-bold uppercase tracking-[0.4em] text-primary">
             Our Best Sellers
           </h2>
           <div className="w-12 h-[2px] bg-secondary mt-3" />
@@ -66,13 +66,13 @@ export default function ProductGrid() {
                   loading="lazy"
                 />
                 {p.badge && (
-                  <span className="absolute top-4 left-4 bg-secondary text-white text-[9px] font-black py-1 px-3 uppercase tracking-wider shadow-sm">
+                  <span className="absolute top-4 left-4 bg-secondary text-white text-xs font-black py-1 px-3 uppercase tracking-wider shadow-sm">
                     {p.badge}
                   </span>
                 )}
                 {/* Cart Icon / Action Overlay */}
                 <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                  <button className="w-full bg-primary hover:bg-secondary text-white text-[10px] font-black py-4 uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95">
+                  <button className="w-full bg-primary hover:bg-secondary text-white text-sm font-black py-4 uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95">
                     Select Options
                   </button>
                 </div>
@@ -91,13 +91,13 @@ export default function ProductGrid() {
                     />
                   ))}
                 </div>
-                <h3 className="text-[12px] font-bold uppercase tracking-[0.05em] text-primary mb-3 leading-tight group-hover:text-secondary transition-colors">
+                <h3 className="text-sm font-bold uppercase tracking-[0.05em] text-primary mb-3 leading-tight group-hover:text-secondary transition-colors">
                   {p.name}
                 </h3>
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-[13px] font-black text-secondary">{p.price}</span>
+                  <span className="text-sm font-black text-secondary">{p.price}</span>
                   {p.oldPrice && (
-                    <span className="text-[11px] text-zinc-300 line-through font-medium">{p.oldPrice}</span>
+                    <span className="text-sm text-zinc-300 line-through font-medium">{p.oldPrice}</span>
                   )}
                 </div>
               </div>
@@ -108,7 +108,7 @@ export default function ProductGrid() {
         <div className="mt-20 text-center">
           <Link
             href="/shop"
-            className="text-[10px] font-black uppercase tracking-[0.3em] text-primary border-b-2 border-secondary/20 hover:border-secondary pb-1 transition-all"
+            className="text-sm font-black uppercase tracking-[0.3em] text-primary border-b-2 border-secondary/20 hover:border-secondary pb-1 transition-all"
           >
             View All Best Sellers
           </Link>

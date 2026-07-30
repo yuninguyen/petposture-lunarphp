@@ -23,7 +23,7 @@ export default function Features() {
     <section className="py-24 bg-white border-b border-zinc-50">
       <div className="container mx-auto px-4 md:px-8 max-w-6xl">
         <div className="flex flex-col items-center mb-16">
-          <h2 className="text-center text-[13px] font-bold uppercase tracking-[0.4em] text-primary">
+          <h2 className="text-center text-xs font-bold uppercase tracking-[0.4em] text-primary">
             Why Choose PetPosture
           </h2>
           <div className="w-12 h-[2px] bg-secondary mt-3" />
@@ -40,8 +40,8 @@ export default function Features() {
                 <Icon size={28} strokeWidth={1.5} className="text-primary/70" aria-hidden="true" />
               </div>
               <div>
-                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">{title}</h3>
-                <p className="text-[11px] text-primary/50 max-w-[200px] leading-relaxed font-medium">{description}</p>
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary mb-3">{title}</h3>
+                <p className="text-md text-primary/50 max-w-[200px] leading-relaxed font-medium">{description}</p>
               </div>
             </div>
           ))}

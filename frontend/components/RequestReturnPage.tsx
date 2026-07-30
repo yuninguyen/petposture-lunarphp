@@ -237,7 +237,7 @@ function RequestReturnContent() {
                         <motion.span
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="inline-block px-4 py-1.5 bg-[#df8448]/10 text-[#df8448] text-[11px] font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
+                            className="inline-block px-4 py-1.5 bg-[#df8448]/10 text-[#df8448] text-xs font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
                         >
                             Returns
                         </motion.span>
@@ -276,7 +276,7 @@ function RequestReturnContent() {
                                     <p className="text-zinc-500 text-[15px] leading-relaxed mb-8">
                                         We&rsquo;ve received your request for order #{order?.reference}. Our team will review it and email you with next steps.
                                     </p>
-                                    <Link href="/" className="inline-flex items-center gap-3 text-[#df8448] font-bold uppercase tracking-[0.2em] text-[12px] hover:text-[#3e4c57] transition-all">
+                                    <Link href="/" className="inline-flex items-center gap-3 text-[#df8448] font-bold uppercase tracking-[0.2em] text-sm hover:text-[#3e4c57] transition-all">
                                         <ArrowLeft size={16} /> Back to Homepage
                                     </Link>
                                 </div>
@@ -295,7 +295,7 @@ function RequestReturnContent() {
                                     <form onSubmit={handleLookup} className="space-y-8">
                                         <div className="grid md:grid-cols-2 gap-6">
                                             <div className="space-y-3">
-                                                <label className="text-[12px] font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Order Number</label>
+                                                <label className="text-sm font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Order Number</label>
                                                 <input
                                                     type="text"
                                                     required
@@ -306,7 +306,7 @@ function RequestReturnContent() {
                                                 />
                                             </div>
                                             <div className="space-y-3">
-                                                <label className="text-[12px] font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Email</label>
+                                                <label className="text-sm font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Email</label>
                                                 <input
                                                     type="email"
                                                     required
@@ -321,7 +321,7 @@ function RequestReturnContent() {
                                         <button
                                             type="submit"
                                             disabled={isLookingUp}
-                                            className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-[13px] hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                            className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                         >
                                             {isLookingUp ? "Looking up..." : "Find My Order"}
                                             <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -329,7 +329,7 @@ function RequestReturnContent() {
                                     </form>
 
                                     {lookupError && (
-                                        <div className="mt-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-[13px] font-medium">
+                                        <div className="mt-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium">
                                             {lookupError}
                                         </div>
                                     )}
@@ -343,7 +343,7 @@ function RequestReturnContent() {
                                             const windowMessage = getReturnWindowMessage(order);
                                             if (!windowMessage) return null;
                                             return (
-                                                <p className={`text-[12px] font-semibold mt-2 ${windowMessage.expired ? "text-red-500" : "text-[#df8448]"}`}>
+                                                <p className={`text-sm font-semibold mt-2 ${windowMessage.expired ? "text-red-500" : "text-[#df8448]"}`}>
                                                     {windowMessage.text}
                                                 </p>
                                             );
@@ -367,13 +367,13 @@ function RequestReturnContent() {
                                                     )}
                                                     <div className="flex-1">
                                                         <p className="text-[14px] font-semibold text-[#3e4c57]">{line.description}</p>
-                                                        <p className="text-[12px] text-zinc-400">Ordered: {line.quantity}</p>
+                                                        <p className="text-xs text-zinc-400">Ordered: {line.quantity}</p>
                                                     </div>
                                                     {isSelected && line.quantity > 1 && (
                                                         <select
                                                             value={selectedQuantities[line.id]}
                                                             onChange={(e) => updateQuantity(line.id, Number(e.target.value))}
-                                                            className="px-3 py-2 rounded-lg border border-zinc-200 text-[13px] font-medium text-[#3e4c57]"
+                                                            className="px-3 py-2 rounded-lg border border-zinc-200 text-sm font-medium text-[#3e4c57]"
                                                         >
                                                             {Array.from({ length: line.quantity }, (_, i) => i + 1).map((q) => (
                                                                 <option key={q} value={q}>Qty: {q}</option>
@@ -386,7 +386,7 @@ function RequestReturnContent() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[12px] font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Reason for return</label>
+                                        <label className="text-sm font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Reason for return</label>
                                         <select
                                             value={reason}
                                             onChange={(e) => setReason(e.target.value)}
@@ -399,7 +399,7 @@ function RequestReturnContent() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-[12px] font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Additional notes (optional)</label>
+                                        <label className="text-sm font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Additional notes (optional)</label>
                                         <textarea
                                             value={note}
                                             onChange={(e) => setNote(e.target.value)}
@@ -410,19 +410,19 @@ function RequestReturnContent() {
                                     </div>
 
                                     {isEstimating ? (
-                                        <p className="text-[12px] text-zinc-400">Calculating estimated refund…</p>
+                                        <p className="text-sm text-zinc-400">Calculating estimated refund…</p>
                                     ) : estimate ? (
                                         <div className="p-4 bg-[#fdf2ea] border border-[#df8448]/20 rounded-xl">
                                             <p className="text-[14px] font-bold text-[#3e4c57]">
                                                 Estimated refund: ${estimate.estimated_refund.toFixed(2)}
                                             </p>
-                                            <p className="text-[11px] text-zinc-400 mt-1">
+                                            <p className="text-sm text-zinc-400 mt-1">
                                                 Includes a ${estimate.restocking_fee.toFixed(2)} restocking fee (25%). Final amount confirmed after inspection.
                                             </p>
                                         </div>
                                     ) : null}
 
-                                    <p className="text-[12px] text-zinc-400 leading-relaxed">
+                                    <p className="text-sm text-zinc-400 leading-relaxed">
                                         Approved returns are refunded minus a 25% restocking fee and original shipping cost. See our{" "}
                                         <Link href="/return-refund-policy" className="text-[#df8448] font-semibold underline underline-offset-2" target="_blank">
                                             Return &amp; Refund Policy
@@ -431,7 +431,7 @@ function RequestReturnContent() {
                                     </p>
 
                                     {submitError && (
-                                        <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-[13px] font-medium">
+                                        <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium">
                                             {submitError}
                                         </div>
                                     )}
@@ -439,7 +439,7 @@ function RequestReturnContent() {
                                     <button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-[13px] hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                        className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                     >
                                         {isSubmitting ? "Submitting..." : "Submit Return Request"}
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />

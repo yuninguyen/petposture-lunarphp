@@ -51,7 +51,7 @@ export function ShippingMethodSelector({
                             <div>
                                 <span className="text-[#333333]">{option.name}</span>
                                 {option.description && (
-                                    <p className="mt-0.5 text-[12px] text-[#707070]">{option.description}</p>
+                                    <p className="mt-0.5 text-sm text-[#707070]">{option.description}</p>
                                 )}
                             </div>
                         </div>

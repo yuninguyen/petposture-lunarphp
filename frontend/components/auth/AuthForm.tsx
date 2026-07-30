@@ -89,7 +89,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                         </p>
                         <button
                             onClick={() => { setMode('login'); setEmail(''); }}
-                            className="text-[#df8448] text-[13px] font-bold underline underline-offset-2 hover:text-[#c9713a] transition-colors"
+                            className="text-[#df8448] text-sm font-bold underline underline-offset-2 hover:text-[#c9713a] transition-colors"
                         >
                             Back to Sign In
                         </button>
@@ -113,13 +113,13 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                             <div className="inline-flex overflow-hidden rounded-full border border-zinc-100 bg-[#f8f9fa] p-1 mb-8 shadow-sm">
                                 <Link
                                     href="/sign-in"
-                                    className={`px-6 py-2 rounded-full text-[12px] font-bold uppercase tracking-widest transition-colors ${mode === 'login' ? 'bg-white shadow text-[#df8448] border border-zinc-50' : 'text-zinc-400 hover:text-[#3e4c57]'}`}
+                                    className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-colors ${mode === 'login' ? 'bg-white shadow text-[#df8448] border border-zinc-50' : 'text-zinc-400 hover:text-[#3e4c57]'}`}
                                 >
                                     Sign In
                                 </Link>
                                 <Link
                                     href="/sign-up"
-                                    className={`px-6 py-2 rounded-full text-[12px] font-bold uppercase tracking-widest transition-colors ${mode === 'register' ? 'bg-white shadow text-[#df8448] border border-zinc-50' : 'text-zinc-400 hover:text-[#3e4c57]'}`}
+                                    className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-colors ${mode === 'register' ? 'bg-white shadow text-[#df8448] border border-zinc-50' : 'text-zinc-400 hover:text-[#3e4c57]'}`}
                                 >
                                     Register
                                 </Link>
@@ -144,7 +144,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
 
                         {mode === 'register' && (
                             <div className="space-y-1 relative">
-                                <label className="text-[11px] font-extrabold uppercase tracking-widest text-zinc-400 ml-1">Full Name</label>
+                                <label className="text-xs font-extrabold uppercase tracking-widest text-zinc-400 ml-1">Full Name</label>
                                 <div className="relative">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                                     <input
@@ -161,7 +161,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                         )}
 
                         <div className="space-y-1 relative">
-                            <label className="text-[11px] font-extrabold uppercase tracking-widest text-zinc-400 ml-1">Email Address</label>
+                            <label className="text-xs font-extrabold uppercase tracking-widest text-zinc-400 ml-1">Email Address</label>
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                                 <input
@@ -179,12 +179,12 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                         {mode !== 'forgot' && (
                             <div className="space-y-1 relative">
                                 <div className="flex items-center justify-between ml-1">
-                                    <label className="text-[11px] font-extrabold uppercase tracking-widest text-zinc-400">Secure Password</label>
+                                    <label className="text-xs font-extrabold uppercase tracking-widest text-zinc-400">Secure Password</label>
                                     {mode === 'login' && (
                                         <button
                                             type="button"
                                             onClick={() => { setMode('forgot'); setError(null); }}
-                                            className="text-[11px] font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
+                                            className="text-xs font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
                                         >
                                             Forgot password?
                                         </button>
@@ -215,7 +215,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                         )}
 
                         {error && (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-[12px] font-medium px-1 bg-red-50 p-3 rounded-lg border border-red-100">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-sm font-medium px-1 bg-red-50 p-3 rounded-lg border border-red-100">
                                 {error}
                             </motion.div>
                         )}
@@ -224,7 +224,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-[13px] hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                             >
                                 {isLoading ? 'Processing...' : mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : 'Send Reset Link'}
                                 {!isLoading && <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />}
@@ -234,7 +234,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                                 <button
                                     type="button"
                                     onClick={() => { setMode('login'); setError(null); }}
-                                    className="w-full text-zinc-400 text-[12px] font-bold hover:text-[#3e4c57] transition-colors py-2"
+                                    className="w-full text-zinc-400 text-sm font-bold hover:text-[#3e4c57] transition-colors py-2"
                                 >
                                     Back to Sign In
                                 </button>

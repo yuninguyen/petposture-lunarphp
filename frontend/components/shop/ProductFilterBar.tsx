@@ -30,13 +30,13 @@ export function ProductFilterBar({
         <aside className="lg:sticky lg:top-8">
             <div className="overflow-hidden rounded-[28px] border border-[#eadfd3] bg-white shadow-[0_18px_50px_rgba(34,33,33,0.05)]">
                 <div className="border-b border-[#f0e7de] px-6 py-5">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[#9a806a]">Refine Catalog</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#9a806a]">Refine Catalog</p>
                     <h2 className="mt-2 text-[24px] font-semibold text-[#2d3a43]">Filters</h2>
                 </div>
 
                 <div className="space-y-7 px-6 py-6">
                     <div>
-                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.22em] text-[#8b8f93]">
+                        <label className="mb-2 block text-sm font-bold uppercase tracking-[0.22em] text-[#8b8f93]">
                             Search
                         </label>
                         <div className="relative">
@@ -52,19 +52,19 @@ export function ProductFilterBar({
                     </div>
 
                     <div>
-                        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#8b8f93]">Category</p>
+                        <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-[#8b8f93]">Category</p>
                         <div className="space-y-2">
                             {categories.map((category) => (
                                 <button
                                     key={category.name}
                                     onClick={() => setActiveCategory(category.name)}
-                                    className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-[13px] transition ${activeCategory === category.name
+                                    className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-sm transition ${activeCategory === category.name
                                         ? 'border-[#df8448] bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
                                         : 'border-[#efe5dc] bg-white text-[#687076] hover:border-[#d9c6b5] hover:bg-[#faf7f3]'
                                         }`}
                                 >
                                     <span className="font-medium">{category.name}</span>
-                                    <span className="rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-[#8b8f93]">
+                                    <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-[#8b8f93]">
                                         {category.count}
                                     </span>
                                 </button>
@@ -73,14 +73,14 @@ export function ProductFilterBar({
                     </div>
 
                     <div>
-                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.22em] text-[#8b8f93]">
+                        <label className="mb-2 block text-sm font-bold uppercase tracking-[0.22em] text-[#8b8f93]">
                             Sort By
                         </label>
                         <div className="relative">
                             <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
-                                className="h-[50px] w-full appearance-none rounded-[16px] border border-[#e7ddd2] bg-[#faf7f3] pl-4 pr-12 text-[13px] font-semibold text-[#2d3a43] outline-none transition focus:border-[#df8448] focus:bg-white"
+                                className="h-[50px] w-full appearance-none rounded-[16px] border border-[#e7ddd2] bg-[#faf7f3] pl-4 pr-12 text-sm font-semibold text-[#2d3a43] outline-none transition focus:border-[#df8448] focus:bg-white"
                             >
                                 {SORT_OPTIONS.map((option) => (
                                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -93,7 +93,7 @@ export function ProductFilterBar({
                     {hasActiveFilters && (
                         <button
                             onClick={clearFilters}
-                            className="h-[48px] w-full rounded-[16px] border border-[#d9c6b5] text-[11px] font-bold uppercase tracking-[0.22em] text-[#7d5f49] transition hover:border-[#df8448] hover:text-[#df8448]"
+                            className="h-[48px] w-full rounded-[16px] border border-[#d9c6b5] text-sm font-bold uppercase tracking-[0.22em] text-[#7d5f49] transition hover:border-[#df8448] hover:text-[#df8448]"
                         >
                             Reset Filters
                         </button>

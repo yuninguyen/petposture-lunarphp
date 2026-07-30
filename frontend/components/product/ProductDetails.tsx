@@ -102,7 +102,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                     className="object-contain"
                                 />
                                 {product.badge && (
-                                    <span className="absolute left-6 top-6 rounded-[2px] bg-[#df8448] px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/20">
+                                    <span className="absolute left-6 top-6 rounded-[2px] bg-[#df8448] px-4 py-1.5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/20">
                                         {product.badge}
                                     </span>
                                 )}
@@ -116,7 +116,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                         className="flex flex-col"
                     >
                         <div className="mb-8">
-                            <p className="mb-4 text-[12px] font-black uppercase tracking-[0.3em] text-[#df8448]">
+                            <p className="mb-4 text-xs font-black uppercase tracking-[0.3em] text-[#df8448]">
                                 {product.category} Ergonomics
                             </p>
                             <h1 className="mb-6 text-[32px] font-bold leading-[1.1] text-[#3e4c57] md:text-[44px]">
@@ -132,10 +132,10 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                             className={i < product.rating ? 'fill-[#df8448] text-[#df8448]' : 'text-zinc-200'}
                                         />
                                     ))}
-                                    <span className="ml-1 text-[12px] font-bold text-zinc-400">({product.reviews} Verified)</span>
+                                    <span className="ml-1 text-xs font-bold text-zinc-400">({product.reviews} Verified)</span>
                                 </div>
                                 <div className="h-4 w-px bg-zinc-100"></div>
-                                <div className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest ${isAvailable ? 'text-green-600' : 'text-zinc-400'}`}>
+                                <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${isAvailable ? 'text-green-600' : 'text-zinc-400'}`}>
                                     <ShieldCheck size={14} /> {isAvailable ? 'In Stock' : 'Out of Stock'}
                                 </div>
                             </div>
@@ -152,7 +152,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                             <div className="mb-8 space-y-6">
                                 {options.map((option) => (
                                     <div key={option.id}>
-                                        <p className="mb-3 text-[11px] font-black uppercase tracking-[0.2em] text-[#3e4c57]">
+                                        <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-[#3e4c57]">
                                             {option.name}
                                         </p>
                                         <div className="flex flex-wrap gap-2">
@@ -165,7 +165,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                         onClick={() =>
                                                             setSelectedValues((prev) => ({ ...prev, [option.name]: value.id }))
                                                         }
-                                                        className={`rounded-[4px] border-2 px-4 py-2 text-[12px] font-bold uppercase tracking-wide transition-colors ${isSelected
+                                                        className={`rounded-[4px] border-2 px-4 py-2 text-sm font-bold uppercase tracking-wide transition-colors ${isSelected
                                                                 ? 'border-[#df8448] bg-[#df8448] text-white'
                                                                 : 'border-zinc-200 bg-white text-[#3e4c57] hover:border-[#df8448]'
                                                             }`}
@@ -211,17 +211,17 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                         for (let i = 0; i < quantity; i++) addItem(itemToAdd);
                                     }}
                                     disabled={!isAvailable}
-                                    className="h-[54px] flex-1 rounded-[4px] bg-[#df8448] text-[12px] font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-[#c9713a] disabled:cursor-not-allowed disabled:opacity-40"
+                                    className="h-[54px] flex-1 rounded-[4px] bg-[#df8448] text-sm font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-[#c9713a] disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                     {isAvailable ? 'Add to cart' : 'Out of stock'}
                                 </button>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                                <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-zinc-400">
                                     <Truck size={14} className="text-[#df8448]" /> Free Express Shipping
                                 </div>
-                                <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                                <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-zinc-400">
                                     <RotateCcw size={14} className="text-[#df8448]" /> 30-Day Health Trial
                                 </div>
                             </div>
@@ -233,7 +233,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
-                                        className={`relative whitespace-nowrap pb-4 text-[12px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'text-[#3e4c57]' : 'text-zinc-300 hover:text-zinc-400'}`}
+                                        className={`relative whitespace-nowrap pb-4 text-sm font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'text-[#3e4c57]' : 'text-zinc-300 hover:text-zinc-400'}`}
                                     >
                                         {tab.label}
                                         {activeTab === tab.id && (
@@ -273,7 +273,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                         >
                                             {(product.specs && product.specs.length > 0) ? (
                                                 product.specs.map((spec, i) => (
-                                                    <div key={i} className="flex justify-between border-b border-zinc-50 py-3 text-[13px]">
+                                                    <div key={i} className="flex justify-between border-b border-zinc-50 py-3 text-sm">
                                                         <span className="font-bold uppercase tracking-wide text-[#3e4c57]">{spec.label}</span>
                                                         <span className="text-zinc-500">{spec.value}</span>
                                                     </div>

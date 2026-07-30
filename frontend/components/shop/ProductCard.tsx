@@ -21,29 +21,29 @@ export function ProductCard({ product }: { product: Product }) {
                     />
 
                     <div className="absolute left-3 top-3">
-                        <span className="rounded-full bg-white/92 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-[#56616a] shadow-sm">
+                        <span className="rounded-full bg-white/92 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#56616a] shadow-sm">
                             {product.category}
                         </span>
                     </div>
 
                     <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
                         {product.badge && (
-                            <span className="rounded-full bg-[#df8448] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-orange-500/20">
+                            <span className="rounded-full bg-[#df8448] px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-orange-500/20">
                                 {product.badge}
                             </span>
                         )}
                         {product.isNew && (
-                            <span className="rounded-full bg-[#3e4c57] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
+                            <span className="rounded-full bg-[#3e4c57] px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
                                 New
                             </span>
                         )}
                         {product.lowStockWarning && !product.backorder && (
-                            <span className="rounded-full bg-[#d94e33] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-red-500/20">
+                            <span className="rounded-full bg-[#d94e33] px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-red-500/20">
                                 Low Stock
                             </span>
                         )}
                         {product.backorder && (
-                            <span className="rounded-full bg-[#6b7280] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
+                            <span className="rounded-full bg-[#6b7280] px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
                                 Backorder
                             </span>
                         )}
@@ -60,7 +60,7 @@ export function ProductCard({ product }: { product: Product }) {
                             className={i < product.rating ? "fill-[#df8448] text-[#df8448]" : "text-zinc-200"}
                         />
                     ))}
-                    <span className="ml-1 text-[10px] font-medium text-[#8b8f93]">{product.reviews} reviews</span>
+                    <span className="ml-1 text-xs font-medium text-[#8b8f93]">{product.reviews} reviews</span>
                 </div>
 
                 <Link href={`/shop/${product.categorySlug}/${product.slug}`} className="block">
@@ -73,13 +73,13 @@ export function ProductCard({ product }: { product: Product }) {
                     <div className="flex items-center gap-3 font-bold">
                         <span className="text-[16px] text-[#df8448]">${product.price.toFixed(2)}</span>
                         {product.oldPrice != null && (
-                            <span className="text-[12px] font-medium text-zinc-300 line-through">${product.oldPrice.toFixed(2)}</span>
+                            <span className="text-xs font-medium text-zinc-300 line-through">${product.oldPrice.toFixed(2)}</span>
                         )}
                     </div>
 
                     <Link
                         href={`/shop/${product.categorySlug}/${product.slug}`}
-                        className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#54646e] transition hover:text-[#df8448]"
+                        className="inline-flex items-center gap-1 text-sm font-bold uppercase tracking-[0.16em] text-[#54646e] transition hover:text-[#df8448]"
                     >
                         View <ArrowUpRight size={14} />
                     </Link>
@@ -87,7 +87,7 @@ export function ProductCard({ product }: { product: Product }) {
 
                 <button
                     onClick={() => addItem(product)}
-                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#2f3d46] px-4 text-[11px] font-bold uppercase tracking-[0.16em] text-white transition hover:bg-[#df8448]"
+                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#2f3d46] px-4 text-sm font-bold uppercase tracking-[0.16em] text-white transition hover:bg-[#df8448]"
                 >
                     <ShoppingBag size={15} />
                     Add to Cart

@@ -14,7 +14,7 @@ export function Breadcrumbs({ category, categorySlug, productName }: Breadcrumbs
     const isCategoryGeneric = category?.toLowerCase() === 'shop' || category?.toLowerCase() === 'categories';
 
     return (
-        <nav className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-zinc-400 py-8 px-4 md:px-8 max-w-[1200px] mx-auto">
+        <nav className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-zinc-400 py-8 px-4 md:px-8 max-w-[1200px] mx-auto">
             <Link href="/" className="hover:text-[#df8448] transition-colors flex items-center gap-1">
                 <Home size={12} />
                 <span>Home</span>

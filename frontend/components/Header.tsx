@@ -41,7 +41,7 @@ export default function Header() {
   return (
     <header className="w-full relative z-50 flex flex-col font-sans">
       {/* Announcement Top Bar - Professional Refinement */}
-      <div className="bg-[#3e4c57] text-white py-1.5 px-4 text-center text-[10px] md:text-[11px] font-medium tracking-[0.2em] uppercase w-full">
+      <div className="bg-[#3e4c57] text-white py-1.5 px-4 text-center text-xs md:text-sm font-medium tracking-[0.2em] uppercase w-full">
         <div className="flex items-center justify-center gap-2 opacity-90">
           <Truck size={13} className="text-[#df8448]" />
           <span>Free Shipping on all US orders over $50</span>
@@ -82,7 +82,7 @@ export default function Header() {
                 className="flex-1 px-4 h-[44px] border-none outline-none focus:ring-0 text-[14px] text-primary bg-transparent"
               />
               <button
-                className="bg-[#df8448] text-white px-8 h-[44px] font-bold tracking-wider text-[11px] uppercase hover:bg-[#c9713a] transition-colors border-none m-0 rounded-none"
+                className="bg-[#df8448] text-white px-8 h-[44px] font-bold tracking-wider text-sm uppercase hover:bg-[#c9713a] transition-colors border-none m-0 rounded-none"
               >
                 Search
               </button>
@@ -96,7 +96,7 @@ export default function Header() {
             </Link>
             {user ? (
               <div className="flex items-center gap-3">
-                <Link href="/account" className="text-[12px] font-bold uppercase tracking-widest text-[#df8448] hidden lg:block hover:underline">
+                <Link href="/account" className="text-sm font-bold uppercase tracking-widest text-[#df8448] hidden lg:block hover:underline">
                   Hi, {user.name.split(' ')[0]}
                 </Link>
                 <Link href="/account" className="hover:text-[#df8448] transition-colors" title="My Account">
@@ -118,7 +118,7 @@ export default function Header() {
             >
               <ShoppingBag size={22} strokeWidth={2} />
               {items.length > 0 && (
-                <span className="absolute -top-1 -right-1.5 bg-[#df8448] text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
+                <span className="absolute -top-1 -right-1.5 bg-[#df8448] text-white text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
                   {items.reduce((total, item) => total + item.quantity, 0)}
                 </span>
               )}
@@ -133,7 +133,7 @@ export default function Header() {
         <div className="max-w-[1200px] mx-auto w-full px-6 flex justify-between h-full">
 
           {/* Main Links */}
-          <ul className="flex items-center text-[13px] font-bold uppercase tracking-[0.1em] h-full" style={{ fontFamily: "var(--font-lato), sans-serif" }}>
+          <ul className="flex items-center text-sm font-bold uppercase tracking-[0.1em] h-full" style={{ fontFamily: "var(--font-lato), sans-serif" }}>
             <li className="h-full">
               <Link href="/" className={navLinkClass("/")}>
                 Home
@@ -163,7 +163,7 @@ export default function Header() {
 
 
           {/* Utility Links */}
-          <ul className="flex items-center text-[13px] font-bold uppercase tracking-[0.1em] divide-x divide-white/10 h-full" style={{ fontFamily: "var(--font-lato), sans-serif" }}>
+          <ul className="flex items-center text-sm font-bold uppercase tracking-[0.1em] divide-x divide-white/10 h-full" style={{ fontFamily: "var(--font-lato), sans-serif" }}>
             <li className="h-full relative group flex items-center hover:bg-white/10 transition-all duration-300">
               <a href="mailto:support@petposture.com" className="flex items-center gap-2.5 h-full px-6 hover:text-[#df8448] transition-colors text-[#e8eaec]">
                 <Mail size={14} className="text-[#df8448]" /> Support
@@ -193,9 +193,9 @@ export default function Header() {
           <input
             type="text"
             placeholder="Search products..."
-            className="flex-1 px-3 py-2 outline-none text-[12px]"
+            className="flex-1 px-3 py-2 outline-none text-sm"
           />
-          <button className="bg-[#df8448] px-4 text-white uppercase text-[10px] font-bold">
+          <button className="bg-[#df8448] px-4 text-white uppercase text-sm font-bold">
             Search
           </button>
         </div>
@@ -274,7 +274,7 @@ export default function Header() {
                       <Phone size={18} />
                     </div>
                     <div>
-                      <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Call Us</div>
+                      <div className="text-xs uppercase font-bold text-gray-400 tracking-wider">Call Us</div>
                       <a href="tel:19166680065" className="text-[14px] font-bold">+1 (916) 668-0065</a>
                     </div>
                   </div>
@@ -284,7 +284,7 @@ export default function Header() {
                       <Mail size={18} />
                     </div>
                     <div>
-                      <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Email Us</div>
+                      <div className="text-xs uppercase font-bold text-gray-400 tracking-wider">Email Us</div>
                       <a href="mailto:support@petposture.com" className="text-[14px] font-bold">support@petposture.com</a>
                     </div>
                   </div>
@@ -305,7 +305,7 @@ export default function Header() {
                 <Link
                   href="/shop"
                   onClick={() => setMobileOpen(false)}
-                  className="w-full bg-secondary text-white py-4 rounded font-black uppercase tracking-[0.2em] text-[12px] flex items-center justify-center gap-3 shadow-lg hover:bg-secondary/90 transition-all"
+                  className="w-full bg-secondary text-white py-4 rounded font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3 shadow-lg hover:bg-secondary/90 transition-all"
                 >
                   <ShoppingBag size={18} />
                   Shop the Collection
@@ -321,7 +321,7 @@ export default function Header() {
 
 function NavTooltip({ children, textCase = 'lowercase' }: { children: React.ReactNode, textCase?: 'lowercase' | 'uppercase' }) {
   return (
-    <div className={`absolute bottom-[55px] left-1/2 -translate-x-1/2 px-4 py-2.5 bg-[#3e4c57] text-white text-[12px] rounded shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-2 group-hover:translate-y-0 whitespace-nowrap z-[9999] font-sans font-medium pointer-events-none ${textCase} after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-8 after:border-transparent after:border-t-[#3e4c57]`}>
+    <div className={`absolute bottom-[55px] left-1/2 -translate-x-1/2 px-4 py-2.5 bg-[#3e4c57] text-white text-sm rounded shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-2 group-hover:translate-y-0 whitespace-nowrap z-[9999] font-sans font-medium pointer-events-none ${textCase} after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-8 after:border-transparent after:border-t-[#3e4c57]`}>
       {children}
     </div>
   );

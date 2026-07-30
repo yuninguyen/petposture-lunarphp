@@ -230,14 +230,14 @@ export default function AccountPage() {
                                     <button
                                         key={t.id}
                                         onClick={() => setTab(t.id)}
-                                        className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-[13px] font-bold uppercase tracking-wide transition-colors ${tab === t.id ? 'bg-[#df8448] text-white' : 'bg-white text-[#3e4c57] hover:bg-zinc-50'}`}
+                                        className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wide transition-colors ${tab === t.id ? 'bg-[#df8448] text-white' : 'bg-white text-[#3e4c57] hover:bg-zinc-50'}`}
                                     >
                                         {t.icon} {t.label}
                                     </button>
                                 ))}
                                 <button
                                     onClick={handleLogout}
-                                    className="flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-[13px] font-bold uppercase tracking-wide text-red-500 bg-white hover:bg-red-50 transition-colors"
+                                    className="flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wide text-red-500 bg-white hover:bg-red-50 transition-colors"
                                 >
                                     <LogOut size={16} /> Log Out
                                 </button>
@@ -246,7 +246,7 @@ export default function AccountPage() {
 
                         <div className="flex-1 bg-white rounded-2xl border border-zinc-100 shadow-sm p-6 md:p-8">
                             {error && (
-                                <div className="mb-6 text-red-500 text-[12px] font-medium bg-red-50 p-3 rounded-lg border border-red-100">
+                                <div className="mb-6 text-red-500 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-100">
                                     {error}
                                 </div>
                             )}
@@ -269,11 +269,11 @@ export default function AccountPage() {
                                                     >
                                                         <div>
                                                             <p className="font-bold text-[#3e4c57] text-[14px]">#{order.reference}</p>
-                                                            <p className="text-zinc-400 text-[12px]">{new Date(order.created_at).toLocaleDateString()}</p>
+                                                            <p className="text-zinc-400 text-xs">{new Date(order.created_at).toLocaleDateString()}</p>
                                                         </div>
                                                         <div className="flex items-center gap-3">
                                                             <div className="text-right">
-                                                                <p className="text-[12px] font-bold uppercase tracking-wide text-[#df8448]">{order.status_label}</p>
+                                                                <p className="text-sm font-bold uppercase tracking-wide text-[#df8448]">{order.status_label}</p>
                                                                 <p className="text-[14px] font-bold text-[#3e4c57]">{order.total.formatted}</p>
                                                             </div>
                                                             <ChevronDown size={18} className={`text-zinc-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -284,38 +284,38 @@ export default function AccountPage() {
                                                         <div className="border-t border-zinc-100 bg-[#fafbfc] p-4 space-y-4">
                                                             <div className="grid sm:grid-cols-2 gap-4">
                                                                 <div>
-                                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Order Number</p>
-                                                                    <p className="text-[13px] font-medium text-[#3e4c57]">#{order.reference}</p>
+                                                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Order Number</p>
+                                                                    <p className="text-sm font-medium text-[#3e4c57]">#{order.reference}</p>
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Order Placed</p>
-                                                                    <p className="text-[13px] font-medium text-[#3e4c57]">
+                                                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Order Placed</p>
+                                                                    <p className="text-sm font-medium text-[#3e4c57]">
                                                                         {new Date(order.created_at).toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                                                                     </p>
                                                                 </div>
                                                             </div>
 
                                                             <div className="pt-3 border-t border-zinc-100">
-                                                                <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Payment</p>
-                                                                <div className="flex items-center justify-between text-[13px]">
+                                                                <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Payment</p>
+                                                                <div className="flex items-center justify-between text-sm">
                                                                     <span className="text-zinc-600">{order.payment_label || 'N/A'}</span>
-                                                                    <span className="text-[11px] font-bold uppercase tracking-wide text-[#df8448]">{order.payment_status_label}</span>
+                                                                    <span className="text-xs font-bold uppercase tracking-wide text-[#df8448]">{order.payment_status_label}</span>
                                                                 </div>
-                                                                <p className="mt-1 text-[12px] text-zinc-500">{orderPaymentMessage(order)}</p>
+                                                                <p className="mt-1 text-sm text-zinc-500">{orderPaymentMessage(order)}</p>
                                                             </div>
 
                                                             <div className="grid sm:grid-cols-2 gap-4 pt-3 border-t border-zinc-100">
                                                                 <div>
-                                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Shipping Address</p>
-                                                                    <p className="text-[13px] text-zinc-600 leading-relaxed">
+                                                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Shipping Address</p>
+                                                                    <p className="text-sm text-zinc-600 leading-relaxed">
                                                                         {order.shipping_address.first_name} {order.shipping_address.last_name}<br />
                                                                         {order.shipping_address.line_one}{order.shipping_address.line_two ? `, ${order.shipping_address.line_two}` : ''}<br />
                                                                         {order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.postcode}
                                                                     </p>
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Billing Address</p>
-                                                                    <p className="text-[13px] text-zinc-600 leading-relaxed">
+                                                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Billing Address</p>
+                                                                    <p className="text-sm text-zinc-600 leading-relaxed">
                                                                         {order.billing_address.first_name} {order.billing_address.last_name}<br />
                                                                         {order.billing_address.line_one}{order.billing_address.line_two ? `, ${order.billing_address.line_two}` : ''}<br />
                                                                         {order.billing_address.city}, {order.billing_address.state} {order.billing_address.postcode}
@@ -325,9 +325,9 @@ export default function AccountPage() {
 
                                                             {order.shipments.length > 0 && (
                                                                 <div className="pt-3 border-t border-zinc-100">
-                                                                    <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Tracking</p>
+                                                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Tracking</p>
                                                                     {order.shipments.map((shipment) => (
-                                                                        <div key={shipment.id} className="flex items-center justify-between text-[13px] text-zinc-600">
+                                                                        <div key={shipment.id} className="flex items-center justify-between text-sm text-zinc-600">
                                                                             <span>
                                                                                 {shipment.carrier ? `${shipment.carrier.toUpperCase()} — ` : ''}
                                                                                 {shipment.tracking_number}
@@ -351,14 +351,14 @@ export default function AccountPage() {
 
                                                             <div className="space-y-2 pt-3 border-t border-zinc-100">
                                                                 {order.lines.filter((line) => line.type !== 'shipping').map((line) => (
-                                                                    <div key={line.id} className="flex items-center justify-between text-[13px]">
+                                                                    <div key={line.id} className="flex items-center justify-between text-sm">
                                                                         <span className="text-[#3e4c57]">{line.description} <span className="text-zinc-400">&times;{line.quantity}</span></span>
                                                                         <span className="font-medium text-[#3e4c57]">${line.sub_total.toFixed(2)}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
 
-                                                            <div className="pt-3 border-t border-zinc-100 space-y-1 text-[13px]">
+                                                            <div className="pt-3 border-t border-zinc-100 space-y-1 text-sm">
                                                                 <div className="flex justify-between text-zinc-500"><span>Subtotal</span><span>${order.sub_total.toFixed(2)}</span></div>
                                                                 {order.discount_total > 0 && (
                                                                     <div className="flex justify-between text-zinc-500"><span>Discount</span><span>-${order.discount_total.toFixed(2)}</span></div>
@@ -372,7 +372,7 @@ export default function AccountPage() {
                                                                 <div className="pt-3 border-t border-zinc-100">
                                                                     <Link
                                                                         href={`/returns?ref=${encodeURIComponent(order.reference)}&email=${encodeURIComponent(order.customer_email)}`}
-                                                                        className="text-[13px] font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
+                                                                        className="text-sm font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
                                                                     >
                                                                         Request a Return
                                                                     </Link>
@@ -380,10 +380,10 @@ export default function AccountPage() {
                                                             )}
                                                             {returnEligibility(order) === 'closed' && (
                                                                 <div className="pt-3 border-t border-zinc-100">
-                                                                    <p className="text-[13px] font-bold text-zinc-300 cursor-not-allowed">
+                                                                    <p className="text-sm font-bold text-zinc-300 cursor-not-allowed">
                                                                         Request a Return
                                                                     </p>
-                                                                    <p className="mt-1 text-[12px] text-zinc-400">
+                                                                    <p className="mt-1 text-sm text-zinc-400">
                                                                         This order is outside our {RETURN_WINDOW_DAYS}-day return window.
                                                                     </p>
                                                                 </div>
@@ -399,10 +399,10 @@ export default function AccountPage() {
                                 <div className="space-y-4">
                                     {addresses.map((addr) => (
                                         <div key={addr.id} className="flex items-start justify-between border border-zinc-100 rounded-xl p-4">
-                                            <div className="text-[13px] text-[#3e4c57]">
+                                            <div className="text-sm text-[#3e4c57]">
                                                 <p className="font-bold">
                                                     {addr.first_name} {addr.last_name}{' '}
-                                                    {addr.is_default && <span className="text-[10px] uppercase text-[#df8448] font-bold ml-2">Default</span>}
+                                                    {addr.is_default && <span className="text-xs uppercase text-[#df8448] font-bold ml-2">Default</span>}
                                                 </p>
                                                 <p className="text-zinc-500">{addr.line_one}{addr.line_two ? `, ${addr.line_two}` : ''}</p>
                                                 <p className="text-zinc-500">{addr.city}, {addr.state} {addr.postcode}</p>
@@ -421,27 +421,27 @@ export default function AccountPage() {
                                     {showAddressForm ? (
                                         <form onSubmit={handleAddAddress} className="border border-zinc-100 rounded-xl p-4 space-y-3">
                                             <div className="flex items-center justify-between">
-                                                <p className="font-bold text-[13px] text-[#3e4c57] uppercase tracking-wide">New Address</p>
+                                                <p className="font-bold text-sm text-[#3e4c57] uppercase tracking-wide">New Address</p>
                                                 <button type="button" onClick={() => setShowAddressForm(false)} className="text-zinc-400 hover:text-[#3e4c57]">
                                                     <X size={16} />
                                                 </button>
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
-                                                <input required placeholder="First name" value={addressForm.first_name} onChange={(e) => setAddressForm((f) => ({ ...f, first_name: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-[13px] outline-none focus:ring-2 focus:ring-[#df8448]" />
-                                                <input required placeholder="Last name" value={addressForm.last_name} onChange={(e) => setAddressForm((f) => ({ ...f, last_name: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-[13px] outline-none focus:ring-2 focus:ring-[#df8448]" />
+                                                <input required placeholder="First name" value={addressForm.first_name} onChange={(e) => setAddressForm((f) => ({ ...f, first_name: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
+                                                <input required placeholder="Last name" value={addressForm.last_name} onChange={(e) => setAddressForm((f) => ({ ...f, last_name: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
                                             </div>
-                                            <input required placeholder="Address line 1" value={addressForm.line_one} onChange={(e) => setAddressForm((f) => ({ ...f, line_one: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-[13px] outline-none focus:ring-2 focus:ring-[#df8448]" />
-                                            <input placeholder="Address line 2 (optional)" value={addressForm.line_two} onChange={(e) => setAddressForm((f) => ({ ...f, line_two: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-[13px] outline-none focus:ring-2 focus:ring-[#df8448]" />
+                                            <input required placeholder="Address line 1" value={addressForm.line_one} onChange={(e) => setAddressForm((f) => ({ ...f, line_one: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
+                                            <input placeholder="Address line 2 (optional)" value={addressForm.line_two} onChange={(e) => setAddressForm((f) => ({ ...f, line_two: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
                                             <div className="grid grid-cols-3 gap-3">
-                                                <input required placeholder="City" value={addressForm.city} onChange={(e) => setAddressForm((f) => ({ ...f, city: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-[13px] outline-none focus:ring-2 focus:ring-[#df8448]" />
-                                                <input required placeholder="State" value={addressForm.state} onChange={(e) => setAddressForm((f) => ({ ...f, state: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-[13px] outline-none focus:ring-2 focus:ring-[#df8448]" />
-                                                <input required placeholder="Postcode" value={addressForm.postcode} onChange={(e) => setAddressForm((f) => ({ ...f, postcode: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-[13px] outline-none focus:ring-2 focus:ring-[#df8448]" />
+                                                <input required placeholder="City" value={addressForm.city} onChange={(e) => setAddressForm((f) => ({ ...f, city: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
+                                                <input required placeholder="State" value={addressForm.state} onChange={(e) => setAddressForm((f) => ({ ...f, state: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
+                                                <input required placeholder="Postcode" value={addressForm.postcode} onChange={(e) => setAddressForm((f) => ({ ...f, postcode: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
                                             </div>
-                                            <input placeholder="Phone (optional)" value={addressForm.phone} onChange={(e) => setAddressForm((f) => ({ ...f, phone: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-[13px] outline-none focus:ring-2 focus:ring-[#df8448]" />
+                                            <input placeholder="Phone (optional)" value={addressForm.phone} onChange={(e) => setAddressForm((f) => ({ ...f, phone: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
                                             <button
                                                 type="submit"
                                                 disabled={savingAddress}
-                                                className="bg-[#df8448] text-white px-6 py-2.5 rounded-lg text-[12px] font-bold uppercase tracking-wide hover:bg-[#c9713a] disabled:opacity-50 transition-colors"
+                                                className="bg-[#df8448] text-white px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide hover:bg-[#c9713a] disabled:opacity-50 transition-colors"
                                             >
                                                 {savingAddress ? 'Saving...' : 'Save Address'}
                                             </button>
@@ -449,7 +449,7 @@ export default function AccountPage() {
                                     ) : (
                                         <button
                                             onClick={() => setShowAddressForm(true)}
-                                            className="flex items-center gap-2 text-[13px] font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
+                                            className="flex items-center gap-2 text-sm font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
                                         >
                                             <Plus size={16} /> Add New Address
                                         </button>
@@ -458,15 +458,15 @@ export default function AccountPage() {
                             ) : (
                                 <div className="grid sm:grid-cols-2 gap-6 text-[14px] text-[#3e4c57]">
                                     <div>
-                                        <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Full Name</p>
+                                        <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Full Name</p>
                                         <p className="font-medium">{user.name}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Email Address</p>
+                                        <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Email Address</p>
                                         <p className="font-medium">{user.email}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Member Since</p>
+                                        <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Member Since</p>
                                         <p className="font-medium">
                                             {user.created_at
                                                 ? new Date(user.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
@@ -474,7 +474,7 @@ export default function AccountPage() {
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Orders Placed</p>
+                                        <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Orders Placed</p>
                                         <p className="font-medium">{orders.length}</p>
                                     </div>
                                 </div>

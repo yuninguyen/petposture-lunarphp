@@ -22,7 +22,7 @@ export function RelatedProducts({ products, currentProductId }: RelatedProductsP
             <div className="max-w-[1200px] mx-auto">
                 <div className="flex items-end justify-between mb-12">
                     <div>
-                        <h2 className="text-[#df8448] text-[12px] font-black uppercase tracking-[0.4em] mb-4">Complete the solution</h2>
+                        <h2 className="text-[#df8448] text-xs font-black uppercase tracking-[0.4em] mb-4">Complete the solution</h2>
                         <h3 className="text-[#3e4c57] text-[32px] md:text-[44px] font-bold leading-tight uppercase">RELATED GEAR</h3>
                     </div>
                     <div className="w-12 h-1 bg-[#df8448] rounded-full hidden md:block"></div>

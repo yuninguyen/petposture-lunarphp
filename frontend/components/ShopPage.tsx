@@ -24,7 +24,7 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
                 <div className="mx-auto max-w-[1280px]">
                     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                         <div>
-                            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.32em] text-[#df8448]">
+                            <p className="mb-3 text-xs font-bold uppercase tracking-[0.32em] text-[#df8448]">
                                 PetPosture Shop
                             </p>
                             <h1 className="max-w-[760px] text-[28px] font-bold leading-tight text-[#2d3a43] md:text-[40px]">
@@ -35,7 +35,7 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-2 self-start rounded-full border border-[#e3d6c9] bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8b8f93] shadow-sm">
+                        <div className="flex items-center gap-2 self-start rounded-full border border-[#e3d6c9] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8f93] shadow-sm">
                             <SlidersHorizontal size={14} className="text-[#df8448]" />
                             Left sidebar filters
                         </div>
@@ -60,14 +60,14 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
                     <div className="min-w-0">
                         <div className="mb-5 flex flex-col gap-3 rounded-[24px] border border-[#eadfd3] bg-white px-5 py-4 shadow-[0_18px_50px_rgba(34,33,33,0.05)] md:flex-row md:items-center md:justify-between">
                             <div>
-                                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.24em] text-[#8b8f93]">
+                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.24em] text-[#8b8f93]">
                                     <SlidersHorizontal size={14} className="text-[#df8448]" />
                                     Storefront overview
                                 </div>
                                 <h2 className="mt-2 text-[21px] font-semibold text-[#2d3a43]">
                                     Showing {shopLogic.filteredProducts.length} of {shopLogic.totalProducts} products
                                 </h2>
-                                <p className="mt-1 text-[13px] text-[#6a6f73]">
+                                <p className="mt-1 text-sm text-[#6a6f73]">
                                     {shopLogic.activeCategory === 'All'
                                         ? 'Browse the full catalog or narrow it down from the left sidebar.'
                                         : `Filtered to ${shopLogic.activeCategory}.`}
@@ -76,12 +76,12 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
 
                             <div className="flex flex-wrap items-center gap-2">
                                 {shopLogic.activeCategory !== 'All' && (
-                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#b36a3b]">
+                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#b36a3b]">
                                         {shopLogic.activeCategory}
                                     </span>
                                 )}
                                 {shopLogic.searchQuery && (
-                                    <span className="rounded-full bg-[#eef3f5] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#54646e]">
+                                    <span className="rounded-full bg-[#eef3f5] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#54646e]">
                                         Search: {shopLogic.searchQuery}
                                     </span>
                                 )}
@@ -104,7 +104,7 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
                 <div className="mx-auto max-w-[1000px]">
                     <div className="relative overflow-hidden rounded-2xl bg-[#3e4c57] p-8 text-center shadow-xl md:p-14">
                         <div className="relative z-10">
-                            <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.34em] text-[#df8448]">
+                            <p className="mb-4 text-xs font-bold uppercase tracking-[0.34em] text-[#df8448]">
                                 PetPosture Dispatch
                             </p>
                             <h2 className="mb-4 text-[32px] font-bold tracking-tight text-white md:text-[36px]">
@@ -119,11 +119,11 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
                                     placeholder="Enter your email address"
                                     className="w-full md:flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-[#3e4c57] outline-none"
                                 />
-                                <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-[#df8448] px-10 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-all hover:bg-[#c9713a]">
+                                <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-[#df8448] px-10 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-all hover:bg-[#c9713a]">
                                     Subscribe Now
                                 </button>
                             </div>
-                            <p className="mt-6 text-[10px] font-bold uppercase tracking-widest text-white/30">
+                            <p className="mt-6 text-xs font-bold uppercase tracking-widest text-white/30">
                                 By subscribing, you agree to our privacy policy and terms.
                             </p>
                         </div>

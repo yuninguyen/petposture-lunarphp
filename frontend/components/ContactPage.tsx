@@ -43,10 +43,10 @@ function ContactInfoItem({ icon: Icon, label, value, href, note }: { icon: React
                 <Icon size={20} />
             </div>
             <div className="flex-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#df8448] mb-1">{label}</p>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#df8448] mb-1">{label}</p>
                 <p className="text-[15px] font-bold text-[#3e4c57] leading-tight">{value}</p>
                 {note && (
-                    <p className="text-[12px] text-zinc-400 mt-1 font-medium italic">
+                    <p className="text-xs text-zinc-400 mt-1 font-medium italic">
                         ({note})
                     </p>
                 )}
@@ -155,7 +155,7 @@ export default function ContactPage() {
             {/* Hero Section - Clean & High-End */}
             <section className="bg-[#f4f5f6] py-12 px-4 md:px-8 border-b border-zinc-100">
                 <div className="max-w-[1200px] mx-auto text-center">
-                    <div className="inline-block px-4 py-1.5 bg-[#df8448]/5 border border-[#df8448]/20 rounded text-[10px] font-black uppercase tracking-[0.25em] text-[#df8448] mb-6">
+                    <div className="inline-block px-4 py-1.5 bg-[#df8448]/5 border border-[#df8448]/20 rounded text-xs font-black uppercase tracking-[0.25em] text-[#df8448] mb-6">
                         Get in touch
                     </div>
                     <h1 className="text-[32px] md:text-[48px] font-black uppercase tracking-[0.1em] text-[#3e4c57] mb-6 leading-tight">
@@ -181,12 +181,12 @@ export default function ContactPage() {
                     <div className="lg:col-span-7 bg-white p-8 md:p-12 rounded-2xl border border-zinc-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)]">
                         <div className="mb-10">
                             <h3 className="text-2xl font-black uppercase tracking-widest text-[#3e4c57] mb-3">Send Us a Message</h3>
-                            <p className="text-[13px] text-zinc-400 font-medium">We typically respond to all inquiries within 24 business hours.</p>
+                            <p className="text-sm text-zinc-400 font-medium">We typically respond to all inquiries within 24 business hours.</p>
                         </div>
 
                         {/* ── Inline success notice (CF7-style) ── */}
                         {status === 'success' && (
-                            <div className="flex items-start gap-3 p-5 mb-8 bg-green-50 border border-green-200 rounded-xl text-green-800 text-[13px] font-medium leading-relaxed">
+                            <div className="flex items-start gap-3 p-5 mb-8 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm font-medium leading-relaxed">
                                 <CheckCircle2 size={18} className="shrink-0 mt-0.5 text-green-500" />
                                 <span>{MESSAGES.success}</span>
                             </div>
@@ -207,7 +207,7 @@ export default function ContactPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Full Name */}
                                 <div className="relative group">
-                                    <label htmlFor="name" className={`text-[10px] font-black uppercase tracking-[0.15em] mb-2 block transition-colors group-focus-within:text-[#df8448] ${fieldErrors.name ? 'text-red-500' : 'text-[#3e4c57]/40'}`}>Full Name *</label>
+                                    <label htmlFor="name" className={`text-sm font-semibold uppercase tracking-[0.15em] mb-2 block transition-colors group-focus-within:text-[#df8448] ${fieldErrors.name ? 'text-red-500' : 'text-[#3e4c57]/40'}`}>Full Name *</label>
                                     <input
                                         type="text"
                                         id="name"
@@ -216,14 +216,14 @@ export default function ContactPage() {
                                         onChange={handleInputChange}
                                         placeholder="Enter your name"
                                         aria-invalid={!!fieldErrors.name}
-                                        className={`w-full border-b-2 py-3 text-[13px] font-bold transition-all focus:outline-none bg-transparent text-[#3e4c57] placeholder:text-zinc-200 ${fieldErrors.name ? 'border-red-400 focus:border-red-500' : 'border-zinc-100 focus:border-[#df8448]'}`}
+                                        className={`w-full border-b-2 py-3 text-sm font-bold transition-all focus:outline-none bg-transparent text-[#3e4c57] placeholder:text-zinc-200 ${fieldErrors.name ? 'border-red-400 focus:border-red-500' : 'border-zinc-100 focus:border-[#df8448]'}`}
                                     />
-                                    {fieldErrors.name && <p className="mt-1.5 text-[11px] font-semibold text-red-500">{fieldErrors.name}</p>}
+                                    {fieldErrors.name && <p className="mt-1.5 text-sm font-semibold text-red-500">{fieldErrors.name}</p>}
                                 </div>
 
                                 {/* Email Address */}
                                 <div className="relative group">
-                                    <label htmlFor="email" className={`text-[10px] font-black uppercase tracking-[0.15em] mb-2 block transition-colors group-focus-within:text-[#df8448] ${fieldErrors.email ? 'text-red-500' : 'text-[#3e4c57]/40'}`}>Email Address *</label>
+                                    <label htmlFor="email" className={`text-sm font-semibold uppercase tracking-[0.15em] mb-2 block transition-colors group-focus-within:text-[#df8448] ${fieldErrors.email ? 'text-red-500' : 'text-[#3e4c57]/40'}`}>Email Address *</label>
                                     <input
                                         type="email"
                                         id="email"
@@ -232,16 +232,16 @@ export default function ContactPage() {
                                         onChange={handleInputChange}
                                         placeholder="example@pack.com"
                                         aria-invalid={!!fieldErrors.email}
-                                        className={`w-full border-b-2 py-3 text-[13px] font-bold transition-all focus:outline-none bg-transparent text-[#3e4c57] placeholder:text-zinc-200 ${fieldErrors.email ? 'border-red-400 focus:border-red-500' : 'border-zinc-100 focus:border-[#df8448]'}`}
+                                        className={`w-full border-b-2 py-3 text-sm font-bold transition-all focus:outline-none bg-transparent text-[#3e4c57] placeholder:text-zinc-200 ${fieldErrors.email ? 'border-red-400 focus:border-red-500' : 'border-zinc-100 focus:border-[#df8448]'}`}
                                     />
-                                    {fieldErrors.email && <p className="mt-1.5 text-[11px] font-semibold text-red-500">{fieldErrors.email}</p>}
+                                    {fieldErrors.email && <p className="mt-1.5 text-sm font-semibold text-red-500">{fieldErrors.email}</p>}
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Order Number */}
                                 <div className="relative group">
-                                    <label htmlFor="orderNumber" className="text-[10px] font-black uppercase tracking-[0.15em] text-[#3e4c57]/40 mb-2 block transition-colors group-focus-within:text-[#df8448]">Order Number (Optional)</label>
+                                    <label htmlFor="orderNumber" className="text-sm font-semibold uppercase tracking-[0.15em] text-[#3e4c57]/40 mb-2 block transition-colors group-focus-within:text-[#df8448]">Order Number (Optional)</label>
                                     <input
                                         type="text"
                                         id="orderNumber"
@@ -249,13 +249,13 @@ export default function ContactPage() {
                                         value={formData.orderNumber}
                                         onChange={handleInputChange}
                                         placeholder="#PP-12345"
-                                        className="w-full border-b-2 border-zinc-100 py-3 text-[13px] font-bold transition-all focus:outline-none focus:border-[#df8448] bg-transparent text-[#3e4c57] placeholder:text-zinc-200"
+                                        className="w-full border-b-2 border-zinc-100 py-3 text-sm font-bold transition-all focus:outline-none focus:border-[#df8448] bg-transparent text-[#3e4c57] placeholder:text-zinc-200"
                                     />
                                 </div>
 
                                 {/* Subject */}
                                 <div className="relative group">
-                                    <label htmlFor="subject" className={`text-[10px] font-black uppercase tracking-[0.15em] mb-2 block transition-colors group-focus-within:text-[#df8448] ${fieldErrors.subject ? 'text-red-500' : 'text-[#3e4c57]/40'}`}>Subject / Inquiry Type *</label>
+                                    <label htmlFor="subject" className={`text-sm font-semibold uppercase tracking-[0.15em] mb-2 block transition-colors group-focus-within:text-[#df8448] ${fieldErrors.subject ? 'text-red-500' : 'text-[#3e4c57]/40'}`}>Subject / Inquiry Type *</label>
                                     <input
                                         type="text"
                                         id="subject"
@@ -264,15 +264,15 @@ export default function ContactPage() {
                                         onChange={handleInputChange}
                                         placeholder="How can we help?"
                                         aria-invalid={!!fieldErrors.subject}
-                                        className={`w-full border-b-2 py-3 text-[13px] font-bold transition-all focus:outline-none bg-transparent text-[#3e4c57] placeholder:text-zinc-200 ${fieldErrors.subject ? 'border-red-400 focus:border-red-500' : 'border-zinc-100 focus:border-[#df8448]'}`}
+                                        className={`w-full border-b-2 py-3 text-sm font-bold transition-all focus:outline-none bg-transparent text-[#3e4c57] placeholder:text-zinc-200 ${fieldErrors.subject ? 'border-red-400 focus:border-red-500' : 'border-zinc-100 focus:border-[#df8448]'}`}
                                     />
-                                    {fieldErrors.subject && <p className="mt-1.5 text-[11px] font-semibold text-red-500">{fieldErrors.subject}</p>}
+                                    {fieldErrors.subject && <p className="mt-1.5 text-sm font-semibold text-red-500">{fieldErrors.subject}</p>}
                                 </div>
                             </div>
 
                             {/* Message */}
                             <div className="relative group">
-                                <label htmlFor="message" className={`text-[10px] font-black uppercase tracking-[0.15em] mb-2 block transition-colors group-focus-within:text-[#df8448] ${fieldErrors.message ? 'text-red-500' : 'text-[#3e4c57]/40'}`}>Your Message *</label>
+                                <label htmlFor="message" className={`text-sm font-semibold uppercase tracking-[0.15em] mb-2 block transition-colors group-focus-within:text-[#df8448] ${fieldErrors.message ? 'text-red-500' : 'text-[#3e4c57]/40'}`}>Your Message *</label>
                                 <textarea
                                     id="message"
                                     name="message"
@@ -281,14 +281,14 @@ export default function ContactPage() {
                                     onChange={handleInputChange}
                                     placeholder="Write your message here..."
                                     aria-invalid={!!fieldErrors.message}
-                                    className={`w-full border-b-2 py-3 text-[13px] font-bold transition-all focus:outline-none bg-transparent text-[#3e4c57] placeholder:text-zinc-200 resize-none ${fieldErrors.message ? 'border-red-400 focus:border-red-500' : 'border-zinc-100 focus:border-[#df8448]'}`}
+                                    className={`w-full border-b-2 py-3 text-sm font-bold transition-all focus:outline-none bg-transparent text-[#3e4c57] placeholder:text-zinc-200 resize-none ${fieldErrors.message ? 'border-red-400 focus:border-red-500' : 'border-zinc-100 focus:border-[#df8448]'}`}
                                 />
-                                {fieldErrors.message && <p className="mt-1.5 text-[11px] font-semibold text-red-500">{fieldErrors.message}</p>}
+                                {fieldErrors.message && <p className="mt-1.5 text-sm font-semibold text-red-500">{fieldErrors.message}</p>}
                             </div>
 
                             {/* Send error notice */}
                             {status === 'error' && (
-                                <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[13px] font-medium">
+                                <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-medium">
                                     <AlertCircle size={16} className="shrink-0" />
                                     {errorMessage}
                                 </div>
@@ -296,7 +296,7 @@ export default function ContactPage() {
 
                             {/* Sending notice */}
                             {status === 'loading' && (
-                                <p className="text-[12px] text-zinc-400 font-medium">{MESSAGES.sending}</p>
+                                <p className="text-sm text-zinc-400 font-medium">{MESSAGES.sending}</p>
                             )}
 
                             {/* Submit Button */}
@@ -304,7 +304,7 @@ export default function ContactPage() {
                                 type="submit"
                                 disabled={status === 'loading'}
                                 style={{ fontFamily: 'var(--font-lato), sans-serif' }}
-                                className="w-full md:w-auto bg-[#df8448] hover:bg-[#c9713a] text-white px-12 py-5 font-bold text-[12px] uppercase tracking-[0.12em] transition-colors rounded-sm shadow-md flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group"
+                                className="w-full md:w-auto bg-[#df8448] hover:bg-[#c9713a] text-white px-12 py-5 font-bold text-sm uppercase tracking-[0.12em] transition-colors rounded-sm shadow-md flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group"
                             >
                                 {status === 'loading' ? (
                                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -349,10 +349,10 @@ export default function ContactPage() {
                             <div className="p-8 bg-[#3e4c57] rounded-2xl relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700" />
                                 <h4 className="text-white text-lg font-black uppercase tracking-widest mb-4">Have a Quick Question?</h4>
-                                <p className="text-white/60 text-[13px] leading-relaxed mb-6">
+                                <p className="text-white/60 text-sm leading-relaxed mb-6">
                                     Many common questions about shipping, returns, and breed-specific fits are answered in our Help Center.
                                 </p>
-                                <Link href="/faqs" className="inline-flex items-center gap-2 text-[#df8448] font-black text-[11px] uppercase tracking-widest hover:text-white transition-colors group">
+                                <Link href="/faqs" className="inline-flex items-center gap-2 text-[#df8448] font-black text-sm uppercase tracking-widest hover:text-white transition-colors group">
                                     Visit Help Center <span className="group-hover:translate-x-1 transition-transform">→</span>
                                 </Link>
                             </div>

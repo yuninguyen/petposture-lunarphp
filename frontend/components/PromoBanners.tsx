@@ -36,7 +36,7 @@ export default function PromoBanners() {
                 <h3 className="text-[22px] md:text-[26px] font-bold uppercase tracking-[0.1em] mb-6 drop-shadow-lg">{title}</h3>
                 <Link
                   href={href}
-                  className="inline-block bg-secondary hover:bg-white hover:text-primary text-white text-[10px] font-black uppercase tracking-[0.25em] px-8 py-3.5 transition-all shadow-md active:scale-95"
+                  className="inline-block bg-secondary hover:bg-white hover:text-primary text-white text-sm font-black uppercase tracking-[0.25em] px-8 py-3.5 transition-all shadow-md active:scale-95"
                 >
                   Shop Now
                 </Link>

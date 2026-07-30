@@ -54,7 +54,7 @@ function ResetPasswordForm() {
                 <p className="text-zinc-500 text-[14px]">Your password has been reset. You can now sign in with your new password.</p>
                 <button
                     onClick={() => router.push('/sign-in')}
-                    className="bg-[#df8448] text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-[12px] hover:bg-[#c9713a] transition-colors"
+                    className="bg-[#df8448] text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-[#c9713a] transition-colors"
                 >
                     Sign In
                 </button>
@@ -71,7 +71,7 @@ function ResetPasswordForm() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-1">
-                    <label className="text-[11px] font-extrabold uppercase tracking-widest text-zinc-400 ml-1">New Password</label>
+                    <label className="text-sm font-extrabold uppercase tracking-widest text-zinc-400 ml-1">New Password</label>
                     <div className="relative">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                         <input
@@ -87,7 +87,7 @@ function ResetPasswordForm() {
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-[11px] font-extrabold uppercase tracking-widest text-zinc-400 ml-1">Confirm Password</label>
+                    <label className="text-sm font-extrabold uppercase tracking-widest text-zinc-400 ml-1">Confirm Password</label>
                     <div className="relative">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                         <input
@@ -103,7 +103,7 @@ function ResetPasswordForm() {
                 </div>
 
                 {error && (
-                    <div className="text-red-500 text-[12px] font-medium bg-red-50 p-3 rounded-lg border border-red-100">
+                    <div className="text-red-500 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-100">
                         {error}
                     </div>
                 )}
@@ -112,7 +112,7 @@ function ResetPasswordForm() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-[13px] hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                        className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                     >
                         {isLoading ? 'Updating...' : 'Reset Password'}
                         {!isLoading && <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />}

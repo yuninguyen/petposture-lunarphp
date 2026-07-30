@@ -30,7 +30,7 @@ export default function Insights() {
     <section className="py-24 px-4 md:px-8 bg-white overflow-hidden">
       <div className="container mx-auto max-w-6xl">
         <div className="flex flex-col items-center mb-16">
-          <h2 className="text-center text-[13px] font-bold uppercase tracking-[0.4em] text-primary">
+          <h2 className="text-center text-xs font-bold uppercase tracking-[0.4em] text-primary">
             Insights
           </h2>
           <div className="w-12 h-[2px] bg-secondary mt-3" />
@@ -50,7 +50,7 @@ export default function Insights() {
                 />
               </div>
               
-              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-primary/30 mb-4 group-hover:text-secondary transition-colors">
+              <span className="text-xs font-black uppercase tracking-[0.15em] text-primary/30 mb-4 group-hover:text-secondary transition-colors">
                 {category}
               </span>
               
@@ -60,7 +60,7 @@ export default function Insights() {
               
               <div className="w-8 h-[1px] bg-secondary/30 mb-4 group-hover:w-16 transition-all duration-500" />
               
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 hover:text-secondary transition-colors border-b border-primary/10 group-hover:border-secondary pb-1">
+              <span className="text-sm font-black uppercase tracking-[0.2em] text-primary/60 hover:text-secondary transition-colors border-b border-primary/10 group-hover:border-secondary pb-1">
                 Read More
               </span>
             </Link>

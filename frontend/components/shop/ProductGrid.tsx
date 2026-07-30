@@ -27,7 +27,7 @@ export function ProductGrid({ filteredProducts, totalProducts, activeCategory, s
         <section className="rounded-[24px] border border-[#eadfd3] bg-white p-4 shadow-[0_18px_50px_rgba(34,33,33,0.05)] md:p-5">
             <div className="mb-6 flex flex-col gap-3 border-b border-[#f1e8df] pb-5 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#8b8f93]">Catalog Results</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#8b8f93]">Catalog Results</p>
                     <p className="mt-2 text-[14px] text-[#62666a]">
                         {loading ? (
                             <span className="inline-block h-4 w-40 animate-pulse rounded bg-[#f0e8e0]" />
@@ -41,7 +41,7 @@ export function ProductGrid({ filteredProducts, totalProducts, activeCategory, s
                 {(searchQuery || activeCategory !== 'All') && !loading && (
                     <button
                         onClick={clearFilters}
-                        className="inline-flex items-center gap-2 self-start rounded-full bg-[#f7efe8] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#c06f3d] transition hover:bg-[#f2e3d7]"
+                        className="inline-flex items-center gap-2 self-start rounded-full bg-[#f7efe8] px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-[#c06f3d] transition hover:bg-[#f2e3d7]"
                     >
                         Clear Filters <X size={14} />
                     </button>

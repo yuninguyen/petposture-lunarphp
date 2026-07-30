@@ -14,13 +14,13 @@ export default function TrustBadges() {
           {badges.map(({ icon: Icon, title, subtitle, link }, i) => (
             <div key={i} className="flex items-center gap-3 px-6 py-4 justify-center">
               <Icon size={18} className="text-primary shrink-0" aria-hidden="true" />
-              <p className="text-[11px] text-primary leading-tight">
+              <p className="text-sm text-primary leading-tight">
                 <strong className="font-bold">{title}</strong>{" "}
                 <span className="opacity-75">{subtitle}</span>
                 {link && (
                   <>
                     {" "}
-                    <a href={link} className="underline opacity-60 hover:opacity-100 transition-opacity text-[10px]">
+                    <a href={link} className="underline opacity-60 hover:opacity-100 transition-opacity text-sm">
                       Learn more
                     </a>
                   </>

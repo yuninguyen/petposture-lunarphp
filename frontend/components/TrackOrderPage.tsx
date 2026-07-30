@@ -153,7 +153,7 @@ export default function TrackOrderPage() {
                         <motion.span
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="inline-block px-4 py-1.5 bg-[#df8448]/10 text-[#df8448] text-[11px] font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
+                            className="inline-block px-4 py-1.5 bg-[#df8448]/10 text-[#df8448] text-xs font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
                         >
                             Order Tracking
                         </motion.span>
@@ -205,7 +205,7 @@ export default function TrackOrderPage() {
                                 <form onSubmit={handleTrack} className="space-y-8">
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <div className="space-y-3">
-                                            <label className="text-[12px] font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Tracking Number</label>
+                                            <label className="text-sm font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Tracking Number</label>
                                             <input
                                                 type="text"
                                                 required
@@ -214,10 +214,10 @@ export default function TrackOrderPage() {
                                                 placeholder="e.g. PP-XXXXXX-XXXX"
                                                 className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium"
                                             />
-                                            <p className="text-[11px] text-zinc-400 italic ml-1">(Found in your order confirmation email.)</p>
+                                            <p className="text-sm text-zinc-400 italic ml-1">(Found in your order confirmation email.)</p>
                                         </div>
                                         <div className="space-y-3">
-                                            <label className="text-[12px] font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Billing Email</label>
+                                            <label className="text-sm font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Billing Email</label>
                                             <input
                                                 type="email"
                                                 required
@@ -226,14 +226,14 @@ export default function TrackOrderPage() {
                                                 placeholder="email@example.com"
                                                 className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium"
                                             />
-                                            <p className="text-[11px] text-zinc-400 italic ml-1">(Email you used during checkout.)</p>
+                                            <p className="text-sm text-zinc-400 italic ml-1">(Email you used during checkout.)</p>
                                         </div>
                                     </div>
 
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-[13px] hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                        className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                     >
                                         {isLoading ? 'Tracking...' : 'Track My Order'}
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -241,7 +241,7 @@ export default function TrackOrderPage() {
                                 </form>
 
                                 {error && (
-                                    <div className="mt-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-[13px] font-medium">
+                                    <div className="mt-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium">
                                         {error}
                                     </div>
                                 )}
@@ -257,35 +257,35 @@ export default function TrackOrderPage() {
                                                 <CheckCircle2 className="text-green-500" size={24} />
                                                 <div>
                                                     <h3 className="text-[16px] font-bold text-[#3e4c57]">Order Found: {statusData.reference}</h3>
-                                                    <p className="text-[12px] text-zinc-500 font-medium">Placed on {new Date(statusData.created_at).toLocaleDateString()}</p>
+                                                    <p className="text-xs text-zinc-500 font-medium">Placed on {new Date(statusData.created_at).toLocaleDateString()}</p>
                                                 </div>
                                             </div>
                                             <div className="space-y-4 pt-2">
-                                                <div className="flex justify-between items-center text-[13px]">
+                                                <div className="flex justify-between items-center text-sm">
                                                     <span className="text-zinc-500 font-bold uppercase tracking-wider">Status</span>
-                                                    <span className="bg-[#df8448] text-white px-3 py-1 rounded-[4px] font-black uppercase text-[10px] tracking-widest">{statusData.status_label}</span>
+                                                    <span className="bg-[#df8448] text-white px-3 py-1 rounded-[4px] font-black uppercase text-xs tracking-widest">{statusData.status_label}</span>
                                                 </div>
-                                                <div className="flex justify-between items-center text-[13px]">
+                                                <div className="flex justify-between items-center text-sm">
                                                     <span className="text-zinc-500 font-bold uppercase tracking-wider">Total</span>
                                                     <span className="font-black text-[#3e4c57]">${statusData.total.decimal.toFixed(2)}</span>
                                                 </div>
-                                                <div className="flex justify-between items-center text-[13px]">
+                                                <div className="flex justify-between items-center text-sm">
                                                     <span className="text-zinc-500 font-bold uppercase tracking-wider">Shipping</span>
                                                     <span className="font-medium text-[#3e4c57]">{formatMethodLabel(statusData.shipping_method, "Standard")}</span>
                                                 </div>
-                                                <div className="flex justify-between items-center text-[13px]">
+                                                <div className="flex justify-between items-center text-sm">
                                                     <span className="text-zinc-500 font-bold uppercase tracking-wider">Payment</span>
                                                     <div className="text-right">
                                                         <p className="font-medium text-[#3e4c57]">{formatMethodLabel(statusData.payment_label || statusData.payment_method, "Card")}</p>
-                                                        <p className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-zinc-400">{paymentStateHint(statusData)}</p>
+                                                        <p className="mt-0.5 text-xs uppercase tracking-[0.14em] text-zinc-400">{paymentStateHint(statusData)}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex justify-between items-start text-[13px]">
+                                                <div className="flex justify-between items-start text-sm">
                                                     <span className="text-zinc-500 font-bold uppercase tracking-wider">Destination</span>
                                                     <span className="font-medium text-[#3e4c57] text-right max-w-[220px]">{formatAddress(statusData.shipping_address)}</span>
                                                 </div>
                                                 {latestShipment(statusData)?.tracking_url ? (
-                                                    <div className="flex justify-between items-center text-[13px]">
+                                                    <div className="flex justify-between items-center text-sm">
                                                         <span className="text-zinc-500 font-bold uppercase tracking-wider">Tracking link</span>
                                                         <a
                                                             href={latestShipment(statusData)?.tracking_url || "#"}
@@ -300,7 +300,7 @@ export default function TrackOrderPage() {
                                             </div>
                                             {statusData.order_events && statusData.order_events.length > 0 ? (
                                                 <div className="mt-5 border-t border-zinc-200 pt-4">
-                                                    <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-zinc-400">
+                                                    <p className="mb-3 text-xs font-black uppercase tracking-widest text-zinc-400">
                                                         Recent updates
                                                     </p>
                                                     <div className="space-y-3">
@@ -308,12 +308,12 @@ export default function TrackOrderPage() {
                                                             <div key={`${event.type}-${event.created_at}-${index}`} className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
                                                                 <div className="flex items-start justify-between gap-4">
                                                                     <div>
-                                                                        <p className="text-[12.5px] font-semibold text-[#3e4c57]">{event.title}</p>
+                                                                        <p className="text-sm font-semibold text-[#3e4c57]">{event.title}</p>
                                                                         {event.detail ? (
-                                                                            <p className="mt-1 text-[12px] leading-5 text-zinc-500">{event.detail}</p>
+                                                                            <p className="mt-1 text-sm leading-5 text-zinc-500">{event.detail}</p>
                                                                         ) : null}
                                                                     </div>
-                                                                    <p className="whitespace-nowrap text-[10px] uppercase tracking-[0.14em] text-zinc-400">
+                                                                    <p className="whitespace-nowrap text-xs uppercase tracking-[0.14em] text-zinc-400">
                                                                         {new Date(event.created_at).toLocaleString()}
                                                                     </p>
                                                                 </div>
@@ -339,12 +339,12 @@ export default function TrackOrderPage() {
                                         {(statusData.status === "delivered" || statusData.status === "shipped") && (
                                             <div className="rounded-2xl border border-[#df8448]/20 bg-white p-6 shadow-sm flex items-center justify-between gap-4">
                                                 <div>
-                                                    <p className="text-[13px] font-bold text-[#3e4c57]">Need to send something back?</p>
-                                                    <p className="mt-1 text-[12px] text-zinc-500">Request a return for this order.</p>
+                                                    <p className="text-sm font-bold text-[#3e4c57]">Need to send something back?</p>
+                                                    <p className="mt-1 text-sm text-zinc-500">Request a return for this order.</p>
                                                 </div>
                                                 <Link
                                                     href={`/returns?ref=${encodeURIComponent(statusData.reference)}&email=${encodeURIComponent(email)}`}
-                                                    className="whitespace-nowrap text-[13px] font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
+                                                    className="whitespace-nowrap text-sm font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
                                                 >
                                                     Request a Return
                                                 </Link>
@@ -406,7 +406,7 @@ export default function TrackOrderPage() {
                                         <p className="text-zinc-600 text-[14px] leading-relaxed mb-6">
                                             Every PetPosture product undergoes rigorous quality checks before leaving our facility to ensure your pet receives only the best.
                                         </p>
-                                        <Link href="/contact" className="text-[#df8448] font-bold uppercase tracking-widest text-[11px] flex items-center gap-2 hover:text-[#3e4c57] transition-colors">
+                                        <Link href="/contact" className="text-[#df8448] font-bold uppercase tracking-widest text-sm flex items-center gap-2 hover:text-[#3e4c57] transition-colors">
                                             Contact Support <ChevronRight size={14} />
                                         </Link>
                                     </div>
@@ -424,7 +424,7 @@ export default function TrackOrderPage() {
                 {/* Return Link Footer */}
                 <section className="py-16 bg-zinc-50">
                     <div className="max-w-[1200px] mx-auto px-4 text-center">
-                        <Link href="/" className="inline-flex items-center gap-3 text-[#3e4c57]/40 hover:text-[#df8448] font-bold uppercase tracking-[0.25em] text-[12px] transition-all">
+                        <Link href="/" className="inline-flex items-center gap-3 text-[#3e4c57]/40 hover:text-[#df8448] font-bold uppercase tracking-[0.25em] text-sm transition-all">
                             <ArrowLeft size={16} /> Back to Homepage
                         </Link>
                     </div>

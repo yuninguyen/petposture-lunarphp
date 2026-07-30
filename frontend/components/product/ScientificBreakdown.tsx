@@ -22,7 +22,7 @@ export function ScientificBreakdown({ product }: ScientificBreakdownProps) {
         <section className="bg-[#3e4c57] py-24 px-4 md:px-8 relative overflow-hidden">
             <div className="max-w-[1200px] mx-auto relative z-10">
                 <div className="text-center mb-16">
-                    <h2 className="text-[#df8448] text-[12px] font-black uppercase tracking-[0.4em] mb-4">Ergo-Care Science</h2>
+                    <h2 className="text-[#df8448] text-xs font-black uppercase tracking-[0.4em] mb-4">Ergo-Care Science</h2>
                     <h3 className="text-white text-[32px] md:text-[44px] font-bold leading-tight">THE BIOLOGY OF COMFORT</h3>
                     <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mt-6"></div>
                 </div>

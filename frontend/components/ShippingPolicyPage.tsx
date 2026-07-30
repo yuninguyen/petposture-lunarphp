@@ -105,7 +105,7 @@ export default function ShippingPolicyPage() {
                                 <button
                                     key={s.id}
                                     onClick={() => scrollTo(s.id)}
-                                    className={`text-left text-[13px] font-bold uppercase tracking-wider transition-all hover:text-[#df8448] ${activeSection === s.id ? 'text-[#df8448] pl-2 border-l-2 border-[#df8448]' : 'text-[#666666]'
+                                    className={`text-left text-sm font-bold uppercase tracking-wider transition-all hover:text-[#df8448] ${activeSection === s.id ? 'text-[#df8448] pl-2 border-l-2 border-[#df8448]' : 'text-[#666666]'
                                         }`}
                                 >
                                     {s.title}

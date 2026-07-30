@@ -230,7 +230,7 @@ export default function RetryPaymentPanel({
                 </h2>
             </div>
             <div className="space-y-4 px-6 py-5">
-                <p className="text-[13px] leading-[1.7] text-[#707070]">
+                <p className="text-sm leading-[1.7] text-[#707070]">
                     Your order is still awaiting card payment. You can start a new secure payment attempt here.
                 </p>
 
@@ -239,7 +239,7 @@ export default function RetryPaymentPanel({
                         type="button"
                         onClick={handlePrepareRetry}
                         disabled={isPreparing}
-                        className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[#df8448] px-5 text-[13px] font-semibold text-white transition hover:bg-[#c9713a] disabled:opacity-60"
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[#df8448] px-5 text-sm font-semibold text-white transition hover:bg-[#c9713a] disabled:opacity-60"
                     >
                         {isPreparing ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}
                         {isPreparing ? "Preparing..." : "Retry card payment"}
@@ -255,7 +255,7 @@ export default function RetryPaymentPanel({
                             type="button"
                             onClick={handleConfirmRetry}
                             disabled={!stripeReady || isConfirming}
-                            className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[#111827] px-5 text-[13px] font-semibold text-white transition hover:bg-black disabled:opacity-60"
+                            className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[#111827] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-60"
                         >
                             {isConfirming ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}
                             {isConfirming ? "Confirming..." : "Confirm payment"}
@@ -264,13 +264,13 @@ export default function RetryPaymentPanel({
                 ) : null}
 
                 {message ? (
-                    <div className="rounded-[8px] border border-[#f4cdb7] bg-[#fff7f2] px-4 py-3 text-[12.5px] leading-6 text-[#8a5a34]">
+                    <div className="rounded-[8px] border border-[#f4cdb7] bg-[#fff7f2] px-4 py-3 text-[14px] leading-6 text-[#8a5a34]">
                         {message}
                     </div>
                 ) : null}
 
                 {error ? (
-                    <div className="rounded-[8px] border border-[#f0d4d4] bg-[#fff5f5] px-4 py-3 text-[12.5px] leading-6 text-[#b24a4a]">
+                    <div className="rounded-[8px] border border-[#f0d4d4] bg-[#fff5f5] px-4 py-3 text-[14px] leading-6 text-[#b24a4a]">
                         {error}
                     </div>
                 ) : null}

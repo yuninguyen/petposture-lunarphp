@@ -940,7 +940,7 @@ export default function CheckoutPage() {
                         <MapPinHouse size={16} className="mt-0.5 flex-shrink-0 text-[#df8448]" />
                         <div className="min-w-0">
                             <p className="text-[14px] font-medium text-[#333333]">{suggestion.mainText}</p>
-                            <p className="text-[12px] leading-5 text-[#707070]">
+                            <p className="text-sm leading-5 text-[#707070]">
                                 {suggestion.secondaryText || suggestion.description}
                             </p>
                         </div>
@@ -985,11 +985,11 @@ export default function CheckoutPage() {
                         />
                     </div>
                     <div className="group relative">
-                        <span className="flex h-[16px] w-[28px] cursor-help items-center justify-center rounded-[4px] border border-[#E1E1E1] bg-[#F2F3F5] text-[9px] font-bold text-[#121212] transition hover:bg-[#e8e9eb]">
+                        <span className="flex h-[16px] w-[28px] cursor-help items-center justify-center rounded-[4px] border border-[#E1E1E1] bg-[#F2F3F5] text-xs font-bold text-[#121212] transition hover:bg-[#e8e9eb]">
                             +5
                         </span>
                         <div className="invisible absolute bottom-[calc(100%+8px)] right-0 w-auto min-w-[124px] translate-y-1 rounded-[6px] bg-[#1a1a1a] p-2 opacity-0 shadow-2xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 z-[100]">
-                            <p className="mb-2 px-1 text-[9px] font-medium text-white opacity-70">Supported cards:</p>
+                            <p className="mb-2 px-1 text-xs font-medium text-white opacity-70">Supported cards:</p>
                             <div className="grid grid-cols-2 gap-1.5">
                                 <div className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] bg-white overflow-hidden">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1420,16 +1420,16 @@ export default function CheckoutPage() {
                         <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-full bg-[#ecfdf3] text-[#0f9f61]">
                             <CheckCircle size={34} />
                         </div>
-                        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.28em] text-[#0f9f61]">Order confirmed</p>
+                        <p className="mb-3 text-xs font-bold uppercase tracking-[0.28em] text-[#0f9f61]">Order confirmed</p>
                         <h1 className="mb-4 text-[34px] font-semibold leading-tight text-[#1c1c1f]">Thanks for your order.</h1>
                         <p className="mb-10 max-w-[520px] text-[15px] leading-7 text-[#5c5f62]">
                             Your order reference is <span className="font-semibold text-[#1c1c1f]">{successRef}</span>. We&apos;ll email shipping updates as soon as your items are on the way.
                         </p>
                         <div className="flex flex-col gap-3 sm:flex-row">
-                            <Link href="/shop" className="inline-flex items-center justify-center rounded-[14px] bg-[#111827] px-6 py-4 text-[13px] font-semibold text-white transition hover:bg-[#1f2937]">
+                            <Link href="/shop" className="inline-flex items-center justify-center rounded-[14px] bg-[#111827] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#1f2937]">
                                 Continue shopping
                             </Link>
-                            <Link href="/track-order" className="inline-flex items-center justify-center rounded-[14px] border border-[#d6d6db] px-6 py-4 text-[13px] font-semibold text-[#1c1c1f] transition hover:bg-[#f6f6f7]">
+                            <Link href="/track-order" className="inline-flex items-center justify-center rounded-[14px] border border-[#d6d6db] px-6 py-4 text-sm font-semibold text-[#1c1c1f] transition hover:bg-[#f6f6f7]">
                                 Track order
                             </Link>
                         </div>
@@ -1503,7 +1503,7 @@ export default function CheckoutPage() {
                                     </div>
                                     <h2 className="text-[18px] font-semibold text-[#333333]">Contact</h2>
                                 </div>
-                                <p className="text-[13px] text-[#707070]">
+                                <p className="text-sm text-[#707070]">
                                     Already have an account? <Link href="/sign-in" className="text-[#197bbd] underline">Log in</Link>
                                 </p>
                             </div>
@@ -1528,7 +1528,7 @@ export default function CheckoutPage() {
                                         onChange={(e) => updateField('saveInfo', e.target.checked)}
                                         className="h-4 w-4 rounded border-[#d9d9d9] text-[#197bbd] focus:ring-[#197bbd]"
                                     />
-                                    <label htmlFor="saveInfo" className="text-[13px] text-[#333333]">Email me with news and offers</label>
+                                    <label htmlFor="saveInfo" className="text-sm text-[#333333]">Email me with news and offers</label>
                                 </div>
                             </div>
                         </section>
@@ -1578,7 +1578,7 @@ export default function CheckoutPage() {
                                     {renderAddressSuggestions('shipping')}
                                 </div>
                                 {googleMapsApiKey && normalizeCountryCode(form.country) === 'us' ? (
-                                    <p className="text-[12px] text-[#707070]">Start typing your street address and choose a suggestion.</p>
+                                    <p className="text-sm text-[#707070]">Start typing your street address and choose a suggestion.</p>
                                 ) : null}
 
                                 <input name="address2" autoComplete="shipping address-line2" placeholder="Apartment, suite, etc. (optional)" value={form.address2} onChange={(e) => updateField('address2', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]" />
@@ -1599,7 +1599,7 @@ export default function CheckoutPage() {
                                         onChange={(e) => updateField('saveDelivery', e.target.checked)}
                                         className="h-4 w-4 rounded border-[#d9d9d9] text-[#197bbd] focus:ring-[#197bbd]"
                                     />
-                                    <label htmlFor="saveDelivery" className="text-[13px] text-[#333333]">Save this information for next time</label>
+                                    <label htmlFor="saveDelivery" className="text-sm text-[#333333]">Save this information for next time</label>
                                 </div>
                             </div>
                         </section>
@@ -1634,7 +1634,7 @@ export default function CheckoutPage() {
                                     </div>
                                     <h2 className="text-[18px] font-semibold text-[#333333]">Payment</h2>
                                 </div>
-                                <div className="mt-2 flex items-center gap-1.5 text-[13px] text-[#707070]">
+                                <div className="mt-2 flex items-center gap-1.5 text-sm text-[#707070]">
                                     <ShieldCheck size={14} className="text-[#0f9f61]" />
                                     <p>All transactions are secure and encrypted.</p>
                                 </div>
@@ -1661,13 +1661,13 @@ export default function CheckoutPage() {
                                                         <span className="text-[14px] font-semibold text-[#2d3742]">{method.label}</span>
                                                     </div>
                                                     {method.description ? (
-                                                        <p className="mt-1 pr-2 text-[12px] leading-[1.45] text-[#6f7782]">{method.description}</p>
+                                                        <p className="mt-1 pr-2 text-sm leading-[1.45] text-[#6f7782]">{method.description}</p>
                                                     ) : null}
                                                     {method.mode === 'placeholder' && method.method === 'paypal' ? (
-                                                        <p className="mt-1 text-[11px] font-medium text-[#8a5a34]">PayPal is not configured yet — placeholder mode.</p>
+                                                        <p className="mt-1 text-sm font-medium text-[#8a5a34]">PayPal is not configured yet — placeholder mode.</p>
                                                     ) : null}
                                                     {method.mode === 'manual' && method.method === 'cod' ? (
-                                                        <p className="mt-1 text-[11px] font-medium text-[#8a5a34]">Offline/manual method for testing only.</p>
+                                                        <p className="mt-1 text-sm font-medium text-[#8a5a34]">Offline/manual method for testing only.</p>
                                                     ) : null}
                                                 </div>
                                             </div>
@@ -1693,10 +1693,10 @@ export default function CheckoutPage() {
                                                 )}
                                                 <input value={form.cardName} onChange={(e) => updateField('cardName', e.target.value)} placeholder="Name on card" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
                                                 {stripeLiveMode ? (
-                                                    <p className="text-[12px] leading-[1.45] text-[#6f7782]">Card details are collected securely by Stripe.</p>
+                                                    <p className="text-sm leading-[1.45] text-[#6f7782]">Card details are collected securely by Stripe.</p>
                                                 ) : null}
                                                 {stripeError ? (
-                                                    <p className="text-[12px] font-medium text-[#b42318]">{stripeError}</p>
+                                                    <p className="text-sm font-medium text-[#b42318]">{stripeError}</p>
                                                 ) : null}
                                                 <div className="rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 py-3">
                                                     <label htmlFor="billingSameAsShipping" className="flex cursor-pointer items-start gap-3 text-[14px] text-[#333333]">
@@ -1712,7 +1712,7 @@ export default function CheckoutPage() {
                                                 </div>
 
                                                 {paymentIntentMessage ? (
-                                                    <div className="rounded-[8px] border border-[#f4cdb7] bg-[#fff7f2] px-3.5 py-3 text-[12px] leading-5 text-[#8a5a34]">
+                                                    <div className="rounded-[8px] border border-[#f4cdb7] bg-[#fff7f2] px-3.5 py-3 text-sm leading-5 text-[#8a5a34]">
                                                         {paymentIntentMessage}
                                                         {preparedPaymentIntent?.intent_id ? (
                                                             <span className="mt-1 block font-medium text-[#6b4527]">Intent ID: {preparedPaymentIntent.intent_id}</span>
@@ -1724,7 +1724,7 @@ export default function CheckoutPage() {
                                                     <div className="grid gap-3 rounded-[8px] border border-[#d9d9d9] bg-white p-4">
                                                         <div>
                                                             <p className="text-[14px] font-medium text-[#333333]">Billing address</p>
-                                                            <p className="mt-1 text-[12px] text-[#707070]">Enter the address associated with this card.</p>
+                                                            <p className="mt-1 text-sm text-[#707070]">Enter the address associated with this card.</p>
                                                         </div>
 
                                                         <div className="relative">
@@ -1827,14 +1827,14 @@ export default function CheckoutPage() {
                                                     <>
                                                         <div ref={paypalContainerRef} />
                                                         {!paypalReady ? (
-                                                            <p className="text-[12px] leading-[1.45] text-[#6f7782]">Loading PayPal…</p>
+                                                            <p className="text-sm leading-[1.45] text-[#6f7782]">Loading PayPal…</p>
                                                         ) : null}
                                                     </>
                                                 ) : (
-                                                    <p className="text-[12px] leading-[1.45] text-[#6f7782]">PayPal is running in placeholder mode — click &quot;Complete order&quot; below to simulate a PayPal order without a live PayPal account.</p>
+                                                    <p className="text-sm leading-[1.45] text-[#6f7782]">PayPal is running in placeholder mode — click &quot;Complete order&quot; below to simulate a PayPal order without a live PayPal account.</p>
                                                 )}
                                                 {paypalError ? (
-                                                    <p className="text-[12px] font-medium text-[#b42318]">{paypalError}</p>
+                                                    <p className="text-sm font-medium text-[#b42318]">{paypalError}</p>
                                                 ) : null}
                                             </div>
                                         )}
@@ -1865,7 +1865,7 @@ export default function CheckoutPage() {
                     </form>
 
                     <footer className="mt-16 border-t border-[#e6e6e6] pt-8">
-                        <div className="flex flex-wrap gap-x-6 gap-y-3 text-[13px] text-[#707070]">
+                        <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-[#707070]">
                             <Link href="/return-refund-policy" className="hover:underline">Refund policy</Link>
                             <Link href="/shipping-policy" className="hover:underline">Shipping policy</Link>
                             <Link href="/privacy-policy" className="hover:underline">Privacy policy</Link>

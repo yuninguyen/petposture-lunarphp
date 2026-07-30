@@ -28,7 +28,7 @@ export default function Categories() {
     <section className="py-20 px-4 md:px-8 bg-white border-b border-zinc-50">
       <div className="container mx-auto max-w-6xl">
         <div className="flex flex-col items-center mb-12">
-          <h2 className="text-center text-[13px] font-bold uppercase tracking-[0.4em] text-primary">
+          <h2 className="text-center text-xs font-bold uppercase tracking-[0.4em] text-primary">
             Shop What You Need
           </h2>
           <div className="w-12 h-[2px] bg-secondary mt-3" />
@@ -50,13 +50,13 @@ export default function Categories() {
               {/* Content */}
               <div className="absolute inset-x-0 bottom-0 flex flex-col items-center p-8 text-white text-center">
                 <h3 className="text-[20px] font-bold uppercase tracking-[0.1em] mb-2">{cat.title}</h3>
-                <p className="text-[11px] mb-6 opacity-80 max-w-xs font-medium leading-relaxed">{cat.description}</p>
+                <p className="text-sm mb-6 opacity-80 max-w-xs font-medium leading-relaxed">{cat.description}</p>
                 <div className="flex flex-wrap justify-center gap-3">
                   {cat.links.map(({ label, href }, li) => (
                     <Link
                       key={li}
                       href={href}
-                      className="bg-secondary hover:bg-white hover:text-primary text-white px-5 py-2.5 text-[9px] font-black uppercase tracking-[0.2em] transition-all"
+                      className="bg-secondary hover:bg-white hover:text-primary text-white px-5 py-2.5 text-sm font-black uppercase tracking-[0.2em] transition-all"
                     >
                       {label}
                     </Link>

@@ -171,7 +171,7 @@ export default function Footer() {
                     <Link
                       key={link}
                       href={getLegalHref(link)}
-                      className="text-[12px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
+                      className="text-sm uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
                     >
                       {link}
                     </Link>
@@ -183,7 +183,7 @@ export default function Footer() {
                     <Link
                       key={link}
                       href={getLegalHref(link)}
-                      className="text-[12px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
+                      className="text-sm uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
                     >
                       {link}
                     </Link>
@@ -192,7 +192,7 @@ export default function Footer() {
               </div>
 
               <div className="pt-[10px] border-t border-white/10 w-full">
-                <p className="text-[13px] text-white/70 font-normal tracking-wide">
+                <p className="text-xs text-white/70 font-normal tracking-wide">
                   Copyright {new Date().getFullYear()} © <span className="text-white/60 font-bold">PetPosture</span>. All rights reserved.
                 </p>
               </div>

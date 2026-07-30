@@ -106,7 +106,7 @@ export default function BlogPage() {
             <div className="flex min-h-screen items-center justify-center bg-white font-hanken">
                 <div className="text-center">
                     <Loader2 className="mx-auto mb-6 animate-spin text-[#df8448]" size={48} />
-                    <p className="text-[12px] font-bold uppercase tracking-widest text-[#3e4c57]">
+                    <p className="text-sm font-bold uppercase tracking-widest text-[#3e4c57]">
                         Curating your feed...
                     </p>
                 </div>
@@ -136,18 +136,18 @@ export default function BlogPage() {
                                     sizes="(max-width: 1024px) 100vw, 60vw"
                                 />
                                 <div className="absolute left-6 top-6">
-                                    <span className="rounded-[3px] bg-[#df8448] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg">
+                                    <span className="rounded-[3px] bg-[#df8448] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-lg">
                                         Featured Article
                                     </span>
                                 </div>
                             </div>
                             <div className="flex flex-col justify-center p-8 md:p-12 lg:w-2/5">
                                 <div className="mb-6 flex items-center gap-3">
-                                    <span className="text-[13px] font-bold uppercase tracking-widest text-[#df8448]">
+                                    <span className="text-sm font-bold uppercase tracking-widest text-[#df8448]">
                                         {featuredPost.blog_category?.name || "Insights"}
                                     </span>
                                     <span className="h-1 w-1 rounded-full bg-zinc-300" />
-                                    <span className="text-[13px] text-zinc-400">
+                                    <span className="text-xs text-zinc-400">
                                         {featuredPost.created_at
                                             ? new Date(featuredPost.created_at).toLocaleDateString("en-US", {
                                                   month: "long",
@@ -172,14 +172,14 @@ export default function BlogPage() {
                                             <span className="block text-[14px] font-bold text-[#3e4c57]">
                                                 {featuredPost.author || "PetPosture Editorial"}
                                             </span>
-                                            <span className="block text-[12px] text-zinc-400">
+                                            <span className="block text-xs text-zinc-400">
                                                 {featuredPost.read_time || "5 min read"}
                                             </span>
                                         </div>
                                     </div>
                                     <Link
                                         href={`/blog/${featuredPost.slug || featuredPost.id}`}
-                                        className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#3e4c57] transition-all hover:text-[#df8448]"
+                                        className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-[#3e4c57] transition-all hover:text-[#df8448]"
                                     >
                                         Continue <ArrowRight size={14} />
                                     </Link>
@@ -195,7 +195,7 @@ export default function BlogPage() {
                     <div className="flex items-center gap-8 whitespace-nowrap py-5">
                         <button
                             onClick={() => setActiveTab("All")}
-                            className={`relative py-2 text-[12px] font-bold uppercase tracking-[0.15em] transition-all md:text-[13px] ${
+                            className={`relative py-2 text-sm font-bold uppercase tracking-[0.15em] transition-all ${
                                 activeTab === "All"
                                     ? "text-[#df8448]"
                                     : "text-[#3e4c57]/60 hover:text-[#3e4c57]"
@@ -210,7 +210,7 @@ export default function BlogPage() {
                             <button
                                 key={cat.id}
                                 onClick={() => setActiveTab(cat.name)}
-                                className={`relative py-2 text-[12px] font-bold uppercase tracking-[0.15em] transition-all md:text-[13px] ${
+                                className={`relative py-2 text-sm font-bold uppercase tracking-[0.15em] transition-all ${
                                     activeTab === cat.name
                                         ? "text-[#df8448]"
                                         : "text-[#3e4c57]/60 hover:text-[#3e4c57]"
@@ -235,7 +235,7 @@ export default function BlogPage() {
                         </h2>
 
                         {error && (
-                            <div className="mb-8 rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-[13px] font-medium text-amber-700">
+                            <div className="mb-8 rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-700">
                                 {error}
                             </div>
                         )}
@@ -258,13 +258,13 @@ export default function BlogPage() {
                                                 sizes="(max-width: 768px) 100vw, 35vw"
                                             />
                                             <div className="absolute left-4 top-4">
-                                                <span className="rounded-[3px] bg-white/90 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-[#df8448] shadow-sm backdrop-blur-sm">
+                                                <span className="rounded-[3px] bg-white/90 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-[#df8448] shadow-sm backdrop-blur-sm">
                                                     {post.blog_category?.name || "Insights"}
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="flex flex-1 flex-col py-1">
-                                            <div className="mb-3 flex items-center gap-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                                            <div className="mb-3 flex items-center gap-3 text-xs font-bold uppercase tracking-wider text-zinc-400">
                                                 <span className="text-[#df8448]">
                                                     {post.author || "PetPosture Editorial"}
                                                 </span>
@@ -283,16 +283,16 @@ export default function BlogPage() {
                                             </p>
                                             <div className="mt-auto flex items-center justify-between border-t border-zinc-50 pt-5">
                                                 <div className="flex items-center gap-6">
-                                                    <button className="flex items-center gap-1.5 text-[12px] font-medium text-zinc-400 transition-colors hover:text-[#df8448]">
+                                                    <button className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-[#df8448]">
                                                         <Share2 size={14} /> Share
                                                     </button>
-                                                    <button className="flex items-center gap-1.5 text-[12px] font-medium text-zinc-400 transition-colors hover:text-[#df8448]">
+                                                    <button className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-[#df8448]">
                                                         <MessageSquare size={14} /> Discuss
                                                     </button>
                                                 </div>
                                                 <Link
                                                     href={`/blog/${post.slug || post.id}`}
-                                                    className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#3e4c57] transition-all hover:text-[#df8448]"
+                                                    className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-[#3e4c57] transition-all hover:text-[#df8448]"
                                                 >
                                                     Read Story <ChevronRight size={14} />
                                                 </Link>
@@ -305,7 +305,7 @@ export default function BlogPage() {
 
                         {latestPosts.length > 0 && (
                             <div className="mt-20 flex justify-center border-t border-zinc-100 pt-10">
-                                <button className="rounded-[3px] bg-[#df8448] px-14 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-xl shadow-orange-100/50 transition-all hover:bg-[#c9713a]">
+                                <button className="rounded-[3px] bg-[#df8448] px-14 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white shadow-xl shadow-orange-100/50 transition-all hover:bg-[#c9713a]">
                                     Load More Content
                                 </button>
                             </div>
@@ -314,7 +314,7 @@ export default function BlogPage() {
 
                     <aside className="space-y-12 lg:w-80">
                         <div className="rounded-2xl border border-zinc-100 bg-white p-8 shadow-sm">
-                            <h4 className="mb-6 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#df8448]">
+                            <h4 className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-[#df8448]">
                                 Follow PetPosture
                                 <div className="h-1.5 w-1.5 rounded-full bg-[#df8448]/20" />
                             </h4>
@@ -333,9 +333,9 @@ export default function BlogPage() {
                                             <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-100 bg-white shadow-sm transition-colors group-hover:border-[#df8448]/30">
                                                 <social.icon size={16} style={{ color: social.color }} />
                                             </div>
-                                            <span className="text-[13px] font-bold text-[#3e4c57]">{social.label}</span>
+                                            <span className="text-sm font-bold text-[#3e4c57]">{social.label}</span>
                                         </div>
-                                        <span className="text-[11px] font-bold text-zinc-400">{social.count}</span>
+                                        <span className="text-xs font-bold text-zinc-400">{social.count}</span>
                                     </button>
                                 ))}
                             </div>
@@ -343,7 +343,7 @@ export default function BlogPage() {
 
                         {posts.length > 0 && (
                             <div>
-                                <h4 className="mb-8 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#df8448]">
+                                <h4 className="mb-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-[#df8448]">
                                     Most Discussed
                                     <div className="h-[1px] flex-1 bg-zinc-100" />
                                 </h4>
@@ -357,7 +357,7 @@ export default function BlogPage() {
                                             sizes="320px"
                                         />
                                         <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#3e4c57]/90 via-[#3e4c57]/20 to-transparent p-5">
-                                            <span className="mb-2 w-fit rounded-[2px] bg-[#df8448] px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-white">
+                                            <span className="mb-2 w-fit rounded-[2px] bg-[#df8448] px-2 py-1 text-xs font-bold uppercase tracking-widest text-white">
                                                 Editor&apos;s Pick
                                             </span>
                                             <h5 className="line-clamp-2 text-[15px] font-bold leading-tight text-white transition-colors group-hover:text-[#df8448]">
@@ -377,10 +377,10 @@ export default function BlogPage() {
                                                 />
                                             </div>
                                             <div className="flex-1">
-                                                <h6 className="mb-1 line-clamp-2 text-[13px] font-bold leading-snug text-[#3e4c57] transition-colors group-hover:text-[#df8448]">
+                                                <h6 className="mb-1 line-clamp-2 text-sm font-bold leading-snug text-[#3e4c57] transition-colors group-hover:text-[#df8448]">
                                                     {post.title}
                                                 </h6>
-                                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                                                <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                                                     {post.created_at
                                                         ? new Date(post.created_at).toLocaleDateString()
                                                         : "Recently published"}
@@ -396,15 +396,15 @@ export default function BlogPage() {
                             <h4 className="mb-4 text-[14px] font-bold uppercase tracking-[0.1em] text-[#3e4c57]">
                                 Never miss a post
                             </h4>
-                            <p className="mb-6 text-[13px] text-[#666666]">
+                            <p className="mb-6 text-sm text-[#666666]">
                                 Join 5,000+ pet parents getting our weekly ergonomics report.
                             </p>
                             <input
                                 type="email"
                                 placeholder="Your email"
-                                className="mb-4 w-full rounded-[3px] border border-zinc-200 px-4 py-3 text-[13px] outline-none focus:border-[#df8448]"
+                                className="mb-4 w-full rounded-[3px] border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-[#df8448]"
                             />
-                            <button className="w-full rounded-[3px] bg-[#df8448] py-3 text-[11px] font-bold uppercase tracking-[0.15em] text-white transition-all hover:bg-[#c9713a]">
+                            <button className="w-full rounded-[3px] bg-[#df8448] py-3 text-sm font-bold uppercase tracking-[0.15em] text-white transition-all hover:bg-[#c9713a]">
                                 Subscribe
                             </button>
                         </div>
@@ -444,11 +444,11 @@ export default function BlogPage() {
                                 placeholder="Enter your email address"
                                 className="w-full md:flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-[#3e4c57] outline-none"
                             />
-                            <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-[#df8448] px-10 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-all hover:bg-[#c9713a]">
+                            <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-[#df8448] px-10 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-all hover:bg-[#c9713a]">
                                 Subscribe Now
                             </button>
                         </div>
-                        <p className="mt-6 text-[10px] font-bold uppercase tracking-widest text-white/30">
+                        <p className="mt-6 text-xs font-bold uppercase tracking-widest text-white/30">
                             By subscribing, you agree to our privacy policy and terms.
                         </p>
                     </motion.div>

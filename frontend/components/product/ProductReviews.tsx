@@ -81,7 +81,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
 
                     {/* Summary Side */}
                     <div className="lg:col-span-1">
-                        <h2 className="text-[#3e4c57] text-[12px] font-black uppercase tracking-[0.4em] mb-4">Patient Feedback</h2>
+                        <h2 className="text-[#3e4c57] text-xs font-black uppercase tracking-[0.4em] mb-4">Patient Feedback</h2>
                         <h3 className="text-[#3e4c57] text-[32px] font-bold leading-tight uppercase mb-8">USER JOURNEYS</h3>
 
                         <div className="bg-white p-10 rounded-3xl border border-zinc-100 shadow-xl shadow-zinc-200/20 mb-8">
@@ -92,12 +92,12 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                         <Star key={i} size={18} className={i < Math.round(Number(averageRating)) ? "text-[#df8448] fill-[#df8448]" : "text-zinc-100"} />
                                     ))}
                                 </div>
-                                <p className="text-zinc-400 text-[11px] font-bold uppercase tracking-widest">Based on {reviews.length} Verified Owners</p>
+                                <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest">Based on {reviews.length} Verified Owners</p>
                             </div>
 
                             <button
                                 onClick={() => setIsFormOpen(!isFormOpen)}
-                                className="w-full mt-10 bg-[#3e4c57] text-white py-4 rounded-[4px] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[#df8448] transition-all"
+                                className="w-full mt-10 bg-[#3e4c57] text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[#df8448] transition-all"
                             >
                                 {isFormOpen ? 'Cancel Review' : 'Write a Review'}
                             </button>
@@ -106,14 +106,14 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                         <div className="space-y-4">
                             {[5, 4, 3, 2, 1].map(star => (
                                 <div key={star} className="flex items-center gap-4">
-                                    <span className="text-[10px] font-bold text-zinc-400 w-4">{star}</span>
+                                    <span className="text-xs font-bold text-zinc-400 w-4">{star}</span>
                                     <div className="flex-1 h-1.5 bg-zinc-100 rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-[#df8448] rounded-full"
                                             style={{ width: `${reviews.length > 0 ? (reviews.filter(r => r.rating === star).length / reviews.length) * 100 : 0}%` }}
                                         />
                                     </div>
-                                    <span className="text-[10px] font-bold text-zinc-300 w-8">{reviews.filter(r => r.rating === star).length}</span>
+                                    <span className="text-xs font-bold text-zinc-300 w-8">{reviews.filter(r => r.rating === star).length}</span>
                                 </div>
                             ))}
                         </div>
@@ -127,7 +127,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                     <form onSubmit={handleSubmit} className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Customer Name</label>
+                                                <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Customer Name</label>
                                                 <input
                                                     required
                                                     type="text"
@@ -138,7 +138,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Biometric Rating</label>
+                                                <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Biometric Rating</label>
                                                 <div className="flex gap-2">
                                                     {[1, 2, 3, 4, 5].map(star => (
                                                         <button
@@ -154,7 +154,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Professional Feedback</label>
+                                            <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Professional Feedback</label>
                                             <textarea
                                                 required
                                                 rows={4}
@@ -167,7 +167,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                         <button
                                             disabled={isSubmitting}
                                             type="submit"
-                                            className="bg-[#df8448] text-white px-10 py-5 rounded-[4px] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[#c9713a] transition-all flex items-center gap-3 disabled:opacity-50"
+                                            className="bg-[#df8448] text-white px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[#c9713a] transition-all flex items-center gap-3 disabled:opacity-50"
                                         >
                                             {isSubmitting ? 'Transmitting...' : (
                                                 <>Submit for Verification <Send size={14} /></>
@@ -181,12 +181,12 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                             {isLoading ? (
                                 <div className="text-center py-20">
                                     <div className="w-8 h-8 border-4 border-[#df8448] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                                    <p className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Retrieving Social Proof...</p>
+                                    <p className="text-xs font-black text-zinc-300 uppercase tracking-widest">Retrieving Social Proof...</p>
                                 </div>
                             ) : reviews.length === 0 ? (
                                 <div className="bg-white p-12 rounded-3xl border border-zinc-100 text-center">
                                     <MessageSquare size={32} className="mx-auto text-zinc-100 mb-6" />
-                                    <p className="text-zinc-400 font-bold uppercase tracking-widest text-[11px]">No journeys shared yet. Be the first to lead the pack.</p>
+                                    <p className="text-zinc-400 font-bold uppercase tracking-widest text-sm">No journeys shared yet. Be the first to lead the pack.</p>
                                 </div>
                             ) : (
                                 reviews.map((review) => (
@@ -201,7 +201,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                                 </div>
                                                 <div>
                                                     <h5 className="text-[14px] font-black uppercase tracking-wide text-[#3e4c57]">{review.customer_name}</h5>
-                                                    <div className="flex items-center gap-2 text-[10px] font-bold text-green-500 uppercase tracking-widest mt-1">
+                                                    <div className="flex items-center gap-2 text-xs font-bold text-green-500 uppercase tracking-widest mt-1">
                                                         <ShieldCheck size={12} /> Verified Owner
                                                     </div>
                                                 </div>
@@ -213,7 +213,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                             </div>
                                         </div>
                                         <p className="text-zinc-500 text-[15px] leading-relaxed italic">&quot;{review.comment}&quot;</p>
-                                        <div className="mt-6 pt-6 border-t border-zinc-50 text-[10px] font-bold text-zinc-300 uppercase tracking-widest">
+                                        <div className="mt-6 pt-6 border-t border-zinc-50 text-xs font-bold text-zinc-300 uppercase tracking-widest">
                                             {new Date(review.created_at).toLocaleDateString()}
                                         </div>
                                     </div>

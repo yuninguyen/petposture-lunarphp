@@ -1220,7 +1220,7 @@ function EmailCta() {
         )}
 
         {/* Trust micro-copy */}
-        <div className="flex flex-row flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-8 sm:mt-6 opacity-80 uppercase tracking-[0.08em] font-bold text-[11px] sm:text-[11px]" style={{ fontFamily: F.nav, color: C.grayText }}>
+        <div className="flex flex-row flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-8 sm:mt-6 opacity-80 uppercase tracking-[0.08em] font-bold text-xs" style={{ fontFamily: F.nav, color: C.grayText }}>
           {['🔒 No spam, ever', '✉️ Unsubscribe anytime', '🐾 Pet-exclusive offers'].map(t => (
             <span key={t} className="flex items-center whitespace-nowrap">{t}</span>
           ))}

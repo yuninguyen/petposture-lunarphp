@@ -139,19 +139,19 @@ export default function CartPage() {
             {/* Stepper Section */}
             <div className="bg-zinc-50 border-b border-zinc-100 py-12 px-4">
                 <div className="max-w-[1200px] mx-auto">
-                    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-[11px] md:text-[13px] font-black uppercase tracking-[0.2em]">
+                    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm font-black uppercase tracking-[0.2em]">
                         <div className="flex items-center gap-3 text-[#df8448]">
-                            <span className="w-6 h-6 rounded-full bg-[#df8448] text-white flex items-center justify-center text-[10px]">1</span>
+                            <span className="w-6 h-6 rounded-full bg-[#df8448] text-white flex items-center justify-center text-xs">1</span>
                             <span>Shopping Cart</span>
                         </div>
                         <ChevronRight size={16} className="text-zinc-300" />
                         <div className="flex items-center gap-3 text-zinc-400">
-                            <span className="w-6 h-6 rounded-full bg-zinc-200 text-white flex items-center justify-center text-[10px]">2</span>
+                            <span className="w-6 h-6 rounded-full bg-zinc-200 text-white flex items-center justify-center text-xs">2</span>
                             <span>Checkout Details</span>
                         </div>
                         <ChevronRight size={16} className="text-zinc-300" />
                         <div className="flex items-center gap-3 text-zinc-400">
-                            <span className="w-6 h-6 rounded-full bg-zinc-200 text-white flex items-center justify-center text-[10px]">3</span>
+                            <span className="w-6 h-6 rounded-full bg-zinc-200 text-white flex items-center justify-center text-xs">3</span>
                             <span>Order Complete</span>
                         </div>
                     </div>
@@ -166,7 +166,7 @@ export default function CartPage() {
                         </div>
                         <h2 className="text-[24px] font-bold text-[#3e4c57] mb-4 uppercase tracking-widest">Your Cart is Empty</h2>
                         <p className="text-zinc-400 mb-8 max-w-md mx-auto">Looks like you haven&apos;t added anything to your cart yet. Explore our shop to find the best for your pet.</p>
-                        <Link href="/shop" className="bg-[#df8448] text-white px-10 py-5 rounded-[4px] text-[12px] font-black uppercase tracking-widest hover:bg-[#c9713a] transition-all shadow-xl shadow-orange-500/10">
+                        <Link href="/shop" className="bg-[#df8448] text-white px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-widest hover:bg-[#c9713a] transition-all shadow-xl shadow-orange-500/10">
                             Return to Shop
                         </Link>
                     </div>
@@ -176,7 +176,7 @@ export default function CartPage() {
                         <div className="flex-1 overflow-x-auto">
                             <table className="w-full text-left border-collapse min-w-[600px]">
                                 <thead>
-                                    <tr className="border-b border-zinc-200 text-[11px] font-black text-[#3e4c57] uppercase tracking-[0.2em]">
+                                    <tr className="border-b border-zinc-200 text-sm font-black text-[#3e4c57] uppercase tracking-[0.2em]">
                                         <th className="pb-6 w-12"></th>
                                         <th className="pb-6">Product</th>
                                         <th className="pb-6 text-center">Price</th>
@@ -234,7 +234,7 @@ export default function CartPage() {
                             </table>
 
                             <div className="mt-12 flex justify-between items-center">
-                                <Link href="/shop" className="inline-flex items-center gap-2 group text-[11px] font-black uppercase tracking-widest text-[#3e4c57] border-2 border-zinc-100 px-8 py-4 rounded-[4px] hover:bg-zinc-50 transition-all">
+                                <Link href="/shop" className="inline-flex items-center gap-2 group text-sm font-black uppercase tracking-widest text-[#3e4c57] border-2 border-zinc-100 px-8 py-4 rounded-[4px] hover:bg-zinc-50 transition-all">
                                     <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
                                     Continue Shopping
                                 </Link>
@@ -249,19 +249,19 @@ export default function CartPage() {
                                 </h2>
 
                                 <div className="space-y-6 mb-10">
-                                    <div className="flex justify-between items-center text-[13px]">
+                                    <div className="flex justify-between items-center text-sm">
                                         <span className="text-zinc-500 font-bold uppercase tracking-wider">Subtotal</span>
                                         <span className="font-bold text-[#3e4c57]">${totalAmount.toFixed(2)}</span>
                                     </div>
-                                    <div className="flex justify-between items-start text-[13px]">
+                                    <div className="flex justify-between items-start text-sm">
                                         <span className="text-zinc-500 font-bold uppercase tracking-wider">Shipping</span>
                                         <div className="text-right">
                                             <p className="font-bold text-[#3e4c57]">{shippingPrice === 0 ? 'FREE' : `$${shippingPrice.toFixed(2)}`}</p>
-                                            <p className="text-[10px] text-zinc-400 mt-1">Free shipping on orders over $50</p>
+                                            <p className="text-xs text-zinc-400 mt-1">Free shipping on orders over $50</p>
                                         </div>
                                     </div>
                                     {coupon.discountAmount > 0 && (
-                                        <div className="flex justify-between items-center text-[13px] text-[#df8448]">
+                                        <div className="flex justify-between items-center text-sm text-[#df8448]">
                                             <span className="font-bold uppercase tracking-wider">Discount</span>
                                             <span className="font-bold">-${coupon.discountAmount.toFixed(2)}</span>
                                         </div>
@@ -275,7 +275,7 @@ export default function CartPage() {
 
                                 <button
                                     onClick={() => router.push('/checkout')}
-                                    className="w-full bg-[#df8448] text-white py-5 rounded-[4px] font-black uppercase tracking-[0.25em] text-[12px] shadow-2xl shadow-orange-500/20 hover:bg-[#c9713a] transition-all"
+                                    className="w-full bg-[#df8448] text-white py-5 rounded-[4px] font-black uppercase tracking-[0.25em] text-sm shadow-2xl shadow-orange-500/20 hover:bg-[#c9713a] transition-all"
                                 >
                                     Proceed to Checkout
                                 </button>
@@ -284,7 +284,7 @@ export default function CartPage() {
                                 <div className="mt-12 pt-10 border-t border-zinc-200">
                                     <div className="flex items-center gap-2 mb-4">
                                         <Tag size={16} className="text-[#df8448]" />
-                                        <span className="text-[11px] font-black text-[#3e4c57] uppercase tracking-widest">Coupon Code</span>
+                                        <span className="text-sm font-black text-[#3e4c57] uppercase tracking-widest">Coupon Code</span>
                                     </div>
                                     <div className="flex flex-col gap-3">
                                         <input
@@ -292,17 +292,17 @@ export default function CartPage() {
                                             value={couponCode}
                                             onChange={(e) => setCouponCode(e.target.value)}
                                             placeholder="Coupon code"
-                                            className="w-full bg-white border border-zinc-200 rounded-[4px] px-6 py-4 text-[13px] outline-none focus:border-[#df8448] transition-colors"
+                                            className="w-full bg-white border border-zinc-200 rounded-[4px] px-6 py-4 text-sm outline-none focus:border-[#df8448] transition-colors"
                                         />
                                         <button
                                             onClick={handleApplyCoupon}
                                             disabled={isApplying}
-                                            className="w-full bg-zinc-100 text-[#3e4c57] py-4 rounded-[4px] text-[11px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all disabled:opacity-50"
+                                            className="w-full bg-zinc-100 text-[#3e4c57] py-4 rounded-[4px] text-sm font-black uppercase tracking-widest hover:bg-zinc-200 transition-all disabled:opacity-50"
                                         >
                                             {isApplying ? 'Applying...' : 'Apply Coupon'}
                                         </button>
                                         {coupon.message && (
-                                            <p className={`text-[11px] mt-2 font-bold ${coupon.isError ? 'text-red-500' : 'text-green-600'}`}>
+                                            <p className={`text-sm mt-2 font-bold ${coupon.isError ? 'text-red-500' : 'text-green-600'}`}>
                                                 {coupon.message}
                                             </p>
                                         )}

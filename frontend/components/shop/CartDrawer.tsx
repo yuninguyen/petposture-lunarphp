@@ -53,10 +53,10 @@ export function CartDrawer() {
                                         <ShoppingBag size={32} className="text-zinc-200" />
                                     </div>
                                     <p className="text-[14px] font-bold text-[#3e4c57] uppercase tracking-widest mb-2">Your cart is empty</p>
-                                    <p className="text-[12px] text-zinc-400 mb-8">Add items to get started</p>
+                                    <p className="text-sm text-zinc-400 mb-8">Add items to get started</p>
                                     <button
                                         onClick={() => setCartOpen(false)}
-                                        className="bg-[#3e4c57] text-white px-8 py-4 rounded-[4px] text-[11px] font-black uppercase tracking-widest hover:bg-[#2c363e] transition-all shadow-lg shadow-zinc-200"
+                                        className="bg-[#3e4c57] text-white px-8 py-4 rounded-[4px] text-sm font-black uppercase tracking-widest hover:bg-[#2c363e] transition-all shadow-lg shadow-zinc-200"
                                     >
                                         Continue Shopping
                                     </button>
@@ -71,10 +71,10 @@ export function CartDrawer() {
 
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="text-[13px] font-bold text-[#3e4c57] leading-tight mb-1 hover:text-[#df8448] transition-colors cursor-pointer">
+                                            <h3 className="text-sm font-bold text-[#3e4c57] leading-tight mb-1 hover:text-[#df8448] transition-colors cursor-pointer">
                                                 {item.name}
                                             </h3>
-                                            <div className="flex items-center gap-2 text-[12px] font-medium text-zinc-400">
+                                            <div className="flex items-center gap-2 text-sm font-medium text-zinc-400">
                                                 <span>{item.quantity}</span>
                                                 <span>&times;</span>
                                                 <span className="text-[#df8448] font-bold">${item.price.toFixed(2)}</span>
@@ -88,7 +88,7 @@ export function CartDrawer() {
                                                 >
                                                     <Minus size={10} strokeWidth={3} />
                                                 </button>
-                                                <span className="px-2 text-[11px] font-black text-[#3e4c57] min-w-[20px] text-center">{item.quantity}</span>
+                                                <span className="px-2 text-sm font-black text-[#3e4c57] min-w-[20px] text-center">{item.quantity}</span>
                                                 <button
                                                     onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
                                                     className="px-2.5 py-1 text-zinc-400 hover:text-[#3e4c57] transition-colors"
@@ -114,7 +114,7 @@ export function CartDrawer() {
                         {items.length > 0 && (
                             <div className="p-8 bg-white border-t border-zinc-100 flex flex-col gap-4">
                                 <div className="flex items-center justify-between py-2">
-                                    <span className="text-[#3e4c57] text-[13px] font-bold uppercase tracking-widest">Subtotal:</span>
+                                    <span className="text-[#3e4c57] text-sm font-bold uppercase tracking-widest">Subtotal:</span>
                                     <span className="text-[18px] font-black text-[#3e4c57]">${totalAmount.toFixed(2)}</span>
                                 </div>
                                 <div className="h-[1px] bg-zinc-100 w-full mb-2" />
@@ -122,13 +122,13 @@ export function CartDrawer() {
                                 <div className="flex flex-col gap-3">
                                     <button
                                         onClick={() => { setCartOpen(false); router.push('/cart'); }}
-                                        className="w-full bg-[#3e4c57] text-white py-4 rounded-[4px] text-[11px] font-black uppercase tracking-[0.25em] hover:bg-[#2c363e] transition-all flex items-center justify-center"
+                                        className="w-full bg-[#3e4c57] text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.25em] hover:bg-[#2c363e] transition-all flex items-center justify-center"
                                     >
                                         View Cart
                                     </button>
                                     <button
                                         onClick={() => { setCartOpen(false); router.push('/checkout'); }}
-                                        className="w-full bg-[#df8448] text-white py-4 rounded-[4px] text-[11px] font-black uppercase tracking-[0.25em] shadow-xl shadow-orange-500/10 hover:bg-[#c9713a] transition-all flex items-center justify-center"
+                                        className="w-full bg-[#df8448] text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.25em] shadow-xl shadow-orange-500/10 hover:bg-[#c9713a] transition-all flex items-center justify-center"
                                     >
                                         Checkout
                                     </button>

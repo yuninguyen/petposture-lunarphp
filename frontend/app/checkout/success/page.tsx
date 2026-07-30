@@ -344,10 +344,10 @@ function AddressBlock({ title, address }: { title: string; address: Address }) {
 
     return (
         <div>
-            <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9ca3af]">
+            <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#9ca3af]">
                 {title}
             </p>
-            <div className="space-y-0.5 text-[13.5px] leading-[1.8] text-[#555555]">
+            <div className="space-y-0.5 text-[14px] leading-[1.8] text-[#555555]">
                 {name && <p className="font-semibold text-[#1a1a1a]">{name}</p>}
                 {street && <p>{street}</p>}
                 {cityLine && <p>{cityLine}</p>}
@@ -472,7 +472,7 @@ function OrderSuccessContent() {
                             />
                         </div>
                         <div>
-                            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#df8448]">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#df8448]">
                                 Order #{order.reference}
                             </p>
                             <h1 className="mt-0.5 text-[26px] font-bold leading-tight tracking-tight text-[#2f3d46] md:text-[30px]">
@@ -521,10 +521,10 @@ function OrderSuccessContent() {
                                             {step.done ? <CheckCircle size={14} /> : <span className="h-2 w-2 rounded-full bg-current" />}
                                         </span>
                                         <div className="pb-1">
-                                            <p className="text-[13.5px] font-semibold text-[#1a1a1a]">
+                                            <p className="text-[14px] font-semibold text-[#1a1a1a]">
                                                 {step.label}
                                             </p>
-                                            <p className="mt-0.5 text-[12.5px] leading-[1.65] text-[#707070]">
+                                            <p className="mt-0.5 text-[13px] leading-[1.65] text-[#707070]">
                                                 {step.detail}
                                             </p>
                                         </div>
@@ -543,10 +543,10 @@ function OrderSuccessContent() {
                             </div>
                             <div className="flex items-center justify-between gap-4 px-6 py-5">
                                 <div>
-                                    <p className="text-[13.5px] font-medium text-[#555555]">
+                                    <p className="text-[14px] font-medium text-[#555555]">
                                         {formatMethodLabel(shipment.carrier || "manual")}
                                     </p>
-                                    <p className="mt-0.5 text-[12.5px] leading-[1.6] text-[#707070]">
+                                    <p className="mt-0.5 text-[13px] leading-[1.6] text-[#707070]">
                                         Tracking number: {shipment.tracking_number}
                                     </p>
                                 </div>
@@ -554,7 +554,7 @@ function OrderSuccessContent() {
                                     href={shipment.tracking_url}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex h-10 items-center justify-center rounded-[6px] border border-[#df8448] px-4 text-[12px] font-semibold text-[#df8448] transition hover:bg-[#fff4ec]"
+                                    className="inline-flex h-10 items-center justify-center rounded-[6px] border border-[#df8448] px-4 text-sm font-semibold text-[#df8448] transition hover:bg-[#fff4ec]"
                                 >
                                     Open tracking
                                 </a>
@@ -571,7 +571,7 @@ function OrderSuccessContent() {
                         </div>
                         <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                             <div className="px-6 py-4">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
                                     Order number
                                 </p>
                                 <p className="mt-1.5 text-[14px] font-semibold text-[#1a1a1a]">
@@ -579,7 +579,7 @@ function OrderSuccessContent() {
                                 </p>
                             </div>
                             <div className="px-6 py-4">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
                                     Date
                                 </p>
                                 <p className="mt-1.5 text-[14px] font-medium text-[#555555]">
@@ -591,7 +591,7 @@ function OrderSuccessContent() {
                                 </p>
                             </div>
                             <div className="px-6 py-4">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
                                     Order total
                                 </p>
                                 <p className="mt-1.5 text-[14px] font-semibold text-[#1a1a1a]">
@@ -610,20 +610,20 @@ function OrderSuccessContent() {
                         </div>
                         <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
                             <div className="px-6 py-5">
-                                <p className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+                                <p className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
                                     <Mail size={12} />
                                     Contact
                                 </p>
-                                <p className="text-[13.5px] text-[#555555]">
+                                <p className="text-[14px] text-[#555555]">
                                     {order.customer_email}
                                 </p>
                             </div>
                             <div className="px-6 py-5">
-                                <p className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+                                <p className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
                                     <Truck size={12} />
                                     Shipping method
                                 </p>
-                                <p className="text-[13.5px] text-[#555555]">
+                                <p className="text-[14px] text-[#555555]">
                                     {shippingMethod}
                                 </p>
                             </div>
@@ -641,7 +641,7 @@ function OrderSuccessContent() {
                             {(() => {
                                 const badge = cardBrandBadge(order.card_brand);
                                 return badge ? (
-                                    <div className={`flex h-8 w-12 flex-shrink-0 items-center justify-center rounded-[5px] text-[10px] font-bold tracking-wide ${badge.className}`}>
+                                    <div className={`flex h-8 w-12 flex-shrink-0 items-center justify-center rounded-[5px] text-xs font-bold tracking-wide ${badge.className}`}>
                                         {badge.label}
                                     </div>
                                 ) : (
@@ -651,20 +651,20 @@ function OrderSuccessContent() {
                                 );
                             })()}
                             <div className="min-w-0 flex-1">
-                                <p className="text-[13.5px] font-medium text-[#555555]">
+                                <p className="text-[14px] font-medium text-[#555555]">
                                     {paymentMethod}
                                     {order.card_last4 ? ` •••• ${order.card_last4}` : ""}
                                 </p>
-                                <p className="mt-0.5 text-[12.5px] leading-[1.6] text-[#707070]">
+                                <p className="mt-0.5 text-[13px] leading-[1.6] text-[#707070]">
                                     {paymentMessage(order)}
                                 </p>
                             </div>
                             <div className="flex flex-col items-end gap-1.5">
-                                <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${paymentTone(order.payment_status)}`}>
+                                <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${paymentTone(order.payment_status)}`}>
                                     {order.payment_status_label}
                                 </span>
                                 {order.amount_charged != null ? (
-                                    <span className="text-[12.5px] font-semibold text-[#1a1a1a]">
+                                    <span className="text-[14px] font-semibold text-[#1a1a1a]">
                                         ${order.amount_charged.toFixed(2)} USD
                                     </span>
                                 ) : null}
@@ -740,16 +740,16 @@ function OrderSuccessContent() {
                                                 <Package size={20} className="text-[#c8c8cc]" />
                                             )}
                                         </div>
-                                        <span className="absolute -right-1.5 -top-1.5 z-10 flex h-[21px] w-[21px] items-center justify-center rounded-full bg-black text-[11px] font-bold leading-none text-white ring-2 ring-white">
+                                        <span className="absolute -right-1.5 -top-1.5 z-10 flex h-[21px] w-[21px] items-center justify-center rounded-full bg-black text-xs font-bold leading-none text-white ring-2 ring-white">
                                             {line.quantity}
                                         </span>
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-[13px] font-medium leading-[1.5] text-[#1a1a1a]">
+                                        <p className="text-sm font-medium leading-[1.5] text-[#1a1a1a]">
                                             {line.description}
                                         </p>
                                     </div>
-                                    <p className="flex-shrink-0 text-[13px] font-semibold text-[#1a1a1a]">
+                                    <p className="flex-shrink-0 text-sm font-semibold text-[#1a1a1a]">
                                         ${line.sub_total}
                                     </p>
                                 </div>
@@ -758,7 +758,7 @@ function OrderSuccessContent() {
 
                         {/* Totals */}
                         <div className="space-y-2.5 border-t border-[#e8e8ea] px-5 py-5">
-                            <div className="flex items-center justify-between text-[13px]">
+                            <div className="flex items-center justify-between text-sm">
                                 <span className="text-[#707070]">Subtotal</span>
                                 <span className="font-medium text-[#1a1a1a]">
                                     ${order.sub_total}
@@ -766,7 +766,7 @@ function OrderSuccessContent() {
                             </div>
 
                             {parseFloat(order.discount_total) > 0 && (
-                                <div className="flex items-center justify-between text-[13px]">
+                                <div className="flex items-center justify-between text-sm">
                                     <div className="flex items-center gap-2">
                                         <Tag className="w-3.5 h-3.5 text-[#df8448]" />
                                         <span className="text-[#707070]">
@@ -779,7 +779,7 @@ function OrderSuccessContent() {
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-between text-[13px]">
+                            <div className="flex items-center justify-between text-sm">
                                 <span className="text-[#707070]">Shipping</span>
                                 <span className="font-medium text-[#1a1a1a]">
                                     {parseFloat(order.shipping_total) === 0
@@ -788,7 +788,7 @@ function OrderSuccessContent() {
                                 </span>
                             </div>
 
-                            <div className="flex items-center justify-between text-[13px]">
+                            <div className="flex items-center justify-between text-sm">
                                 <div className="pr-3 text-[#707070]">
                                     <span>
                                         {order.tax_is_estimate === false ? 'Tax' : 'Estimated tax'} {order.tax_rate_percentage !== undefined && order.tax_rate_percentage > 0 && (
@@ -796,7 +796,7 @@ function OrderSuccessContent() {
                                         )}
                                     </span>
                                     {order.tax_source_label ? (
-                                        <p className="mt-1 text-[11px] leading-4 text-[#9ca3af]">
+                                        <p className="mt-1 text-xs leading-4 text-[#9ca3af]">
                                             {order.tax_source_label}
                                             {order.tax_effective_date ? `, effective ${order.tax_effective_date}` : ''}
                                         </p>
@@ -812,7 +812,7 @@ function OrderSuccessContent() {
                                     Total
                                 </span>
                                 <div className="text-right">
-                                    <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
                                         {order.total.currency}
                                     </p>
                                     <p className="text-[22px] font-bold tracking-tight text-[#1a1a1a]">

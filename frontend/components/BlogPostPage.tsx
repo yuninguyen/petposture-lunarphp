@@ -55,12 +55,12 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         animate="animate"
                         variants={fadeUp}
                     >
-                        <Link href="/blog" className="inline-flex items-center gap-2 text-[#df8448] font-bold uppercase tracking-widest text-[11px] mb-8 hover:translate-x-[-4px] transition-transform">
+                        <Link href="/blog" className="inline-flex items-center gap-2 text-[#df8448] font-bold uppercase tracking-widest text-sm mb-8 hover:translate-x-[-4px] transition-transform">
                             <ArrowLeft size={14} /> Back to Blog
                         </Link>
 
                         <div className="flex justify-center mb-6">
-                            <span className="bg-[#df8448]/10 text-[#df8448] text-[11px] font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-[3px]">
+                            <span className="bg-[#df8448]/10 text-[#df8448] text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-[3px]">
                                 {post.category}
                             </span>
                         </div>
@@ -69,7 +69,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                             {post.title}
                         </h1>
 
-                        <div className="flex flex-wrap items-center justify-center gap-6 text-zinc-400 text-[13px] font-medium">
+                        <div className="flex flex-wrap items-center justify-center gap-6 text-zinc-400 text-xs font-medium">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-zinc-200 flex items-center justify-center overflow-hidden border border-zinc-300">
                                     <User size={16} className="text-zinc-500" />
@@ -153,7 +153,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         <div className="mt-16 pt-10 border-t border-zinc-100">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                 <div className="flex items-center gap-4">
-                                    <span className="text-zinc-400 text-[13px] font-bold uppercase tracking-wider">Share this story:</span>
+                                    <span className="text-zinc-400 text-sm font-bold uppercase tracking-wider">Share this story:</span>
                                     <div className="flex items-center gap-2">
                                         {[
                                             { icon: Facebook, color: "#1877F2" },
@@ -168,7 +168,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     {["Health", "Guideline", "Senior Pets"].map(tag => (
-                                        <span key={tag} className="text-[11px] font-bold text-[#3e4c57]/60 border border-zinc-200 px-4 py-1.5 rounded-[3px] hover:bg-zinc-50 cursor-pointer transition-colors bg-white shadow-sm uppercase tracking-widest">
+                                        <span key={tag} className="text-xs font-bold text-[#3e4c57]/60 border border-zinc-200 px-4 py-1.5 rounded-[3px] hover:bg-zinc-50 cursor-pointer transition-colors bg-white shadow-sm uppercase tracking-widest">
                                             {tag}
                                         </span>
                                     ))}
@@ -181,7 +181,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                             <div className="flex items-center gap-4">
                                 <h3 className="text-[24px] font-bold text-[#3e4c57]">Reader Comments</h3>
                                 <div className="flex-1 h-[1px] bg-zinc-100" />
-                                <span className="bg-zinc-50 text-zinc-400 px-3 py-1 rounded-full text-[12px] font-bold">2</span>
+                                <span className="bg-zinc-50 text-zinc-400 px-3 py-1 rounded-full text-xs font-bold">2</span>
                             </div>
 
                             <div className="space-y-10">
@@ -192,12 +192,12 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between mb-2">
                                             <h5 className="text-[14px] font-bold text-[#3e4c57]">Michael Chen</h5>
-                                            <span className="text-[11px] text-zinc-400">Mar 25, 2024</span>
+                                            <span className="text-xs text-zinc-400">Mar 25, 2024</span>
                                         </div>
                                         <p className="text-[#666666] text-[15px] leading-relaxed">
                                             This is exactly the information I was looking for! My Dachshund has been showing some signs of discomfort during meals, and I&apos;ll definitely look into a tilted bowl.
                                         </p>
-                                        <button className="mt-4 text-[11px] font-bold text-[#df8448] uppercase tracking-widest hover:text-[#3e4c57] transition-colors">Reply</button>
+                                        <button className="mt-4 text-sm font-bold text-[#df8448] uppercase tracking-widest hover:text-[#3e4c57] transition-colors">Reply</button>
                                     </div>
                                 </div>
                             </div>
@@ -233,27 +233,27 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                                 <form className="space-y-6">
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                         <div className="space-y-2">
-                                                            <label className="text-[11px] font-bold text-[#3e4c57] uppercase tracking-widest ml-1">Name *</label>
+                                                            <label className="text-sm font-bold text-[#3e4c57] uppercase tracking-widest ml-1">Name *</label>
                                                             <input type="text" className="w-full px-5 py-4 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-[#df8448] text-[14px]" placeholder="John Doe" />
                                                         </div>
                                                         <div className="space-y-2">
-                                                            <label className="text-[11px] font-bold text-[#3e4c57] uppercase tracking-widest ml-1">Email *</label>
+                                                            <label className="text-sm font-bold text-[#3e4c57] uppercase tracking-widest ml-1">Email *</label>
                                                             <input type="email" className="w-full px-5 py-4 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-[#df8448] text-[14px]" placeholder="john@example.com" />
                                                         </div>
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <label className="text-[11px] font-bold text-[#3e4c57] uppercase tracking-widest ml-1">Website</label>
+                                                        <label className="text-sm font-bold text-[#3e4c57] uppercase tracking-widest ml-1">Website</label>
                                                         <input type="text" className="w-full px-5 py-4 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-[#df8448] text-[14px]" placeholder="Optional" />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <label className="text-[11px] font-bold text-[#3e4c57] uppercase tracking-widest ml-1">Comment *</label>
+                                                        <label className="text-sm font-bold text-[#3e4c57] uppercase tracking-widest ml-1">Comment *</label>
                                                         <textarea rows={6} className="w-full px-5 py-4 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-[#df8448] text-[14px] resize-none" placeholder="Your message here..." />
                                                     </div>
                                                     <div className="flex items-center gap-3 py-4">
                                                         <input type="checkbox" id="save-info" className="w-4 h-4 rounded border-zinc-300 text-[#df8448] focus:ring-[#df8448]" />
-                                                        <label htmlFor="save-info" className="text-[13px] text-zinc-500">Save my name, email, and website in this browser for the next time I comment.</label>
+                                                        <label htmlFor="save-info" className="text-sm text-zinc-500">Save my name, email, and website in this browser for the next time I comment.</label>
                                                     </div>
-                                                    <button className="bg-[#df8448] text-white px-10 py-4 rounded-[3px] font-bold uppercase tracking-[0.2em] text-[11px] hover:bg-[#c9713a] transition-all shadow-lg shadow-orange-200/50">
+                                                    <button className="bg-[#df8448] text-white px-10 py-4 rounded-[3px] font-bold uppercase tracking-[0.2em] text-sm hover:bg-[#c9713a] transition-all shadow-lg shadow-orange-200/50">
                                                         Post Comment
                                                     </button>
                                                 </form>
@@ -270,7 +270,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
 
                         {/* Featured Widget */}
                         <div className="bg-[#f8f9fa] rounded-2xl p-8 border border-zinc-100 relative overflow-hidden">
-                            <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#df8448] mb-6 flex items-center gap-3">
+                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#df8448] mb-6 flex items-center gap-3">
                                 More Like This
                                 <div className="flex-1 h-[1px] bg-zinc-200" />
                             </h4>
@@ -290,7 +290,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                             <h5 className="text-[14px] font-bold text-[#3e4c57] leading-tight group-hover:text-[#df8448] transition-colors mb-2 line-clamp-2">
                                                 {rPost.title}
                                             </h5>
-                                            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{rPost.date}</span>
+                                            <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">{rPost.date}</span>
                                         </div>
                                     </Link>
                                 ))}
@@ -299,7 +299,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
 
                         {/* Social Widget */}
                         <div className="bg-white rounded-2xl p-8 border border-zinc-100 shadow-xl shadow-zinc-100">
-                            <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#df8448] mb-6">Join the Community</h4>
+                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#df8448] mb-6">Join the Community</h4>
                             <div className="grid grid-cols-1 gap-3">
                                 {[
                                     { icon: Facebook, label: "Facebook", count: "12K", color: "#1877F2" },
@@ -311,9 +311,9 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
                                                 <social.icon size={16} style={{ color: social.color }} />
                                             </div>
-                                            <span className="text-[13px] font-bold text-[#3e4c57]">{social.label}</span>
+                                            <span className="text-sm font-bold text-[#3e4c57]">{social.label}</span>
                                         </div>
-                                        <span className="text-[11px] font-bold text-zinc-400">{social.count}</span>
+                                        <span className="text-xs font-bold text-zinc-400">{social.count}</span>
                                     </button>
                                 ))}
                             </div>
@@ -323,7 +323,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         <div className="bg-[#fdf2ea] rounded-3xl p-8 text-[#3e4c57] relative overflow-hidden border border-orange-100/50">
                             <div className="relative z-10">
                                 <h4 className="text-[18px] font-bold mb-4 uppercase tracking-[0.1em]">Ergo-Tips in your inbox</h4>
-                                <p className="text-zinc-600 text-[13px] leading-relaxed mb-8">
+                                <p className="text-zinc-600 text-sm leading-relaxed mb-8">
                                     The science of pet care is evolving. Get our monthly digest of breed-specific ergonomics.
                                 </p>
                                 <div className="space-y-3">
@@ -332,7 +332,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                         placeholder="Your email"
                                         className="w-full px-5 py-4 rounded-[3px] bg-white border border-orange-200/50 text-[#3e4c57] placeholder:text-zinc-400 text-[14px] outline-none focus:border-[#df8448] shadow-sm"
                                     />
-                                    <button className="w-full bg-[#df8448] text-white py-4 rounded-[3px] font-bold uppercase tracking-widest text-[11px] hover:bg-[#c9713a] transition-all shadow-lg shadow-orange-200/30">
+                                    <button className="w-full bg-[#df8448] text-white py-4 rounded-[3px] font-bold uppercase tracking-widest text-sm hover:bg-[#c9713a] transition-all shadow-lg shadow-orange-200/30">
                                         Subscribe
                                     </button>
                                 </div>
@@ -363,7 +363,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                     className="object-cover transition-transform duration-500 group-hover:scale-110"
                                 />
                                 <div className="absolute top-4 left-4">
-                                    <span className="bg-white/90 backdrop-blur-sm text-[#df8448] text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-[3px]">
+                                    <span className="bg-white/90 backdrop-blur-sm text-[#df8448] text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-[3px]">
                                         {rPost.category}
                                     </span>
                                 </div>
@@ -372,7 +372,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                 <h3 className="text-[18px] font-bold text-[#3e4c57] leading-tight mb-4 hover:text-[#df8448] transition-colors cursor-pointer">
                                     {rPost.title}
                                 </h3>
-                                <Link href={`/blog/${rPost.id}`} className="text-[#3e4c57] font-bold uppercase tracking-widest text-[10px] flex items-center gap-2">
+                                <Link href={`/blog/${rPost.id}`} className="text-[#3e4c57] font-bold uppercase tracking-widest text-sm flex items-center gap-2">
                                     Read Story <ChevronRight size={14} />
                                 </Link>
                             </div>
