@@ -133,7 +133,7 @@ export default function Header() {
         <div className="max-w-[1200px] mx-auto w-full px-6 flex justify-between h-full">
 
           {/* Main Links */}
-          <ul className="flex items-center text-sm font-bold uppercase tracking-[0.1em] h-full" style={{ fontFamily: "var(--font-lato), sans-serif" }}>
+          <ul className="flex items-center text-[13px] font-bold uppercase tracking-[0.1em] h-full" style={{ fontFamily: "var(--font-lato), sans-serif" }}>
             <li className="h-full">
               <Link href="/" className={navLinkClass("/")}>
                 Home

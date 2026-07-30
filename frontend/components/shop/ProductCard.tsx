@@ -21,29 +21,29 @@ export function ProductCard({ product }: { product: Product }) {
                     />
 
                     <div className="absolute left-3 top-3">
-                        <span className="rounded-full bg-white/92 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#56616a] shadow-sm">
+                        <span className="rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#56616a] shadow-sm">
                             {product.category}
                         </span>
                     </div>
 
                     <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
                         {product.badge && (
-                            <span className="rounded-full bg-[#df8448] px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-orange-500/20">
+                            <span className="rounded-full bg-[#df8448] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-orange-500/20">
                                 {product.badge}
                             </span>
                         )}
                         {product.isNew && (
-                            <span className="rounded-full bg-[#3e4c57] px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
+                            <span className="rounded-full bg-[#3e4c57] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
                                 New
                             </span>
                         )}
                         {product.lowStockWarning && !product.backorder && (
-                            <span className="rounded-full bg-[#d94e33] px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-red-500/20">
+                            <span className="rounded-full bg-[#d94e33] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-red-500/20">
                                 Low Stock
                             </span>
                         )}
                         {product.backorder && (
-                            <span className="rounded-full bg-[#6b7280] px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
+                            <span className="rounded-full bg-[#6b7280] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
                                 Backorder
                             </span>
                         )}
