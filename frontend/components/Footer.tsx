@@ -55,7 +55,7 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: 
         className="flex items-center justify-between w-full lg:mb-4 group text-left"
       >
         <div>
-          <h3 className="font-bold text-[13px] md:text-[16px] uppercase tracking-[0.15em] text-white inline-block">
+          <h3 className="font-bold text-[14px] md:text-[16px] uppercase tracking-[0.15em] text-white inline-block">
             {title}
           </h3>
           <div className="hidden lg:block w-8 h-[2px] bg-[#df8448] mt-3" />

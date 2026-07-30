@@ -299,18 +299,6 @@ export default function Header() {
                   ))}
                 </div>
               </div>
-
-              {/* Drawer Footer CTA */}
-              <div className="p-6 border-t border-zinc-100">
-                <Link
-                  href="/shop"
-                  onClick={() => setMobileOpen(false)}
-                  className="w-full bg-secondary text-white py-4 rounded font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3 shadow-lg hover:bg-secondary/90 transition-all"
-                >
-                  <ShoppingBag size={18} />
-                  Shop the Collection
-                </Link>
-              </div>
             </motion.div>
           </>
         )}
