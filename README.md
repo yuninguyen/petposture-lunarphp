@@ -2,6 +2,13 @@
 
 An e-commerce platform for pet posture products, built as a monorepo with Next.js (frontend) and Laravel + Lunar PHP (backend).
 
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?logo=php&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Stripe](https://img.shields.io/badge/Payments-Stripe%20%2B%20PayPal-635BFF?logo=stripe&logoColor=white)
+![License](https://img.shields.io/badge/License-Proprietary-lightgrey)
+
 **Live site:** https://petposture.com  
 **Admin panel:** https://api.petposture.com/admin
 
@@ -17,7 +24,7 @@ An e-commerce platform for pet posture products, built as a monorepo with Next.j
 | Admin Panel | Filament 3 + Filament Shield (RBAC) |
 | Auth | Laravel Sanctum |
 | Roles & Permissions | Spatie Laravel Permission |
-| Payments | Stripe (cards, incl. Radar fraud scoring) + PayPal (Smart Buttons, popup approval) + Cash on Delivery |
+| Payments | Stripe (cards, incl. Radar fraud scoring) + PayPal (Smart Buttons, popup approval) |
 | Database | MySQL |
 | Cache & Session | Redis (via `predis/predis`) |
 | Queue | Database driver, processed by a `queue:work` process (supervisord) |
@@ -68,7 +75,7 @@ petposture/
 ## Features
 
 - Product catalog with categories, variants, attributes, and brands
-- Shopping cart & checkout flow (guest + authenticated), COD, Stripe card, and PayPal (Smart
+- Shopping cart & checkout flow (guest + authenticated), Stripe card and PayPal (Smart
   Buttons rendered inline, popup approval — not a full-page redirect) payments. A "Save this
   information for next time" checkout checkbox saves the shipping address for next time: to the
   customer's account (`/api/me/addresses`, authenticated) if logged in, or to `localStorage`
@@ -416,4 +423,6 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for a detailed system diagram and reque
 
 ## License
 
-MIT
+Proprietary — All rights reserved.
+
+<p align="center"><b>© 2026 PetPosture</b></p>
