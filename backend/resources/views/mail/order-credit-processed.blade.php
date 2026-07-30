@@ -13,6 +13,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ config('app.name') }}</title>
+<style>
+@media only screen and (max-width:600px) {
+  .stack-col { display:block !important; width:100% !important; }
+  .stack-gap { padding-bottom:20px !important; }
+}
+</style>
 </head>
 <body style="margin:0; padding:0; background-color:#ffffff; {{ $font }}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="{{ $font }} background-color:#ffffff;">
@@ -66,7 +72,7 @@ If you have further questions on your {{ config('app.name') }}.com order, please
 <td style="{{ $font }} padding-bottom:36px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
-<td width="50%" align="center" valign="top" style="{{ $font }} padding:0 12px;">
+<td width="50%" align="center" valign="top" class="stack-col stack-gap" style="{{ $font }} padding:0 12px;">
 <table role="presentation" cellpadding="0" cellspacing="0" align="center">
 <tr>
 <td width="40" height="40" align="center" valign="middle" style="{{ $font }} background-color:#fff3eb; border-radius:50%; color:#df8448; font-size:16px;">&#9993;</td>
@@ -76,7 +82,7 @@ If you have further questions on your {{ config('app.name') }}.com order, please
 <a href="mailto:support@petposture.com" style="{{ $font }} color:#1a1a1a; text-decoration:none; font-weight:600;">support@petposture.com</a>
 </p>
 </td>
-<td width="50%" align="center" valign="top" style="{{ $font }} padding:0 12px;">
+<td width="50%" align="center" valign="top" class="stack-col" style="{{ $font }} padding:0 12px;">
 <table role="presentation" cellpadding="0" cellspacing="0" align="center">
 <tr>
 <td width="40" height="40" align="center" valign="middle" style="{{ $font }} background-color:#fff3eb; border-radius:50%; color:#df8448; font-size:16px;">&#9742;</td>

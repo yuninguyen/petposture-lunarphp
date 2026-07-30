@@ -40,6 +40,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ config('app.name') }}</title>
+<style>
+@media only screen and (max-width:600px) {
+  .stack-col { display:block !important; width:100% !important; }
+  .stack-gap { padding-bottom:20px !important; }
+  .full-col { width:100% !important; }
+}
+</style>
 </head>
 <body style="margin:0; padding:0; background-color:#ffffff; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; background-color:#ffffff;">
@@ -143,7 +150,7 @@ ${{ number_format($lineTotal, 2) }}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td></td>
-<td width="260" valign="top">
+<td width="260" valign="top" class="full-col">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Subtotal</td>
@@ -175,7 +182,7 @@ ${{ number_format($lineTotal, 2) }}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td></td>
-<td width="260" valign="top" style="border-top:1px solid #ececec; border-bottom:1px solid #ececec; padding:16px 0;">
+<td width="260" valign="top" class="full-col" style="border-top:1px solid #ececec; border-bottom:1px solid #ececec; padding:16px 0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:15px; font-weight:700; color:#1a1a1a;">Total</td>
@@ -198,7 +205,7 @@ ${{ number_format($lineTotal, 2) }}
 <td>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
-<td width="50%" valign="top">
+<td width="50%" valign="top" class="stack-col stack-gap">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 8px; font-size:14px; font-weight:500; color:#1a1a1a;">Shipping address</p>
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#707070;">
 {{ $order->shippingAddress?->first_name }} {{ $order->shippingAddress?->last_name }}<br>
@@ -210,7 +217,7 @@ ${{ number_format($lineTotal, 2) }}
 {{ $order->shippingAddress?->country?->name ?? 'United States' }}
 </p>
 </td>
-<td width="50%" valign="top">
+<td width="50%" valign="top" class="stack-col">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 8px; font-size:14px; font-weight:500; color:#1a1a1a;">Billing address</p>
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#707070;">
 {{ ($order->billingAddress ?? $order->shippingAddress)?->first_name }} {{ ($order->billingAddress ?? $order->shippingAddress)?->last_name }}<br>
