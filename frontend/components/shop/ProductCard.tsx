@@ -1,12 +1,15 @@
 import React from 'react';
-import { Star, ArrowUpRight, ShoppingBag } from 'lucide-react';
+import { Star, ArrowUpRight, ShoppingBag, Heart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import type { Product } from '@/types/shop';
 
 export function ProductCard({ product }: { product: Product }) {
     const { addItem } = useCart();
+    const { isWishlisted, toggle } = useWishlist();
+    const wishlisted = isWishlisted(product.id);
 
     return (
         <article className="group overflow-hidden rounded-[20px] border border-[#eee3d7] bg-[#fcfbf8] shadow-[0_12px_28px_rgba(34,33,33,0.04)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(34,33,33,0.08)]">
@@ -25,6 +28,20 @@ export function ProductCard({ product }: { product: Product }) {
                             {product.category}
                         </span>
                     </div>
+
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggle(product);
+                        }}
+                        aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                        aria-pressed={wishlisted}
+                        className="absolute right-3 bottom-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-[#56616a] shadow-sm transition hover:text-[#df8448]"
+                    >
+                        <Heart size={16} className={wishlisted ? 'fill-[#df8448] text-[#df8448]' : ''} />
+                    </button>
 
                     <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
                         {product.badge && (

@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { Hanken_Grotesk, Lato, Dancing_Script } from 'next/font/google';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { WishlistProvider } from '@/context/WishlistContext';
 import { SettingsProvider } from '@/context/SettingsContext';
 import { CartDrawer } from '@/components/shop/CartDrawer';
 import { AttributionTracker } from '@/components/AttributionTracker';
@@ -117,11 +118,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
         <SettingsProvider>
           <AuthProvider>
-            <CartProvider>
-              <AttributionTracker />
-              {children}
-              <CartDrawer />
-            </CartProvider>
+            <WishlistProvider>
+              <CartProvider>
+                <AttributionTracker />
+                {children}
+                <CartDrawer />
+              </CartProvider>
+            </WishlistProvider>
           </AuthProvider>
         </SettingsProvider>
       </body>

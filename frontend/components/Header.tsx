@@ -8,12 +8,14 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useWishlist } from "@/context/WishlistContext";
 import { useSettings } from "@/context/SettingsContext";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const { items, setCartOpen } = useCart();
+  const { items: wishlistItems } = useWishlist();
   const { user, logout } = useAuth();
   const { shop_name, shop_logo } = useSettings();
   const logoSrc = shop_logo || "/assets/Logo-PetPosture-1-e1761840892773.png";
@@ -91,8 +93,13 @@ export default function Header() {
 
           {/* Right: Icons */}
           <div className="flex items-center gap-4 md:gap-6 text-primary flex-shrink-0">
-            <Link href="/wishlist" className="hover:text-[#df8448] transition-colors hidden sm:block" aria-label="Wishlist">
+            <Link href="/wishlist" className="relative hover:text-[#df8448] transition-colors hidden sm:block" aria-label="Wishlist">
               <Heart size={22} strokeWidth={2} />
+              {wishlistItems.length > 0 && (
+                <span className="absolute -top-1 -right-1.5 bg-[#df8448] text-white text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
+                  {wishlistItems.length}
+                </span>
+              )}
             </Link>
             {user ? (
               <div className="flex items-center gap-3">

@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReturnRequestController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\UserAddressController;
+use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -131,6 +132,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::put('/me/addresses/{id}', [UserAddressController::class, 'update']);
     Route::patch('/me/addresses/{id}', [UserAddressController::class, 'update']);
     Route::delete('/me/addresses/{id}', [UserAddressController::class, 'destroy']);
+
+    // Wishlist
+    Route::get('/me/wishlist', [WishlistController::class, 'index']);
+    Route::post('/me/wishlist', [WishlistController::class, 'store']);
+    Route::delete('/me/wishlist/{productId}', [WishlistController::class, 'destroy']);
 
     // Checkout & Orders
     Route::get('/orders', [OrderController::class, 'index']);

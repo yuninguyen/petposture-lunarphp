@@ -59,4 +59,9 @@ class User extends Authenticatable implements FilamentUser, LunarUserInterface
     {
         return $this->hasMany(UserAddress::class);
     }
+
+    public function wishlistItems(): HasMany
+    {
+        return $this->hasMany(UserWishlistItem::class);
+    }
 }
