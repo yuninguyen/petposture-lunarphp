@@ -163,7 +163,7 @@ export default function Header() {
 
 
           {/* Utility Links */}
-          <ul className="flex items-center text-sm font-bold uppercase tracking-[0.1em] divide-x divide-white/10 h-full" style={{ fontFamily: "var(--font-lato), sans-serif" }}>
+          <ul className="flex items-center text-[13px] font-bold uppercase tracking-[0.1em] divide-x divide-white/10 h-full" style={{ fontFamily: "var(--font-lato), sans-serif" }}>
             <li className="h-full relative group flex items-center hover:bg-white/10 transition-all duration-300">
               <a href="mailto:support@petposture.com" className="flex items-center gap-2.5 h-full px-6 hover:text-[#df8448] transition-colors text-[#e8eaec]">
                 <Mail size={14} className="text-[#df8448]" /> Support
