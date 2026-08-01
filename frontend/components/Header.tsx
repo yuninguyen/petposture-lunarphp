@@ -43,7 +43,7 @@ export default function Header() {
   return (
     <header className="w-full relative z-50 flex flex-col font-sans">
       {/* Announcement Top Bar - Professional Refinement */}
-      <div className="bg-[#3e4c57] text-white py-1.5 px-4 text-center text-xs md:text-sm font-medium tracking-[0.03em] md:tracking-[0.2em] uppercase w-full">
+      <div className="bg-[#3e4c57] text-white py-1.5 px-4 text-center text-xs md:text-sm font-medium tracking-[0.03em] md:tracking-[0.1em] uppercase w-full">
         <div className="flex items-center justify-center gap-1.5 md:gap-2 opacity-90">
           <Truck size={13} className="text-[#df8448] flex-shrink-0" />
           <span className="whitespace-nowrap">Free Shipping on all US orders over $50</span>
@@ -71,7 +71,7 @@ export default function Header() {
               width={400}
               height={140}
               priority
-              className="h-[38px] md:h-[60px] w-auto object-contain"
+              className="h-[38px] md:h-[52px] w-auto object-contain"
             />
           </Link>
 
