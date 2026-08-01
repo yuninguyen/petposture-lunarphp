@@ -295,7 +295,7 @@ export default function CheckoutPage() {
     const [paypalReady, setPaypalReady] = useState(false);
     const [paypalError, setPaypalError] = useState<string | null>(null);
     const [form, setForm] = useState<CheckoutFormState>({
-        email: user?.email || 'guest@petposture.com',
+        email: user?.email || '',
         country: 'United States',
         firstName: '',
         lastName: '',
@@ -394,7 +394,7 @@ export default function CheckoutPage() {
     useEffect(() => {
         setForm((prev) => ({
             ...prev,
-            email: user?.email || prev.email || 'guest@petposture.com',
+            email: user?.email || prev.email,
         }));
     }, [user?.email]);
 
