@@ -1,3 +1,37 @@
+# Handoff — 2026-08-01/02
+
+## New Wishlist feature (page was 404, header linked nowhere) — commit `986e0d1`
+
+Yuni's screenshot showed `/wishlist` 404ing off the header's heart icon — a link with no page behind it since the icon was added, apparently never built. Built the real feature rather than just hiding the link:
+
+- Backend: `user_wishlist_items` (`user_id` + `lunar_product_id`, unique pair) + `WishlistService` + `WishlistController`, `GET/POST/DELETE /api/me/wishlist` inside the existing `auth:sanctum` group, returning the same `ProductResource` shape `/api/products` already uses.
+- Frontend: `WishlistContext` forks entirely on login state — **guest wishlist is localStorage-only, no server sync, no merge-on-login** (same shape as checkout's guest "save address" from a prior session — now a repeated, real pattern, not a one-off). Heart toggle added to `ProductCard`, count badge added to `Header`'s wishlist icon, new `/wishlist` page reusing `ProductCard`/grid styling from the shop page.
+- Caught along the way: the frontend `Product.productId` field is never populated by `ProductResource` (only `.id` is) — anywhere else in the frontend filtering by `.productId` is silently comparing `undefined`. Used `.id` for wishlist identity instead of propagating the bug; didn't fix the existing call sites (`RelatedProducts.tsx`, `shop/[category]/[slug]/page.tsx`) since that's a separate, pre-existing, out-of-scope gap.
+- Verified via Playwright against the dev server (backend unavailable locally, so this exercised the guest/localStorage path only, not the logged-in/server path): add → header badge → `/wishlist` shows the product → remove → badge clears, empty state returns. `tsc`/`lint` clean. Backend verified via `php -l` only — no local MySQL and VPS `composer install` for Pint/PHPStan was blocked by the auto-mode classifier (running installs against the production host); migration itself ran clean and automatically on the next container start, confirmed via `docker logs`.
+
+## Header polish, two rounds — commits `7765467`, `04fc88e`
+
+Round 1: desktop nav bar's two link groups had mismatched font sizes (main links `text-[13px]`, utility links/Support/hours/phone `text-sm`/14px) — right side visibly larger. Matched both to `13px`.
+Round 2, from Yuni's follow-up screenshot: announcement bar ("Free Shipping…") desktop letter-spacing `tracking-[0.2em]` felt too wide → `0.1em`; desktop logo `60px` felt slightly oversized → `52px`. Both eyeballed/confirmed via Playwright screenshot before deploy, not measured against a spec.
+
+## Hostinger security-scan fix: unused `@google/design.md` dependency — commit `d51ec68`
+
+Hostinger flagged 1 High-severity finding across "143 packages scanned." Traced it to `ws` (memory-exhaustion DoS), pulled in transitively via `ink` via `@google/design.md` — a dependency that's been sitting in the **root** `package.json` since the very first commit of the repo and is never imported anywhere in the codebase (confirmed via repo-wide grep). `npm uninstall` removed exactly 143 packages, matching Hostinger's scan count exactly, and dropped `npm audit` to 0 vulnerabilities. `build.js` re-verified clean afterward.
+
+Separately, while checking for more of the same: `backend/package.json` (the Vite build for the Filament admin theme) had its own unrelated 5 findings (3 high, 2 critical — axios, form-data, postcss, shell-quote via `concurrently`) — commit `ba59e7e`. `axios` is real (imported in `resources/js/bootstrap.js`), but turned out to have **no actual runtime exposure**: the backend `Dockerfile` never runs `npm install`/`npm run build` for this theme, and `public/build/` is gitignored, so the compiled bundle has never shipped to production at all. Laravel's own default `welcome.blade.php` scaffold already has a graceful `@if (file_exists(public_path('build/manifest.json')) …)` fallback to inline static CSS when the build doesn't exist — which is why `api.petposture.com/` was still returning 200 despite the missing manifest, not a bug. Fixed the dependency versions anyway (`npm audit fix` + widening `axios`'s pinned range to `^1.19.0`) for hygiene/future-proofing, but there was nothing to redeploy for this one specifically — the fix never touches the running container.
+
+## Checkout guest email defaulted to a fake address — commit `b6ba1f6`
+
+Yuni asked why the checkout Contact field defaulted to `guest@petposture.com`. Root cause: `frontend/app/checkout/page.tsx`'s initial form state (`email: user?.email || 'guest@petposture.com'`) — leftover from the very first scaffolding commit (`0967857`), never a real placeholder (it was a live input `value`, so it silently satisfied the `required` check and the gray "Email" placeholder never showed). Backend had no independent safety net either: `CheckoutController`'s email fallback only fires for authenticated users (`if (empty(...) && $userId)`), so a guest's already-non-empty fake value passed straight through into `lunar_orders.customer_reference`.
+
+Checked production impact before fixing: exactly one real order (`#00000012`) had shipped with `customer_reference = 'guest@petposture.com'` — Yuni confirmed it's a test order, not a real customer, so no follow-up contact was needed. Fixed both places the default is set (initial state + the login-sync `useEffect`) to fall back to `''` instead, so the real placeholder shows and the browser's required-field validation forces a genuine email. Verified via Playwright (`input.value === ''`, placeholder renders) before deploy.
+
+## Documentation
+
+Added a Wishlist bullet to `ARCHITECTURE.md`'s Backend section (mirrors the Return Requests/PayPal bullet style) documenting the guest-local/logged-in-server split and the `Product.id` vs `.productId` gotcha, so the next session doesn't have to re-derive it from the diff.
+
+---
+
 # Handoff — 2026-07-31
 
 ## Mobile text-size sweep (storefront) + mobile-responsive email templates — commits `b32317c`..`d3823aa`

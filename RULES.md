@@ -28,6 +28,7 @@ Read this before touching code. See `ARCHITECTURE.md` for the why; this file is 
 - ESLint flat config (`eslint-config-next`) — run `npm run lint`. No Prettier; ESLint is the only formatter config present, don't add one.
 - **Read `frontend/AGENTS.md` before writing non-trivial Next.js/React code.** This Next.js/React version postdates most model training data; check `node_modules/next/dist/docs/` for APIs you're unsure about instead of assuming.
 - Body/label text should use the design-token scale (`text-xs`/`text-sm`/etc., `tailwind.config.ts`) where possible, not arbitrary `text-[Npx]` values — a repo-wide sweep (2026-07-30) found ~365 hardcoded-px text sizes with no responsive breakpoint, several unreadably small on mobile. When a spot genuinely needs a value off the token scale, pair it with a `md:` breakpoint (e.g. `text-[13px] md:text-[16px]`) rather than one fixed size for every viewport — desktop-only elements (`hidden md:block` nav, etc.) don't need a mobile variant at all.
+- Guest-owned data tied to a user (saved address, wishlist, …) is **localStorage-only for guests, server-only once logged in, with no merge-on-login** — established by checkout's guest "save address" and repeated for the wishlist (`ARCHITECTURE.md`). Don't build a guest→account sync/merge step unless explicitly asked; the existing precedent deliberately keeps guest data device-local and throwaway.
 
 ## Error handling
 
