@@ -75,6 +75,12 @@ petposture/
 ## Features
 
 - Product catalog with categories, variants, attributes, and brands
+- Shop by Breed / Shop by Solution (added 2026-08-02): two independent product facets on top of
+  category — breed (`flat-faced`/`long-backed`) and health-concern solution
+  (`eating-digestion`/`mobility-support`/`comfort-safety`) — each with a picker index page
+  (`/shop/breeds`, `/shop/solutions`) and dedicated landing pages per variant
+  (`/shop/breeds/flat-faced`, `/shop/solutions/comfort-safety`, …), plus matching filter facets in
+  the main shop sidebar. A product can carry both a breed and a solution tag at once.
 - Shopping cart & checkout flow (guest + authenticated), Stripe card and PayPal (Smart
   Buttons rendered inline, popup approval — not a full-page redirect) payments. A "Save this
   information for next time" checkout checkbox saves the shipping address for next time: to the
