@@ -96,7 +96,7 @@ export function ProductCard({ product }: { product: Product }) {
 
                     <Link
                         href={`/shop/${product.categorySlug}/${product.slug}`}
-                        className="inline-flex items-center gap-1 text-sm font-bold uppercase tracking-[0.16em] text-[#54646e] transition hover:text-[#df8448]"
+                        className="inline-flex items-center gap-1 text-sm font-bold uppercase tracking-[0.06em] text-[#54646e] transition-colors hover:text-[#df8448]"
                     >
                         View <ArrowUpRight size={14} />
                     </Link>
@@ -104,7 +104,7 @@ export function ProductCard({ product }: { product: Product }) {
 
                 <button
                     onClick={() => addItem(product)}
-                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#2f3d46] px-4 text-sm font-bold uppercase tracking-[0.16em] text-white transition hover:bg-[#df8448]"
+                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#df8448] px-4 text-sm font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#c9713a]"
                 >
                     <ShoppingBag size={15} />
                     Add to Cart
