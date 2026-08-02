@@ -1,7 +1,7 @@
 import AcceptableUsePolicyPage from "@/components/AcceptableUsePolicyPage";
 
 export const metadata = {
-    title: "Acceptable Use Policy | PetPosture",
+    title: "Acceptable Use Policy",
     description: "Learn about the acceptable use standards for PetPosture services and products.",
 };
 

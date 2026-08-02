@@ -1,7 +1,7 @@
 import RequestReturnPage from "@/components/RequestReturnPage";
 
 export const metadata = {
-    title: "Request a Return | PetPosture",
+    title: "Request a Return",
     description: "Start a return for your PetPosture order by entering your order number and email.",
 };
 

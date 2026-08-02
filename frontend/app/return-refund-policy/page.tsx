@@ -1,7 +1,7 @@
 import ReturnRefundPolicyPage from "@/components/ReturnRefundPolicyPage";
 
 export const metadata = {
-    title: "Return & Refund Policy | PetPosture",
+    title: "Return & Refund Policy",
     description: "Learn about PetPosture's 30-day return policy and 25% restocking fee for ergonomic pet gear.",
 };
 

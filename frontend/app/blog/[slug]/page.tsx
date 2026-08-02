@@ -94,7 +94,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const post = await fetchPost(slug);
 
     return {
-        title: post ? `${post.title} | Blog | PetPosture` : 'Blog Post',
+        title: post ? `${post.title} | Blog` : 'Blog Post',
         description: post?.content?.slice(0, 160) || 'Pet ergonomics tips',
     };
 }

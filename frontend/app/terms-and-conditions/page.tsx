@@ -1,7 +1,7 @@
 import TermsAndConditionsPage from "@/components/TermsAndConditionsPage";
 
 export const metadata = {
-    title: "Terms and Conditions | PetPosture",
+    title: "Terms and Conditions",
     description: "Read the Terms and Conditions for using PetPosture services and website.",
 };
 
