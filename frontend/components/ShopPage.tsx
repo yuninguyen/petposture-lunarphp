@@ -56,10 +56,11 @@ export default function ShopPage({
                         </div>
 
                         <button
+                            key={mobileFiltersOpen ? 'open' : 'closed'}
                             type="button"
                             onClick={() => setMobileFiltersOpen((open) => !open)}
                             aria-expanded={mobileFiltersOpen}
-                            className="flex items-center gap-2 self-start rounded-full border border-[#e3d6c9] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8f93] shadow-sm transition-colors hover:border-[#df8448] hover:text-[#df8448] lg:hidden"
+                            className="flex items-center gap-2 self-start rounded-full border border-[#e3d6c9] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8f93] shadow-sm transition-colors hover:border-[#df8448] hover:text-[#df8448] lg:hidden [transform:translateZ(0)]"
                         >
                             <SlidersHorizontal size={14} className="text-[#df8448]" />
                             {mobileFiltersOpen ? 'Hide Filters' : 'Show Filters'}
