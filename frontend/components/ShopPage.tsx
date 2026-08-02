@@ -65,7 +65,7 @@ export default function ShopPage({
                             <SlidersHorizontal size={14} className="text-[#df8448]" />
                             {mobileFiltersOpen ? 'Hide Filters' : 'Show Filters'}
                             {shopLogic.hasActiveFilters && (
-                                <span className="rounded-full bg-[#df8448] px-1.5 py-0.5 text-[10px] text-white">•</span>
+                                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#df8448]" />
                             )}
                             {mobileFiltersOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                         </button>

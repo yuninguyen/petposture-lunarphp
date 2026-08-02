@@ -188,14 +188,14 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                 <div className="flex h-[54px] items-center rounded-[4px] border-2 border-white bg-white shadow-sm">
                                     <button
                                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                        className="flex h-full items-center px-3 text-zinc-400 transition-colors hover:text-[#3e4c57]"
+                                        className="flex h-full items-center px-2 text-zinc-400 transition-colors hover:text-[#3e4c57]"
                                     >
                                         -
                                     </button>
-                                    <span className="w-12 text-center font-bold text-[#3e4c57]">{quantity}</span>
+                                    <span className="w-9 text-center font-bold text-[#3e4c57]">{quantity}</span>
                                     <button
                                         onClick={() => setQuantity(quantity + 1)}
-                                        className="flex h-full items-center px-3 text-zinc-400 transition-colors hover:text-[#3e4c57]"
+                                        className="flex h-full items-center px-2 text-zinc-400 transition-colors hover:text-[#3e4c57]"
                                     >
                                         +
                                     </button>
