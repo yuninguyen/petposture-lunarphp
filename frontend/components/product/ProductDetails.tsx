@@ -2,8 +2,8 @@
 
 import Image from 'next/image';
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Star, ShieldCheck, Truck, RotateCcw } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Star, ShieldCheck, Truck, RotateCcw, Plus, Minus } from 'lucide-react';
 import { Product } from '@/types/shop';
 import { useCart } from '@/context/CartContext';
 import { Breadcrumbs } from './Breadcrumbs';
@@ -14,7 +14,8 @@ interface ProductDetailsProps {
 
 export function ProductDetails({ product }: ProductDetailsProps) {
     const [quantity, setQuantity] = useState(1);
-    const [activeTab, setActiveTab] = useState('description');
+    const [openSection, setOpenSection] = useState<string | null>('description');
+    const toggleSection = (id: string) => setOpenSection((current) => (current === id ? null : id));
     const { addItem } = useCart();
 
     const options = product.options ?? [];
@@ -53,7 +54,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         ? (product.description.includes('<') ? product.description : `<p>${product.description}</p>`)
         : '<p>Expertly crafted for superior spinal alignment and long-term pet health.</p>';
 
-    const tabs = [
+    const sections = [
         { id: 'description', label: 'Description' },
         { id: 'specs', label: 'Technical Specs' },
         { id: 'shipping', label: 'Shipping & Returns' },
@@ -152,7 +153,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                             <div className="mb-8 space-y-6">
                                 {options.map((option) => (
                                     <div key={option.id}>
-                                        <p className="mb-3 text-sm font-black uppercase tracking-[0.2em] text-[#3e4c57]">
+                                        <p className="mb-3 text-sm font-black capitalize tracking-[0.05em] text-[#3e4c57]">
                                             {option.name}
                                         </p>
                                         <div className="flex flex-wrap gap-2">
@@ -227,84 +228,58 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                             </div>
                         </div>
 
-                        <div className="mt-4">
-                            <div className="scrollbar-hide mb-8 flex items-center gap-8 overflow-x-auto overflow-y-hidden border-b border-zinc-100">
-                                {tabs.map((tab) => (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
-                                        className={`relative whitespace-nowrap pb-4 text-sm font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'text-[#3e4c57]' : 'text-zinc-300 hover:text-zinc-400'}`}
-                                    >
-                                        {tab.label}
-                                        {activeTab === tab.id && (
-                                            <motion.div
-                                                layoutId="tab-underline"
-                                                className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-[#df8448]"
-                                            />
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <div className="min-h-[200px]">
-                                <AnimatePresence mode="wait">
-                                    {activeTab === 'description' && (
-                                        <motion.div
-                                            key="desc"
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className="text-[15px] leading-[1.8] text-zinc-500"
+                        <div className="mt-4 divide-y divide-zinc-100 border-t border-zinc-100">
+                            {sections.map((section) => {
+                                const isOpen = openSection === section.id;
+                                return (
+                                    <div key={section.id}>
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleSection(section.id)}
+                                            aria-expanded={isOpen}
+                                            className="flex w-full items-center justify-between py-5 text-left text-sm font-black uppercase tracking-wide text-[#3e4c57]"
                                         >
-                                            <div
-                                                className="prose prose-zinc mb-4 max-w-none prose-headings:text-[#3e4c57] prose-p:my-0 prose-p:leading-[1.8]"
-                                                dangerouslySetInnerHTML={{ __html: descriptionMarkup }}
-                                            />
+                                            {section.label}
+                                            {isOpen ? <Minus size={18} className="text-[#df8448]" /> : <Plus size={18} className="text-zinc-300" />}
+                                        </button>
 
-                                        </motion.div>
-                                    )}
-                                    {activeTab === 'specs' && (
-                                        <motion.div
-                                            key="specs"
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className="grid grid-cols-1 gap-4"
-                                        >
-                                            {(product.specs && product.specs.length > 0) ? (
-                                                product.specs.map((spec, i) => (
-                                                    <div key={i} className="flex justify-between border-b border-zinc-50 py-3 text-sm">
-                                                        <span className="font-bold uppercase tracking-wide text-[#3e4c57]">{spec.label}</span>
-                                                        <span className="text-zinc-500">{spec.value}</span>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <p className="text-zinc-400">No technical specifications available for this product yet.</p>
+                                        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[1000px] opacity-100 pb-6' : 'max-h-0 opacity-0'}`}>
+                                            {section.id === 'description' && (
+                                                <div
+                                                    className="prose prose-zinc max-w-none text-[15px] leading-[1.8] text-zinc-500 prose-headings:text-[#3e4c57] prose-p:my-0 prose-p:leading-[1.8]"
+                                                    dangerouslySetInnerHTML={{ __html: descriptionMarkup }}
+                                                />
                                             )}
-                                        </motion.div>
-                                    )}
-                                    {activeTab === 'shipping' && (
-                                        <motion.div
-                                            key="shipping"
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className="text-[15px] leading-[1.8] text-zinc-500"
-                                        >
-                                            <ul className="space-y-4">
-                                                <li className="flex items-start gap-3">
-                                                    <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#df8448]" />
-                                                    <span>Free standard shipping for all US orders over $50.</span>
-                                                </li>
-                                                <li className="flex items-start gap-3">
-                                                    <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#df8448]" />
-                                                    <span>Express 2-day delivery available at checkout.</span>
-                                                </li>
-                                            </ul>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
+                                            {section.id === 'specs' && (
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    {(product.specs && product.specs.length > 0) ? (
+                                                        product.specs.map((spec, i) => (
+                                                            <div key={i} className="flex justify-between border-b border-zinc-50 py-3 text-sm">
+                                                                <span className="font-bold uppercase tracking-wide text-[#3e4c57]">{spec.label}</span>
+                                                                <span className="text-zinc-500">{spec.value}</span>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <p className="text-zinc-400">No technical specifications available for this product yet.</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {section.id === 'shipping' && (
+                                                <ul className="space-y-4 text-[15px] leading-[1.8] text-zinc-500">
+                                                    <li className="flex items-start gap-3">
+                                                        <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#df8448]" />
+                                                        <span>Free standard shipping for all US orders over $50.</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-3">
+                                                        <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#df8448]" />
+                                                        <span>Express 2-day delivery available at checkout.</span>
+                                                    </li>
+                                                </ul>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </motion.div>
                 </div>

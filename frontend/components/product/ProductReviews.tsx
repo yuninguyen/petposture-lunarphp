@@ -81,7 +81,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
 
                     {/* Summary Side */}
                     <div className="lg:col-span-1">
-                        <h2 className="text-[#3e4c57] text-xs font-black uppercase tracking-[0.4em] mb-4">Patient Feedback</h2>
+                        <h2 className="text-[#3e4c57] text-xs font-black uppercase tracking-[0.18em] mb-4">Patient Feedback</h2>
                         <h3 className="text-[#3e4c57] text-[32px] font-bold leading-tight uppercase mb-8">USER JOURNEYS</h3>
 
                         <div className="bg-white p-10 rounded-3xl border border-zinc-100 shadow-xl shadow-zinc-200/20 mb-8">

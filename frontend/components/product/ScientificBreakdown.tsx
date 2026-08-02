@@ -21,20 +21,20 @@ export function ScientificBreakdown({ product }: ScientificBreakdownProps) {
     return (
         <section className="bg-[#3e4c57] py-24 px-4 md:px-8 relative overflow-hidden">
             <div className="max-w-[1200px] mx-auto relative z-10">
-                <div className="text-center mb-16">
-                    <h2 className="text-[#df8448] text-xs font-black uppercase tracking-[0.4em] mb-4">Ergo-Care Science</h2>
+                <div className="text-center mb-16 px-4">
+                    <h2 className="text-[#df8448] text-xs font-black uppercase tracking-[0.18em] mb-4">Ergo-Care Science</h2>
                     <h3 className="text-white text-[32px] md:text-[44px] font-bold leading-tight">THE BIOLOGY OF COMFORT</h3>
                     <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mt-6"></div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+                <div className="scrollbar-hide flex snap-x snap-mandatory flex-row gap-6 overflow-x-auto px-4 md:grid md:grid-cols-2 md:gap-12 md:overflow-visible md:px-0 lg:grid-cols-4">
                     {specs.map((spec, index) => (
                         <motion.div
                             key={index}
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
-                            className="flex flex-col items-center text-center group"
+                            className="flex w-[78%] flex-shrink-0 snap-center flex-col items-center text-center group md:w-auto md:flex-shrink"
                         >
                             <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-[#df8448] mb-6 border border-white/10 group-hover:bg-[#df8448] group-hover:text-white transition-all duration-500">
                                 {spec.icon}
