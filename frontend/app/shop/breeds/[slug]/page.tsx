@@ -2,49 +2,44 @@ import ShopPage from '@/components/ShopPage';
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { PRODUCTS as MOCK_PRODUCTS, SOLUTION_TYPES } from '@/lib/shopData';
+import { PRODUCTS as MOCK_PRODUCTS, BREED_TYPES } from '@/lib/shopData';
 import { Product } from '@/types/shop';
 import { API_BASE_URL } from '@/lib/api';
 
-const SOLUTION_CONTENT: Record<string, { title: string; description: string; metaDescription: string }> = {
-    'eating-digestion': {
-        title: 'Better Eating & Digestion',
-        description: 'Tilted bowls, slow feeders, and fountains that ease strain and support healthy digestion at every meal.',
-        metaDescription: 'Tilted bowls, slow feeders, and pet fountains built to ease mealtime strain and support digestion.',
+const BREED_CONTENT: Record<string, { title: string; description: string; metaDescription: string }> = {
+    'flat-faced': {
+        title: 'Built for Flat-Faced Breeds',
+        description: 'Pugs, Bulldogs & French Bulldogs benefit most from elevated, tilted bowls and anti-strain harnesses that ease pressure on short snouts and airways.',
+        metaDescription: 'Elevated, tilted bowls and anti-strain harnesses built for Pugs, Bulldogs, and French Bulldogs.',
     },
-    'mobility-support': {
-        title: 'Built for Mobility & Support',
-        description: 'Ramps, stairs, and strollers that protect joints and keep pets moving comfortably, indoors and out.',
-        metaDescription: 'Ramps, stairs, and strollers that protect joints and support pets with limited mobility.',
-    },
-    'comfort-safety': {
-        title: 'Comfort & Safety, Every Day',
-        description: 'Orthopedic beds, cooling mats, and supportive harnesses designed around your pet\'s everyday wellbeing.',
-        metaDescription: 'Orthopedic beds, cooling mats, and supportive harnesses for everyday pet comfort and safety.',
+    'long-backed': {
+        title: 'Built for Long-Backed Breeds',
+        description: 'Dachshunds & Corgis need ramps, orthopedic beds, and harnesses that protect the intervertebral discs from everyday strain.',
+        metaDescription: 'Ramps, orthopedic beds, and disc-protecting harnesses built for Dachshunds and Corgis.',
     },
 };
 
 type Params = { slug: string };
 
 export async function generateStaticParams() {
-    return SOLUTION_TYPES.map((s) => ({ slug: s.slug }));
+    return BREED_TYPES.map((b) => ({ slug: b.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
     const { slug } = await params;
-    const content = SOLUTION_CONTENT[slug];
+    const content = BREED_CONTENT[slug];
 
     if (!content) return {};
 
     return {
-        title: `Shop ${content.title}`,
+        title: `Shop ${content.title.replace('Built for ', '')}`,
         description: content.metaDescription,
     };
 }
 
 async function getInitialProducts(slug: string): Promise<Product[]> {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/products?solution=${slug}`, {
+        const response = await fetch(`${API_BASE_URL}/api/products?breed=${slug}`, {
             next: { revalidate: 60 },
         });
 
@@ -61,12 +56,12 @@ async function getInitialProducts(slug: string): Promise<Product[]> {
         console.warn('Falling back to mock shop data on the server.', error);
     }
 
-    return MOCK_PRODUCTS.filter((p) => p.solutionTags?.includes(slug));
+    return MOCK_PRODUCTS.filter((p) => p.breedTags?.includes(slug));
 }
 
 export default async function Page({ params }: { params: Promise<Params> }) {
     const { slug } = await params;
-    const content = SOLUTION_CONTENT[slug];
+    const content = BREED_CONTENT[slug];
 
     if (!content) {
         notFound();
@@ -78,8 +73,8 @@ export default async function Page({ params }: { params: Promise<Params> }) {
         <Suspense fallback={<main className="min-h-screen bg-[#f7f3ee]" />}>
             <ShopPage
                 initialProducts={initialProducts}
-                initialSolution={slug}
-                heroEyebrow="Shop by Solution"
+                initialBreed={slug}
+                heroEyebrow="Shop by Breed"
                 heroTitle={content.title}
                 heroDescription={content.description}
             />

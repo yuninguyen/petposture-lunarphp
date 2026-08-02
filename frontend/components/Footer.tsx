@@ -87,8 +87,8 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: 
                                 item === "Mobility & Support" ? "/shop/solutions/mobility-support" :
                                   item === "Comfort & Safety" ? "/shop/solutions/comfort-safety" :
                                     item === "All Products" ? "/shop" :
-                                      item === "Flat-Faced Breeds" ? "/shop/flat-faced" :
-                                        item === "Long-Backed Breeds" ? "/shop/long-backed" : "#"
+                                      item === "Flat-Faced Breeds" ? "/shop/breeds/flat-faced" :
+                                        item === "Long-Backed Breeds" ? "/shop/breeds/long-backed" : "#"
                   }
                   className="text-[16px] text-white/60 hover:text-[#df8448] transition-colors flex items-center gap-2 group"
                 >

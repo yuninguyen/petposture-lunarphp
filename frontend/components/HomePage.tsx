@@ -187,8 +187,8 @@ function ShopCategories() {
       align: 'flex-end' as const,
       textAlign: 'right' as const,
       buttons: [
-        { label: 'Flat-Faced Breeds', href: '/shop/flat-faced', variant: 'solid' as const },
-        { label: 'Long-Backed Breeds', href: '/shop/long-backed', variant: 'outlineWhite' as const },
+        { label: 'Flat-Faced Breeds', href: '/shop/breeds/flat-faced', variant: 'solid' as const },
+        { label: 'Long-Backed Breeds', href: '/shop/breeds/long-backed', variant: 'outlineWhite' as const },
       ],
     },
     {

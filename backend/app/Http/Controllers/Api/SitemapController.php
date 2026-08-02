@@ -23,6 +23,17 @@ class SitemapController extends Controller
         $urls[] = ['loc' => $frontendUrl . '/shop', 'lastmod' => now()->toAtomString(), 'priority' => '0.8'];
         $urls[] = ['loc' => $frontendUrl . '/our-mission', 'lastmod' => now()->toAtomString(), 'priority' => '0.6'];
 
+        // 1b. Shop-by-Breed and Shop-by-Solution landing pages
+        $breedSlugs = ['flat-faced', 'long-backed'];
+        foreach ($breedSlugs as $slug) {
+            $urls[] = ['loc' => $frontendUrl . '/shop/breeds/' . $slug, 'lastmod' => now()->toAtomString(), 'priority' => '0.7'];
+        }
+
+        $solutionSlugs = ['eating-digestion', 'mobility-support', 'comfort-safety'];
+        foreach ($solutionSlugs as $slug) {
+            $urls[] = ['loc' => $frontendUrl . '/shop/solutions/' . $slug, 'lastmod' => now()->toAtomString(), 'priority' => '0.7'];
+        }
+
         // 2. Lunar Collections (product categories)
         $collections = Collection::with(['defaultUrl', 'urls'])->get();
         foreach ($collections as $collection) {
