@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Product } from '@/types/shop';
 import { Activity, Beaker, Heart, Shield } from 'lucide-react';
@@ -11,6 +11,14 @@ interface ScientificBreakdownProps {
 
 export function ScientificBreakdown({ product }: ScientificBreakdownProps) {
     void product;
+    const [activeSlide, setActiveSlide] = useState(0);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const el = e.currentTarget;
+        const index = Math.round(el.scrollLeft / (el.clientWidth * 0.78));
+        if (index !== activeSlide) setActiveSlide(index);
+    };
+
     const specs = [
         { icon: <Beaker size={24} />, title: "BIOMETRIC FIT", desc: "Digital mapping ensures zero pressure points on joints." },
         { icon: <Activity size={24} />, title: "VET-VALIDATED", desc: "Clinically tested to improve spinal alignment by 22%." },
@@ -27,14 +35,17 @@ export function ScientificBreakdown({ product }: ScientificBreakdownProps) {
                     <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mt-6"></div>
                 </div>
 
-                <div className="scrollbar-hide flex snap-x snap-mandatory flex-row gap-6 overflow-x-auto px-4 md:grid md:grid-cols-2 md:gap-12 md:overflow-visible md:px-0 lg:grid-cols-4">
+                <div
+                    className="scrollbar-hide flex snap-x snap-mandatory flex-row gap-4 overflow-x-auto px-4 md:grid md:grid-cols-2 md:gap-12 md:overflow-visible md:px-0 lg:grid-cols-4"
+                    onScroll={handleScroll}
+                >
                     {specs.map((spec, index) => (
                         <motion.div
                             key={index}
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
-                            className="flex w-[78%] flex-shrink-0 snap-center flex-col items-center text-center group md:w-auto md:flex-shrink"
+                            className="group flex w-[78%] flex-shrink-0 snap-center flex-col items-center rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-10 text-center md:w-auto md:flex-shrink md:border-none md:bg-transparent md:px-0 md:py-0"
                         >
                             <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-[#df8448] mb-6 border border-white/10 group-hover:bg-[#df8448] group-hover:text-white transition-all duration-500">
                                 {spec.icon}
@@ -42,6 +53,19 @@ export function ScientificBreakdown({ product }: ScientificBreakdownProps) {
                             <h4 className="text-white text-[14px] font-bold uppercase tracking-widest mb-3">{spec.title}</h4>
                             <p className="text-white/40 text-[14px] leading-relaxed px-4">{spec.desc}</p>
                         </motion.div>
+                    ))}
+                </div>
+
+                <div className="mt-10 flex justify-center gap-2 md:hidden">
+                    {specs.map((_, idx) => (
+                        <div
+                            key={idx}
+                            className="h-2 rounded-full transition-all duration-300"
+                            style={{
+                                width: activeSlide === idx ? 24 : 8,
+                                background: activeSlide === idx ? '#df8448' : 'rgba(255,255,255,0.2)',
+                            }}
+                        />
                     ))}
                 </div>
             </div>

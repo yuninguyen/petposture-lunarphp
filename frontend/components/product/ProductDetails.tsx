@@ -117,7 +117,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                         className="flex flex-col"
                     >
                         <div className="mb-8">
-                            <p className="mb-4 text-xs font-black uppercase tracking-[0.3em] text-[#df8448]">
+                            <p className="mb-4 text-xs font-black uppercase tracking-[0.15em] text-[#df8448]">
                                 {product.category} Ergonomics
                             </p>
                             <h1 className="mb-6 text-[32px] font-bold leading-[1.1] text-[#3e4c57] md:text-[44px]">
@@ -153,7 +153,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                             <div className="mb-8 space-y-6">
                                 {options.map((option) => (
                                     <div key={option.id}>
-                                        <p className="mb-3 text-sm font-black capitalize tracking-[0.05em] text-[#3e4c57]">
+                                        <p className="mb-3 text-base font-black capitalize tracking-[0.05em] text-[#3e4c57]">
                                             {option.name}
                                         </p>
                                         <div className="flex flex-wrap gap-2">
