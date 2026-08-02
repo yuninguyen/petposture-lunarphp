@@ -1,7 +1,7 @@
 "use client";
 
-import React from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import React, { useState } from 'react';
+import { SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useShopLogic } from '@/hooks/useShopLogic';
@@ -26,6 +26,7 @@ export default function ShopPage({
     heroTitle = 'Ergonomic essentials, organized like a real catalog.',
     heroDescription = 'Products now load upfront, and the page is trimmed down so filters and items show sooner without a bulky hero getting in the way.',
 }: ShopPageProps) {
+    const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
     const shopLogic = useShopLogic(initialProducts, initialBreed, initialSolution);
     const activeBreedLabel = shopLogic.breeds.find((b) => b.slug === shopLogic.activeBreed)?.label;
     const activeSolutionLabel = shopLogic.solutions.find((s) => s.slug === shopLogic.activeSolution)?.label;
@@ -54,33 +55,44 @@ export default function ShopPage({
                             </p>
                         </div>
 
-                        <div className="flex items-center gap-2 self-start rounded-full border border-[#e3d6c9] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8f93] shadow-sm">
+                        <button
+                            type="button"
+                            onClick={() => setMobileFiltersOpen((open) => !open)}
+                            aria-expanded={mobileFiltersOpen}
+                            className="flex items-center gap-2 self-start rounded-full border border-[#e3d6c9] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8f93] shadow-sm transition hover:border-[#df8448] hover:text-[#df8448] lg:hidden"
+                        >
                             <SlidersHorizontal size={14} className="text-[#df8448]" />
-                            Left sidebar filters
-                        </div>
+                            {mobileFiltersOpen ? 'Hide Filters' : 'Show Filters'}
+                            {shopLogic.hasActiveFilters && (
+                                <span className="rounded-full bg-[#df8448] px-1.5 py-0.5 text-[10px] text-white">•</span>
+                            )}
+                            {mobileFiltersOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </button>
                     </div>
                 </div>
             </section>
 
             <section className="px-4 py-8 md:px-8 md:py-10">
                 <div className="mx-auto grid max-w-[1280px] gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
-                    <ProductFilterBar
-                        categories={shopLogic.categories}
-                        activeCategory={shopLogic.activeCategory}
-                        setActiveCategory={shopLogic.setActiveCategory}
-                        breeds={initialBreed === 'All' ? shopLogic.breeds : []}
-                        activeBreed={shopLogic.activeBreed}
-                        setActiveBreed={shopLogic.setActiveBreed}
-                        solutions={initialSolution === 'All' ? shopLogic.solutions : []}
-                        activeSolution={shopLogic.activeSolution}
-                        setActiveSolution={shopLogic.setActiveSolution}
-                        searchQuery={shopLogic.searchQuery}
-                        setSearchQuery={shopLogic.setSearchQuery}
-                        sortBy={shopLogic.sortBy}
-                        setSortBy={shopLogic.setSortBy}
-                        clearFilters={shopLogic.clearFilters}
-                        hasActiveFilters={shopLogic.hasActiveFilters}
-                    />
+                    <div className={mobileFiltersOpen ? 'block' : 'hidden lg:block'}>
+                        <ProductFilterBar
+                            categories={shopLogic.categories}
+                            activeCategory={shopLogic.activeCategory}
+                            setActiveCategory={shopLogic.setActiveCategory}
+                            breeds={initialBreed === 'All' ? shopLogic.breeds : []}
+                            activeBreed={shopLogic.activeBreed}
+                            setActiveBreed={shopLogic.setActiveBreed}
+                            solutions={initialSolution === 'All' ? shopLogic.solutions : []}
+                            activeSolution={shopLogic.activeSolution}
+                            setActiveSolution={shopLogic.setActiveSolution}
+                            searchQuery={shopLogic.searchQuery}
+                            setSearchQuery={shopLogic.setSearchQuery}
+                            sortBy={shopLogic.sortBy}
+                            setSortBy={shopLogic.setSortBy}
+                            clearFilters={shopLogic.clearFilters}
+                            hasActiveFilters={shopLogic.hasActiveFilters}
+                        />
+                    </div>
 
                     <div className="min-w-0">
                         <div className="mb-5 flex flex-col gap-3 rounded-[24px] border border-[#eadfd3] bg-white px-5 py-4 shadow-[0_18px_50px_rgba(34,33,33,0.05)] md:flex-row md:items-center md:justify-between">
