@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Product } from '@/types/shop';
-import { PRODUCTS as MOCK_PRODUCTS } from '@/lib/shopData';
+import { PRODUCTS as MOCK_PRODUCTS, BREED_TYPES, SOLUTION_TYPES } from '@/lib/shopData';
 import { getApiBaseUrl } from '@/lib/api';
 
 export type ShopCategoryOption = {
@@ -8,8 +8,26 @@ export type ShopCategoryOption = {
     count: number;
 };
 
-export function useShopLogic(initialProducts: Product[] = MOCK_PRODUCTS) {
+export type ShopBreedOption = {
+    slug: string;
+    label: string;
+    count: number;
+};
+
+export type ShopSolutionOption = {
+    slug: string;
+    label: string;
+    count: number;
+};
+
+export function useShopLogic(
+    initialProducts: Product[] = MOCK_PRODUCTS,
+    initialBreed: string = 'All',
+    initialSolution: string = 'All'
+) {
     const [activeCategory, setActiveCategory] = useState('All');
+    const [activeBreed, setActiveBreed] = useState(initialBreed);
+    const [activeSolution, setActiveSolution] = useState(initialSolution);
     const [sortBy, setSortBy] = useState('newest');
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredProducts, setFilteredProducts] = useState<Product[]>(
@@ -17,6 +35,8 @@ export function useShopLogic(initialProducts: Product[] = MOCK_PRODUCTS) {
     );
     const [loading, setLoading] = useState(false);
     const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isFilterMountRef = useRef(true);
+    const isSearchMountRef = useRef(true);
 
     // Categories derived from the full initial (unfiltered) product set
     const categories = useMemo<ShopCategoryOption[]>(() => {
@@ -33,11 +53,41 @@ export function useShopLogic(initialProducts: Product[] = MOCK_PRODUCTS) {
         ];
     }, [initialProducts]);
 
-    const hasActiveFilters = activeCategory !== 'All' || sortBy !== 'newest' || searchQuery.trim() !== '';
+    // Breeds derived from the full initial (unfiltered) product set
+    const breeds = useMemo<ShopBreedOption[]>(() => {
+        const base = initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS;
+        const counts = base.reduce<Record<string, number>>((acc, p) => {
+            (p.breedTags || []).forEach((tag) => {
+                acc[tag] = (acc[tag] || 0) + 1;
+            });
+            return acc;
+        }, {});
+        return BREED_TYPES
+            .map((b) => ({ ...b, count: counts[b.slug] || 0 }))
+            .filter((b) => b.count > 0);
+    }, [initialProducts]);
 
-    const fetchProducts = (category: string, sort: string, q: string) => {
+    // Solutions derived from the full initial (unfiltered) product set
+    const solutions = useMemo<ShopSolutionOption[]>(() => {
+        const base = initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS;
+        const counts = base.reduce<Record<string, number>>((acc, p) => {
+            (p.solutionTags || []).forEach((tag) => {
+                acc[tag] = (acc[tag] || 0) + 1;
+            });
+            return acc;
+        }, {});
+        return SOLUTION_TYPES
+            .map((s) => ({ ...s, count: counts[s.slug] || 0 }))
+            .filter((s) => s.count > 0);
+    }, [initialProducts]);
+
+    const hasActiveFilters = activeCategory !== 'All' || activeBreed !== 'All' || activeSolution !== 'All' || sortBy !== 'newest' || searchQuery.trim() !== '';
+
+    const fetchProducts = (category: string, breed: string, solution: string, sort: string, q: string) => {
         const params = new URLSearchParams();
         if (category !== 'All') params.set('category', category);
+        if (breed !== 'All') params.set('breed', breed);
+        if (solution !== 'All') params.set('solution', solution);
         if (sort !== 'newest') params.set('sort', sort);
         if (q.trim()) params.set('q', q.trim());
 
@@ -69,18 +119,30 @@ export function useShopLogic(initialProducts: Product[] = MOCK_PRODUCTS) {
         return () => controller.abort();
     };
 
-    // Immediate re-fetch on category / sort change
+    // Immediate re-fetch on category / breed / solution / sort change.
+    // Skip the very first run: SSR already provided initialProducts matching
+    // the initial filters (e.g. a breed or solution landing page), and
+    // re-fetching on mount would wipe that out with an empty list if the
+    // API is unreachable.
     useEffect(() => {
-        const cancel = fetchProducts(activeCategory, sortBy, searchQuery);
+        if (isFilterMountRef.current) {
+            isFilterMountRef.current = false;
+            return;
+        }
+        const cancel = fetchProducts(activeCategory, activeBreed, activeSolution, sortBy, searchQuery);
         return cancel;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeCategory, sortBy]);
+    }, [activeCategory, activeBreed, activeSolution, sortBy]);
 
     // Debounced re-fetch on search input (300 ms)
     useEffect(() => {
+        if (isSearchMountRef.current) {
+            isSearchMountRef.current = false;
+            return;
+        }
         if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
         searchTimerRef.current = setTimeout(() => {
-            fetchProducts(activeCategory, sortBy, searchQuery);
+            fetchProducts(activeCategory, activeBreed, activeSolution, sortBy, searchQuery);
         }, 300);
         return () => {
             if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
@@ -90,6 +152,8 @@ export function useShopLogic(initialProducts: Product[] = MOCK_PRODUCTS) {
 
     const clearFilters = () => {
         setActiveCategory('All');
+        setActiveBreed('All');
+        setActiveSolution('All');
         setSortBy('newest');
         setSearchQuery('');
     };
@@ -98,6 +162,12 @@ export function useShopLogic(initialProducts: Product[] = MOCK_PRODUCTS) {
         categories,
         activeCategory,
         setActiveCategory,
+        breeds,
+        activeBreed,
+        setActiveBreed,
+        solutions,
+        activeSolution,
+        setActiveSolution,
         sortBy,
         setSortBy,
         searchQuery,

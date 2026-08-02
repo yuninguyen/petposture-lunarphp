@@ -83,12 +83,12 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: 
                           item === "FAQs" ? "/faqs" :
                             item === "Track Your Order" ? "/track-order" :
                               item === "Request a Return" ? "/returns" :
-                              item === "Eating & Digestion" ? "/shop?category=Bowls" :
-                                item === "Mobility & Support" ? "/shop?category=Ramps" :
-                                  item === "Comfort & Safety" ? "/shop?category=Beds" :
+                              item === "Eating & Digestion" ? "/shop/solutions/eating-digestion" :
+                                item === "Mobility & Support" ? "/shop/solutions/mobility-support" :
+                                  item === "Comfort & Safety" ? "/shop/solutions/comfort-safety" :
                                     item === "All Products" ? "/shop" :
-                                      item === "Flat-Faced Breeds" ? "/shop?category=Bowls" :
-                                        item === "Long-Backed Breeds" ? "/shop?category=Ramps" : "#"
+                                      item === "Flat-Faced Breeds" ? "/shop/flat-faced" :
+                                        item === "Long-Backed Breeds" ? "/shop/long-backed" : "#"
                   }
                   className="text-[16px] text-white/60 hover:text-[#df8448] transition-colors flex items-center gap-2 group"
                 >

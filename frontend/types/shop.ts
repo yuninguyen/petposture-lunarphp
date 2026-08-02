@@ -44,6 +44,8 @@ export interface Product {
     name: string;
     category: string;
     categorySlug: string;
+    breedTags?: string[];
+    solutionTags?: string[];
     price: number;
     oldPrice?: number | null;
     rating: number;

@@ -2,6 +2,17 @@ import { Product } from '@/types/shop';
 
 export const CATEGORIES = ["All", "Bowls", "Ramps", "Beds", "Harnesses"];
 
+export const BREED_TYPES = [
+    { slug: "flat-faced", label: "Flat-Faced Breeds" },
+    { slug: "long-backed", label: "Long-Backed Breeds" },
+];
+
+export const SOLUTION_TYPES = [
+    { slug: "eating-digestion", label: "Eating & Digestion" },
+    { slug: "mobility-support", label: "Mobility & Support" },
+    { slug: "comfort-safety", label: "Comfort & Safety" },
+];
+
 export const SORT_OPTIONS = [
     { label: "Default Sorting", value: "newest" },
     { label: "Price: Low to High", value: "price_asc" },
@@ -17,6 +28,8 @@ export const PRODUCTS: Product[] = [
         name: "PetPosture: The Mealtime Difference Bowl",
         category: "Bowls",
         categorySlug: "bowls",
+        breedTags: ["flat-faced"],
+        solutionTags: ["eating-digestion"],
         price: 59.99,
         oldPrice: 85.00,
         rating: 5,
@@ -33,6 +46,8 @@ export const PRODUCTS: Product[] = [
         name: "Corgi Ergonomic Feeding Stand",
         category: "Bowls",
         categorySlug: "bowls",
+        breedTags: ["long-backed"],
+        solutionTags: ["eating-digestion"],
         price: 49.99,
         oldPrice: 69.99,
         rating: 5,
@@ -49,6 +64,8 @@ export const PRODUCTS: Product[] = [
         name: "PosturePro™ Tilted Bowl",
         category: "Bowls",
         categorySlug: "bowls",
+        breedTags: ["flat-faced"],
+        solutionTags: ["eating-digestion"],
         price: 29.00,
         rating: 5,
         reviews: 308,
@@ -64,6 +81,8 @@ export const PRODUCTS: Product[] = [
         name: "ErgoStep™ Pet Ramp",
         category: "Ramps",
         categorySlug: "ramps",
+        breedTags: ["long-backed"],
+        solutionTags: ["mobility-support"],
         price: 49.00,
         rating: 5,
         reviews: 182,
@@ -78,6 +97,8 @@ export const PRODUCTS: Product[] = [
         name: "ComfortRest™ Memory Bed",
         category: "Beds",
         categorySlug: "beds",
+        breedTags: ["flat-faced"],
+        solutionTags: ["comfort-safety"],
         price: 89.00,
         rating: 5,
         reviews: 425,
@@ -93,6 +114,8 @@ export const PRODUCTS: Product[] = [
         name: "SpineSave™ Support Harness",
         category: "Harnesses",
         categorySlug: "harnesses",
+        breedTags: ["flat-faced", "long-backed"],
+        solutionTags: ["comfort-safety"],
         price: 34.00,
         rating: 4,
         reviews: 97,

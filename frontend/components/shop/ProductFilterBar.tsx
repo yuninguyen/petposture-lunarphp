@@ -1,12 +1,18 @@
 import React from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import { SORT_OPTIONS } from '@/lib/shopData';
-import { ShopCategoryOption } from '@/hooks/useShopLogic';
+import { ShopCategoryOption, ShopBreedOption, ShopSolutionOption } from '@/hooks/useShopLogic';
 
 interface ProductFilterBarProps {
     categories: ShopCategoryOption[];
     activeCategory: string;
     setActiveCategory: (category: string) => void;
+    breeds: ShopBreedOption[];
+    activeBreed: string;
+    setActiveBreed: (breed: string) => void;
+    solutions: ShopSolutionOption[];
+    activeSolution: string;
+    setActiveSolution: (solution: string) => void;
     searchQuery: string;
     setSearchQuery: (query: string) => void;
     sortBy: string;
@@ -19,6 +25,12 @@ export function ProductFilterBar({
     categories,
     activeCategory,
     setActiveCategory,
+    breeds,
+    activeBreed,
+    setActiveBreed,
+    solutions,
+    activeSolution,
+    setActiveSolution,
     searchQuery,
     setSearchQuery,
     sortBy,
@@ -71,6 +83,70 @@ export function ProductFilterBar({
                             ))}
                         </div>
                     </div>
+
+                    {breeds.length > 0 && (
+                        <div>
+                            <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-[#8b8f93]">Breed Type</p>
+                            <div className="space-y-2">
+                                <button
+                                    onClick={() => setActiveBreed('All')}
+                                    className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-sm transition ${activeBreed === 'All'
+                                        ? 'border-[#df8448] bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
+                                        : 'border-[#efe5dc] bg-white text-[#687076] hover:border-[#d9c6b5] hover:bg-[#faf7f3]'
+                                        }`}
+                                >
+                                    <span className="font-medium">All Breeds</span>
+                                </button>
+                                {breeds.map((breed) => (
+                                    <button
+                                        key={breed.slug}
+                                        onClick={() => setActiveBreed(breed.slug)}
+                                        className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-sm transition ${activeBreed === breed.slug
+                                            ? 'border-[#df8448] bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
+                                            : 'border-[#efe5dc] bg-white text-[#687076] hover:border-[#d9c6b5] hover:bg-[#faf7f3]'
+                                            }`}
+                                    >
+                                        <span className="font-medium">{breed.label}</span>
+                                        <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-[#8b8f93]">
+                                            {breed.count}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {solutions.length > 0 && (
+                        <div>
+                            <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-[#8b8f93]">Solution</p>
+                            <div className="space-y-2">
+                                <button
+                                    onClick={() => setActiveSolution('All')}
+                                    className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-sm transition ${activeSolution === 'All'
+                                        ? 'border-[#df8448] bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
+                                        : 'border-[#efe5dc] bg-white text-[#687076] hover:border-[#d9c6b5] hover:bg-[#faf7f3]'
+                                        }`}
+                                >
+                                    <span className="font-medium">All Solutions</span>
+                                </button>
+                                {solutions.map((solution) => (
+                                    <button
+                                        key={solution.slug}
+                                        onClick={() => setActiveSolution(solution.slug)}
+                                        className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-sm transition ${activeSolution === solution.slug
+                                            ? 'border-[#df8448] bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
+                                            : 'border-[#efe5dc] bg-white text-[#687076] hover:border-[#d9c6b5] hover:bg-[#faf7f3]'
+                                            }`}
+                                    >
+                                        <span className="font-medium">{solution.label}</span>
+                                        <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-[#8b8f93]">
+                                            {solution.count}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div>
                         <label className="mb-2 block text-sm font-bold uppercase tracking-[0.22em] text-[#8b8f93]">

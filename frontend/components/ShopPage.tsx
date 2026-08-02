@@ -11,10 +11,29 @@ import { Product } from '@/types/shop';
 
 interface ShopPageProps {
     initialProducts: Product[];
+    initialBreed?: string;
+    initialSolution?: string;
+    heroEyebrow?: string;
+    heroTitle?: string;
+    heroDescription?: string;
 }
 
-export default function ShopPage({ initialProducts }: ShopPageProps) {
-    const shopLogic = useShopLogic(initialProducts);
+export default function ShopPage({
+    initialProducts,
+    initialBreed = 'All',
+    initialSolution = 'All',
+    heroEyebrow = 'PetPosture Shop',
+    heroTitle = 'Ergonomic essentials, organized like a real catalog.',
+    heroDescription = 'Products now load upfront, and the page is trimmed down so filters and items show sooner without a bulky hero getting in the way.',
+}: ShopPageProps) {
+    const shopLogic = useShopLogic(initialProducts, initialBreed, initialSolution);
+    const activeBreedLabel = shopLogic.breeds.find((b) => b.slug === shopLogic.activeBreed)?.label;
+    const activeSolutionLabel = shopLogic.solutions.find((s) => s.slug === shopLogic.activeSolution)?.label;
+    const activeFilterLabel = [
+        shopLogic.activeCategory !== 'All' ? shopLogic.activeCategory : null,
+        shopLogic.activeBreed !== 'All' ? activeBreedLabel : null,
+        shopLogic.activeSolution !== 'All' ? activeSolutionLabel : null,
+    ].filter(Boolean).join(' + ');
 
     return (
         <main className="min-h-screen bg-[#f7f3ee] font-hanken">
@@ -25,13 +44,13 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
                     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                         <div>
                             <p className="mb-3 text-xs font-bold uppercase tracking-[0.32em] text-[#df8448]">
-                                PetPosture Shop
+                                {heroEyebrow}
                             </p>
                             <h1 className="max-w-[760px] text-[28px] font-bold leading-tight text-[#2d3a43] md:text-[40px]">
-                                Ergonomic essentials, organized like a real catalog.
+                                {heroTitle}
                             </h1>
                             <p className="mt-3 max-w-[760px] text-[14px] leading-7 text-[#62666a]">
-                                Products now load upfront, and the page is trimmed down so filters and items show sooner without a bulky hero getting in the way.
+                                {heroDescription}
                             </p>
                         </div>
 
@@ -49,6 +68,12 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
                         categories={shopLogic.categories}
                         activeCategory={shopLogic.activeCategory}
                         setActiveCategory={shopLogic.setActiveCategory}
+                        breeds={initialBreed === 'All' ? shopLogic.breeds : []}
+                        activeBreed={shopLogic.activeBreed}
+                        setActiveBreed={shopLogic.setActiveBreed}
+                        solutions={initialSolution === 'All' ? shopLogic.solutions : []}
+                        activeSolution={shopLogic.activeSolution}
+                        setActiveSolution={shopLogic.setActiveSolution}
                         searchQuery={shopLogic.searchQuery}
                         setSearchQuery={shopLogic.setSearchQuery}
                         sortBy={shopLogic.sortBy}
@@ -68,9 +93,9 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
                                     Showing {shopLogic.filteredProducts.length} of {shopLogic.totalProducts} products
                                 </h2>
                                 <p className="mt-1 text-sm text-[#6a6f73]">
-                                    {shopLogic.activeCategory === 'All'
-                                        ? 'Browse the full catalog or narrow it down from the left sidebar.'
-                                        : `Filtered to ${shopLogic.activeCategory}.`}
+                                    {activeFilterLabel
+                                        ? `Filtered to ${activeFilterLabel}.`
+                                        : 'Browse the full catalog or narrow it down from the left sidebar.'}
                                 </p>
                             </div>
 
@@ -78,6 +103,16 @@ export default function ShopPage({ initialProducts }: ShopPageProps) {
                                 {shopLogic.activeCategory !== 'All' && (
                                     <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#b36a3b]">
                                         {shopLogic.activeCategory}
+                                    </span>
+                                )}
+                                {shopLogic.activeBreed !== 'All' && (
+                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#b36a3b]">
+                                        {activeBreedLabel || shopLogic.activeBreed}
+                                    </span>
+                                )}
+                                {shopLogic.activeSolution !== 'All' && (
+                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#b36a3b]">
+                                        {activeSolutionLabel || shopLogic.activeSolution}
                                     </span>
                                 )}
                                 {shopLogic.searchQuery && (

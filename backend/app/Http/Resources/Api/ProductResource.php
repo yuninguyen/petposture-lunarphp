@@ -45,6 +45,12 @@ class ProductResource extends JsonResource
             'categorySlug'  => $firstCollection?->defaultUrl?->slug
                 ?? ($firstCollection ? Str::slug($firstCollection->translateAttribute('name')) : 'categories'),
 
+            // Breed-type tags (e.g. "flat-faced", "long-backed") — comma-separated attribute
+            'breedTags'     => $this->resolveBreedTags(),
+
+            // Solution tags (e.g. "eating-digestion", "mobility-support") — comma-separated attribute
+            'solutionTags'  => $this->resolveTagList('solution_tags'),
+
             // Reviews (from attributes until real aggregate is built)
             'rating'        => (float) ($this->translateAttribute('rating') ?: 5),
             'reviewCount'   => (int) ($this->translateAttribute('reviews') ?: 0),
@@ -121,6 +127,26 @@ class ProductResource extends JsonResource
         }
 
         return $images;
+    }
+
+    private function resolveBreedTags(): array
+    {
+        return $this->resolveTagList('breed_tags');
+    }
+
+    private function resolveTagList(string $attributeHandle): array
+    {
+        $raw = $this->translateAttribute($attributeHandle);
+
+        if (! $raw) {
+            return [];
+        }
+
+        return collect(explode(',', $raw))
+            ->map(fn ($tag) => Str::slug(trim($tag)))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     private function resolveSpecs(): array

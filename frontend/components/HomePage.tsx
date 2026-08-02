@@ -199,9 +199,9 @@ function ShopCategories() {
       align: 'flex-start' as const,
       textAlign: 'left' as const,
       buttons: [
-        { label: 'Digestion', href: '/shop/digestion', variant: 'white' as const },
-        { label: 'Mobility', href: '/shop/mobility', variant: 'white' as const },
-        { label: 'Comfort', href: '/shop/comfort', variant: 'white' as const },
+        { label: 'Digestion', href: '/shop/solutions/eating-digestion', variant: 'white' as const },
+        { label: 'Mobility', href: '/shop/solutions/mobility-support', variant: 'white' as const },
+        { label: 'Comfort', href: '/shop/solutions/comfort-safety', variant: 'white' as const },
       ],
     },
   ];

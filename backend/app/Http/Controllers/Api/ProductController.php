@@ -46,6 +46,20 @@ class ProductController extends Controller
             );
         }
 
+        // Filter by breed-type tag (e.g. "flat-faced", "long-backed") — stored as a
+        // comma-separated attribute, so match the slug as a standalone LIKE token
+        if ($request->filled('breed')) {
+            $breed = '%' . strtolower($request->input('breed')) . '%';
+            $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$breed]);
+        }
+
+        // Filter by solution tag (e.g. "eating-digestion", "mobility-support") — same
+        // comma-separated attribute pattern as breed
+        if ($request->filled('solution')) {
+            $solution = '%' . strtolower($request->input('solution')) . '%';
+            $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$solution]);
+        }
+
         // Filter by brand slug
         if ($request->filled('brand')) {
             $query->whereHas('brand', fn ($q) =>
@@ -56,13 +70,13 @@ class ProductController extends Controller
         // Filter by badge attribute (e.g. "Best Seller")
         if ($request->filled('badge')) {
             $badge = '%' . strtolower($request->input('badge')) . '%';
-            $query->whereRaw('LOWER(CAST(attribute_data AS TEXT)) LIKE ?', [$badge]);
+            $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$badge]);
         }
 
         // Search: Lunar product names/descriptions are stored in attribute_data JSON
         if ($request->filled('q')) {
             $term = '%' . strtolower($request->input('q')) . '%';
-            $query->whereRaw('LOWER(CAST(attribute_data AS TEXT)) LIKE ?', [$term]);
+            $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$term]);
         }
 
         // Min price filter
@@ -96,7 +110,7 @@ class ProductController extends Controller
         if ($request->filled('option')) {
             foreach ((array) $request->input('option') as $optionHandle => $valueName) {
                 $query->whereHas('variants.values', fn ($q) =>
-                    $q->whereRaw('LOWER(CAST(name AS TEXT)) LIKE ?', ['%' . strtolower((string) $valueName) . '%'])
+                    $q->whereRaw('LOWER(CAST(name AS CHAR)) LIKE ?', ['%' . strtolower((string) $valueName) . '%'])
                       ->whereHas('option', fn ($q2) =>
                           $q2->whereRaw('LOWER(handle) = ?', [strtolower((string) $optionHandle)])
                       )
@@ -126,7 +140,7 @@ class ProductController extends Controller
         // Skip cache for filtered/sorted requests; cache only the unfiltered first page
         $perPage = min((int) $request->input('per_page', 12), 100);
 
-        $hasFilters = $request->hasAny(['category', 'brand', 'q', 'min_price', 'max_price', 'per_page', 'in_stock', 'option'])
+        $hasFilters = $request->hasAny(['category', 'breed', 'solution', 'brand', 'q', 'min_price', 'max_price', 'per_page', 'in_stock', 'option'])
             || ($sort !== 'newest')
             || ($request->input('page', 1) > 1);
 
