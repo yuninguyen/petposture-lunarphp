@@ -2,27 +2,9 @@ import ShopPage from '@/components/ShopPage';
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { PRODUCTS as MOCK_PRODUCTS, SOLUTION_TYPES } from '@/lib/shopData';
+import { PRODUCTS as MOCK_PRODUCTS, SOLUTION_TYPES, SOLUTION_CONTENT } from '@/lib/shopData';
 import { Product } from '@/types/shop';
 import { API_BASE_URL } from '@/lib/api';
-
-const SOLUTION_CONTENT: Record<string, { title: string; description: string; metaDescription: string }> = {
-    'eating-digestion': {
-        title: 'Better Eating & Digestion',
-        description: 'Tilted bowls, slow feeders, and fountains that ease strain and support healthy digestion at every meal.',
-        metaDescription: 'Tilted bowls, slow feeders, and pet fountains built to ease mealtime strain and support digestion.',
-    },
-    'mobility-support': {
-        title: 'Built for Mobility & Support',
-        description: 'Ramps, stairs, and strollers that protect joints and keep pets moving comfortably, indoors and out.',
-        metaDescription: 'Ramps, stairs, and strollers that protect joints and support pets with limited mobility.',
-    },
-    'comfort-safety': {
-        title: 'Comfort & Safety, Every Day',
-        description: 'Orthopedic beds, cooling mats, and supportive harnesses designed around your pet\'s everyday wellbeing.',
-        metaDescription: 'Orthopedic beds, cooling mats, and supportive harnesses for everyday pet comfort and safety.',
-    },
-};
 
 type Params = { slug: string };
 

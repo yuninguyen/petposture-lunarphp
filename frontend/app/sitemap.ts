@@ -33,6 +33,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${SITE_URL}/shop`, changeFrequency: 'daily', priority: 0.9 },
         { url: `${SITE_URL}/blog`, changeFrequency: 'daily', priority: 0.7 },
         { url: `${SITE_URL}/our-mission`, changeFrequency: 'monthly', priority: 0.6 },
+        { url: `${SITE_URL}/shop/breeds`, changeFrequency: 'weekly', priority: 0.7 },
+        { url: `${SITE_URL}/shop/solutions`, changeFrequency: 'weekly', priority: 0.7 },
         { url: `${SITE_URL}/shop/breeds/flat-faced`, changeFrequency: 'weekly', priority: 0.7 },
         { url: `${SITE_URL}/shop/breeds/long-backed`, changeFrequency: 'weekly', priority: 0.7 },
         { url: `${SITE_URL}/shop/solutions/eating-digestion`, changeFrequency: 'weekly', priority: 0.7 },

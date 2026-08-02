@@ -2,22 +2,9 @@ import ShopPage from '@/components/ShopPage';
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { PRODUCTS as MOCK_PRODUCTS, BREED_TYPES } from '@/lib/shopData';
+import { PRODUCTS as MOCK_PRODUCTS, BREED_TYPES, BREED_CONTENT } from '@/lib/shopData';
 import { Product } from '@/types/shop';
 import { API_BASE_URL } from '@/lib/api';
-
-const BREED_CONTENT: Record<string, { title: string; description: string; metaDescription: string }> = {
-    'flat-faced': {
-        title: 'Built for Flat-Faced Breeds',
-        description: 'Pugs, Bulldogs & French Bulldogs benefit most from elevated, tilted bowls and anti-strain harnesses that ease pressure on short snouts and airways.',
-        metaDescription: 'Elevated, tilted bowls and anti-strain harnesses built for Pugs, Bulldogs, and French Bulldogs.',
-    },
-    'long-backed': {
-        title: 'Built for Long-Backed Breeds',
-        description: 'Dachshunds & Corgis need ramps, orthopedic beds, and harnesses that protect the intervertebral discs from everyday strain.',
-        metaDescription: 'Ramps, orthopedic beds, and disc-protecting harnesses built for Dachshunds and Corgis.',
-    },
-};
 
 type Params = { slug: string };
 
