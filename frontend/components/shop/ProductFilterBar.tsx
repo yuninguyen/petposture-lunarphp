@@ -42,13 +42,13 @@ export function ProductFilterBar({
         <aside className="lg:sticky lg:top-8">
             <div className="overflow-hidden rounded-[28px] border border-[#eadfd3] bg-white shadow-[0_18px_50px_rgba(34,33,33,0.05)]">
                 <div className="border-b border-[#f0e7de] px-6 py-5">
-                    <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#9a806a]">Refine Catalog</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#9a806a]">Refine Catalog</p>
                     <h2 className="mt-2 text-[24px] font-semibold text-[#2d3a43]">Filters</h2>
                 </div>
 
                 <div className="space-y-7 px-6 py-6">
                     <div>
-                        <label className="mb-2 block text-sm font-bold uppercase tracking-[0.22em] text-[#8b8f93]">
+                        <label className="mb-2 block text-sm font-bold uppercase tracking-[0.14em] text-[#8b8f93]">
                             Search
                         </label>
                         <div className="relative">
@@ -64,7 +64,7 @@ export function ProductFilterBar({
                     </div>
 
                     <div>
-                        <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-[#8b8f93]">Category</p>
+                        <p className="mb-3 text-sm font-bold uppercase tracking-[0.14em] text-[#8b8f93]">Category</p>
                         <div className="space-y-2">
                             {categories.map((category) => (
                                 <button
@@ -86,7 +86,7 @@ export function ProductFilterBar({
 
                     {breeds.length > 0 && (
                         <div>
-                            <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-[#8b8f93]">Breed Type</p>
+                            <p className="mb-3 text-sm font-bold uppercase tracking-[0.14em] text-[#8b8f93]">Breed Type</p>
                             <div className="space-y-2">
                                 <button
                                     onClick={() => setActiveBreed('All')}
@@ -118,7 +118,7 @@ export function ProductFilterBar({
 
                     {solutions.length > 0 && (
                         <div>
-                            <p className="mb-3 text-sm font-bold uppercase tracking-[0.22em] text-[#8b8f93]">Solution</p>
+                            <p className="mb-3 text-sm font-bold uppercase tracking-[0.14em] text-[#8b8f93]">Solution</p>
                             <div className="space-y-2">
                                 <button
                                     onClick={() => setActiveSolution('All')}
@@ -149,7 +149,7 @@ export function ProductFilterBar({
                     )}
 
                     <div>
-                        <label className="mb-2 block text-sm font-bold uppercase tracking-[0.22em] text-[#8b8f93]">
+                        <label className="mb-2 block text-sm font-bold uppercase tracking-[0.14em] text-[#8b8f93]">
                             Sort By
                         </label>
                         <div className="relative">
@@ -169,7 +169,7 @@ export function ProductFilterBar({
                     {hasActiveFilters && (
                         <button
                             onClick={clearFilters}
-                            className="h-[48px] w-full rounded-[16px] border border-[#d9c6b5] text-sm font-bold uppercase tracking-[0.22em] text-[#7d5f49] transition hover:border-[#df8448] hover:text-[#df8448]"
+                            className="h-[48px] w-full rounded-[16px] border border-[#d9c6b5] text-sm font-bold uppercase tracking-[0.14em] text-[#7d5f49] transition hover:border-[#df8448] hover:text-[#df8448]"
                         >
                             Reset Filters
                         </button>
