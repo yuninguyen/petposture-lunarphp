@@ -212,7 +212,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                         for (let i = 0; i < quantity; i++) addItem(itemToAdd);
                                     }}
                                     disabled={!isAvailable}
-                                    className="h-[54px] flex-1 rounded-[4px] bg-[#df8448] text-sm font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-[#c9713a] disabled:cursor-not-allowed disabled:opacity-40"
+                                    className="h-[54px] flex-1 rounded-[4px] bg-[#df8448] text-sm font-black uppercase tracking-[0.12em] text-white shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-[#c9713a] disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                     {isAvailable ? 'Add to cart' : 'Out of stock'}
                                 </button>
