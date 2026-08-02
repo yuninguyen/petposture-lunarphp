@@ -130,10 +130,12 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                         <Star
                                             key={i}
                                             size={14}
-                                            className={i < product.rating ? 'fill-[#df8448] text-[#df8448]' : 'text-zinc-200'}
+                                            className={product.reviews > 0 && i < product.rating ? 'fill-[#df8448] text-[#df8448]' : 'text-zinc-200'}
                                         />
                                     ))}
-                                    <span className="ml-1 text-xs font-bold text-zinc-400">({product.reviews} Verified)</span>
+                                    <span className="ml-1 text-xs font-bold text-zinc-400">
+                                        {product.reviews > 0 ? `(${product.reviews} Verified)` : 'No reviews yet'}
+                                    </span>
                                 </div>
                                 <div className="h-4 w-px bg-zinc-100"></div>
                                 <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${isAvailable ? 'text-green-600' : 'text-zinc-400'}`}>
@@ -183,17 +185,17 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
                         <div className="mb-12 space-y-6 rounded-2xl border border-zinc-100 bg-zinc-50 p-8 shadow-sm shadow-zinc-200/20">
                             <div className="flex items-center gap-4">
-                                <div className="flex items-center rounded-[4px] border-2 border-white bg-white shadow-sm">
+                                <div className="flex h-[54px] items-center rounded-[4px] border-2 border-white bg-white shadow-sm">
                                     <button
                                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                        className="px-3 py-3 text-zinc-400 transition-colors hover:text-[#3e4c57]"
+                                        className="flex h-full items-center px-3 text-zinc-400 transition-colors hover:text-[#3e4c57]"
                                     >
                                         -
                                     </button>
                                     <span className="w-12 text-center font-bold text-[#3e4c57]">{quantity}</span>
                                     <button
                                         onClick={() => setQuantity(quantity + 1)}
-                                        className="px-3 py-3 text-zinc-400 transition-colors hover:text-[#3e4c57]"
+                                        className="flex h-full items-center px-3 text-zinc-400 transition-colors hover:text-[#3e4c57]"
                                     >
                                         +
                                     </button>

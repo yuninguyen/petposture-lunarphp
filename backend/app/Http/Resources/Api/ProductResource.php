@@ -54,7 +54,7 @@ class ProductResource extends JsonResource
             // Reviews (from attributes until real aggregate is built)
             // `reviews` is kept alongside `reviewCount` — most of the frontend
             // (ProductCard, ShopPage, ProductDetails) reads `product.reviews`.
-            'rating'        => (float) ($this->translateAttribute('rating') ?: 5),
+            'rating'        => (float) ($this->translateAttribute('rating') ?: 0),
             'reviews'       => (int) ($this->translateAttribute('reviews') ?: 0),
             'reviewCount'   => (int) ($this->translateAttribute('reviews') ?: 0),
 

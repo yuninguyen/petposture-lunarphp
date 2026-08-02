@@ -72,7 +72,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
 
     const averageRating = reviews.length > 0
         ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
-        : "5.0";
+        : null;
 
     return (
         <section className="py-24 px-4 md:px-8 bg-[#fdfdfd] border-t border-zinc-100">
@@ -86,13 +86,15 @@ export function ProductReviews({ product }: ProductReviewsProps) {
 
                         <div className="bg-white p-10 rounded-3xl border border-zinc-100 shadow-xl shadow-zinc-200/20 mb-8">
                             <div className="text-center">
-                                <span className="text-[64px] font-black text-[#3e4c57] leading-none">{averageRating}</span>
+                                <span className="text-[64px] font-black text-[#3e4c57] leading-none">{averageRating ?? '—'}</span>
                                 <div className="flex justify-center gap-1.5 my-4">
                                     {[...Array(5)].map((_, i) => (
-                                        <Star key={i} size={18} className={i < Math.round(Number(averageRating)) ? "text-[#df8448] fill-[#df8448]" : "text-zinc-100"} />
+                                        <Star key={i} size={18} className={averageRating !== null && i < Math.round(Number(averageRating)) ? "text-[#df8448] fill-[#df8448]" : "text-zinc-100"} />
                                     ))}
                                 </div>
-                                <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest">Based on {reviews.length} Verified Owners</p>
+                                <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest">
+                                    {reviews.length > 0 ? `Based on ${reviews.length} Verified Owners` : 'No reviews yet'}
+                                </p>
                             </div>
 
                             <button

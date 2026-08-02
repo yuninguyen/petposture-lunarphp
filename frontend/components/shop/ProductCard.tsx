@@ -74,10 +74,12 @@ export function ProductCard({ product }: { product: Product }) {
                         <Star
                             key={i}
                             size={11}
-                            className={i < product.rating ? "fill-[#df8448] text-[#df8448]" : "text-zinc-200"}
+                            className={product.reviews > 0 && i < product.rating ? "fill-[#df8448] text-[#df8448]" : "text-zinc-200"}
                         />
                     ))}
-                    <span className="ml-1 text-xs font-medium text-[#8b8f93]">{product.reviews} reviews</span>
+                    <span className="ml-1 text-xs font-medium text-[#8b8f93]">
+                        {product.reviews > 0 ? `${product.reviews} reviews` : 'No reviews yet'}
+                    </span>
                 </div>
 
                 <Link href={`/shop/${product.categorySlug}/${product.slug}`} className="block">
