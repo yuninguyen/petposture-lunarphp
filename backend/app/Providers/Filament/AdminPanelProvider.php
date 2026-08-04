@@ -2,6 +2,14 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\AverageOrderValueChart;
+use App\Filament\Widgets\EcommerceStatsOverview;
+use App\Filament\Widgets\NewVsReturningCustomersChart;
+use App\Filament\Widgets\OrdersSalesChart;
+use App\Filament\Widgets\OrderStatusBreakdownChart;
+use App\Filament\Widgets\OrderTotalsChart;
+use App\Http\Middleware\SetLocale;
+use App\Models\Setting;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -9,7 +17,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
-
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Facades\FilamentView;
@@ -21,13 +28,9 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
+use Livewire\Livewire;
 use Lunar\Admin\Filament\Resources;
-use App\Filament\Widgets\AverageOrderValueChart;
-use App\Filament\Widgets\NewVsReturningCustomersChart;
-use App\Filament\Widgets\OrdersSalesChart;
-use App\Filament\Widgets\EcommerceStatsOverview;
-use App\Filament\Widgets\OrderStatusBreakdownChart;
-use App\Filament\Widgets\OrderTotalsChart;
+use Lunar\Admin\Filament\Resources\CollectionGroupResource\Widgets\CollectionTreeView;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\LatestOrdersTable;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\PopularProductsTable;
 
@@ -37,50 +40,50 @@ class AdminPanelProvider extends PanelProvider
     {
         FilamentView::registerRenderHook(
             'panels::global-search.after',
-            fn(): string => \Livewire\Livewire::mount('language-switcher'),
+            fn (): string => Livewire::mount('language-switcher'),
         );
 
         FilamentIcon::register([
-            'lunar::activity'              => 'lucide-activity',
-            'lunar::attributes'            => 'lucide-pencil-ruler',
-            'lunar::availability'          => 'lucide-calendar',
-            'lunar::basic-information'     => 'lucide-edit',
-            'lunar::brands'                => 'lucide-badge-check',
-            'lunar::channels'              => 'lucide-store',
-            'lunar::collections'           => 'lucide-blocks',
-            'lunar::sub-collection'        => 'lucide-square-stack',
-            'lunar::move-collection'       => 'lucide-move',
-            'lunar::currencies'            => 'lucide-circle-dollar-sign',
-            'lunar::customers'             => 'lucide-users',
-            'lunar::customer-groups'       => 'lucide-users',
-            'lunar::dashboard'             => 'lucide-bar-chart-big',
-            'lunar::discounts'             => 'lucide-percent-circle',
-            'lunar::discount-limitations'  => 'lucide-list-x',
-            'lunar::info'                  => 'lucide-info',
-            'lunar::languages'             => 'lucide-languages',
-            'lunar::media'                 => 'lucide-image',
-            'lunar::orders'                => 'lucide-inbox',
-            'lunar::product-pricing'       => 'lucide-coins',
-            'lunar::product-associations'  => 'lucide-cable',
-            'lunar::product-inventory'     => 'lucide-combine',
-            'lunar::product-options'       => 'lucide-list',
-            'lunar::product-shipping'      => 'lucide-truck',
-            'lunar::product-variants'      => 'lucide-shapes',
-            'lunar::products'              => 'lucide-tag',
-            'lunar::staff'                 => 'lucide-shield',
-            'lunar::tags'                  => 'lucide-tags',
-            'lunar::tax'                   => 'lucide-landmark',
-            'lunar::urls'                  => 'lucide-globe',
-            'lunar::product-identifiers'   => 'lucide-package-search',
-            'lunar::reorder'               => 'lucide-grip-vertical',
-            'lunar::chevron-right'         => 'lucide-chevron-right',
-            'lunar::image-placeholder'     => 'lucide-image',
-            'lunar::trending-up'           => 'lucide-trending-up',
-            'lunar::trending-down'         => 'lucide-trending-down',
-            'lunar::exclamation-circle'    => 'lucide-alert-circle',
-            'actions::view-action'         => 'lucide-eye',
-            'actions::edit-action'         => 'lucide-edit',
-            'actions::delete-action'       => 'lucide-trash-2',
+            'lunar::activity' => 'lucide-activity',
+            'lunar::attributes' => 'lucide-pencil-ruler',
+            'lunar::availability' => 'lucide-calendar',
+            'lunar::basic-information' => 'lucide-edit',
+            'lunar::brands' => 'lucide-badge-check',
+            'lunar::channels' => 'lucide-store',
+            'lunar::collections' => 'lucide-blocks',
+            'lunar::sub-collection' => 'lucide-square-stack',
+            'lunar::move-collection' => 'lucide-move',
+            'lunar::currencies' => 'lucide-circle-dollar-sign',
+            'lunar::customers' => 'lucide-users',
+            'lunar::customer-groups' => 'lucide-users',
+            'lunar::dashboard' => 'lucide-bar-chart-big',
+            'lunar::discounts' => 'lucide-percent-circle',
+            'lunar::discount-limitations' => 'lucide-list-x',
+            'lunar::info' => 'lucide-info',
+            'lunar::languages' => 'lucide-languages',
+            'lunar::media' => 'lucide-image',
+            'lunar::orders' => 'lucide-inbox',
+            'lunar::product-pricing' => 'lucide-coins',
+            'lunar::product-associations' => 'lucide-cable',
+            'lunar::product-inventory' => 'lucide-combine',
+            'lunar::product-options' => 'lucide-list',
+            'lunar::product-shipping' => 'lucide-truck',
+            'lunar::product-variants' => 'lucide-shapes',
+            'lunar::products' => 'lucide-tag',
+            'lunar::staff' => 'lucide-shield',
+            'lunar::tags' => 'lucide-tags',
+            'lunar::tax' => 'lucide-landmark',
+            'lunar::urls' => 'lucide-globe',
+            'lunar::product-identifiers' => 'lucide-package-search',
+            'lunar::reorder' => 'lucide-grip-vertical',
+            'lunar::chevron-right' => 'lucide-chevron-right',
+            'lunar::image-placeholder' => 'lucide-image',
+            'lunar::trending-up' => 'lucide-trending-up',
+            'lunar::trending-down' => 'lucide-trending-down',
+            'lunar::exclamation-circle' => 'lucide-alert-circle',
+            'actions::view-action' => 'lucide-eye',
+            'actions::edit-action' => 'lucide-edit',
+            'actions::delete-action' => 'lucide-trash-2',
         ]);
 
         return $panel
@@ -91,7 +94,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->colors([
                 'primary' => [
-                    50  => '#fdf2eb',
+                    50 => '#fdf2eb',
                     100 => '#fbe2cc',
                     200 => '#f6c39a',
                     300 => '#f0a367',
@@ -107,12 +110,12 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->font('Google Sans Flex')
             ->brandName('PetPosture')
-            ->brandLogo(fn () => \App\Models\Setting::get('shop_logo')
-                ? asset('storage/' . \App\Models\Setting::get('shop_logo'))
+            ->brandLogo(fn () => Setting::get('shop_logo')
+                ? asset('storage/'.Setting::get('shop_logo'))
                 : asset('logo.png'))
             ->brandLogoHeight('45px')
-            ->favicon(fn () => \App\Models\Setting::get('shop_favicon')
-                ? asset('storage/' . \App\Models\Setting::get('shop_favicon'))
+            ->favicon(fn () => Setting::get('shop_favicon')
+                ? asset('storage/'.Setting::get('shop_favicon'))
                 : asset('favicon.ico'))
             ->navigationGroups([
                 __('lunarpanel::global.sections.catalog'),
@@ -299,33 +302,33 @@ class AdminPanelProvider extends PanelProvider
                     <div class="pp-banner">
                         <div style="min-width:0">
                             <div class="pp-banner-title">
-                                ' . __('admin.dashboard.welcome', ['name' => '<span style="color:#df8448;">' . e($name) . '</span>']) . '
+                                '.__('admin.dashboard.welcome', ['name' => '<span style="color:#df8448;">'.e($name).'</span>']).'
                             </div>
                             <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
                                 <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 6px rgba(52,211,153,.65);animation:pp-pulse 2s infinite;flex-shrink:0"></span>
-                                <span style="font-size:12px;font-weight:600;color:#94a3b8;">' . $date . '</span>
+                                <span style="font-size:12px;font-weight:600;color:#94a3b8;">'.$date.'</span>
                             </div>
                         </div>
                         <div class="pp-banner-actions">
                             <a href="/admin/products?mountedActions[0]=create" class="pp-btn pp-btn-primary"
                                onmouseover="this.style.background=\'#c9713a\'" onmouseout="this.style.background=\'#df8448\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 5v14M5 12h14"/></svg>
-                                ' . __('admin.dashboard.actions.new_product') . '
+                                '.__('admin.dashboard.actions.new_product').'
                             </a>
                             <a href="/admin/orders" class="pp-btn pp-btn-secondary"
                                onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#f8fafc\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                                ' . __('admin.dashboard.actions.orders') . '
+                                '.__('admin.dashboard.actions.orders').'
                             </a>
                             <a href="/admin/customers" class="pp-btn pp-btn-secondary"
                                onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#f8fafc\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                ' . __('admin.dashboard.actions.customers') . '
+                                '.__('admin.dashboard.actions.customers').'
                             </a>
                             <a href="/admin/discounts" class="pp-btn pp-btn-secondary"
                                onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#f8fafc\'">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><circle cx="12" cy="12" r="10"/><path d="M14.5 9.5 9.5 14.5M9.5 9.5h.01M14.5 14.5h.01"/></svg>
-                                ' . __('admin.dashboard.actions.discounts') . '
+                                '.__('admin.dashboard.actions.discounts').'
                             </a>
                         </div>
                     </div>';
@@ -344,7 +347,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->livewireComponents([
                 Resources\OrderResource\Pages\Components\OrderItemsTable::class,
-                \Lunar\Admin\Filament\Resources\CollectionGroupResource\Widgets\CollectionTreeView::class,
+                CollectionTreeView::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -356,7 +359,7 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                \App\Http\Middleware\SetLocale::class,
+                SetLocale::class,
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),

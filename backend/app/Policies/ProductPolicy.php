@@ -3,8 +3,8 @@
 namespace App\Policies;
 
 use App\Models\User;
-use Lunar\Models\Product;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Lunar\Models\Product;
 
 class ProductPolicy
 {

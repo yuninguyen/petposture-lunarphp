@@ -21,15 +21,13 @@ class StripeCardGateway implements PaymentGatewayInterface
 
     private function stripeKey(): string
     {
-        return Cache::remember('stripe_key', 300, fn () =>
-            Setting::get('stripe_key') ?: (string) config('services.stripe.key')
+        return Cache::remember('stripe_key', 300, fn () => Setting::get('stripe_key') ?: (string) config('services.stripe.key')
         );
     }
 
     private function stripeSecret(): string
     {
-        return Cache::remember('stripe_secret', 300, fn () =>
-            Setting::get('stripe_secret') ?: (string) config('services.stripe.secret')
+        return Cache::remember('stripe_secret', 300, fn () => Setting::get('stripe_secret') ?: (string) config('services.stripe.secret')
         );
     }
 

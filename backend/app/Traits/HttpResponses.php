@@ -14,13 +14,4 @@ trait HttpResponses
             'data' => $data,
         ], $code);
     }
-
-    protected function error($data, $message = null, $code): JsonResponse
-    {
-        return response()->json([
-            'status' => 'Error has occurred...',
-            'message' => $message,
-            'data' => $data,
-        ], $code);
-    }
 }

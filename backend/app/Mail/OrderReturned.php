@@ -14,8 +14,8 @@ class OrderReturned extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            to:      $this->order->customer_reference,
-            subject: "Your " . config('app.name') . " Order #{$this->order->reference} Has Been Returned",
+            to: $this->order->customer_reference,
+            subject: 'Your '.config('app.name')." Order #{$this->order->reference} Has Been Returned",
         );
     }
 

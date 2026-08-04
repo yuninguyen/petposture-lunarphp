@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\UserAddress;
 use Illuminate\Http\Request;
 
 class UserAddressController extends Controller
@@ -22,17 +21,17 @@ class UserAddressController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'label'        => 'nullable|string|max:64',
-            'first_name'   => 'required|string|max:128',
-            'last_name'    => 'required|string|max:128',
-            'line_one'     => 'required|string|max:255',
-            'line_two'     => 'nullable|string|max:255',
-            'city'         => 'required|string|max:128',
-            'state'        => 'required|string|max:128',
-            'postcode'     => 'required|string|max:20',
+            'label' => 'nullable|string|max:64',
+            'first_name' => 'required|string|max:128',
+            'last_name' => 'required|string|max:128',
+            'line_one' => 'required|string|max:255',
+            'line_two' => 'nullable|string|max:255',
+            'city' => 'required|string|max:128',
+            'state' => 'required|string|max:128',
+            'postcode' => 'required|string|max:20',
             'country_code' => 'nullable|string|size:2',
-            'phone'        => 'nullable|string|max:32',
-            'is_default'   => 'nullable|boolean',
+            'phone' => 'nullable|string|max:32',
+            'is_default' => 'nullable|boolean',
         ]);
 
         $user = $request->user();
@@ -55,17 +54,17 @@ class UserAddressController extends Controller
         $address = $request->user()->addresses()->findOrFail($id);
 
         $validated = $request->validate([
-            'label'        => 'nullable|string|max:64',
-            'first_name'   => 'sometimes|required|string|max:128',
-            'last_name'    => 'sometimes|required|string|max:128',
-            'line_one'     => 'sometimes|required|string|max:255',
-            'line_two'     => 'nullable|string|max:255',
-            'city'         => 'sometimes|required|string|max:128',
-            'state'        => 'sometimes|required|string|max:128',
-            'postcode'     => 'sometimes|required|string|max:20',
+            'label' => 'nullable|string|max:64',
+            'first_name' => 'sometimes|required|string|max:128',
+            'last_name' => 'sometimes|required|string|max:128',
+            'line_one' => 'sometimes|required|string|max:255',
+            'line_two' => 'nullable|string|max:255',
+            'city' => 'sometimes|required|string|max:128',
+            'state' => 'sometimes|required|string|max:128',
+            'postcode' => 'sometimes|required|string|max:20',
             'country_code' => 'nullable|string|size:2',
-            'phone'        => 'nullable|string|max:32',
-            'is_default'   => 'nullable|boolean',
+            'phone' => 'nullable|string|max:32',
+            'is_default' => 'nullable|boolean',
         ]);
 
         if (! empty($validated['is_default'])) {

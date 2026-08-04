@@ -14,7 +14,7 @@ class NewOrderAdmin extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "[New Order] #{$this->order->reference} — " . config('app.name'),
+            subject: "[New Order] #{$this->order->reference} — ".config('app.name'),
         );
     }
 

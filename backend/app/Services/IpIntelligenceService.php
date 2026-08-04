@@ -23,7 +23,7 @@ class IpIntelligenceService
                 'fields' => 'status,country,regionName,city,isp,org,mobile,proxy,hosting',
             ]);
         } catch (\Throwable $e) {
-            Log::warning('IP intelligence lookup failed: ' . $e->getMessage());
+            Log::warning('IP intelligence lookup failed: '.$e->getMessage());
 
             return null;
         }

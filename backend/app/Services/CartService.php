@@ -13,8 +13,7 @@ class CartService
 {
     public function __construct(
         private readonly InventoryService $inventoryService,
-    ) {
-    }
+    ) {}
 
     /**
      * Resolve an existing cart or create a new one.
@@ -46,9 +45,9 @@ class CartService
 
         return Cart::create([
             'currency_id' => Currency::getDefault()->id,
-            'channel_id'  => Channel::getDefault()->id,
-            'user_id'     => $userId,
-            'meta'        => ['token' => $token ?? Str::uuid()->toString()],
+            'channel_id' => Channel::getDefault()->id,
+            'user_id' => $userId,
+            'meta' => ['token' => $token ?? Str::uuid()->toString()],
         ]);
     }
 
@@ -61,6 +60,7 @@ class CartService
         $existingQuantity = (int) $cart->lines()->where('purchasable_id', $variantId)->sum('quantity');
         $this->inventoryService->assertVariantCanFulfill($variant, $quantity, $existingQuantity);
         $cart->add($variant, $quantity);
+
         return $this->fresh($cart);
     }
 
@@ -90,6 +90,7 @@ class CartService
     public function removeLine(Cart $cart, int $lineId): Cart
     {
         CartLine::where('cart_id', $cart->id)->where('id', $lineId)->delete();
+
         return $this->fresh($cart);
     }
 
@@ -138,8 +139,8 @@ class CartService
     public function toArray(Cart $cart): array
     {
         $cart->calculate();
-        $currency  = $cart->currency;
-        $factor    = max(1, (int) ($currency->factor ?? 100));
+        $currency = $cart->currency;
+        $factor = max(1, (int) ($currency->factor ?? 100));
 
         $lines = $cart->lines->map(function (CartLine $line) use ($currency, $factor) {
             $purchasable = $line->purchasable;
@@ -149,27 +150,27 @@ class CartService
                 ->first();
 
             return [
-                'id'        => $line->id,
+                'id' => $line->id,
                 'variantId' => $line->purchasable_id,
-                'name'      => $purchasable?->translateAttribute('name') ?? '',
-                'sku'       => $purchasable?->sku ?? '',
-                'quantity'  => $line->quantity,
-                'price'     => round(($price?->getRawOriginal('price') ?? 0) / $factor, 2),
-                'total'     => round(($line->sub_total?->value ?? 0) / $factor, 2),
+                'name' => $purchasable?->translateAttribute('name') ?? '',
+                'sku' => $purchasable?->sku ?? '',
+                'quantity' => $line->quantity,
+                'price' => round(($price?->getRawOriginal('price') ?? 0) / $factor, 2),
+                'total' => round(($line->sub_total?->value ?? 0) / $factor, 2),
                 ...($purchasable instanceof ProductVariant ? $this->inventoryService->stockSnapshot($purchasable) : []),
             ];
         })->values();
 
         return [
-            'token'      => $cart->meta['token'] ?? null,
+            'token' => $cart->meta['token'] ?? null,
             'couponCode' => $cart->coupon_code,
-            'currency'   => $currency->code,
-            'itemCount'  => (int) $cart->lines->sum('quantity'),
-            'lineCount'  => $cart->lines->count(),
-            'lines'      => $lines,
-            'subtotal'   => round(($cart->sub_total?->value ?? 0) / $factor, 2),
-            'discount'   => round(($cart->discount_total?->value ?? 0) / $factor, 2),
-            'total'      => round(($cart->total?->value ?? 0) / $factor, 2),
+            'currency' => $currency->code,
+            'itemCount' => (int) $cart->lines->sum('quantity'),
+            'lineCount' => $cart->lines->count(),
+            'lines' => $lines,
+            'subtotal' => round(($cart->sub_total?->value ?? 0) / $factor, 2),
+            'discount' => round(($cart->discount_total?->value ?? 0) / $factor, 2),
+            'total' => round(($cart->total?->value ?? 0) / $factor, 2),
         ];
     }
 

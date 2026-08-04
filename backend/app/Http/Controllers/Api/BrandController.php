@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\ProductResource;
-use App\Services\ProductSyncService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Lunar\Models\Brand;
 use Lunar\Models\Product;
 
@@ -18,11 +18,11 @@ class BrandController extends Controller
                 ->orderBy('name')
                 ->get()
                 ->map(fn ($b) => [
-                    'id'            => $b->id,
-                    'name'          => $b->name,
-                    'slug'          => \Illuminate\Support\Str::slug($b->name),
+                    'id' => $b->id,
+                    'name' => $b->name,
+                    'slug' => Str::slug($b->name),
                     'product_count' => $b->products_count,
-                    'thumbnail'     => $b->getFirstMediaUrl() ?: null,
+                    'thumbnail' => $b->getFirstMediaUrl() ?: null,
                 ])
                 ->values();
         });

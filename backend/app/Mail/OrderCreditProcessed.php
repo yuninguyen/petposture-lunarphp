@@ -14,8 +14,8 @@ class OrderCreditProcessed extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            to:      $this->order->customer_reference,
-            subject: "Your " . config('app.name') . " Credit Has Been Processed",
+            to: $this->order->customer_reference,
+            subject: 'Your '.config('app.name').' Credit Has Been Processed',
         );
     }
 

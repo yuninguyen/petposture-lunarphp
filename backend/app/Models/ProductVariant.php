@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Legacy\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use App\Models\Legacy\Product;
 
 class ProductVariant extends Model implements HasMedia
 {

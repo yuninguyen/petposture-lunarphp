@@ -2,11 +2,10 @@
 
 use App\Models\Setting;
 
-if (!function_exists('setting')) {
+if (! function_exists('setting')) {
     /**
      * Get a setting value.
      *
-     * @param  string  $key
      * @param  mixed  $default
      * @return mixed
      */

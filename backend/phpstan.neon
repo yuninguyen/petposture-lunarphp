@@ -7,10 +7,11 @@ parameters:
     level: 3
     ignoreErrors:
         # Magic property access via Eloquent model attributes is expected
-        - '#Access to an undefined property Lunar\\Models\\[a-zA-Z]+::#'
+        - '#Access to an undefined property Lunar\\Models\\[a-zA-Z\\\\]+::#'
         # Lunar uses dynamic relations resolved at runtime
-        - '#Call to an undefined method Lunar\\Models\\[a-zA-Z]+::#'
+        - '#Call to an undefined method Lunar\\Models\\[a-zA-Z\\\\]+::#'
         # Same magic-property pattern, but on relations Larastan can't resolve to a
         # concrete model class and falls back to the generic Eloquent base class.
         - '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model::#'
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::#'
     reportUnmatchedIgnoredErrors: false

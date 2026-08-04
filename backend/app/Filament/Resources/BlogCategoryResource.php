@@ -32,6 +32,7 @@ class BlogCategoryResource extends Resource
     {
         return __('Blog Categories');
     }
+
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -42,8 +43,7 @@ class BlogCategoryResource extends Resource
                     ->label(__('Name'))
                     ->required()
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn(string $operation, $state, Set $set) =>
-                        $operation === 'create' ? $set('slug', Str::slug($state)) : null),
+                    ->afterStateUpdated(fn (string $operation, $state, Set $set) => $operation === 'create' ? $set('slug', Str::slug($state)) : null),
                 Forms\Components\TextInput::make('slug')
                     ->label(__('Slug'))
                     ->required()

@@ -2,12 +2,12 @@
 
 namespace App\Filament\Widgets;
 
-use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrdersSalesChart as BaseOrdersSalesChart;
 use Carbon\Carbon;
+use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrdersSalesChart as BaseOrdersSalesChart;
 
 class OrdersSalesChart extends BaseOrdersSalesChart
 {
-    protected int | string | array $columnSpan = 1;
+    protected int|string|array $columnSpan = 1;
 
     protected function getOptions(): array
     {

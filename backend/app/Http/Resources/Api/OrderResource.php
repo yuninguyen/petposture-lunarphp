@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources\Api;
 
+use App\Services\OrderOperationsService;
+use App\Services\ProductSyncService;
 use App\Support\Orders\OrderStateMachine;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -93,12 +95,12 @@ class OrderResource extends JsonResource
                 ], $shipment))
                 ->values()
                 ->all(),
-            'available_actions' => app(\App\Services\OrderOperationsService::class)->availableActions($this->resource),
+            'available_actions' => app(OrderOperationsService::class)->availableActions($this->resource),
             'customer_note' => $meta['customer_note'] ?? $this->notes,
             'internal_note' => $meta['internal_note'] ?? null,
             'currency' => $this->currency_code,
             'total' => [
-                'formatted' => '$' . number_format($total, 2) . ' ' . $this->currency_code,
+                'formatted' => '$'.number_format($total, 2).' '.$this->currency_code,
                 'decimal' => round($total, 2),
                 'currency' => $this->currency_code,
             ],
@@ -108,7 +110,7 @@ class OrderResource extends JsonResource
             'discount_total' => round($discountTotal, 2),
             'created_at' => $this->created_at->toDateTimeString(),
             'notes' => $this->notes,
-            'lines' => $this->lines->map(fn($line) => [
+            'lines' => $this->lines->map(fn ($line) => [
                 'id' => $line->id,
                 'type' => $line->type,
                 'description' => $line->description,
@@ -166,11 +168,11 @@ class OrderResource extends JsonResource
 
         $purchasable = $line->getRelationValue('purchasable');
 
-        if (!$purchasable || !method_exists($purchasable, 'product') || !$purchasable->product) {
+        if (! $purchasable || ! method_exists($purchasable, 'product') || ! $purchasable->product) {
             return null;
         }
 
-        return \App\Services\ProductSyncService::normalizePublicImageUrl(
+        return ProductSyncService::normalizePublicImageUrl(
             $purchasable->product->translateAttribute('image_url')
         );
     }
@@ -185,7 +187,7 @@ class OrderResource extends JsonResource
 
         $shippingLine = $this->lines->firstWhere('type', 'shipping');
 
-        if (!$shippingLine) {
+        if (! $shippingLine) {
             return 0.0;
         }
 
@@ -210,7 +212,7 @@ class OrderResource extends JsonResource
 
     private function formatStatusLabel(?string $status): ?string
     {
-        if (!$status) {
+        if (! $status) {
             return null;
         }
 
@@ -219,7 +221,7 @@ class OrderResource extends JsonResource
 
     private function formatShippingLabel(?string $shippingMethod): string
     {
-        if (!$shippingMethod) {
+        if (! $shippingMethod) {
             return 'Standard';
         }
 
@@ -231,7 +233,7 @@ class OrderResource extends JsonResource
 
     private function formatPaymentLabel(?string $paymentMethod): string
     {
-        if (!$paymentMethod) {
+        if (! $paymentMethod) {
             return 'Payment';
         }
 

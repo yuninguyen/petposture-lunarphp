@@ -1,17 +1,30 @@
 <?php
 
+use App\Enums\ErrorCode;
+use App\Http\Middleware\RefreshMailConfig;
+use App\Http\Middleware\ResetPermissionCache;
+use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\SetRequestId;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__ . '/../routes/web.php',
-        api: __DIR__ . '/../routes/api.php',
-        commands: __DIR__ . '/../routes/console.php',
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function () {
-            \Illuminate\Support\Facades\Route::middleware('api')
+            Route::middleware('api')
                 ->prefix('api/v1')
                 ->group(base_path('routes/api.php'));
         },
@@ -24,58 +37,58 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/*',
         ]);
         $middleware->alias([
-            'role'               => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission'         => \Spatie\Permission\Middleware\PermissionMiddleware::class,
-            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
-        $middleware->appendToGroup('api', \App\Http\Middleware\SetRequestId::class);
+        $middleware->appendToGroup('api', SetRequestId::class);
         // SetLocale's global side effects (Carbon::setLocale, PHP setlocale(), the
         // MySQL session's lc_time_names) are process-wide, not request-scoped — API
         // requests need it too, or a request right after a 'vi' web request would
         // silently inherit Vietnamese-formatted dates on the same worker. Its
         // Filament-navigation-group block already no-ops outside a Filament request.
-        $middleware->appendToGroup('api', \App\Http\Middleware\SetLocale::class);
-        $middleware->appendToGroup('api', \App\Http\Middleware\ResetPermissionCache::class);
-        $middleware->appendToGroup('api', \App\Http\Middleware\RefreshMailConfig::class);
+        $middleware->appendToGroup('api', SetLocale::class);
+        $middleware->appendToGroup('api', ResetPermissionCache::class);
+        $middleware->appendToGroup('api', RefreshMailConfig::class);
         $middleware->web(append: [
-            \App\Http\Middleware\SetLocale::class,
-            \App\Http\Middleware\ResetPermissionCache::class,
-            \App\Http\Middleware\RefreshMailConfig::class,
+            SetLocale::class,
+            ResetPermissionCache::class,
+            RefreshMailConfig::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {
+        $exceptions->render(function (ValidationException $e, $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
-                    'code'    => \App\Enums\ErrorCode::VALIDATION_ERROR->value,
+                    'code' => ErrorCode::VALIDATION_ERROR->value,
                     'message' => $e->getMessage(),
-                    'errors'  => $e->errors(),
+                    'errors' => $e->errors(),
                 ], 422);
             }
         });
 
-        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
+        $exceptions->render(function (AuthenticationException $e, $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
-                    'code'    => \App\Enums\ErrorCode::UNAUTHENTICATED->value,
+                    'code' => ErrorCode::UNAUTHENTICATED->value,
                     'message' => 'Unauthenticated.',
                 ], 401);
             }
         });
 
-        $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException $e, $request) {
+        $exceptions->render(function (AuthorizationException $e, $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
-                    'code'    => \App\Enums\ErrorCode::FORBIDDEN->value,
+                    'code' => ErrorCode::FORBIDDEN->value,
                     'message' => 'This action is unauthorized.',
                 ], 403);
             }
         });
 
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
+        $exceptions->render(function (NotFoundHttpException $e, $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
-                    'code'    => \App\Enums\ErrorCode::NOT_FOUND->value,
+                    'code' => ErrorCode::NOT_FOUND->value,
                     'message' => $e->getMessage() ?: 'Not found.',
                 ], 404);
             }

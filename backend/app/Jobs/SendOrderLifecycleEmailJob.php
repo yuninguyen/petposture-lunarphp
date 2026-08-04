@@ -8,6 +8,7 @@ use App\Mail\OrderCreditProcessed;
 use App\Mail\OrderDelivered;
 use App\Mail\OrderReturned;
 use App\Mail\OrderShipped;
+use App\Models\OrderShipment;
 use App\Support\MailConfigSync;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -46,7 +47,7 @@ class SendOrderLifecycleEmailJob implements ShouldQueue
         }
 
         $shipment = $this->shipmentId
-            ? \App\Models\OrderShipment::with('items')->find($this->shipmentId)
+            ? OrderShipment::with('items')->find($this->shipmentId)
             : null;
 
         match ($this->event) {

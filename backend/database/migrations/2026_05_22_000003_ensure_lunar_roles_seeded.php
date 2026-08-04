@@ -21,7 +21,7 @@ return new class extends Migration
         foreach ($roles as $roleName) {
             try {
                 Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Fail silently if table does not exist or guard is not defined yet
             }
         }

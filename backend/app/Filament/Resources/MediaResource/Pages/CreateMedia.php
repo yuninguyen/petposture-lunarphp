@@ -4,12 +4,14 @@ namespace App\Filament\Resources\MediaResource\Pages;
 
 use App\Filament\Resources\MediaResource;
 use App\Models\SiteMedia;
+use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
+use Illuminate\Support\Facades\Storage;
 
 class CreateMedia extends Page
 {
@@ -37,8 +39,8 @@ class CreateMedia extends Page
                     ->label('Collection')
                     ->options([
                         'general' => 'General',
-                        'banner'  => 'Banner',
-                        'blog'    => 'Blog',
+                        'banner' => 'Banner',
+                        'blog' => 'Blog',
                     ])
                     ->default('general')
                     ->required(),
@@ -62,7 +64,7 @@ class CreateMedia extends Page
         $data = $this->form->getState();
 
         $siteMedia = SiteMedia::create([
-            'title'      => $data['title'] ?? null,
+            'title' => $data['title'] ?? null,
             'collection' => $data['collection'],
         ]);
 
@@ -72,7 +74,7 @@ class CreateMedia extends Page
         $disk = config('filament.default_filesystem_disk', 'public');
 
         foreach ($data['files'] as $path) {
-            $fullPath = \Illuminate\Support\Facades\Storage::disk($disk)->path($path);
+            $fullPath = Storage::disk($disk)->path($path);
             $siteMedia
                 ->addMedia($fullPath)
                 ->usingName(pathinfo($path, PATHINFO_FILENAME))
@@ -80,7 +82,7 @@ class CreateMedia extends Page
         }
 
         Notification::make()
-            ->title(count($data['files']) . ' file(s) uploaded successfully.')
+            ->title(count($data['files']).' file(s) uploaded successfully.')
             ->success()
             ->send();
 
@@ -90,7 +92,7 @@ class CreateMedia extends Page
     protected function getFormActions(): array
     {
         return [
-            \Filament\Actions\Action::make('save')
+            Action::make('save')
                 ->label('Upload')
                 ->submit('save'),
         ];

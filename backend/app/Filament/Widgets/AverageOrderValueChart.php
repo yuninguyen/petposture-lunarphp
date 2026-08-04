@@ -2,12 +2,12 @@
 
 namespace App\Filament\Widgets;
 
-use Lunar\Admin\Filament\Widgets\Dashboard\Orders\AverageOrderValueChart as BaseAverageOrderValueChart;
 use Carbon\Carbon;
+use Lunar\Admin\Filament\Widgets\Dashboard\Orders\AverageOrderValueChart as BaseAverageOrderValueChart;
 
 class AverageOrderValueChart extends BaseAverageOrderValueChart
 {
-    protected int | string | array $columnSpan = 1;
+    protected int|string|array $columnSpan = 1;
 
     protected function getOptions(): array
     {

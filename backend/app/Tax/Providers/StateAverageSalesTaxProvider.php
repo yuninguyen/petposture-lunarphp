@@ -2,15 +2,14 @@
 
 namespace App\Tax\Providers;
 
-use App\Tax\Contracts\SalesTaxProviderInterface;
 use App\Services\UsStateSalesTaxService;
+use App\Tax\Contracts\SalesTaxProviderInterface;
 
 class StateAverageSalesTaxProvider implements SalesTaxProviderInterface
 {
     public function __construct(
         private readonly UsStateSalesTaxService $stateSalesTaxService,
-    ) {
-    }
+    ) {}
 
     public function quote(array $address, int $taxableAmount): array
     {

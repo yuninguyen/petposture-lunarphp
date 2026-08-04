@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Legacy\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
-use App\Models\Legacy\Product;
 
 class Brand extends Model
 {

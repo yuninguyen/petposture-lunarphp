@@ -29,12 +29,12 @@ return [
         ],
         'statuses' => [
             'awaiting-payment' => 'Awaiting Payment',
-            'payment-offline'  => 'Payment Offline',
+            'payment-offline' => 'Payment Offline',
             'payment-received' => 'Payment Received',
-            'processing'       => 'Processing',
-            'shipped'          => 'Shipped',
-            'delivered'        => 'Delivered',
-            'cancelled'        => 'Cancelled',
+            'processing' => 'Processing',
+            'shipped' => 'Shipped',
+            'delivered' => 'Delivered',
+            'cancelled' => 'Cancelled',
         ],
     ],
     'customers' => [

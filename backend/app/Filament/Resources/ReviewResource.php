@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources;
 
-use App\Models\Review;
 use App\Filament\Resources\ReviewResource\Pages;
+use App\Models\Review;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -21,7 +21,6 @@ class ReviewResource extends Resource
      * Reviews are moderated here, but storefront product pages are the canonical
      * ingest path for customer-submitted reviews.
      */
-
     public static function getNavigationGroup(): ?string
     {
         return __('lunarpanel::global.sections.sales');
@@ -48,8 +47,8 @@ class ReviewResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('lunar_product_id')
                             ->label(__('Product'))
-                            ->options(fn() => Product::all()->mapWithKeys(
-                                fn(Product $product) => [$product->id => $product->translateAttribute('name')]
+                            ->options(fn () => Product::all()->mapWithKeys(
+                                fn (Product $product) => [$product->id => $product->translateAttribute('name')]
                             ))
                             ->required()
                             ->searchable(),
@@ -60,11 +59,11 @@ class ReviewResource extends Resource
                         Forms\Components\Select::make('rating')
                             ->label(__('Rating'))
                             ->options([
-                                1 => '1 ' . __('Star'),
-                                2 => '2 ' . __('Star'),
-                                3 => '3 ' . __('Star'),
-                                4 => '4 ' . __('Star'),
-                                5 => '5 ' . __('Star'),
+                                1 => '1 '.__('Star'),
+                                2 => '2 '.__('Star'),
+                                3 => '3 '.__('Star'),
+                                4 => '4 '.__('Star'),
+                                5 => '5 '.__('Star'),
                             ])
                             ->required(),
                         Forms\Components\Toggle::make('is_verified')
@@ -84,7 +83,7 @@ class ReviewResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('product.name')
                     ->label(__('Product'))
-                    ->getStateUsing(fn(Review $record) => $record->product?->translateAttribute('name') ?? '—'),
+                    ->getStateUsing(fn (Review $record) => $record->product?->translateAttribute('name') ?? '—'),
                 Tables\Columns\TextColumn::make('customer_name')
                     ->label(__('Customer'))
                     ->searchable()
@@ -104,8 +103,8 @@ class ReviewResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('lunar_product_id')
                     ->label(__('Product'))
-                    ->options(fn() => Product::all()->mapWithKeys(
-                        fn(Product $product) => [$product->id => $product->translateAttribute('name')]
+                    ->options(fn () => Product::all()->mapWithKeys(
+                        fn (Product $product) => [$product->id => $product->translateAttribute('name')]
                     )),
             ])
             ->actions([

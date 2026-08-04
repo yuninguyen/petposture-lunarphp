@@ -2,12 +2,12 @@
 
 namespace App\Filament\Widgets;
 
-use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderTotalsChart as BaseOrderTotalsChart;
 use Carbon\Carbon;
+use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderTotalsChart as BaseOrderTotalsChart;
 
 class OrderTotalsChart extends BaseOrderTotalsChart
 {
-    protected int | string | array $columnSpan = 1;
+    protected int|string|array $columnSpan = 1;
 
     protected function getOptions(): array
     {

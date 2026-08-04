@@ -19,17 +19,17 @@ class SeoController extends Controller
         }
 
         $seo = SeoMetadata::where('path', $path)
-            ->orWhere('path', '/' . $path)
+            ->orWhere('path', '/'.$path)
             ->first();
 
-        if (!$seo) {
+        if (! $seo) {
             return response()->json(['error' => 'Not found'], 404);
         }
 
         return response()->json([
-            'title'         => $seo->title,
-            'description'   => $seo->description,
-            'og_image'      => $seo->og_image,
+            'title' => $seo->title,
+            'description' => $seo->description,
+            'og_image' => $seo->og_image,
             'canonical_url' => $seo->canonical_url,
         ]);
     }

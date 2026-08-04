@@ -1,9 +1,10 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use App\Providers\Filament\AdminPanelProvider;
 
 return [
     AppServiceProvider::class,
-    App\Providers\Filament\AdminPanelProvider::class,
+    AdminPanelProvider::class,
     // Lunar\Admin\LunarPanelProvider::class, // disabled: Lunar resources merged into /admin panel
 ];

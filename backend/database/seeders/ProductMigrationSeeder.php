@@ -4,19 +4,18 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Lunar\Models\Product;
-use Lunar\Models\ProductVariant;
-use Lunar\Models\Price;
-use Lunar\Models\Url;
-use Lunar\Models\Channel;
-use Lunar\Models\CustomerGroup;
-use Lunar\Models\Currency;
-use Lunar\Models\ProductType;
-use Lunar\Models\Collection;
-use Lunar\Models\Url as LunarUrl;
 use Lunar\FieldTypes\Text;
-use Lunar\FieldTypes\TranslatedText;
-use Illuminate\Support\Str;
+use Lunar\Models\Channel;
+use Lunar\Models\Collection;
+use Lunar\Models\Currency;
+use Lunar\Models\CustomerGroup;
+use Lunar\Models\Price;
+use Lunar\Models\Product;
+use Lunar\Models\ProductType;
+use Lunar\Models\ProductVariant;
+use Lunar\Models\TaxClass;
+use Lunar\Models\Url;
+use Lunar\Models\Url as LunarUrl;
 
 class ProductMigrationSeeder extends Seeder
 {
@@ -27,7 +26,7 @@ class ProductMigrationSeeder extends Seeder
         $channel = Channel::first();
         $customerGroup = CustomerGroup::first();
         $currency = Currency::where('default', true)->first() ?: Currency::first();
-        $taxClass = \Lunar\Models\TaxClass::first();
+        $taxClass = TaxClass::first();
 
         // Ensure default collections exist
         $collections = [
@@ -49,7 +48,7 @@ class ProductMigrationSeeder extends Seeder
             $existingUrl = Url::where('slug', $legacy->slug)->where('element_type', Product::class)->first();
 
             $imageUrl = $legacy->image_url;
-            if (!$imageUrl) {
+            if (! $imageUrl) {
                 // Find matching image or use fallback
                 foreach ($images as $key => $url) {
                     if (str_contains($legacy->name, $key)) {
@@ -58,8 +57,9 @@ class ProductMigrationSeeder extends Seeder
                     }
                 }
             }
-            if (!$imageUrl)
+            if (! $imageUrl) {
                 $imageUrl = 'https://images.pexels.com/photos/1108099/pexels-photo-1108099.jpeg';
+            }
 
             $productData = [
                 'product_type_id' => $productType->id,
@@ -86,7 +86,7 @@ class ProductMigrationSeeder extends Seeder
                 // 2. Create Variant
                 $variant = ProductVariant::create([
                     'product_id' => $product->id,
-                    'sku' => $legacy->slug . '-default',
+                    'sku' => $legacy->slug.'-default',
                     'stock' => $legacy->stock_quantity ?? 0,
                     'tax_class_id' => $taxClass->id,
                 ]);
@@ -118,9 +118,9 @@ class ProductMigrationSeeder extends Seeder
 
     protected function getOrCreateCollection($name, $slug)
     {
-        $collection = Collection::whereHas('urls', fn($q) => $q->where('slug', $slug))->first();
+        $collection = Collection::whereHas('urls', fn ($q) => $q->where('slug', $slug))->first();
 
-        if (!$collection) {
+        if (! $collection) {
             $collection = Collection::create([
                 'collection_group_id' => 1,
                 'attribute_data' => [

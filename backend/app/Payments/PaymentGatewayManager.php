@@ -12,8 +12,7 @@ class PaymentGatewayManager
      */
     public function __construct(
         private readonly iterable $gateways
-    ) {
-    }
+    ) {}
 
     public function forMethod(?string $method): PaymentGatewayInterface
     {

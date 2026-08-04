@@ -24,8 +24,10 @@ class NewsletterController extends Controller
             if ($existing->status === 'unsubscribed') {
                 $existing->update(['status' => 'subscribed']);
                 Mail::send(new NewsletterConfirmation($email));
+
                 return ['message' => 'You have been resubscribed.'];
             }
+
             return ['message' => 'This email is already subscribed.'];
         }
 

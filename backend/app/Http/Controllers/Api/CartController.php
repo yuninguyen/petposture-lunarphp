@@ -28,7 +28,7 @@ class CartController extends Controller
     {
         $validated = Validator::make($request->all(), [
             'variantId' => 'required|exists:lunar_product_variants,id',
-            'quantity'  => 'required|integer|min:1',
+            'quantity' => 'required|integer|min:1',
         ])->validate();
 
         $cart = $this->cartService->resolveCart(

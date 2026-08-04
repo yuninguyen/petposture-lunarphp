@@ -32,7 +32,7 @@ class SettingResource extends Resource
                         Forms\Components\TextInput::make('key')
                             ->required()
                             ->unique(ignoreRecord: true)
-                            ->disabled(fn($record) => $record !== null),
+                            ->disabled(fn ($record) => $record !== null),
 
                         Forms\Components\Select::make('type')
                             ->options([
@@ -52,7 +52,7 @@ class SettingResource extends Resource
                         Forms\Components\Textarea::make('value')
                             ->rows(5)
                             ->columnSpanFull(),
-                    ])->columns(2)
+                    ])->columns(2),
             ]);
     }
 

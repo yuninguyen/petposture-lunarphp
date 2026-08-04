@@ -3,9 +3,10 @@
 namespace App\Services;
 
 use App\Models\CheckoutSession;
-use App\Services\ShippingService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Lunar\Models\Contracts\Order;
+use Lunar\Models\Discount;
 
 class CheckoutSessionService
 {
@@ -13,8 +14,7 @@ class CheckoutSessionService
         private readonly CheckoutService $checkoutService,
         private readonly StripePaymentIntentService $stripePaymentIntentService,
         private readonly ShippingService $shippingService,
-    ) {
-    }
+    ) {}
 
     public function upsert(?string $token, array $payload, ?int $userId = null): CheckoutSession
     {
@@ -73,7 +73,7 @@ class CheckoutSessionService
         return $intent;
     }
 
-    public function confirm(CheckoutSession $session): \Lunar\Models\Contracts\Order
+    public function confirm(CheckoutSession $session): Order
     {
         $order = $this->checkoutService->placeOrder((array) ($session->payload ?? []), $session->user_id);
 
@@ -158,7 +158,7 @@ class CheckoutSessionService
 
         $isFreeShipping = false;
         if ($couponCode) {
-            $discount = \Lunar\Models\Discount::active()->where('coupon', $couponCode)->first();
+            $discount = Discount::active()->where('coupon', $couponCode)->first();
             $isFreeShipping = (bool) ($discount?->data['free_shipping'] ?? false);
         }
 

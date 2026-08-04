@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $ordersTable = config('lunar.database.table_prefix', 'lunar_') . 'orders';
+        $ordersTable = config('lunar.database.table_prefix', 'lunar_').'orders';
 
         Schema::create('paypal_webhook_events', function (Blueprint $table) use ($ordersTable) {
             $table->id();

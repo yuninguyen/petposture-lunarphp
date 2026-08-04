@@ -25,7 +25,7 @@ class FixedAmountOffPerUnit extends AmountOff
     {
         $data = $this->discount->data;
 
-        if (!$this->checkDiscountConditions($cart)) {
+        if (! $this->checkDiscountConditions($cart)) {
             return $cart;
         }
 
@@ -45,7 +45,7 @@ class FixedAmountOffPerUnit extends AmountOff
         $decimal = ($values[$currency->code] ?? 0) / $currency->factor;
         $unitValue = (int) bcmul($decimal, $currency->factor);
 
-        if (!$unitValue) {
+        if (! $unitValue) {
             return $cart;
         }
 
@@ -92,13 +92,13 @@ class FixedAmountOffPerUnit extends AmountOff
             return $cart;
         }
 
-        if (!$cart->discounts) {
+        if (! $cart->discounts) {
             $cart->discounts = collect();
         }
 
         $cart->discounts->push($this);
 
-        $this->addDiscountBreakdown($cart, new \Lunar\Base\ValueObjects\Cart\DiscountBreakdown(
+        $this->addDiscountBreakdown($cart, new DiscountBreakdown(
             price: new Price($totalDiscountAmount, $cart->currency, 1),
             lines: $affectedLines,
             discount: $this->discount,

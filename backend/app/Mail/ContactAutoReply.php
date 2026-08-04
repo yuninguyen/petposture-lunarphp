@@ -17,7 +17,7 @@ class ContactAutoReply extends Mailable
     {
         return new Envelope(
             replyTo: 'support@petposture.com',
-            subject: 'We received your message — ' . config('app.name'),
+            subject: 'We received your message — '.config('app.name'),
         );
     }
 

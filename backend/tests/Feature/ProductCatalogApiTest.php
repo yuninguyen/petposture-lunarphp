@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
-use App\Models\Product as LegacyProduct;
+use App\Models\Legacy\Product as LegacyProduct;
 use App\Models\ProductSyncMapping;
 use App\Services\ProductSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

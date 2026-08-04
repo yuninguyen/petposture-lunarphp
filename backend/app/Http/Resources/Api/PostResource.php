@@ -37,7 +37,7 @@ class PostResource extends JsonResource
 
     protected function resolveAssetUrl(?string $path): ?string
     {
-        if (!$path) {
+        if (! $path) {
             return null;
         }
 
@@ -45,6 +45,6 @@ class PostResource extends JsonResource
             return $path;
         }
 
-        return asset('storage/' . ltrim($path, '/'));
+        return asset('storage/'.ltrim($path, '/'));
     }
 }

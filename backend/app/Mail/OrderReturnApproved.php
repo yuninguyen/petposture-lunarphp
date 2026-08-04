@@ -14,8 +14,8 @@ class OrderReturnApproved extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            to:      $this->returnRequest->order->customer_reference,
-            subject: "Your Return Request for " . config('app.name') . " Order #{$this->returnRequest->order->reference} Has Been Approved",
+            to: $this->returnRequest->order->customer_reference,
+            subject: 'Your Return Request for '.config('app.name')." Order #{$this->returnRequest->order->reference} Has Been Approved",
         );
     }
 

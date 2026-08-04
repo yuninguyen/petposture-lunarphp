@@ -24,3 +24,7 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 scripts/unsafe/
+/scratch_*.php
+/out_*.txt
+/tmp/
+/tools/

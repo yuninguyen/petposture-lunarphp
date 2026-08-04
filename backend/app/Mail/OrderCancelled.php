@@ -14,7 +14,7 @@ class OrderCancelled extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            to:      $this->order->customer_reference,
+            to: $this->order->customer_reference,
             subject: "Order #{$this->order->reference} has been canceled",
         );
     }

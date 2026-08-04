@@ -15,8 +15,7 @@ class AfterShipWebhookController extends Controller
     public function __construct(
         private readonly AfterShipService $afterShip,
         private readonly OrderOperationsService $orderOperationsService,
-    ) {
-    }
+    ) {}
 
     public function handle(Request $request): JsonResponse
     {

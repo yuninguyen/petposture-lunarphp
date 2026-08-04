@@ -25,7 +25,7 @@ return new class extends Migration
         );
 
         // 3. Assign the super_admin role to the user
-        if (!$user->hasRole('super_admin')) {
+        if (! $user->hasRole('super_admin')) {
             $user->assignRole($adminRole);
         }
     }

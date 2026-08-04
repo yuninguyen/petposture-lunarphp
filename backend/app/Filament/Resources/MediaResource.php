@@ -75,9 +75,9 @@ class MediaResource extends Resource
                     ->options([
                         'product-images' => 'Product Images',
                         'variant-images' => 'Variant Images',
-                        'banner'         => 'Banner',
-                        'blog'           => 'Blog',
-                        'general'        => 'General',
+                        'banner' => 'Banner',
+                        'blog' => 'Blog',
+                        'general' => 'General',
                     ]),
             ])
             ->actions([
@@ -86,8 +86,8 @@ class MediaResource extends Resource
                     ->icon('heroicon-o-clipboard-document')
                     ->color('gray')
                     ->extraAttributes(fn (Media $record): array => [
-                        'data-url'   => $record->original_url,
-                        'x-data'     => '',
+                        'data-url' => $record->original_url,
+                        'x-data' => '',
                         'x-on:click' => 'navigator.clipboard.writeText($el.closest("[data-url]").dataset.url); $tooltip("Copied!", { timeout: 1500 })',
                     ]),
                 Tables\Actions\DeleteAction::make(),
@@ -102,7 +102,7 @@ class MediaResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListMedia::route('/'),
+            'index' => ListMedia::route('/'),
             'create' => CreateMedia::route('/create'),
         ];
     }

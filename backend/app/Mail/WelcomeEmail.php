@@ -14,10 +14,10 @@ class WelcomeEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            from:    'hello@petposture.com',
-            to:      $this->user->email,
+            from: 'hello@petposture.com',
+            to: $this->user->email,
             replyTo: 'support@petposture.com',
-            subject: 'Welcome to ' . config('app.name') . '!',
+            subject: 'Welcome to '.config('app.name').'!',
         );
     }
 

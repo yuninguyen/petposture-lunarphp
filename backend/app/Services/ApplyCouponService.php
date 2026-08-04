@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Collection;
+use App\Lunar\DiscountTypes\FixedAmountOffPerUnit;
 use Lunar\Base\DiscountManagerInterface;
 use Lunar\DiscountTypes\AmountOff;
 use Lunar\Models\Cart;
@@ -92,11 +92,11 @@ class ApplyCouponService
         if ($discount->type === AmountOff::class && ! ($data['fixed_value'] ?? false)) {
             $type = 'percentage';
             $amount = (float) ($data['percentage'] ?? 0);
-        } elseif ($discount->type === \App\Lunar\DiscountTypes\FixedAmountOffPerUnit::class) {
+        } elseif ($discount->type === FixedAmountOffPerUnit::class) {
             $type = 'fixed_product';
-            $amount = ((float) ($data['fixed_values'][$currency->code] ?? 0)) / $currency->factor;
+            $amount = ((float) ($data['fixed_values'][$currency->code] ?? 0)) / (float) $currency->factor;
         } else {
-            $amount = ((float) ($data['fixed_values'][$currency->code] ?? 0)) / $currency->factor;
+            $amount = ((float) ($data['fixed_values'][$currency->code] ?? 0)) / (float) $currency->factor;
         }
 
         return [

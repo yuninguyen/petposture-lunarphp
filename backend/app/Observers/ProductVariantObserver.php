@@ -2,8 +2,8 @@
 
 namespace App\Observers;
 
-use Lunar\Models\ProductVariant;
 use Illuminate\Support\Facades\Log;
+use Lunar\Models\ProductVariant;
 
 class ProductVariantObserver
 {

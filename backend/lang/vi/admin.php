@@ -29,12 +29,12 @@ return [
         ],
         'statuses' => [
             'awaiting-payment' => 'Chờ thanh toán',
-            'payment-offline'  => 'Thanh toán ngoại tuyến',
+            'payment-offline' => 'Thanh toán ngoại tuyến',
             'payment-received' => 'Đã nhận thanh toán',
-            'processing'       => 'Đang xử lý',
-            'shipped'          => 'Đã giao cho ĐVVC',
-            'delivered'        => 'Đã giao hàng',
-            'cancelled'        => 'Đã hủy',
+            'processing' => 'Đang xử lý',
+            'shipped' => 'Đã giao cho ĐVVC',
+            'delivered' => 'Đã giao hàng',
+            'cancelled' => 'Đã hủy',
         ],
     ],
     'customers' => [

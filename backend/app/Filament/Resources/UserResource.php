@@ -38,8 +38,7 @@ class UserResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         // Mirrors the staff role list in App\Models\User::canAccessPanel() — keep in sync.
-        return parent::getEloquentQuery()->whereHas('roles', fn (Builder $query) =>
-            $query->whereIn('name', ['super_admin', 'admin', 'staff', 'Product Manager', 'Order Manager', 'Support'])
+        return parent::getEloquentQuery()->whereHas('roles', fn (Builder $query) => $query->whereIn('name', ['super_admin', 'admin', 'staff', 'Product Manager', 'Order Manager', 'Support'])
         );
     }
 
@@ -63,17 +62,17 @@ class UserResource extends Resource
                             ->label(__('Password'))
                             ->password()
                             ->revealable()
-                            ->dehydrateStateUsing(fn($state) => Hash::make($state))
-                            ->dehydrated(fn($state) => filled($state))
-                            ->required(fn(string $context): bool => $context === 'create'),
+                            ->dehydrateStateUsing(fn ($state) => Hash::make($state))
+                            ->dehydrated(fn ($state) => filled($state))
+                            ->required(fn (string $context): bool => $context === 'create'),
                     ])->columns(2),
 
                 Forms\Components\Section::make(__('Access Control'))
                     ->schema([
                         Forms\Components\Select::make('roles')
                             ->label(__('Roles'))
-                            ->relationship('roles', 'name', fn(Builder $query) => $query->where('guard_name', 'web'))
-                            ->getOptionLabelFromRecordUsing(fn($record) => str($record->name)->headline())
+                            ->relationship('roles', 'name', fn (Builder $query) => $query->where('guard_name', 'web'))
+                            ->getOptionLabelFromRecordUsing(fn ($record) => str($record->name)->headline())
                             ->multiple()
                             ->preload()
                             ->searchable()
@@ -95,7 +94,7 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('roles.name')
                     ->label(__('Roles'))
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => str($state)->headline())
+                    ->formatStateUsing(fn (string $state): string => str($state)->headline())
                     ->color('info'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('Created At'))

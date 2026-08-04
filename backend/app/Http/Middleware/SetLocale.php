@@ -2,10 +2,16 @@
 
 namespace App\Http\Middleware;
 
+use Carbon\Carbon;
 use Closure;
+use Filament\Facades\Filament;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Session;
+use Lunar\Admin\Support\CustomerStatus;
+use Lunar\Admin\Support\OrderStatus;
 use Symfony\Component\HttpFoundation\Response;
 
 class SetLocale
@@ -13,7 +19,7 @@ class SetLocale
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -21,13 +27,13 @@ class SetLocale
         // default — otherwise app.locale drifts to whatever locale the last request set it to,
         // which would leak across requests in a persistent worker process (FrankenPHP worker mode).
         $locale = Session::get('locale', config('app.fallback_locale', 'en'));
-        
+
         App::setLocale($locale);
         config(['app.locale' => $locale]);
 
         // Dynamically translate and order Filament navigation groups based on the active locale
-        if (class_exists(\Filament\Facades\Filament::class)) {
-            $panel = \Filament\Facades\Filament::getCurrentPanel();
+        if (class_exists(Filament::class)) {
+            $panel = Filament::getCurrentPanel();
             if ($panel) {
                 try {
                     $panel->navigationGroups([
@@ -53,7 +59,7 @@ class SetLocale
         $statuses = (require config_path('lunar/orders.php'))['statuses'] ?? [];
         foreach ($statuses as $key => $status) {
             $translationKey = "admin.orders.statuses.{$key}";
-            if (\Illuminate\Support\Facades\Lang::has($translationKey)) {
+            if (Lang::has($translationKey)) {
                 $statuses[$key]['label'] = __($translationKey);
             }
         }
@@ -63,7 +69,7 @@ class SetLocale
         // current locale — same leak class as OrderStatus: both memoize __()
         // output in a static array that's never invalidated by Lunar itself.
         try {
-            $reflector = new \ReflectionClass(\Lunar\Admin\Support\OrderStatus::class);
+            $reflector = new \ReflectionClass(OrderStatus::class);
             $reflector->getProperty('cachedStatusLabel')->setValue(null, []);
             $reflector->getProperty('cachedStatusColor')->setValue(null, []);
         } catch (\Throwable $e) {
@@ -71,28 +77,30 @@ class SetLocale
         }
 
         try {
-            $reflector = new \ReflectionClass(\Lunar\Admin\Support\CustomerStatus::class);
+            $reflector = new \ReflectionClass(CustomerStatus::class);
             $reflector->getProperty('cachedStatusLabel')->setValue(null, []);
             $reflector->getProperty('cachedStatusColor')->setValue(null, []);
             $reflector->getProperty('cachedStatusIcon')->setValue(null, []);
         } catch (\Throwable $e) {
             // ignore cache reset failures
         }
-        
+
         // Set Carbon locale for translated formats
-        \Carbon\Carbon::setLocale($locale);
-        
+        Carbon::setLocale($locale);
+
         // Set PHP system locale for standard date formats (Windows compatible)
         if ($locale === 'vi') {
             setlocale(LC_ALL, 'vi_VN.UTF-8', 'vi_VN', 'vietnamese', 'vie', 'vn', 'vietnam');
             try {
-                \Illuminate\Support\Facades\DB::statement("SET lc_time_names = 'vi_VN'");
-            } catch (\Exception $e) {}
+                DB::statement("SET lc_time_names = 'vi_VN'");
+            } catch (\Exception $e) {
+            }
         } else {
             setlocale(LC_ALL, 'en_US.UTF-8', 'en_US', 'english', 'eng', 'en');
             try {
-                \Illuminate\Support\Facades\DB::statement("SET lc_time_names = 'en_US'");
-            } catch (\Exception $e) {}
+                DB::statement("SET lc_time_names = 'en_US'");
+            } catch (\Exception $e) {
+            }
         }
 
         return $next($request);

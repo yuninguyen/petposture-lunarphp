@@ -13,8 +13,8 @@ class NewsletterConfirmation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            to:      $this->email,
-            subject: 'You\'re subscribed to ' . config('app.name') . '!',
+            to: $this->email,
+            subject: 'You\'re subscribed to '.config('app.name').'!',
         );
     }
 

@@ -2,9 +2,9 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Session;
+use Livewire\Component;
 
 class LanguageSwitcher extends Component
 {
@@ -19,7 +19,7 @@ class LanguageSwitcher extends Component
 
     public function changeLocale(string $locale)
     {
-        if (!in_array($locale, ['en', 'vi'])) {
+        if (! in_array($locale, ['en', 'vi'])) {
             return;
         }
 

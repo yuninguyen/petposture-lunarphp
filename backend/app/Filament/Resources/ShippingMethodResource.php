@@ -42,7 +42,7 @@ class ShippingMethodResource extends Resource
                     ->required()
                     ->alphaDash()
                     ->unique(ignoreRecord: true)
-                    ->disabled(fn(string $operation) => $operation === 'edit')
+                    ->disabled(fn (string $operation) => $operation === 'edit')
                     ->helperText(__('Used internally to match checkout selections. Cannot be changed after creation.')),
                 Forms\Components\TextInput::make('name')
                     ->label(__('Name'))
@@ -98,9 +98,9 @@ class ShippingMethodResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListShippingMethods::route('/'),
+            'index' => Pages\ListShippingMethods::route('/'),
             'create' => Pages\CreateShippingMethod::route('/create'),
-            'edit'   => Pages\EditShippingMethod::route('/{record}/edit'),
+            'edit' => Pages\EditShippingMethod::route('/{record}/edit'),
         ];
     }
 }

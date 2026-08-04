@@ -16,8 +16,8 @@ class PasswordResetEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            from:    'accounts@petposture.com',
-            subject: 'Reset your ' . config('app.name') . ' password',
+            from: 'accounts@petposture.com',
+            subject: 'Reset your '.config('app.name').' password',
         );
     }
 

@@ -8,11 +8,14 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Carbon;
 use Lunar\Models\Order;
 use Lunar\Models\Product;
+use Spatie\Permission\Exceptions\RoleDoesNotExist;
 
 class EcommerceStatsOverview extends BaseWidget
 {
     protected static ?int $sort = -2;
+
     protected int|string|array $columnSpan = 'full';
+
     protected int|string|array $columns = 3;
 
     protected function getStats(): array
@@ -65,7 +68,7 @@ class EcommerceStatsOverview extends BaseWidget
         $totalCustomers = (function () {
             try {
                 return User::role('customer')->count();
-            } catch (\Spatie\Permission\Exceptions\RoleDoesNotExist $e) {
+            } catch (RoleDoesNotExist $e) {
                 return User::count();
             }
         })();
@@ -73,7 +76,7 @@ class EcommerceStatsOverview extends BaseWidget
         $customersLast30 = (function () use ($thirtyDaysAgo) {
             try {
                 return User::role('customer')->where('created_at', '>=', $thirtyDaysAgo)->count();
-            } catch (\Spatie\Permission\Exceptions\RoleDoesNotExist $e) {
+            } catch (RoleDoesNotExist $e) {
                 return User::where('created_at', '>=', $thirtyDaysAgo)->count();
             }
         })();
@@ -81,7 +84,7 @@ class EcommerceStatsOverview extends BaseWidget
         $customersPrev30 = (function () use ($sixtyDaysAgo, $thirtyDaysAgo) {
             try {
                 return User::role('customer')->whereBetween('created_at', [$sixtyDaysAgo, $thirtyDaysAgo])->count();
-            } catch (\Spatie\Permission\Exceptions\RoleDoesNotExist $e) {
+            } catch (RoleDoesNotExist $e) {
                 return User::whereBetween('created_at', [$sixtyDaysAgo, $thirtyDaysAgo])->count();
             }
         })();
@@ -97,9 +100,9 @@ class EcommerceStatsOverview extends BaseWidget
         $todayOrders = Order::where('created_at', '>=', $todayStart)->count();
 
         return [
-            Stat::make(__('admin.dashboard.stats.revenue.label'), '$' . number_format($revenue / 100, 2))
-                ->description($revenueUp 
-                    ? __('admin.dashboard.trend.increase', ['trend' => abs($revenueTrend)]) 
+            Stat::make(__('admin.dashboard.stats.revenue.label'), '$'.number_format($revenue / 100, 2))
+                ->description($revenueUp
+                    ? __('admin.dashboard.trend.increase', ['trend' => abs($revenueTrend)])
                     : __('admin.dashboard.trend.decrease', ['trend' => abs($revenueTrend)]))
                 ->descriptionIcon($revenueUp ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->icon('heroicon-o-banknotes')
@@ -107,8 +110,8 @@ class EcommerceStatsOverview extends BaseWidget
                 ->color('success'),
 
             Stat::make(__('admin.dashboard.stats.orders.label'), number_format($totalOrders))
-                ->description($ordersUp 
-                    ? __('admin.dashboard.trend.increase', ['trend' => abs($ordersTrend)]) 
+                ->description($ordersUp
+                    ? __('admin.dashboard.trend.increase', ['trend' => abs($ordersTrend)])
                     : __('admin.dashboard.trend.decrease', ['trend' => abs($ordersTrend)]))
                 ->descriptionIcon($ordersUp ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->icon('heroicon-o-shopping-bag')
@@ -122,14 +125,14 @@ class EcommerceStatsOverview extends BaseWidget
                 ->color('warning'),
 
             Stat::make(__('admin.dashboard.stats.customers.label'), number_format($totalCustomers))
-                ->description($customersUp 
-                    ? __('admin.dashboard.trend.increase', ['trend' => abs($customersTrend)]) 
+                ->description($customersUp
+                    ? __('admin.dashboard.trend.increase', ['trend' => abs($customersTrend)])
                     : __('admin.dashboard.trend.decrease', ['trend' => abs($customersTrend)]))
                 ->descriptionIcon($customersUp ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->icon('heroicon-o-user-group')
                 ->color('info'),
 
-            Stat::make(__('admin.dashboard.stats.today_revenue.label'), '$' . number_format($todayRevenue / 100, 2))
+            Stat::make(__('admin.dashboard.stats.today_revenue.label'), '$'.number_format($todayRevenue / 100, 2))
                 ->description(__('admin.dashboard.stats.today_revenue.description'))
                 ->descriptionIcon('heroicon-m-sun')
                 ->icon('heroicon-o-currency-dollar')

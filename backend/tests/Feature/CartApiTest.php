@@ -4,10 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Lunar\Models\Channel;
 use Lunar\Models\Currency;
 use Lunar\Models\Language;
+use Lunar\Models\Price;
+use Lunar\Models\Product;
+use Lunar\Models\ProductType;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
 use Tests\TestCase;
@@ -27,7 +31,7 @@ class CartApiTest extends TestCase
 
     public function test_guest_can_get_empty_cart(): void
     {
-        $token = \Illuminate\Support\Str::uuid()->toString();
+        $token = Str::uuid()->toString();
 
         $this->getJson('/api/cart', ['X-Cart-Token' => $token])
             ->assertOk()
@@ -36,11 +40,11 @@ class CartApiTest extends TestCase
 
     public function test_guest_can_add_item_to_cart(): void
     {
-        $token = \Illuminate\Support\Str::uuid()->toString();
+        $token = Str::uuid()->toString();
 
         $this->postJson('/api/cart/lines', [
             'variantId' => $this->variant->id,
-            'quantity'  => 2,
+            'quantity' => 2,
         ], ['X-Cart-Token' => $token])
             ->assertStatus(201)
             ->assertJsonPath('lines.0.variantId', $this->variant->id)
@@ -49,7 +53,7 @@ class CartApiTest extends TestCase
 
     public function test_adding_same_variant_increments_quantity(): void
     {
-        $token = \Illuminate\Support\Str::uuid()->toString();
+        $token = Str::uuid()->toString();
         $headers = ['X-Cart-Token' => $token];
 
         $this->postJson('/api/cart/lines', ['variantId' => $this->variant->id, 'quantity' => 1], $headers);
@@ -60,12 +64,12 @@ class CartApiTest extends TestCase
 
     public function test_can_remove_line_from_cart(): void
     {
-        $token = \Illuminate\Support\Str::uuid()->toString();
+        $token = Str::uuid()->toString();
         $headers = ['X-Cart-Token' => $token];
 
         $addResponse = $this->postJson('/api/cart/lines', [
             'variantId' => $this->variant->id,
-            'quantity'  => 1,
+            'quantity' => 1,
         ], $headers)->assertStatus(201);
 
         $lineId = $addResponse->json('lines.0.id');
@@ -82,11 +86,11 @@ class CartApiTest extends TestCase
 
         $this->postJson('/api/cart/lines', [
             'variantId' => $this->variant->id,
-            'quantity'  => 3,
+            'quantity' => 3,
         ])->assertStatus(201)->assertJsonPath('lines.0.quantity', 3);
 
         // Guest with no token gets its own empty cart
-        $guestToken = \Illuminate\Support\Str::uuid()->toString();
+        $guestToken = Str::uuid()->toString();
         $this->getJson('/api/cart', ['X-Cart-Token' => $guestToken])
             ->assertOk()
             ->assertJsonPath('lines', []);
@@ -96,8 +100,8 @@ class CartApiTest extends TestCase
     {
         $this->postJson('/api/cart/lines', [
             'variantId' => 99999,
-            'quantity'  => 1,
-        ], ['X-Cart-Token' => \Illuminate\Support\Str::uuid()->toString()])
+            'quantity' => 1,
+        ], ['X-Cart-Token' => Str::uuid()->toString()])
             ->assertUnprocessable();
     }
 
@@ -107,20 +111,20 @@ class CartApiTest extends TestCase
 
         $this->postJson('/api/cart/lines', [
             'variantId' => $this->variant->id,
-            'quantity'  => 1,
-        ], ['X-Cart-Token' => \Illuminate\Support\Str::uuid()->toString()])
+            'quantity' => 1,
+        ], ['X-Cart-Token' => Str::uuid()->toString()])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['quantity']);
     }
 
     public function test_cart_line_includes_inventory_snapshot(): void
     {
-        $token = \Illuminate\Support\Str::uuid()->toString();
+        $token = Str::uuid()->toString();
         $this->variant->update(['stock' => 2, 'low_stock_threshold' => 5, 'backorder' => false]);
 
         $this->postJson('/api/cart/lines', [
             'variantId' => $this->variant->id,
-            'quantity'  => 1,
+            'quantity' => 1,
         ], ['X-Cart-Token' => $token])
             ->assertCreated()
             ->assertJsonPath('lines.0.stock', 2)
@@ -141,21 +145,21 @@ class CartApiTest extends TestCase
 
     private function createVariant(): ProductVariant
     {
-        $productType = \Lunar\Models\ProductType::factory()->create(['name' => 'Default']);
-        $product     = \Lunar\Models\Product::factory()->create([
+        $productType = ProductType::factory()->create(['name' => 'Default']);
+        $product = Product::factory()->create([
             'product_type_id' => $productType->id,
-            'status'          => 'published',
+            'status' => 'published',
         ]);
 
         $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
 
-        \Lunar\Models\Price::factory()->create([
+        Price::factory()->create([
             'priceable_type' => ProductVariant::class,
-            'priceable_id'   => $variant->id,
-            'price'          => 2999,
-            'currency_id'    => Currency::getDefault()->id,
+            'priceable_id' => $variant->id,
+            'price' => 2999,
+            'currency_id' => Currency::getDefault()->id,
             'customer_group_id' => null,
-            'min_quantity'   => 1,
+            'min_quantity' => 1,
         ]);
 
         return $variant;

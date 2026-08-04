@@ -37,7 +37,7 @@ class ContentController extends Controller
     {
         return response()->json([
             'data' => BlogCategory::all()->map(fn ($c) => [
-                'id'   => $c->id,
+                'id' => $c->id,
                 'name' => $c->name,
                 'slug' => $c->slug,
             ])->values(),

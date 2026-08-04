@@ -18,7 +18,7 @@ class OrderShipped extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            to:      $this->order->customer_reference,
+            to: $this->order->customer_reference,
             subject: "A shipment from order #{$this->order->reference} is on the way",
         );
     }

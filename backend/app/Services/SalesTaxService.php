@@ -11,8 +11,7 @@ class SalesTaxService
     public function __construct(
         private readonly StateAverageSalesTaxProvider $stateAverageProvider,
         private readonly StripeTaxSalesTaxProvider $stripeTaxProvider,
-    ) {
-    }
+    ) {}
 
     public function quote(array $address, int $taxableAmount): array
     {

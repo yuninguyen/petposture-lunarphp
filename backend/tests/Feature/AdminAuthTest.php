@@ -59,7 +59,7 @@ class AdminAuthTest extends TestCase
         User::factory()->create(['email' => 'test@example.com', 'password' => bcrypt('correct')]);
 
         $this->postJson('/api/login', [
-            'email'    => 'test@example.com',
+            'email' => 'test@example.com',
             'password' => 'wrong',
         ])->assertUnprocessable();
     }
@@ -69,13 +69,13 @@ class AdminAuthTest extends TestCase
         Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
 
         $this->postJson('/api/register', [
-            'name'                  => 'Jane Doe',
-            'email'                 => 'jane@example.com',
-            'password'              => 'password123',
+            'name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'password' => 'password123',
             'password_confirmation' => 'password123',
         ])->assertOk()
-          ->assertJsonPath('data.user.email', 'jane@example.com')
-          ->assertJsonStructure(['data' => ['token']]);
+            ->assertJsonPath('data.user.email', 'jane@example.com')
+            ->assertJsonStructure(['data' => ['token']]);
     }
 
     public function test_logout_revokes_token(): void

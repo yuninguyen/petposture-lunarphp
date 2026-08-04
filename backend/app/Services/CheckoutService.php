@@ -6,12 +6,11 @@ use App\Jobs\LookupOrderIpIntelligenceJob;
 use App\Jobs\SendOrderConfirmationJob;
 use App\Models\User;
 use App\Payments\PaymentGatewayManager;
-use App\Services\SalesTaxService;
-use App\Services\ShippingService;
 use Illuminate\Support\Facades\DB;
 use Lunar\Base\ShippingManifestInterface;
 use Lunar\DataTypes\Price as PriceDataType;
 use Lunar\DataTypes\ShippingOption;
+use Lunar\DiscountTypes\AmountOff;
 use Lunar\Models\Cart;
 use Lunar\Models\Channel;
 use Lunar\Models\Contracts\Order;
@@ -32,8 +31,7 @@ class CheckoutService
         private readonly InventoryService $inventoryService,
         private readonly ShippingService $shippingService,
         private readonly CustomerLinkService $customerLinkService,
-    ) {
-    }
+    ) {}
 
     public function placeOrder(array $payload, ?int $userId = null, ?string $customerIp = null): Order
     {
@@ -44,7 +42,7 @@ class CheckoutService
                 ->prepare($payload);
             $customerNote = $this->nullableString($payload['customer_note'] ?? null);
             $shippingInput = $payload['shipping'] ?? [];
-            $billingInput = !empty($payload['billing_same_as_shipping'])
+            $billingInput = ! empty($payload['billing_same_as_shipping'])
                 ? $shippingInput
                 : (($payload['billing'] ?? []) ?: $shippingInput);
 
@@ -70,7 +68,7 @@ class CheckoutService
                 $cart->add($variant, $item['quantity']);
             }
 
-            if (!empty($payload['coupon_code'])) {
+            if (! empty($payload['coupon_code'])) {
                 $cart->coupon_code = $payload['coupon_code'];
             }
 
@@ -98,9 +96,9 @@ class CheckoutService
                     ->where('postcode', $shippingAddressData['postcode'])
                     ->exists();
 
-                if (!$alreadySaved) {
+                if (! $alreadySaved) {
                     $customer->addresses()->create(array_merge($shippingAddressData, [
-                        'shipping_default' => !$customer->addresses()->exists(),
+                        'shipping_default' => ! $customer->addresses()->exists(),
                     ]));
                 }
 
@@ -121,10 +119,10 @@ class CheckoutService
                     ->where('postcode', $userAddressData['postcode'])
                     ->exists();
 
-                if (!$alreadySavedForUser) {
+                if (! $alreadySavedForUser) {
                     $user->addresses()->create(array_merge($userAddressData, [
                         'label' => 'Home',
-                        'is_default' => !$user->addresses()->exists(),
+                        'is_default' => ! $user->addresses()->exists(),
                     ]));
                 }
             }
@@ -136,15 +134,15 @@ class CheckoutService
             $shippingOptions = $shippingManifest->getOptions($cart);
 
             $shippingOption = $shippingOptions->first(
-                fn($option) => $option->identifier === $shippingMethod
+                fn ($option) => $option->identifier === $shippingMethod
             ) ?? $shippingOptions->first();
 
             $shippingFeeOverride = isset($payload['shipping_fee_override']) && $payload['shipping_fee_override'] !== null
                 ? (int) $payload['shipping_fee_override']
                 : null;
 
-            if (!$shippingOption || $shippingFeeOverride !== null) {
-                $couponDiscount = !empty($payload['coupon_code'])
+            if (! $shippingOption || $shippingFeeOverride !== null) {
+                $couponDiscount = ! empty($payload['coupon_code'])
                     ? Discount::active()->where('coupon', $payload['coupon_code'])->first()
                     : null;
                 $isFreeShipping = $shippingFeeOverride === 0 || (bool) ($couponDiscount?->data['free_shipping'] ?? false);
@@ -211,26 +209,26 @@ class CheckoutService
             ]);
 
             // Manual admin card order — mark as paid immediately
-            if (!empty($payload['created_by_admin']) && ($payload['payment_method'] ?? '') === 'card') {
+            if (! empty($payload['created_by_admin']) && ($payload['payment_method'] ?? '') === 'card') {
                 Transaction::create([
-                    'order_id'   => $order->id,
-                    'success'    => true,
-                    'type'       => 'capture',
-                    'driver'     => 'manual',
-                    'amount'     => $order->total->value ?? (int) $order->total,
-                    'reference'  => 'MANUAL-' . strtoupper($order->reference),
-                    'status'     => 'completed',
-                    'notes'      => 'Manually marked as paid by admin.',
+                    'order_id' => $order->id,
+                    'success' => true,
+                    'type' => 'capture',
+                    'driver' => 'manual',
+                    'amount' => $order->total->value ?? (int) $order->total,
+                    'reference' => 'MANUAL-'.strtoupper($order->reference),
+                    'status' => 'completed',
+                    'notes' => 'Manually marked as paid by admin.',
                 ]);
 
-                $orderMeta['payment_status']    = 'paid';
-                $orderMeta['payment_method']    = 'card';
-                $orderMeta['payment_label']     = 'Credit Card';
-                $orderMeta['payment_gateway']   = 'manual';
+                $orderMeta['payment_status'] = 'paid';
+                $orderMeta['payment_method'] = 'card';
+                $orderMeta['payment_label'] = 'Credit Card';
+                $orderMeta['payment_gateway'] = 'manual';
                 $orderMeta['payment_received_at'] = now()->toIso8601String();
                 $order->update([
                     'status' => 'payment-received',
-                    'meta'   => $orderMeta,
+                    'meta' => $orderMeta,
                 ]);
             }
 
@@ -238,7 +236,7 @@ class CheckoutService
                 $order,
                 'order.created',
                 'Order created',
-                !empty($payload['created_by_admin']) ? 'Order created manually by admin.' : 'Checkout completed by customer.',
+                ! empty($payload['created_by_admin']) ? 'Order created manually by admin.' : 'Checkout completed by customer.',
                 dedupeAgainstLatest: false,
             );
 
@@ -306,7 +304,7 @@ class CheckoutService
         $discountValue = $this->resolveDiscountValue($couponCode, $currency);
 
         // resolveDiscountValue only covers fixed discounts; handle percentage here
-        if ($discount && $discountValue === 0 && $discount->type === \Lunar\DiscountTypes\AmountOff::class) {
+        if ($discount && $discountValue === 0 && $discount->type === AmountOff::class) {
             $percentage = (float) ($discount->data['percentage'] ?? 0);
             if ($percentage > 0) {
                 $discountValue = (int) round($subTotal * ($percentage / 100));
@@ -495,7 +493,7 @@ class CheckoutService
         return (int) $cart->lines->sum(function ($line) use ($cart) {
             $purchasable = $line->purchasable;
 
-            if (!$purchasable) {
+            if (! $purchasable) {
                 return 0;
             }
 
@@ -517,7 +515,7 @@ class CheckoutService
 
         $purchasable = $line->purchasable;
 
-        if (!$purchasable) {
+        if (! $purchasable) {
             return 0;
         }
 
@@ -541,7 +539,7 @@ class CheckoutService
 
     private function resolveDiscountValue(?string $couponCode, Currency $currency): int
     {
-        if (!$couponCode) {
+        if (! $couponCode) {
             return 0;
         }
 

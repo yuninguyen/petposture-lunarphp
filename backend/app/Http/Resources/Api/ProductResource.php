@@ -12,10 +12,10 @@ class ProductResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $variants     = $this->variants;
+        $variants = $this->variants;
         $defaultVariant = $variants->first();
-        $price        = $defaultVariant?->prices->sortBy('min_quantity')->first();
-        $productId    = (int) $this->id;
+        $price = $defaultVariant?->prices->sortBy('min_quantity')->first();
+        $productId = (int) $this->id;
 
         $productSlug = $this->defaultUrl?->slug
             ?? $this->urls->firstWhere('default', true)?->slug
@@ -28,55 +28,55 @@ class ProductResource extends JsonResource
         $defaultInventory = app(InventoryService::class)->stockSnapshot($defaultVariant);
 
         return [
-            'id'            => $productId,
-            'variantId'     => (int) ($defaultVariant?->id ?? $productId),
-            'slug'          => $productSlug,
-            'name'          => $this->translateAttribute('name'),
-            'description'   => $this->translateAttribute('description'),
-            'badge'         => $this->translateAttribute('badge'),
-            'isNew'         => $this->translateAttribute('is_new') === '1',
+            'id' => $productId,
+            'variantId' => (int) ($defaultVariant?->id ?? $productId),
+            'slug' => $productSlug,
+            'name' => $this->translateAttribute('name'),
+            'description' => $this->translateAttribute('description'),
+            'badge' => $this->translateAttribute('badge'),
+            'isNew' => $this->translateAttribute('is_new') === '1',
 
             // Pricing
-            'price'         => $this->minorToDecimal($price?->getRawOriginal('price')),
-            'comparePrice'  => $this->minorToDecimal($price?->getRawOriginal('compare_price')),
+            'price' => $this->minorToDecimal($price?->getRawOriginal('price')),
+            'comparePrice' => $this->minorToDecimal($price?->getRawOriginal('compare_price')),
 
             // Category
-            'category'      => $firstCollection?->translateAttribute('name') ?? 'Shop',
-            'categorySlug'  => $firstCollection?->defaultUrl?->slug
+            'category' => $firstCollection?->translateAttribute('name') ?? 'Shop',
+            'categorySlug' => $firstCollection?->defaultUrl?->slug
                 ?? ($firstCollection ? Str::slug($firstCollection->translateAttribute('name')) : 'categories'),
 
             // Breed-type tags (e.g. "flat-faced", "long-backed") — comma-separated attribute
-            'breedTags'     => $this->resolveBreedTags(),
+            'breedTags' => $this->resolveBreedTags(),
 
             // Solution tags (e.g. "eating-digestion", "mobility-support") — comma-separated attribute
-            'solutionTags'  => $this->resolveTagList('solution_tags'),
+            'solutionTags' => $this->resolveTagList('solution_tags'),
 
             // Reviews (from attributes until real aggregate is built)
             // `reviews` is kept alongside `reviewCount` — most of the frontend
             // (ProductCard, ShopPage, ProductDetails) reads `product.reviews`.
-            'rating'        => (float) ($this->translateAttribute('rating') ?: 0),
-            'reviews'       => (int) ($this->translateAttribute('reviews') ?: 0),
-            'reviewCount'   => (int) ($this->translateAttribute('reviews') ?: 0),
+            'rating' => (float) ($this->translateAttribute('rating') ?: 0),
+            'reviews' => (int) ($this->translateAttribute('reviews') ?: 0),
+            'reviewCount' => (int) ($this->translateAttribute('reviews') ?: 0),
 
             // Images — primary image kept as `image` for backwards compat,
             // full gallery added as `images[]`
-            'image'         => $this->resolvePrimaryImageUrl(),
-            'images'        => $this->resolveImageGallery(),
+            'image' => $this->resolvePrimaryImageUrl(),
+            'images' => $this->resolveImageGallery(),
 
             // Inventory (default variant)
-            'available'     => $defaultInventory['available'],
+            'available' => $defaultInventory['available'],
             'lowStockWarning' => $defaultInventory['lowStockWarning'],
-            'backorder'     => $defaultInventory['backorder'],
-            'stockStatus'   => $defaultInventory['stockStatus'],
+            'backorder' => $defaultInventory['backorder'],
+            'stockStatus' => $defaultInventory['stockStatus'],
 
             // Technical specs — e.g. [{"label":"Material","value":"..."}]
-            'specs'         => $this->resolveSpecs(),
+            'specs' => $this->resolveSpecs(),
 
             // Options — e.g. [{"name":"Size","values":["S","M","L"]}]
-            'options'       => $this->resolveOptions(),
+            'options' => $this->resolveOptions(),
 
             // Variants with their selected option values
-            'variants'      => $variants->map(fn ($v) => $this->formatVariant($v))->values()->all(),
+            'variants' => $variants->map(fn ($v) => $this->formatVariant($v))->values()->all(),
 
             // Schema.org JSON-LD for SEO (included only on single-product responses)
             'seo' => $this->buildJsonLd($productSlug, $price),
@@ -110,7 +110,7 @@ class ProductResource extends JsonResource
         if ($this->relationLoaded('images') && $this->images->isNotEmpty()) {
             foreach ($this->images as $media) {
                 $images[] = [
-                    'id'  => $media->id,
+                    'id' => $media->id,
                     'src' => $media->getUrl(),
                     'alt' => $media->name ?? $this->translateAttribute('name'),
                 ];
@@ -123,7 +123,7 @@ class ProductResource extends JsonResource
         $primary = $this->resolvePrimaryImageUrl();
         if ($primary) {
             $images[] = [
-                'id'  => null,
+                'id' => null,
                 'src' => $primary,
                 'alt' => $this->translateAttribute('name'),
             ];
@@ -155,11 +155,11 @@ class ProductResource extends JsonResource
     private function resolveSpecs(): array
     {
         $specHandles = [
-            'material'          => 'Material',
-            'weight'            => 'Weight',
-            'dimensions'        => 'Dimensions',
+            'material' => 'Material',
+            'weight' => 'Weight',
+            'dimensions' => 'Dimensions',
             'care_instructions' => 'Care Instructions',
-            'warranty'          => 'Warranty',
+            'warranty' => 'Warranty',
         ];
 
         $specs = [];
@@ -180,11 +180,11 @@ class ProductResource extends JsonResource
         }
 
         return $this->productOptions->map(fn ($option) => [
-            'id'     => $option->id,
-            'name'   => $option->translate('name'),
+            'id' => $option->id,
+            'name' => $option->translate('name'),
             'handle' => $option->handle ?? Str::slug($option->translate('name')),
             'values' => $option->values->map(fn ($v) => [
-                'id'   => $v->id,
+                'id' => $v->id,
                 'name' => $v->translate('name'),
             ])->values()->all(),
         ])->values()->all();
@@ -203,9 +203,9 @@ class ProductResource extends JsonResource
                     : null;
 
                 $selectedOptions[] = [
-                    'option'   => $optionName,
-                    'valueId'  => $value->id,
-                    'value'    => $value->translate('name'),
+                    'option' => $optionName,
+                    'valueId' => $value->id,
+                    'value' => $value->translate('name'),
                 ];
             }
         }
@@ -220,34 +220,34 @@ class ProductResource extends JsonResource
         $inventory = app(InventoryService::class)->stockSnapshot($v);
 
         return [
-            'id'             => (int) $v->id,
-            'sku'            => $v->sku,
-            'name'           => $v->translateAttribute('name'),
-            'price'          => $this->minorToDecimal($variantPrice?->getRawOriginal('price')),
-            'comparePrice'   => $this->minorToDecimal($variantPrice?->getRawOriginal('compare_price')),
-            'stock'          => $inventory['stock'],
-            'available'      => $inventory['available'],
-            'lowStockWarning'=> $inventory['lowStockWarning'],
-            'backorder'      => $inventory['backorder'],
-            'stockStatus'    => $inventory['stockStatus'],
-            'image'          => $variantImage,
-            'options'        => $selectedOptions,
+            'id' => (int) $v->id,
+            'sku' => $v->sku,
+            'name' => $v->translateAttribute('name'),
+            'price' => $this->minorToDecimal($variantPrice?->getRawOriginal('price')),
+            'comparePrice' => $this->minorToDecimal($variantPrice?->getRawOriginal('compare_price')),
+            'stock' => $inventory['stock'],
+            'available' => $inventory['available'],
+            'lowStockWarning' => $inventory['lowStockWarning'],
+            'backorder' => $inventory['backorder'],
+            'stockStatus' => $inventory['stockStatus'],
+            'image' => $variantImage,
+            'options' => $selectedOptions,
         ];
     }
 
     private function buildJsonLd(string $slug, mixed $price): array
     {
-        $name        = $this->translateAttribute('name') ?? '';
+        $name = $this->translateAttribute('name') ?? '';
         $description = $this->translateAttribute('description') ?? '';
-        $imageUrl    = $this->resolvePrimaryImageUrl();
-        $priceValue  = $this->minorToDecimal($price?->getRawOriginal('price'));
-        $sku         = $this->variants->first()?->sku;
+        $imageUrl = $this->resolvePrimaryImageUrl();
+        $priceValue = $this->minorToDecimal($price?->getRawOriginal('price'));
+        $sku = $this->variants->first()?->sku;
 
         $ld = [
             '@context' => 'https://schema.org',
-            '@type'    => 'Product',
-            'name'     => $name,
-            'url'      => url('/products/' . $slug),
+            '@type' => 'Product',
+            'name' => $name,
+            'url' => url('/products/'.$slug),
         ];
 
         if ($description) {
@@ -264,11 +264,11 @@ class ProductResource extends JsonResource
 
         if ($priceValue !== null) {
             $ld['offers'] = [
-                '@type'         => 'Offer',
-                'price'         => $priceValue,
+                '@type' => 'Offer',
+                'price' => $priceValue,
                 'priceCurrency' => 'USD',
-                'availability'  => 'https://schema.org/' . ($this->variants->first()?->stock > 0 ? 'InStock' : 'OutOfStock'),
-                'url'           => url('/products/' . $slug),
+                'availability' => 'https://schema.org/'.($this->variants->first()?->stock > 0 ? 'InStock' : 'OutOfStock'),
+                'url' => url('/products/'.$slug),
             ];
         }
 
@@ -276,7 +276,7 @@ class ProductResource extends JsonResource
         $reviewCount = (int) ($this->translateAttribute('reviews') ?: 0);
         if ($rating > 0 && $reviewCount > 0) {
             $ld['aggregateRating'] = [
-                '@type'       => 'AggregateRating',
+                '@type' => 'AggregateRating',
                 'ratingValue' => $rating,
                 'reviewCount' => $reviewCount,
             ];

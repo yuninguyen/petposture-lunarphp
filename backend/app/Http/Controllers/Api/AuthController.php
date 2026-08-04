@@ -6,17 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Resources\Api\UserResource;
-use App\Models\User;
 use App\Mail\WelcomeEmail;
+use App\Models\User;
 use App\Services\CartService;
 use App\Services\CustomerLinkService;
 use App\Traits\HttpResponses;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Role;
+use Symfony\Component\HttpFoundation\Cookie;
 
 class AuthController extends Controller
 {
@@ -36,7 +36,7 @@ class AuthController extends Controller
         $plainToken = $user->createToken("Api Token of {$user->name}")->plainTextToken;
 
         return $this->success([
-            'user'  => new UserResource($user),
+            'user' => new UserResource($user),
             'token' => $plainToken,
         ], 'Đăng nhập thành công')->withCookie($this->authCookie($plainToken));
     }
@@ -44,8 +44,8 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
+            'name' => $request->name,
+            'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
@@ -57,7 +57,7 @@ class AuthController extends Controller
         try {
             app(CustomerLinkService::class)->resolveForUser($user);
         } catch (\Throwable $e) {
-            Log::error('Customer link failed for user ' . $user->id . ': ' . $e->getMessage());
+            Log::error('Customer link failed for user '.$user->id.': '.$e->getMessage());
         }
 
         Mail::send(new WelcomeEmail($user));
@@ -65,7 +65,7 @@ class AuthController extends Controller
         $plainToken = $user->createToken("Api Token of {$user->name}")->plainTextToken;
 
         return $this->success([
-            'user'  => new UserResource($user),
+            'user' => new UserResource($user),
             'token' => $plainToken,
         ], 'Đăng ký thành công')->withCookie($this->authCookie($plainToken));
     }
@@ -83,11 +83,11 @@ class AuthController extends Controller
         return $this->success(new UserResource(Auth::user()));
     }
 
-    private function authCookie(string $token): \Symfony\Component\HttpFoundation\Cookie
+    private function authCookie(string $token): Cookie
     {
-        $isProd     = app()->environment('production');
-        $sameSite   = $isProd ? 'none' : 'lax';
-        $domain     = config('session.domain');
+        $isProd = app()->environment('production');
+        $sameSite = $isProd ? 'none' : 'lax';
+        $domain = config('session.domain');
 
         return cookie(
             'petposture_token',

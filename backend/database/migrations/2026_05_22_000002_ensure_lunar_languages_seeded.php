@@ -24,7 +24,7 @@ return new class extends Migration
             ]);
         } else {
             // Ensure at least one language is marked as default
-            if (!Language::where('default', true)->exists()) {
+            if (! Language::where('default', true)->exists()) {
                 $lang = Language::where('code', 'en')->first() ?? Language::first();
                 if ($lang) {
                     $lang->update(['default' => true]);

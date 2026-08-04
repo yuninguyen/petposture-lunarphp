@@ -14,7 +14,7 @@ class CancelledOrderAdmin extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "[Cancelled] Order #{$this->order->reference} — " . config('app.name'),
+            subject: "[Cancelled] Order #{$this->order->reference} — ".config('app.name'),
         );
     }
 

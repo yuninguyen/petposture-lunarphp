@@ -22,8 +22,7 @@ class DispatchOutboundWebhook implements ShouldQueue
     public function __construct(
         private readonly string $event,
         private readonly array $payload,
-    ) {
-    }
+    ) {}
 
     public function handle(): void
     {
@@ -34,7 +33,7 @@ class DispatchOutboundWebhook implements ShouldQueue
         }
 
         $body = array_merge($this->payload, [
-            'event'    => $this->event,
+            'event' => $this->event,
             'fired_at' => now()->toIso8601String(),
         ]);
 
@@ -44,8 +43,8 @@ class DispatchOutboundWebhook implements ShouldQueue
 
         if (! $response->successful()) {
             Log::warning('Outbound webhook delivery failed', [
-                'event'  => $this->event,
-                'url'    => $url,
+                'event' => $this->event,
+                'url' => $url,
                 'status' => $response->status(),
             ]);
 

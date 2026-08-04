@@ -4,10 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\PostResource;
-use App\Models\Post;
 use App\Models\BlogCategory;
+use App\Models\Post;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 class PostController extends Controller
@@ -59,7 +58,7 @@ class PostController extends Controller
             'status' => 'required|in:draft,published',
         ]);
 
-        $validated['slug'] = Str::slug($validated['title']) . '-' . rand(1000, 9999);
+        $validated['slug'] = Str::slug($validated['title']).'-'.rand(1000, 9999);
 
         if ($validated['status'] === 'published') {
             $validated['published_at'] = now();
@@ -92,7 +91,7 @@ class PostController extends Controller
             'status' => 'sometimes|required|in:draft,published',
         ]);
 
-        if (isset($validated['status']) && $validated['status'] === 'published' && !$post->published_at) {
+        if (isset($validated['status']) && $validated['status'] === 'published' && ! $post->published_at) {
             $validated['published_at'] = now();
         }
 
@@ -106,6 +105,7 @@ class PostController extends Controller
         $this->authorizeAdmin();
 
         $post->delete();
+
         return response()->json(null, 204);
     }
 }

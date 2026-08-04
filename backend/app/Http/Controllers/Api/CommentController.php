@@ -19,10 +19,10 @@ class CommentController extends Controller
             ->orderByDesc('created_at')
             ->get()
             ->map(fn ($c) => [
-                'id'            => $c->id,
+                'id' => $c->id,
                 'customer_name' => $c->customer_name,
-                'comment'       => $c->comment,
-                'created_at'    => $c->created_at->toIso8601String(),
+                'comment' => $c->comment,
+                'created_at' => $c->created_at->toIso8601String(),
             ]);
 
         return response()->json(['comments' => $comments]);
@@ -34,7 +34,7 @@ class CommentController extends Controller
 
         $validated = Validator::make($request->all(), [
             'customer_name' => 'required|string|max:255',
-            'comment'       => 'required|string|max:2000',
+            'comment' => 'required|string|max:2000',
         ])->validate();
 
         $comment = $post->comments()->create([
@@ -43,7 +43,7 @@ class CommentController extends Controller
         ]);
 
         return response()->json([
-            'message'    => 'Comment submitted for moderation.',
+            'message' => 'Comment submitted for moderation.',
             'comment_id' => $comment->id,
         ], 201);
     }

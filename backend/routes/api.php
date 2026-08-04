@@ -75,7 +75,7 @@ Route::post('/auth/reset-password', [PasswordResetController::class, 'resetPassw
 Route::get('/checkout/payment-methods', [CheckoutController::class, 'paymentMethods']);
 Route::get('/checkout/shipping-rates', [CheckoutController::class, 'shippingRates']);
 Route::post('/checkout/session', [CheckoutController::class, 'upsertSession'])->middleware('throttle:api-write');
-Route::get('/checkout/session/{token}', [CheckoutController::class, 'showSession']);
+Route::get('/checkout/session/{token}', [CheckoutController::class, 'showSession'])->middleware('throttle:api-write');
 Route::post('/checkout/session/{token}/payment-intent', [CheckoutController::class, 'prepareSessionPaymentIntent'])->middleware('throttle:api-write');
 Route::post('/checkout/session/{token}/confirm', [CheckoutController::class, 'confirmSession'])->middleware('throttle:api-write');
 Route::post('/checkout/payment-intent', [CheckoutController::class, 'preparePaymentIntent'])->middleware('throttle:api-write');
@@ -99,8 +99,8 @@ Route::get('/settings', [SettingsController::class, 'index']);
 Route::get('/cart', [CartController::class, 'show']);
 Route::post('/cart/lines', [CartController::class, 'addLine'])->middleware('throttle:api-write');
 Route::put('/cart/lines/{lineId}', [CartController::class, 'updateLine'])->middleware('throttle:api-write');
-Route::delete('/cart/lines/{lineId}', [CartController::class, 'removeLine']);
-Route::delete('/cart', [CartController::class, 'clear']);
+Route::delete('/cart/lines/{lineId}', [CartController::class, 'removeLine'])->middleware('throttle:api-write');
+Route::delete('/cart', [CartController::class, 'clear'])->middleware('throttle:api-write');
 
 Route::prefix('/admin')
     ->middleware(['auth:sanctum', 'role:super_admin|admin|staff'])

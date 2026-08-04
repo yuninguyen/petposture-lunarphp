@@ -8,8 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $ordersTable = config('lunar.database.table_prefix', 'lunar_') . 'orders';
-        $orderLinesTable = config('lunar.database.table_prefix', 'lunar_') . 'order_lines';
+        $ordersTable = config('lunar.database.table_prefix', 'lunar_').'orders';
+        $orderLinesTable = config('lunar.database.table_prefix', 'lunar_').'order_lines';
 
         Schema::create('order_return_requests', function (Blueprint $table) use ($ordersTable) {
             $table->id();

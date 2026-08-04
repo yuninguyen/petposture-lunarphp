@@ -13,8 +13,7 @@ class PaymentPreparation
         public readonly string $paymentStatus = 'pending',
         public readonly ?string $instructions = null,
         public readonly array $meta = [],
-    ) {
-    }
+    ) {}
 
     public function toMeta(): array
     {

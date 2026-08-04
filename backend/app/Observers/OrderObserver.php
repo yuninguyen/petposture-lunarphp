@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use Illuminate\Support\Facades\Log;
 use Lunar\Models\Order;
 use Lunar\Models\ProductVariant;
 
@@ -28,15 +29,15 @@ class OrderObserver
 
             // Validate Transition
             if ($oldStatus && isset($this->allowedTransitions[$oldStatus])) {
-                if (!in_array($newStatus, $this->allowedTransitions[$oldStatus]) && $newStatus !== $oldStatus) {
-                    \Illuminate\Support\Facades\Log::error("Invalid order state transition attempted: {$oldStatus} -> {$newStatus} for Order #{$order->id}");
+                if (! in_array($newStatus, $this->allowedTransitions[$oldStatus]) && $newStatus !== $oldStatus) {
+                    Log::error("Invalid order state transition attempted: {$oldStatus} -> {$newStatus} for Order #{$order->id}");
                     // In a production environment, we might want to throw an exception here
                     // throw new \Exception("Invalid order state transition: {$oldStatus} -> {$newStatus}");
                 }
             }
 
             // Inventory Reduction Trigger
-            if (in_array($newStatus, ['processing', 'payment-received']) && !in_array($oldStatus, ['processing', 'payment-received'])) {
+            if (in_array($newStatus, ['processing', 'payment-received']) && ! in_array($oldStatus, ['processing', 'payment-received'])) {
                 $this->adjustInventory($order, -1); // Decrease
             }
 

@@ -8,7 +8,7 @@ class Discount extends LunarDiscount
 {
     /**
      * Extend or override Lunar Discount methods here if needed.
-     * The project pattern is to have local models for better IDE support 
+     * The project pattern is to have local models for better IDE support
      * and customization without modifying vendor code.
      */
 }

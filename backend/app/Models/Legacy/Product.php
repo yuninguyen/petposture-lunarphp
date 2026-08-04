@@ -2,13 +2,13 @@
 
 namespace App\Models\Legacy;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\ProductSyncMapping;
 use App\Models\ProductVariant;
 use App\Traits\HasMetadata;
 use App\Traits\HasSeo;
+use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -39,7 +39,7 @@ class Product extends Model implements HasMedia
         'height',
         'shipping_class',
         'embed_code',
-        'is_active'
+        'is_active',
     ];
 
     public function category()

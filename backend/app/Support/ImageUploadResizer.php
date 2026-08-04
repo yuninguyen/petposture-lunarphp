@@ -74,7 +74,7 @@ class ImageUploadResizer
 
             imagecopyresampled($resized, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
 
-            $tmpPath = tempnam(sys_get_temp_dir(), 'resize_') . '.' . pathinfo($filename, PATHINFO_EXTENSION);
+            $tmpPath = tempnam(sys_get_temp_dir(), 'resize_').'.'.pathinfo($filename, PATHINFO_EXTENSION);
 
             $saved = match ($mime) {
                 'image/jpeg' => imagejpeg($resized, $tmpPath, 85),
@@ -92,7 +92,7 @@ class ImageUploadResizer
                 return $storeOriginal();
             }
 
-            $path = trim($directory . '/' . $filename, '/');
+            $path = trim($directory.'/'.$filename, '/');
             $component->getDisk()->put($path, file_get_contents($tmpPath), $component->getVisibility());
 
             @unlink($tmpPath);

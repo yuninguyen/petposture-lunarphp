@@ -2,12 +2,12 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Artisan;
-use Lunar\Models\Currency;
 use Lunar\Models\Channel;
+use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
+use Lunar\Models\Language;
 use Lunar\Models\ProductType;
 use Lunar\Models\TaxClass;
-use Lunar\Models\Language;
 
 return new class extends Migration
 {
@@ -22,7 +22,7 @@ return new class extends Migration
                 Artisan::call('lunar:install', [
                     '--no-interaction' => true,
                 ]);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Fail silently and let the manual checks below set up fallback records
             }
         }
@@ -41,7 +41,7 @@ return new class extends Migration
             ]);
         } else {
             // Ensure at least one language is marked as default
-            if (!Language::where('default', true)->exists()) {
+            if (! Language::where('default', true)->exists()) {
                 $lang = Language::where('code', 'en')->first() ?? Language::first();
                 if ($lang) {
                     $lang->update(['default' => true]);

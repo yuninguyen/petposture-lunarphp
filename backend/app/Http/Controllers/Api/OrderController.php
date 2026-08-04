@@ -125,8 +125,6 @@ class OrderController extends Controller
         }
 
         return new OrderResource($order);
-
-        return new OrderResource($order);
     }
 
     public function update(Request $request, $id)

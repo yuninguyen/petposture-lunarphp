@@ -25,6 +25,7 @@ class CategoryResource extends Resource
     {
         return __('lunarpanel::global.sections.catalog');
     }
+
     protected static ?int $navigationSort = 1;
 
     public static function getLabel(): string
@@ -45,8 +46,7 @@ class CategoryResource extends Resource
                     ->label(__('Name'))
                     ->required()
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn(string $operation, $state, Set $set) =>
-                        $operation === 'create' ? $set('slug', Str::slug($state)) : null),
+                    ->afterStateUpdated(fn (string $operation, $state, Set $set) => $operation === 'create' ? $set('slug', Str::slug($state)) : null),
                 Forms\Components\TextInput::make('slug')
                     ->label(__('Slug'))
                     ->required()

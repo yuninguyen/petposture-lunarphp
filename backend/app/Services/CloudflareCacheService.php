@@ -37,7 +37,7 @@ class CloudflareCacheService
 
         try {
             $response = Http::withToken(config('services.cloudflare.api_token'))
-                ->post('https://api.cloudflare.com/client/v4/zones/' . config('services.cloudflare.zone_id') . '/purge_cache', [
+                ->post('https://api.cloudflare.com/client/v4/zones/'.config('services.cloudflare.zone_id').'/purge_cache', [
                     'purge_everything' => true,
                 ]);
 

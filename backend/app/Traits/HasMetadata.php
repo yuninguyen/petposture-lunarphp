@@ -37,6 +37,7 @@ trait HasMetadata
     public function getMeta(string $key, $default = null)
     {
         $meta = $this->metadata()->where('key', $key)->first();
+
         return $meta ? $meta->cast_value : $default;
     }
 

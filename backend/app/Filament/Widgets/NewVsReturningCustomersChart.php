@@ -2,12 +2,12 @@
 
 namespace App\Filament\Widgets;
 
-use Lunar\Admin\Filament\Widgets\Dashboard\Orders\NewVsReturningCustomersChart as BaseNewVsReturningCustomersChart;
 use Carbon\Carbon;
+use Lunar\Admin\Filament\Widgets\Dashboard\Orders\NewVsReturningCustomersChart as BaseNewVsReturningCustomersChart;
 
 class NewVsReturningCustomersChart extends BaseNewVsReturningCustomersChart
 {
-    protected int | string | array $columnSpan = 1;
+    protected int|string|array $columnSpan = 1;
 
     protected function getOptions(): array
     {

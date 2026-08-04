@@ -38,7 +38,7 @@ class SettingsController extends Controller
 
     protected function resolveAssetUrl(?string $path): ?string
     {
-        if (!$path) {
+        if (! $path) {
             return null;
         }
 
@@ -46,6 +46,6 @@ class SettingsController extends Controller
             return $path;
         }
 
-        return asset('storage/' . ltrim($path, '/'));
+        return asset('storage/'.ltrim($path, '/'));
     }
 }

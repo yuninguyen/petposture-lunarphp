@@ -16,12 +16,12 @@ class ContactController extends Controller
     public function submit(Request $request): JsonResponse
     {
         $validated = Validator::make($request->all(), [
-            'name'         => 'required|string|max:255',
-            'email'        => 'required|email|max:255',
-            'subject'      => 'required|string|max:255',
-            'message'      => 'required|string|max:5000',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string|max:5000',
             'order_number' => 'nullable|string|max:100',
-            'website'      => 'nullable|string|max:255', // honeypot: real users never see/fill this field
+            'website' => 'nullable|string|max:255', // honeypot: real users never see/fill this field
         ])->validate();
 
         if (! empty($validated['website'])) {
@@ -40,20 +40,20 @@ class ContactController extends Controller
         try {
             // Notify admin
             Mail::to($adminEmail)->send(new ContactFormSubmission(
-                senderName:     $validated['name'],
-                senderEmail:    $validated['email'],
+                senderName: $validated['name'],
+                senderEmail: $validated['email'],
                 messageSubject: $validated['subject'],
-                messageBody:    $validated['message'],
-                orderNumber:    $validated['order_number'] ?? null,
+                messageBody: $validated['message'],
+                orderNumber: $validated['order_number'] ?? null,
             ));
 
             // Auto-reply to customer
             Mail::to($validated['email'])->send(new ContactAutoReply(
-                senderName:      $validated['name'],
+                senderName: $validated['name'],
                 originalSubject: $validated['subject'],
             ));
         } catch (\Throwable $e) {
-            Log::error('Contact form mail failed: ' . $e->getMessage());
+            Log::error('Contact form mail failed: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,

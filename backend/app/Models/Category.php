@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use App\Traits\HasSeo;
 use App\Models\Legacy\Product;
+use App\Traits\HasSeo;
+use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {

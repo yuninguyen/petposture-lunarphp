@@ -10,6 +10,7 @@ use App\Traits\HttpResponses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Lunar\Models\Brand;
 use Lunar\Models\Order;
 use Lunar\Models\Price;
@@ -39,65 +40,58 @@ class ProductController extends Controller
 
         // Filter by category: slug lives in lunar_urls, not lunar_collections
         if ($request->filled('category')) {
-            $query->whereHas('collections', fn ($q) =>
-                $q->whereHas('urls', fn ($q2) =>
-                    $q2->where('slug', $request->input('category'))
-                )
+            $query->whereHas('collections', fn ($q) => $q->whereHas('urls', fn ($q2) => $q2->where('slug', $request->input('category'))
+            )
             );
         }
 
         // Filter by breed-type tag (e.g. "flat-faced", "long-backed") — stored as a
         // comma-separated attribute, so match the slug as a standalone LIKE token
         if ($request->filled('breed')) {
-            $breed = '%' . strtolower($request->input('breed')) . '%';
+            $breed = '%'.strtolower($request->input('breed')).'%';
             $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$breed]);
         }
 
         // Filter by solution tag (e.g. "eating-digestion", "mobility-support") — same
         // comma-separated attribute pattern as breed
         if ($request->filled('solution')) {
-            $solution = '%' . strtolower($request->input('solution')) . '%';
+            $solution = '%'.strtolower($request->input('solution')).'%';
             $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$solution]);
         }
 
         // Filter by brand slug
         if ($request->filled('brand')) {
-            $query->whereHas('brand', fn ($q) =>
-                $q->whereRaw('LOWER(name) = ?', [strtolower($request->input('brand'))])
+            $query->whereHas('brand', fn ($q) => $q->whereRaw('LOWER(name) = ?', [strtolower($request->input('brand'))])
             );
         }
 
         // Filter by badge attribute (e.g. "Best Seller")
         if ($request->filled('badge')) {
-            $badge = '%' . strtolower($request->input('badge')) . '%';
+            $badge = '%'.strtolower($request->input('badge')).'%';
             $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$badge]);
         }
 
         // Search: Lunar product names/descriptions are stored in attribute_data JSON
         if ($request->filled('q')) {
-            $term = '%' . strtolower($request->input('q')) . '%';
+            $term = '%'.strtolower($request->input('q')).'%';
             $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$term]);
         }
 
         // Min price filter
         if ($request->filled('min_price')) {
             $variantMorph = (new ProductVariant)->getMorphClass();
-            $query->whereHas('variants', fn ($q) =>
-                $q->whereHas('prices', fn ($q2) =>
-                    $q2->where('price', '>=', (int) ($request->input('min_price') * 100))
-                      ->where('priceable_type', $variantMorph)
-                )
+            $query->whereHas('variants', fn ($q) => $q->whereHas('prices', fn ($q2) => $q2->where('price', '>=', (int) ($request->input('min_price') * 100))
+                ->where('priceable_type', $variantMorph)
+            )
             );
         }
 
         // Max price filter
         if ($request->filled('max_price')) {
             $variantMorph = (new ProductVariant)->getMorphClass();
-            $query->whereHas('variants', fn ($q) =>
-                $q->whereHas('prices', fn ($q2) =>
-                    $q2->where('price', '<=', (int) ($request->input('max_price') * 100))
-                      ->where('priceable_type', $variantMorph)
-                )
+            $query->whereHas('variants', fn ($q) => $q->whereHas('prices', fn ($q2) => $q2->where('price', '<=', (int) ($request->input('max_price') * 100))
+                ->where('priceable_type', $variantMorph)
+            )
             );
         }
 
@@ -109,11 +103,9 @@ class ProductController extends Controller
         // Option value filter: ?option[size]=M&option[color]=Red
         if ($request->filled('option')) {
             foreach ((array) $request->input('option') as $optionHandle => $valueName) {
-                $query->whereHas('variants.values', fn ($q) =>
-                    $q->whereRaw('LOWER(CAST(name AS CHAR)) LIKE ?', ['%' . strtolower((string) $valueName) . '%'])
-                      ->whereHas('option', fn ($q2) =>
-                          $q2->whereRaw('LOWER(handle) = ?', [strtolower((string) $optionHandle)])
-                      )
+                $query->whereHas('variants.values', fn ($q) => $q->whereRaw('LOWER(CAST(name AS CHAR)) LIKE ?', ['%'.strtolower((string) $valueName).'%'])
+                    ->whereHas('option', fn ($q2) => $q2->whereRaw('LOWER(handle) = ?', [strtolower((string) $optionHandle)])
+                    )
                 );
             }
         }
@@ -122,7 +114,7 @@ class ProductController extends Controller
         $sort = $request->input('sort', 'newest');
 
         if (in_array($sort, ['price_asc', 'price_desc'])) {
-            $direction  = $sort === 'price_asc' ? 'asc' : 'desc';
+            $direction = $sort === 'price_asc' ? 'asc' : 'desc';
             $variantMorph = (new ProductVariant)->getMorphClass();
             $priceSubquery = Price::query()
                 ->selectRaw('MIN(price)')
@@ -131,8 +123,8 @@ class ProductController extends Controller
                 ->where('lunar_prices.priceable_type', $variantMorph);
 
             $query->selectRaw('lunar_products.*')
-                  ->selectSub($priceSubquery, '_sort_price')
-                  ->orderBy('_sort_price', $direction);
+                ->selectSub($priceSubquery, '_sort_price')
+                ->orderBy('_sort_price', $direction);
         } else {
             $query->orderBy('lunar_products.created_at', 'desc');
         }
@@ -158,7 +150,7 @@ class ProductController extends Controller
     {
         $product = $this->resolvePublishedProduct($slug);
 
-        if (!$product) {
+        if (! $product) {
             abort(404, 'Product not found');
         }
 
@@ -227,7 +219,7 @@ class ProductController extends Controller
         }
 
         $collectionIds = $product->collections->pluck('id');
-        $brandId       = $product->brand_id ?? null;
+        $brandId = $product->brand_id ?? null;
 
         $query = Product::where('status', 'published')
             ->where('id', '!=', $product->id)
@@ -288,9 +280,9 @@ class ProductController extends Controller
                 ->orderBy('name')
                 ->get()
                 ->map(fn ($b) => [
-                    'id'    => $b->id,
-                    'name'  => $b->name,
-                    'slug'  => \Illuminate\Support\Str::slug($b->name),
+                    'id' => $b->id,
+                    'name' => $b->name,
+                    'slug' => Str::slug($b->name),
                     'count' => $b->products_count,
                 ])
                 ->values()
@@ -301,10 +293,10 @@ class ProductController extends Controller
                 ->with('values')
                 ->get()
                 ->map(fn ($opt) => [
-                    'handle' => $opt->handle ?? \Illuminate\Support\Str::slug($opt->translate('name')),
-                    'name'   => $opt->translate('name'),
+                    'handle' => $opt->handle ?? Str::slug($opt->translate('name')),
+                    'name' => $opt->translate('name'),
                     'values' => $opt->values->map(fn ($v) => [
-                        'id'   => $v->id,
+                        'id' => $v->id,
                         'name' => $v->translate('name'),
                     ])->values()->all(),
                 ])
@@ -316,7 +308,7 @@ class ProductController extends Controller
                     'min' => $priceRange ? round($priceRange->min_price / 100, 2) : 0,
                     'max' => $priceRange ? round($priceRange->max_price / 100, 2) : 0,
                 ],
-                'brands'  => $brands,
+                'brands' => $brands,
                 'options' => $options,
             ];
         });
@@ -341,7 +333,7 @@ class ProductController extends Controller
         $product = Product::with($with)
             ->where('status', 'published')
             ->whereHas('variants')
-            ->whereHas('urls', fn($q) => $q->where('slug', $slug))
+            ->whereHas('urls', fn ($q) => $q->where('slug', $slug))
             ->first();
 
         if (! $product && is_numeric($slug)) {

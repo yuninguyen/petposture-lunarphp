@@ -61,7 +61,7 @@ class CommentResource extends Resource
                             ->label(__('Comment'))
                             ->required()
                             ->columnSpanFull(),
-                    ])->columns(2)
+                    ])->columns(2),
             ]);
     }
 
@@ -80,13 +80,13 @@ class CommentResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'pending' => 'warning',
                         'approved' => 'success',
                         'rejected' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn($state) => match ($state) {
+                    ->formatStateUsing(fn ($state) => match ($state) {
                         'pending' => __('Pending'),
                         'approved' => __('Approved'),
                         'rejected' => __('Rejected'),
@@ -111,8 +111,8 @@ class CommentResource extends Resource
                     ->label(__('Approve'))
                     ->icon('heroicon-o-check')
                     ->color('success')
-                    ->action(fn(Comment $record) => $record->update(['status' => 'approved']))
-                    ->visible(fn(Comment $record) => $record->status !== 'approved'),
+                    ->action(fn (Comment $record) => $record->update(['status' => 'approved']))
+                    ->visible(fn (Comment $record) => $record->status !== 'approved'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
