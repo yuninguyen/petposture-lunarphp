@@ -1,4 +1,69 @@
-# Handoff — 2026-08-02/03
+# Handoff — 2026-08-04
+
+## Backend hygiene sweep (dead code, git rác, PHPStan config, throttles) + `oldPrice`/`comparePrice` bug fix
+
+Full backend audit + cleanup requested by Yuni ("dọn backend toàn bộ"). Everything verified before/after
+via `composer analyse`/`vendor/bin/pint --test`/`php artisan test`, and every deletion checked with
+`gitnexus_impact` (upstream, 0 real callers) before removing.
+
+- **Removed 51 committed debug/scratch files from git** (`backend/scratch_*.php`, `backend/tools/`
+  ~25 files, `backend/scripts/*.php`, `fix_checkout.py`, `out_*.txt`, `users_list.txt`, `tmp/`) —
+  grepped all of them for secrets/credentials first (none found), but they were still real risk/clutter
+  sitting in the repo. Added matching patterns to `backend/.gitignore` so they don't creep back in.
+- **`phpstan.neon`**: the `ignoreErrors` regex for Lunar magic-property/relation false-positives only
+  matched `Lunar\Models\X` (single segment) — missed `Lunar\Models\Contracts\Order` etc, and only
+  covered *property* access on the generic Eloquent `Model` fallback, not *method calls* on it (e.g.
+  `$purchasable?->translateAttribute(...)` in `CartService.php`). Broadened both patterns to match
+  nested namespaces and method calls — confirmed via before/after run that this recovers real false
+  positives (e.g. `CheckoutSessionService.php`'s `$order->reference`) without hiding any of the
+  genuinely-real errors elsewhere. Net: 168 → 145 PHPStan errors; the rest is pre-existing debt
+  (mostly JsonResource magic-property noise) already accepted as out-of-scope in prior sessions.
+- **Real PHPStan bug fixed**: `ApplyCouponService.php` divided a float by `$currency->factor` without
+  casting it, which PHPStan (correctly) flagged as a float/string binary op — cast added.
+- **Dead code removed**: `app/Repositories/OrderRepository.php` and `App\Models\Legacy\Order`/
+  `Legacy\OrderItem` (0 real callers — `Legacy\README.md` already said "use `Lunar\Models\Order`
+  instead"; the only caller was the now-deleted `OrderRepository`), a duplicated unreachable
+  `return new OrderResource($order);` in `OrderController::show()`, and `HttpResponses::error()`
+  (never called anywhere, and its `$code` parameter had no default after an optional one — a
+  standing PHP 8 deprecation warning firing on every request that loaded the trait, for a dead method).
+- **Missing throttles added**: `GET /checkout/session/{token}` and `DELETE /cart/lines/{lineId}` /
+  `DELETE /cart` were the only routes in their respective groups without `throttle:api-write` —
+  now consistent with their sibling routes.
+- **`composer format` (Pint) run repo-wide** — ~200 files had drifted out of formatting (confirms
+  it hadn't been run in a while); `vendor/bin/pint --test` is clean now.
+- **New test coverage: `AfterShipWebhookTest.php`** (7 cases) — the AfterShip delivered-webhook
+  endpoint (public, HMAC-verified, auto-marks orders delivered + fires customer email) had zero
+  tests despite being a production entry point. Covers: bad signature, missing tracking data,
+  non-delivered event ignored, unknown tracking number, single-shipment delivery, idempotent
+  re-delivery, and multi-shipment (stays "shipped" until every shipment reports delivered).
+
+**Pre-existing test-suite rot found, confirmed NOT caused by this session** (verified by `git stash
+-u` back to clean HEAD and re-running — same failures occurred): ~21 failures across `AdminAuthTest`
+(7, `RoleAlreadyExists` — test's `Role::create()` collides with a migration that already seeds the
+same roles), `CartApiTest` (8, `UniqueConstraintViolationException` on `lunar_languages.code`, same
+seeding-collision shape), and `CheckoutApiTest` (6, incl. one stale test asserting a client-supplied
+`payment_intent.amount` that hasn't matched reality since server-side amount calculation shipped).
+Root cause not yet investigated — flagged as a dedicated future session, not something to patch
+piecemeal alongside unrelated work. One of the ProductCatalogApiTest failures *was* an easy, safe fix
+in scope (`tests/Feature/ProductCatalogApiTest.php` imported the wrong class — `App\Models\Product`
+instead of `App\Models\Legacy\Product`, a stale reference from before the Legacy namespace existed) —
+fixed, and it recovered 2 of 3 tests immediately.
+
+**Real, currently-live bug found while fixing that import** (not caused by this session, just
+surfaced by finally being able to run the test): fixing the import let the third test actually run,
+and it caught that `frontend/components/shop/ProductCard.tsx` reads `product.oldPrice` — a field
+that real API responses never populate (the real field is `comparePrice`, confirmed correct end to
+end: `ProductSyncService` → Lunar `Price.compare_price` → `Api\ProductResource`'s `comparePrice`
+key). `ProductCard` is used everywhere a product tile renders (Home, Wishlist, Shop grid, Related
+Products), so the strikethrough "was $X" price has never rendered for any real product, site-wide.
+Same shape as the earlier `reviewCount`/`reviews` mismatch (2026-08-02/03 session) — mock data and
+the real API drifted on a field name and nothing caught it because local dev leaned on mock data.
+Fixed: `ProductCard.tsx` now reads `product.comparePrice ?? product.oldPrice` (matching the fallback
+`ProductDetails.tsx` already used), and `types/shop.ts`'s `Product` interface now declares
+`comparePrice` (it only had the mock-only `oldPrice` before, so TypeScript couldn't have caught the
+mismatch even with strict mode). `tsc --noEmit` and `next lint` both clean.
+
+Not deployed as of this writing — commit + deploy is the next step.
 
 ## Shop by Breed / Shop by Solution — new taxonomy + 2 landing-page trees — commits `6dc4ccf`..`9fe4326`
 
@@ -685,25 +750,27 @@ discussed above (PATCH tracking number there only wrote `meta.shipments[]`, neve
 
 - **Order Summary cosmetic gap — no-Fraud-Risk case fixed** (see top of this file, commits
   `ddcae9e`/`4462442`), confirmed correct by Yuni. The **Fraud & Risk-present stacked case**
-  (card payments) is still the accepted "lesser-bad" `h-full`/`items-stretch` baseline from
-  before — open if anyone wants to take another pass at it (would need a custom Blade view
-  override to distribute space between fields — not reachable through Filament's normal
-  component API, see notes above).
+  (card payments) stays on the `h-full`/`items-stretch` baseline permanently — Yuni decided
+  not to pursue a fix (would need a custom Blade view override to distribute space between
+  fields, not reachable through Filament's normal component API). Don't re-propose.
 - **A real carrier delivery scan reaching our webhook is still unconfirmed** — the entire *our-side*
   pipeline (signature verify → shipment match → status update → email) is now verified end-to-end
   against production with a simulated-but-correctly-signed webhook call (see above); the only thing
   left unconfirmed is whether AfterShip itself reliably calls our webhook when a real UPS/USPS/
   FedEx/DHL scan happens — that's outside our code, can only be observed, not tested.
 - Carried over from 2026-07-24, still open: **Hostinger Mail trial expires 2026-08-15** — must
-  upgrade before then; a real guest return submission through `https://petposture.com/returns`
-  (not just curl/route checks) is still pending a suitable real order+email from Yuni.
+  upgrade before then; the full guest-return happy path through `https://petposture.com/returns`
+  (Playwright is fine for this — the blocker isn't the testing tool) is still untested end-to-end
+  because it needs a real order that's actually eligible (delivered, within the 30-day window,
+  real email) to submit against — pending Yuni pointing at a suitable order.
 
 ## Immediate follow-ups (next session)
 
 1. Watch for the next real "delivered" AfterShip webhook hit to confirm the new per-shipment
    matching logic end-to-end with real carrier data (not test tracking numbers).
-2. Still pending from before: upgrade Hostinger Mail before 2026-08-15; a real end-to-end guest
-   return submission once Yuni has a suitable order+email on hand.
+2. Still pending from before: upgrade Hostinger Mail before 2026-08-15; run the full guest return
+   submission (Playwright against a real eligible order is fine) once Yuni has a suitable
+   order+email on hand.
 
 ## Backlog / bigger asks (need scoping before starting)
 
@@ -711,5 +778,6 @@ discussed above (PATCH tracking number there only wrote `meta.shipments[]`, neve
   The low-value no-return-required rule it was waiting on (auto-waive, above) has since shipped,
   but Phase 3 itself is deliberately deferred until the site scales — don't re-propose without a
   fresh ask.
-- **Shop by Solution / Shop by Breed re-think** — needs a business-side decision on target categories first.
 - **Support helpdesk tooling** (Zendesk/Freshdesk/shared inbox) for `support@petposture.com` — only worth it once there's more than one person handling customer replies.
+
+(Shop by Solution/Breed re-think — done, see the 2026-08-02/03 entry at the top of this file.)

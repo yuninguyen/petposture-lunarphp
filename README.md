@@ -401,6 +401,28 @@ docker-compose up -d
 
 ---
 
+## Testing & Code Quality
+
+```bash
+cd backend
+composer format   # Pint (Laravel preset)
+composer analyse   # PHPStan level 3
+php artisan test   # PHPUnit feature/unit suite
+```
+
+`php artisan test` currently has ~21 pre-existing failures unrelated to feature work in progress
+(`AdminAuthTest`, `CartApiTest`, `CheckoutApiTest` — a role/language seeding collision between a
+migration and test setup; see `ARCHITECTURE.md`'s "Known gap" note). New work should still add
+its own passing tests; don't let the pre-existing red mask a new regression.
+
+```bash
+cd frontend
+npm run lint       # ESLint (no Prettier — see RULES.md)
+npx tsc --noEmit    # TypeScript strict-mode check
+```
+
+---
+
 ## API Endpoints
 
 | Group | Prefix |

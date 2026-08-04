@@ -48,6 +48,7 @@ export interface Product {
     solutionTags?: string[];
     price: number;
     oldPrice?: number | null;
+    comparePrice?: number | null;
     rating: number;
     reviews: number;
     image: string;

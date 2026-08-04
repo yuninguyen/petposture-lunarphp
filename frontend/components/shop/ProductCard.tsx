@@ -91,8 +91,8 @@ export function ProductCard({ product }: { product: Product }) {
                 <div className="mt-3 flex items-end justify-between gap-3">
                     <div className="flex items-center gap-3 font-bold">
                         <span className="text-[16px] text-[#df8448]">${product.price.toFixed(2)}</span>
-                        {product.oldPrice != null && (
-                            <span className="text-xs font-medium text-zinc-300 line-through">${product.oldPrice.toFixed(2)}</span>
+                        {(product.comparePrice ?? product.oldPrice) != null && (
+                            <span className="text-xs font-medium text-zinc-300 line-through">${(product.comparePrice ?? product.oldPrice)!.toFixed(2)}</span>
                         )}
                     </div>
 
