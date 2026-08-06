@@ -7,11 +7,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\CheckoutSessionResource;
 use App\Http\Resources\Api\OrderResource;
 use App\Models\UserAddress;
+use App\Services\AirwallexService;
 use App\Services\ApplyCouponService;
 use App\Services\CheckoutService;
 use App\Services\CheckoutSessionService;
 use App\Services\OrderOperationsService;
+use App\Services\PayoneerService;
 use App\Services\PayPalService;
+use App\Services\PingPongService;
 use App\Services\SalesTaxService;
 use App\Services\ShippingService;
 use App\Services\StripePaymentIntentService;
@@ -20,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Lunar\Models\Discount;
 use Lunar\Models\Order;
@@ -33,6 +37,9 @@ class CheckoutController extends Controller
         private readonly ApplyCouponService $applyCouponService,
         private readonly StripePaymentIntentService $stripePaymentIntentService,
         private readonly PayPalService $payPalService,
+        private readonly AirwallexService $airwallexService,
+        private readonly PayoneerService $payoneerService,
+        private readonly PingPongService $pingPongService,
         private readonly OrderOperationsService $orderOperationsService,
         private readonly SalesTaxService $salesTaxService,
         private readonly ShippingService $shippingService,
@@ -465,6 +472,142 @@ class CheckoutController extends Controller
             ], Response::HTTP_OK);
         } catch (\Throwable $e) {
             Log::error("PayPal Webhook Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code' => ErrorCode::PAYMENT_FAILED->value,
+                'success' => false,
+                'message' => 'Webhook processing failed.',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function prepareAirwallexSession(Request $request)
+    {
+        return $this->prepareRedirectSession($request, 'airwallex', function (int $amount, string $currency, string $reference, string $returnUrl) {
+            return $this->airwallexService->createCheckoutSession($amount, $currency, $reference, $returnUrl);
+        });
+    }
+
+    public function preparePayoneerSession(Request $request)
+    {
+        return $this->prepareRedirectSession($request, 'payoneer', function (int $amount, string $currency, string $reference, string $returnUrl) {
+            return $this->payoneerService->createCheckoutSession($amount, $currency, $reference, $returnUrl);
+        });
+    }
+
+    public function preparePingPongSession(Request $request)
+    {
+        return $this->prepareRedirectSession($request, 'pingpong', function (int $amount, string $currency, string $reference, string $returnUrl) use ($request) {
+            return $this->pingPongService->createCheckoutSession($amount, $currency, $reference, $returnUrl, (string) $request->ip());
+        });
+    }
+
+    /**
+     * Shared validation/total-calculation for the redirect-checkout gateways
+     * (Airwallex, Payoneer, PingPong) — each just supplies its own session
+     * creation call, mirroring how preparePayPalOrder() creates a PayPal order
+     * before placeOrder() links it to the real Lunar order.
+     */
+    private function prepareRedirectSession(Request $request, string $method, \Closure $createSession)
+    {
+        $validated = Validator::make($request->all(), [
+            'payment_method' => "required|string|in:{$method}",
+            'items' => 'required|array|min:1',
+            'items.*.variantId' => 'required|exists:lunar_product_variants,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'coupon_code' => 'nullable|string',
+            'shipping_method' => 'nullable|string',
+            'shipping.state' => 'nullable|string|max:255',
+            'shipping.country' => 'nullable|string|max:255',
+            'shipping.city' => 'nullable|string|max:255',
+            'shipping.postcode' => 'nullable|string|max:32',
+            'currency' => 'nullable|string|max:10',
+        ])->validate();
+
+        try {
+            $amount = $this->checkoutService->calculateTotal(
+                $validated['items'],
+                $validated['coupon_code'] ?? null,
+                $validated['shipping'] ?? null,
+                $validated['shipping_method'] ?? null,
+            );
+
+            // Generated before the order exists (and before the vendor assigns its own
+            // session id) so it can be baked into the return_url the shopper is bounced
+            // back to — the success page resolves the order via this same token, stored
+            // on the order as meta.{gateway}_session_id once placeOrder() runs.
+            $sessionToken = strtoupper($method).'-'.Str::upper(Str::random(20));
+            $returnUrl = rtrim((string) config('app.frontend_url'), '/')."/checkout/success?gateway={$method}&session_id={$sessionToken}";
+
+            $session = $createSession($amount, $validated['currency'] ?? 'usd', $sessionToken, $returnUrl);
+            $session['session_id'] = $sessionToken;
+
+            return response()->json([
+                'success' => true,
+                'session' => $session,
+            ]);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error("{$method} Session Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code' => ErrorCode::PAYMENT_INTENT_ERROR->value,
+                'success' => false,
+                'message' => 'Unable to prepare payment. Please try again.',
+            ], 500);
+        }
+    }
+
+    public function airwallexWebhook(Request $request)
+    {
+        try {
+            $result = $this->airwallexService->handleWebhook(
+                (string) $request->getContent(),
+                $request->header('x-signature'),
+                $request->header('x-timestamp')
+            );
+
+            return response()->json(['success' => true, 'result' => $result], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            Log::error("Airwallex Webhook Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code' => ErrorCode::PAYMENT_FAILED->value,
+                'success' => false,
+                'message' => 'Webhook processing failed.',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function payoneerWebhook(Request $request)
+    {
+        try {
+            $result = $this->payoneerService->handleWebhook(
+                (string) $request->getContent(),
+                $request->header('X-Payoneer-Signature')
+            );
+
+            return response()->json(['success' => true, 'result' => $result], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            Log::error("Payoneer Webhook Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code' => ErrorCode::PAYMENT_FAILED->value,
+                'success' => false,
+                'message' => 'Webhook processing failed.',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function pingpongWebhook(Request $request)
+    {
+        try {
+            $result = $this->pingPongService->handleWebhook($request->all());
+
+            return response()->json(['success' => true, 'result' => $result], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            Log::error("PingPong Webhook Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
 
             return response()->json([
                 'code' => ErrorCode::PAYMENT_FAILED->value,

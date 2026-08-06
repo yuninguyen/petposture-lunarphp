@@ -44,6 +44,28 @@ return [
         'webhook_id' => env('PAYPAL_WEBHOOK_ID'),
     ],
 
+    'airwallex' => [
+        'mode' => env('AIRWALLEX_MODE', 'sandbox'),
+        'client_id' => env('AIRWALLEX_CLIENT_ID'),
+        'api_key' => env('AIRWALLEX_API_KEY'),
+        'webhook_secret' => env('AIRWALLEX_WEBHOOK_SECRET'),
+    ],
+
+    'payoneer' => [
+        'mode' => env('PAYONEER_MODE', 'sandbox'),
+        'merchant_code' => env('PAYONEER_MERCHANT_CODE'),
+        'api_key' => env('PAYONEER_API_KEY'),
+        'api_secret' => env('PAYONEER_API_SECRET'),
+        'webhook_secret' => env('PAYONEER_WEBHOOK_SECRET'),
+    ],
+
+    'pingpong' => [
+        'mode' => env('PINGPONG_MODE', 'sandbox'),
+        'app_id' => env('PINGPONG_APP_ID'),
+        'private_key' => env('PINGPONG_PRIVATE_KEY'),
+        'public_key' => env('PINGPONG_PUBLIC_KEY'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

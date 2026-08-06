@@ -6,7 +6,7 @@ An e-commerce platform for pet posture products, built as a monorepo with Next.j
 ![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?logo=laravel&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?logo=php&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
-![Stripe](https://img.shields.io/badge/Payments-Stripe%20%2B%20PayPal-635BFF?logo=stripe&logoColor=white)
+![Stripe](https://img.shields.io/badge/Payments-Stripe%20%2B%20PayPal%20%2B%20Airwallex%20%2B%20Payoneer%20%2B%20PingPong-635BFF?logo=stripe&logoColor=white)
 ![License](https://img.shields.io/badge/License-Proprietary-lightgrey)
 
 **Live site:** https://petposture.com  
@@ -24,7 +24,7 @@ An e-commerce platform for pet posture products, built as a monorepo with Next.j
 | Admin Panel | Filament 3 + Filament Shield (RBAC) |
 | Auth | Laravel Sanctum |
 | Roles & Permissions | Spatie Laravel Permission |
-| Payments | Stripe (cards, incl. Radar fraud scoring) + PayPal (Smart Buttons, popup approval) |
+| Payments | Stripe (cards, incl. Radar fraud scoring) + PayPal (Smart Buttons, popup approval) + Airwallex/Payoneer/PingPong (redirect/hosted-checkout, added 2026-08-07) |
 | Database | MySQL |
 | Cache & Session | Redis (via `predis/predis`) |
 | Queue | Database driver, processed by a `queue:work` process (supervisord) |
@@ -82,7 +82,9 @@ petposture/
   (`/shop/breeds/flat-faced`, `/shop/solutions/comfort-safety`, …), plus matching filter facets in
   the main shop sidebar. A product can carry both a breed and a solution tag at once.
 - Shopping cart & checkout flow (guest + authenticated), Stripe card and PayPal (Smart
-  Buttons rendered inline, popup approval — not a full-page redirect) payments. A "Save this
+  Buttons rendered inline, popup approval — not a full-page redirect) payments, plus Airwallex,
+  Payoneer, and PingPong (redirect/hosted-checkout — customer is bounced to the gateway's own
+  page and back, added 2026-08-07). A "Save this
   information for next time" checkout checkbox saves the shipping address for next time: to the
   customer's account (`/api/me/addresses`, authenticated) if logged in, or to `localStorage`
   (same-device only) for guest checkouts — guest addresses are deliberately not matched by email
@@ -122,7 +124,13 @@ petposture/
   source, so what's configured in the admin is exactly what customers are charged
 - Customers are linked to real Lunar `Customer` records on signup/checkout (not just Users),
   so Sales > Customers shows real customer data instead of an empty page
-- Blog with slug-based routing
+- Blog with slug-based routing, including a "comparison" post type (retailer price-comparison
+  cards with outbound affiliate links — Chewy/Amazon/Walmart/Petco/PetSmart, managed under
+  Content Management → Affiliate Networks) with FTC disclosure. Outbound affiliate links go
+  through an internal `/go/{post}/{item}` redirect (added 2026-08-07) that logs a click
+  (`affiliate_clicks` table: post, network, product, referrer) before forwarding to the real
+  retailer URL, so admin can eventually see which posts/products actually drive outbound clicks —
+  no revenue/commission tracking yet, click volume only.
 - Discount / coupon codes (Lunar's discount engine, incl. free-shipping coupons)
 - Self-service order returns (`/returns`): guest lookup by order number + email, item/quantity
   selection, reason and note — reviewed in Filament (Sales > Return Requests) with
@@ -351,6 +359,25 @@ Settings save). Without real sandbox credentials entered, checkout falls back to
 mode (fake `PAYPAL-PLACEHOLDER-...`/`CAPTURE-PLACEHOLDER-...` IDs, no real PayPal Smart Buttons
 rendered) so the checkout flow still works end-to-end for testing other payment methods.
 
+### Airwallex / Payoneer / PingPong config (redirect-checkout gateways, added 2026-08-07)
+
+Three more payment methods, all **redirect/hosted-checkout** (customer is bounced to the
+gateway's own payment page and back — no embedded card field or popup), same DB-`Setting`-
+overrides-`.env` credential pattern as Stripe/PayPal: `AirwallexService`, `PayoneerService`,
+`PingPongService` (`app/Services/`) + `AirwallexGateway`/`PayoneerGateway`/`PingPongGateway`
+(`app/Payments/Gateways/`), configured in Filament → Settings → Payment (new tabs) or
+`backend/.env` (`AIRWALLEX_*`/`PAYONEER_*`/`PINGPONG_*`, see `.env.example`). Without real
+credentials, each falls back to placeholder mode exactly like Stripe/PayPal — the redirect
+target becomes the success page directly, so the checkout flow still completes end-to-end for
+testing. A shared `payment_webhook_events` table (`gateway` + `event_id` unique) and
+`OrderOperationsService::syncRedirectGatewayPayment()` handle webhook idempotency/state
+transitions for all three at once, instead of three near-duplicate tables/methods like
+Stripe/PayPal each got. **Before enabling live mode**: Payoneer's and Airwallex's exact
+request/response API shapes were not confirmable against live docs when built and are
+best-effort reconstructions — verify against a real sandbox account before flipping
+`PAYONEER_MODE`/`AIRWALLEX_MODE` to `live`. PingPong's `prePay` fields are doc-verified, but its
+RSA signing format should still be checked against PingPong's own Signature Guide first.
+
 ### Standard deploy (from a local clone with SSH access to the VPS)
 
 ```bash
@@ -439,8 +466,8 @@ npx tsc --noEmit    # TypeScript strict-mode check
 | Auth | `/api/login`, `/api/register`, `/api/auth/forgot-password`, `/api/auth/reset-password` |
 | Products & Reviews | `/api/products/...` (incl. `/api/products/{slug}/reviews`) |
 | Categories | `/api/categories/...` |
-| Cart & Checkout | `/api/cart/...`, `/api/checkout/place-order`, `/api/checkout/shipping-rates`, `/api/checkout/tax-quote`, `/api/checkout/payment-intent`, `/api/checkout/paypal-order`, `/api/checkout/paypal-capture`, `/api/apply-coupon` |
-| Orders | `/api/orders/...` (authenticated, scoped to the customer), `/api/orders/track` (public, reference + email) |
+| Cart & Checkout | `/api/cart/...`, `/api/checkout/place-order`, `/api/checkout/shipping-rates`, `/api/checkout/tax-quote`, `/api/checkout/payment-intent`, `/api/checkout/paypal-order`, `/api/checkout/paypal-capture`, `/api/checkout/airwallex-session`, `/api/checkout/payoneer-session`, `/api/checkout/pingpong-session`, `/api/apply-coupon` |
+| Orders | `/api/orders/...` (authenticated, scoped to the customer), `/api/orders/track` (public, reference + email), `/api/orders/by-payment-session` (public, resolves an order by `gateway`+`session_id` — used by the checkout success page after a redirect-gateway payment) |
 | Return Requests | `/api/orders/return-requests` (public, create), `/api/admin/return-requests/...` (list/approve/reject/complete) |
 | Customer account | `/api/me/addresses` (authenticated address book) |
 | Blog / Posts | `/api/posts/...` |
@@ -448,7 +475,9 @@ npx tsc --noEmit    # TypeScript strict-mode check
 | Newsletter | `/api/newsletter/subscribe` (fired from the checkout "email me with news and offers" opt-in) |
 | Stripe webhook | `/api/webhooks/stripe` |
 | PayPal webhook | `/api/webhooks/paypal` |
+| Airwallex / Payoneer / PingPong webhooks | `/api/webhooks/airwallex`, `/api/webhooks/payoneer`, `/api/webhooks/pingpong` |
 | AfterShip webhook | `/api/webhooks/aftership` (HMAC-verified, auto-marks orders delivered) |
+| Affiliate click redirect | `GET /go/{post}/{item}` (not under `/api` — a top-level `routes/web.php` route, logs the click then 302s to the retailer) |
 
 ---
 

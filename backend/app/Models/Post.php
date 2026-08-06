@@ -39,6 +39,11 @@ class Post extends Model
         return $this->belongsTo(BlogCategory::class, 'blog_category_id');
     }
 
+    public function clicks()
+    {
+        return $this->hasMany(AffiliateClick::class);
+    }
+
     public function comments()
     {
         return $this->hasMany(Comment::class);

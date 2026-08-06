@@ -363,6 +363,8 @@ function OrderSuccessContent() {
     const searchParams = useSearchParams();
     const reference = searchParams.get("ref");
     const email = searchParams.get("email");
+    const gateway = searchParams.get("gateway");
+    const sessionId = searchParams.get("session_id");
 
     const [order, setOrder] = useState<OrderData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -370,6 +372,31 @@ function OrderSuccessContent() {
 
     useEffect(() => {
         const fetchOrder = async () => {
+            // Redirect-checkout gateways (Airwallex/Payoneer/PingPong) bounce the shopper
+            // back with {gateway, session_id} instead of {ref, email} — the order's own
+            // reference isn't known until after the session was already created.
+            if (gateway && sessionId) {
+                try {
+                    const apiBase = getApiBaseUrl();
+                    const res = await fetch(
+                        `${apiBase}/api/orders/by-payment-session?gateway=${encodeURIComponent(gateway)}&session_id=${encodeURIComponent(sessionId)}`
+                    );
+                    const raw = await res.text();
+                    const data = raw ? JSON.parse(raw) : null;
+                    if (res.ok) {
+                        setOrder(data.data);
+                    } else {
+                        setError(data?.message || "Failed to fetch order details.");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    setError("Network error fetching order details.");
+                } finally {
+                    setLoading(false);
+                }
+                return;
+            }
+
             if (!reference || !email) {
                 setError("Missing order reference or email.");
                 setLoading(false);
@@ -397,7 +424,7 @@ function OrderSuccessContent() {
             }
         };
         fetchOrder();
-    }, [reference, email]);
+    }, [reference, email, gateway, sessionId]);
 
     /* Loading */
     if (loading) {

@@ -15,6 +15,7 @@ export type ComparisonItem = {
     pros?: string[];
     cons?: string[];
     affiliate_url: string;
+    redirect_url?: string | null;
     in_house_match_url?: string | null;
 };
 
@@ -111,7 +112,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
                     </a>
                 ) : null}
                 <a
-                    href={item.affiliate_url}
+                    href={item.redirect_url || item.affiliate_url}
                     target="_blank"
                     rel="sponsored nofollow noopener"
                     className="rounded-[3px] bg-[#df8448] py-3 text-center text-[13px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-[#c9713a]"

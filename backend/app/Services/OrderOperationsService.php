@@ -488,6 +488,26 @@ class OrderOperationsService
     }
 
     /**
+     * Shared sync entry point for the redirect-checkout gateways (Airwallex, Payoneer,
+     * PingPong) — unlike Stripe/PayPal these don't carry extra fraud/card fields, so a
+     * single method covers all three instead of one near-identical wrapper each.
+     */
+    public function syncRedirectGatewayPayment(Order $order, string $gatewayLabel, array $paymentData): Order
+    {
+        $meta = (array) ($order->meta ?? []);
+        $paymentStatus = (string) ($paymentData['payment_status'] ?? ($meta['payment_status'] ?? 'pending'));
+        $eventType = $paymentData['event_type'] ?? null;
+        $eventId = $paymentData['event_id'] ?? null;
+
+        $meta['payment_status'] = $paymentStatus;
+        $meta['payment_last_event_type'] = $eventType;
+        $meta['payment_last_event_id'] = $eventId;
+        $meta['payment_webhook_processed_at'] = now()->toDateTimeString();
+
+        return $this->applyPaymentStatusTransition($order, $meta, $paymentStatus, $eventType, $gatewayLabel);
+    }
+
+    /**
      * Shared order-lifecycle side effects (status transitions + order events) fired whenever a
      * gateway (Stripe webhook, PayPal capture/webhook) reports a payment status change — kept in
      * one place so every gateway drives the same state machine instead of re-implementing it.

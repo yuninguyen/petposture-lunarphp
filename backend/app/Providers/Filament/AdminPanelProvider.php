@@ -181,16 +181,16 @@ class AdminPanelProvider extends PanelProvider
                     .fi-sidebar-header span{color:#f8fafc!important;font-weight:700!important}
                     [class*="fi-sidebar-group-label"],[class*="fi-sidebar-nav-label"]{color:rgba(148,163,184,.5)!important;font-size:12.5px!important;font-weight:500!important;letter-spacing:normal!important;text-transform:uppercase!important;padding:1.1rem 1.1rem .4rem .2rem!important}
 
-                    .fi-sidebar-item-button{color:#8b93a0!important;border-radius:10px!important;margin:1px 0!important;padding:.5rem .75rem!important;transition:background .12s,color .12s!important}
-                    .fi-sidebar-item-button:hover,.fi-sidebar-item-button:focus-visible{background:rgba(255,255,255,.06)!important;color:#f1f4f8!important}
-                    .fi-sidebar-item-icon{color:#6b7280!important;width:16px!important;height:16px!important}
-                    .fi-sidebar-item-label{color:inherit!important;font-size:13.5px!important;font-weight:500!important}
+                    nav.fi-sidebar .fi-sidebar-item-button,aside.fi-sidebar .fi-sidebar-item-button{color:#8b93a0!important;border-radius:10px!important;margin:1px 0!important;padding:.5rem .75rem!important;transition:background .12s,color .12s!important}
+                    nav.fi-sidebar .fi-sidebar-item-button:hover,aside.fi-sidebar .fi-sidebar-item-button:hover,nav.fi-sidebar .fi-sidebar-item-button:focus-visible,aside.fi-sidebar .fi-sidebar-item-button:focus-visible{background:rgba(255,255,255,.06)!important;color:#f1f4f8!important}
+                    nav.fi-sidebar .fi-sidebar-item-icon,aside.fi-sidebar .fi-sidebar-item-icon{color:#6b7280!important;width:16px!important;height:16px!important}
+                    nav.fi-sidebar .fi-sidebar-item-label,aside.fi-sidebar .fi-sidebar-item-label{color:inherit!important;font-size:13.5px!important;font-weight:500!important}
 
-                    .fi-sidebar-item-active .fi-sidebar-item-button{background:#26313c!important;color:#fff!important}
-                    .fi-sidebar-item-active .fi-sidebar-item-icon{color:#fff!important}
-                    .fi-sidebar-item-active .fi-sidebar-item-label{color:#fff!important;font-weight:600!important}
+                    nav.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-button,aside.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-button{background:#26313c!important;color:#fff!important}
+                    nav.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-icon,aside.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-icon{color:#fff!important}
+                    nav.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-label,aside.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-label{color:#fff!important;font-weight:600!important}
 
-                    .fi-sidebar-item [class*="fi-badge"]{background:var(--pp-orange)!important;color:#fff!important;font-size:10px!important;font-weight:800!important;min-width:18px!important;height:18px!important;padding:0 5px!important;border-radius:99px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+                    nav.fi-sidebar .fi-sidebar-item [class*="fi-badge"],aside.fi-sidebar .fi-sidebar-item [class*="fi-badge"]{background:var(--pp-orange)!important;color:#fff!important;font-size:10px!important;font-weight:800!important;min-width:18px!important;height:18px!important;padding:0 5px!important;border-radius:99px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
                     .fi-sidebar-nav{padding:.4rem .75rem 1rem!important}
                     aside.fi-sidebar ::-webkit-scrollbar-thumb,nav.fi-sidebar ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16)!important}
                     aside.fi-sidebar ::-webkit-scrollbar-track,nav.fi-sidebar ::-webkit-scrollbar-track{background:transparent!important}

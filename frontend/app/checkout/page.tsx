@@ -94,7 +94,7 @@ type CheckoutFormState = {
     saveInfo: boolean;
     saveDelivery: boolean;
     shippingMethod: string;
-    paymentMethod: 'cod' | 'card' | 'paypal';
+    paymentMethod: PaymentMethod;
     cardNumber: string;
     cardName: string;
     expiry: string;
@@ -115,7 +115,7 @@ const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const googleMapsScriptId = 'petposture-google-places';
 const stripeJsScriptId = 'petposture-stripe-js';
 const paypalJsScriptId = 'petposture-paypal-js';
-const paymentMethodOrder = { card: 0, paypal: 1, cod: 2 } as const;
+const paymentMethodOrder = { card: 0, paypal: 1, airwallex: 2, payoneer: 3, pingpong: 4, cod: 5 } as const;
 
 type AddressTarget = 'shipping' | 'billing';
 type AddressSuggestion = {
@@ -126,7 +126,9 @@ type AddressSuggestion = {
     target: AddressTarget;
 };
 
-type PaymentMethod = 'cod' | 'card' | 'paypal';
+type PaymentMethod = 'cod' | 'card' | 'paypal' | 'airwallex' | 'payoneer' | 'pingpong';
+
+const redirectPaymentMethods: ReadonlySet<PaymentMethod> = new Set(['airwallex', 'payoneer', 'pingpong']);
 
 type PaymentMethodOption = {
     method: PaymentMethod;
@@ -1262,7 +1264,40 @@ export default function CheckoutPage() {
         return data.order.reference;
     };
 
-    const finishSuccessSideEffectsAndRedirect = (reference: string) => {
+    const prepareRedirectSession = async (method: 'airwallex' | 'payoneer' | 'pingpong'): Promise<{ checkout_url: string; session_id: string }> => {
+        const apiBase = getApiBaseUrl();
+
+        // The backend generates the correlation token and bakes it into the gateway's
+        // return_url before calling the vendor API, so the success page can always
+        // resolve the order via GET /api/orders/by-payment-session?gateway=&session_id=.
+        const res = await fetch(`${apiBase}/api/checkout/${method}-session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                payment_method: method,
+                items: items.map(i => ({ variantId: i.variantId, quantity: i.quantity })),
+                coupon_code: coupon.discountAmount > 0 ? coupon.code : null,
+                shipping_method: form.shippingMethod,
+                shipping: {
+                    state: form.province,
+                    country: form.country,
+                    city: form.city,
+                    postcode: form.postalCode,
+                },
+                currency: 'usd',
+            }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data?.session?.checkout_url) {
+            throw new Error(data?.message || 'Unable to prepare payment. Please try again.');
+        }
+
+        return data.session;
+    };
+
+    const finishSuccessSideEffectsAndRedirect = (reference: string, externalRedirectUrl?: string) => {
         const apiBase = getApiBaseUrl();
 
         if (form.saveInfo && form.email) {
@@ -1363,6 +1398,21 @@ export default function CheckoutPage() {
         setPaymentIntentMessage(null);
 
         try {
+            if (redirectPaymentMethods.has(form.paymentMethod)) {
+                const session = await prepareRedirectSession(form.paymentMethod as 'airwallex' | 'payoneer' | 'pingpong');
+
+                await placeOrder({ session_id: session.session_id });
+
+                // Order is recorded (payment still pending) — clear the local cart before
+                // leaving the site, same as the card/PayPal paths do once placeOrder succeeds.
+                localStorage.removeItem('petposture_cart');
+                localStorage.removeItem('petposture_cart_coupon');
+                clearCoupon();
+
+                window.location.href = session.checkout_url;
+                return;
+            }
+
             const paymentContext = form.paymentMethod === 'card'
                 ? await prepareCardPaymentIntent()
                 : null;

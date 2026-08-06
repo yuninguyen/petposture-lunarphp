@@ -7,6 +7,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -48,6 +49,22 @@ class Payment extends Page
         $data['paypal_webhook_id'] ??= config('services.paypal.webhook_id');
         $data['paypal_mode'] ??= config('services.paypal.mode', 'sandbox');
 
+        $data['airwallex_client_id'] ??= config('services.airwallex.client_id');
+        $data['airwallex_api_key'] ??= config('services.airwallex.api_key');
+        $data['airwallex_webhook_secret'] ??= config('services.airwallex.webhook_secret');
+        $data['airwallex_mode'] ??= config('services.airwallex.mode', 'sandbox');
+
+        $data['payoneer_merchant_code'] ??= config('services.payoneer.merchant_code');
+        $data['payoneer_api_key'] ??= config('services.payoneer.api_key');
+        $data['payoneer_api_secret'] ??= config('services.payoneer.api_secret');
+        $data['payoneer_webhook_secret'] ??= config('services.payoneer.webhook_secret');
+        $data['payoneer_mode'] ??= config('services.payoneer.mode', 'sandbox');
+
+        $data['pingpong_app_id'] ??= config('services.pingpong.app_id');
+        $data['pingpong_private_key'] ??= config('services.pingpong.private_key');
+        $data['pingpong_public_key'] ??= config('services.pingpong.public_key');
+        $data['pingpong_mode'] ??= config('services.pingpong.mode', 'sandbox');
+
         $this->form->fill($data);
     }
 
@@ -65,6 +82,24 @@ class Payment extends Page
                 ->icon('heroicon-o-credit-card')
                 ->color('gray')
                 ->action(fn () => $this->testPayPalConnection()),
+
+            Action::make('testAirwallex')
+                ->label('Test Airwallex')
+                ->icon('heroicon-o-credit-card')
+                ->color('gray')
+                ->action(fn () => $this->testAirwallexConnection()),
+
+            Action::make('testPayoneer')
+                ->label('Test Payoneer')
+                ->icon('heroicon-o-credit-card')
+                ->color('gray')
+                ->action(fn () => $this->testPayoneerConnection()),
+
+            Action::make('testPingPong')
+                ->label('Test PingPong')
+                ->icon('heroicon-o-credit-card')
+                ->color('gray')
+                ->action(fn () => $this->testPingPongConnection()),
         ];
     }
 
@@ -154,6 +189,107 @@ class Payment extends Page
                 ->danger()
                 ->send();
         }
+    }
+
+    public function testAirwallexConnection(): void
+    {
+        $clientId = Setting::get('airwallex_client_id') ?: config('services.airwallex.client_id');
+        $apiKey = Setting::get('airwallex_api_key') ?: config('services.airwallex.api_key');
+        $mode = Setting::get('airwallex_mode') ?: config('services.airwallex.mode', 'sandbox');
+
+        if (! $clientId || ! $apiKey) {
+            Notification::make()
+                ->title('Airwallex credentials not set')
+                ->body('Please enter your Airwallex Client ID and API Key in the Airwallex tab.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        try {
+            $baseUrl = $mode === 'live' ? 'https://api.airwallex.com' : 'https://api-demo.airwallex.com';
+
+            $response = Http::withHeaders([
+                'x-client-id' => $clientId,
+                'x-api-key' => $apiKey,
+            ])->post($baseUrl.'/api/v1/authentication/login');
+
+            if ($response->successful()) {
+                Notification::make()
+                    ->title('Airwallex connected ✓')
+                    ->body('Mode: '.ucfirst($mode).' — access token issued successfully.')
+                    ->success()
+                    ->send();
+            } else {
+                Notification::make()
+                    ->title('Airwallex connection failed')
+                    ->body($response->json('message') ?? 'Invalid credentials or network error.')
+                    ->danger()
+                    ->send();
+            }
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title('Airwallex connection error')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    public function testPayoneerConnection(): void
+    {
+        $merchantCode = Setting::get('payoneer_merchant_code') ?: config('services.payoneer.merchant_code');
+        $apiKey = Setting::get('payoneer_api_key') ?: config('services.payoneer.api_key');
+        $apiSecret = Setting::get('payoneer_api_secret') ?: config('services.payoneer.api_secret');
+
+        if (! $merchantCode || ! $apiKey || ! $apiSecret) {
+            Notification::make()
+                ->title('Payoneer credentials not set')
+                ->body('Please enter your Payoneer Merchant Code, API Key, and API Secret in the Payoneer tab.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->title('Payoneer credentials saved')
+            ->body('Credentials are present. A full connectivity test isn\'t wired up yet — the first real checkout attempt through Payoneer will confirm they work.')
+            ->success()
+            ->send();
+    }
+
+    public function testPingPongConnection(): void
+    {
+        $appId = Setting::get('pingpong_app_id') ?: config('services.pingpong.app_id');
+        $privateKey = Setting::get('pingpong_private_key') ?: config('services.pingpong.private_key');
+
+        if (! $appId || ! $privateKey) {
+            Notification::make()
+                ->title('PingPong credentials not set')
+                ->body('Please enter your PingPong App ID and Private Key in the PingPong tab.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        if (! openssl_pkey_get_private($privateKey)) {
+            Notification::make()
+                ->title('PingPong private key invalid')
+                ->body('The private key could not be parsed as a valid RSA key.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->title('PingPong credentials valid')
+            ->body('App ID is set and the private key parses correctly. A full connectivity test isn\'t wired up yet — the first real checkout attempt through PingPong will confirm the rest.')
+            ->success()
+            ->send();
     }
 
     public function form(Form $form): Form
@@ -261,6 +397,156 @@ class Payment extends Page
                                     )
                                     ->helperText('Register this URL in your PayPal Dashboard → Webhooks.'),
                             ]),
+
+                        Tabs\Tab::make(__('Airwallex'))
+                            ->icon('heroicon-o-credit-card')
+                            ->schema([
+                                Select::make('airwallex_mode')
+                                    ->label(__('Airwallex Mode'))
+                                    ->options([
+                                        'sandbox' => 'Sandbox (Test)',
+                                        'live' => 'Live (Production)',
+                                    ])
+                                    ->required()
+                                    ->helperText('Switch to Sandbox to use Airwallex demo credentials without real charges.')
+                                    ->columnSpanFull(),
+
+                                Grid::make(2)->schema([
+                                    TextInput::make('airwallex_client_id')
+                                        ->label(__('Client ID'))
+                                        ->helperText('From Airwallex Dashboard → Account → API Keys.'),
+
+                                    TextInput::make('airwallex_api_key')
+                                        ->label(__('API Key'))
+                                        ->password()
+                                        ->revealable()
+                                        ->helperText('From Airwallex Dashboard → Account → API Keys.'),
+                                ]),
+
+                                TextInput::make('airwallex_webhook_secret')
+                                    ->label(__('Webhook Secret'))
+                                    ->password()
+                                    ->revealable()
+                                    ->helperText('From Airwallex Dashboard → Developer → Webhooks → your endpoint. Leave blank to skip signature verification (not recommended in live mode).')
+                                    ->columnSpanFull(),
+
+                                TextInput::make('airwallex_webhook_url')
+                                    ->label('Airwallex Webhook Endpoint URL')
+                                    ->default(fn () => url('/api/webhooks/airwallex'))
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->suffixAction(
+                                        \Filament\Forms\Components\Actions\Action::make('copyAirwallexWebhook')
+                                            ->icon('heroicon-o-clipboard-document')
+                                            ->tooltip('Copy to clipboard')
+                                            ->action(fn () => null)
+                                            ->extraAttributes([
+                                                'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                            ])
+                                    )
+                                    ->helperText('Register this URL in your Airwallex Dashboard → Developer → Webhooks.'),
+                            ]),
+
+                        Tabs\Tab::make(__('Payoneer'))
+                            ->icon('heroicon-o-credit-card')
+                            ->schema([
+                                Select::make('payoneer_mode')
+                                    ->label(__('Payoneer Mode'))
+                                    ->options([
+                                        'sandbox' => 'Sandbox (Test)',
+                                        'live' => 'Live (Production)',
+                                    ])
+                                    ->required()
+                                    ->helperText('Switch to Sandbox to use Payoneer test credentials without real charges.')
+                                    ->columnSpanFull(),
+
+                                TextInput::make('payoneer_merchant_code')
+                                    ->label(__('Merchant Code'))
+                                    ->helperText('From your Payoneer Checkout merchant account.')
+                                    ->columnSpanFull(),
+
+                                Grid::make(2)->schema([
+                                    TextInput::make('payoneer_api_key')
+                                        ->label(__('API Key'))
+                                        ->password()
+                                        ->revealable(),
+
+                                    TextInput::make('payoneer_api_secret')
+                                        ->label(__('API Secret'))
+                                        ->password()
+                                        ->revealable(),
+                                ]),
+
+                                TextInput::make('payoneer_webhook_secret')
+                                    ->label(__('Webhook Secret'))
+                                    ->password()
+                                    ->revealable()
+                                    ->helperText('Leave blank to skip signature verification (not recommended in live mode).')
+                                    ->columnSpanFull(),
+
+                                TextInput::make('payoneer_webhook_url')
+                                    ->label('Payoneer Webhook Endpoint URL')
+                                    ->default(fn () => url('/api/webhooks/payoneer'))
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->suffixAction(
+                                        \Filament\Forms\Components\Actions\Action::make('copyPayoneerWebhook')
+                                            ->icon('heroicon-o-clipboard-document')
+                                            ->tooltip('Copy to clipboard')
+                                            ->action(fn () => null)
+                                            ->extraAttributes([
+                                                'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                            ])
+                                    )
+                                    ->helperText('Register this URL as the notification callback in your Payoneer Checkout dashboard.'),
+                            ]),
+
+                        Tabs\Tab::make(__('PingPong'))
+                            ->icon('heroicon-o-credit-card')
+                            ->schema([
+                                Select::make('pingpong_mode')
+                                    ->label(__('PingPong Mode'))
+                                    ->options([
+                                        'sandbox' => 'Sandbox (Test)',
+                                        'live' => 'Live (Production)',
+                                    ])
+                                    ->required()
+                                    ->helperText('Switch to Sandbox to use PingPong test credentials without real charges.')
+                                    ->columnSpanFull(),
+
+                                TextInput::make('pingpong_app_id')
+                                    ->label(__('App ID'))
+                                    ->helperText('From your PingPong merchant dashboard.')
+                                    ->columnSpanFull(),
+
+                                Textarea::make('pingpong_private_key')
+                                    ->label(__('Merchant Private Key (PEM)'))
+                                    ->rows(4)
+                                    ->helperText('Your RSA private key, used to sign requests to PingPong.')
+                                    ->columnSpanFull(),
+
+                                Textarea::make('pingpong_public_key')
+                                    ->label(__("PingPong's Public Key (PEM)"))
+                                    ->rows(4)
+                                    ->helperText('Used to verify the authenticity of PingPong webhook notifications. Leave blank to skip signature verification (not recommended in live mode).')
+                                    ->columnSpanFull(),
+
+                                TextInput::make('pingpong_webhook_url')
+                                    ->label('PingPong Notification URL')
+                                    ->default(fn () => url('/api/webhooks/pingpong'))
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->suffixAction(
+                                        \Filament\Forms\Components\Actions\Action::make('copyPingPongWebhook')
+                                            ->icon('heroicon-o-clipboard-document')
+                                            ->tooltip('Copy to clipboard')
+                                            ->action(fn () => null)
+                                            ->extraAttributes([
+                                                'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                            ])
+                                    )
+                                    ->helperText('Register this URL as the notificationUrl in your PingPong merchant dashboard.'),
+                            ]),
                     ])
                     ->columnSpanFull(),
             ])
@@ -296,6 +582,24 @@ class Payment extends Page
         Cache::forget('paypal_webhook_id');
         Cache::forget('paypal_access_token_sandbox');
         Cache::forget('paypal_access_token_live');
+
+        Cache::forget('airwallex_client_id');
+        Cache::forget('airwallex_api_key');
+        Cache::forget('airwallex_webhook_secret');
+        Cache::forget('airwallex_mode');
+        Cache::forget('airwallex_access_token_sandbox');
+        Cache::forget('airwallex_access_token_live');
+
+        Cache::forget('payoneer_merchant_code');
+        Cache::forget('payoneer_api_key');
+        Cache::forget('payoneer_api_secret');
+        Cache::forget('payoneer_webhook_secret');
+        Cache::forget('payoneer_mode');
+
+        Cache::forget('pingpong_app_id');
+        Cache::forget('pingpong_private_key');
+        Cache::forget('pingpong_public_key');
+        Cache::forget('pingpong_mode');
 
         Notification::make()
             ->title('Payment settings saved successfully!')

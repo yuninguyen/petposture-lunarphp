@@ -62,6 +62,7 @@ Route::get('/brands', [BrandController::class, 'index']);
 Route::get('/brands/{id}/products', [BrandController::class, 'products']);
 Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('throttle:api-write');
 Route::post('/orders/track', [OrderController::class, 'track'])->middleware('throttle:10,1');
+Route::get('/orders/by-payment-session', [OrderController::class, 'byPaymentSession'])->middleware('throttle:10,1');
 Route::post('/orders/retry-payment', [OrderController::class, 'retryPayment'])->middleware('throttle:10,1');
 Route::post('/orders/return-requests', [ReturnRequestController::class, 'store'])->middleware('throttle:10,1');
 Route::post('/orders/return-requests/preview', [ReturnRequestController::class, 'preview'])->middleware('throttle:api-write');
@@ -83,8 +84,14 @@ Route::post('/checkout/payment-intent', [CheckoutController::class, 'preparePaym
 Route::post('/checkout/paypal-order', [CheckoutController::class, 'preparePayPalOrder'])->middleware('throttle:api-write');
 Route::post('/checkout/paypal-capture', [CheckoutController::class, 'capturePayPalOrder'])->middleware('throttle:api-write');
 Route::post('/checkout/tax-quote', [CheckoutController::class, 'taxQuote'])->middleware('throttle:api-write');
+Route::post('/checkout/airwallex-session', [CheckoutController::class, 'prepareAirwallexSession'])->middleware('throttle:api-write');
+Route::post('/checkout/payoneer-session', [CheckoutController::class, 'preparePayoneerSession'])->middleware('throttle:api-write');
+Route::post('/checkout/pingpong-session', [CheckoutController::class, 'preparePingPongSession'])->middleware('throttle:api-write');
 Route::post('/webhooks/stripe', [CheckoutController::class, 'stripeWebhook']);
 Route::post('/webhooks/paypal', [CheckoutController::class, 'paypalWebhook']);
+Route::post('/webhooks/airwallex', [CheckoutController::class, 'airwallexWebhook']);
+Route::post('/webhooks/payoneer', [CheckoutController::class, 'payoneerWebhook']);
+Route::post('/webhooks/pingpong', [CheckoutController::class, 'pingpongWebhook']);
 Route::post('/webhooks/aftership', [AfterShipWebhookController::class, 'handle']);
 
 Route::get('/posts', [ContentController::class, 'posts']);

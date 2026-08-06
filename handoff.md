@@ -1,3 +1,52 @@
+# Handoff — 2026-08-07 (later)
+
+## Affiliate click tracking, 3 new redirect-checkout payment gateways, and a Filament CSS bug fix
+
+**Affiliate click tracking (Phase 1 of the affiliate-analytics plan)**
+- New `affiliate_clicks` table (`post_id`, `affiliate_network_id`, `product_name`, `target_url`,
+  `referrer`) + `AffiliateClick` model + `Post::clicks()`.
+- New public `GET /go/{post}/{item}` route (`routes/web.php`, not `routes/api.php` — it's a
+  redirect, not JSON) via `AffiliateClickController`: reads the comparison item at `{item}`
+  index from the post's `metadata.comparison_items`, logs a click row, 302s to the real
+  `affiliate_url`.
+- `Api\PostResource::resolveComparison()` now emits `redirect_url` (`/go/{id}/{index}`) per
+  comparison item; `frontend/components/blog/ComparisonTable.tsx`'s outbound CTA uses
+  `redirect_url` with `affiliate_url` as a fallback (no breaking change if the API hasn't
+  deployed yet).
+- Deliberately no revenue/commission tracking, no admin analytics widget yet — just click
+  volume. A Filament widget reading this table is the natural Phase 2, deferred until there's
+  real click data worth looking at.
+- **Found and fixed a real pre-existing local-env issue while verifying**: `php artisan migrate`
+  failed with `Class "Laravel\Pail\PailServiceProvider" not found` — `vendor/laravel/pail` was
+  missing from `backend/vendor/` despite being a declared `composer.json` dev dependency. Root
+  cause: `RULES.md` already documents that `build.js`'s push-time smoke build runs
+  `composer install --no-dev`, which strips dev-only packages (Pint/PHPStan/Pail/PHPUnit/Faker)
+  from the local vendor dir on every `git push` — this had happened and nobody had run a plain
+  `composer install` since. Fixed by running `composer install` (no flag). Not a regression from
+  this session's changes, just the known gap actually being hit.
+
+**3 new payment gateways: Airwallex, Payoneer, PingPong** — see `ARCHITECTURE.md`'s "Redirect-
+checkout gateways" entry for the full technical shape (session-before-order sequencing, shared
+`payment_webhook_events` table, `by-payment-session` lookup, confidence caveats per gateway).
+Short version: all three are redirect/hosted-checkout (not embedded like Stripe, not popup like
+PayPal), configured via Filament → Settings → Payment (3 new tabs) or `.env`, placeholder mode
+when unconfigured so checkout never breaks without live credentials. Verified end-to-end locally
+(booted the server, round-tripped a real order through `place-order` → `by-payment-session`,
+confirmed `awaiting-payment`/`pending` state and correct resolution by session id) — but **not
+charged real money anywhere**; Payoneer's and Airwallex's exact API schemas are unverified
+reconstructions and must be checked against real sandbox docs/accounts before `*_MODE=live`.
+
+**Filament bug fix: Edit Product's sub-navigation ("Basic Information / Availability / Media /
+…") lost hover text** — root cause was `AdminPanelProvider.php`'s dark-sidebar CSS block
+targeting `.fi-sidebar-item-button`/`.fi-sidebar-item-label` etc. **unscoped**, so it also hit
+Filament's record-sub-navigation panel (reuses the identical classes) on a light background —
+hover text went near-white-on-white. Fixed by scoping every rule in that block to
+`nav.fi-sidebar`/`aside.fi-sidebar`, matching the pattern already used by the block's other
+rules. See `RULES.md` for the reusable lesson (any future panel-wide CSS addition needs the same
+scoping check).
+
+---
+
 # Handoff — 2026-08-06/07
 
 ## Filament admin panel overhaul: real data everywhere, dashboard/sidebar redesign, global action styling

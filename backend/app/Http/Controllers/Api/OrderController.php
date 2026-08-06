@@ -62,6 +62,42 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * Resolve an order by its redirect-checkout gateway session (Public) — used by the
+     * checkout success page when a shopper is bounced back from a hosted payment page
+     * (Airwallex/Payoneer/PingPong), before the order's own reference/tracking-number
+     * flow can be used (the browser only knows the session id at that point).
+     */
+    public function byPaymentSession(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'gateway' => 'required|string|in:airwallex,payoneer,pingpong',
+            'session_id' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $gateway = (string) $request->query('gateway');
+        $sessionId = (string) $request->query('session_id');
+
+        $order = Order::query()->where("meta->{$gateway}_session_id", $sessionId)->first();
+
+        if (! $order) {
+            return response()->json(['message' => 'No order found for this payment session.'], 404);
+        }
+
+        $hasActiveReturnRequest = OrderReturnRequest::query()
+            ->where('order_id', $order->id)
+            ->whereIn('status', [OrderReturnRequest::STATUS_REQUESTED, OrderReturnRequest::STATUS_APPROVED])
+            ->exists();
+
+        return (new OrderPublicResource($order))->additional([
+            'has_active_return_request' => $hasActiveReturnRequest,
+        ]);
+    }
+
     public function retryPayment(Request $request)
     {
         $validated = Validator::make($request->all(), [

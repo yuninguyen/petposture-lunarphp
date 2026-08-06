@@ -49,7 +49,8 @@ class PostResource extends JsonResource
             ->keyBy('slug');
 
         $items = $rawItems
-            ->map(function (array $item) use ($networks) {
+            ->values()
+            ->map(function (array $item, int $index) use ($networks) {
                 $network = $networks->get($item['retailer'] ?? null);
 
                 return [
@@ -57,6 +58,7 @@ class PostResource extends JsonResource
                     'image_url' => $this->resolveAssetUrl($item['image_url'] ?? null),
                     'retailer_label' => $network?->name ?? $item['retailer'] ?? null,
                     'retailer_logo' => $network ? $this->resolveAssetUrl($network->logo) : null,
+                    'redirect_url' => url("/go/{$this->id}/{$index}"),
                 ];
             })
             ->values()

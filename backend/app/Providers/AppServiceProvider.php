@@ -15,8 +15,11 @@ use App\Observers\PostCacheObserver;
 use App\Observers\ProductCacheObserver;
 use App\Observers\ProductVariantObserver;
 use App\Observers\SettingCacheObserver;
+use App\Payments\Gateways\AirwallexGateway;
 use App\Payments\Gateways\CashOnDeliveryGateway;
+use App\Payments\Gateways\PayoneerGateway;
 use App\Payments\Gateways\PayPalGateway;
+use App\Payments\Gateways\PingPongGateway;
 use App\Payments\Gateways\StripeCardGateway;
 use App\Payments\PaymentGatewayManager;
 use App\Support\MailConfigSync;
@@ -50,6 +53,9 @@ class AppServiceProvider extends ServiceProvider
                 new CashOnDeliveryGateway,
                 new StripeCardGateway,
                 $app->make(PayPalGateway::class),
+                $app->make(AirwallexGateway::class),
+                $app->make(PayoneerGateway::class),
+                $app->make(PingPongGateway::class),
             ]);
         });
     }
