@@ -1,13 +1,19 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { getApiBaseUrl } from "@/lib/api";
 
-const banners = [
+const defaultBanners = [
   {
+    key: "flat-faced",
     image: "/assets/Flat-Faced-Breeds.png",
     title: "For Flat Faced Breeds",
     href: "/shop-by-breed",
   },
   {
+    key: "long-backed",
     image: "/assets/Corgi.png",
     title: "For Long Backed Breeds",
     href: "/shop-by-breed",
@@ -15,6 +21,26 @@ const banners = [
 ];
 
 export default function PromoBanners() {
+  const [banners, setBanners] = useState(defaultBanners);
+
+  useEffect(() => {
+    fetch(`${getApiBaseUrl()}/api/site-media?collection=banner`)
+      .then((r) => r.json())
+      .then((json) => {
+        const items: { title: string | null; url: string }[] = json?.data ?? [];
+        if (items.length === 0) return;
+        setBanners((current) =>
+          current.map((banner) => {
+            const match = items.find((item) => item.title === banner.key);
+            return match ? { ...banner, image: match.url } : banner;
+          })
+        );
+      })
+      .catch(() => {
+        // silently keep the default banners
+      });
+  }, []);
+
   return (
     <section className="py-12 px-4 md:px-8 bg-white overflow-hidden">
       <div className="container mx-auto max-w-6xl">

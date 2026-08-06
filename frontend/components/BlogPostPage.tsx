@@ -17,6 +17,8 @@ import {
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+import ComparisonTable, { ComparisonData } from '@/components/blog/ComparisonTable';
+import { useSettings } from '@/context/SettingsContext';
 
 const fadeUp = {
     initial: { opacity: 0, y: 20 },
@@ -29,6 +31,8 @@ interface BlogPost {
     title: string;
     excerpt: string;
     content?: string;
+    type?: string;
+    comparison?: ComparisonData | null;
     image: string;
     author: string;
     date: string;
@@ -41,6 +45,7 @@ interface BlogPostPageProps {
 }
 
 export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
+    const { social } = useSettings();
     const [isCommenting, setIsCommenting] = React.useState(false);
 
     return (
@@ -112,42 +117,14 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                             </div>
                         </motion.div>
 
-                        <article className="prose prose-zinc max-w-none">
-                            <div className="text-[#3e4c57] text-[18px] md:text-[20px] leading-[1.8] space-y-8 font-medium">
-                                <p className="first-letter:text-5xl first-letter:font-bold first-letter:text-[#df8448] first-letter:mr-3 first-letter:float-left">
-                                    {post.excerpt}
-                                </p>
+                        {post.type === 'comparison' && post.comparison ? (
+                            <ComparisonTable data={post.comparison} />
+                        ) : null}
 
-                                <p>
-                                    As pet owners, we often overlook the long-term impact of daily physical activities. Simple motions like jumping off a couch, leaning down to reach a bowl, or sleeping on an unsupportive surface can accumulate stress on a pet&apos;s skeletal structure over time. This is especially true for specific breeds like Dachshunds, Pugs, and senior pets of all sizes.
-                                </p>
-
-                                <h2 className="text-[28px] md:text-[32px] font-bold text-[#3e4c57] mt-12 mb-6">The Science Behind the Slump</h2>
-
-                                <p>
-                                    Modern veterinary ergonomic research suggests that a &quot;neutral spine&quot; position is critical for digestive health and joint longevity. When a pet eats from a bowl placed too low, they must arch their neck and compress their chest, which can lead to air swallowing (aerophagia) and unnecessary strain on the cervical vertebrae.
-                                </p>
-
-                                <blockquote className="border-l-4 border-[#df8448] pl-8 py-4 my-10 bg-[#fdf2ea] rounded-r-xl italic text-[22px] text-[#3e4c57] font-semibold">
-                                    &quot;Prevention is always more effective—and less painful—than correction when it comes to spinal health.&quot;
-                                </blockquote>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-12">
-                                    <div className="bg-[#f8f9fa] p-8 rounded-2xl border border-zinc-100">
-                                        <h3 className="text-[18px] font-bold text-[#df8448] mb-4 uppercase tracking-widest">The Risk</h3>
-                                        <p className="text-[16px] text-zinc-600">Standard bowls and beds don&apos;t account for natural anatomical angles, leading to premature aging and joint inflammation.</p>
-                                    </div>
-                                    <div className="bg-[#3e4c57] p-8 rounded-2xl text-white">
-                                        <h3 className="text-[18px] font-bold text-[#df8448] mb-4 uppercase tracking-widest">The Solution</h3>
-                                        <p className="text-[16px] text-white/80">Raised, tilted feeding systems and orthopedic memory foam provide the alignment needed for a pain-free life.</p>
-                                    </div>
-                                </div>
-
-                                <p>
-                                    By incorporating ergonomic tools into your pet&apos;s life today, you&apos;re not just buying gear; you&apos;re investing in years of mobility and comfort. At PetPosture, our mission is to make these scientific benefits accessible without compromising the aesthetic of your home.
-                                </p>
-                            </div>
-                        </article>
+                        <article
+                            className="prose prose-zinc max-w-none text-[#3e4c57] text-[18px] md:text-[20px] leading-[1.8] font-medium [&>p:first-of-type]:first-letter:text-5xl [&>p:first-of-type]:first-letter:font-bold [&>p:first-of-type]:first-letter:text-[#df8448] [&>p:first-of-type]:first-letter:mr-3 [&>p:first-of-type]:first-letter:float-left [&>*+*]:mt-8 [&_h2]:text-[28px] [&_h2]:md:text-[32px] [&_h2]:font-bold [&_h2]:text-[#3e4c57] [&_h2]:mt-12 [&_h2]:mb-6 [&_blockquote]:border-l-4 [&_blockquote]:border-[#df8448] [&_blockquote]:pl-8 [&_blockquote]:py-4 [&_blockquote]:bg-[#fdf2ea] [&_blockquote]:rounded-r-xl [&_blockquote]:italic [&_blockquote]:text-[22px] [&_blockquote]:text-[#3e4c57] [&_blockquote]:font-semibold [&_blockquote]:not-italic"
+                            dangerouslySetInnerHTML={{ __html: post.content || `<p>${post.excerpt}</p>` }}
+                        />
 
                         {/* Article Footer */}
                         <div className="mt-16 pt-10 border-t border-zinc-100">
@@ -179,7 +156,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         {/* Comments Section */}
                         <div className="mt-24 space-y-16">
                             <div className="flex items-center gap-4">
-                                <h3 className="text-[24px] font-bold text-[#3e4c57]">Reader Comments</h3>
+                                <h3 className="text-[24px] font-bold text-[#3e4c57]">Discussion</h3>
                                 <div className="flex-1 h-[1px] bg-zinc-100" />
                                 <span className="bg-zinc-50 text-zinc-400 px-3 py-1 rounded-full text-xs font-bold">2</span>
                             </div>
@@ -206,14 +183,14 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                             <div className="space-y-8">
                                 <button
                                     onClick={() => setIsCommenting(!isCommenting)}
-                                    className="w-full flex items-center justify-center gap-4 py-4 border-2 border-zinc-100 rounded-2xl hover:bg-zinc-50 hover:border-[#df8448]/20 transition-all group"
+                                    className="w-full flex items-center justify-center gap-3 py-4 border border-zinc-100 rounded-2xl hover:bg-zinc-50 hover:border-[#df8448]/20 transition-all group"
                                 >
-                                    <h3 className="text-[20px] font-bold text-[#3e4c57] uppercase tracking-tighter group-hover:text-[#df8448]">Leave a Comment</h3>
+                                    <h3 className="text-[16px] font-bold text-[#3e4c57] group-hover:text-[#df8448]">Leave a Comment</h3>
                                     <motion.div
                                         animate={{ rotate: isCommenting ? 180 : 0 }}
                                         className="text-[#df8448]"
                                     >
-                                        <ChevronRight size={24} className="rotate-90" />
+                                        <ChevronRight size={18} className="rotate-90" />
                                     </motion.div>
                                 </button>
 
@@ -225,35 +202,35 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                             exit={{ opacity: 0, height: 0 }}
                                             className="overflow-hidden"
                                         >
-                                            <div className="bg-[#f8f9fa] rounded-3xl p-10 border border-zinc-100">
-                                                <div className="mb-10">
-                                                    <h3 className="text-[20px] font-bold text-[#3e4c57] mb-2 uppercase tracking-tight">Leave a Reply</h3>
-                                                    <p className="text-zinc-500 text-[14px]">Your email address will not be published. Required fields are marked *</p>
+                                            <div className="bg-[#f8f9fa] rounded-2xl p-6 md:p-7 border border-zinc-100">
+                                                <div className="mb-6">
+                                                    <h3 className="text-[16px] font-bold text-[#3e4c57] mb-1">Leave a Reply</h3>
+                                                    <p className="text-zinc-500 text-[13px]">Your email address will not be published. Required fields are marked *</p>
                                                 </div>
-                                                <form className="space-y-6">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <div className="space-y-2">
-                                                            <label className="text-sm font-bold text-[#3e4c57] uppercase tracking-widest ml-1">Name *</label>
-                                                            <input type="text" className="w-full px-5 py-4 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-[#df8448] text-[14px]" placeholder="John Doe" />
+                                                <form className="space-y-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-xs font-bold text-[#3e4c57] uppercase tracking-wide ml-1">Name *</label>
+                                                            <input type="text" className="w-full px-4 py-3 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-[#df8448] text-[14px]" placeholder="John Doe" />
                                                         </div>
-                                                        <div className="space-y-2">
-                                                            <label className="text-sm font-bold text-[#3e4c57] uppercase tracking-widest ml-1">Email *</label>
-                                                            <input type="email" className="w-full px-5 py-4 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-[#df8448] text-[14px]" placeholder="john@example.com" />
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-xs font-bold text-[#3e4c57] uppercase tracking-wide ml-1">Email *</label>
+                                                            <input type="email" className="w-full px-4 py-3 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-[#df8448] text-[14px]" placeholder="john@example.com" />
                                                         </div>
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-sm font-bold text-[#3e4c57] uppercase tracking-widest ml-1">Website</label>
-                                                        <input type="text" className="w-full px-5 py-4 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-[#df8448] text-[14px]" placeholder="Optional" />
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-xs font-bold text-[#3e4c57] uppercase tracking-wide ml-1">Website</label>
+                                                        <input type="text" className="w-full px-4 py-3 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-[#df8448] text-[14px]" placeholder="Optional" />
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-sm font-bold text-[#3e4c57] uppercase tracking-widest ml-1">Comment *</label>
-                                                        <textarea rows={6} className="w-full px-5 py-4 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-[#df8448] text-[14px] resize-none" placeholder="Your message here..." />
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-xs font-bold text-[#3e4c57] uppercase tracking-wide ml-1">Comment *</label>
+                                                        <textarea rows={5} className="w-full px-4 py-3 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-[#df8448] text-[14px] resize-none" placeholder="Your message here..." />
                                                     </div>
-                                                    <div className="flex items-center gap-3 py-4">
+                                                    <div className="flex items-center gap-3 py-2">
                                                         <input type="checkbox" id="save-info" className="w-4 h-4 rounded border-zinc-300 text-[#df8448] focus:ring-[#df8448]" />
                                                         <label htmlFor="save-info" className="text-sm text-zinc-500">Save my name, email, and website in this browser for the next time I comment.</label>
                                                     </div>
-                                                    <button className="bg-[#df8448] text-white px-10 py-4 rounded-[3px] font-bold uppercase tracking-[0.2em] text-sm hover:bg-[#c9713a] transition-all shadow-lg shadow-orange-200/50">
+                                                    <button className="bg-[#df8448] text-white px-8 py-3 rounded-[3px] font-bold uppercase tracking-[0.1em] text-sm hover:bg-[#c9713a] transition-all shadow-lg shadow-orange-200/50">
                                                         Post Comment
                                                     </button>
                                                 </form>
@@ -302,20 +279,27 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#df8448] mb-6">Join the Community</h4>
                             <div className="grid grid-cols-1 gap-3">
                                 {[
-                                    { icon: Facebook, label: "Facebook", count: "12K", color: "#1877F2" },
-                                    { icon: Instagram, label: "Instagram", count: "25K", color: "#E4405F" },
-                                    { icon: Twitter, label: "X", count: "8K", color: "#000000" }
-                                ].map((social) => (
-                                    <button key={social.label} className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 hover:bg-zinc-100 transition-all border border-transparent hover:border-zinc-200 group">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                                                <social.icon size={16} style={{ color: social.color }} />
+                                    { icon: Facebook, label: "Facebook", color: "#1877F2", href: social.facebook },
+                                    { icon: Instagram, label: "Instagram", color: "#E4405F", href: social.instagram },
+                                    { icon: Twitter, label: "X", color: "#000000", href: social.twitter },
+                                ]
+                                    .filter((item) => item.href)
+                                    .map((item) => (
+                                        <a
+                                            key={item.label}
+                                            href={item.href!}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 hover:bg-zinc-100 transition-all border border-transparent hover:border-zinc-200 group"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                                                    <item.icon size={16} style={{ color: item.color }} />
+                                                </div>
+                                                <span className="text-sm font-bold text-[#3e4c57]">{item.label}</span>
                                             </div>
-                                            <span className="text-sm font-bold text-[#3e4c57]">{social.label}</span>
-                                        </div>
-                                        <span className="text-xs font-bold text-zinc-400">{social.count}</span>
-                                    </button>
-                                ))}
+                                        </a>
+                                    ))}
                             </div>
                         </div>
 
@@ -372,7 +356,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                 <h3 className="text-[18px] font-bold text-[#3e4c57] leading-tight mb-4 hover:text-[#df8448] transition-colors cursor-pointer">
                                     {rPost.title}
                                 </h3>
-                                <Link href={`/blog/${rPost.id}`} className="text-[#3e4c57] font-bold uppercase tracking-widest text-sm flex items-center gap-2">
+                                <Link href={`/blog/${rPost.id}`} className="text-[#3e4c57] font-bold uppercase tracking-[0.1em] text-sm flex items-center gap-2 transition-colors hover:text-[#df8448]">
                                     Read Story <ChevronRight size={14} />
                                 </Link>
                             </div>

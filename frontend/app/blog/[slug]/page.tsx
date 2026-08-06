@@ -4,12 +4,16 @@ import { notFound } from 'next/navigation';
 
 import BlogPostPage from '@/components/BlogPostPage';
 import { API_BASE_URL } from '@/lib/api';
+import { formatDate } from '@/lib/date';
+import type { ComparisonData } from '@/components/blog/ComparisonTable';
 
 type ApiPost = {
     id: string;
     slug: string;
     title: string;
     content?: string;
+    type?: string;
+    comparison?: ComparisonData | null;
     featured_image?: string | null;
     author?: string | null;
     read_time?: string | null;
@@ -28,6 +32,8 @@ type BlogPostViewModel = {
     title: string;
     excerpt: string;
     content?: string;
+    type: string;
+    comparison?: ComparisonData | null;
     image: string;
     author: string;
     date: string;
@@ -44,9 +50,11 @@ function toViewModel(post: ApiPost): BlogPostViewModel {
         title: post.title,
         excerpt: content.slice(0, 180) || post.title,
         content,
+        type: post.type || 'article',
+        comparison: post.comparison ?? null,
         image: post.featured_image || '/assets/placeholder-post.jpg',
         author: post.author || 'PetPosture Editorial',
-        date: post.created_at ? new Date(post.created_at).toLocaleDateString() : 'Recently published',
+        date: post.created_at ? formatDate(post.created_at) : 'Recently published',
         readTime: post.read_time || '5 min read',
     };
 }

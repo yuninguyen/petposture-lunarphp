@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Facebook, Instagram, Twitter, Mail, Plus, Minus } from "lucide-react";
+import { Facebook, Instagram, Twitter, Youtube, Mail, Plus, Minus } from "lucide-react";
 import PaymentIcons from "./PaymentIcons";
 import { useSettings } from "@/context/SettingsContext";
+import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
 
 const shopBySolution = [
   "Eating & Digestion",
@@ -106,7 +107,7 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: 
 
 export default function Footer() {
   const [openSection, setOpenSection] = useState<string | null>(null);
-  const { description } = useSettings();
+  const { description, social } = useSettings();
 
   const toggleSection = (section: string) => {
     setOpenSection(openSection === section ? null : section);
@@ -131,20 +132,33 @@ export default function Footer() {
                   </p>
                   <div className="flex gap-4">
                     {[
-                      { Icon: Facebook, label: "Facebook" },
-                      { Icon: Instagram, label: "Instagram" },
-                      { Icon: Twitter, label: "Twitter" },
-                      { Icon: Mail, label: "Email" },
-                    ].map(({ Icon, label }) => (
-                      <Link
-                        key={label}
-                        href="#"
-                        aria-label={label}
-                        className="w-11 h-11 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
-                      >
-                        <Icon size={18} strokeWidth={2} className="transition-transform duration-300 group-hover:scale-125" />
-                      </Link>
-                    ))}
+                      { Icon: Facebook, label: "Facebook", href: social.facebook },
+                      { Icon: Instagram, label: "Instagram", href: social.instagram },
+                      { Icon: Twitter, label: "Twitter", href: social.twitter },
+                      { Icon: TikTokIcon, label: "TikTok", href: social.tiktok },
+                      { Icon: PinterestIcon, label: "Pinterest", href: social.pinterest },
+                      { Icon: Youtube, label: "Youtube", href: social.youtube },
+                    ]
+                      .filter(({ href }) => href)
+                      .map(({ Icon, label, href }) => (
+                        <a
+                          key={label}
+                          href={href!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={label}
+                          className="w-11 h-11 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
+                        >
+                          <Icon size={18} strokeWidth={2} className="transition-transform duration-300 group-hover:scale-125" />
+                        </a>
+                      ))}
+                    <Link
+                      href="/contact"
+                      aria-label="Email"
+                      className="w-11 h-11 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
+                    >
+                      <Mail size={18} strokeWidth={2} className="transition-transform duration-300 group-hover:scale-125" />
+                    </Link>
                   </div>
                 </div>
               }

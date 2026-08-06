@@ -2,25 +2,29 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
     ArrowRight,
     BookOpen,
     Bookmark,
+    ChevronLeft,
     ChevronRight,
     Facebook,
     Instagram,
     Loader2,
     MessageSquare,
     Share2,
-    Twitter,
     User,
     Youtube,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getApiBaseUrl } from "@/lib/api";
+import { formatDate } from "@/lib/date";
+import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
+import { useSettings } from "@/context/SettingsContext";
+import { stripHtml } from "@/lib/text";
 
 type BlogCategory = {
     id: string;
@@ -54,11 +58,28 @@ const fadeUp = {
 };
 
 export default function BlogPage() {
+    const { social: socialLinks } = useSettings();
     const [activeTab, setActiveTab] = useState("All");
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const [categories, setCategories] = useState<BlogCategory[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const tabsScrollRef = useRef<HTMLDivElement>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+
+    const updateTabsScrollState = () => {
+        const el = tabsScrollRef.current;
+        if (!el) return;
+        setCanScrollLeft(el.scrollLeft > 4);
+        setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    };
+
+    useEffect(() => {
+        updateTabsScrollState();
+        window.addEventListener("resize", updateTabsScrollState);
+        return () => window.removeEventListener("resize", updateTabsScrollState);
+    }, [categories]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -136,7 +157,7 @@ export default function BlogPage() {
                                     sizes="(max-width: 1024px) 100vw, 60vw"
                                 />
                                 <div className="absolute left-6 top-6">
-                                    <span className="rounded-[3px] bg-[#df8448] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-lg">
+                                    <span className="rounded-[3px] bg-[#df8448] px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-white shadow-lg">
                                         Featured Article
                                     </span>
                                 </div>
@@ -157,11 +178,13 @@ export default function BlogPage() {
                                             : "Recently published"}
                                     </span>
                                 </div>
-                                <h1 className="mb-6 cursor-pointer text-[28px] font-bold leading-tight text-[#3e4c57] transition-colors hover:text-[#df8448] md:text-[36px]">
-                                    {featuredPost.title}
-                                </h1>
+                                <Link href={`/blog/${featuredPost.slug || featuredPost.id}`}>
+                                    <h1 className="mb-6 cursor-pointer text-[28px] font-bold leading-tight text-[#3e4c57] transition-colors hover:text-[#df8448] md:text-[36px]">
+                                        {featuredPost.title}
+                                    </h1>
+                                </Link>
                                 <p className="mb-8 line-clamp-3 text-[16px] leading-relaxed text-[#666666]">
-                                    {featuredPost.content.substring(0, 160)}...
+                                    {stripHtml(featuredPost.content).substring(0, 160)}...
                                 </p>
                                 <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-6">
                                     <div className="flex items-center gap-3">
@@ -191,38 +214,61 @@ export default function BlogPage() {
             )}
 
             <nav className="sticky top-[65px] z-40 border-y border-zinc-100 bg-white md:top-[100px]">
-                <div className="mx-auto max-w-[1200px] overflow-x-auto px-4 no-scrollbar md:px-8">
-                    <div className="flex items-center gap-8 whitespace-nowrap py-5">
+                <div className="relative mx-auto max-w-[1200px]">
+                    <div
+                        ref={tabsScrollRef}
+                        onScroll={updateTabsScrollState}
+                        className="flex items-center gap-2 overflow-x-auto whitespace-nowrap px-4 py-4 no-scrollbar md:px-8"
+                    >
                         <button
                             onClick={() => setActiveTab("All")}
-                            className={`relative py-2 text-sm font-bold uppercase tracking-[0.15em] transition-all ${
+                            className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors md:text-sm ${
                                 activeTab === "All"
-                                    ? "text-[#df8448]"
+                                    ? "text-white"
                                     : "text-[#3e4c57]/60 hover:text-[#3e4c57]"
                             }`}
                         >
-                            All
                             {activeTab === "All" && (
-                                <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#df8448]" />
+                                <motion.div
+                                    layoutId="activeTabPill"
+                                    className="absolute inset-0 rounded-full bg-[#df8448]"
+                                    transition={{ type: "spring", duration: 0.4 }}
+                                />
                             )}
+                            <span className="relative">All</span>
                         </button>
                         {categories.map((cat) => (
                             <button
                                 key={cat.id}
                                 onClick={() => setActiveTab(cat.name)}
-                                className={`relative py-2 text-sm font-bold uppercase tracking-[0.15em] transition-all ${
+                                className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors md:text-sm ${
                                     activeTab === cat.name
-                                        ? "text-[#df8448]"
+                                        ? "text-white"
                                         : "text-[#3e4c57]/60 hover:text-[#3e4c57]"
                                 }`}
                             >
-                                {cat.name}
                                 {activeTab === cat.name && (
-                                    <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#df8448]" />
+                                    <motion.div
+                                        layoutId="activeTabPill"
+                                        className="absolute inset-0 rounded-full bg-[#df8448]"
+                                        transition={{ type: "spring", duration: 0.4 }}
+                                    />
                                 )}
+                                <span className="relative">{cat.name}</span>
                             </button>
                         ))}
                     </div>
+
+                    {canScrollLeft && (
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex w-10 items-center bg-gradient-to-r from-white to-transparent pl-1 md:hidden">
+                            <ChevronLeft size={16} className="text-[#3e4c57]/40" />
+                        </div>
+                    )}
+                    {canScrollRight && (
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-end bg-gradient-to-l from-white to-transparent pr-1 md:hidden">
+                            <ChevronRight size={16} className="text-[#3e4c57]/40" />
+                        </div>
+                    )}
                 </div>
             </nav>
 
@@ -258,7 +304,7 @@ export default function BlogPage() {
                                                 sizes="(max-width: 768px) 100vw, 35vw"
                                             />
                                             <div className="absolute left-4 top-4">
-                                                <span className="rounded-[3px] bg-white/90 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-[#df8448] shadow-sm backdrop-blur-sm">
+                                                <span className="rounded-[3px] bg-white/90 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-[#df8448] shadow-sm backdrop-blur-sm">
                                                     {post.blog_category?.name || "Insights"}
                                                 </span>
                                             </div>
@@ -270,16 +316,16 @@ export default function BlogPage() {
                                                 </span>
                                                 <span className="h-1 w-1 rounded-full bg-zinc-200" />
                                                 <span>
-                                                    {post.created_at
-                                                        ? new Date(post.created_at).toLocaleDateString()
-                                                        : "Recently published"}
+                                                    {post.created_at ? formatDate(post.created_at) : "Recently published"}
                                                 </span>
                                             </div>
-                                            <h3 className="mb-4 line-clamp-2 cursor-pointer text-[22px] font-bold leading-tight text-[#3e4c57] transition-colors hover:text-[#df8448] md:text-[26px]">
-                                                {post.title}
-                                            </h3>
+                                            <Link href={`/blog/${post.slug || post.id}`}>
+                                                <h3 className="mb-4 line-clamp-2 cursor-pointer text-[22px] font-bold leading-tight text-[#3e4c57] transition-colors hover:text-[#df8448] md:text-[26px]">
+                                                    {post.title}
+                                                </h3>
+                                            </Link>
                                             <p className="mb-6 line-clamp-3 text-[15px] leading-relaxed text-[#666666]">
-                                                {post.content.substring(0, 140)}...
+                                                {stripHtml(post.content).substring(0, 140)}...
                                             </p>
                                             <div className="mt-auto flex items-center justify-between border-t border-zinc-50 pt-5">
                                                 <div className="flex items-center gap-6">
@@ -292,7 +338,7 @@ export default function BlogPage() {
                                                 </div>
                                                 <Link
                                                     href={`/blog/${post.slug || post.id}`}
-                                                    className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-[#3e4c57] transition-all hover:text-[#df8448]"
+                                                    className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.1em] text-[#3e4c57] transition-all hover:text-[#df8448]"
                                                 >
                                                     Read Story <ChevronRight size={14} />
                                                 </Link>
@@ -314,59 +360,68 @@ export default function BlogPage() {
 
                     <aside className="space-y-12 lg:w-80">
                         <div className="rounded-2xl border border-zinc-100 bg-white p-8 shadow-sm">
-                            <h4 className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-[#df8448]">
+                            <h4 className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.1em] text-[#df8448]">
                                 Follow PetPosture
                                 <div className="h-1.5 w-1.5 rounded-full bg-[#df8448]/20" />
                             </h4>
                             <div className="grid grid-cols-1 gap-3">
                                 {[
-                                    { icon: Facebook, label: "Facebook", count: "12K", color: "#1877F2" },
-                                    { icon: Instagram, label: "Instagram", count: "25K", color: "#E4405F" },
-                                    { icon: Twitter, label: "Twitter (X)", count: "8K", color: "#000000" },
-                                    { icon: Youtube, label: "Youtube", count: "15K", color: "#FF0000" },
-                                ].map((social) => (
-                                    <button
-                                        key={social.label}
-                                        className="group flex items-center justify-between rounded-xl border border-zinc-100/50 bg-[#f8f9fa] p-3.5 transition-all hover:bg-zinc-100"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-100 bg-white shadow-sm transition-colors group-hover:border-[#df8448]/30">
-                                                <social.icon size={16} style={{ color: social.color }} />
+                                    { icon: Facebook, label: "Facebook", color: "#1877F2", href: socialLinks.facebook },
+                                    { icon: Instagram, label: "Instagram", color: "#E4405F", href: socialLinks.instagram },
+                                    { icon: TikTokIcon, label: "TikTok", color: "#000000", href: socialLinks.tiktok },
+                                    { icon: PinterestIcon, label: "Pinterest", color: "#E60023", href: socialLinks.pinterest },
+                                    { icon: Youtube, label: "Youtube", color: "#FF0000", href: socialLinks.youtube },
+                                ]
+                                    .filter((item) => item.href)
+                                    .map((item) => (
+                                        <a
+                                            key={item.label}
+                                            href={item.href!}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="group flex items-center justify-between rounded-xl border border-zinc-100/50 bg-[#f8f9fa] p-3.5 transition-all hover:bg-zinc-100"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-100 bg-white shadow-sm transition-colors group-hover:border-[#df8448]/30">
+                                                    <item.icon size={16} style={{ color: item.color }} />
+                                                </div>
+                                                <span className="text-sm font-bold text-[#3e4c57]">{item.label}</span>
                                             </div>
-                                            <span className="text-sm font-bold text-[#3e4c57]">{social.label}</span>
-                                        </div>
-                                        <span className="text-xs font-bold text-zinc-400">{social.count}</span>
-                                    </button>
-                                ))}
+                                        </a>
+                                    ))}
                             </div>
                         </div>
 
                         {posts.length > 0 && (
                             <div>
-                                <h4 className="mb-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-[#df8448]">
+                                <h4 className="mb-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.1em] text-[#df8448]">
                                     Most Discussed
                                     <div className="h-[1px] flex-1 bg-zinc-100" />
                                 </h4>
                                 <div className="space-y-7">
-                                    <div className="group relative aspect-[16/10] cursor-pointer overflow-hidden rounded-xl shadow-sm">
-                                        <Image
-                                            src={posts[0].featured_image || "/assets/placeholder-post.jpg"}
-                                            alt={posts[0].title}
-                                            fill
-                                            className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                            sizes="320px"
-                                        />
-                                        <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#3e4c57]/90 via-[#3e4c57]/20 to-transparent p-5">
-                                            <span className="mb-2 w-fit rounded-[2px] bg-[#df8448] px-2 py-1 text-xs font-bold uppercase tracking-widest text-white">
+                                    <Link href={`/blog/${posts[0].slug || posts[0].id}`} className="group block">
+                                        <div className="relative aspect-[16/10] overflow-hidden rounded-xl shadow-sm">
+                                            <Image
+                                                src={posts[0].featured_image || "/assets/placeholder-post.jpg"}
+                                                alt={posts[0].title}
+                                                fill
+                                                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                                sizes="320px"
+                                            />
+                                            <span className="absolute left-3 top-3 w-fit rounded-[2px] bg-[#df8448] px-2 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
                                                 Editor&apos;s Pick
                                             </span>
-                                            <h5 className="line-clamp-2 text-[15px] font-bold leading-tight text-white transition-colors group-hover:text-[#df8448]">
-                                                {posts[0].title}
-                                            </h5>
                                         </div>
-                                    </div>
+                                        <h5 className="mt-3 line-clamp-2 text-[15px] font-bold leading-tight text-[#3e4c57] transition-colors group-hover:text-[#df8448]">
+                                            {posts[0].title}
+                                        </h5>
+                                    </Link>
                                     {posts.slice(1, 4).map((post) => (
-                                        <div key={post.id} className="group flex cursor-pointer gap-4">
+                                        <Link
+                                            href={`/blog/${post.slug || post.id}`}
+                                            key={post.id}
+                                            className="group flex gap-4"
+                                        >
                                             <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-zinc-100 shadow-sm">
                                                 <Image
                                                     src={post.featured_image || "/assets/placeholder-post.jpg"}
@@ -381,12 +436,10 @@ export default function BlogPage() {
                                                     {post.title}
                                                 </h6>
                                                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                                                    {post.created_at
-                                                        ? new Date(post.created_at).toLocaleDateString()
-                                                        : "Recently published"}
+                                                    {post.created_at ? formatDate(post.created_at) : "Recently published"}
                                                 </span>
                                             </div>
-                                        </div>
+                                        </Link>
                                     ))}
                                 </div>
                             </div>

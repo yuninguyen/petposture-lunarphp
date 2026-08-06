@@ -1,13 +1,34 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { getApiBaseUrl } from "@/lib/api";
+
+const DEFAULT_HERO_IMAGE = "/assets/banner-5.jpg";
 
 export default function Hero() {
+  const [heroImage, setHeroImage] = useState(DEFAULT_HERO_IMAGE);
+
+  useEffect(() => {
+    fetch(`${getApiBaseUrl()}/api/site-media?collection=banner`)
+      .then((r) => r.json())
+      .then((json) => {
+        const items: { title: string | null; url: string }[] = json?.data ?? [];
+        const match = items.find((item) => item.title === "hero");
+        if (match) setHeroImage(match.url);
+      })
+      .catch(() => {
+        // silently keep the default hero image
+      });
+  }, []);
+
   return (
     <section className="relative w-full overflow-hidden bg-white" style={{ minHeight: "400px", maxHeight: "680px" }}>
       {/* Background Image Layer */}
       <div className="absolute inset-0">
         <Image
-          src="/assets/banner-5.jpg"
+          src={heroImage}
           alt="Ergonomic feeding stance"
           fill
           className="object-cover object-[center_65%]"

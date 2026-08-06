@@ -384,7 +384,7 @@ function WhyChoose() {
           {features.map((f, i) => (
             <div
               key={f.title}
-              className="min-w-[85vw] sm:min-w-0 snap-center"
+              className={`min-w-[85vw] sm:min-w-0 snap-center ${i > 0 ? 'sm:-ml-px' : ''}`}
               style={{
                 padding: '48px 32px',
                 border: `1px solid ${hoveredIdx === i ? f.accent : C.border}`,
@@ -393,7 +393,6 @@ function WhyChoose() {
                 cursor: 'default',
                 transition: 'all 0.25s ease',
                 position: 'relative',
-                marginLeft: i > 0 ? (typeof window !== 'undefined' && window.innerWidth < 640 ? 0 : -1) : 0,
               }}
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
