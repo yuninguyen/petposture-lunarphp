@@ -1,3 +1,100 @@
+# Handoff — 2026-08-06/07
+
+## Filament admin panel overhaul: real data everywhere, dashboard/sidebar redesign, global action styling
+
+Long multi-session sweep (dashboard theme referenced against the "Haze"/"Apex"/"EzMart" admin
+templates Yuni shared) with one consistent rule: **never fake data to make a widget look done** —
+every number/list/badge added or touched this session reads from a real DB column, a real event, or
+a real relationship, with no mock arrays left behind.
+
+**Navigation & theme**
+- Reorganized nav groups: Sales → Commerce (`lunarpanel::global.sections.sales` key kept, only the
+  *label* changed to "🛒 Commerce" — see `ARCHITECTURE.md`), Roles moved into System, Customers
+  repositioned to sit next to Customer Groups, Payment/Goals moved into a new Finance group, SEO &
+  Social moved into Content Management, Return Requests folded into Commerce as a header-action modal
+  on the Orders table rather than its own page.
+- Renamed "Reviews" → "Customer Review", hid "Saved Addresses" from the nav, renamed
+  "Media Management"/"Media Library" → "Files" everywhere (nav, page heading, breadcrumb).
+- Sidebar narrowed from Filament's 20rem default to 16rem via the native `->sidebarWidth('16rem')`
+  Panel method (not a CSS override — `HasSidebar.php` exposes this directly), plus a sidebar
+  group-label `padding-left: .2rem` tweak. Global icon-only row actions, dark charcoal sidebar theme,
+  Public Sans font — all via the single `HEAD_END` render-hook `<style>` block in
+  `AdminPanelProvider.php` (the established pattern for panel-wide CSS in this codebase).
+
+**Real, DB-backed features (replacing fake/static content)**
+- **Notifications**: real Laravel database notifications (`->databaseNotifications()`,
+  30s polling), wired to real events — order placed, new review, new customer registration. No more
+  static bell icon.
+- **Users**: added real `is_active` (boolean) + `last_login_at` (timestamp) columns
+  (`2026_08_06_162423_add_status_and_last_login_to_users_table.php`); `canAccessPanel()` now checks
+  `is_active`; a global `Illuminate\Auth\Events\Login` listener in `AppServiceProvider::boot()`
+  stamps `last_login_at` on **every** successful login (storefront or admin), verified via a real
+  login, not assumed. New `ViewUser` page (Profile card, Account Details, Activity) plus a redesigned
+  Edit form (Roles + Status side by side, compact Choices.js multi-select).
+- **Files** (formerly Media Library): rebuilt `ListMedia` as a real file-manager view — real
+  `Storage::disk()` free/total space, real folders grouped by `collection_name`. Trimmed the
+  `SiteMedia` collection list from `['banner','blog','general']` to `['banner','general']` after
+  confirming zero consumers of the `blog` collection anywhere in code.
+- **Homepage banners now admin-controlled**: new public `GET /api/site-media?collection=banner`
+  endpoint, title-matched (`SiteMedia` records titled "hero"/"flat-faced"/"long-backed" override
+  specific frontend image slots). `Hero.tsx`/`PromoBanners.tsx` fetch this client-side (both are
+  rendered under a `"use client"` parent, so this has to be a client fetch, not an async Server
+  Component) and fall back to the original static asset if nothing's uploaded — never a broken image.
+- **Social links wired for real**: `Footer.tsx`, `BlogPage.tsx`'s "Follow PetPosture" widget, and
+  `BlogPostPage.tsx`'s "Join the Community" widget now read `useSettings().social` (6 platforms) and
+  hide any platform with no configured URL — previously hardcoded fake follower counts and dead `#`
+  links. `SettingsContext.tsx`'s `ShopSettings` type extended with `social`.
+- **SEO**: `Manage Settings → General → Shop Description` now also feeds the site-wide meta
+  description fallback (`frontend/app/layout.tsx`'s `generateMetadata()` and the homepage JSON-LD
+  `Organization.description`) — pages with their own `generateMetadata()` (product, blog, breed,
+  solution) are unaffected, since Next.js per-page metadata always wins over the root layout's.
+
+**Products table redesign** (`app/Filament/Resources/ProductResource.php`, new local override —
+Lunar's own `ProductResource` was previously registered and used directly, no local override existed)
+- Columns, in order: thumbnail + name + description subtitle, Category (first Collection's name,
+  plain text), Brand (plain text), Stock (sum across variants + click-to-quick-edit pencil, **only
+  shown for single-variant products** — editing a summed value is ambiguous otherwise), Price (bold,
+  Lunar's own currency formatter), Status (badge + click-to-quick-edit pencil, opens a small modal via
+  `Tables\Actions\Action` bound through `TextColumn::action()`), Created (sortable), row actions as a
+  kebab (`ActionGroup`) instead of a single bare edit icon.
+- Required creating `App\Filament\Resources\ProductResource extends Lunar\Admin\...\ProductResource`
+  + a local `ListProducts` page (only override needed — Lunar's other Product sub-pages, still
+  pointing at the vendor `$resource`, keep working since Filament resolves URLs by route name, not by
+  which class is currently registered) and removing Lunar's `ProductResource` from
+  `AdminPanelProvider`'s explicit resource list. Same pattern applied to `CollectionGroupResource`
+  (see below) — now the established playbook for touching any Lunar vendor resource, documented in
+  `ARCHITECTURE.md`/`RULES.md` so it doesn't have to be re-discovered next time.
+- Verified the quick-edit modals end-to-end via Playwright + raw Livewire network payload inspection
+  (not just a visual screenshot) — a first attempt at checking "did the modal open" via
+  `getComputedStyle().display` gave false negatives (Alpine `x-show`/`x-teleport` timing), so the real
+  check was asserting `mountedTableActions` in the Livewire response body, then round-tripping an
+  actual status change (Draft ⇄ Published) and confirming it persisted.
+
+**Global Edit/Delete action styling — the actual system-wide fix**
+First pass hand-styled Edit/Delete buttons per page (`ViewUser`, `EditUser`, `ViewRole`, `EditRole`,
+then `EditCollectionGroup`) with `->icon()->outlined()->color()`, and initially used gray for both
+actions. Corrected twice by Yuni: (1) gray was wrong, Edit should be outlined+orange (brand primary)
+and Delete outlined+red; (2) per-page edits don't scale — the very next untouched vendor resource
+(Attribute Groups) still showed the old plain red Filament default. Fixed properly with
+`Filament\Actions\EditAction::configureUsing(...)` / `DeleteAction::configureUsing(...)` in
+`AdminPanelProvider::panel()` — Filament's built-in `Component::configureUsing()` (`Configurable`
+trait), which applies the style to **every** instance of that action class panel-wide, including
+pages never explicitly touched. Verified by screenshotting Attribute Groups and Blog Categories
+(neither had been hand-edited) and seeing the correct colors appear automatically. This is now the
+precedent: don't hand-style an individual page's header actions, fix the global `configureUsing()`
+call. Scoped to `Filament\Actions\*` only — `Filament\Tables\Actions\*` (table row/kebab icon
+actions) is a different class hierarchy and deliberately left at Filament's denser default styling.
+
+**Known gap, not yet fixed**: `app/Filament/Resources/UserResource/Pages/ViewUser.php` has 3
+pre-existing PHPStan errors (`property.nonObject`/`method.nonObject` on `$this->record`, lines
+18/23/36) — confirmed pre-existing (the file was never committed, so no git history to blame; not
+introduced by any color/styling change this session). Not fixed — out of scope for a styling pass,
+flag for a dedicated cleanup session.
+
+Not deployed as of this writing — commit + deploy is the next step.
+
+---
+
 # Handoff — 2026-08-04
 
 ## Backend hygiene sweep (dead code, git rác, PHPStan config, throttles) + `oldPrice`/`comparePrice` bug fix

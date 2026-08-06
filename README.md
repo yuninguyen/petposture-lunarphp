@@ -163,7 +163,16 @@ petposture/
 - Multi-language support
 - SEO metadata & automatic sitemap
 - Static policy pages (FAQ, privacy, shipping, returns, etc.)
-- Full Filament admin panel with custom dark sidebar theme
+- Full Filament admin panel with a custom dark sidebar theme (Haze-referenced), narrowed nav width,
+  and reorganized nav groups (Commerce, Content Management, Finance, System). Real dashboard widgets
+  (revenue/orders/AOV, sales-by-category, order pipeline, return-request aging), a real DB-backed
+  notification center (order placed, new review, new customer — polling every 30s), Users with real
+  active/inactive status and last-login tracking, a Roles card grid + Permissions matrix, and a real
+  file manager (Files) replacing the old bare media table. Products table shows a thumbnail + name +
+  description, category/brand, price, and click-to-quick-edit Stock/Status (single-variant products
+  only for Stock, since the column is a sum across variants). Every Edit/Delete header button across
+  the whole panel — local resources and untouched Lunar/Shield vendor pages alike — is styled from one
+  global config (outlined orange for Edit, outlined red for Delete), not per page.
 - Role-based access control via Filament Shield
 
 ---
