@@ -228,9 +228,10 @@ class AdminPanelProvider extends PanelProvider
                     .fi-ta-actions .fi-link:hover{background:rgba(0,0,0,.045)!important}
                     .fi-ta-actions .fi-link>span{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 
-                    /* ── Primary buttons ── */
-                    [class*="fi-btn"][class*="primary"]{background:var(--pp-orange)!important;border-color:var(--pp-orange)!important;border-radius:9px!important;font-weight:700!important;box-shadow:0 2px 8px rgba(223,132,72,.28)!important}
-                    [class*="fi-btn"][class*="primary"]:hover{background:var(--pp-orange-dk)!important}
+                    /* ── Primary buttons (solid CTAs only — outlined actions like Edit keep their border-only look) ── */
+                    [class*="fi-btn"][class*="primary"]:not(.fi-btn-outlined){background:var(--pp-orange)!important;border-color:var(--pp-orange)!important;border-radius:9px!important;font-weight:700!important;box-shadow:0 2px 8px rgba(223,132,72,.28)!important}
+                    [class*="fi-btn"][class*="primary"]:not(.fi-btn-outlined):hover{background:var(--pp-orange-dk)!important}
+                    .fi-btn-outlined{border-radius:9px!important;font-weight:500!important}
 
                     /* ── Inputs ── */
                     [class*="fi-input"]{border-radius:9px!important;border-color:#e2e8f0!important}
