@@ -15,6 +15,13 @@ class EditPost extends EditRecord
         return $this->getResource()::getUrl('index');
     }
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['metadata'] = $this->record->getAllMeta()->toArray();
+
+        return $data;
+    }
+
     protected function afterSave(): void
     {
         $metadata = $this->data['metadata'] ?? [];
@@ -23,7 +30,11 @@ class EditPost extends EditRecord
         $this->record->metadata()->whereNotIn('key', array_keys($metadata))->delete();
 
         foreach ($metadata as $key => $value) {
-            $this->record->setMeta($key, $value);
+            $this->record->setMeta($key, $value, match (true) {
+                is_array($value) => 'json',
+                is_bool($value) => 'bool',
+                default => 'string',
+            });
         }
     }
 

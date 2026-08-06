@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages\CreateUser;
 use App\Filament\Resources\UserResource\Pages\EditUser;
 use App\Filament\Resources\UserResource\Pages\ListUsers;
+use App\Filament\Resources\UserResource\Pages\ViewUser;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -69,14 +70,23 @@ class UserResource extends Resource
 
                 Forms\Components\Section::make(__('Access Control'))
                     ->schema([
-                        Forms\Components\Select::make('roles')
-                            ->label(__('Roles'))
-                            ->relationship('roles', 'name', fn (Builder $query) => $query->where('guard_name', 'web'))
-                            ->getOptionLabelFromRecordUsing(fn ($record) => str($record->name)->headline())
-                            ->multiple()
-                            ->preload()
-                            ->searchable()
-                            ->required(),
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\Select::make('roles')
+                                ->label(__('Roles'))
+                                ->relationship('roles', 'name', fn (Builder $query) => $query->where('guard_name', 'web'))
+                                ->getOptionLabelFromRecordUsing(fn ($record) => str($record->name)->headline())
+                                ->multiple()
+                                ->preload()
+                                ->searchable()
+                                ->required()
+                                ->columnSpan(1),
+                            Forms\Components\Toggle::make('is_active')
+                                ->label(__('Status'))
+                                ->inline(false)
+                                ->helperText(__('Inactive users cannot sign in to the admin panel.'))
+                                ->default(true)
+                                ->columnSpan(1),
+                        ]),
                     ]),
             ]);
     }
@@ -92,20 +102,28 @@ class UserResource extends Resource
                     ->label(__('Email'))
                     ->searchable(),
                 Tables\Columns\TextColumn::make('roles.name')
-                    ->label(__('Roles'))
+                    ->label(__('Role'))
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => str($state)->headline())
                     ->color('info'),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label(__('Created At'))
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label(__('Status'))
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
+                Tables\Columns\TextColumn::make('last_login_at')
+                    ->label(__('Last Login'))
                     ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->placeholder(__('Never'))
+                    ->sortable(),
             ])
             ->filters([
                 //
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
@@ -127,6 +145,7 @@ class UserResource extends Resource
         return [
             'index' => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),
+            'view' => ViewUser::route('/{record}'),
             'edit' => EditUser::route('/{record}/edit'),
         ];
     }

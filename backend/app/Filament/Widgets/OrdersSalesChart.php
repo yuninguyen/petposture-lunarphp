@@ -7,7 +7,9 @@ use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrdersSalesChart as BaseOrders
 
 class OrdersSalesChart extends BaseOrdersSalesChart
 {
-    protected int|string|array $columnSpan = 1;
+    protected static ?int $sort = 2;
+
+    protected int|string|array $columnSpan = 'full';
 
     protected function getOptions(): array
     {

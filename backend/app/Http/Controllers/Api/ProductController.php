@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\OrderResource;
 use App\Http\Resources\Api\ProductResource;
 use App\Models\Review;
+use App\Models\User;
+use App\Notifications\NewReviewNotification;
 use App\Traits\HttpResponses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Lunar\Models\Brand;
 use Lunar\Models\Order;
@@ -194,6 +197,11 @@ class ProductController extends Controller
             'comment' => $validated['comment'],
             'is_verified' => false,
         ]);
+
+        Notification::send(
+            User::staffRecipients(),
+            new NewReviewNotification($review)
+        );
 
         return response()->json([
             'message' => 'Review submitted successfully',

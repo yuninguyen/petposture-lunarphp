@@ -30,12 +30,17 @@ class ReviewResource extends Resource
 
     public static function getLabel(): string
     {
-        return __('Review');
+        return __('Customer Reviews');
     }
 
     public static function getPluralLabel(): string
     {
-        return __('Reviews');
+        return __('Customer Reviews');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('Customer Reviews');
     }
 
     public static function form(Form $form): Form
@@ -108,8 +113,10 @@ class ReviewResource extends Resource
                     )),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -7,6 +7,8 @@ use Lunar\Admin\Filament\Widgets\Dashboard\Orders\NewVsReturningCustomersChart a
 
 class NewVsReturningCustomersChart extends BaseNewVsReturningCustomersChart
 {
+    protected static ?int $sort = 4;
+
     protected int|string|array $columnSpan = 1;
 
     protected function getOptions(): array

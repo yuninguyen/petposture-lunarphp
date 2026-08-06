@@ -247,7 +247,7 @@ class OrderResource extends Resource
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('customer_name')
-                    ->label(__('Full Name'))
+                    ->label(__('Customer'))
                     ->getStateUsing(fn ($record) => trim(($record->shippingAddress?->first_name ?? '').' '.($record->shippingAddress?->last_name ?? '')) ?: '—')
                     ->searchable(query: function ($query, string $search) {
                         $query->whereHas('shippingAddress', function ($query) use ($search) {

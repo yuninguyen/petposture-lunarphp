@@ -3,7 +3,7 @@
 return [
     'sections' => [
         'catalog' => '📦 Catalogue',
-        'sales' => '🛒 Sales',
+        'sales' => '🛒 Commerce',
         'reports' => '📊 Reports',
         'settings' => '⚙️ Settings',
     ],

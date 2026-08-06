@@ -8,7 +8,7 @@ return [
         'catalog' => 'Catalogue',
         'system' => 'System',
         'manage_settings' => 'Manage Settings',
-        'media_management' => 'Media Management',
+        'media_management' => 'Files',
         'shield' => 'Security & Roles',
     ],
     'orders' => [
@@ -68,33 +68,108 @@ return [
             'discounts' => 'Discounts',
         ],
         'trend' => [
-            'increase' => ':trend% increase vs previous 30 days',
-            'decrease' => ':trend% decrease vs previous 30 days',
+            'increase' => ':trend% increase vs previous period',
+            'decrease' => ':trend% decrease vs previous period',
+            'all_time' => 'All time',
         ],
         'stats' => [
             'revenue' => [
-                'label' => 'Total Revenue',
-                'description' => 'All time, excluding cancelled',
+                'label' => 'Revenue',
             ],
             'orders' => [
-                'label' => 'Total Orders',
-                'description' => 'Lifetime transactions',
+                'label' => 'Orders',
             ],
-            'products' => [
-                'label' => 'Active Products',
-                'description' => 'Published in catalogue',
+            'sales' => [
+                'label' => 'Total Sales',
             ],
-            'customers' => [
-                'label' => 'Customers',
-                'description' => 'Registered customers',
+            'aov' => [
+                'label' => 'Avg. Order Value',
             ],
-            'today_revenue' => [
-                'label' => "Today's Revenue",
-                'description' => 'Revenue earned today',
+            'conversion_rate' => [
+                'label' => 'Conversion Rate',
             ],
-            'today_orders' => [
-                'label' => "Today's Orders",
-                'description' => 'Orders placed today',
+            'refund_rate' => [
+                'label' => 'Refund Rate',
+            ],
+            'active_users' => [
+                'label' => 'Active Users',
+            ],
+            'page_views' => [
+                'label' => 'Page Views',
+            ],
+            'not_connected' => 'Not connected yet',
+        ],
+        'order_status' => 'Order Status',
+        'sales_overview' => 'Sales Overview',
+        'sales_by_category' => 'Sales by Category',
+        'uncategorized' => 'Uncategorized',
+        'top_products' => 'Top Products',
+        'top_products_columns' => [
+            'product' => 'Product',
+            'sku' => 'SKU',
+            'sold' => 'Sold',
+            'revenue' => 'Revenue',
+        ],
+        'recent_orders' => 'Recent Orders',
+        'recent_orders_columns' => [
+            'date' => 'Date',
+            'order' => 'Order',
+            'customer' => 'Customer',
+            'status' => 'Order Status',
+            'total' => 'Total',
+        ],
+        'recent_activity' => 'Recent Activity',
+        'activity' => [
+            'order_placed' => 'New order placed',
+            'order_placed_desc' => 'Order :reference was placed',
+            'customer_registered' => 'New customer registered',
+            'customer_registered_desc' => ':name created an account',
+            'review_received' => 'New review received',
+            'review_received_desc' => ':rating-star review from :name',
+        ],
+        'traffic_sources' => 'Traffic Sources',
+        'traffic' => [
+            'direct' => 'Direct',
+            'organic' => 'Organic Search',
+            'social' => 'Social Media',
+            'referral' => 'Referral',
+        ],
+        'goals' => [
+            'heading' => 'Goals — :month',
+            'revenue' => 'Revenue',
+            'orders' => 'Orders',
+            'new_customers' => 'New Customers',
+            'no_target' => 'No target set — add one in Settings → Goals.',
+            'target' => 'Target',
+        ],
+        'filters' => [
+            'granularity' => [
+                'today' => 'Today',
+                'month' => 'This Month',
+                'year' => 'This Year',
+            ],
+            'range' => [
+                'label' => 'Date range',
+                '7' => 'Last 7 days',
+                '30' => 'Last 30 days',
+                '90' => 'Last 90 days',
+                '365' => 'Last 12 months',
+                'all' => 'All time',
+            ],
+        ],
+        'returns' => [
+            'heading' => 'Return Requests',
+            'pending_review' => [
+                'label' => 'Pending Review',
+                'description' => 'Awaiting admin decision',
+            ],
+            'overdue' => [
+                'label' => 'Overdue Review',
+                'description' => 'Pending more than 2 days',
+            ],
+            'awaiting_completion' => [
+                'label' => 'Awaiting Completion',
+                'description' => 'Approved, not yet completed',
             ],
         ],
     ],

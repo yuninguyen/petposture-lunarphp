@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Jobs\LookupOrderIpIntelligenceJob;
 use App\Jobs\SendOrderConfirmationJob;
 use App\Models\User;
+use App\Notifications\OrderPlacedNotification;
 use App\Payments\PaymentGatewayManager;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Lunar\Base\ShippingManifestInterface;
 use Lunar\DataTypes\Price as PriceDataType;
 use Lunar\DataTypes\ShippingOption;
@@ -250,6 +252,11 @@ class CheckoutService
             if ($customerIp) {
                 LookupOrderIpIntelligenceJob::dispatch($placed->id, $customerIp);
             }
+
+            Notification::send(
+                User::staffRecipients(),
+                new OrderPlacedNotification($placed)
+            );
 
             return $placed;
         });

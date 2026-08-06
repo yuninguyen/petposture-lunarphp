@@ -28,10 +28,16 @@ class SettingsController extends Controller
                 'facebook' => setting('social_facebook'),
                 'instagram' => setting('social_instagram'),
                 'twitter' => setting('social_twitter'),
+                'tiktok' => setting('social_tiktok'),
+                'pinterest' => setting('social_pinterest'),
+                'youtube' => setting('social_youtube'),
             ],
             'contact' => [
                 'phone' => setting('business_phone'),
                 'address' => setting('business_address'),
+            ],
+            'analytics' => [
+                'google_analytics_id' => setting('google_analytics_id'),
             ],
         ]);
     }

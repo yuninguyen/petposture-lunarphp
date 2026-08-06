@@ -8,6 +8,7 @@ use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Resources\Api\UserResource;
 use App\Mail\WelcomeEmail;
 use App\Models\User;
+use App\Notifications\NewCustomerRegisteredNotification;
 use App\Services\CartService;
 use App\Services\CustomerLinkService;
 use App\Traits\HttpResponses;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
 use Symfony\Component\HttpFoundation\Cookie;
 
@@ -61,6 +63,8 @@ class AuthController extends Controller
         }
 
         Mail::send(new WelcomeEmail($user));
+
+        Notification::send(User::staffRecipients(), new NewCustomerRegisteredNotification($user));
 
         $plainToken = $user->createToken("Api Token of {$user->name}")->plainTextToken;
 

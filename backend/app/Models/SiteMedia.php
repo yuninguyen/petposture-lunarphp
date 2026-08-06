@@ -17,7 +17,6 @@ class SiteMedia extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('banner');
-        $this->addMediaCollection('blog');
         $this->addMediaCollection('general');
     }
 }

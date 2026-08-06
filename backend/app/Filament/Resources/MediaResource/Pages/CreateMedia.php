@@ -32,15 +32,15 @@ class CreateMedia extends Page
             ->schema([
                 TextInput::make('title')
                     ->label('Title / Alt text')
-                    ->placeholder('e.g. Homepage Banner')
+                    ->placeholder('e.g. hero, flat-faced, long-backed')
+                    ->helperText('For Banner uploads, use "hero" to replace the homepage hero image, or "flat-faced" / "long-backed" to replace the two homepage promo banners.')
                     ->columnSpanFull(),
 
                 Select::make('collection')
                     ->label('Collection')
                     ->options([
                         'general' => 'General',
-                        'banner' => 'Banner',
-                        'blog' => 'Blog',
+                        'banner' => 'Banner (homepage hero & promo banners)',
                     ])
                     ->default('general')
                     ->required(),

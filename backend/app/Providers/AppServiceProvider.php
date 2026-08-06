@@ -20,9 +20,11 @@ use App\Payments\Gateways\PayPalGateway;
 use App\Payments\Gateways\StripeCardGateway;
 use App\Payments\PaymentGatewayManager;
 use App\Support\MailConfigSync;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
@@ -110,5 +112,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
         MailConfigSync::run();
+
+        Event::listen(function (Login $event) {
+            $event->user->forceFill(['last_login_at' => now()])->saveQuietly();
+        });
     }
 }

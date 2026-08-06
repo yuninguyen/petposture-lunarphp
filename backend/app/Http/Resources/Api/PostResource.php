@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources\Api;
 
+use App\Models\AffiliateNetwork;
+use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -17,6 +19,7 @@ class PostResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'content' => $this->content,
+            'type' => $this->type,
             'featured_image' => $featuredImage,
             'author' => $this->author,
             'read_time' => $this->read_time,
@@ -32,6 +35,37 @@ class PostResource extends JsonResource
                 'name' => $blogCategory->name,
                 'slug' => $blogCategory->slug,
             ] : null,
+            'comparison' => $this->type === Post::TYPE_COMPARISON ? $this->resolveComparison() : null,
+        ];
+    }
+
+    protected function resolveComparison(): array
+    {
+        $meta = $this->getAllMeta();
+        $rawItems = collect($meta->get('comparison_items', []));
+
+        $networks = AffiliateNetwork::whereIn('slug', $rawItems->pluck('retailer')->filter()->unique())
+            ->get()
+            ->keyBy('slug');
+
+        $items = $rawItems
+            ->map(function (array $item) use ($networks) {
+                $network = $networks->get($item['retailer'] ?? null);
+
+                return [
+                    ...$item,
+                    'image_url' => $this->resolveAssetUrl($item['image_url'] ?? null),
+                    'retailer_label' => $network?->name ?? $item['retailer'] ?? null,
+                    'retailer_logo' => $network ? $this->resolveAssetUrl($network->logo) : null,
+                ];
+            })
+            ->values()
+            ->all();
+
+        return [
+            'intro' => $meta->get('comparison_intro'),
+            'disclosure_shown' => $meta->get('disclosure_shown', true),
+            'items' => $items,
         ];
     }
 

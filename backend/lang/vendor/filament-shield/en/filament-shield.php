@@ -1,5 +1,5 @@
 <?php
 
 return [
-    'nav.group' => '🛡️ Security & Roles',
+    'nav.group' => 'System',
 ];

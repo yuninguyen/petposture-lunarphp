@@ -7,6 +7,8 @@ use Lunar\Admin\Filament\Widgets\Dashboard\Orders\AverageOrderValueChart as Base
 
 class AverageOrderValueChart extends BaseAverageOrderValueChart
 {
+    protected static ?int $sort = 3;
+
     protected int|string|array $columnSpan = 1;
 
     protected function getOptions(): array

@@ -107,14 +107,16 @@ class CommentResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\Action::make('approve')
-                    ->label(__('Approve'))
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->action(fn (Comment $record) => $record->update(['status' => 'approved']))
-                    ->visible(fn (Comment $record) => $record->status !== 'approved'),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('approve')
+                        ->label(__('Approve'))
+                        ->icon('heroicon-o-check')
+                        ->color('success')
+                        ->action(fn (Comment $record) => $record->update(['status' => 'approved']))
+                        ->visible(fn (Comment $record) => $record->status !== 'approved'),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

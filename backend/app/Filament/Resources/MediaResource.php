@@ -28,9 +28,9 @@ class MediaResource extends Resource
         return __('admin.navigation.media_management');
     }
 
-    protected static ?string $modelLabel = 'Media';
+    protected static ?string $modelLabel = 'File';
 
-    protected static ?string $pluralModelLabel = 'Media Library';
+    protected static ?string $pluralModelLabel = 'Files';
 
     public static function getNavigationGroup(): ?string
     {
@@ -81,16 +81,18 @@ class MediaResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\Action::make('copy_url')
-                    ->label('Copy URL')
-                    ->icon('heroicon-o-clipboard-document')
-                    ->color('gray')
-                    ->extraAttributes(fn (Media $record): array => [
-                        'data-url' => $record->original_url,
-                        'x-data' => '',
-                        'x-on:click' => 'navigator.clipboard.writeText($el.closest("[data-url]").dataset.url); $tooltip("Copied!", { timeout: 1500 })',
-                    ]),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('copy_url')
+                        ->label('Copy URL')
+                        ->icon('heroicon-o-clipboard-document')
+                        ->color('gray')
+                        ->extraAttributes(fn (Media $record): array => [
+                            'data-url' => $record->original_url,
+                            'x-data' => '',
+                            'x-on:click' => 'navigator.clipboard.writeText($el.closest("[data-url]").dataset.url); $tooltip("Copied!", { timeout: 1500 })',
+                        ]),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

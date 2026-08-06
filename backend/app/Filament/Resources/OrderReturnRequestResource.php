@@ -137,143 +137,145 @@ class OrderReturnRequestResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\Action::make('approveLowValueWaiver')
-                    ->label(__('Refund — No Return Required'))
-                    ->icon('heroicon-o-bolt')
-                    ->color('success')
-                    ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_REQUESTED
-                        && (bool) ($record->meta['low_value_auto_waive_eligible'] ?? false))
-                    ->form([
-                        Forms\Components\Placeholder::make('waiver_estimate')
-                            ->label(__('Refund amount'))
-                            ->content(function (OrderReturnRequest $record): string {
-                                $estimate = app(ReturnRequestService::class)->calculateRefundEstimate($record, feeWaived: true);
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('approveLowValueWaiver')
+                        ->label(__('Refund — No Return Required'))
+                        ->icon('heroicon-o-bolt')
+                        ->color('success')
+                        ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_REQUESTED
+                            && (bool) ($record->meta['low_value_auto_waive_eligible'] ?? false))
+                        ->form([
+                            Forms\Components\Placeholder::make('waiver_estimate')
+                                ->label(__('Refund amount'))
+                                ->content(function (OrderReturnRequest $record): string {
+                                    $estimate = app(ReturnRequestService::class)->calculateRefundEstimate($record, feeWaived: true);
 
-                                return sprintf('$%.2f (restocking fee waived, no return required)', $estimate['refund_amount_minor'] / 100);
-                            }),
-                        Forms\Components\Textarea::make('admin_note')
-                            ->label(__('Note (optional)')),
-                    ])
-                    ->requiresConfirmation()
-                    ->modalDescription(__('Issues a full refund immediately via Stripe — the customer will not be asked to ship the item back.'))
-                    ->action(fn (OrderReturnRequest $record, array $data) => app(ReturnRequestService::class)
-                        ->approveLowValueWaiver($record, $data['admin_note'] ?? null)),
-                Tables\Actions\Action::make('approve')
-                    ->label(__('Approve'))
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_REQUESTED)
-                    ->form([
-                        Forms\Components\Textarea::make('rma_address')
-                            ->label(__('RMA Return Address'))
-                            ->required(),
-                        Forms\Components\Toggle::make('fee_waived')
-                            ->label(__('Waive 25% restocking fee (defective/wrong item)'))
-                            ->live(),
-                        Forms\Components\Placeholder::make('refund_estimate')
-                            ->label(__('Computed refund estimate'))
-                            ->content(function (Get $get, OrderReturnRequest $record): string {
-                                $estimate = app(ReturnRequestService::class)->calculateRefundEstimate($record, (bool) $get('fee_waived'));
+                                    return sprintf('$%.2f (restocking fee waived, no return required)', $estimate['refund_amount_minor'] / 100);
+                                }),
+                            Forms\Components\Textarea::make('admin_note')
+                                ->label(__('Note (optional)')),
+                        ])
+                        ->requiresConfirmation()
+                        ->modalDescription(__('Issues a full refund immediately via Stripe — the customer will not be asked to ship the item back.'))
+                        ->action(fn (OrderReturnRequest $record, array $data) => app(ReturnRequestService::class)
+                            ->approveLowValueWaiver($record, $data['admin_note'] ?? null)),
+                    Tables\Actions\Action::make('approve')
+                        ->label(__('Approve'))
+                        ->icon('heroicon-o-check')
+                        ->color('success')
+                        ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_REQUESTED)
+                        ->form([
+                            Forms\Components\Textarea::make('rma_address')
+                                ->label(__('RMA Return Address'))
+                                ->required(),
+                            Forms\Components\Toggle::make('fee_waived')
+                                ->label(__('Waive 25% restocking fee (defective/wrong item)'))
+                                ->live(),
+                            Forms\Components\Placeholder::make('refund_estimate')
+                                ->label(__('Computed refund estimate'))
+                                ->content(function (Get $get, OrderReturnRequest $record): string {
+                                    $estimate = app(ReturnRequestService::class)->calculateRefundEstimate($record, (bool) $get('fee_waived'));
 
-                                return sprintf(
-                                    'Item value: $%.2f — Restocking fee: $%.2f — Estimated refund: $%.2f',
-                                    $estimate['item_subtotal_minor'] / 100,
-                                    $estimate['restocking_fee_minor'] / 100,
-                                    $estimate['refund_amount_minor'] / 100,
-                                );
-                            }),
-                        Forms\Components\TextInput::make('refund_amount_override')
-                            ->label(__('Override refund amount (optional, leave blank to use the computed estimate above)'))
-                            ->numeric()
-                            ->prefix('$')
-                            ->live(onBlur: true),
-                        Forms\Components\Placeholder::make('override_warning')
-                            ->label('')
-                            ->visible(function (Get $get, OrderReturnRequest $record): bool {
-                                if (! filled($get('refund_amount_override'))) {
-                                    return false;
-                                }
+                                    return sprintf(
+                                        'Item value: $%.2f — Restocking fee: $%.2f — Estimated refund: $%.2f',
+                                        $estimate['item_subtotal_minor'] / 100,
+                                        $estimate['restocking_fee_minor'] / 100,
+                                        $estimate['refund_amount_minor'] / 100,
+                                    );
+                                }),
+                            Forms\Components\TextInput::make('refund_amount_override')
+                                ->label(__('Override refund amount (optional, leave blank to use the computed estimate above)'))
+                                ->numeric()
+                                ->prefix('$')
+                                ->live(onBlur: true),
+                            Forms\Components\Placeholder::make('override_warning')
+                                ->label('')
+                                ->visible(function (Get $get, OrderReturnRequest $record): bool {
+                                    if (! filled($get('refund_amount_override'))) {
+                                        return false;
+                                    }
 
-                                $estimate = app(ReturnRequestService::class)->calculateRefundEstimate($record, (bool) $get('fee_waived'));
-                                $overrideMinor = (int) round(((float) $get('refund_amount_override')) * 100);
+                                    $estimate = app(ReturnRequestService::class)->calculateRefundEstimate($record, (bool) $get('fee_waived'));
+                                    $overrideMinor = (int) round(((float) $get('refund_amount_override')) * 100);
 
-                                return $overrideMinor !== $estimate['refund_amount_minor'];
-                            })
-                            ->content(function (Get $get, OrderReturnRequest $record): string {
-                                $estimate = app(ReturnRequestService::class)->calculateRefundEstimate($record, (bool) $get('fee_waived'));
-                                $overrideMinor = (int) round(((float) $get('refund_amount_override')) * 100);
-                                $diff = ($overrideMinor - $estimate['refund_amount_minor']) / 100;
+                                    return $overrideMinor !== $estimate['refund_amount_minor'];
+                                })
+                                ->content(function (Get $get, OrderReturnRequest $record): string {
+                                    $estimate = app(ReturnRequestService::class)->calculateRefundEstimate($record, (bool) $get('fee_waived'));
+                                    $overrideMinor = (int) round(((float) $get('refund_amount_override')) * 100);
+                                    $diff = ($overrideMinor - $estimate['refund_amount_minor']) / 100;
 
-                                return sprintf(
-                                    '⚠️ This differs from the computed estimate by %s$%.2f.',
-                                    $diff >= 0 ? '+' : '-',
-                                    abs($diff),
-                                );
-                            }),
-                        Forms\Components\Textarea::make('admin_note')
-                            ->label(__('Note to customer (optional)')),
-                    ])
-                    ->requiresConfirmation()
-                    ->action(function (OrderReturnRequest $record, array $data) {
-                        $refundAmountOverrideMinor = filled($data['refund_amount_override'] ?? null)
-                            ? (int) round(((float) $data['refund_amount_override']) * 100)
-                            : null;
+                                    return sprintf(
+                                        '⚠️ This differs from the computed estimate by %s$%.2f.',
+                                        $diff >= 0 ? '+' : '-',
+                                        abs($diff),
+                                    );
+                                }),
+                            Forms\Components\Textarea::make('admin_note')
+                                ->label(__('Note to customer (optional)')),
+                        ])
+                        ->requiresConfirmation()
+                        ->action(function (OrderReturnRequest $record, array $data) {
+                            $refundAmountOverrideMinor = filled($data['refund_amount_override'] ?? null)
+                                ? (int) round(((float) $data['refund_amount_override']) * 100)
+                                : null;
 
-                        app(ReturnRequestService::class)->approve(
-                            $record,
-                            $data['rma_address'],
-                            (bool) ($data['fee_waived'] ?? false),
-                            $refundAmountOverrideMinor,
-                            $data['admin_note'] ?? null,
-                        );
-                    }),
-                Tables\Actions\Action::make('reject')
-                    ->label(__('Reject'))
-                    ->icon('heroicon-o-x-mark')
-                    ->color('danger')
-                    ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_REQUESTED)
-                    ->form([
-                        Forms\Components\Textarea::make('admin_note')
-                            ->label(__('Reason for rejection'))
-                            ->required(),
-                    ])
-                    ->requiresConfirmation()
-                    ->action(fn (OrderReturnRequest $record, array $data) => app(ReturnRequestService::class)->reject($record, $data['admin_note'])),
-                Tables\Actions\Action::make('addReturnTracking')
-                    ->label(__('Add Return Tracking'))
-                    ->icon('heroicon-o-truck')
-                    ->color('gray')
-                    ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_APPROVED
-                        && blank($record->return_tracking_number))
-                    ->form([
-                        Forms\Components\TextInput::make('tracking_number')
-                            ->label(__('Tracking Number'))
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\Select::make('carrier')
-                            ->label(__('Carrier'))
-                            ->native(false)
-                            ->options([
-                                'ups' => 'UPS',
-                                'usps' => 'USPS',
-                                'fedex' => 'FedEx',
-                                'dhl' => 'DHL',
-                                'manual' => 'Other / Manual',
-                            ])
-                            ->default('manual'),
-                    ])
-                    ->modalDescription(__('This is the tracking number for the customer\'s return shipment back to you — not related to the original delivery.'))
-                    ->requiresConfirmation()
-                    ->action(fn (OrderReturnRequest $record, array $data) => app(ReturnRequestService::class)
-                        ->addTracking($record, $data['tracking_number'], $data['carrier'] ?? null)),
-                Tables\Actions\Action::make('complete')
-                    ->label(__('Mark Item Received'))
-                    ->icon('heroicon-o-inbox-arrow-down')
-                    ->color('gray')
-                    ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_APPROVED)
-                    ->requiresConfirmation()
-                    ->modalDescription(__('This confirms the returned item(s) have been received and notifies the customer. Use the Refund action on the order separately once inspected.'))
-                    ->action(fn (OrderReturnRequest $record) => app(ReturnRequestService::class)->complete($record)),
+                            app(ReturnRequestService::class)->approve(
+                                $record,
+                                $data['rma_address'],
+                                (bool) ($data['fee_waived'] ?? false),
+                                $refundAmountOverrideMinor,
+                                $data['admin_note'] ?? null,
+                            );
+                        }),
+                    Tables\Actions\Action::make('reject')
+                        ->label(__('Reject'))
+                        ->icon('heroicon-o-x-mark')
+                        ->color('danger')
+                        ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_REQUESTED)
+                        ->form([
+                            Forms\Components\Textarea::make('admin_note')
+                                ->label(__('Reason for rejection'))
+                                ->required(),
+                        ])
+                        ->requiresConfirmation()
+                        ->action(fn (OrderReturnRequest $record, array $data) => app(ReturnRequestService::class)->reject($record, $data['admin_note'])),
+                    Tables\Actions\Action::make('addReturnTracking')
+                        ->label(__('Add Return Tracking'))
+                        ->icon('heroicon-o-truck')
+                        ->color('gray')
+                        ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_APPROVED
+                            && blank($record->return_tracking_number))
+                        ->form([
+                            Forms\Components\TextInput::make('tracking_number')
+                                ->label(__('Tracking Number'))
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\Select::make('carrier')
+                                ->label(__('Carrier'))
+                                ->native(false)
+                                ->options([
+                                    'ups' => 'UPS',
+                                    'usps' => 'USPS',
+                                    'fedex' => 'FedEx',
+                                    'dhl' => 'DHL',
+                                    'manual' => 'Other / Manual',
+                                ])
+                                ->default('manual'),
+                        ])
+                        ->modalDescription(__('This is the tracking number for the customer\'s return shipment back to you — not related to the original delivery.'))
+                        ->requiresConfirmation()
+                        ->action(fn (OrderReturnRequest $record, array $data) => app(ReturnRequestService::class)
+                            ->addTracking($record, $data['tracking_number'], $data['carrier'] ?? null)),
+                    Tables\Actions\Action::make('complete')
+                        ->label(__('Mark Item Received'))
+                        ->icon('heroicon-o-inbox-arrow-down')
+                        ->color('gray')
+                        ->visible(fn (OrderReturnRequest $record) => $record->status === OrderReturnRequest::STATUS_APPROVED)
+                        ->requiresConfirmation()
+                        ->modalDescription(__('This confirms the returned item(s) have been received and notifies the customer. Use the Refund action on the order separately once inspected.'))
+                        ->action(fn (OrderReturnRequest $record) => app(ReturnRequestService::class)->complete($record)),
+                ]),
             ]);
     }
 

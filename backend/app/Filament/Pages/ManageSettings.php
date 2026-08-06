@@ -14,8 +14,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Symfony\Component\Mime\Email;
@@ -50,16 +48,6 @@ class ManageSettings extends Page
             $data[$setting->key] = $setting->value;
         }
 
-        $data['stripe_key'] ??= config('services.stripe.key');
-        $data['stripe_secret'] ??= config('services.stripe.secret');
-        $data['stripe_webhook_secret'] ??= config('services.stripe.webhook_secret');
-        $data['stripe_mode'] ??= 'live';
-        $data['paypal_client_id'] ??= config('services.paypal.client_id');
-        $data['paypal_client_secret'] ??= config('services.paypal.client_secret');
-        $data['paypal_webhook_id'] ??= config('services.paypal.webhook_id');
-        $data['paypal_mode'] ??= config('services.paypal.mode', 'sandbox');
-        $data['low_value_return_threshold'] ??= 30;
-
         $this->form->fill($data);
     }
 
@@ -77,21 +65,6 @@ class ManageSettings extends Page
                     $this->sendTestEmail();
                 }),
 
-            Action::make('testStripe')
-                ->label('Test Stripe')
-                ->icon('heroicon-o-credit-card')
-                ->color('gray')
-                ->action(function () {
-                    $this->testStripeConnection();
-                }),
-
-            Action::make('testPayPal')
-                ->label('Test PayPal')
-                ->icon('heroicon-o-credit-card')
-                ->color('gray')
-                ->action(function () {
-                    $this->testPayPalConnection();
-                }),
         ];
     }
 
@@ -166,94 +139,6 @@ class ManageSettings extends Page
         }
     }
 
-    public function testStripeConnection(): void
-    {
-        $secret = Setting::get('stripe_secret') ?: config('services.stripe.secret');
-
-        if (! $secret) {
-            Notification::make()
-                ->title('Stripe secret key not set')
-                ->body('Please enter your Stripe Secret Key in the Payment tab.')
-                ->warning()
-                ->send();
-
-            return;
-        }
-
-        try {
-            $response = Http::withBasicAuth($secret, '')
-                ->get('https://api.stripe.com/v1/account');
-
-            if ($response->successful()) {
-                $account = $response->json();
-                Notification::make()
-                    ->title('Stripe connected ✓')
-                    ->body('Account: '.($account['email'] ?? $account['id'] ?? 'verified').' — Mode: '.(str_starts_with($secret, 'sk_test_') ? 'Test' : 'Live'))
-                    ->success()
-                    ->send();
-            } else {
-                Notification::make()
-                    ->title('Stripe connection failed')
-                    ->body($response->json('error.message') ?? 'Invalid API key or network error.')
-                    ->danger()
-                    ->send();
-            }
-        } catch (\Throwable $e) {
-            Notification::make()
-                ->title('Stripe connection error')
-                ->body($e->getMessage())
-                ->danger()
-                ->send();
-        }
-    }
-
-    public function testPayPalConnection(): void
-    {
-        $clientId = Setting::get('paypal_client_id') ?: config('services.paypal.client_id');
-        $clientSecret = Setting::get('paypal_client_secret') ?: config('services.paypal.client_secret');
-        $mode = Setting::get('paypal_mode') ?: config('services.paypal.mode', 'sandbox');
-
-        if (! $clientId || ! $clientSecret) {
-            Notification::make()
-                ->title('PayPal credentials not set')
-                ->body('Please enter your PayPal Client ID and Secret in the Payment tab.')
-                ->warning()
-                ->send();
-
-            return;
-        }
-
-        try {
-            $baseUrl = $mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
-
-            $response = Http::asForm()
-                ->withBasicAuth($clientId, $clientSecret)
-                ->post($baseUrl.'/v1/oauth2/token', [
-                    'grant_type' => 'client_credentials',
-                ]);
-
-            if ($response->successful()) {
-                Notification::make()
-                    ->title('PayPal connected ✓')
-                    ->body('Mode: '.ucfirst($mode).' — access token issued successfully.')
-                    ->success()
-                    ->send();
-            } else {
-                Notification::make()
-                    ->title('PayPal connection failed')
-                    ->body($response->json('error_description') ?? 'Invalid credentials or network error.')
-                    ->danger()
-                    ->send();
-            }
-        } catch (\Throwable $e) {
-            Notification::make()
-                ->title('PayPal connection error')
-                ->body($e->getMessage())
-                ->danger()
-                ->send();
-        }
-    }
-
     public function form(Form $form): Form
     {
         return $form
@@ -280,139 +165,17 @@ class ManageSettings extends Page
                                     ->helperText('Recommended: 32×32 or 64×64 px (.ico, .png, .svg)'),
                                 Textarea::make('shop_description')
                                     ->label(__('Shop Description'))
-                                    ->rows(3),
+                                    ->rows(3)
+                                    ->helperText(__('Shown in the site footer and used as the default SEO description for pages that don\'t have their own (homepage, contact, etc.). Keep it to about 150–160 characters for best results in search results.')),
                             ]),
 
-                        Tabs\Tab::make(__('Payment'))
-                            ->icon('heroicon-o-credit-card')
+                        Tabs\Tab::make(__('Analytics'))
+                            ->icon('heroicon-o-chart-bar')
                             ->schema([
-                                Select::make('stripe_mode')
-                                    ->label(__('Stripe Mode'))
-                                    ->options([
-                                        'test' => 'Test (Sandbox)',
-                                        'live' => 'Live (Production)',
-                                    ])
-                                    ->required()
-                                    ->helperText('Switch to Test to use Stripe test cards without real charges.'),
-
-                                Grid::make(2)->schema([
-                                    TextInput::make('stripe_key')
-                                        ->label(__('Publishable Key'))
-                                        ->placeholder('pk_live_...')
-                                        ->helperText('Starts with pk_live_ or pk_test_'),
-
-                                    TextInput::make('stripe_secret')
-                                        ->label(__('Secret Key'))
-                                        ->password()
-                                        ->revealable()
-                                        ->placeholder('sk_live_...')
-                                        ->helperText('Starts with sk_live_ or sk_test_'),
-                                ]),
-
-                                TextInput::make('stripe_webhook_secret')
-                                    ->label(__('Webhook Signing Secret'))
-                                    ->password()
-                                    ->revealable()
-                                    ->placeholder('whsec_...')
-                                    ->helperText('From Stripe Dashboard → Developers → Webhooks → your endpoint → Signing secret.')
-                                    ->columnSpanFull(),
-
-                                TextInput::make('webhook_url')
-                                    ->label('Webhook Endpoint URL')
-                                    ->default(fn () => url('/api/webhooks/stripe'))
-                                    ->disabled()
-                                    ->dehydrated(false)
-                                    ->suffixAction(
-                                        \Filament\Forms\Components\Actions\Action::make('copy')
-                                            ->icon('heroicon-o-clipboard-document')
-                                            ->tooltip('Copy to clipboard')
-                                            ->action(fn () => null)
-                                            ->extraAttributes([
-                                                'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
-                                            ])
-                                    )
-                                    ->helperText('Register this URL in your Stripe Dashboard → Developers → Webhooks.'),
-
-                                Select::make('paypal_mode')
-                                    ->label(__('PayPal Mode'))
-                                    ->options([
-                                        'sandbox' => 'Sandbox (Test)',
-                                        'live' => 'Live (Production)',
-                                    ])
-                                    ->required()
-                                    ->helperText('Switch to Sandbox to use PayPal test accounts without real charges.')
-                                    ->columnSpanFull(),
-
-                                Grid::make(2)->schema([
-                                    TextInput::make('paypal_client_id')
-                                        ->label(__('Client ID'))
-                                        ->helperText('From developer.paypal.com → Apps & Credentials.'),
-
-                                    TextInput::make('paypal_client_secret')
-                                        ->label(__('Client Secret'))
-                                        ->password()
-                                        ->revealable()
-                                        ->helperText('From developer.paypal.com → Apps & Credentials.'),
-                                ]),
-
-                                TextInput::make('paypal_webhook_id')
-                                    ->label(__('Webhook ID'))
-                                    ->password()
-                                    ->revealable()
-                                    ->helperText('From PayPal Dashboard → Webhooks → your endpoint → Webhook ID. Leave blank to skip signature verification (not recommended in live mode).')
-                                    ->columnSpanFull(),
-
-                                TextInput::make('paypal_webhook_url')
-                                    ->label('PayPal Webhook Endpoint URL')
-                                    ->default(fn () => url('/api/webhooks/paypal'))
-                                    ->disabled()
-                                    ->dehydrated(false)
-                                    ->suffixAction(
-                                        \Filament\Forms\Components\Actions\Action::make('copyPayPalWebhook')
-                                            ->icon('heroicon-o-clipboard-document')
-                                            ->tooltip('Copy to clipboard')
-                                            ->action(fn () => null)
-                                            ->extraAttributes([
-                                                'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
-                                            ])
-                                    )
-                                    ->helperText('Register this URL in your PayPal Dashboard → Webhooks.'),
-                            ]),
-
-                        Tabs\Tab::make(__('SEO & Social'))
-                            ->icon('heroicon-o-globe-alt')
-                            ->schema([
-                                Grid::make(2)->schema([
-                                    TextInput::make('social_facebook')
-                                        ->label(__('Facebook URL'))
-                                        ->url()
-                                        ->placeholder('https://facebook.com/yourpage'),
-                                    TextInput::make('social_instagram')
-                                        ->label(__('Instagram URL'))
-                                        ->url()
-                                        ->placeholder('https://instagram.com/yourpage'),
-                                    TextInput::make('social_twitter')
-                                        ->label(__('Twitter / X URL'))
-                                        ->url()
-                                        ->placeholder('https://x.com/yourpage'),
-                                    TextInput::make('business_phone')
-                                        ->label(__('Business Phone'))
-                                        ->tel(),
-                                ]),
-                                Textarea::make('business_address')
-                                    ->label(__('Business Address'))
-                                    ->rows(2)
-                                    ->helperText('Used for search engine business info (Organization schema).'),
-                            ]),
-
-                        Tabs\Tab::make(__('Returns'))
-                            ->icon('heroicon-o-arrow-uturn-left')
-                            ->schema([
-                                TextInput::make('low_value_return_threshold')
-                                    ->label(__('Low-Value Auto-Waive Threshold'))
-                                    ->numeric()
-                                    ->prefix('$')
-                                    ->helperText('Return requests for items at or under this amount are flagged for the admin as eligible for an instant refund without requiring the item shipped back.'),
+                                TextInput::make('google_analytics_id')
+                                    ->label(__('Google Analytics Measurement ID'))
+                                    ->placeholder('G-XXXXXXXXXX')
+                                    ->helperText(__('Paste your GA4 Measurement ID here — the tracking script is added to the storefront automatically, no code changes needed.')),
                             ]),
 
                         Tabs\Tab::make(__('SMTP Settings'))
@@ -468,17 +231,6 @@ class ManageSettings extends Page
                 ]
             );
         }
-
-        Cache::forget('stripe_key');
-        Cache::forget('stripe_secret');
-        Cache::forget('stripe_webhook_secret');
-        Cache::forget('paypal_client_id');
-        Cache::forget('paypal_client_secret');
-        Cache::forget('paypal_mode');
-        Cache::forget('paypal_webhook_id');
-        Cache::forget('paypal_access_token_sandbox');
-        Cache::forget('paypal_access_token_live');
-        Cache::forget('low_value_return_threshold');
 
         Notification::make()
             ->title('Settings saved successfully!')

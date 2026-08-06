@@ -8,7 +8,7 @@ return [
         'catalog' => 'Danh mục',
         'system' => 'Hệ thống',
         'manage_settings' => 'Cài đặt hệ thống',
-        'media_management' => 'Quản lý Media',
+        'media_management' => 'Tệp tin',
         'shield' => 'Bảo mật & Vai trò',
     ],
     'orders' => [
@@ -68,33 +68,108 @@ return [
             'discounts' => 'Khuyến mãi',
         ],
         'trend' => [
-            'increase' => 'Tăng :trend% so với 30 ngày trước',
-            'decrease' => 'Giảm :trend% so với 30 ngày trước',
+            'increase' => 'Tăng :trend% so với kỳ trước',
+            'decrease' => 'Giảm :trend% so với kỳ trước',
+            'all_time' => 'Toàn thời gian',
         ],
         'stats' => [
             'revenue' => [
-                'label' => 'Tổng doanh thu',
-                'description' => 'Toàn thời gian, không bao gồm đơn đã hủy',
+                'label' => 'Doanh thu',
             ],
             'orders' => [
-                'label' => 'Tổng đơn hàng',
-                'description' => 'Tổng số giao dịch',
+                'label' => 'Đơn hàng',
             ],
-            'products' => [
-                'label' => 'Sản phẩm đang hoạt động',
-                'description' => 'Đã xuất bản trong danh mục',
+            'sales' => [
+                'label' => 'Tổng doanh số',
             ],
-            'customers' => [
-                'label' => 'Khách hàng',
-                'description' => 'Khách hàng đã đăng ký',
+            'aov' => [
+                'label' => 'Giá trị đơn TB',
             ],
-            'today_revenue' => [
-                'label' => 'Doanh thu hôm nay',
-                'description' => 'Doanh thu tích lũy hôm nay',
+            'conversion_rate' => [
+                'label' => 'Tỷ lệ chuyển đổi',
             ],
-            'today_orders' => [
-                'label' => 'Đơn hàng hôm nay',
-                'description' => 'Đơn đặt hàng hôm nay',
+            'refund_rate' => [
+                'label' => 'Tỷ lệ hoàn trả',
+            ],
+            'active_users' => [
+                'label' => 'Người dùng hoạt động',
+            ],
+            'page_views' => [
+                'label' => 'Lượt xem trang',
+            ],
+            'not_connected' => 'Chưa kết nối',
+        ],
+        'order_status' => 'Trạng thái đơn hàng',
+        'sales_overview' => 'Tổng quan doanh số',
+        'sales_by_category' => 'Doanh thu theo ngành hàng',
+        'uncategorized' => 'Chưa phân loại',
+        'top_products' => 'Sản phẩm bán chạy',
+        'top_products_columns' => [
+            'product' => 'Sản phẩm',
+            'sku' => 'SKU',
+            'sold' => 'Đã bán',
+            'revenue' => 'Doanh thu',
+        ],
+        'recent_orders' => 'Đơn hàng gần đây',
+        'recent_orders_columns' => [
+            'date' => 'Ngày',
+            'order' => 'Đơn hàng',
+            'customer' => 'Khách hàng',
+            'status' => 'Trạng thái',
+            'total' => 'Tổng tiền',
+        ],
+        'recent_activity' => 'Hoạt động gần đây',
+        'activity' => [
+            'order_placed' => 'Đơn hàng mới',
+            'order_placed_desc' => 'Đơn :reference vừa được đặt',
+            'customer_registered' => 'Khách hàng mới đăng ký',
+            'customer_registered_desc' => ':name vừa tạo tài khoản',
+            'review_received' => 'Đánh giá mới',
+            'review_received_desc' => 'Đánh giá :rating sao từ :name',
+        ],
+        'traffic_sources' => 'Nguồn truy cập',
+        'traffic' => [
+            'direct' => 'Trực tiếp',
+            'organic' => 'Tìm kiếm tự nhiên',
+            'social' => 'Mạng xã hội',
+            'referral' => 'Giới thiệu',
+        ],
+        'goals' => [
+            'heading' => 'Mục tiêu — :month',
+            'revenue' => 'Doanh thu',
+            'orders' => 'Đơn hàng',
+            'new_customers' => 'Khách hàng mới',
+            'no_target' => 'Chưa đặt mục tiêu — thêm ở Settings → Goals.',
+            'target' => 'Mục tiêu',
+        ],
+        'filters' => [
+            'granularity' => [
+                'today' => 'Hôm nay',
+                'month' => 'Tháng này',
+                'year' => 'Năm nay',
+            ],
+            'range' => [
+                'label' => 'Khoảng thời gian',
+                '7' => '7 ngày qua',
+                '30' => '30 ngày qua',
+                '90' => '90 ngày qua',
+                '365' => '12 tháng qua',
+                'all' => 'Toàn thời gian',
+            ],
+        ],
+        'returns' => [
+            'heading' => 'Yêu cầu trả hàng',
+            'pending_review' => [
+                'label' => 'Chờ duyệt',
+                'description' => 'Đang chờ admin quyết định',
+            ],
+            'overdue' => [
+                'label' => 'Quá hạn duyệt',
+                'description' => 'Chờ quá 2 ngày',
+            ],
+            'awaiting_completion' => [
+                'label' => 'Chờ hoàn tất',
+                'description' => 'Đã duyệt, chưa hoàn tất',
             ],
         ],
     ],

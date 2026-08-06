@@ -19,7 +19,11 @@ class CreatePost extends CreateRecord
         $metadata = $this->data['metadata'] ?? [];
 
         foreach ($metadata as $key => $value) {
-            $this->record->setMeta($key, $value);
+            $this->record->setMeta($key, $value, match (true) {
+                is_array($value) => 'json',
+                is_bool($value) => 'bool',
+                default => 'string',
+            });
         }
     }
 }

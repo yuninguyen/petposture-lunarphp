@@ -7,6 +7,8 @@ use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderTotalsChart as BaseOrderT
 
 class OrderTotalsChart extends BaseOrderTotalsChart
 {
+    protected static ?int $sort = 2;
+
     protected int|string|array $columnSpan = 1;
 
     protected function getOptions(): array

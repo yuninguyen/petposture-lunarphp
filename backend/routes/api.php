@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReturnRequestController;
 use App\Http\Controllers\Api\SettingsController;
+use App\Http\Controllers\Api\SiteMediaController;
 use App\Http\Controllers\Api\UserAddressController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Cache;
@@ -94,6 +95,7 @@ Route::get('/categories', [ContentController::class, 'categories']);
 Route::get('/blog/categories', [ContentController::class, 'categories']);
 
 Route::get('/settings', [SettingsController::class, 'index']);
+Route::get('/site-media', [SiteMediaController::class, 'index']);
 
 // Cart — works for both guest (X-Cart-Token header) and auth users
 Route::get('/cart', [CartController::class, 'show']);

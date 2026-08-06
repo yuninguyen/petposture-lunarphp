@@ -11,8 +11,15 @@ class Post extends Model
 {
     use HasFactory, HasMetadata, HasSeo;
 
+    public const TYPE_ARTICLE = 'article';
+
+    public const TYPE_GUIDE = 'guide';
+
+    public const TYPE_COMPARISON = 'comparison';
+
     protected $fillable = [
         'blog_category_id',
+        'type',
         'title',
         'slug',
         'content',

@@ -2,14 +2,17 @@
 
 namespace App\Filament\Widgets;
 
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 use Lunar\Models\Order;
 
 class OrderStatusBreakdownChart extends ApexChartWidget
 {
+    use InteractsWithPageFilters;
+
     protected static ?string $chartId = 'orderStatusBreakdown';
 
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 1;
 
     protected int|string|array $columnSpan = 1;
 
@@ -31,7 +34,16 @@ class OrderStatusBreakdownChart extends ApexChartWidget
             'cancelled' => ['label' => __('admin.orders.statuses.cancelled'),        'color' => '#ef4444'],
         ];
 
+        $rangeDays = match ($this->filters['range'] ?? '30') {
+            '7' => 7,
+            '30' => 30,
+            '90' => 90,
+            '365' => 365,
+            default => null,
+        };
+
         $counts = Order::selectRaw('status, COUNT(*) as status_count')
+            ->when($rangeDays, fn ($query) => $query->where('created_at', '>=', now()->subDays($rangeDays)))
             ->groupBy('status')
             ->pluck('status_count', 'status')
             ->toArray();

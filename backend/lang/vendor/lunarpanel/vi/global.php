@@ -3,7 +3,7 @@
 return [
     'sections' => [
         'catalog' => '📦 Danh mục',
-        'sales' => '🛒 Bán hàng',
+        'sales' => '🛒 Thương mại',
         'reports' => '📊 Báo cáo',
         'settings' => '⚙️ Cài đặt',
     ],

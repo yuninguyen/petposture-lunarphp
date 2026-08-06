@@ -19,7 +19,7 @@ class UserAddressResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('lunarpanel::global.sections.sales');
+        return __('System');
     }
 
     public static function getLabel(): string
@@ -30,6 +30,11 @@ class UserAddressResource extends Resource
     public static function getPluralLabel(): string
     {
         return __('Saved Addresses');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
     }
 
     public static function table(Table $table): Table

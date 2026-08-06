@@ -1,11 +1,11 @@
 {
     "Catalogue": "📦 Catalogue",
-    "Sales": "🛒 Sales",
+    "Sales": "🛒 Commerce",
     "Content Management": "📝 Content Management",
     "System": "⚙️ System",
-    "Filament Shield": "🛡️ Security & Roles",
+    "Filament Shield": "⚙️ System",
     "lunarpanel::global.sections.catalog": "📦 Catalogue",
-    "lunarpanel::global.sections.sales": "🛒 Sales",
+    "lunarpanel::global.sections.sales": "🛒 Commerce",
     "lunarpanel::global.sections.settings": "⚙️ Settings",
-    "filament-shield::filament-shield.nav.group": "🛡️ Security & Roles"
+    "filament-shield::filament-shield.nav.group": "⚙️ System"
 }
