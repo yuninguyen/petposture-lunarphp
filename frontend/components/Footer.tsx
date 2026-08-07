@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Facebook, Instagram, Twitter, Youtube, Mail, Plus, Minus, Loader2, Check } from "lucide-react";
+import { Facebook, Instagram, Twitter, Youtube, Mail, Plus, Minus } from "lucide-react";
 import PaymentIcons from "./PaymentIcons";
 import { useSettings } from "@/context/SettingsContext";
 import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
-import { getApiBaseUrl } from "@/lib/api";
 
 const shopBySolution = [
   "Eating & Digestion",
@@ -50,78 +49,6 @@ const getLegalHref = (link: string) => {
     default: return "#";
   }
 };
-
-function NewsletterForm() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [message, setMessage] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || status === "loading") return;
-
-    setStatus("loading");
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/newsletter/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setStatus("error");
-        setMessage(data?.message || "Something went wrong. Please try again.");
-        return;
-      }
-      setStatus("success");
-      setMessage(data?.message || "Successfully subscribed!");
-      setEmail("");
-    } catch {
-      setStatus("error");
-      setMessage("Something went wrong. Please try again.");
-    }
-  };
-
-  return (
-    <div className="pb-4 lg:pb-0">
-      <p className="text-[16px] text-white/60 leading-[1.75] mb-6 max-w-sm">
-        Be the first to know when new products, breed guides, and offers launch.
-      </p>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-sm">
-        <div className="flex gap-2">
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Your email address"
-            disabled={status === "loading" || status === "success"}
-            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-[14px] text-white placeholder:text-white/40 focus:outline-none focus:border-[#df8448] transition-colors disabled:opacity-60"
-          />
-          <button
-            type="submit"
-            disabled={status === "loading" || status === "success"}
-            className="shrink-0 w-11 h-11 rounded-lg bg-[#df8448] hover:bg-[#c9713a] text-white flex items-center justify-center transition-colors disabled:opacity-60"
-            aria-label="Subscribe"
-          >
-            {status === "loading" ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : status === "success" ? (
-              <Check size={18} />
-            ) : (
-              <Mail size={18} strokeWidth={2} />
-            )}
-          </button>
-        </div>
-        {message && (
-          <p className={`text-[13px] ${status === "error" ? "text-red-400" : "text-[#df8448]"}`}>
-            {message}
-          </p>
-        )}
-      </form>
-    </div>
-  );
-}
 
 function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: FooterSectionProps) {
   return (
@@ -244,11 +171,25 @@ export default function Footer() {
             <FooterSection title="Shop by Breed" items={shopByBreed} id="breed" isOpen={openSection === "breed"} onToggle={toggleSection} />
             <FooterSection title="Customer Service" items={customerService} id="service" isOpen={openSection === "service"} onToggle={toggleSection} />
             <FooterSection
-              title="Newsletter"
-              id="newsletter"
-              isOpen={openSection === "newsletter"}
+              title="Legal"
+              id="legal"
+              isOpen={openSection === "legal"}
               onToggle={toggleSection}
-              isCustomContent={<NewsletterForm />}
+              isCustomContent={
+                <ul className="space-y-3 pb-4 lg:pb-0">
+                  {legalLinks.map((link) => (
+                    <li key={link}>
+                      <Link
+                        href={getLegalHref(link)}
+                        className="text-[16px] text-white/60 hover:text-[#df8448] transition-colors flex items-center gap-2 group"
+                      >
+                        <span className="w-0 h-[1px] bg-[#df8448] transition-all group-hover:w-3" />
+                        {link}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              }
             />
           </div>
         </div>
@@ -258,25 +199,11 @@ export default function Footer() {
       <div className="bg-black/10 py-5 px-4 md:px-8">
         <div className="max-w-[1200px] w-full mx-auto">
           <div className="flex flex-col lg:flex-row items-center lg:justify-between text-center lg:text-left gap-8 lg:gap-10">
-            {/* Links and Copyright Column */}
-            <div className="flex flex-col items-center lg:items-start w-full lg:w-auto">
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-y-4 gap-x-6 mb-[10px]">
-                {legalLinks.map((link) => (
-                  <Link
-                    key={link}
-                    href={getLegalHref(link)}
-                    className="text-[13px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
-                  >
-                    {link}
-                  </Link>
-                ))}
-              </div>
-
-              <div className="pt-[10px] border-t border-white/10 w-full">
-                <p className="text-xs text-white/70 font-normal tracking-wide">
-                  Copyright {new Date().getFullYear()} © <span className="text-white/60 font-bold">PetPosture</span>. All rights reserved.
-                </p>
-              </div>
+            {/* Copyright */}
+            <div className="w-full lg:w-auto">
+              <p className="text-xs text-white/70 font-normal tracking-wide">
+                Copyright {new Date().getFullYear()} © <span className="text-white/60 font-bold">PetPosture</span>. All rights reserved.
+              </p>
             </div>
 
             {/* Payment Icons & Back to Top */}

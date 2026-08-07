@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\NewsletterConfirmation;
 use App\Models\NewsletterSubscriber;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
@@ -23,7 +24,7 @@ class NewsletterController extends Controller
         if ($existing) {
             if ($existing->status === 'unsubscribed') {
                 $existing->update(['status' => 'subscribed']);
-                Mail::send(new NewsletterConfirmation($email));
+                $this->sendConfirmation($email);
 
                 return ['message' => 'You have been resubscribed.'];
             }
@@ -32,8 +33,17 @@ class NewsletterController extends Controller
         }
 
         NewsletterSubscriber::create(['email' => $email, 'status' => 'subscribed']);
-        Mail::send(new NewsletterConfirmation($email));
+        $this->sendConfirmation($email);
 
         return ['message' => 'Successfully subscribed!'];
+    }
+
+    private function sendConfirmation(string $email): void
+    {
+        try {
+            Mail::send(new NewsletterConfirmation($email));
+        } catch (\Throwable $e) {
+            Log::error('Newsletter confirmation mail failed: '.$e->getMessage(), ['email' => $email]);
+        }
     }
 }
