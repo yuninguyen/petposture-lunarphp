@@ -23,6 +23,14 @@ type ApiPost = {
         name: string;
         slug?: string | null;
     } | null;
+    seo?: {
+        title?: string;
+        keyphrase?: string;
+        description?: string;
+        og_title?: string;
+        og_description?: string;
+        og_image?: string;
+    } | null;
 };
 
 type BlogPostViewModel = {
@@ -101,9 +109,32 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const { slug } = await params;
     const post = await fetchPost(slug);
 
+    if (!post) {
+        return { title: 'Blog Post' };
+    }
+
+    const seo = post.seo;
+    const title = seo?.title || `${post.title} | Blog`;
+    const description = seo?.description || post.content?.slice(0, 160) || 'Pet ergonomics tips';
+    const ogTitle = seo?.og_title || title;
+    const ogDescription = seo?.og_description || description;
+    const ogImage = seo?.og_image || post.featured_image || undefined;
+
     return {
-        title: post ? `${post.title} | Blog` : 'Blog Post',
-        description: post?.content?.slice(0, 160) || 'Pet ergonomics tips',
+        title,
+        description,
+        openGraph: {
+            title: ogTitle,
+            description: ogDescription,
+            type: 'article',
+            images: ogImage ? [{ url: ogImage }] : undefined,
+        },
+        twitter: {
+            card: ogImage ? 'summary_large_image' : 'summary',
+            title: ogTitle,
+            description: ogDescription,
+            images: ogImage ? [ogImage] : undefined,
+        },
     };
 }
 

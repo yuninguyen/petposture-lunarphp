@@ -36,7 +36,7 @@ Route::get('/health', function () {
     // Cache
     try {
         Cache::put('_health_check', 1, 5);
-        if (Cache::get('_health_check') !== 1) {
+        if ((int) Cache::get('_health_check') !== 1) {
             $allOk = false;
         }
     } catch (Exception $e) {

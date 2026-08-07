@@ -5,11 +5,13 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PostResource\Pages;
 use App\Models\AffiliateNetwork;
 use App\Models\Post;
+use App\Services\AiSeoGeneratorService;
 use App\Support\ImageUploadResizer;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -184,6 +186,48 @@ class PostResource extends Resource
 
                 Forms\Components\Section::make(__('SEO Settings'))
                     ->description(__('Optimize this post for search engines and social media.'))
+                    ->headerActions([
+                        Forms\Components\Actions\Action::make('generateSeo')
+                            ->label(__('Generate with AI'))
+                            ->icon('heroicon-o-sparkles')
+                            ->color('gray')
+                            ->action(function (Get $get, Set $set) {
+                                $title = (string) $get('title');
+                                $content = (string) $get('content');
+
+                                if (blank($title)) {
+                                    Notification::make()
+                                        ->title(__('Add a title first'))
+                                        ->warning()
+                                        ->send();
+
+                                    return;
+                                }
+
+                                try {
+                                    $result = app(AiSeoGeneratorService::class)->generate($title, $content);
+                                } catch (\Throwable $e) {
+                                    Notification::make()
+                                        ->title(__('SEO generation failed'))
+                                        ->body($e->getMessage())
+                                        ->danger()
+                                        ->send();
+
+                                    return;
+                                }
+
+                                $set('seo.title', $result['seo_title']);
+                                $set('seo.keyphrase', $result['focus_keyphrase']);
+                                $set('seo.description', $result['meta_description']);
+                                $set('seo.og_title', $result['social_title']);
+                                $set('seo.og_description', $result['social_description']);
+
+                                Notification::make()
+                                    ->title(__('SEO fields generated — review before saving'))
+                                    ->success()
+                                    ->send();
+                            }),
+                    ])
                     ->schema([
                         Forms\Components\Tabs::make('SEO')
                             ->tabs([

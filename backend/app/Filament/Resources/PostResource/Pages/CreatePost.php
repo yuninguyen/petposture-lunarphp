@@ -25,5 +25,18 @@ class CreatePost extends CreateRecord
                 default => 'string',
             });
         }
+
+        $seo = $this->data['seo'] ?? [];
+
+        if (array_filter($seo)) {
+            $this->record->seo()->create([
+                'title' => $seo['title'] ?? null,
+                'keyphrase' => $seo['keyphrase'] ?? null,
+                'description' => $seo['description'] ?? null,
+                'og_title' => $seo['og_title'] ?? null,
+                'og_description' => $seo['og_description'] ?? null,
+                'og_image' => $seo['og_image'] ?? null,
+            ]);
+        }
     }
 }

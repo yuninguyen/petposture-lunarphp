@@ -36,7 +36,26 @@ class PostResource extends JsonResource
                 'slug' => $blogCategory->slug,
             ] : null,
             'comparison' => $this->type === Post::TYPE_COMPARISON ? $this->resolveComparison() : null,
+            'seo' => $this->resolveSeo(),
         ];
+    }
+
+    protected function resolveSeo(): ?array
+    {
+        $seo = $this->seo;
+
+        if (! $seo) {
+            return null;
+        }
+
+        return array_filter([
+            'title' => $seo->title,
+            'keyphrase' => $seo->keyphrase,
+            'description' => $seo->description,
+            'og_title' => $seo->og_title,
+            'og_description' => $seo->og_description,
+            'og_image' => $this->resolveAssetUrl($seo->og_image),
+        ], static fn ($value) => $value !== null);
     }
 
     protected function resolveComparison(): array

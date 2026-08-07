@@ -83,4 +83,8 @@ return [
         'zone_id' => env('CLOUDFLARE_ZONE_ID'),
     ],
 
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+    ],
+
 ];

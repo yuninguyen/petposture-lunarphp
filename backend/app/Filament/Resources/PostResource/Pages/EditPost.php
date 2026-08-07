@@ -18,6 +18,9 @@ class EditPost extends EditRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $data['metadata'] = $this->record->getAllMeta()->toArray();
+        $data['seo'] = $this->record->seo?->only([
+            'title', 'keyphrase', 'description', 'og_title', 'og_description', 'og_image',
+        ]) ?? [];
 
         return $data;
     }
@@ -36,6 +39,16 @@ class EditPost extends EditRecord
                 default => 'string',
             });
         }
+
+        $seo = $this->data['seo'] ?? [];
+        $this->record->seo()->updateOrCreate([], [
+            'title' => $seo['title'] ?? null,
+            'keyphrase' => $seo['keyphrase'] ?? null,
+            'description' => $seo['description'] ?? null,
+            'og_title' => $seo['og_title'] ?? null,
+            'og_description' => $seo['og_description'] ?? null,
+            'og_image' => $seo['og_image'] ?? null,
+        ]);
     }
 
     protected function getHeaderActions(): array
