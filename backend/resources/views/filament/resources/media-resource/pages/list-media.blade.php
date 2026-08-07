@@ -49,7 +49,7 @@
                     type="text"
                     wire:model.live.debounce.400ms="search"
                     placeholder="{{ __('Search files...') }}"
-                    style="border:1px solid #e5e7eb;border-radius:999px;padding:8px 16px;font-size:13px;width:260px;max-width:100%;"
+                    style="flex:1;min-width:160px;border:1px solid #e5e7eb;border-radius:999px;padding:8px 16px;font-size:13px;"
                 />
 
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -79,7 +79,7 @@
 
                     <a
                         href="{{ $this->uploadUrl() }}"
-                        style="display:inline-flex;align-items:center;gap:6px;background:#16a34a;color:#fff;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;text-decoration:none;"
+                        style="display:inline-flex;align-items:center;gap:6px;background:var(--pp-orange,#df8448);color:#fff;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;text-decoration:none;"
                     >
                         <x-filament::icon icon="heroicon-o-arrow-up-tray" style="width:15px;height:15px;" />
                         {{ __('Upload') }}
@@ -106,8 +106,8 @@
                         @foreach ($folders as $folder)
                             <div style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-bottom:1px solid #f1f3f6;">
                                 <button wire:click="setCollection('{{ $folder['key'] }}')" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer;text-align:left;">
-                                    <span style="width:36px;height:36px;border-radius:10px;background:#e7f6ee;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                        <x-filament::icon icon="heroicon-o-folder" style="width:18px;height:18px;color:#16a34a;" />
+                                    <span style="width:36px;height:36px;border-radius:10px;background:#fdf2eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                        <x-filament::icon icon="heroicon-o-folder" style="width:18px;height:18px;color:var(--pp-orange,#df8448);" />
                                     </span>
                                     <span style="font-size:13px;font-weight:600;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $folder['label'] }}</span>
                                 </button>
@@ -217,8 +217,8 @@
                                 @endif
 
                                 <button wire:click="setCollection('{{ $folder['key'] }}')" style="display:flex;flex-direction:column;align-items:center;width:100%;cursor:pointer;">
-                                    <span style="width:56px;height:56px;border-radius:14px;background:#e7f6ee;display:flex;align-items:center;justify-content:center;margin-bottom:10px;">
-                                        <x-filament::icon icon="heroicon-o-folder" style="width:26px;height:26px;color:#16a34a;" />
+                                    <span style="width:56px;height:56px;border-radius:14px;background:#fdf2eb;display:flex;align-items:center;justify-content:center;margin-bottom:10px;">
+                                        <x-filament::icon icon="heroicon-o-folder" style="width:26px;height:26px;color:var(--pp-orange,#df8448);" />
                                     </span>
                                     <span style="font-size:13px;font-weight:700;color:#111827;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">{{ $folder['label'] }}</span>
                                     <span style="font-size:11px;color:#9ca3af;margin-top:2px;">{{ trans_choice('{1} 1 file|[2,*] :count files', $folder['count'], ['count' => $folder['count']]) }}</span>
