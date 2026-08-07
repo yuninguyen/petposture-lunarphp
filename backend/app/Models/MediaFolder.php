@@ -6,5 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class MediaFolder extends Model
 {
-    protected $fillable = ['name', 'slug'];
+    protected $fillable = ['name', 'slug', 'starred'];
+
+    protected $casts = [
+        'starred' => 'boolean',
+    ];
 }

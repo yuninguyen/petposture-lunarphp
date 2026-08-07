@@ -34,6 +34,10 @@ class ListMedia extends ListRecords
         'general' => 'General',
     ];
 
+    public const SCOPE_RECENT = '__recent__';
+
+    public const SCOPE_STARRED = '__starred__';
+
     public function getTitle(): string
     {
         return __('File Manager');
@@ -51,9 +55,11 @@ class ListMedia extends ListRecords
 
     public function uploadUrl(): string
     {
-        return $this->activeCollection === 'all'
-            ? MediaResource::getUrl('create')
-            : MediaResource::getUrl('create', ['collection' => $this->activeCollection]);
+        $isRealFolder = ! in_array($this->activeCollection, ['all', self::SCOPE_RECENT, self::SCOPE_STARRED], true);
+
+        return $isRealFolder
+            ? MediaResource::getUrl('create', ['collection' => $this->activeCollection])
+            : MediaResource::getUrl('create');
     }
 
     public function setCollection(string $collection): void
@@ -124,6 +130,19 @@ class ListMedia extends ListRecords
         Notification::make()->title(__('Folder deleted'))->success()->send();
     }
 
+    public function toggleFolderStar(int $folderId): void
+    {
+        $folder = MediaFolder::findOrFail($folderId);
+        $folder->update(['starred' => ! $folder->starred]);
+    }
+
+    public function toggleFileStar(int $mediaId): void
+    {
+        $media = Media::query()->findOrFail($mediaId);
+        $media->setCustomProperty('starred', ! $media->getCustomProperty('starred', false));
+        $media->save();
+    }
+
     public function downloadFolder(string $collection): StreamedResponse
     {
         $files = Media::query()->where('collection_name', $collection)->get();
@@ -189,8 +208,17 @@ class ListMedia extends ListRecords
             'label' => $folder->name,
             'count' => $counts[$folder->slug] ?? 0,
             'is_custom' => true,
+            'starred' => $folder->starred,
             'created_at' => $folder->created_at,
         ])->toBase();
+
+        if ($this->activeCollection === self::SCOPE_STARRED) {
+            return $customFolders->where('starred', true)->values();
+        }
+
+        if ($this->activeCollection === self::SCOPE_RECENT) {
+            return collect();
+        }
 
         $customKeys = $customFolders->pluck('key');
 
@@ -202,6 +230,7 @@ class ListMedia extends ListRecords
                 'label' => $label,
                 'count' => $counts[$key] ?? 0,
                 'is_custom' => false,
+                'starred' => false,
                 'created_at' => null,
             ])
             ->values()
@@ -212,6 +241,7 @@ class ListMedia extends ListRecords
                     'label' => str($key)->headline()->toString(),
                     'count' => $count,
                     'is_custom' => false,
+                    'starred' => false,
                     'created_at' => null,
                 ])->values()
             );
@@ -221,6 +251,23 @@ class ListMedia extends ListRecords
 
     public function getFiles()
     {
+        if ($this->activeCollection === self::SCOPE_RECENT) {
+            return Media::query()
+                ->when($this->search !== '', fn ($query) => $query->where('file_name', 'like', "%{$this->search}%"))
+                ->latest('id')
+                ->limit(20)
+                ->get();
+        }
+
+        if ($this->activeCollection === self::SCOPE_STARRED) {
+            return Media::query()
+                ->where('custom_properties->starred', true)
+                ->when($this->search !== '', fn ($query) => $query->where('file_name', 'like', "%{$this->search}%"))
+                ->latest('id')
+                ->limit(60)
+                ->get();
+        }
+
         return Media::query()
             ->when($this->activeCollection !== 'all', fn ($query) => $query->where('collection_name', $this->activeCollection))
             ->when($this->search !== '', fn ($query) => $query->where('file_name', 'like', "%{$this->search}%"))

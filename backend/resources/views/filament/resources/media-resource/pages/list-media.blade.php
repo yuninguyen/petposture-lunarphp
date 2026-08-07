@@ -17,13 +17,29 @@
     <div style="display:grid;grid-template-columns:240px 1fr;gap:24px;align-items:start;" class="fi-media-grid">
         <div style="display:flex;flex-direction:column;gap:16px;">
             <x-filament::section>
-                <button
-                    wire:click="setCollection('all')"
-                    style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border-radius:8px;font-size:13.5px;font-weight:600;text-align:left;background:{{ $activeCollection === 'all' ? '#fdf2eb' : 'transparent' }};color:{{ $activeCollection === 'all' ? '#c9713a' : '#374151' }};cursor:pointer;"
-                >
-                    <x-filament::icon icon="heroicon-o-folder-open" style="width:16px;height:16px;" />
-                    <span>{{ __('All Files') }}</span>
-                </button>
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                    <button
+                        wire:click="setCollection('all')"
+                        style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border-radius:8px;font-size:13.5px;font-weight:600;text-align:left;background:{{ $activeCollection === 'all' ? '#fdf2eb' : 'transparent' }};color:{{ $activeCollection === 'all' ? '#c9713a' : '#374151' }};cursor:pointer;"
+                    >
+                        <x-filament::icon icon="heroicon-o-folder-open" style="width:16px;height:16px;" />
+                        <span>{{ __('All Files') }}</span>
+                    </button>
+                    <button
+                        wire:click="setCollection('__recent__')"
+                        style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border-radius:8px;font-size:13.5px;font-weight:600;text-align:left;background:{{ $activeCollection === '__recent__' ? '#fdf2eb' : 'transparent' }};color:{{ $activeCollection === '__recent__' ? '#c9713a' : '#374151' }};cursor:pointer;"
+                    >
+                        <x-filament::icon icon="heroicon-o-clock" style="width:16px;height:16px;" />
+                        <span>{{ __('Recent') }}</span>
+                    </button>
+                    <button
+                        wire:click="setCollection('__starred__')"
+                        style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border-radius:8px;font-size:13.5px;font-weight:600;text-align:left;background:{{ $activeCollection === '__starred__' ? '#fdf2eb' : 'transparent' }};color:{{ $activeCollection === '__starred__' ? '#c9713a' : '#374151' }};cursor:pointer;"
+                    >
+                        <x-filament::icon icon="heroicon-o-star" style="width:16px;height:16px;" />
+                        <span>{{ __('Starred') }}</span>
+                    </button>
+                </div>
             </x-filament::section>
 
             <x-filament::section>
@@ -92,7 +108,13 @@
                 <button wire:click="setCollection('all')" style="color:{{ $activeCollection === 'all' ? '#111827' : '#6b7280' }};font-weight:{{ $activeCollection === 'all' ? '700' : '500' }};cursor:pointer;">
                     {{ __('Files') }}
                 </button>
-                @if ($currentFolder)
+                @if ($activeCollection === '__recent__')
+                    <span>/</span>
+                    <span style="color:#111827;font-weight:700;">{{ __('Recent') }}</span>
+                @elseif ($activeCollection === '__starred__')
+                    <span>/</span>
+                    <span style="color:#111827;font-weight:700;">{{ __('Starred') }}</span>
+                @elseif ($currentFolder)
                     <span>/</span>
                     <span style="color:#111827;font-weight:700;">{{ $currentFolder['label'] }}</span>
                 @endif
@@ -102,9 +124,17 @@
                 <p style="text-align:center;color:#9ca3af;padding:32px 0;font-size:13px;">{{ __('No files found.') }}</p>
             @elseif ($view_mode === 'list')
                 <div style="display:flex;flex-direction:column;">
-                    @if ($activeCollection === 'all')
+                    @if (in_array($activeCollection, ['all', '__starred__']))
                         @foreach ($folders as $folder)
                             <div style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-bottom:1px solid #f1f3f6;">
+                                @if ($folder['is_custom'])
+                                    <button wire:click="toggleFolderStar({{ $folder['id'] }})" style="flex-shrink:0;padding:2px;line-height:0;cursor:pointer;">
+                                        <x-filament::icon
+                                            :icon="$folder['starred'] ? 'heroicon-s-star' : 'heroicon-o-star'"
+                                            style="width:14px;height:14px;color:{{ $folder['starred'] ? '#f59e0b' : '#d1d5db' }};"
+                                        />
+                                    </button>
+                                @endif
                                 <button wire:click="setCollection('{{ $folder['key'] }}')" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer;text-align:left;">
                                     <span style="width:36px;height:36px;border-radius:10px;background:#fdf2eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                                         <x-filament::icon icon="heroicon-o-folder" style="width:18px;height:18px;color:var(--pp-orange,#df8448);" />
@@ -133,8 +163,14 @@
                     @endif
 
                     @foreach ($files as $file)
-                        @php $palette = $iconFor($file->mime_type ?? ''); @endphp
+                        @php $palette = $iconFor($file->mime_type ?? ''); $starred = (bool) $file->getCustomProperty('starred', false); @endphp
                         <div style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-bottom:1px solid #f1f3f6;">
+                            <button wire:click="toggleFileStar({{ $file->id }})" style="flex-shrink:0;padding:2px;line-height:0;cursor:pointer;">
+                                <x-filament::icon
+                                    :icon="$starred ? 'heroicon-s-star' : 'heroicon-o-star'"
+                                    style="width:14px;height:14px;color:{{ $starred ? '#f59e0b' : '#d1d5db' }};"
+                                />
+                            </button>
                             <span style="width:36px;height:36px;border-radius:10px;background:{{ $palette['bg'] }};color:{{ $palette['fg'] }};display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">
                                 @if (str_starts_with($file->mime_type ?? '', 'image/'))
                                     <img src="{{ $file->getUrl() }}" alt="{{ $file->name }}" style="width:100%;height:100%;object-fit:cover;" />
@@ -162,13 +198,23 @@
                 </div>
             @else
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">
-                    @if ($activeCollection === 'all')
+                    @if (in_array($activeCollection, ['all', '__starred__']))
                         @foreach ($folders as $folder)
                             <div
                                 x-data="{ menuOpen: false }"
                                 style="position:relative;border:1px solid #eaecf0;border-radius:12px;padding:16px 14px;background:#fff;"
                             >
                                 @if ($folder['is_custom'])
+                                    <button
+                                        wire:click="toggleFolderStar({{ $folder['id'] }})"
+                                        style="position:absolute;top:8px;left:8px;padding:4px;border-radius:6px;line-height:0;cursor:pointer;"
+                                    >
+                                        <x-filament::icon
+                                            :icon="$folder['starred'] ? 'heroicon-s-star' : 'heroicon-o-star'"
+                                            style="width:16px;height:16px;color:{{ $folder['starred'] ? '#f59e0b' : '#d1d5db' }};"
+                                        />
+                                    </button>
+
                                     <button
                                         x-on:click="menuOpen = !menuOpen"
                                         x-on:click.outside="menuOpen = false"
@@ -228,8 +274,17 @@
                     @endif
 
                     @foreach ($files as $file)
-                        @php $palette = $iconFor($file->mime_type ?? ''); @endphp
-                        <div style="border:1px solid #eaecf0;border-radius:12px;overflow:hidden;background:#fff;">
+                        @php $palette = $iconFor($file->mime_type ?? ''); $starred = (bool) $file->getCustomProperty('starred', false); @endphp
+                        <div style="position:relative;border:1px solid #eaecf0;border-radius:12px;overflow:hidden;background:#fff;">
+                            <button
+                                wire:click="toggleFileStar({{ $file->id }})"
+                                style="position:absolute;top:6px;left:6px;z-index:2;padding:4px;border-radius:6px;background:rgba(255,255,255,.85);line-height:0;cursor:pointer;"
+                            >
+                                <x-filament::icon
+                                    :icon="$starred ? 'heroicon-s-star' : 'heroicon-o-star'"
+                                    style="width:14px;height:14px;color:{{ $starred ? '#f59e0b' : '#9ca3af' }};"
+                                />
+                            </button>
                             <div style="height:110px;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden;">
                                 @if (str_starts_with($file->mime_type ?? '', 'image/'))
                                     <img src="{{ $file->getUrl() }}" alt="{{ $file->name }}" style="width:100%;height:100%;object-fit:cover;" />
