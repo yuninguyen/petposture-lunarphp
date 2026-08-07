@@ -11,13 +11,13 @@ class AddressRelationManager extends BaseAddressRelationManager
 {
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
-        return __('Saved Address');
+        return __('Address Book');
     }
 
     public function getDefaultTable(Table $table): Table
     {
         return parent::getDefaultTable($table)
-            ->heading(__('Saved Address'))
+            ->heading(__('Address Book'))
             ->columns([
                 Tables\Columns\TextColumn::make('title')->label(__('Title')),
                 Tables\Columns\TextColumn::make('first_name')->label(__('First Name')),
