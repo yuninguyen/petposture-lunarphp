@@ -8,7 +8,7 @@ return [
         'catalog' => 'Danh mục',
         'system' => 'Hệ thống',
         'manage_settings' => 'Cài đặt hệ thống',
-        'media_management' => 'Tệp tin',
+        'media_management' => 'Quản Lý Tệp',
         'shield' => 'Bảo mật & Vai trò',
     ],
     'orders' => [

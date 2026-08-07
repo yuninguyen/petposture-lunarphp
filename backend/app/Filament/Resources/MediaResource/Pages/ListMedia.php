@@ -3,11 +3,15 @@
 namespace App\Filament\Resources\MediaResource\Pages;
 
 use App\Filament\Resources\MediaResource;
-use Filament\Actions\CreateAction;
+use App\Models\MediaFolder;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use ZipArchive;
 
 class ListMedia extends ListRecords
 {
@@ -15,20 +19,132 @@ class ListMedia extends ListRecords
 
     protected static string $view = 'filament.resources.media-resource.pages.list-media';
 
+    #[Url(as: 'folder', keep: false)]
     public string $activeCollection = 'all';
 
     public string $search = '';
 
+    public string $view_mode = 'grid';
+
+    protected const SYSTEM_FOLDER_LABELS = [
+        'product-images' => 'Product Images',
+        'variant-images' => 'Variant Images',
+        'banner' => 'Banner',
+        'blog' => 'Blog',
+        'general' => 'General',
+    ];
+
+    public function getTitle(): string
+    {
+        return __('File Manager');
+    }
+
+    public function getSubheading(): ?string
+    {
+        return __('Manage your files and folders');
+    }
+
     protected function getHeaderActions(): array
     {
-        return [
-            CreateAction::make()->label('Upload Files'),
-        ];
+        return [];
+    }
+
+    public function uploadUrl(): string
+    {
+        return $this->activeCollection === 'all'
+            ? MediaResource::getUrl('create')
+            : MediaResource::getUrl('create', ['collection' => $this->activeCollection]);
     }
 
     public function setCollection(string $collection): void
     {
         $this->activeCollection = $collection;
+    }
+
+    public function setViewMode(string $mode): void
+    {
+        $this->view_mode = $mode;
+    }
+
+    public function folderShareUrl(string $collection): string
+    {
+        return MediaResource::getUrl('index', ['folder' => $collection]);
+    }
+
+    public function createFolder(string $name): void
+    {
+        $name = trim($name);
+        $slug = Str::slug($name);
+
+        if ($slug === '' || $slug === 'all') {
+            Notification::make()->title(__('Invalid folder name'))->danger()->send();
+
+            return;
+        }
+
+        if (MediaFolder::where('slug', $slug)->exists() || Media::where('collection_name', $slug)->exists()) {
+            Notification::make()->title(__('A folder with that name already exists'))->danger()->send();
+
+            return;
+        }
+
+        MediaFolder::create(['name' => $name, 'slug' => $slug]);
+
+        Notification::make()->title(__('Folder created'))->success()->send();
+    }
+
+    public function renameFolder(int $folderId, string $name): void
+    {
+        $folder = MediaFolder::findOrFail($folderId);
+        $folder->update(['name' => $name]);
+
+        Notification::make()->title(__('Folder renamed'))->success()->send();
+    }
+
+    public function deleteFolder(int $folderId): void
+    {
+        $folder = MediaFolder::findOrFail($folderId);
+
+        if (Media::where('collection_name', $folder->slug)->exists()) {
+            Notification::make()
+                ->title(__('Folder is not empty'))
+                ->body(__('Move or delete its files before deleting the folder.'))
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $folder->delete();
+
+        if ($this->activeCollection === $folder->slug) {
+            $this->activeCollection = 'all';
+        }
+
+        Notification::make()->title(__('Folder deleted'))->success()->send();
+    }
+
+    public function downloadFolder(string $collection): StreamedResponse
+    {
+        $files = Media::query()->where('collection_name', $collection)->get();
+
+        $tmpPath = tempnam(sys_get_temp_dir(), 'folder').'.zip';
+        $zip = new ZipArchive;
+        $zip->open($tmpPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+
+        foreach ($files as $file) {
+            $zip->addFile($file->getPath(), $file->file_name);
+        }
+
+        $zip->close();
+
+        $folderName = MediaFolder::where('slug', $collection)->value('name')
+            ?? (self::SYSTEM_FOLDER_LABELS[$collection] ?? $collection);
+
+        return response()->streamDownload(function () use ($tmpPath) {
+            echo file_get_contents($tmpPath);
+            @unlink($tmpPath);
+        }, Str::slug($folderName).'.zip');
     }
 
     public function deleteMedia(int $mediaId): void
@@ -67,26 +183,40 @@ class ListMedia extends ListRecords
             ->groupBy('collection_name')
             ->pluck('aggregate', 'collection_name');
 
-        $labels = [
-            'product-images' => 'Product Images',
-            'variant-images' => 'Variant Images',
-            'banner' => 'Banner',
-            'general' => 'General',
-        ];
+        $customFolders = MediaFolder::query()->orderBy('name')->get()->map(fn (MediaFolder $folder) => [
+            'id' => $folder->id,
+            'key' => $folder->slug,
+            'label' => $folder->name,
+            'count' => $counts[$folder->slug] ?? 0,
+            'is_custom' => true,
+            'created_at' => $folder->created_at,
+        ])->toBase();
 
-        return collect($labels)
+        $customKeys = $customFolders->pluck('key');
+
+        $systemFolders = collect(self::SYSTEM_FOLDER_LABELS)
+            ->reject(fn ($label, $key) => $customKeys->contains($key))
             ->map(fn ($label, $key) => [
+                'id' => null,
                 'key' => $key,
                 'label' => $label,
                 'count' => $counts[$key] ?? 0,
+                'is_custom' => false,
+                'created_at' => null,
             ])
+            ->values()
             ->merge(
-                $counts->except(array_keys($labels))->map(fn ($count, $key) => [
+                $counts->except($customKeys->merge(array_keys(self::SYSTEM_FOLDER_LABELS)))->map(fn ($count, $key) => [
+                    'id' => null,
                     'key' => $key,
                     'label' => str($key)->headline()->toString(),
                     'count' => $count,
+                    'is_custom' => false,
+                    'created_at' => null,
                 ])->values()
             );
+
+        return $customFolders->merge($systemFolders);
     }
 
     public function getFiles()

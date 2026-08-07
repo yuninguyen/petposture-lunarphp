@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MediaResource\Pages;
 
 use App\Filament\Resources\MediaResource;
+use App\Models\MediaFolder;
 use App\Models\SiteMedia;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -23,7 +24,17 @@ class CreateMedia extends Page
 
     public function mount(): void
     {
-        $this->form->fill();
+        $this->form->fill([
+            'collection' => request()->query('collection', 'general'),
+        ]);
+    }
+
+    protected function collectionOptions(): array
+    {
+        return collect([
+            'general' => 'General',
+            'banner' => 'Banner (homepage hero & promo banners)',
+        ])->merge(MediaFolder::query()->orderBy('name')->pluck('name', 'slug'))->all();
     }
 
     public function form(Form $form): Form
@@ -38,10 +49,7 @@ class CreateMedia extends Page
 
                 Select::make('collection')
                     ->label('Collection')
-                    ->options([
-                        'general' => 'General',
-                        'banner' => 'Banner (homepage hero & promo banners)',
-                    ])
+                    ->options(fn () => $this->collectionOptions())
                     ->default('general')
                     ->required(),
 

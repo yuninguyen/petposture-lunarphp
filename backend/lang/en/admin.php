@@ -8,7 +8,7 @@ return [
         'catalog' => 'Catalogue',
         'system' => 'System',
         'manage_settings' => 'Manage Settings',
-        'media_management' => 'Files',
+        'media_management' => 'File Manager',
         'shield' => 'Security & Roles',
     ],
     'orders' => [

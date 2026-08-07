@@ -30,7 +30,7 @@ class MediaResource extends Resource
 
     protected static ?string $modelLabel = 'File';
 
-    protected static ?string $pluralModelLabel = 'Files';
+    protected static ?string $pluralModelLabel = 'File Manager';
 
     public static function getNavigationGroup(): ?string
     {
