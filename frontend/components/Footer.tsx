@@ -29,6 +29,12 @@ const legalLinks = [
   "Acceptable Use Policy",
   "Affiliate Disclosure",
 ];
+const bottomBarLegalLinks = [
+  "Privacy Policy",
+  "Terms and Conditions",
+  "Cookie Policy",
+  "Acceptable Use Policy",
+];
 
 type FooterSectionProps = {
   title: string;
@@ -199,11 +205,25 @@ export default function Footer() {
       <div className="bg-black/10 py-5 px-4 md:px-8">
         <div className="max-w-[1200px] w-full mx-auto">
           <div className="flex flex-col lg:flex-row items-center lg:justify-between text-center lg:text-left gap-8 lg:gap-10">
-            {/* Copyright */}
-            <div className="w-full lg:w-auto">
-              <p className="text-xs text-white/70 font-normal tracking-wide">
-                Copyright {new Date().getFullYear()} © <span className="text-white/60 font-bold">PetPosture</span>. All rights reserved.
-              </p>
+            {/* Legal Links & Copyright */}
+            <div className="flex flex-col items-center lg:items-start w-full lg:w-auto">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-y-3 gap-x-6 mb-[10px]">
+                {bottomBarLegalLinks.map((link) => (
+                  <Link
+                    key={link}
+                    href={getLegalHref(link)}
+                    className="text-[13px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
+                  >
+                    {link}
+                  </Link>
+                ))}
+              </div>
+
+              <div className="pt-[10px] border-t border-white/10 w-full">
+                <p className="text-xs text-white/70 font-normal tracking-wide">
+                  Copyright {new Date().getFullYear()} © <span className="text-white/60 font-bold">PetPosture</span>. All rights reserved.
+                </p>
+              </div>
             </div>
 
             {/* Payment Icons & Back to Top */}
