@@ -6,11 +6,11 @@ use App\Filament\Resources\CustomerResource\Pages\ListCustomers;
 use App\Filament\Resources\CustomerResource\Pages\ViewCustomer;
 use App\Filament\Resources\CustomerResource\RelationManagers\AddressRelationManager;
 use App\Filament\Resources\CustomerResource\RelationManagers\OrdersRelationManager;
+use App\Filament\Resources\CustomerResource\RelationManagers\UserRelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Lunar\Admin\Filament\Resources\CustomerResource as BaseCustomerResource;
-use Lunar\Admin\Filament\Resources\CustomerResource\RelationManagers\UserRelationManager;
 use Lunar\Models\Customer;
 
 class CustomerResource extends BaseCustomerResource
