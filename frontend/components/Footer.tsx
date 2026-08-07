@@ -28,6 +28,7 @@ const legalLinks = [
   "Cookie Policy",
   "Acceptable Use Policy",
   "Affiliate Disclosure",
+  "Do Not Sell My Personal Information",
 ];
 const bottomBarLegalLinks = [
   "Privacy Policy",
@@ -52,6 +53,7 @@ const getLegalHref = (link: string) => {
     case "Cookie Policy": return "/cookie-policy";
     case "Acceptable Use Policy": return "/acceptable-use-policy";
     case "Affiliate Disclosure": return "/affiliate-disclosure";
+    case "Do Not Sell My Personal Information": return "/privacy-policy#us-state-rights";
     default: return "#";
   }
 };
@@ -205,18 +207,33 @@ export default function Footer() {
       <div className="bg-black/10 py-5 px-4 md:px-8">
         <div className="max-w-[1200px] w-full mx-auto">
           <div className="flex flex-col lg:flex-row items-center lg:justify-between text-center lg:text-left gap-8 lg:gap-10">
-            {/* Legal Links & Copyright */}
+            {/* Links and Copyright Column */}
             <div className="flex flex-col items-center lg:items-start w-full lg:w-auto">
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-y-3 gap-x-6 mb-[10px]">
-                {bottomBarLegalLinks.map((link) => (
-                  <Link
-                    key={link}
-                    href={getLegalHref(link)}
-                    className="text-[13px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
-                  >
-                    {link}
-                  </Link>
-                ))}
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-y-4 gap-x-6 mb-[10px]">
+                {/* Mobile Group 1 */}
+                <div className="flex items-center gap-6">
+                  {bottomBarLegalLinks.slice(0, 2).map((link) => (
+                    <Link
+                      key={link}
+                      href={getLegalHref(link)}
+                      className="text-[13px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
+                    >
+                      {link}
+                    </Link>
+                  ))}
+                </div>
+                {/* Mobile Group 2 */}
+                <div className="flex items-center gap-6">
+                  {bottomBarLegalLinks.slice(2).map((link) => (
+                    <Link
+                      key={link}
+                      href={getLegalHref(link)}
+                      className="text-[13px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
+                    >
+                      {link}
+                    </Link>
+                  ))}
+                </div>
               </div>
 
               <div className="pt-[10px] border-t border-white/10 w-full">
