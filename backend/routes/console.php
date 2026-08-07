@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\ExpireOverdueReturnRequests;
+use App\Jobs\SyncAffiliateReportJob;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -10,3 +11,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command(ExpireOverdueReturnRequests::class)->daily();
+Schedule::job(new SyncAffiliateReportJob)->dailyAt('06:00');
