@@ -223,8 +223,14 @@ class AdminPanelProvider extends PanelProvider
                     .fi-section-header{border-bottom:1px solid #f1f3f6!important}
                     .fi-section-header-heading,.fi-ta-header-heading,.filament-apex-charts-heading{font-size:14px!important;font-weight:700!important;color:#111827!important;font-family:"Public Sans","Public Sans Fallback",ui-sans-serif,sans-serif!important}
 
-                    /* ── ApexCharts widget header (plain div, unlike fi-section-header has no built-in border/padding) ── */
-                    .filament-apex-charts-header{border-bottom:1px solid #f1f3f6!important;padding-bottom:.75rem!important;margin-bottom:.75rem!important}
+                    /* ── ApexCharts widget header — matches Top Products (fi-ta-header) card-top-to-border distance
+                       (16px + 24px line-height + 16px = 56px) pixel for pixel, since the two widgets use unrelated
+                       markup (fi-ta-header sits flush in fi-ta-ctn with no card padding; this header sits inside
+                       the fi-section content p-6 padding, plus the apex-charts package own py-2 wrapper row) and
+                       were visibly misaligned before this override. ── */
+                    .filament-apex-charts-card .fi-section-content{padding-top:16px!important}
+                    .filament-apex-charts-header>div{padding-top:0!important;padding-bottom:0!important}
+                    .filament-apex-charts-header{border-bottom:1px solid #f1f3f6!important;padding-bottom:16px!important;margin-bottom:1.5rem!important}
 
                     /* ── Tables ── */
                     [class*="fi-ta-header-cell"]{font-size:13px!important;font-weight:600!important;text-transform:capitalize!important;color:#6b7280!important}

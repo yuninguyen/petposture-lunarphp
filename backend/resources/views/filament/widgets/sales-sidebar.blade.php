@@ -36,7 +36,7 @@
                 @foreach ($goals as $goal)
                     <div>
                         <div class="mb-2.5 flex items-baseline justify-between gap-2">
-                            <span class="text-sm font-bold text-gray-700 dark:text-gray-200">
+                            <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">
                                 {{ $goal['label'] }}
                             </span>
                             @if ($goal['percent'] !== null)
