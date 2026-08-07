@@ -120,7 +120,7 @@ export default function CookiePolicyPage() {
 
                                 <section id="control-manager">
                                     <h2 className="text-[28px] font-bold text-[#3e4c57] uppercase tracking-tight mb-6">3. HOW CAN I CONTROL COOKIES?</h2>
-                                    <p>You have the right to decide whether to accept or reject cookies. You can exercise your cookie rights by setting your preferences in the Cookie Consent Manager. The Cookie Consent Manager allows you to select which categories of cookies you accept or reject. Essential cookies cannot be rejected as they are strictly necessary to provide you with services.</p>
+                                    <p>You have the right to decide whether to accept or reject cookies. When you first visit our Website, a cookie notice will let you know that we use cookies and link you to this Cookie Policy. Currently, the cookies we use are strictly necessary or functional cookies — for example, to keep items in your cart and to keep you signed in — so there is nothing non-essential to opt out of at this time. If we begin using analytics or advertising cookies in the future, we will update this Cookie Policy and provide a way to manage your preferences for those categories accordingly.</p>
                                 </section>
 
                                 <section id="control-browser">
@@ -160,7 +160,7 @@ export default function CookiePolicyPage() {
                                     <h2 className="text-[28px] font-bold text-[#3e4c57] uppercase tracking-tight mb-6">9. WHERE CAN I GET FURTHER INFORMATION?</h2>
                                     <p>If you have any questions about our use of cookies or other technologies, please email us at <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a> or by post to:</p>
                                     <p className="mt-4 font-bold">PetPosture LLC</p>
-                                    <p>2017 I STA</p>
+                                    <p>2017 I St A</p>
                                     <p>Sacramento, CA 95811</p>
                                     <p>United States</p>
                                     <p>Phone: +1 (916) 623-5368</p>

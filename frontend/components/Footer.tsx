@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Facebook, Instagram, Twitter, Youtube, Mail, Plus, Minus } from "lucide-react";
+import { Facebook, Instagram, Twitter, Youtube, Mail, Plus, Minus, Loader2, Check } from "lucide-react";
 import PaymentIcons from "./PaymentIcons";
 import { useSettings } from "@/context/SettingsContext";
 import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
+import { getApiBaseUrl } from "@/lib/api";
 
 const shopBySolution = [
   "Eating & Digestion",
@@ -27,6 +28,7 @@ const legalLinks = [
   "Terms and Conditions",
   "Cookie Policy",
   "Acceptable Use Policy",
+  "Affiliate Disclosure",
 ];
 
 type FooterSectionProps = {
@@ -44,9 +46,82 @@ const getLegalHref = (link: string) => {
     case "Terms and Conditions": return "/terms-and-conditions";
     case "Cookie Policy": return "/cookie-policy";
     case "Acceptable Use Policy": return "/acceptable-use-policy";
+    case "Affiliate Disclosure": return "/affiliate-disclosure";
     default: return "#";
   }
 };
+
+function NewsletterForm() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || status === "loading") return;
+
+    setStatus("loading");
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/api/newsletter/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setStatus("error");
+        setMessage(data?.message || "Something went wrong. Please try again.");
+        return;
+      }
+      setStatus("success");
+      setMessage(data?.message || "Successfully subscribed!");
+      setEmail("");
+    } catch {
+      setStatus("error");
+      setMessage("Something went wrong. Please try again.");
+    }
+  };
+
+  return (
+    <div className="pb-4 lg:pb-0">
+      <p className="text-[16px] text-white/60 leading-[1.75] mb-6 max-w-sm">
+        Be the first to know when new products, breed guides, and offers launch.
+      </p>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-sm">
+        <div className="flex gap-2">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Your email address"
+            disabled={status === "loading" || status === "success"}
+            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-[14px] text-white placeholder:text-white/40 focus:outline-none focus:border-[#df8448] transition-colors disabled:opacity-60"
+          />
+          <button
+            type="submit"
+            disabled={status === "loading" || status === "success"}
+            className="shrink-0 w-11 h-11 rounded-lg bg-[#df8448] hover:bg-[#c9713a] text-white flex items-center justify-center transition-colors disabled:opacity-60"
+            aria-label="Subscribe"
+          >
+            {status === "loading" ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : status === "success" ? (
+              <Check size={18} />
+            ) : (
+              <Mail size={18} strokeWidth={2} />
+            )}
+          </button>
+        </div>
+        {message && (
+          <p className={`text-[13px] ${status === "error" ? "text-red-400" : "text-[#df8448]"}`}>
+            {message}
+          </p>
+        )}
+      </form>
+    </div>
+  );
+}
 
 function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: FooterSectionProps) {
   return (
@@ -118,7 +193,7 @@ export default function Footer() {
       {/* Main Footer */}
       <div className="py-10 md:py-10 px-4 md:px-8 border-t border-white/5">
         <div className="max-w-[1200px] w-full mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-8">
             {/* About Section */}
             <FooterSection
               title="About PetPosture"
@@ -168,6 +243,13 @@ export default function Footer() {
             <FooterSection title="Shop by Solution" items={shopBySolution} id="solution" isOpen={openSection === "solution"} onToggle={toggleSection} />
             <FooterSection title="Shop by Breed" items={shopByBreed} id="breed" isOpen={openSection === "breed"} onToggle={toggleSection} />
             <FooterSection title="Customer Service" items={customerService} id="service" isOpen={openSection === "service"} onToggle={toggleSection} />
+            <FooterSection
+              title="Newsletter"
+              id="newsletter"
+              isOpen={openSection === "newsletter"}
+              onToggle={toggleSection}
+              isCustomContent={<NewsletterForm />}
+            />
           </div>
         </div>
       </div>
@@ -178,31 +260,16 @@ export default function Footer() {
           <div className="flex flex-col lg:flex-row items-center lg:justify-between text-center lg:text-left gap-8 lg:gap-10">
             {/* Links and Copyright Column */}
             <div className="flex flex-col items-center lg:items-start w-full lg:w-auto">
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-y-4 gap-x-6 mb-[10px]">
-                {/* Mobile Group 1 */}
-                <div className="flex items-center gap-6">
-                  {legalLinks.slice(0, 2).map((link) => (
-                    <Link
-                      key={link}
-                      href={getLegalHref(link)}
-                      className="text-[13px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
-                    >
-                      {link}
-                    </Link>
-                  ))}
-                </div>
-                {/* Mobile Group 2 */}
-                <div className="flex items-center gap-6">
-                  {legalLinks.slice(2).map((link) => (
-                    <Link
-                      key={link}
-                      href={getLegalHref(link)}
-                      className="text-[13px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
-                    >
-                      {link}
-                    </Link>
-                  ))}
-                </div>
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-y-4 gap-x-6 mb-[10px]">
+                {legalLinks.map((link) => (
+                  <Link
+                    key={link}
+                    href={getLegalHref(link)}
+                    className="text-[13px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
+                  >
+                    {link}
+                  </Link>
+                ))}
               </div>
 
               <div className="pt-[10px] border-t border-white/10 w-full">

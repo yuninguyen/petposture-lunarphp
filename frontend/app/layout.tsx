@@ -9,6 +9,7 @@ import { WishlistProvider } from '@/context/WishlistContext';
 import { SettingsProvider } from '@/context/SettingsContext';
 import { CartDrawer } from '@/components/shop/CartDrawer';
 import { AttributionTracker } from '@/components/AttributionTracker';
+import { CookieBanner } from '@/components/CookieBanner';
 import { SITE_URL } from '@/lib/site';
 
 const hankenGrotesk = Hanken_Grotesk({ subsets: ['latin'], weight: ['400', '700'], display: 'swap' });
@@ -145,6 +146,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <AttributionTracker />
                 {children}
                 <CartDrawer />
+                <CookieBanner />
               </CartProvider>
             </WishlistProvider>
           </AuthProvider>

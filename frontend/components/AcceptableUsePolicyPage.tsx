@@ -101,7 +101,7 @@ export default function AcceptableUsePolicyPage() {
                                 <section id="who-we-are">
                                     <h2 className="text-[28px] font-bold text-[#3e4c57] uppercase tracking-tight mb-6">1. WHO WE ARE</h2>
                                     <p>
-                                        PetPosture LLC (&quot;<strong>Company</strong>,&quot; &quot;<strong>we</strong>,&quot; &quot;<strong>us</strong>,&quot; or &quot;<strong>our</strong>&quot;) is a company registered in the United States at 2017 I STA, Sacramento, CA 95811. We operate the website http://petposture.com (the &quot;<strong>Site</strong>&quot;), and any other related products and services that refer or link to this Acceptable Use Policy (collectively, the &quot;<strong>Services</strong>&quot;).
+                                        PetPosture LLC (&quot;<strong>Company</strong>,&quot; &quot;<strong>we</strong>,&quot; &quot;<strong>us</strong>,&quot; or &quot;<strong>our</strong>&quot;) is a company registered in the United States at 2017 I St A, Sacramento, CA 95811. We operate the website http://petposture.com (the &quot;<strong>Site</strong>&quot;), and any other related products and services that refer or link to this Acceptable Use Policy (collectively, the &quot;<strong>Services</strong>&quot;).
                                     </p>
                                 </section>
 
@@ -158,7 +158,7 @@ export default function AcceptableUsePolicyPage() {
                                     <h2 className="text-[28px] font-bold text-[#3e4c57] uppercase tracking-tight mb-6">7. HOW CAN YOU CONTACT US ABOUT THIS POLICY?</h2>
                                     <p>If you have any further questions or comments, you may contact us at:</p>
                                     <p className="mt-4 font-bold">PetPosture LLC</p>
-                                    <p>2017 I STA</p>
+                                    <p>2017 I St A</p>
                                     <p>Sacramento, CA 95811</p>
                                     <p>United States</p>
                                     <p className="mt-4">Email: <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a></p>

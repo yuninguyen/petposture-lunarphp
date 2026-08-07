@@ -29,7 +29,8 @@ const SECTIONS = [
     { id: "user-data", title: "16. USER DATA" },
     { id: "electronics", title: "17. ELECTRONIC COMMUNICATIONS" },
     { id: "misc", title: "18. MISCELLANEOUS" },
-    { id: "contact", title: "19. CONTACT US" },
+    { id: "affiliate", title: "19. AFFILIATE DISCLOSURE" },
+    { id: "contact", title: "20. CONTACT US" },
 ];
 
 export default function TermsAndConditionsPage() {
@@ -210,8 +211,14 @@ export default function TermsAndConditionsPage() {
                                     <p>These Terms and Conditions and any policies or operating rules posted by us on the Site or in respect to the Site constitute the entire agreement and understanding between you and us. Our failure to exercise or enforce any right or provision of these Terms and Conditions shall not operate as a waiver of such right or provision.</p>
                                 </section>
 
+                                <section id="affiliate">
+                                    <h2 className="text-[28px] font-bold text-[#3e4c57] uppercase tracking-tight mb-6">19. AFFILIATE DISCLOSURE</h2>
+                                    <p className="italic mb-6"><strong>In Short:</strong> Some links on the Site are affiliate links, and we may earn a commission from qualifying purchases at no extra cost to you.</p>
+                                    <p>Certain content on the Site, including product comparisons and buying guides, contains affiliate links to third-party retailers. If you make a purchase through one of these links, we may receive a commission. This does not affect the price you pay. See our <a href="/affiliate-disclosure" className="text-[#df8448] hover:underline">Affiliate Disclosure</a> for full details.</p>
+                                </section>
+
                                 <section id="contact">
-                                    <h2 className="text-[28px] font-bold text-[#3e4c57] uppercase tracking-tight mb-6">19. CONTACT US</h2>
+                                    <h2 className="text-[28px] font-bold text-[#3e4c57] uppercase tracking-tight mb-6">20. CONTACT US</h2>
                                     <p>In order to resolve a complaint regarding the Site or to receive further information regarding use of the Site, please contact us at:</p>
                                     <p className="mt-4 font-bold">PetPosture LLC</p>
                                     <p>2017 I St A</p>

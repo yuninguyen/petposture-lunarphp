@@ -24,6 +24,7 @@ const SECTIONS = [
     { id: "updates", title: "11. DO WE MAKE UPDATES TO THIS NOTICE?" },
     { id: "contact", title: "12. HOW CAN YOU CONTACT US ABOUT THIS NOTICE?" },
     { id: "review", title: "13. HOW CAN YOU REVIEW, UPDATE, OR DELETE THE DATA WE COLLECT FROM YOU?" },
+    { id: "us-state-rights", title: "14. YOUR U.S. STATE PRIVACY RIGHTS" },
 ];
 
 export default function PrivacyPolicyPage() {
@@ -232,6 +233,21 @@ export default function PrivacyPolicyPage() {
                                 <section id="review">
                                     <h2 className="text-[28px] font-bold text-[#3e4c57] uppercase tracking-tight mb-6">13. HOW CAN YOU REVIEW, UPDATE, OR DELETE THE DATA WE COLLECT FROM YOU?</h2>
                                     <p>Based on the applicable laws of your country, you may have the right to request access to the personal information we collect from you, change that information, or delete it. To request to review, update, or delete your personal information, please visit: <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a>.</p>
+                                </section>
+
+                                <section id="us-state-rights">
+                                    <h2 className="text-[28px] font-bold text-[#3e4c57] uppercase tracking-tight mb-6">14. YOUR U.S. STATE PRIVACY RIGHTS</h2>
+                                    <p className="italic mb-6"><strong>In Short:</strong> We do not sell or share your personal information, and residents of California and other U.S. states have rights over the personal information we collect.</p>
+                                    <p className="mb-4"><strong>We do not sell your personal information.</strong> We have not sold or shared (as those terms are defined under the California Consumer Privacy Act, as amended by the California Privacy Rights Act, and similar U.S. state privacy laws) any personal information in the preceding 12 months, and we do not use your personal information for cross-context behavioral advertising.</p>
+                                    <p className="mb-4">If you are a resident of California or another U.S. state with a comprehensive privacy law, you may have the right to:</p>
+                                    <ul className="list-disc pl-6 space-y-2 mb-4">
+                                        <li>Know what personal information we have collected about you and why.</li>
+                                        <li>Request deletion of personal information we have collected from you.</li>
+                                        <li>Correct inaccurate personal information we maintain about you.</li>
+                                        <li>Opt out of the sale or sharing of your personal information, or its use for targeted advertising (though, as noted above, we do not currently engage in either).</li>
+                                        <li>Not be discriminated against for exercising any of these rights.</li>
+                                    </ul>
+                                    <p>To exercise any of these rights, please contact us at <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a>. We will verify your request and respond within the timeframe required by applicable law.</p>
                                 </section>
                             </div>
                         </div>
