@@ -17,9 +17,9 @@
                             <x-filament::icon :icon="$event['icon']" class="h-4 w-4" />
                         </div>
                         <div class="min-w-0 flex-1">
-                            <p class="text-sm font-bold text-gray-950 dark:text-white">{{ $event['title'] }}</p>
-                            <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ $event['description'] }}</p>
-                            <p class="mt-0.5 text-xs text-gray-400">{{ $event['at']->diffForHumans() }}</p>
+                            <p class="fi-recent-activity-text text-gray-950 dark:text-white">{{ $event['title'] }}</p>
+                            <p class="fi-recent-activity-text truncate text-gray-500 dark:text-gray-400">{{ $event['description'] }}</p>
+                            <p class="fi-recent-activity-text mt-0.5 text-gray-400">{{ $event['at']->diffForHumans() }}</p>
                         </div>
                     </div>
                 @endforeach

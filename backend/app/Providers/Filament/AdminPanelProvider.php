@@ -235,7 +235,10 @@ class AdminPanelProvider extends PanelProvider
                     /* ── Tables ── */
                     [class*="fi-ta-header-cell"]{font-size:13px!important;font-weight:600!important;text-transform:capitalize!important;color:#6b7280!important}
                     [class*="fi-ta-row"]:hover td{background:#fafbfc!important}
-                    .fi-ta-text-item-label{font-size:.8rem!important;font-weight:600!important;line-height:1.5rem!important}
+
+                    /* ── Recent Activity widget text (scoped class, not a bare table-cell class — that
+                       previously bled into every table including Recent Orders) ── */
+                    .fi-recent-activity-text{font-size:.8rem!important;font-weight:550!important;line-height:1.5rem!important}
 
                     /* ── Table row actions: icon-only (label hidden, kept in DOM for screen readers) ── */
                     .fi-ta-actions{gap:.25rem!important}
