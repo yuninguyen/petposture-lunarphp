@@ -65,7 +65,7 @@
                     type="text"
                     wire:model.live.debounce.400ms="search"
                     placeholder="{{ __('Search files...') }}"
-                    style="flex:1;min-width:160px;border:1px solid #e5e7eb;border-radius:999px;padding:8px 16px;font-size:13px;"
+                    style="flex:1;min-width:160px;border:1px solid #e5e7eb;border-radius:8px;padding:8px 16px;font-size:13px;"
                 />
 
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
