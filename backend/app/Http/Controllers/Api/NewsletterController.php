@@ -43,7 +43,7 @@ class NewsletterController extends Controller
         try {
             Mail::send(new NewsletterConfirmation($email));
         } catch (\Throwable $e) {
-            Log::error('Newsletter confirmation mail failed: '.$e->getMessage(), ['email' => $email]);
+            Log::warning('Newsletter confirmation mail failed: '.$e->getMessage(), ['email' => $email]);
         }
     }
 }

@@ -1,3 +1,74 @@
+# Handoff — 2026-08-08
+
+## Legal/compliance pages, cookie banner, and footer redesign
+
+User asked for legal text (Affiliate Disclosure, "Do Not Sell My Personal Information", cookie
+banner copy) plus proposed changes to the 4 existing legal pages, driven by a real observation:
+the footer's About section had lost all its social icons (confirmed working-as-designed — the 6
+`social_*` Settings fields are all empty, and the icon row simply filters out empty URLs, no bug).
+
+**New page, fixed a real bug**: `/affiliate-disclosure` (`components/AffiliateDisclosurePage.tsx`)
+didn't exist — `ComparisonTable.tsx`'s affiliate-disclosure banner on comparison-type blog posts
+had linked to it since that feature shipped (2026-08-05), a dead 404 the whole time. Matches the
+shared legal-page visual pattern (see `RULES.md`).
+
+**Privacy Policy**: added a CCPA/CPRA "Your U.S. State Privacy Rights" section
+(`#us-state-rights`). The site doesn't sell/share personal data with anyone, so this is a plain
+disclosure + contact-based rights-request process — deliberately not an opt-out toggle/consent-
+management UI, since there's nothing to opt out of yet.
+
+**Terms and Conditions**: added a short Affiliate Disclosure section — the affiliate-links feature
+had been live since 2026-08-05 but Terms never mentioned it.
+
+**Cookie Policy**: §3 ("How can I control cookies?") had claimed a "Cookie Consent Manager" that
+let visitors pick cookie categories — no such UI ever existed in the codebase. Built a real,
+minimal `CookieBanner` component instead (essential-cookies-only messaging, localStorage-dismissed,
+mounted in `app/layout.tsx`) and rewrote §3 to describe it accurately. Also normalized the "2017 I
+STA" / "2017 I St A" address-formatting inconsistency across pages to the latter.
+
+**Footer**, iterated over several rounds of user feedback (screenshots each round):
+1. Added a "Newsletter" column wired to the real `/api/newsletter/subscribe` endpoint — user asked
+   to drop it again shortly after ("too many columns"). Ended up not shipped.
+2. Added a "Legal" column (all 6 legal links) and restored a 4-link bottom-bar row — went through
+   3 layout attempts (full-width flex-wrap row, then a stacked two-row version) before landing back
+   on the *original* pre-session two-group (`slice(0,2)`/`slice(2)`) bottom-bar layout, which is
+   what the user actually meant by "like the original."
+3. Merged "Shop by Solution" + "Shop by Breed" into one "Shop" column — first attempt put the two
+   sub-groups side-by-side, which halved their width and wrapped every link onto two lines ("ugly"
+   per user feedback); fixed by stacking the sub-groups vertically instead.
+4. Removed "All Products" from the Shop column (redundant with the main nav's Shop link, and not
+   actually a "solution" category).
+5. Switched the main column row from an equal-width CSS grid to `flex justify-between` — with
+   content length varying a lot per column, equal grid tracks left uneven-looking gaps wherever a
+   short column's content didn't fill its track. Also gave the About column an explicit width
+   constraint (new `wrapperClassName` prop on the shared `FooterSection`), since its paragraph text
+   would otherwise be the widest column and unbalance the row.
+
+**Newsletter subscribe hardening**: `NewsletterController::subscribe()`'s confirmation
+`Mail::send()` had no error handling — an SMTP failure would throw *after* the subscriber row was
+already saved, turning a real success into a 500 for the caller. Wrapped in try/catch +
+`Log::warning` (matches the "non-critical external call" convention in `RULES.md`, extended to
+cover this case explicitly). Also fixed `Newsletter.tsx` (a homepage promo form component) whose
+`<form>` had no `onSubmit` at all — clicking Subscribe did nothing — and linked to a nonexistent
+`/privacy` route; this component turned out to be unused/dead code (the live homepage promo is a
+different inline component, `EmailCta` in `HomePage.tsx`), so the fix has no live effect yet but is
+now correct if the component is ever wired up.
+
+**Known follow-up, not fixed this session** (flagged to user, not actioned): `HomePage.tsx`'s
+`EmailCta` (the live "Get 10% Off" homepage promo) has the identical bug as `Newsletter.tsx` did —
+its submit handler only sets local state, never calls the real newsletter API. Also,
+`AuthController::register()`'s `WelcomeEmail` send is still unguarded (same bug class as the
+Newsletter fix above, not yet applied there).
+
+Verified every round via `tsc --noEmit`, `eslint`, and Playwright screenshots at 1500/1280/1024px
+(desktop breakpoints only — mobile accordion behavior spot-checked once, not on every iteration).
+`gitnexus_detect_changes` (low risk, 0 affected processes each time) before every commit.
+
+**Not yet done**: push to remote and VPS deploy (frontend + backend rebuild, Cloudflare purge,
+public `curl` verification) — pending as of this entry.
+
+---
+
 # Handoff — 2026-08-07 (even later)
 
 ## Customer admin resource: real table columns, redesigned view page, and a Lunar List-page gotcha

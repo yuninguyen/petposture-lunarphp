@@ -138,6 +138,15 @@ petposture/
   (`affiliate_clicks` table: post, network, product, referrer) before forwarding to the real
   retailer URL, so admin can eventually see which posts/products actually drive outbound clicks —
   no revenue/commission tracking yet, click volume only.
+- Legal/compliance pages (added 2026-08-08): Privacy Policy (incl. a CCPA/CPRA "Your U.S. State
+  Privacy Rights" section — the site doesn't sell/share personal data, so this is a disclosure +
+  contact-based rights process, not an opt-out mechanism), Terms and Conditions, Cookie Policy, and
+  Acceptable Use Policy, plus a new Affiliate Disclosure page that also fixed a dead
+  `/affiliate-disclosure` link the comparison-post banner had pointed to since launch. A real
+  cookie notice banner (essential-cookies-only, dismissed via localStorage) replaced Cookie
+  Policy's prior mention of a "Cookie Consent Manager" that never existed in code. Footer groups
+  these under a dedicated "Legal" column (plus the 4 most-referenced ones in the bottom bar) and a
+  merged "Shop" column (previously two separate "Shop by Solution"/"Shop by Breed" columns).
 - Discount / coupon codes (Lunar's discount engine, incl. free-shipping coupons)
 - Self-service order returns (`/returns`): guest lookup by order number + email, item/quantity
   selection, reason and note — reviewed in Filament (Sales > Return Requests) with
