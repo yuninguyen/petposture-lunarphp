@@ -209,6 +209,16 @@ class AdminPanelProvider extends PanelProvider
                     /* ── Topbar ── */
                     header.fi-topbar{background:#fff!important;border-bottom:1px solid #eef0f3!important;box-shadow:0 1px 4px rgba(0,0,0,.05)!important}
 
+                    /* ── Breadcrumbs relocated into the topbar (see ppMoveBreadcrumbToTopbar in the
+                       script block below) — reset the page-header margin now that this is a flex
+                       sibling of the topbar own left-side buttons, not a stacked header row. ── */
+                    .fi-topbar .fi-breadcrumbs{margin:0!important}
+                    .fi-topbar .fi-breadcrumbs-item-label{font-size:12.5px!important}
+
+                    /* ── Page header heading/subheading weight+size (requested 2026-08-08) ── */
+                    .fi-header-heading{font-weight:600!important}
+                    .fi-header-subheading{font-size:.9rem!important;line-height:1.2rem!important}
+
                     /* ── Page bg ── */
                     main.fi-main,div.fi-main,.fi-main-ctn{background:#f4f6f9!important}
 
@@ -304,8 +314,42 @@ class AdminPanelProvider extends PanelProvider
                             });
                         }
 
+                        // Tracks which URL the topbar breadcrumb currently reflects, so a real page
+                        // navigation clears the stale one exactly once — not on every one of the
+                        // several events/timers below that all fire for the very same page load
+                        // (DOMContentLoaded, livewire:navigated, and the retry timers all fire together
+                        // on a first load; clearing unconditionally on each one removed the copy we
+                        // had just relocated moments earlier, before anything fresh existed to replace
+                        // it, permanently losing the breadcrumb).
+                        var ppBreadcrumbUrl = null;
+
+                        function ppMoveBreadcrumbToTopbar(){
+                            var topbarNav = document.querySelector(\'.fi-topbar nav\');
+                            if (!topbarNav) return;
+
+                            if (ppBreadcrumbUrl !== location.pathname) {
+                                ppBreadcrumbUrl = location.pathname;
+                                topbarNav.querySelectorAll(\':scope > nav.fi-breadcrumbs\').forEach(function(n){ n.remove(); });
+                            }
+
+                            // A page-header breadcrumb only exists in its original template position
+                            // if Livewire has (re)rendered it there since the last move — most partial
+                            // updates (e.g. search-as-you-type) never touch the header at all, so on
+                            // those runs there is nothing fresh to find and the one already sitting in
+                            // the topbar from before is left completely alone.
+                            var pageBreadcrumb = document.querySelector(\'.fi-header nav.fi-breadcrumbs, main nav.fi-breadcrumbs\');
+                            if (!pageBreadcrumb || topbarNav.contains(pageBreadcrumb)) return;
+
+                            topbarNav.querySelectorAll(\':scope > nav.fi-breadcrumbs\').forEach(function(n){ n.remove(); });
+                            pageBreadcrumb.classList.remove(\'mb-2\');
+                            var anchor = topbarNav.querySelector(\':scope > .ms-auto\');
+                            if (anchor) { topbarNav.insertBefore(pageBreadcrumb, anchor); }
+                            else { topbarNav.appendChild(pageBreadcrumb); }
+                        }
+
                         function applyTheme(){
                             ppSafe(ppHideDashboardHeading);
+                            ppSafe(ppMoveBreadcrumbToTopbar);
                         }
 
                         /* Run immediately + on Livewire navigation */
