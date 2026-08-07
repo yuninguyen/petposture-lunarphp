@@ -11,7 +11,6 @@ const shopBySolution = [
   "Eating & Digestion",
   "Mobility & Support",
   "Comfort & Safety",
-  "All Products",
 ];
 const shopByBreed = ["Flat-Faced Breeds", "Long-Backed Breeds"];
 const customerService = [
@@ -44,6 +43,7 @@ type FooterSectionProps = {
   onToggle: (section: string) => void;
   items?: string[];
   isCustomContent?: React.ReactNode;
+  wrapperClassName?: string;
 };
 
 const getLegalHref = (link: string) => {
@@ -63,7 +63,6 @@ const getShopHref = (item: string) => {
     case "Eating & Digestion": return "/shop/solutions/eating-digestion";
     case "Mobility & Support": return "/shop/solutions/mobility-support";
     case "Comfort & Safety": return "/shop/solutions/comfort-safety";
-    case "All Products": return "/shop";
     case "Flat-Faced Breeds": return "/shop/breeds/flat-faced";
     case "Long-Backed Breeds": return "/shop/breeds/long-backed";
     default: return "#";
@@ -93,9 +92,9 @@ function ShopLinkGroup({ heading, items }: { heading: string; items: string[] })
   );
 }
 
-function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: FooterSectionProps) {
+function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent, wrapperClassName }: FooterSectionProps) {
   return (
-    <div className="border-b lg:border-none border-white/5 py-4 lg:py-0">
+    <div className={`border-b lg:border-none border-white/5 py-4 lg:py-0 ${wrapperClassName ?? ""}`}>
       <button
         onClick={() => onToggle(id)}
         className="flex items-center justify-between w-full lg:mb-4 group text-left"
@@ -157,16 +156,17 @@ export default function Footer() {
       {/* Main Footer */}
       <div className="py-10 md:py-10 px-4 md:px-8 border-t border-white/5">
         <div className="max-w-[1200px] w-full mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-8">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 lg:gap-10">
             {/* About Section */}
             <FooterSection
               title="About PetPosture"
               id="about"
               isOpen={openSection === "about"}
               onToggle={toggleSection}
+              wrapperClassName="lg:w-64 lg:shrink-0"
               isCustomContent={
                 <div className="pb-4 lg:pb-0">
-                  <p className="text-[16px] text-white/60 leading-[1.75] mb-6 max-w-sm">
+                  <p className="text-[16px] text-white/60 leading-[1.75] mb-6">
                     {description}
                   </p>
                   <div className="flex gap-4">
