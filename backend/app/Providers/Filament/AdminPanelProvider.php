@@ -177,7 +177,7 @@ class AdminPanelProvider extends PanelProvider
                     nav.fi-sidebar,aside.fi-sidebar{background:#1c252e!important;border-right:none!important;box-shadow:none!important}
                     nav.fi-sidebar *,aside.fi-sidebar *{border-color:rgba(255,255,255,.05)!important}
                     header.fi-sidebar-header,.fi-sidebar-header{background:transparent!important;height:auto!important;min-height:4rem!important;padding:.85rem 1.1rem!important;border-bottom:none!important;display:flex!important;align-items:center!important}
-                    img.fi-logo{height:32px!important;width:auto!important;max-width:160px!important;object-fit:contain!important;display:block!important}
+                    .fi-sidebar-header img.fi-logo{height:32px!important;width:auto!important;max-width:160px!important;object-fit:contain!important;display:block!important}
                     .fi-sidebar-header span{color:#f8fafc!important;font-weight:700!important}
                     [class*="fi-sidebar-group-label"],[class*="fi-sidebar-nav-label"]{color:rgba(148,163,184,.5)!important;font-size:12.5px!important;font-weight:500!important;letter-spacing:normal!important;text-transform:uppercase!important;padding:1.1rem 1.1rem .4rem .2rem!important}
 
@@ -201,6 +201,10 @@ class AdminPanelProvider extends PanelProvider
                     .fi-wi-widget.fi-wi-table>.fi-ta{flex:1!important;display:flex!important;flex-direction:column!important;min-height:0!important}
                     .fi-wi-widget.fi-wi-table .fi-ta-ctn{flex:1!important;display:flex!important;flex-direction:column!important}
 
+                    /* ── Login / simple page (logo was inheriting the sidebar 32px override; heading was default Filament 2xl/bold) ── */
+                    .fi-simple-header img.fi-logo{height:64px!important;width:auto!important;max-width:220px!important}
+                    .fi-simple-header-heading{font-size:1.25rem!important;font-weight:600!important}
+
                     /* ── Topbar ── */
                     header.fi-topbar{background:#fff!important;border-bottom:1px solid #eef0f3!important;box-shadow:0 1px 4px rgba(0,0,0,.05)!important}
 
@@ -218,9 +222,13 @@ class AdminPanelProvider extends PanelProvider
                     .fi-section-header{border-bottom:1px solid #f1f3f6!important}
                     .fi-section-header-heading,.fi-ta-header-heading,.filament-apex-charts-heading{font-size:14px!important;font-weight:700!important;color:#111827!important;font-family:"Public Sans","Public Sans Fallback",ui-sans-serif,sans-serif!important}
 
+                    /* ── ApexCharts widget header (plain div, unlike fi-section-header has no built-in border/padding) ── */
+                    .filament-apex-charts-header{border-bottom:1px solid #f1f3f6!important;padding-bottom:.75rem!important;margin-bottom:.75rem!important}
+
                     /* ── Tables ── */
                     [class*="fi-ta-header-cell"]{font-size:13px!important;font-weight:600!important;text-transform:capitalize!important;color:#6b7280!important}
                     [class*="fi-ta-row"]:hover td{background:#fafbfc!important}
+                    .fi-ta-text-item-label{font-size:.8rem!important;font-weight:600!important;line-height:1.5rem!important}
 
                     /* ── Table row actions: icon-only (label hidden, kept in DOM for screen readers) ── */
                     .fi-ta-actions{gap:.25rem!important}
