@@ -28,7 +28,12 @@ class Payment extends Page
 
     public function getTitle(): string
     {
-        return __('Payment');
+        return __('Payment Methods');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('Payment Methods');
     }
 
     public ?array $data = [];

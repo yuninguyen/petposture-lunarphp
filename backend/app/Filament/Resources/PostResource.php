@@ -44,65 +44,93 @@ class PostResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make(__('Post Details'))
+                Forms\Components\Grid::make(['default' => 1, 'lg' => 3])
                     ->schema([
-                        Forms\Components\TextInput::make('title')
-                            ->label(__('Title'))
-                            ->required()
-                            ->maxLength(255)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn (string $operation, $state, Set $set) => $operation === 'create' ? $set('slug', Str::slug($state)) : null),
+                        Forms\Components\Group::make([
+                            static::contentSection(),
+                            static::comparisonDetailsSection(),
+                            static::seoSection(),
+                        ])->columnSpan(['lg' => 2]),
 
-                        Forms\Components\TextInput::make('slug')
-                            ->label(__('Slug'))
-                            ->required()
-                            ->unique(Post::class, 'slug', ignoreRecord: true)
-                            ->maxLength(255),
+                        Forms\Components\Group::make([
+                            static::postSettingsSection(),
+                        ])->columnSpan(['lg' => 1]),
+                    ]),
+            ]);
+    }
 
-                        Forms\Components\RichEditor::make('content')
-                            ->label(__('Content'))
-                            ->required()
-                            ->columnSpanFull(),
+    protected static function contentSection(): Forms\Components\Section
+    {
+        return Forms\Components\Section::make(__('Content'))
+            ->description(__('The title and body of the post.'))
+            ->schema([
+                Forms\Components\TextInput::make('title')
+                    ->label(__('Title'))
+                    ->required()
+                    ->maxLength(255)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn (string $operation, $state, Set $set) => $operation === 'create' ? $set('slug', Str::slug($state)) : null)
+                    ->columnSpanFull(),
 
-                        Forms\Components\Select::make('blog_category_id')
-                            ->label(__('Category'))
-                            ->relationship('blogCategory', 'name')
-                            ->required()
-                            ->searchable()
-                            ->preload(),
+                Forms\Components\TextInput::make('slug')
+                    ->label(__('Slug'))
+                    ->required()
+                    ->unique(Post::class, 'slug', ignoreRecord: true)
+                    ->maxLength(255)
+                    ->columnSpanFull(),
 
-                        Forms\Components\Select::make('type')
-                            ->label(__('Post Type'))
-                            ->options([
-                                Post::TYPE_ARTICLE => __('Article'),
-                                Post::TYPE_GUIDE => __('Guide'),
-                                Post::TYPE_COMPARISON => __('Comparison'),
-                            ])
-                            ->default(Post::TYPE_ARTICLE)
-                            ->required()
-                            ->live(),
+                Forms\Components\RichEditor::make('content')
+                    ->label(__('Content'))
+                    ->required()
+                    ->columnSpanFull(),
+            ]);
+    }
 
-                        Forms\Components\FileUpload::make('featured_image')
-                            ->label(__('Featured Image'))
-                            ->image()
-                            ->directory('blog')
-                            ->saveUploadedFileUsing(ImageUploadResizer::make(1600, 1600)),
+    protected static function postSettingsSection(): Forms\Components\Section
+    {
+        return Forms\Components\Section::make(__('Post Settings'))
+            ->schema([
+                Forms\Components\Select::make('blog_category_id')
+                    ->label(__('Category'))
+                    ->relationship('blogCategory', 'name')
+                    ->required()
+                    ->searchable()
+                    ->preload(),
 
-                        Forms\Components\Select::make('status')
-                            ->label(__('Status'))
-                            ->options([
-                                'draft' => __('Draft'),
-                                'published' => __('Published'),
-                            ])
-                            ->required()
-                            ->default('draft'),
+                Forms\Components\Select::make('type')
+                    ->label(__('Post Type'))
+                    ->options([
+                        Post::TYPE_ARTICLE => __('Article'),
+                        Post::TYPE_GUIDE => __('Guide'),
+                        Post::TYPE_COMPARISON => __('Comparison'),
+                    ])
+                    ->default(Post::TYPE_ARTICLE)
+                    ->required()
+                    ->live(),
 
-                        Forms\Components\DateTimePicker::make('published_at')
-                            ->label(__('Published At')),
+                Forms\Components\FileUpload::make('featured_image')
+                    ->label(__('Featured Image'))
+                    ->image()
+                    ->directory('blog')
+                    ->saveUploadedFileUsing(ImageUploadResizer::make(1600, 1600)),
 
-                    ])->columns(2),
+                Forms\Components\Select::make('status')
+                    ->label(__('Status'))
+                    ->options([
+                        'draft' => __('Draft'),
+                        'published' => __('Published'),
+                    ])
+                    ->required()
+                    ->default('draft'),
 
-                Forms\Components\Section::make(__('Comparison Details'))
+                Forms\Components\DateTimePicker::make('published_at')
+                    ->label(__('Published At')),
+            ]);
+    }
+
+    protected static function comparisonDetailsSection(): Forms\Components\Section
+    {
+        return Forms\Components\Section::make(__('Comparison Details'))
                     ->description(__('Retailer price comparison shown above the article body. Only used when post type is Comparison.'))
                     ->visible(fn (Get $get): bool => $get('type') === Post::TYPE_COMPARISON)
                     ->schema([
@@ -182,9 +210,12 @@ class PostResource extends Resource
                                     ->columnSpanFull(),
                             ])
                             ->columns(2),
-                    ]),
+                    ]);
+    }
 
-                Forms\Components\Section::make(__('SEO Settings'))
+    protected static function seoSection(): Forms\Components\Section
+    {
+        return Forms\Components\Section::make(__('SEO Settings'))
                     ->description(__('Optimize this post for search engines and social media.'))
                     ->headerActions([
                         Forms\Components\Actions\Action::make('generateSeo')
@@ -255,8 +286,7 @@ class PostResource extends Resource
                                             ->saveUploadedFileUsing(ImageUploadResizer::make(1200, 630)),
                                     ]),
                             ]),
-                    ])->collapsible(),
-            ]);
+                    ])->collapsible();
     }
 
     public static function table(Table $table): Table
