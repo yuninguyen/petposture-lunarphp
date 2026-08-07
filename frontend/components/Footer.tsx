@@ -58,6 +58,41 @@ const getLegalHref = (link: string) => {
   }
 };
 
+const getShopHref = (item: string) => {
+  switch (item) {
+    case "Eating & Digestion": return "/shop/solutions/eating-digestion";
+    case "Mobility & Support": return "/shop/solutions/mobility-support";
+    case "Comfort & Safety": return "/shop/solutions/comfort-safety";
+    case "All Products": return "/shop";
+    case "Flat-Faced Breeds": return "/shop/breeds/flat-faced";
+    case "Long-Backed Breeds": return "/shop/breeds/long-backed";
+    default: return "#";
+  }
+};
+
+function ShopLinkGroup({ heading, items }: { heading: string; items: string[] }) {
+  return (
+    <div>
+      <h4 className="text-[12px] font-bold uppercase tracking-[0.15em] text-white/40 mb-3">
+        {heading}
+      </h4>
+      <ul className="space-y-3">
+        {items.map((item) => (
+          <li key={item}>
+            <Link
+              href={getShopHref(item)}
+              className="text-[16px] text-white/60 hover:text-[#df8448] transition-colors flex items-center gap-2 group"
+            >
+              <span className="w-0 h-[1px] bg-[#df8448] transition-all group-hover:w-3" />
+              {item}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: FooterSectionProps) {
   return (
     <div className="border-b lg:border-none border-white/5 py-4 lg:py-0">
@@ -93,13 +128,7 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent }: 
                         item === "Return & Refund Policy" ? "/return-refund-policy" :
                           item === "FAQs" ? "/faqs" :
                             item === "Track Your Order" ? "/track-order" :
-                              item === "Request a Return" ? "/returns" :
-                              item === "Eating & Digestion" ? "/shop/solutions/eating-digestion" :
-                                item === "Mobility & Support" ? "/shop/solutions/mobility-support" :
-                                  item === "Comfort & Safety" ? "/shop/solutions/comfort-safety" :
-                                    item === "All Products" ? "/shop" :
-                                      item === "Flat-Faced Breeds" ? "/shop/breeds/flat-faced" :
-                                        item === "Long-Backed Breeds" ? "/shop/breeds/long-backed" : "#"
+                              item === "Request a Return" ? "/returns" : "#"
                   }
                   className="text-[16px] text-white/60 hover:text-[#df8448] transition-colors flex items-center gap-2 group"
                 >
@@ -128,7 +157,7 @@ export default function Footer() {
       {/* Main Footer */}
       <div className="py-10 md:py-10 px-4 md:px-8 border-t border-white/5">
         <div className="max-w-[1200px] w-full mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-8">
             {/* About Section */}
             <FooterSection
               title="About PetPosture"
@@ -174,9 +203,19 @@ export default function Footer() {
               }
             />
 
-            {/* Shop sections with accordion on mobile */}
-            <FooterSection title="Shop by Solution" items={shopBySolution} id="solution" isOpen={openSection === "solution"} onToggle={toggleSection} />
-            <FooterSection title="Shop by Breed" items={shopByBreed} id="breed" isOpen={openSection === "breed"} onToggle={toggleSection} />
+            {/* Shop section: solution + breed sub-groups, accordion on mobile */}
+            <FooterSection
+              title="Shop"
+              id="shop"
+              isOpen={openSection === "shop"}
+              onToggle={toggleSection}
+              isCustomContent={
+                <div className="pb-4 lg:pb-0 space-y-6">
+                  <ShopLinkGroup heading="By Solution" items={shopBySolution} />
+                  <ShopLinkGroup heading="By Breed" items={shopByBreed} />
+                </div>
+              }
+            />
             <FooterSection title="Customer Service" items={customerService} id="service" isOpen={openSection === "service"} onToggle={toggleSection} />
             <FooterSection
               title="Legal"
