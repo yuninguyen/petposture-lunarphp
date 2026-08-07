@@ -9,6 +9,8 @@ use Lunar\Models\Order;
 
 class LatestOrdersTable extends TableWidget
 {
+    protected static string $view = 'filament.widgets.latest-orders-table';
+
     protected static ?int $sort = 4;
 
     protected int|string|array $columnSpan = [
