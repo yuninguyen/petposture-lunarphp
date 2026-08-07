@@ -1,3 +1,93 @@
+# Handoff — 2026-08-07 (even later)
+
+## Customer admin resource: real table columns, redesigned view page, and a Lunar List-page gotcha
+
+Follow-up to the AI SEO work below in this same date — user asked for the Filament admin's
+Customers table/view page to match a `dashboardpack.com` template reference instead of Lunar's
+sparse default (First Name/Last Name/Company Name/Tax Identifier/Account Reference/Customer
+Group only).
+
+**Customers table** (`CustomerResource::getDefaultTable()`): Name, Email (via linked user
+account), Total Orders, Total Spent, Joined, Status (badge, derived from the linked user's
+`is_active`; guests with no linked account read as Active) + a matching status filter.
+
+**Hit and fixed a real bug**: the new table override didn't render at all — `/admin/customers`
+kept showing Lunar's stock columns. Root cause: `ListCustomers` (the resource's `index` page)
+was still Lunar's own vendor class, which hardcodes its own `$resource` and so resolves
+`table()` against Lunar's base `CustomerResource`, never the locally-registered override — the
+exact same class of gotcha already known for `edit`/`view` pages, just not previously hit for
+`list`. Fixed with a local `ListCustomers` page subclass that only overrides `$resource` (see
+`ARCHITECTURE.md`/`RULES.md` for the generalized note — check this first next time a table/form
+override on a Lunar resource silently does nothing).
+
+**Customer view page redesign** (iterated over several rounds of user feedback):
+- Customer Details box: 3 columns — (Full Name, Company Name, Email), (Account Reference, Tax
+  ID, Phone — Phone sourced from the customer's default/first saved address, since `Customer` has
+  no native phone field), (Customer Groups, its own column instead of a half-empty full-width
+  row).
+- Dropped a redundant "Stats Summary" — the page's existing `CustomerStatsOverviewWidget`
+  (Total Orders / Avg Spend / Total Spend, top of page) already covers it.
+- Renamed the "Addresses" tab/box → **"Address Book"** (matches Shopify/Stripe Dashboard
+  convention) — user's first pick, "Saved Address", was rejected as sounding unprofessional.
+  Confirmed for the user that this table (`lunar_addresses`, `customer_id` FK) is genuinely the
+  saved address book, distinct from `lunar_cart_addresses` (temporary, checkout-only) and
+  `lunar_order_addresses` (frozen per-order snapshot).
+- Renamed the "Users" tab → **"Login Accounts"** after the user asked why it existed alongside
+  Customer Details' Email field — it's not redundant: Email in Customer Details is a read-only
+  summary of the *first* linked login, while Login Accounts is the actual account manager
+  (edit email/password, shows *every* linked login — a customer can have more than one, e.g. a
+  B2B/company profile).
+- Address Book's own table trimmed to Title/First Name/Last Name/Address/City/State/Postcode/
+  Contact Phone (dropped Company Name/Tax ID/Contact Email, which duplicate the customer-level
+  fields above).
+
+**Also found**: Filament relation-manager panels lazy-load via `x-intersect`
+(IntersectionObserver) — a screenshot taken before the panel scrolls into the real viewport shows
+a permanent loading skeleton with no underlying error. Cost real debugging time before being
+traced via network/log inspection; now documented in `ARCHITECTURE.md` so it isn't rediscovered.
+
+Verified every step against a real local admin session (Playwright: log in, screenshot,
+`$$eval` header/cell text) with disposable test customer/address/user data created and deleted
+each round — never left in the DB. `gitnexus_detect_changes` (low risk each time) → commit → push
+→ VPS deploy → Cloudflare purge → public `curl` check, same pipeline as every other change this
+session.
+
+**Still open**: `ANTHROPIC_API_KEY` is not set on the production VPS — the AI SEO "Generate with
+AI" button (see the entry immediately below) will error there until it's added.
+
+---
+
+# Handoff — 2026-08-07 (also earlier)
+
+## Fixed Post SEO Settings never actually saving/loading, added real AI-powered "Generate with AI"
+
+User asked to check whether `/admin/posts/create`'s "SEO Settings" section actually did anything.
+It didn't, end to end — three separate breaks in the same pipeline:
+
+1. `CreatePost`/`EditPost` pages never wrote the `seo.*` form fields to the `Post`'s `seo()`
+   relation on save.
+2. The edit form never loaded existing SEO data back in (`mutateFormDataBeforeFill` was missing),
+   so re-opening a post with SEO data always showed blank fields.
+3. `Api\PostResource` never exposed `seo` at all — the frontend's `generateMetadata()` in
+   `app/blog/[slug]/page.tsx` was silently falling back to auto-generated title/description from
+   post content, with the admin's SEO fields having zero effect on the actual `<head>` output.
+
+Fixed all three. Then, per the user's explicit choice ("AI thật (LLM) viết lại chuẩn SEO" over a
+simple keyword-density helper), added a real "Generate with AI" button
+(`AiSeoGeneratorService`, Claude Opus 5 via `anthropic-ai/sdk`, structured JSON output) that
+drafts SEO title/focus keyphrase/meta description/social title/social description from the
+post's own title+content in one call — admin reviews before saving, nothing auto-persists. See
+`ARCHITECTURE.md` for the technical shape (DB-`Setting`-overrides-`.env` credential pattern,
+4th instance after Stripe/PayPal/redirect-gateways).
+
+**Not yet done**: `ANTHROPIC_API_KEY` was never added to the production VPS's `backend/.env` —
+confirmed still missing as of the Customer-resource work above. The button will throw a clear
+"Anthropic API key is not configured" error on production until someone adds it (either the env
+var, or the `anthropic_api_key` field once a Settings-UI tab exists for it — today it's `.env`-only
+in production; the Settings DB override only helps once a real UI field is added there too).
+
+---
+
 # Handoff — 2026-08-07 (later)
 
 ## Affiliate click tracking, 3 new redirect-checkout payment gateways, and a Filament CSS bug fix

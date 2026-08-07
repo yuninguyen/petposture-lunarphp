@@ -124,6 +124,13 @@ petposture/
   source, so what's configured in the admin is exactly what customers are charged
 - Customers are linked to real Lunar `Customer` records on signup/checkout (not just Users),
   so Sales > Customers shows real customer data instead of an empty page
+- Blog post SEO Settings (Google Search + Social Media tabs: SEO title, focus keyphrase, meta
+  description, social title/description/image) with a "Generate with AI" button that calls
+  Claude Opus 5 (`AiSeoGeneratorService`, `anthropic-ai/sdk`) to draft all five fields from the
+  post's title/content in one request (structured JSON output, admin reviews before saving —
+  never auto-saves). Anthropic API key follows the same DB-`Setting`-overrides-`.env` pattern as
+  Stripe/PayPal (`ANTHROPIC_API_KEY` or Settings → `anthropic_api_key`); without it configured,
+  the button shows a clear error instead of failing silently.
 - Blog with slug-based routing, including a "comparison" post type (retailer price-comparison
   cards with outbound affiliate links — Chewy/Amazon/Walmart/Petco/PetSmart, managed under
   Content Management → Affiliate Networks) with FTC disclosure. Outbound affiliate links go
@@ -180,7 +187,14 @@ petposture/
   description, category/brand, price, and click-to-quick-edit Stock/Status (single-variant products
   only for Stock, since the column is a sum across variants). Every Edit/Delete header button across
   the whole panel — local resources and untouched Lunar/Shield vendor pages alike — is styled from one
-  global config (outlined orange for Edit, outlined red for Delete), not per page.
+  global config (outlined orange for Edit, outlined red for Delete), not per page. Customers table
+  (added 2026-08-07) shows Name/Email/Total Orders/Total Spent/Joined/Status (Status derived from
+  the linked login account's active flag) with a matching filter; the Customer view page has a
+  3-column Customer Details box (identity/contact fields, account reference/tax/phone, Customer
+  Groups) plus separate Orders / Address Book (the customer's saved address book,
+  `lunar_addresses` — distinct from the temporary cart address at checkout and from the frozen
+  per-order address snapshot) / Login Accounts (the actual login email/password manager —
+  supports more than one linked login per customer) tabs.
 - Role-based access control via Filament Shield
 
 ---
