@@ -202,7 +202,7 @@ class AdminPanelProvider extends PanelProvider
                     .fi-wi-widget.fi-wi-table .fi-ta-ctn{flex:1!important;display:flex!important;flex-direction:column!important}
 
                     /* ── Login / simple page (logo was inheriting the sidebar 32px override; heading was default Filament 2xl/bold) ── */
-                    .fi-simple-header img.fi-logo{height:44px!important;width:auto!important;max-width:180px!important;margin-bottom:1.25rem!important}
+                    .fi-simple-header img.fi-logo{height:44px!important;width:auto!important;max-width:190px!important;margin-bottom:1.25rem!important}
                     .fi-simple-header-heading{font-size:1.3rem!important;font-weight:650!important;color:#111827!important;font-family:"Public Sans","Public Sans Fallback",ui-sans-serif,sans-serif!important;letter-spacing:normal!important}
                     .fi-simple-main .fi-btn{box-shadow:0 1px 3px rgba(223,132,72,.22)!important}
 
