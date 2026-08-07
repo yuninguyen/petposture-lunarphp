@@ -223,18 +223,19 @@ class AdminPanelProvider extends PanelProvider
                     .fi-section-header{border-bottom:1px solid #f1f3f6!important}
                     .fi-section-header-heading,.fi-ta-header-heading,.filament-apex-charts-heading{font-size:14px!important;font-weight:700!important;color:#111827!important;font-family:"Public Sans","Public Sans Fallback",ui-sans-serif,sans-serif!important}
 
-                    /* ── ApexCharts widget header — matches Top Products (fi-ta-header) card-top-to-border distance
-                       (16+24+16=56px) pixel for pixel. Verified the real rendered DOM via a Livewire component
-                       test render (the x-filament::card wrapper this package uses does not forward its class prop
-                       down to the underlying x-filament::section, so a ".filament-apex-charts-card ..." ancestor
-                       selector never matches anything real — do not reintroduce one). Real chain: fi-section-content
-                       keeps its default p-6 (24px) top padding untouched (unreachable without :has()), the package
-                       own inner py-2 row is zeroed out below, and this header own bottom padding is set to exactly
-                       what is needed. Measured live via a real logged-in Playwright render (getBoundingClientRect
-                       on both card headers): 8px padding-bottom put this 2px over the Top Products 56px target
-                       (measured 58px), so this is 6px instead — re-measure after any further change to this block. ── */
+                    /* ── ApexCharts widget header — matches Top Products (fi-ta-header, p-4 sm:px-6 = 16px top/bottom)
+                       heading position AND border distance, not just the border distance alone. The x-filament::card
+                       wrapper this package uses does not forward its class prop down to the underlying
+                       x-filament::section (verified via a real Livewire component render), so fi-section-content
+                       keeps its default p-6 (24px) top padding — 8px more than Top Products own 16px. A prior fix
+                       only compensated the bottom padding, which made the border land at the same distance from
+                       card-top but left the heading text itself sitting 8px lower than Top Products (visibly
+                       uneven — confirmed from a real production screenshot). Fixed properly this time: margin-top
+                       pulls the whole header up by that same 8px so the heading TEXT starts at 16px like Top
+                       Products, then bottom padding matches Top Products own 16px exactly (16+24+16=56, and the
+                       heading position matches too, not just the total distance). ── */
                     .filament-apex-charts-header>div{padding-top:0!important;padding-bottom:0!important}
-                    .filament-apex-charts-header{border-bottom:1px solid #f1f3f6!important;padding-bottom:6px!important;margin-bottom:1.5rem!important}
+                    .filament-apex-charts-header{margin-top:-8px!important;border-bottom:1px solid #f1f3f6!important;padding-bottom:16px!important;margin-bottom:1.5rem!important}
 
                     /* ── Tables ── */
                     [class*="fi-ta-header-cell"]{font-size:13px!important;font-weight:600!important;text-transform:capitalize!important;color:#6b7280!important}
