@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PostResource\Pages;
 
 use App\Filament\Resources\PostResource;
+use App\Models\Post;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -13,6 +14,13 @@ class EditPost extends EditRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $data['read_time'] = Post::estimateReadTime($data['content'] ?? '');
+
+        return $data;
     }
 
     protected function mutateFormDataBeforeFill(array $data): array
@@ -56,5 +64,11 @@ class EditPost extends EditRecord
         return [
             Actions\DeleteAction::make(),
         ];
+    }
+
+    protected function getSaveFormAction(): Actions\Action
+    {
+        return parent::getSaveFormAction()
+            ->extraAttributes(['onclick' => "localStorage.removeItem('petposture-draft:' + window.location.pathname)"]);
     }
 }

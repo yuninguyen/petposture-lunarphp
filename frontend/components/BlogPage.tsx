@@ -38,6 +38,7 @@ type BlogPost = {
     title: string;
     content: string;
     featured_image?: string | null;
+    featured_image_alt?: string | null;
     author?: string | null;
     read_time?: string | null;
     created_at?: string | null;
@@ -151,7 +152,7 @@ export default function BlogPage() {
                             <div className="group relative h-[300px] overflow-hidden md:h-[450px] lg:w-3/5">
                                 <Image
                                     src={featuredPost.featured_image || "/assets/placeholder-post.jpg"}
-                                    alt={featuredPost.title}
+                                    alt={featuredPost.featured_image_alt || featuredPost.title}
                                     fill
                                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                                     sizes="(max-width: 1024px) 100vw, 60vw"
@@ -298,7 +299,7 @@ export default function BlogPage() {
                                         <div className="relative aspect-[4/3] shrink-0 overflow-hidden rounded-xl shadow-sm md:w-[35%]">
                                             <Image
                                                 src={post.featured_image || "/assets/placeholder-post.jpg"}
-                                                alt={post.title}
+                                                alt={post.featured_image_alt || post.title}
                                                 fill
                                                 className="object-cover transition-transform duration-500 group-hover:scale-105"
                                                 sizes="(max-width: 768px) 100vw, 35vw"
@@ -403,7 +404,7 @@ export default function BlogPage() {
                                         <div className="relative aspect-[16/10] overflow-hidden rounded-xl shadow-sm">
                                             <Image
                                                 src={posts[0].featured_image || "/assets/placeholder-post.jpg"}
-                                                alt={posts[0].title}
+                                                alt={posts[0].featured_image_alt || posts[0].title}
                                                 fill
                                                 className="object-cover transition-transform duration-500 group-hover:scale-110"
                                                 sizes="320px"
@@ -425,7 +426,7 @@ export default function BlogPage() {
                                             <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-zinc-100 shadow-sm">
                                                 <Image
                                                     src={post.featured_image || "/assets/placeholder-post.jpg"}
-                                                    alt={post.title}
+                                                    alt={post.featured_image_alt || post.title}
                                                     fill
                                                     className="object-cover transition-transform group-hover:scale-110"
                                                     sizes="64px"

@@ -19,6 +19,7 @@ import Footer from '@/components/Footer';
 import Link from 'next/link';
 import ComparisonTable, { ComparisonData } from '@/components/blog/ComparisonTable';
 import { useSettings } from '@/context/SettingsContext';
+import { withTableOfContents } from '@/lib/text';
 
 const fadeUp = {
     initial: { opacity: 0, y: 20 },
@@ -34,6 +35,7 @@ interface BlogPost {
     type?: string;
     comparison?: ComparisonData | null;
     image: string;
+    imageAlt?: string;
     author: string;
     date: string;
     readTime: string;
@@ -47,6 +49,10 @@ interface BlogPostPageProps {
 export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
     const { social } = useSettings();
     const [isCommenting, setIsCommenting] = React.useState(false);
+    const { html: contentHtml, items: tocItems } = React.useMemo(
+        () => withTableOfContents(post.content || `<p>${post.excerpt}</p>`),
+        [post.content, post.excerpt]
+    );
 
     return (
         <main className="min-h-screen bg-white font-hanken overflow-x-hidden">
@@ -109,7 +115,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                             <div className="relative aspect-[16/9]">
                                 <Image
                                     src={post.image}
-                                    alt={post.title}
+                                    alt={post.imageAlt || post.title}
                                     fill
                                     sizes="(max-width: 1024px) 100vw, 70vw"
                                     className="object-cover"
@@ -123,7 +129,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
 
                         <article
                             className="prose prose-zinc max-w-none text-[#3e4c57] text-[18px] md:text-[20px] leading-[1.8] font-medium [&>p:first-of-type]:first-letter:text-5xl [&>p:first-of-type]:first-letter:font-bold [&>p:first-of-type]:first-letter:text-[#df8448] [&>p:first-of-type]:first-letter:mr-3 [&>p:first-of-type]:first-letter:float-left [&>*+*]:mt-8 [&_h2]:text-[28px] [&_h2]:md:text-[32px] [&_h2]:font-bold [&_h2]:text-[#3e4c57] [&_h2]:mt-12 [&_h2]:mb-6 [&_blockquote]:border-l-4 [&_blockquote]:border-[#df8448] [&_blockquote]:pl-8 [&_blockquote]:py-4 [&_blockquote]:bg-[#fdf2ea] [&_blockquote]:rounded-r-xl [&_blockquote]:italic [&_blockquote]:text-[22px] [&_blockquote]:text-[#3e4c57] [&_blockquote]:font-semibold [&_blockquote]:not-italic"
-                            dangerouslySetInnerHTML={{ __html: post.content || `<p>${post.excerpt}</p>` }}
+                            dangerouslySetInnerHTML={{ __html: contentHtml }}
                         />
 
                         {/* Article Footer */}
@@ -244,6 +250,27 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
 
                     {/* Sidebar column */}
                     <aside className="lg:w-[30%] space-y-12">
+
+                        {/* Table of Contents Widget */}
+                        {tocItems.length > 0 && (
+                            <div className="bg-white rounded-2xl p-8 border border-zinc-100 shadow-xl shadow-zinc-100">
+                                <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-[#df8448] mb-6 flex items-center gap-3">
+                                    On This Page
+                                    <div className="flex-1 h-[1px] bg-zinc-200" />
+                                </h4>
+                                <nav className="space-y-3">
+                                    {tocItems.map((item) => (
+                                        <a
+                                            key={item.id}
+                                            href={`#${item.id}`}
+                                            className={`block text-[14px] font-medium text-[#3e4c57] hover:text-[#df8448] transition-colors ${item.level === 3 ? 'pl-4 text-[13px] text-zinc-500' : ''}`}
+                                        >
+                                            {item.text}
+                                        </a>
+                                    ))}
+                                </nav>
+                            </div>
+                        )}
 
                         {/* Featured Widget */}
                         <div className="bg-[#f8f9fa] rounded-2xl p-8 border border-zinc-100 relative overflow-hidden">

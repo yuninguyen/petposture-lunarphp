@@ -15,6 +15,7 @@ type ApiPost = {
     type?: string;
     comparison?: ComparisonData | null;
     featured_image?: string | null;
+    featured_image_alt?: string | null;
     author?: string | null;
     read_time?: string | null;
     created_at?: string | null;
@@ -43,6 +44,7 @@ type BlogPostViewModel = {
     type: string;
     comparison?: ComparisonData | null;
     image: string;
+    imageAlt?: string;
     author: string;
     date: string;
     readTime: string;
@@ -61,6 +63,7 @@ function toViewModel(post: ApiPost): BlogPostViewModel {
         type: post.type || 'article',
         comparison: post.comparison ?? null,
         image: post.featured_image || '/assets/placeholder-post.jpg',
+        imageAlt: post.featured_image_alt || undefined,
         author: post.author || 'PetPosture Editorial',
         date: post.created_at ? formatDate(post.created_at) : 'Recently published',
         readTime: post.read_time || '5 min read',

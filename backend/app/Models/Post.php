@@ -24,6 +24,7 @@ class Post extends Model
         'slug',
         'content',
         'featured_image',
+        'featured_image_alt',
         'author',
         'read_time',
         'status',
@@ -47,5 +48,13 @@ class Post extends Model
     public function comments()
     {
         return $this->hasMany(Comment::class);
+    }
+
+    public static function estimateReadTime(string $html): string
+    {
+        $words = str_word_count(strip_tags($html));
+        $minutes = max(1, (int) ceil($words / 200));
+
+        return "{$minutes} min read";
     }
 }

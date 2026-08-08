@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PostResource\Pages;
 
 use App\Filament\Resources\PostResource;
+use App\Models\Post;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 
@@ -15,11 +16,19 @@ class CreatePost extends CreateRecord
         return $this->getResource()::getUrl('index');
     }
 
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['read_time'] = Post::estimateReadTime($data['content'] ?? '');
+
+        return $data;
+    }
+
     protected function getCreateFormAction(): Action
     {
         return parent::getCreateFormAction()
             ->label(__('Publish'))
-            ->icon('heroicon-o-paper-airplane');
+            ->icon('heroicon-o-paper-airplane')
+            ->extraAttributes(['onclick' => "localStorage.removeItem('petposture-draft:' + window.location.pathname)"]);
     }
 
     protected function afterCreate(): void

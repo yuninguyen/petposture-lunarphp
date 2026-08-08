@@ -64,6 +64,9 @@ class PostResource extends Resource
         return Forms\Components\Section::make(__('Content'))
             ->description(__('The title and body of the post.'))
             ->schema([
+                Forms\Components\View::make('filament.forms.autosave-draft')
+                    ->columnSpanFull(),
+
                 Forms\Components\TextInput::make('title')
                     ->label(__('Title'))
                     ->required()
@@ -77,6 +80,7 @@ class PostResource extends Resource
                     ->required()
                     ->unique(Post::class, 'slug', ignoreRecord: true)
                     ->maxLength(255)
+                    ->live(onBlur: true)
                     ->columnSpanFull(),
 
                 Forms\Components\RichEditor::make('content')
@@ -113,6 +117,11 @@ class PostResource extends Resource
                     ->image()
                     ->directory('blog')
                     ->saveUploadedFileUsing(ImageUploadResizer::make(1600, 1600)),
+
+                Forms\Components\TextInput::make('featured_image_alt')
+                    ->label(__('Image Alt Text'))
+                    ->helperText(__('Describe the image for search engines and screen readers.'))
+                    ->maxLength(255),
 
                 Forms\Components\Select::make('status')
                     ->label(__('Status'))
@@ -266,12 +275,25 @@ class PostResource extends Resource
                                     ->schema([
                                         Forms\Components\TextInput::make('seo.title')
                                             ->label(__('SEO Title'))
-                                            ->maxLength(60),
+                                            ->maxLength(60)
+                                            ->live(onBlur: true),
                                         Forms\Components\TextInput::make('seo.keyphrase')
                                             ->label(__('Focus Keyphrase')),
                                         Forms\Components\Textarea::make('seo.description')
                                             ->label(__('Meta Description'))
-                                            ->maxLength(160),
+                                            ->maxLength(160)
+                                            ->live(onBlur: true),
+                                        Forms\Components\Placeholder::make('serp_preview')
+                                            ->label(__('Search Preview'))
+                                            ->content(function (Get $get) {
+                                                $title = Str::limit((string) ($get('seo.title') ?: $get('title') ?: __('Untitled Post')), 60, '');
+                                                $description = Str::limit((string) ($get('seo.description') ?: strip_tags((string) $get('content'))), 160, '');
+                                                $url = rtrim(config('app.frontend_url'), '/').'/blog/'.($get('slug') ?: 'post-slug');
+
+                                                return new \Illuminate\Support\HtmlString(
+                                                    view('filament.forms.serp-preview', compact('title', 'description', 'url'))->render()
+                                                );
+                                            }),
                                     ]),
                                 Forms\Components\Tabs\Tab::make(__('Social Media'))
                                     ->schema([
