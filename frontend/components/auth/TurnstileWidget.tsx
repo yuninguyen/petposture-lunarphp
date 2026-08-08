@@ -30,6 +30,27 @@ export function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetProps) {
         onExpireRef.current = onExpire;
     });
 
+    // next/script only fires onLoad once per unique src for the whole app
+    // session — if this widget remounts (e.g. switching Sign In/Register)
+    // after the script already loaded elsewhere, onLoad never fires again.
+    // Poll for window.turnstile directly so remounts pick it up immediately.
+    useEffect(() => {
+        if (window.turnstile) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time check for an already-loaded external script on mount/remount
+            setScriptLoaded(true);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            if (window.turnstile) {
+                setScriptLoaded(true);
+                clearInterval(interval);
+            }
+        }, 100);
+
+        return () => clearInterval(interval);
+    }, []);
+
     useEffect(() => {
         if (!scriptLoaded || !siteKey || !containerRef.current || !window.turnstile) return;
 
