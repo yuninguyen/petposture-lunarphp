@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PostResource\Pages;
 use App\Models\AffiliateNetwork;
 use App\Models\Post;
+use App\Models\User;
 use App\Services\AiSeoGeneratorService;
 use App\Support\ImageUploadResizer;
 use Filament\Forms;
@@ -112,10 +113,11 @@ class PostResource extends Resource
                     ->required()
                     ->live(),
 
-                Forms\Components\TextInput::make('author')
+                Forms\Components\Select::make('author')
                     ->label(__('Author'))
+                    ->options(fn () => User::orderBy('name')->pluck('name', 'name'))
                     ->default(fn () => auth()->user()?->name)
-                    ->maxLength(255),
+                    ->searchable(),
 
                 Forms\Components\FileUpload::make('featured_image')
                     ->label(__('Featured Image'))
