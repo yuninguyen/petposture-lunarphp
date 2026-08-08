@@ -1,10 +1,34 @@
-import ReturnRefundPolicyPage from "@/components/ReturnRefundPolicyPage";
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
-export const metadata = {
-    title: "Return & Refund Policy",
-    description: "Learn about PetPosture's 30-day return policy and 25% restocking fee for ergonomic pet gear.",
-};
+import LegalPageLayout from '@/components/LegalPageLayout';
+import { fetchCmsPage, formatPageUpdatedAt } from '@/lib/pages';
 
-export default function Page() {
-    return <ReturnRefundPolicyPage />;
+const SLUG = 'return-refund-policy';
+
+export async function generateMetadata(): Promise<Metadata> {
+    const page = await fetchCmsPage(SLUG);
+
+    return {
+        title: page?.meta_title || page?.title || 'Return & Refund Policy',
+        description: page?.meta_description || "Learn about PetPosture's 30-day return policy and 25% restocking fee for ergonomic pet gear.",
+    };
+}
+
+export default async function Page() {
+    const page = await fetchCmsPage(SLUG);
+
+    if (!page) {
+        notFound();
+    }
+
+    return (
+        <LegalPageLayout
+            page={{
+                title: page.title,
+                content: page.content,
+                updatedAt: page.updated_at ? formatPageUpdatedAt(page.updated_at) : null,
+            }}
+        />
+    );
 }

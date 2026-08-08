@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\PostResource;
 use App\Models\BlogCategory;
+use App\Models\Page;
 use App\Models\Post;
 use App\Traits\HttpResponses;
 
@@ -31,6 +32,24 @@ class ContentController extends Controller
             ->firstOrFail();
 
         return new PostResource($post);
+    }
+
+    public function page($slug)
+    {
+        $page = Page::where('slug', $slug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        return response()->json([
+            'data' => [
+                'slug' => $page->slug,
+                'title' => $page->title,
+                'content' => $page->content,
+                'meta_title' => $page->meta_title,
+                'meta_description' => $page->meta_description,
+                'updated_at' => $page->updated_at,
+            ],
+        ]);
     }
 
     public function categories()

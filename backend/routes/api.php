@@ -100,6 +100,7 @@ Route::get('/posts/{slug}/comments', [CommentController::class, 'index']);
 Route::post('/posts/{slug}/comments', [CommentController::class, 'store'])->middleware('throttle:api-write');
 Route::get('/categories', [ContentController::class, 'categories']);
 Route::get('/blog/categories', [ContentController::class, 'categories']);
+Route::get('/pages/{slug}', [ContentController::class, 'page']);
 
 Route::get('/settings', [SettingsController::class, 'index']);
 Route::get('/site-media', [SiteMediaController::class, 'index']);

@@ -1,10 +1,34 @@
-import PrivacyPolicyPage from "@/components/PrivacyPolicyPage";
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
-export const metadata = {
-    title: "Privacy Policy",
-    description: "Learn how PetPosture LLC collects, processes, and protects your personal information.",
-};
+import LegalPageLayout from '@/components/LegalPageLayout';
+import { fetchCmsPage, formatPageUpdatedAt } from '@/lib/pages';
 
-export default function Page() {
-    return <PrivacyPolicyPage />;
+const SLUG = 'privacy-policy';
+
+export async function generateMetadata(): Promise<Metadata> {
+    const page = await fetchCmsPage(SLUG);
+
+    return {
+        title: page?.meta_title || page?.title || 'Privacy Policy',
+        description: page?.meta_description || 'Learn how PetPosture LLC collects, processes, and protects your personal information.',
+    };
+}
+
+export default async function Page() {
+    const page = await fetchCmsPage(SLUG);
+
+    if (!page) {
+        notFound();
+    }
+
+    return (
+        <LegalPageLayout
+            page={{
+                title: page.title,
+                content: page.content,
+                updatedAt: page.updated_at ? formatPageUpdatedAt(page.updated_at) : null,
+            }}
+        />
+    );
 }

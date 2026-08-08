@@ -6,6 +6,9 @@ use App\Filament\Pages\AffiliateReports;
 use App\Filament\Resources\BlogTagResource\Pages\CreateBlogTag;
 use App\Filament\Resources\BlogTagResource\Pages\EditBlogTag;
 use App\Filament\Resources\BlogTagResource\Pages\ListBlogTags;
+use App\Filament\Resources\PageResource\Pages\CreatePage;
+use App\Filament\Resources\PageResource\Pages\EditPage;
+use App\Filament\Resources\PageResource\Pages\ListPages;
 use App\Filament\Resources\PostResource\Pages\CreatePost;
 use App\Filament\Resources\PostResource\Pages\EditPost;
 use App\Filament\Resources\PostResource\Pages\ListPosts;
@@ -13,6 +16,7 @@ use App\Models\AffiliateClick;
 use App\Models\AffiliateNetwork;
 use App\Models\BlogCategory;
 use App\Models\BlogTag;
+use App\Models\Page;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -134,5 +138,45 @@ class ContentAdminRendersTest extends TestCase
             ->assertSuccessful()
             ->assertSeeHtml('Reports Test Post')
             ->assertSeeHtml('Chewy');
+    }
+
+    public function test_page_resource_pages_render(): void
+    {
+        $page = Page::create([
+            'slug' => 'privacy-policy',
+            'title' => 'Privacy Policy',
+            'content' => '<p>Test content</p>',
+            'is_active' => true,
+            'is_core' => true,
+        ]);
+
+        Livewire::test(ListPages::class)->assertSuccessful()->assertSeeHtml('Privacy Policy');
+        Livewire::test(CreatePage::class)->assertSuccessful();
+        Livewire::test(EditPage::class, ['record' => $page->getRouteKey()])->assertSuccessful();
+    }
+
+    public function test_core_page_cannot_be_deleted_but_custom_page_can(): void
+    {
+        $corePage = Page::create([
+            'slug' => 'privacy-policy',
+            'title' => 'Privacy Policy',
+            'content' => '<p>Test</p>',
+            'is_active' => true,
+            'is_core' => true,
+        ]);
+        $customPage = Page::create([
+            'slug' => 'about-us',
+            'title' => 'About Us',
+            'content' => '<p>Test</p>',
+            'is_active' => true,
+            'is_core' => false,
+        ]);
+
+        Livewire::test(ListPages::class)
+            ->callTableAction('delete', $customPage)
+            ->assertSuccessful();
+
+        $this->assertDatabaseMissing('pages', ['id' => $customPage->id]);
+        $this->assertDatabaseHas('pages', ['id' => $corePage->id]);
     }
 }

@@ -1,10 +1,34 @@
-import ShippingPolicyPage from "@/components/ShippingPolicyPage";
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
-export const metadata = {
-    title: "Shipping Policy",
-    description: "Understand PetPosture's shipping times, rates, and zones for ergonomic pet essentials.",
-};
+import LegalPageLayout from '@/components/LegalPageLayout';
+import { fetchCmsPage, formatPageUpdatedAt } from '@/lib/pages';
 
-export default function Page() {
-    return <ShippingPolicyPage />;
+const SLUG = 'shipping-policy';
+
+export async function generateMetadata(): Promise<Metadata> {
+    const page = await fetchCmsPage(SLUG);
+
+    return {
+        title: page?.meta_title || page?.title || 'Shipping Policy',
+        description: page?.meta_description || "Understand PetPosture's shipping times, rates, and zones for ergonomic pet essentials.",
+    };
+}
+
+export default async function Page() {
+    const page = await fetchCmsPage(SLUG);
+
+    if (!page) {
+        notFound();
+    }
+
+    return (
+        <LegalPageLayout
+            page={{
+                title: page.title,
+                content: page.content,
+                updatedAt: page.updated_at ? formatPageUpdatedAt(page.updated_at) : null,
+            }}
+        />
+    );
 }
