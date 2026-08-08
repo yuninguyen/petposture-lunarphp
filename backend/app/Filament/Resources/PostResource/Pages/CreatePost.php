@@ -5,6 +5,7 @@ namespace App\Filament\Resources\PostResource\Pages;
 use App\Filament\Resources\PostResource;
 use App\Models\Post;
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreatePost extends CreateRecord
@@ -26,8 +27,8 @@ class CreatePost extends CreateRecord
     protected function getCreateFormAction(): Action
     {
         return parent::getCreateFormAction()
-            ->label(__('Publish'))
-            ->icon('heroicon-o-paper-airplane')
+            ->label(fn () => ($this->data['status'] ?? 'draft') === 'published' ? __('Publish') : __('Save Draft'))
+            ->icon(fn () => ($this->data['status'] ?? 'draft') === 'published' ? 'heroicon-o-paper-airplane' : 'heroicon-o-document')
             ->extraAttributes(['onclick' => "localStorage.removeItem('petposture-draft:' + window.location.pathname)"]);
     }
 
@@ -54,6 +55,18 @@ class CreatePost extends CreateRecord
                 'og_description' => $seo['og_description'] ?? null,
                 'og_image' => $seo['og_image'] ?? null,
             ]);
+        }
+
+        if ($this->record->status === 'published') {
+            $warnings = $this->record->publishChecklistWarnings();
+
+            if ($warnings) {
+                Notification::make()
+                    ->title(__('Published — but a few things could use attention'))
+                    ->body('• '.implode("\n• ", $warnings))
+                    ->warning()
+                    ->send();
+            }
         }
     }
 }

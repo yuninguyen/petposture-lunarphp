@@ -5,6 +5,7 @@ namespace App\Filament\Resources\PostResource\Pages;
 use App\Filament\Resources\PostResource;
 use App\Models\Post;
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 
 class EditPost extends EditRecord
@@ -57,6 +58,18 @@ class EditPost extends EditRecord
             'og_description' => $seo['og_description'] ?? null,
             'og_image' => $seo['og_image'] ?? null,
         ]);
+
+        if ($this->record->status === 'published') {
+            $warnings = $this->record->refresh()->publishChecklistWarnings();
+
+            if ($warnings) {
+                Notification::make()
+                    ->title(__('Saved — but a few things could use attention'))
+                    ->body('• '.implode("\n• ", $warnings))
+                    ->warning()
+                    ->send();
+            }
+        }
     }
 
     protected function getHeaderActions(): array
@@ -69,6 +82,7 @@ class EditPost extends EditRecord
     protected function getSaveFormAction(): Actions\Action
     {
         return parent::getSaveFormAction()
+            ->label(fn () => ($this->data['status'] ?? 'draft') === 'published' ? __('Update & Publish') : __('Save Draft'))
             ->extraAttributes(['onclick' => "localStorage.removeItem('petposture-draft:' + window.location.pathname)"]);
     }
 }

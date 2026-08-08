@@ -57,4 +57,23 @@ class Post extends Model
 
         return "{$minutes} min read";
     }
+
+    public function publishChecklistWarnings(): array
+    {
+        $warnings = [];
+
+        if (blank($this->seo?->description)) {
+            $warnings[] = __('Meta description is empty');
+        }
+
+        if (filled($this->featured_image) && blank($this->featured_image_alt)) {
+            $warnings[] = __('Featured image has no alt text');
+        }
+
+        if ($this->type === self::TYPE_COMPARISON && ! $this->getMeta('disclosure_shown', true)) {
+            $warnings[] = __('Affiliate disclosure banner is turned off');
+        }
+
+        return $warnings;
+    }
 }

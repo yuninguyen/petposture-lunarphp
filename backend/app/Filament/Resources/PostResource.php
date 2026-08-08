@@ -100,7 +100,18 @@ class PostResource extends Resource
                     ->relationship('blogCategory', 'name')
                     ->required()
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('name')
+                            ->label(__('Name'))
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn ($state, Set $set) => $set('slug', Str::slug($state))),
+                        Forms\Components\TextInput::make('slug')
+                            ->label(__('Slug'))
+                            ->required()
+                            ->unique('blog_categories', 'slug'),
+                    ]),
 
                 Forms\Components\Select::make('type')
                     ->label(__('Post Type'))
@@ -137,7 +148,8 @@ class PostResource extends Resource
                         'published' => __('Published'),
                     ])
                     ->required()
-                    ->default('draft'),
+                    ->default('draft')
+                    ->live(),
 
                 Forms\Components\DateTimePicker::make('published_at')
                     ->label(__('Published At')),
@@ -370,6 +382,26 @@ class PostResource extends Resource
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\ReplicateAction::make()
+                        ->label(__('Duplicate'))
+                        ->beforeReplicaSaved(function (Post $replica) {
+                            $replica->title = $replica->title.' '.__('(Copy)');
+                            $replica->slug = Str::slug($replica->title).'-'.Str::random(6);
+                            $replica->status = 'draft';
+                            $replica->published_at = null;
+                        })
+                        ->after(function (Post $record, Post $replica) {
+                            foreach ($record->metadata as $meta) {
+                                $replica->setMeta($meta->key, $meta->cast_value, $meta->type);
+                            }
+
+                            if ($record->seo) {
+                                $replica->seo()->create($record->seo->only([
+                                    'title', 'keyphrase', 'description', 'og_title', 'og_description', 'og_image',
+                                ]));
+                            }
+                        })
+                        ->successRedirectUrl(fn (Post $replica) => static::getUrl('edit', ['record' => $replica])),
                     Tables\Actions\DeleteAction::make(),
                 ]),
             ])
