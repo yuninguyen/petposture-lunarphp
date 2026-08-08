@@ -3,8 +3,9 @@
 namespace App\Filament\Pages;
 
 use App\Models\Setting;
-use Filament\Actions\Action;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Textarea;
@@ -71,41 +72,6 @@ class Payment extends Page
         $data['pingpong_mode'] ??= config('services.pingpong.mode', 'sandbox');
 
         $this->form->fill($data);
-    }
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            Action::make('testStripe')
-                ->label('Test Stripe')
-                ->icon('heroicon-o-credit-card')
-                ->color('gray')
-                ->action(fn () => $this->testStripeConnection()),
-
-            Action::make('testPayPal')
-                ->label('Test PayPal')
-                ->icon('heroicon-o-credit-card')
-                ->color('gray')
-                ->action(fn () => $this->testPayPalConnection()),
-
-            Action::make('testAirwallex')
-                ->label('Test Airwallex')
-                ->icon('heroicon-o-credit-card')
-                ->color('gray')
-                ->action(fn () => $this->testAirwallexConnection()),
-
-            Action::make('testPayoneer')
-                ->label('Test Payoneer')
-                ->icon('heroicon-o-credit-card')
-                ->color('gray')
-                ->action(fn () => $this->testPayoneerConnection()),
-
-            Action::make('testPingPong')
-                ->label('Test PingPong')
-                ->icon('heroicon-o-credit-card')
-                ->color('gray')
-                ->action(fn () => $this->testPingPongConnection()),
-        ];
     }
 
     public function testStripeConnection(): void
@@ -306,6 +272,15 @@ class Payment extends Page
                         Tabs\Tab::make(__('Stripe'))
                             ->icon('heroicon-o-credit-card')
                             ->schema([
+                                Section::make()
+                                    ->headerActions([
+                                        FormAction::make('testStripe')
+                                            ->label('Test Stripe')
+                                            ->icon('heroicon-o-bolt')
+                                            ->color('gray')
+                                            ->action(fn () => $this->testStripeConnection()),
+                                    ])
+                                    ->schema([
                                 Select::make('stripe_mode')
                                     ->label(__('Stripe Mode'))
                                     ->options([
@@ -352,11 +327,21 @@ class Payment extends Page
                                             ])
                                     )
                                     ->helperText('Register this URL in your Stripe Dashboard → Developers → Webhooks.'),
+                                    ]),
                             ]),
 
                         Tabs\Tab::make(__('PayPal'))
                             ->icon('heroicon-o-credit-card')
                             ->schema([
+                                Section::make()
+                                    ->headerActions([
+                                        FormAction::make('testPayPal')
+                                            ->label('Test PayPal')
+                                            ->icon('heroicon-o-bolt')
+                                            ->color('gray')
+                                            ->action(fn () => $this->testPayPalConnection()),
+                                    ])
+                                    ->schema([
                                 Select::make('paypal_mode')
                                     ->label(__('PayPal Mode'))
                                     ->options([
@@ -401,11 +386,21 @@ class Payment extends Page
                                             ])
                                     )
                                     ->helperText('Register this URL in your PayPal Dashboard → Webhooks.'),
+                                    ]),
                             ]),
 
                         Tabs\Tab::make(__('Airwallex'))
                             ->icon('heroicon-o-credit-card')
                             ->schema([
+                                Section::make()
+                                    ->headerActions([
+                                        FormAction::make('testAirwallex')
+                                            ->label('Test Airwallex')
+                                            ->icon('heroicon-o-bolt')
+                                            ->color('gray')
+                                            ->action(fn () => $this->testAirwallexConnection()),
+                                    ])
+                                    ->schema([
                                 Select::make('airwallex_mode')
                                     ->label(__('Airwallex Mode'))
                                     ->options([
@@ -450,11 +445,21 @@ class Payment extends Page
                                             ])
                                     )
                                     ->helperText('Register this URL in your Airwallex Dashboard → Developer → Webhooks.'),
+                                    ]),
                             ]),
 
                         Tabs\Tab::make(__('Payoneer'))
                             ->icon('heroicon-o-credit-card')
                             ->schema([
+                                Section::make()
+                                    ->headerActions([
+                                        FormAction::make('testPayoneer')
+                                            ->label('Test Payoneer')
+                                            ->icon('heroicon-o-bolt')
+                                            ->color('gray')
+                                            ->action(fn () => $this->testPayoneerConnection()),
+                                    ])
+                                    ->schema([
                                 Select::make('payoneer_mode')
                                     ->label(__('Payoneer Mode'))
                                     ->options([
@@ -504,11 +509,21 @@ class Payment extends Page
                                             ])
                                     )
                                     ->helperText('Register this URL as the notification callback in your Payoneer Checkout dashboard.'),
+                                    ]),
                             ]),
 
                         Tabs\Tab::make(__('PingPong'))
                             ->icon('heroicon-o-credit-card')
                             ->schema([
+                                Section::make()
+                                    ->headerActions([
+                                        FormAction::make('testPingPong')
+                                            ->label('Test PingPong')
+                                            ->icon('heroicon-o-bolt')
+                                            ->color('gray')
+                                            ->action(fn () => $this->testPingPongConnection()),
+                                    ])
+                                    ->schema([
                                 Select::make('pingpong_mode')
                                     ->label(__('PingPong Mode'))
                                     ->options([
@@ -551,6 +566,7 @@ class Payment extends Page
                                             ])
                                     )
                                     ->helperText('Register this URL as the notificationUrl in your PingPong merchant dashboard.'),
+                                    ]),
                             ]),
                     ])
                     ->columnSpanFull(),
