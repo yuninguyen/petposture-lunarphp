@@ -20,6 +20,8 @@ import Link from 'next/link';
 import ComparisonTable, { ComparisonData } from '@/components/blog/ComparisonTable';
 import { useSettings } from '@/context/SettingsContext';
 import { withTableOfContents } from '@/lib/text';
+import { getApiBaseUrl } from '@/lib/api';
+import { formatDate } from '@/lib/date';
 
 const fadeUp = {
     initial: { opacity: 0, y: 20 },
@@ -28,6 +30,7 @@ const fadeUp = {
 
 interface BlogPost {
     id: number;
+    slug: string;
     category: string;
     title: string;
     excerpt: string;
@@ -46,6 +49,13 @@ interface BlogPostPageProps {
     recentPosts: BlogPost[];
 }
 
+type Comment = {
+    id: number;
+    customer_name: string;
+    comment: string;
+    created_at: string;
+};
+
 export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
     const { social } = useSettings();
     const [isCommenting, setIsCommenting] = React.useState(false);
@@ -53,6 +63,57 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
         () => withTableOfContents(post.content || `<p>${post.excerpt}</p>`),
         [post.content, post.excerpt]
     );
+
+    const [comments, setComments] = React.useState<Comment[]>([]);
+    const [commentsLoading, setCommentsLoading] = React.useState(true);
+    const [commentName, setCommentName] = React.useState('');
+    const [commentText, setCommentText] = React.useState('');
+    const [submitting, setSubmitting] = React.useState(false);
+    const [submitError, setSubmitError] = React.useState<string | null>(null);
+    const [submitted, setSubmitted] = React.useState(false);
+
+    React.useEffect(() => {
+        let cancelled = false;
+
+        fetch(`${getApiBaseUrl()}/api/posts/${post.slug}/comments`)
+            .then((res) => (res.ok ? res.json() : Promise.reject()))
+            .then((data) => {
+                if (!cancelled) setComments(Array.isArray(data?.comments) ? data.comments : []);
+            })
+            .catch(() => { })
+            .finally(() => {
+                if (!cancelled) setCommentsLoading(false);
+            });
+
+        return () => { cancelled = true; };
+    }, [post.slug]);
+
+    const handleCommentSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        setSubmitError(null);
+
+        try {
+            const res = await fetch(`${getApiBaseUrl()}/api/posts/${post.slug}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify({ customer_name: commentName, comment: commentText }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => null);
+                throw new Error(data?.message || 'Could not submit your comment. Please try again.');
+            }
+
+            setSubmitted(true);
+            setCommentName('');
+            setCommentText('');
+        } catch (err) {
+            setSubmitError(err instanceof Error ? err.message : 'Could not submit your comment. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     return (
         <main className="min-h-screen bg-white font-hanken overflow-x-hidden">
@@ -164,26 +225,33 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                             <div className="flex items-center gap-4">
                                 <h3 className="text-[24px] font-bold text-primary">Discussion</h3>
                                 <div className="flex-1 h-[1px] bg-zinc-100" />
-                                <span className="bg-zinc-50 text-zinc-400 px-3 py-1 rounded-full text-xs font-bold">2</span>
+                                {!commentsLoading && (
+                                    <span className="bg-zinc-50 text-zinc-400 px-3 py-1 rounded-full text-xs font-bold">{comments.length}</span>
+                                )}
                             </div>
 
-                            <div className="space-y-10">
-                                <div className="flex gap-6">
-                                    <div className="w-12 h-12 rounded-full bg-zinc-100 shrink-0 overflow-hidden border border-zinc-200 flex items-center justify-center">
-                                        <User size={24} className="text-zinc-400" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h5 className="text-[14px] font-bold text-primary">Michael Chen</h5>
-                                            <span className="text-xs text-zinc-400">Mar 25, 2024</span>
+                            {!commentsLoading && comments.length === 0 && (
+                                <p className="text-zinc-400 text-[15px]">No comments yet — be the first to share your thoughts.</p>
+                            )}
+
+                            {comments.length > 0 && (
+                                <div className="space-y-10">
+                                    {comments.map((c) => (
+                                        <div key={c.id} className="flex gap-6">
+                                            <div className="w-12 h-12 rounded-full bg-zinc-100 shrink-0 overflow-hidden border border-zinc-200 flex items-center justify-center">
+                                                <User size={24} className="text-zinc-400" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <h5 className="text-[14px] font-bold text-primary">{c.customer_name}</h5>
+                                                    <span className="text-xs text-zinc-400">{formatDate(c.created_at)}</span>
+                                                </div>
+                                                <p className="text-[#666666] text-[15px] leading-relaxed">{c.comment}</p>
+                                            </div>
                                         </div>
-                                        <p className="text-[#666666] text-[15px] leading-relaxed">
-                                            This is exactly the information I was looking for! My Dachshund has been showing some signs of discomfort during meals, and I&apos;ll definitely look into a tilted bowl.
-                                        </p>
-                                        <button className="mt-4 text-sm font-bold text-secondary uppercase tracking-widest hover:text-primary transition-colors">Reply</button>
-                                    </div>
+                                    ))}
                                 </div>
-                            </div>
+                            )}
 
                             {/* Leave a Comment Form */}
                             <div className="space-y-8">
@@ -209,37 +277,54 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                             className="overflow-hidden"
                                         >
                                             <div className="bg-[#f8f9fa] rounded-2xl p-6 md:p-7 border border-zinc-100">
-                                                <div className="mb-6">
-                                                    <h3 className="text-[16px] font-bold text-primary mb-1">Leave a Reply</h3>
-                                                    <p className="text-zinc-500 text-[13px]">Your email address will not be published. Required fields are marked *</p>
-                                                </div>
-                                                <form className="space-y-4">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        <div className="space-y-1.5">
-                                                            <label className="text-xs font-bold text-primary uppercase tracking-wide ml-1">Name *</label>
-                                                            <input type="text" className="w-full px-4 py-3 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-secondary text-[14px]" placeholder="John Doe" />
+                                                {submitted ? (
+                                                    <p className="text-[14px] text-primary font-medium">
+                                                        Thanks! Your comment has been submitted and will appear once it&apos;s reviewed.
+                                                    </p>
+                                                ) : (
+                                                    <>
+                                                        <div className="mb-6">
+                                                            <h3 className="text-[16px] font-bold text-primary mb-1">Leave a Reply</h3>
+                                                            <p className="text-zinc-500 text-[13px]">Comments are reviewed before they appear publicly. Required fields are marked *</p>
                                                         </div>
-                                                        <div className="space-y-1.5">
-                                                            <label className="text-xs font-bold text-primary uppercase tracking-wide ml-1">Email *</label>
-                                                            <input type="email" className="w-full px-4 py-3 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-secondary text-[14px]" placeholder="john@example.com" />
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-y-1.5">
-                                                        <label className="text-xs font-bold text-primary uppercase tracking-wide ml-1">Website</label>
-                                                        <input type="text" className="w-full px-4 py-3 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-secondary text-[14px]" placeholder="Optional" />
-                                                    </div>
-                                                    <div className="space-y-1.5">
-                                                        <label className="text-xs font-bold text-primary uppercase tracking-wide ml-1">Comment *</label>
-                                                        <textarea rows={5} className="w-full px-4 py-3 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-secondary text-[14px] resize-none" placeholder="Your message here..." />
-                                                    </div>
-                                                    <div className="flex items-center gap-3 py-2">
-                                                        <input type="checkbox" id="save-info" className="w-4 h-4 rounded border-zinc-300 text-secondary focus:ring-secondary" />
-                                                        <label htmlFor="save-info" className="text-sm text-zinc-500">Save my name, email, and website in this browser for the next time I comment.</label>
-                                                    </div>
-                                                    <button className="bg-secondary text-white px-8 py-3 rounded-[3px] font-bold uppercase tracking-[0.1em] text-sm hover:bg-secondary-dark transition-all shadow-lg shadow-orange-200/50">
-                                                        Post Comment
-                                                    </button>
-                                                </form>
+                                                        <form className="space-y-4" onSubmit={handleCommentSubmit}>
+                                                            <div className="space-y-1.5">
+                                                                <label className="text-xs font-bold text-primary uppercase tracking-wide ml-1">Name *</label>
+                                                                <input
+                                                                    type="text"
+                                                                    required
+                                                                    maxLength={255}
+                                                                    value={commentName}
+                                                                    onChange={(e) => setCommentName(e.target.value)}
+                                                                    className="w-full px-4 py-3 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-secondary text-[14px]"
+                                                                    placeholder="John Doe"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                <label className="text-xs font-bold text-primary uppercase tracking-wide ml-1">Comment *</label>
+                                                                <textarea
+                                                                    rows={5}
+                                                                    required
+                                                                    maxLength={2000}
+                                                                    value={commentText}
+                                                                    onChange={(e) => setCommentText(e.target.value)}
+                                                                    className="w-full px-4 py-3 rounded-[3px] bg-white border border-zinc-200 outline-none focus:border-secondary text-[14px] resize-none"
+                                                                    placeholder="Your message here..."
+                                                                />
+                                                            </div>
+                                                            {submitError && (
+                                                                <p className="text-red-500 text-sm">{submitError}</p>
+                                                            )}
+                                                            <button
+                                                                type="submit"
+                                                                disabled={submitting}
+                                                                className="bg-secondary text-white px-8 py-3 rounded-[3px] font-bold uppercase tracking-[0.1em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-lg shadow-orange-200/50"
+                                                            >
+                                                                {submitting ? 'Posting...' : 'Post Comment'}
+                                                            </button>
+                                                        </form>
+                                                    </>
+                                                )}
                                             </div>
                                         </motion.div>
                                     )}
