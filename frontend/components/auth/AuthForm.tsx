@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -8,9 +8,12 @@ import Link from 'next/link';
 import { getApiBaseUrl } from '@/lib/api';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
 import { User, Lock, Mail, ChevronRight, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 type Mode = 'login' | 'register' | 'forgot' | 'forgot-sent';
+
+const TURNSTILE_ENABLED = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
 export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' }) {
     const [mode, setMode] = useState<Mode>(initialMode);
@@ -20,9 +23,14 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
     const { login } = useAuth();
     const router = useRouter();
+
+    useEffect(() => {
+        setTurnstileToken(null);
+    }, [mode]);
 
     const getCartToken = () =>
         typeof window !== 'undefined' ? localStorage.getItem('petposture_cart_token') : null;
@@ -49,8 +57,8 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
             const endpoint = mode === 'login' ? '/api/login' : '/api/register';
             const cartToken = getCartToken();
             const body = mode === 'login'
-                ? { email, password, ...(cartToken ? { cart_token: cartToken } : {}) }
-                : { name, email, password, password_confirmation: password };
+                ? { email, password, cf_turnstile_token: turnstileToken, ...(cartToken ? { cart_token: cartToken } : {}) }
+                : { name, email, password, password_confirmation: password, cf_turnstile_token: turnstileToken };
 
             const res = await fetch(`${base}${endpoint}`, {
                 method: 'POST',
@@ -214,6 +222,16 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                             </div>
                         )}
 
+                        {(mode === 'login' || mode === 'register') && (
+                            <div className="flex justify-center">
+                                <TurnstileWidget
+                                    key={mode}
+                                    onVerify={setTurnstileToken}
+                                    onExpire={() => setTurnstileToken(null)}
+                                />
+                            </div>
+                        )}
+
                         {error && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-500 text-sm font-medium px-1 bg-red-50 p-3 rounded-lg border border-red-100">
                                 {error}
@@ -223,7 +241,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                         <div className="pt-4 space-y-3">
                             <button
                                 type="submit"
-                                disabled={isLoading}
+                                disabled={isLoading || (TURNSTILE_ENABLED && (mode === 'login' || mode === 'register') && !turnstileToken)}
                                 className="w-full bg-secondary text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                             >
                                 {isLoading ? 'Processing...' : mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : 'Send Reset Link'}
