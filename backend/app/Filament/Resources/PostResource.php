@@ -112,6 +112,11 @@ class PostResource extends Resource
                     ->required()
                     ->live(),
 
+                Forms\Components\TextInput::make('author')
+                    ->label(__('Author'))
+                    ->default(fn () => auth()->user()?->name)
+                    ->maxLength(255),
+
                 Forms\Components\FileUpload::make('featured_image')
                     ->label(__('Featured Image'))
                     ->image()
