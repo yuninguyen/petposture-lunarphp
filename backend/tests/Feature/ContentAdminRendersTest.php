@@ -2,12 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\AffiliateReports;
 use App\Filament\Resources\BlogTagResource\Pages\CreateBlogTag;
 use App\Filament\Resources\BlogTagResource\Pages\EditBlogTag;
 use App\Filament\Resources\BlogTagResource\Pages\ListBlogTags;
 use App\Filament\Resources\PostResource\Pages\CreatePost;
 use App\Filament\Resources\PostResource\Pages\EditPost;
 use App\Filament\Resources\PostResource\Pages\ListPosts;
+use App\Models\AffiliateClick;
+use App\Models\AffiliateNetwork;
 use App\Models\BlogCategory;
 use App\Models\BlogTag;
 use App\Models\Post;
@@ -104,5 +107,32 @@ class ContentAdminRendersTest extends TestCase
 
         $this->assertDatabaseMissing('blog_tags', ['id' => $source->id]);
         $this->assertTrue($post->fresh()->tags->pluck('id')->contains($target->id));
+    }
+
+    public function test_affiliate_reports_page_renders_with_click_data(): void
+    {
+        $category = BlogCategory::create(['name' => 'Test Category', 'slug' => 'test-category']);
+        $post = Post::create([
+            'blog_category_id' => $category->id,
+            'type' => Post::TYPE_COMPARISON,
+            'title' => 'Reports Test Post',
+            'slug' => 'reports-test-post',
+            'content' => '<p>content</p>',
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+        $network = AffiliateNetwork::firstOrCreate(['slug' => 'chewy'], ['name' => 'Chewy', 'active' => true]);
+
+        AffiliateClick::create([
+            'post_id' => $post->id,
+            'affiliate_network_id' => $network->id,
+            'product_name' => 'Widget',
+            'target_url' => 'https://example.com/widget',
+        ]);
+
+        Livewire::test(AffiliateReports::class)
+            ->assertSuccessful()
+            ->assertSeeHtml('Reports Test Post')
+            ->assertSeeHtml('Chewy');
     }
 }
