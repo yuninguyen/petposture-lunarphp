@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import LegalPageLayout from '@/components/LegalPageLayout';
 import { fetchCmsPage, formatPageUpdatedAt } from '@/lib/pages';
 
+export const dynamic = 'force-dynamic';
+
 const SLUG = 'privacy-policy';
 
 export async function generateMetadata(): Promise<Metadata> {
