@@ -1,3 +1,75 @@
+# Handoff — 2026-08-09
+
+## Payment page 500, Content Q&A, real comments, Posts/Tags rework, Reports widget, Pages CMS
+
+**Payment page 500, fixed**: `/admin/payment`'s 5 gateway tabs each had a "Test X" button moved
+into that tab's own `Section::headerActions()` — Filament requires an explicit `->key()` on any
+`Section` using `headerActions()`, and without it the page 500s the moment an authenticated user
+actually hits it (a `php -l` check and an unauthenticated `curl` both looked fine, which is what
+let it ship in the first place). Fixed by giving each gateway's Section a unique `->key()`; a new
+`PaymentPageRendersTest` (`Livewire::test(Payment::class)->assertSuccessful()`, `super_admin` actor)
+now guards it. See `RULES.md` for the general rule this became.
+
+**Content Q&A + real comments wired up**: confirmed Blog Categories has no sub-category concept and
+isn't a public catalog-category API (separate systems); decided Tags weren't worth building yet at
+that point (0 real posts) — later built anyway once the Deskholt reference doc made a stronger case
+(see below). `BlogPostPage.tsx`'s comment section was hardcoded fake data with a non-functional
+form despite the backend already having a real Comments API — rewired to fetch/submit real
+comments, dropped decorative Email/Website fields the backend never used, added honest "awaiting
+moderation" copy for pending comments.
+
+**Posts list rework + Blog Tags** (see `ARCHITECTURE.md` for the full shape): reworked the admin
+Posts table to Title (out-of-stock badge inline) / Status / Category / Type / Assigned / Updated /
+bare-icon View, dropping Views (Google Analytics already covers it) and other stale columns. Added
+a per-comparison-item `in_stock` toggle (chosen over a global per-post flag or an automated
+stock-check, via `AskUserQuestion` — manual toggle was the "Recommended" option and what the user
+picked) that drives a "⚠ Out of stock" badge on the post title. Built `BlogTagResource`
+(`blog_tags`/`blog_post_tag` tables, deliberately not `tags`/`taggables` — Lunar's product catalog
+already owns those) with a Merge action. Renamed "Content Management" nav group's *display label*
+only, to "Content" (`lang/{en,vi}.json`) — the `__('Content Management')` key itself is unchanged.
+Created one real end-to-end test post exercising every piece of this (category, author, TOC,
+comparison items with 2 retailers, SEO, disclosure, 1 approved + 1 pending comment), verified via
+actual Playwright form submissions against production, not just DB seeding.
+
+**Deskholt reference docs reviewed, one thing built, one thing declined**: given
+`Admin_Panel_for_Deskholt.md`/`deskholt-page-layouts.html` (a sibling project's admin-panel spec,
+confirmed to be the real intended blueprint for PetPosture's affiliate direction — not an unrelated
+project, see `project_admin_affiliate_plan_2026-08-05.md` memory), recommended **against** building
+Deskholt's full `Product`/`AffiliateLink`/encrypted-`apiConfig`/crawler system — PetPosture doesn't
+sell the compared products (only its own Lunar catalog) and has no live price-sync infra to justify
+that complexity yet. Built the one proportionate piece instead: an Affiliate Reports page (Finance →
+Reports, `AffiliateReports` Filament Page + 3 widgets) reading the *already-existing* `affiliate_clicks`
+table from an earlier session's click-tracking work — no new tracking infra, just a view onto data
+that already existed. Verified via a real `Livewire::test()` render (with `isLazy = false` on all 3
+widgets, since Filament widgets default to lazy-loading their content in a separate request, which
+silently made the first version of this test see nothing but a loading placeholder).
+
+**Retailer live-price API question, answered and declined**: user asked directly whether comparison
+prices could be pulled live from retailer APIs instead of typed by hand. Answer, and why it's not a
+simple yes: Amazon's PA-API is real but gated behind an Associates account needing 3 qualifying
+sales in 180 days (not met yet); Chewy/Petco/PetSmart have no public self-serve price API, only
+periodic bulk feed downloads via CJ/Impact/AWIN; Walmart via Impact is the one currently-usable
+option if this is revisited. Confirmed via `AskUserQuestion` — user chose to keep manual entry. See
+`ARCHITECTURE.md` and `decision_defer_live_price_api.md` memory.
+
+**Pages CMS**: replaced 7 hardcoded legal-page React components (Privacy Policy, Terms and
+Conditions, Cookie Policy, Acceptable Use Policy, Affiliate Disclosure, Shipping Policy, Return &
+Refund Policy) with a database-driven `Page` model + Filament resource, so content edits no longer
+need a code deploy. One shared `LegalPageLayout.tsx` auto-derives the sticky TOC from `<h2>` tags in
+the fetched content HTML, preserving the original design exactly. Seeded all 7 with their real,
+verbatim existing copy (not placeholder text) — a subagent did the mechanical transcription for 6 of
+them, spot-checked before use. Deliberately excluded: "Do Not Sell" (an anchor into Privacy Policy's
+CCPA section, not a real page), FAQs (structured accordion data, not flat prose), Contact Us and
+Track Your Order (real functional tools, not content). **Shipped a real bug on first deploy**: the 7
+new routes defaulted to Next's static generation, and since the Docker build stage can't reliably
+reach the backend, the build baked in a permanent 404 for all 7. Caught by checking the actual
+production URLs after deploy (not just trusting a clean build log) — fixed with `export const
+dynamic = 'force-dynamic'` on all 7 routes, reverified via a second local build showing the route
+type flip from `○` to `ƒ`, then redeployed and reverified live. See `RULES.md`/`ARCHITECTURE.md` for
+the durable rule this became.
+
+---
+
 # Handoff — 2026-08-08
 
 ## Legal/compliance pages, cookie banner, and footer redesign

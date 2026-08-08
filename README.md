@@ -131,22 +131,32 @@ petposture/
   never auto-saves). Anthropic API key follows the same DB-`Setting`-overrides-`.env` pattern as
   Stripe/PayPal (`ANTHROPIC_API_KEY` or Settings → `anthropic_api_key`); without it configured,
   the button shows a clear error instead of failing silently.
-- Blog with slug-based routing, including a "comparison" post type (retailer price-comparison
-  cards with outbound affiliate links — Chewy/Amazon/Walmart/Petco/PetSmart, managed under
-  Content Management → Affiliate Networks) with FTC disclosure. Outbound affiliate links go
-  through an internal `/go/{post}/{item}` redirect (added 2026-08-07) that logs a click
-  (`affiliate_clicks` table: post, network, product, referrer) before forwarding to the real
-  retailer URL, so admin can eventually see which posts/products actually drive outbound clicks —
-  no revenue/commission tracking yet, click volume only.
-- Legal/compliance pages (added 2026-08-08): Privacy Policy (incl. a CCPA/CPRA "Your U.S. State
-  Privacy Rights" section — the site doesn't sell/share personal data, so this is a disclosure +
-  contact-based rights process, not an opt-out mechanism), Terms and Conditions, Cookie Policy, and
-  Acceptable Use Policy, plus a new Affiliate Disclosure page that also fixed a dead
-  `/affiliate-disclosure` link the comparison-post banner had pointed to since launch. A real
-  cookie notice banner (essential-cookies-only, dismissed via localStorage) replaced Cookie
-  Policy's prior mention of a "Cookie Consent Manager" that never existed in code. Footer groups
-  these under a dedicated "Legal" column (plus the 4 most-referenced ones in the bottom bar) and a
-  merged "Shop" column (previously two separate "Shop by Solution"/"Shop by Breed" columns).
+- Blog with slug-based routing, a Tags taxonomy (`blog_tags`, with a Merge action for cleanup) and
+  Categories, including a "comparison" post type (retailer price-comparison cards, each item with
+  an `in_stock` toggle that surfaces a "⚠ Out of stock" badge in the admin Posts list, with outbound
+  affiliate links — Chewy/Amazon/Walmart/Petco/PetSmart, managed under Content → Affiliate Networks)
+  with FTC disclosure. Outbound affiliate links go through an internal `/go/{post}/{item}` redirect
+  (added 2026-08-07) that logs a click (`affiliate_clicks` table: post, network, product, referrer)
+  before forwarding to the real retailer URL — a Reports page (Finance → Reports, added 2026-08-09)
+  shows total clicks (7/30-day/all-time), top network, and top-clicked posts from that table. No
+  revenue/commission tracking yet, click volume only. Comparison-item prices are still entered by
+  hand — evaluated pulling them live from retailer APIs instead (2026-08-09) and deferred: only
+  Walmart (via Impact) has a currently-usable price API among the 5 retailers; Amazon's real API is
+  gated behind an Associates sales history this site doesn't have yet; the others have no public
+  price API at all.
+- Legal/compliance pages, editable from admin without a code deploy (rebuilt as a CMS 2026-08-09):
+  Privacy Policy (incl. a CCPA/CPRA "Your U.S. State Privacy Rights" section — the site doesn't
+  sell/share personal data, so this is a disclosure + contact-based rights process, not an opt-out
+  mechanism), Terms and Conditions, Cookie Policy, Acceptable Use Policy, Affiliate Disclosure,
+  Shipping Policy, and Return & Refund Policy all read from a `Page` model (Content → Pages in
+  Filament, rich-text editor) via one shared frontend layout that auto-builds its own table of
+  contents from the page's own headings. A real cookie notice banner (essential-cookies-only,
+  dismissed via localStorage) replaced Cookie Policy's prior mention of a "Cookie Consent Manager"
+  that never existed in code. Footer groups these under a dedicated "Legal" column (plus the 4
+  most-referenced ones in the bottom bar) and a merged "Shop" column (previously two separate "Shop
+  by Solution"/"Shop by Breed" columns). FAQs, Contact Us, and Track Your Order are intentionally
+  *not* part of this CMS (accordion data, a real form, and a live order-lookup tool, respectively —
+  not flat editable content).
 - Discount / coupon codes (Lunar's discount engine, incl. free-shipping coupons)
 - Self-service order returns (`/returns`): guest lookup by order number + email, item/quantity
   selection, reason and note — reviewed in Filament (Sales > Return Requests) with
@@ -188,7 +198,8 @@ petposture/
 - SEO metadata & automatic sitemap
 - Static policy pages (FAQ, privacy, shipping, returns, etc.)
 - Full Filament admin panel with a custom dark sidebar theme (Haze-referenced), narrowed nav width,
-  and reorganized nav groups (Commerce, Content Management, Finance, System). Real dashboard widgets
+  and reorganized nav groups (Commerce, Content, Finance, System — "Content Management" is displayed
+  as "Content" today, a label-only rename). Real dashboard widgets
   (revenue/orders/AOV, sales-by-category, order pipeline, return-request aging), a real DB-backed
   notification center (order placed, new review, new customer — polling every 30s), Users with real
   active/inactive status and last-login tracking, a Roles card grid + Permissions matrix, and a real
