@@ -1,7 +1,6 @@
 import './globals.css';
 
 import type { Metadata } from 'next';
-import Script from 'next/script';
 import { Hanken_Grotesk, Lato, Dancing_Script } from 'next/font/google';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
@@ -10,6 +9,7 @@ import { SettingsProvider } from '@/context/SettingsContext';
 import { CartDrawer } from '@/components/shop/CartDrawer';
 import { AttributionTracker } from '@/components/AttributionTracker';
 import { CookieBanner } from '@/components/CookieBanner';
+import { GoogleAnalytics } from '@/components/GoogleAnalytics';
 import { SITE_URL } from '@/lib/site';
 
 const hankenGrotesk = Hanken_Grotesk({ subsets: ['latin'], weight: ['400', '700'], display: 'swap' });
@@ -119,22 +119,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       }
     >
       <body>
-        {googleAnalyticsId ? (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${googleAnalyticsId}');
-              `}
-            </Script>
-          </>
-        ) : null}
+        {googleAnalyticsId ? <GoogleAnalytics measurementId={googleAnalyticsId} /> : null}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
