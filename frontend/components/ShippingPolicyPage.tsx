@@ -74,20 +74,20 @@ export default function ShippingPolicyPage() {
             <Header />
 
             {/* Hero Section */}
-            <section className="bg-[#f4f5f6] py-16 px-4 md:px-8 border-b border-zinc-100">
+            <section className="bg-gray-50 py-16 px-4 md:px-8 border-b border-zinc-100">
                 <div className="max-w-[1200px] mx-auto text-center">
                     <motion.div
                         initial="initial"
                         animate="animate"
                         variants={fadeUp}
                     >
-                        <h1 className="text-[32px] md:text-[42px] font-bold uppercase tracking-[0.1em] text-[#3e4c57] mb-4">
+                        <h1 className="text-[32px] md:text-[42px] font-bold uppercase tracking-[0.1em] text-primary mb-4">
                             Shipping Policy
                         </h1>
                         <p className="text-[#666666] text-[15px] font-medium tracking-wide">
                             Last updated: November 9, 2025
                         </p>
-                        <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mt-6"></div>
+                        <div className="w-12 h-1 bg-secondary mx-auto rounded-full mt-6"></div>
                     </motion.div>
                 </div>
             </section>
@@ -97,7 +97,7 @@ export default function ShippingPolicyPage() {
 
                     {/* Sidebar Table of Contents (Desktop) */}
                     <aside className="hidden lg:block w-80 sticky top-32 h-fit">
-                        <h4 className="text-[14px] font-bold uppercase tracking-widest text-[#3e4c57] mb-8 border-b border-zinc-100 pb-4">
+                        <h4 className="text-[14px] font-bold uppercase tracking-widest text-primary mb-8 border-b border-zinc-100 pb-4">
                             Table of Contents
                         </h4>
                         <nav className="flex flex-col gap-4">
@@ -105,7 +105,7 @@ export default function ShippingPolicyPage() {
                                 <button
                                     key={s.id}
                                     onClick={() => scrollTo(s.id)}
-                                    className={`text-left text-sm font-bold uppercase tracking-wider transition-all hover:text-[#df8448] ${activeSection === s.id ? 'text-[#df8448] pl-2 border-l-2 border-[#df8448]' : 'text-[#666666]'
+                                    className={`text-left text-sm font-bold uppercase tracking-wider transition-all hover:text-secondary ${activeSection === s.id ? 'text-secondary pl-2 border-l-2 border-secondary' : 'text-[#666666]'
                                         }`}
                                 >
                                     {s.title}
@@ -119,7 +119,7 @@ export default function ShippingPolicyPage() {
                         <div className="prose prose-zinc max-w-none text-[#4a4a4a] text-[16px] leading-[1.8]">
                             <div className="space-y-12">
                                 <section id="processing">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">1. ORDER PROCESSING TIME</h2>
+                                    <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">1. ORDER PROCESSING TIME</h2>
                                     <p>
                                         At PetPosture, we strive to get your orders ready as quickly as possible. All orders are processed and prepared for shipment within **2 – 4 business days** (Monday – Friday, excluding public holidays) after your order is confirmed.
                                     </p>
@@ -129,7 +129,7 @@ export default function ShippingPolicyPage() {
                                 </section>
 
                                 <section id="shipping-time">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">2. SHIPPING TIME & ZONES</h2>
+                                    <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">2. SHIPPING TIME & ZONES</h2>
                                     <p>
                                         Currently, PetPosture ships exclusively to the **48 contiguous United States**. We do not ship to Alaska, Hawaii, P.O. Boxes, or APO/FPO addresses at this time.
                                     </p>
@@ -144,14 +144,14 @@ export default function ShippingPolicyPage() {
                                 </section>
 
                                 <section id="rates">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">3. SHIPPING RATES</h2>
+                                    <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">3. SHIPPING RATES</h2>
                                     <p>
                                         Shipping costs are calculated dynamically at checkout based on the total weight of the items in your cart and the specific delivery destination. We work with major carriers to ensure common-sense pricing and safe delivery of your products.
                                     </p>
                                 </section>
 
                                 <section id="tracking">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">4. TRACKING & WAREHOUSES</h2>
+                                    <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">4. TRACKING & WAREHOUSES</h2>
                                     <p>
                                         As soon as your package leaves our warehouse, we will send you a shipping confirmation email containing a tracking number so you can follow its journey.
                                     </p>
@@ -161,7 +161,7 @@ export default function ShippingPolicyPage() {
                                 </section>
 
                                 <section id="lost-packages">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">5. LOST OR UNDELIVERED PACKAGES</h2>
+                                    <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">5. LOST OR UNDELIVERED PACKAGES</h2>
                                     <p>
                                         Occasionally a package may be marked as delivered by the carrier but not received, or delayed significantly beyond the estimated delivery window. If this happens:
                                     </p>
@@ -170,7 +170,7 @@ export default function ShippingPolicyPage() {
                                             <strong>Tracking shows &ldquo;Delivered&rdquo; but you haven&apos;t received it:</strong>{" "}Please wait 24&ndash;48 hours, as carriers sometimes scan a package as delivered slightly before it physically arrives. Check with neighbors or your building&apos;s front desk/mailroom.
                                         </li>
                                         <li>
-                                            <strong>Contact us within 7 days:</strong> If the package still hasn&apos;t turned up, email <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a> with your order number. We will open an investigation/claim with the carrier.
+                                            <strong>Contact us within 7 days:</strong> If the package still hasn&apos;t turned up, email <a href="mailto:support@petposture.com" className="text-secondary hover:underline">support@petposture.com</a> with your order number. We will open an investigation/claim with the carrier.
                                         </li>
                                         <li>
                                             <strong>Resolution:</strong>{" "}Once the carrier confirms the package is lost, we will send a free replacement or issue a full refund, at your choice &mdash; no restocking fee applies, since this isn&apos;t a return.
@@ -182,10 +182,10 @@ export default function ShippingPolicyPage() {
                                 </section>
 
                                 <section id="contact">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">6. CONTACT INFORMATION</h2>
+                                    <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">6. CONTACT INFORMATION</h2>
                                     <p>Our dedicated support team is here to help with any shipping-related questions or concerns:</p>
                                     <div className="mt-6 bg-[#f8f9fa] p-8 rounded-xl space-y-3">
-                                        <p><strong>Email:</strong> <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a></p>
+                                        <p><strong>Email:</strong> <a href="mailto:support@petposture.com" className="text-secondary hover:underline">support@petposture.com</a></p>
                                         <p><strong>Phone:</strong> +1 (916) 668-0065</p>
                                         <p><strong>Operating Hours:</strong> 10:00 AM – 20:00 PM (Monday – Friday)</p>
                                         <p className="pt-4 text-[14px] text-[#666666]">
@@ -198,10 +198,10 @@ export default function ShippingPolicyPage() {
                                 {/* FAQ Section */}
                                 <section id="faq" className="pt-10 scroll-mt-32 pb-12">
                                     <div className="text-center mb-10">
-                                        <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">
+                                        <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">
                                             Frequently Asked Questions
                                         </h2>
-                                        <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mb-6"></div>
+                                        <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
                                     </div>
 
                                     <div className="space-y-0">
@@ -211,13 +211,13 @@ export default function ShippingPolicyPage() {
                                                     onClick={() => setOpenFaq(openFaq === item.id ? null : item.id)}
                                                     className="flex items-center justify-between w-full py-4 text-left group"
                                                 >
-                                                    <span className={`text-[16px] md:text-[18px] font-medium transition-colors ${openFaq === item.id ? 'text-[#df8448]' : 'text-[#3e4c57]'
+                                                    <span className={`text-[16px] md:text-[18px] font-medium transition-colors ${openFaq === item.id ? 'text-secondary' : 'text-primary'
                                                         }`}>
                                                         {item.question}
                                                     </span>
                                                     <ChevronDown
                                                         size={20}
-                                                        className={`text-zinc-400 transition-transform duration-300 ${openFaq === item.id ? 'rotate-180 text-[#df8448]' : ''
+                                                        className={`text-zinc-400 transition-transform duration-300 ${openFaq === item.id ? 'rotate-180 text-secondary' : ''
                                                             }`}
                                                     />
                                                 </button>

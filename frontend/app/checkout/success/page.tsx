@@ -106,7 +106,7 @@ function paymentTone(status?: string | null) {
         case "cancelled":
             return "bg-[#fff1f1] text-[#c03d3d]";
         default:
-            return "bg-[#fff3eb] text-[#df8448]";
+            return "bg-[#fff3eb] text-secondary";
     }
 }
 
@@ -344,7 +344,7 @@ function AddressBlock({ title, address }: { title: string; address: Address }) {
 
     return (
         <div>
-            <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#9ca3af]">
+            <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
                 {title}
             </p>
             <div className="space-y-0.5 text-[14px] leading-[1.8] text-[#555555]">
@@ -430,7 +430,7 @@ function OrderSuccessContent() {
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-[#faf9f8]">
-                <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-[#df8448] border-t-transparent" />
+                <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-secondary border-t-transparent" />
             </div>
         );
     }
@@ -440,7 +440,7 @@ function OrderSuccessContent() {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#faf9f8] px-6 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#fff3eb]">
-                    <Package size={26} className="text-[#df8448]" />
+                    <Package size={26} className="text-secondary" />
                 </div>
                 <h1 className="text-[22px] font-semibold text-[#1a1a1a]">
                     Order not found
@@ -450,7 +450,7 @@ function OrderSuccessContent() {
                 </p>
                 <Link
                     href="/shop"
-                    className="mt-2 inline-flex h-11 items-center justify-center rounded-[6px] bg-[#df8448] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#c9713a]"
+                    className="mt-2 inline-flex h-11 items-center justify-center rounded-[6px] bg-secondary px-6 text-[14px] font-semibold text-white transition-colors hover:bg-secondary-dark"
                 >
                     Return to shop
                 </Link>
@@ -495,11 +495,11 @@ function OrderSuccessContent() {
                             <CheckCircle
                                 size={28}
                                 strokeWidth={2}
-                                className="text-[#df8448]"
+                                className="text-secondary"
                             />
                         </div>
                         <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#df8448]">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary">
                                 Order #{order.reference}
                             </p>
                             <h1 className="mt-0.5 text-[26px] font-bold leading-tight tracking-tight text-[#2f3d46] md:text-[30px]">
@@ -513,7 +513,7 @@ function OrderSuccessContent() {
                         <p className="flex items-start gap-2.5 text-[14px] leading-[1.65] text-[#7a4020]">
                             <Mail
                                 size={15}
-                                className="mt-0.5 flex-shrink-0 text-[#df8448]"
+                                className="mt-0.5 flex-shrink-0 text-secondary"
                             />
                             <span>
                                 Your order is confirmed. We&apos;ve sent a confirmation email to{" "}
@@ -542,9 +542,9 @@ function OrderSuccessContent() {
                                 {timeline.map((step, index) => (
                                     <div key={step.key} className="relative flex gap-4">
                                         {index < timeline.length - 1 ? (
-                                            <span className={`absolute left-[11px] top-6 h-[calc(100%+8px)] w-px ${step.done ? "bg-[#df8448]" : "bg-[#e5e7eb]"}`} />
+                                            <span className={`absolute left-[11px] top-6 h-[calc(100%+8px)] w-px ${step.done ? "bg-secondary" : "bg-[#e5e7eb]"}`} />
                                         ) : null}
-                                        <span className={`relative z-10 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border ${step.done ? "border-[#df8448] bg-[#df8448] text-white" : "border-[#d1d5db] bg-white text-[#9ca3af]"}`}>
+                                        <span className={`relative z-10 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border ${step.done ? "border-secondary bg-secondary text-white" : "border-gray-200 bg-white text-gray-400"}`}>
                                             {step.done ? <CheckCircle size={14} /> : <span className="h-2 w-2 rounded-full bg-current" />}
                                         </span>
                                         <div className="pb-1">
@@ -581,7 +581,7 @@ function OrderSuccessContent() {
                                     href={shipment.tracking_url}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex h-10 items-center justify-center rounded-[6px] border border-[#df8448] px-4 text-sm font-semibold text-[#df8448] transition hover:bg-[#fff4ec]"
+                                    className="inline-flex h-10 items-center justify-center rounded-[6px] border border-secondary px-4 text-sm font-semibold text-secondary transition hover:bg-[#fff4ec]"
                                 >
                                     Open tracking
                                 </a>
@@ -598,7 +598,7 @@ function OrderSuccessContent() {
                         </div>
                         <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                             <div className="px-6 py-4">
-                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
                                     Order number
                                 </p>
                                 <p className="mt-1.5 text-[14px] font-semibold text-[#1a1a1a]">
@@ -606,7 +606,7 @@ function OrderSuccessContent() {
                                 </p>
                             </div>
                             <div className="px-6 py-4">
-                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
                                     Date
                                 </p>
                                 <p className="mt-1.5 text-[14px] font-medium text-[#555555]">
@@ -618,7 +618,7 @@ function OrderSuccessContent() {
                                 </p>
                             </div>
                             <div className="px-6 py-4">
-                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
                                     Order total
                                 </p>
                                 <p className="mt-1.5 text-[14px] font-semibold text-[#1a1a1a]">
@@ -637,7 +637,7 @@ function OrderSuccessContent() {
                         </div>
                         <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
                             <div className="px-6 py-5">
-                                <p className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+                                <p className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
                                     <Mail size={12} />
                                     Contact
                                 </p>
@@ -646,7 +646,7 @@ function OrderSuccessContent() {
                                 </p>
                             </div>
                             <div className="px-6 py-5">
-                                <p className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+                                <p className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
                                     <Truck size={12} />
                                     Shipping method
                                 </p>
@@ -673,7 +673,7 @@ function OrderSuccessContent() {
                                     </div>
                                 ) : (
                                     <div className="flex h-8 w-12 flex-shrink-0 items-center justify-center rounded-[5px] border border-[#e8e8ea] bg-[#faf9f8]">
-                                        <CreditCard size={16} className="text-[#9ca3af]" />
+                                        <CreditCard size={16} className="text-gray-400" />
                                     </div>
                                 );
                             })()}
@@ -730,7 +730,7 @@ function OrderSuccessContent() {
                     <div className="flex flex-col sm:flex-row items-center gap-3 pb-8 pt-1 lg:pb-0">
                         <Link
                             href="/shop"
-                            className="flex h-11 w-full sm:w-auto items-center justify-center rounded-[6px] bg-[#df8448] px-8 text-[14px] font-semibold text-white transition-all hover:bg-[#c9713a] hover:shadow-md"
+                            className="flex h-11 w-full sm:w-auto items-center justify-center rounded-[6px] bg-secondary px-8 text-[14px] font-semibold text-white transition-all hover:bg-secondary-dark hover:shadow-md"
                         >
                             Continue shopping
                         </Link>
@@ -795,12 +795,12 @@ function OrderSuccessContent() {
                             {parseFloat(order.discount_total) > 0 && (
                                 <div className="flex items-center justify-between text-sm">
                                     <div className="flex items-center gap-2">
-                                        <Tag className="w-3.5 h-3.5 text-[#df8448]" />
+                                        <Tag className="w-3.5 h-3.5 text-secondary" />
                                         <span className="text-[#707070]">
                                             Discount {order.coupon_code && <span className="uppercase font-medium text-[#1a1a1a]">({order.coupon_code})</span>}
                                         </span>
                                     </div>
-                                    <span className="font-semibold text-[#df8448]">
+                                    <span className="font-semibold text-secondary">
                                         −${order.discount_total}
                                     </span>
                                 </div>
@@ -823,7 +823,7 @@ function OrderSuccessContent() {
                                         )}
                                     </span>
                                     {order.tax_source_label ? (
-                                        <p className="mt-1 text-xs leading-4 text-[#9ca3af]">
+                                        <p className="mt-1 text-xs leading-4 text-gray-400">
                                             {order.tax_source_label}
                                             {order.tax_effective_date ? `, effective ${order.tax_effective_date}` : ''}
                                         </p>
@@ -839,7 +839,7 @@ function OrderSuccessContent() {
                                     Total
                                 </span>
                                 <div className="text-right">
-                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
                                         {order.total.currency}
                                     </p>
                                     <p className="text-[22px] font-bold tracking-tight text-[#1a1a1a]">
@@ -861,7 +861,7 @@ export default function OrderSuccessPage() {
         <Suspense
             fallback={
                 <div className="flex min-h-screen items-center justify-center bg-[#faf9f8]">
-                    <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-[#df8448] border-t-transparent" />
+                    <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-secondary border-t-transparent" />
                 </div>
             }
         >

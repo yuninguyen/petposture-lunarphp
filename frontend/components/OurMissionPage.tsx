@@ -59,11 +59,11 @@ export default function OurMissionPage() {
                         className="flex flex-col items-center"
                     >
                         {/* Eyebrow */}
-                        <h1 className="text-[32px] md:text-[48px] font-bold uppercase tracking-[0.1em] text-[#3e4c57] mb-6 leading-tight">
+                        <h1 className="text-[32px] md:text-[48px] font-bold uppercase tracking-[0.1em] text-primary mb-6 leading-tight">
                             Our Mission
                         </h1>
                         {/* Divider Line */}
-                        <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mb-6"></div>
+                        <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
 
                         {/* Hero Subtitle */}
                         <p className="text-[18px] md:text-[22px] text-[#666666] max-w-2xl italic font-medium leading-relaxed">
@@ -85,7 +85,7 @@ export default function OurMissionPage() {
                         <h2 className="text-[24px] md:text-[36px] font-bold text-[#1A2B3C] uppercase tracking-[0.15em] leading-tight mb-4">
                             The &quot;Standard&quot; Isn&apos;t Good Enough
                         </h2>
-                        <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mb-6"></div>
+                        <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
                     </motion.div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center text-left">
@@ -94,7 +94,7 @@ export default function OurMissionPage() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             whileInView={{ opacity: 1, scale: 1 }}
                             viewport={{ once: true }}
-                            className="relative aspect-square md:aspect-[4/4] rounded-xl overflow-hidden shadow-2xl shadow-[#3e4c57]/10 bg-white"
+                            className="relative aspect-square md:aspect-[4/4] rounded-xl overflow-hidden shadow-2xl shadow-primary/10 bg-white"
                         >
                             <Image
                                 src="/assets/badposture-goodposture.jpg"
@@ -110,8 +110,8 @@ export default function OurMissionPage() {
                             viewport={{ once: true }}
                             transition={{ duration: 0.8 }}
                         >
-                            <h3 className="text-[14px] font-bold uppercase tracking-[0.15em] text-[#df8448] mb-6">Our Origin Story</h3>
-                            <h4 className="text-[24px] font-bold text-[#3e4c57] tracking-[0.1em] leading-tight mb-8">WHY WE STARTED PETPOSTURE</h4>
+                            <h3 className="text-[14px] font-bold uppercase tracking-[0.15em] text-secondary mb-6">Our Origin Story</h3>
+                            <h4 className="text-[24px] font-bold text-primary tracking-[0.1em] leading-tight mb-8">WHY WE STARTED PETPOSTURE</h4>
                             <p className="text-[15px] md:text-[17px] text-[#333333] leading-relaxed mb-6 font-medium">
                                 We saw pets struggling with products not built for them. We saw flat-faced breeds like Pugs and Frenchies straining their necks and struggling to breathe at mealtimes.
                             </p>
@@ -135,7 +135,7 @@ export default function OurMissionPage() {
                         <h2 className="text-[24px] md:text-[36px] font-bold uppercase tracking-[0.15em] text-[#1A2B3C] mb-4">
                             Our Core Mission
                         </h2>
-                        <div className="w-10 h-1 bg-[#df8448] mx-auto rounded-full mb-6"></div>
+                        <div className="w-10 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
 
                         <blockquote className="text-[18px] md:text-[22px] text-[#333333] leading-[1.6] font-medium italic max-w-3xl mx-auto mb-2">
                             &quot;Our mission is to improve the health and daily comfort of every pet by providing
@@ -147,13 +147,13 @@ export default function OurMissionPage() {
             </section>
 
             {/* 4. How We Make a Difference - Custom Icon Style + Slider on Mobile */}
-            <section className="py-8 md:py-12 px-4 bg-[#f4f5f6]">
+            <section className="py-8 md:py-12 px-4 bg-gray-50">
                 <div className="max-w-[1200px] mx-auto">
                     <div className="text-center mb-12">
                         <h2 className="text-[24px] md:text-[36px] font-bold text-[#1A2B3C] uppercase tracking-[0.15em] mb-4">
                             How We Make A Difference
                         </h2>
-                        <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mb-6"></div>
+                        <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
                     </div>
 
                     <div
@@ -170,10 +170,10 @@ export default function OurMissionPage() {
                                 viewport={{ once: true }}
                                 className="min-w-[85vw] md:min-w-0 snap-center flex flex-col items-center text-center group px-4 md:px-0 pt-4"
                             >
-                                <div className="w-16 h-16 bg-[#3e4c57] rounded-full flex items-center justify-center text-[#df8448] mb-8 group-hover:scale-110 transition-transform duration-500 shadow-xl shadow-black/10">
+                                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-secondary mb-8 group-hover:scale-110 transition-transform duration-500 shadow-xl shadow-black/10">
                                     <feature.icon size={36} strokeWidth={1} />
                                 </div>
-                                <h5 className="text-[18px] md:text-[22px] font-bold text-[#3e4c57] mb-4 uppercase tracking-wider">{feature.title}</h5>
+                                <h5 className="text-[18px] md:text-[22px] font-bold text-primary mb-4 uppercase tracking-wider">{feature.title}</h5>
                                 <p className="text-[#333333] leading-relaxed text-[15px] md:text-[17px] font-medium">
                                     {feature.desc}
                                 </p>
@@ -186,7 +186,7 @@ export default function OurMissionPage() {
                         {features.map((_, idx) => (
                             <div
                                 key={idx}
-                                className={`h-2 rounded-full transition-all duration-300 ${activeSlide === idx ? 'w-6 bg-[#df8448]' : 'w-2 bg-[#d1d5db]'}`}
+                                className={`h-2 rounded-full transition-all duration-300 ${activeSlide === idx ? 'w-6 bg-secondary' : 'w-2 bg-gray-200'}`}
                             />
                         ))}
                     </div>
@@ -194,7 +194,7 @@ export default function OurMissionPage() {
             </section>
 
             {/* 5. Join Us CTA Section - Enhanced with Image Overlay & Depth */}
-            <section className="py-6 md:py-10 px-4 bg-[#3e4c57] text-white text-center relative overflow-hidden group">
+            <section className="py-6 md:py-10 px-4 bg-primary text-white text-center relative overflow-hidden group">
                 {/* Visual Depth: Background Image Overlay */}
                 <div className="absolute inset-0 z-0">
                     <Image
@@ -204,10 +204,10 @@ export default function OurMissionPage() {
                         className="object-cover opacity-10 group-hover:scale-110 transition-transform duration-[10s] ease-linear"
                     />
                     {/* Radial Glow */}
-                    <div className="absolute inset-0 bg-radial-gradient from-transparent via-[#3e4c57]/50 to-[#3e4c57]"></div>
+                    <div className="absolute inset-0 bg-radial-gradient from-transparent via-primary/50 to-primary"></div>
                 </div>
 
-                <div className="absolute top-0 left-0 w-full h-1 bg-[#df8448]"></div>
+                <div className="absolute top-0 left-0 w-full h-1 bg-secondary"></div>
 
                 <div className="max-w-[1200px] mx-auto relative z-10">
                     <motion.div
@@ -219,7 +219,7 @@ export default function OurMissionPage() {
                         <h2 className="text-[16px] md:text-[20px] font-bold uppercase tracking-[0.3em] text-white/90 mb-6">
                             Join Us In Our Mission
                         </h2>
-                        <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mb-6"></div>
+                        <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
 
                         <p className="text-[15px] md:text-[18px] text-zinc-300 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
                             Help your pet live their most comfortable, healthy, and happy life.
@@ -227,10 +227,10 @@ export default function OurMissionPage() {
 
                         <Link
                             href="/shop"
-                            className="inline-block px-10 py-3 border-2 border-[#df8448] text-[#df8448] font-bold uppercase tracking-[.2em] text-[15px] hover:bg-[#df8448] hover:text-white transition-all duration-500 rounded relative group overflow-hidden"
+                            className="inline-block px-10 py-3 border-2 border-secondary text-secondary font-bold uppercase tracking-[.2em] text-[15px] hover:bg-secondary hover:text-white transition-all duration-500 rounded relative group overflow-hidden"
                         >
                             <span className="relative z-10">Shop Our Solutions</span>
-                            <div className="absolute inset-0 bg-[#df8448] translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+                            <div className="absolute inset-0 bg-secondary translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
                         </Link>
                     </motion.div>
                 </div>

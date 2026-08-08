@@ -220,7 +220,7 @@ export default function AccountPage() {
 
             <section className="flex-1 px-4 md:px-8 py-12">
                 <div className="mx-auto max-w-[1000px]">
-                    <h1 className="text-[28px] font-bold text-[#3e4c57] mb-2">My Account</h1>
+                    <h1 className="text-[28px] font-bold text-primary mb-2">My Account</h1>
                     <p className="text-zinc-500 text-[14px] mb-8">Welcome back, {user.name}.</p>
 
                     <div className="flex flex-col md:flex-row gap-8">
@@ -230,7 +230,7 @@ export default function AccountPage() {
                                     <button
                                         key={t.id}
                                         onClick={() => setTab(t.id)}
-                                        className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wide transition-colors ${tab === t.id ? 'bg-[#df8448] text-white' : 'bg-white text-[#3e4c57] hover:bg-zinc-50'}`}
+                                        className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wide transition-colors ${tab === t.id ? 'bg-secondary text-white' : 'bg-white text-primary hover:bg-zinc-50'}`}
                                     >
                                         {t.icon} {t.label}
                                     </button>
@@ -268,13 +268,13 @@ export default function AccountPage() {
                                                         className="w-full flex items-center justify-between p-4 text-left hover:bg-zinc-50 transition-colors"
                                                     >
                                                         <div>
-                                                            <p className="font-bold text-[#3e4c57] text-[14px]">#{order.reference}</p>
+                                                            <p className="font-bold text-primary text-[14px]">#{order.reference}</p>
                                                             <p className="text-zinc-400 text-xs">{new Date(order.created_at).toLocaleDateString()}</p>
                                                         </div>
                                                         <div className="flex items-center gap-3">
                                                             <div className="text-right">
-                                                                <p className="text-sm font-bold uppercase tracking-wide text-[#df8448]">{order.status_label}</p>
-                                                                <p className="text-[14px] font-bold text-[#3e4c57]">{order.total.formatted}</p>
+                                                                <p className="text-sm font-bold uppercase tracking-wide text-secondary">{order.status_label}</p>
+                                                                <p className="text-[14px] font-bold text-primary">{order.total.formatted}</p>
                                                             </div>
                                                             <ChevronDown size={18} className={`text-zinc-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                                         </div>
@@ -285,11 +285,11 @@ export default function AccountPage() {
                                                             <div className="grid sm:grid-cols-2 gap-4">
                                                                 <div>
                                                                     <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Order Number</p>
-                                                                    <p className="text-sm font-medium text-[#3e4c57]">#{order.reference}</p>
+                                                                    <p className="text-sm font-medium text-primary">#{order.reference}</p>
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Order Placed</p>
-                                                                    <p className="text-sm font-medium text-[#3e4c57]">
+                                                                    <p className="text-sm font-medium text-primary">
                                                                         {new Date(order.created_at).toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                                                                     </p>
                                                                 </div>
@@ -299,7 +299,7 @@ export default function AccountPage() {
                                                                 <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Payment</p>
                                                                 <div className="flex items-center justify-between text-sm">
                                                                     <span className="text-zinc-600">{order.payment_label || 'N/A'}</span>
-                                                                    <span className="text-xs font-bold uppercase tracking-wide text-[#df8448]">{order.payment_status_label}</span>
+                                                                    <span className="text-xs font-bold uppercase tracking-wide text-secondary">{order.payment_status_label}</span>
                                                                 </div>
                                                                 <p className="mt-1 text-sm text-zinc-500">{orderPaymentMessage(order)}</p>
                                                             </div>
@@ -337,7 +337,7 @@ export default function AccountPage() {
                                                                                     href={shipment.tracking_url}
                                                                                     target="_blank"
                                                                                     rel="noreferrer"
-                                                                                    className="font-bold text-[#df8448] hover:text-[#c9713a]"
+                                                                                    className="font-bold text-secondary hover:text-secondary-dark"
                                                                                 >
                                                                                     Track Package
                                                                                 </a>
@@ -352,8 +352,8 @@ export default function AccountPage() {
                                                             <div className="space-y-2 pt-3 border-t border-zinc-100">
                                                                 {order.lines.filter((line) => line.type !== 'shipping').map((line) => (
                                                                     <div key={line.id} className="flex items-center justify-between text-sm">
-                                                                        <span className="text-[#3e4c57]">{line.description} <span className="text-zinc-400">&times;{line.quantity}</span></span>
-                                                                        <span className="font-medium text-[#3e4c57]">${line.sub_total.toFixed(2)}</span>
+                                                                        <span className="text-primary">{line.description} <span className="text-zinc-400">&times;{line.quantity}</span></span>
+                                                                        <span className="font-medium text-primary">${line.sub_total.toFixed(2)}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -365,14 +365,14 @@ export default function AccountPage() {
                                                                 )}
                                                                 <div className="flex justify-between text-zinc-500"><span>Shipping - {order.shipping_label}</span><span>{order.shipping_total === 0 ? 'Free' : `$${order.shipping_total.toFixed(2)}`}</span></div>
                                                                 <div className="flex justify-between text-zinc-500"><span>Tax</span><span>${order.tax_total.toFixed(2)}</span></div>
-                                                                <div className="flex justify-between font-bold text-[#3e4c57] pt-1"><span>Total</span><span>{order.total.formatted}</span></div>
+                                                                <div className="flex justify-between font-bold text-primary pt-1"><span>Total</span><span>{order.total.formatted}</span></div>
                                                             </div>
 
                                                             {returnEligibility(order) === 'open' && (
                                                                 <div className="pt-3 border-t border-zinc-100">
                                                                     <Link
                                                                         href={`/returns?ref=${encodeURIComponent(order.reference)}&email=${encodeURIComponent(order.customer_email)}`}
-                                                                        className="text-sm font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
+                                                                        className="text-sm font-bold text-secondary hover:text-secondary-dark transition-colors"
                                                                     >
                                                                         Request a Return
                                                                     </Link>
@@ -399,10 +399,10 @@ export default function AccountPage() {
                                 <div className="space-y-4">
                                     {addresses.map((addr) => (
                                         <div key={addr.id} className="flex items-start justify-between border border-zinc-100 rounded-xl p-4">
-                                            <div className="text-sm text-[#3e4c57]">
+                                            <div className="text-sm text-primary">
                                                 <p className="font-bold">
                                                     {addr.first_name} {addr.last_name}{' '}
-                                                    {addr.is_default && <span className="text-xs uppercase text-[#df8448] font-bold ml-2">Default</span>}
+                                                    {addr.is_default && <span className="text-xs uppercase text-secondary font-bold ml-2">Default</span>}
                                                 </p>
                                                 <p className="text-zinc-500">{addr.line_one}{addr.line_two ? `, ${addr.line_two}` : ''}</p>
                                                 <p className="text-zinc-500">{addr.city}, {addr.state} {addr.postcode}</p>
@@ -421,27 +421,27 @@ export default function AccountPage() {
                                     {showAddressForm ? (
                                         <form onSubmit={handleAddAddress} className="border border-zinc-100 rounded-xl p-4 space-y-3">
                                             <div className="flex items-center justify-between">
-                                                <p className="font-bold text-sm text-[#3e4c57] uppercase tracking-wide">New Address</p>
-                                                <button type="button" onClick={() => setShowAddressForm(false)} className="text-zinc-400 hover:text-[#3e4c57]">
+                                                <p className="font-bold text-sm text-primary uppercase tracking-wide">New Address</p>
+                                                <button type="button" onClick={() => setShowAddressForm(false)} className="text-zinc-400 hover:text-primary">
                                                     <X size={16} />
                                                 </button>
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
-                                                <input required placeholder="First name" value={addressForm.first_name} onChange={(e) => setAddressForm((f) => ({ ...f, first_name: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
-                                                <input required placeholder="Last name" value={addressForm.last_name} onChange={(e) => setAddressForm((f) => ({ ...f, last_name: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
+                                                <input required placeholder="First name" value={addressForm.first_name} onChange={(e) => setAddressForm((f) => ({ ...f, first_name: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-secondary" />
+                                                <input required placeholder="Last name" value={addressForm.last_name} onChange={(e) => setAddressForm((f) => ({ ...f, last_name: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-secondary" />
                                             </div>
-                                            <input required placeholder="Address line 1" value={addressForm.line_one} onChange={(e) => setAddressForm((f) => ({ ...f, line_one: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
-                                            <input placeholder="Address line 2 (optional)" value={addressForm.line_two} onChange={(e) => setAddressForm((f) => ({ ...f, line_two: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
+                                            <input required placeholder="Address line 1" value={addressForm.line_one} onChange={(e) => setAddressForm((f) => ({ ...f, line_one: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-secondary" />
+                                            <input placeholder="Address line 2 (optional)" value={addressForm.line_two} onChange={(e) => setAddressForm((f) => ({ ...f, line_two: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-secondary" />
                                             <div className="grid grid-cols-3 gap-3">
-                                                <input required placeholder="City" value={addressForm.city} onChange={(e) => setAddressForm((f) => ({ ...f, city: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
-                                                <input required placeholder="State" value={addressForm.state} onChange={(e) => setAddressForm((f) => ({ ...f, state: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
-                                                <input required placeholder="Postcode" value={addressForm.postcode} onChange={(e) => setAddressForm((f) => ({ ...f, postcode: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
+                                                <input required placeholder="City" value={addressForm.city} onChange={(e) => setAddressForm((f) => ({ ...f, city: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-secondary" />
+                                                <input required placeholder="State" value={addressForm.state} onChange={(e) => setAddressForm((f) => ({ ...f, state: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-secondary" />
+                                                <input required placeholder="Postcode" value={addressForm.postcode} onChange={(e) => setAddressForm((f) => ({ ...f, postcode: e.target.value }))} className="px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-secondary" />
                                             </div>
-                                            <input placeholder="Phone (optional)" value={addressForm.phone} onChange={(e) => setAddressForm((f) => ({ ...f, phone: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-[#df8448]" />
+                                            <input placeholder="Phone (optional)" value={addressForm.phone} onChange={(e) => setAddressForm((f) => ({ ...f, phone: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#f8f9fa] text-sm outline-none focus:ring-2 focus:ring-secondary" />
                                             <button
                                                 type="submit"
                                                 disabled={savingAddress}
-                                                className="bg-[#df8448] text-white px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide hover:bg-[#c9713a] disabled:opacity-50 transition-colors"
+                                                className="bg-secondary text-white px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide hover:bg-secondary-dark disabled:opacity-50 transition-colors"
                                             >
                                                 {savingAddress ? 'Saving...' : 'Save Address'}
                                             </button>
@@ -449,14 +449,14 @@ export default function AccountPage() {
                                     ) : (
                                         <button
                                             onClick={() => setShowAddressForm(true)}
-                                            className="flex items-center gap-2 text-sm font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
+                                            className="flex items-center gap-2 text-sm font-bold text-secondary hover:text-secondary-dark transition-colors"
                                         >
                                             <Plus size={16} /> Add New Address
                                         </button>
                                     )}
                                 </div>
                             ) : (
-                                <div className="grid sm:grid-cols-2 gap-6 text-[14px] text-[#3e4c57]">
+                                <div className="grid sm:grid-cols-2 gap-6 text-[14px] text-primary">
                                     <div>
                                         <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Full Name</p>
                                         <p className="font-medium">{user.name}</p>

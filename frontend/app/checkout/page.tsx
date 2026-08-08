@@ -939,7 +939,7 @@ export default function CheckoutPage() {
                         }}
                         className="flex w-full items-start gap-3 border-b border-[#f1f1f3] px-4 py-3 text-left transition hover:bg-[#faf7f3] last:border-b-0"
                     >
-                        <MapPinHouse size={16} className="mt-0.5 flex-shrink-0 text-[#df8448]" />
+                        <MapPinHouse size={16} className="mt-0.5 flex-shrink-0 text-secondary" />
                         <div className="min-w-0">
                             <p className="text-[14px] font-medium text-[#333333]">{suggestion.mainText}</p>
                             <p className="text-sm leading-5 text-[#707070]">
@@ -1548,7 +1548,7 @@ export default function CheckoutPage() {
                         >
                             <div className="mb-4 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-[#df8448]">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-secondary">
                                         <Mail size={16} />
                                     </div>
                                     <h2 className="text-[18px] font-semibold text-[#333333]">Contact</h2>
@@ -1567,7 +1567,7 @@ export default function CheckoutPage() {
                                         placeholder="Email"
                                         value={form.email}
                                         onChange={(e) => updateField('email', e.target.value)}
-                                        className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]"
+                                        className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
                                     />
                                 </div>
                                 <div className="flex items-center gap-3 py-1">
@@ -1592,7 +1592,7 @@ export default function CheckoutPage() {
                             onPointerDownCapture={() => activateStep('shipping')}
                         >
                             <div className="mb-4 flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-[#df8448]">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-secondary">
                                     <MapPinHouse size={16} />
                                 </div>
                                 <h2 className="text-[18px] font-semibold text-[#333333]">Delivery</h2>
@@ -1604,7 +1604,7 @@ export default function CheckoutPage() {
                                         autoComplete="shipping country-name"
                                         value={form.country}
                                         onChange={(e) => updateField('country', e.target.value)}
-                                        className="h-[46px] w-full appearance-none rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]"
+                                        className="h-[46px] w-full appearance-none rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
                                     >
                                         {countryOptions.map((country) => (
                                             <option key={country} value={country}>{country}</option>
@@ -1616,14 +1616,14 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="grid gap-3 md:grid-cols-2">
-                                    <input required name="firstName" autoComplete="shipping given-name" placeholder="First name" value={form.firstName} onChange={(e) => updateField('firstName', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]" />
-                                    <input required name="lastName" autoComplete="shipping family-name" placeholder="Last name" value={form.lastName} onChange={(e) => updateField('lastName', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]" />
+                                    <input required name="firstName" autoComplete="shipping given-name" placeholder="First name" value={form.firstName} onChange={(e) => updateField('firstName', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
+                                    <input required name="lastName" autoComplete="shipping family-name" placeholder="Last name" value={form.lastName} onChange={(e) => updateField('lastName', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
                                 </div>
 
-                                <input name="company" autoComplete="shipping organization" placeholder="Company (optional)" value={form.company} onChange={(e) => updateField('company', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]" />
+                                <input name="company" autoComplete="shipping organization" placeholder="Company (optional)" value={form.company} onChange={(e) => updateField('company', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
 
                                 <div className="relative">
-                                    <input required name="address1" autoComplete="shipping address-line1" placeholder="Address" value={form.address1} onChange={(e) => updateField('address1', e.target.value)} onFocus={() => setActiveAddressTarget('shipping')} onBlur={() => window.setTimeout(() => setActiveAddressTarget((prev) => (prev === 'shipping' ? null : prev)), 120)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 pr-10 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]" />
+                                    <input required name="address1" autoComplete="shipping address-line1" placeholder="Address" value={form.address1} onChange={(e) => updateField('address1', e.target.value)} onFocus={() => setActiveAddressTarget('shipping')} onBlur={() => window.setTimeout(() => setActiveAddressTarget((prev) => (prev === 'shipping' ? null : prev)), 120)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 pr-10 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
                                     <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#707070]" />
                                     {renderAddressSuggestions('shipping')}
                                 </div>
@@ -1631,15 +1631,15 @@ export default function CheckoutPage() {
                                     <p className="text-sm text-[#707070]">Start typing your street address and choose a suggestion.</p>
                                 ) : null}
 
-                                <input name="address2" autoComplete="shipping address-line2" placeholder="Apartment, suite, etc. (optional)" value={form.address2} onChange={(e) => updateField('address2', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]" />
+                                <input name="address2" autoComplete="shipping address-line2" placeholder="Apartment, suite, etc. (optional)" value={form.address2} onChange={(e) => updateField('address2', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
 
                                 <div className="grid gap-3 md:grid-cols-3">
-                                    <input required name="city" autoComplete="shipping address-level2" placeholder="City" value={form.city} onChange={(e) => updateField('city', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]" />
-                                    <input required name="province" autoComplete="shipping address-level1" placeholder="State" value={form.province} onChange={(e) => updateField('province', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]" />
-                                    <input required name="postalCode" autoComplete="shipping postal-code" placeholder="ZIP code" value={form.postalCode} onChange={(e) => updateField('postalCode', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]" />
+                                    <input required name="city" autoComplete="shipping address-level2" placeholder="City" value={form.city} onChange={(e) => updateField('city', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
+                                    <input required name="province" autoComplete="shipping address-level1" placeholder="State" value={form.province} onChange={(e) => updateField('province', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
+                                    <input required name="postalCode" autoComplete="shipping postal-code" placeholder="ZIP code" value={form.postalCode} onChange={(e) => updateField('postalCode', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
                                 </div>
 
-                                <input name="phone" autoComplete="shipping tel" placeholder="Phone" value={form.phone} onChange={(e) => updateField('phone', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]" />
+                                <input name="phone" autoComplete="shipping tel" placeholder="Phone" value={form.phone} onChange={(e) => updateField('phone', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
 
                                 <div className="flex items-center gap-3 py-1">
                                     <input
@@ -1679,7 +1679,7 @@ export default function CheckoutPage() {
                         >
                             <div className="mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-[#df8448]">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-secondary">
                                         <CreditCard size={16} />
                                     </div>
                                     <h2 className="text-[18px] font-semibold text-[#333333]">Payment</h2>
@@ -1783,7 +1783,7 @@ export default function CheckoutPage() {
                                                                 autoComplete="billing country-name"
                                                                 value={form.billingCountry}
                                                                 onChange={(e) => updateField('billingCountry', e.target.value)}
-                                                                className="h-[46px] w-full appearance-none rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]"
+                                                                className="h-[46px] w-full appearance-none rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
                                                             >
                                                                 {countryOptions.map((country) => (
                                                                     <option key={country} value={country}>{country}</option>
@@ -1799,7 +1799,7 @@ export default function CheckoutPage() {
                                                                 placeholder="First name"
                                                                 value={form.billingFirstName}
                                                                 onChange={(e) => updateField('billingFirstName', e.target.value)}
-                                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]"
+                                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
                                                             />
                                                             <input
                                                                 required={form.billingAddress === 'different'}
@@ -1808,7 +1808,7 @@ export default function CheckoutPage() {
                                                                 placeholder="Last name"
                                                                 value={form.billingLastName}
                                                                 onChange={(e) => updateField('billingLastName', e.target.value)}
-                                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]"
+                                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
                                                             />
                                                         </div>
 
@@ -1822,7 +1822,7 @@ export default function CheckoutPage() {
                                                                 onChange={(e) => updateField('billingAddress1', e.target.value)}
                                                                 onFocus={() => setActiveAddressTarget('billing')}
                                                                 onBlur={() => window.setTimeout(() => setActiveAddressTarget((prev) => (prev === 'billing' ? null : prev)), 120)}
-                                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 pr-10 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]"
+                                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 pr-10 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
                                                             />
                                                             <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#707070]" />
                                                             {renderAddressSuggestions('billing')}
@@ -1834,7 +1834,7 @@ export default function CheckoutPage() {
                                                             placeholder="Apartment, suite, etc. (optional)"
                                                             value={form.billingAddress2}
                                                             onChange={(e) => updateField('billingAddress2', e.target.value)}
-                                                            className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]"
+                                                            className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
                                                         />
 
                                                         <div className="grid gap-3 md:grid-cols-3">
@@ -1845,7 +1845,7 @@ export default function CheckoutPage() {
                                                                 placeholder="City"
                                                                 value={form.billingCity}
                                                                 onChange={(e) => updateField('billingCity', e.target.value)}
-                                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]"
+                                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
                                                             />
                                                             <input
                                                                 required={form.billingAddress === 'different'}
@@ -1854,7 +1854,7 @@ export default function CheckoutPage() {
                                                                 placeholder="State"
                                                                 value={form.billingProvince}
                                                                 onChange={(e) => updateField('billingProvince', e.target.value)}
-                                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]"
+                                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
                                                             />
                                                             <input
                                                                 required={form.billingAddress === 'different'}
@@ -1863,7 +1863,7 @@ export default function CheckoutPage() {
                                                                 placeholder="ZIP code"
                                                                 value={form.billingPostalCode}
                                                                 onChange={(e) => updateField('billingPostalCode', e.target.value)}
-                                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-[#df8448] focus:ring-2 focus:ring-[#f4cdb7]"
+                                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
                                                             />
                                                         </div>
                                                     </div>
@@ -1899,7 +1899,7 @@ export default function CheckoutPage() {
                             <div className="pt-6">
                                 <button
                                     disabled={isLoading || items.length === 0}
-                                    className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[8px] bg-[#df8448] px-6 text-[15px] font-bold text-white shadow-[0_14px_30px_rgba(223,132,72,0.22)] transition hover:bg-[#c9713a] disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[8px] bg-secondary px-6 text-[15px] font-bold text-white shadow-[0_14px_30px_rgba(223,132,72,0.22)] transition hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {isLoading ? (
                                         'Processing...'

@@ -58,7 +58,7 @@ export function ProductFilterBar({
                                 placeholder="Find products..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-[50px] w-full rounded-[16px] border border-[#e7ddd2] bg-[#faf7f3] pl-11 pr-4 text-[14px] outline-none transition focus:border-[#df8448] focus:bg-white"
+                                className="h-[50px] w-full rounded-[16px] border border-[#e7ddd2] bg-[#faf7f3] pl-11 pr-4 text-[14px] outline-none transition focus:border-secondary focus:bg-white"
                             />
                         </div>
                     </div>
@@ -71,7 +71,7 @@ export function ProductFilterBar({
                                     key={category.name}
                                     onClick={() => setActiveCategory(category.name)}
                                     className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-sm transition ${activeCategory === category.name
-                                        ? 'border-[#df8448] bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
+                                        ? 'border-secondary bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
                                         : 'border-[#efe5dc] bg-white text-[#687076] hover:border-[#d9c6b5] hover:bg-[#faf7f3]'
                                         }`}
                                 >
@@ -91,7 +91,7 @@ export function ProductFilterBar({
                                 <button
                                     onClick={() => setActiveBreed('All')}
                                     className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-sm transition ${activeBreed === 'All'
-                                        ? 'border-[#df8448] bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
+                                        ? 'border-secondary bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
                                         : 'border-[#efe5dc] bg-white text-[#687076] hover:border-[#d9c6b5] hover:bg-[#faf7f3]'
                                         }`}
                                 >
@@ -102,7 +102,7 @@ export function ProductFilterBar({
                                         key={breed.slug}
                                         onClick={() => setActiveBreed(breed.slug)}
                                         className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-sm transition ${activeBreed === breed.slug
-                                            ? 'border-[#df8448] bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
+                                            ? 'border-secondary bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
                                             : 'border-[#efe5dc] bg-white text-[#687076] hover:border-[#d9c6b5] hover:bg-[#faf7f3]'
                                             }`}
                                     >
@@ -123,7 +123,7 @@ export function ProductFilterBar({
                                 <button
                                     onClick={() => setActiveSolution('All')}
                                     className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-sm transition ${activeSolution === 'All'
-                                        ? 'border-[#df8448] bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
+                                        ? 'border-secondary bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
                                         : 'border-[#efe5dc] bg-white text-[#687076] hover:border-[#d9c6b5] hover:bg-[#faf7f3]'
                                         }`}
                                 >
@@ -134,7 +134,7 @@ export function ProductFilterBar({
                                         key={solution.slug}
                                         onClick={() => setActiveSolution(solution.slug)}
                                         className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-sm transition ${activeSolution === solution.slug
-                                            ? 'border-[#df8448] bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
+                                            ? 'border-secondary bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
                                             : 'border-[#efe5dc] bg-white text-[#687076] hover:border-[#d9c6b5] hover:bg-[#faf7f3]'
                                             }`}
                                     >
@@ -156,7 +156,7 @@ export function ProductFilterBar({
                             <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
-                                className="h-[50px] w-full appearance-none rounded-[16px] border border-[#e7ddd2] bg-[#faf7f3] pl-4 pr-12 text-sm font-semibold text-[#2d3a43] outline-none transition focus:border-[#df8448] focus:bg-white"
+                                className="h-[50px] w-full appearance-none rounded-[16px] border border-[#e7ddd2] bg-[#faf7f3] pl-4 pr-12 text-sm font-semibold text-[#2d3a43] outline-none transition focus:border-secondary focus:bg-white"
                             >
                                 {SORT_OPTIONS.map((option) => (
                                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -169,7 +169,7 @@ export function ProductFilterBar({
                     {hasActiveFilters && (
                         <button
                             onClick={clearFilters}
-                            className="h-[48px] w-full rounded-[16px] border border-[#d9c6b5] text-sm font-bold uppercase tracking-[0.14em] text-[#7d5f49] transition hover:border-[#df8448] hover:text-[#df8448]"
+                            className="h-[48px] w-full rounded-[16px] border border-[#d9c6b5] text-sm font-bold uppercase tracking-[0.14em] text-[#7d5f49] transition hover:border-secondary hover:text-secondary"
                         >
                             Reset Filters
                         </button>

@@ -47,7 +47,7 @@ export function CookieBanner() {
                         <div className="max-w-[1200px] mx-auto flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
                             <p className="text-[14px] text-white/70 leading-relaxed flex-1 text-center sm:text-left">
                                 We use cookies to measure traffic and improve your experience. See our{" "}
-                                <Link href="/cookie-policy" className="text-[#df8448] hover:underline">
+                                <Link href="/cookie-policy" className="text-secondary hover:underline">
                                     Cookie Policy
                                 </Link>
                                 .

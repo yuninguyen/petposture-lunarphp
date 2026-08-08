@@ -74,20 +74,20 @@ export default function ReturnRefundPolicyPage() {
             <Header />
 
             {/* Hero Section */}
-            <section className="bg-[#f4f5f6] py-16 px-4 md:px-8 border-b border-zinc-100">
+            <section className="bg-gray-50 py-16 px-4 md:px-8 border-b border-zinc-100">
                 <div className="max-w-[1200px] mx-auto text-center">
                     <motion.div
                         initial="initial"
                         animate="animate"
                         variants={fadeUp}
                     >
-                        <h1 className="text-[32px] md:text-[42px] font-bold uppercase tracking-[0.1em] text-[#3e4c57] mb-4">
+                        <h1 className="text-[32px] md:text-[42px] font-bold uppercase tracking-[0.1em] text-primary mb-4">
                             Return & Refund Policy
                         </h1>
                         <p className="text-[#666666] text-[15px] font-medium tracking-wide">
                             Last updated: November 9, 2025
                         </p>
-                        <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mt-6"></div>
+                        <div className="w-12 h-1 bg-secondary mx-auto rounded-full mt-6"></div>
                     </motion.div>
                 </div>
             </section>
@@ -97,7 +97,7 @@ export default function ReturnRefundPolicyPage() {
 
                     {/* Sidebar Table of Contents (Desktop) */}
                     <aside className="hidden lg:block w-80 sticky top-32 h-fit">
-                        <h4 className="text-[14px] font-bold uppercase tracking-widest text-[#3e4c57] mb-8 border-b border-zinc-100 pb-4">
+                        <h4 className="text-[14px] font-bold uppercase tracking-widest text-primary mb-8 border-b border-zinc-100 pb-4">
                             Table of Contents
                         </h4>
                         <nav className="flex flex-col gap-4">
@@ -105,7 +105,7 @@ export default function ReturnRefundPolicyPage() {
                                 <button
                                     key={s.id}
                                     onClick={() => scrollTo(s.id)}
-                                    className={`text-left text-sm font-bold uppercase tracking-wider transition-all hover:text-[#df8448] ${activeSection === s.id ? 'text-[#df8448] pl-2 border-l-2 border-[#df8448]' : 'text-[#666666]'
+                                    className={`text-left text-sm font-bold uppercase tracking-wider transition-all hover:text-secondary ${activeSection === s.id ? 'text-secondary pl-2 border-l-2 border-secondary' : 'text-[#666666]'
                                         }`}
                                 >
                                     {s.title}
@@ -119,12 +119,12 @@ export default function ReturnRefundPolicyPage() {
                         <div className="prose prose-zinc max-w-none text-[#4a4a4a] text-[16px] leading-[1.8]">
                             <div className="space-y-12">
                                 <section id="window">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">1. RETURN WINDOW & REPORTING</h2>
+                                    <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">1. RETURN WINDOW & REPORTING</h2>
                                     <p>
                                         We want you and your pet to be completely satisfied with your purchase. If for any reason you are not, we offer a **30-day return window** from the date of delivery.
                                     </p>
-                                    <div className="mt-6 bg-[#fff8f4] border-l-4 border-[#df8448] p-6">
-                                        <p className="font-bold text-[#3e4c57]">Important regarding Damaged or Defective items:</p>
+                                    <div className="mt-6 bg-[#fff8f4] border-l-4 border-secondary p-6">
+                                        <p className="font-bold text-primary">Important regarding Damaged or Defective items:</p>
                                         <p className="mt-2 text-[#4a4a4a]">
                                             Any items that arrive damaged or defective must be reported to our support team within **7 days** of delivery. Reporting within this timeframe ensures you are eligible for return shipping reimbursement.
                                         </p>
@@ -132,9 +132,9 @@ export default function ReturnRefundPolicyPage() {
                                 </section>
 
                                 <section id="rma">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">2. HOW TO REQUEST A RETURN</h2>
+                                    <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">2. HOW TO REQUEST A RETURN</h2>
                                     <p>
-                                        Start your return online at <a href="/returns" className="text-[#df8448] hover:underline font-medium">petposture.com/returns</a> using your order number and the email address from checkout. Select the item(s), quantity, and reason for the return.
+                                        Start your return online at <a href="/returns" className="text-secondary hover:underline font-medium">petposture.com/returns</a> using your order number and the email address from checkout. Select the item(s), quantity, and reason for the return.
                                     </p>
                                     <p className="mt-4">
                                         Once approved, you&apos;ll receive an email with your <strong>Return Merchandise Authorization (RMA)</strong> number and the correct return address for that item. You&apos;ll then have <strong>7 days</strong> from approval to ship the item back and enter your return tracking number.
@@ -145,7 +145,7 @@ export default function ReturnRefundPolicyPage() {
                                 </section>
 
                                 <section id="conditions">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">3. RETURN CONDITIONS</h2>
+                                    <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">3. RETURN CONDITIONS</h2>
                                     <p>To be eligible for a refund, returned items must meet the following criteria:</p>
                                     <ul className="list-disc pl-6 space-y-3 mt-6">
                                         <li>Must be in **original, new, and unused condition**.</li>
@@ -156,28 +156,28 @@ export default function ReturnRefundPolicyPage() {
                                 </section>
 
                                 <section id="fees">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">4. COSTS AND FEES</h2>
+                                    <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">4. COSTS AND FEES</h2>
                                     <div className="space-y-6">
                                         <div>
-                                            <h3 className="text-[18px] font-bold text-[#3e4c57] mb-2">Restocking Fee</h3>
+                                            <h3 className="text-[18px] font-bold text-primary mb-2">Restocking Fee</h3>
                                             <p>
                                                 A **25% restocking fee** is charged on all returns. This fee covers the inspection, professional cleaning, and repackaging required by our suppliers to maintain hygiene standards for pet products.
                                             </p>
                                         </div>
                                         <div>
-                                            <h3 className="text-[18px] font-bold text-[#3e4c57] mb-2">Shipping Costs</h3>
+                                            <h3 className="text-[18px] font-bold text-primary mb-2">Shipping Costs</h3>
                                             <p>
                                                 Original shipping charges are **non-refundable**.
                                             </p>
                                             <p className="mt-2">
-                                                For &quot;Buyer&apos;s Remorse&quot; returns (e.g., changed mind, wrong size/color), the customer is responsible for the return shipping costs. For confirmed defective or incorrect items reported within 7 days, contact us at <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline font-medium">support@petposture.com</a> and we will reimburse your return shipping cost.
+                                                For &quot;Buyer&apos;s Remorse&quot; returns (e.g., changed mind, wrong size/color), the customer is responsible for the return shipping costs. For confirmed defective or incorrect items reported within 7 days, contact us at <a href="mailto:support@petposture.com" className="text-secondary hover:underline font-medium">support@petposture.com</a> and we will reimburse your return shipping cost.
                                             </p>
                                         </div>
                                     </div>
                                 </section>
 
                                 <section id="refund-process">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">5. REFUND PROCESS</h2>
+                                    <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">5. REFUND PROCESS</h2>
                                     <p>
                                         Once your return is received at the designated supplier warehouse, it undergoes a thorough inspection which typically takes **3–5 business days**.
                                     </p>
@@ -187,16 +187,16 @@ export default function ReturnRefundPolicyPage() {
                                 </section>
 
                                 <section id="logistics">
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">6. LOGISTICS & CONTACT</h2>
+                                    <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">6. LOGISTICS & CONTACT</h2>
                                     <p>
                                         Because PetPosture partners with specialized warehouses across the US, items from different categories may need to be returned to different locations.
                                     </p>
-                                    <p className="mt-4 font-bold text-[#3e4c57]">Do not send returns to our Sacramento administrative office.</p>
+                                    <p className="mt-4 font-bold text-primary">Do not send returns to our Sacramento administrative office.</p>
                                     <p className="mt-4">
                                         We will provide you with the correct warehouse address during the RMA process. If you have any questions, please reach out:
                                     </p>
                                     <div className="mt-8 bg-[#f8f9fa] p-8 rounded-xl">
-                                        <p><strong>Support Email:</strong> <a href="mailto:support@petposture.com" className="text-[#df8448] hover:underline">support@petposture.com</a></p>
+                                        <p><strong>Support Email:</strong> <a href="mailto:support@petposture.com" className="text-secondary hover:underline">support@petposture.com</a></p>
                                         <p className="mt-2"><strong>Support Phone:</strong> +1 (916) 668-0065</p>
                                     </div>
                                 </section>
@@ -204,10 +204,10 @@ export default function ReturnRefundPolicyPage() {
                                 {/* FAQ Section */}
                                 <section id="faq" className="pt-10 scroll-mt-32 pb-12">
                                     <div className="text-center mb-10">
-                                        <h2 className="text-[24px] font-bold text-[#3e4c57] uppercase tracking-[0.1em] mb-6">
+                                        <h2 className="text-[24px] font-bold text-primary uppercase tracking-[0.1em] mb-6">
                                             Frequently Asked Questions
                                         </h2>
-                                        <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mb-6"></div>
+                                        <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
                                     </div>
 
                                     <div className="space-y-0">
@@ -217,13 +217,13 @@ export default function ReturnRefundPolicyPage() {
                                                     onClick={() => setOpenFaq(openFaq === item.id ? null : item.id)}
                                                     className="flex items-center justify-between w-full py-4 text-left group"
                                                 >
-                                                    <span className={`text-[16px] md:text-[18px] font-medium transition-colors ${openFaq === item.id ? 'text-[#df8448]' : 'text-[#3e4c57]'
+                                                    <span className={`text-[16px] md:text-[18px] font-medium transition-colors ${openFaq === item.id ? 'text-secondary' : 'text-primary'
                                                         }`}>
                                                         {item.question}
                                                     </span>
                                                     <ChevronDown
                                                         size={20}
-                                                        className={`text-zinc-400 transition-transform duration-300 ${openFaq === item.id ? 'rotate-180 text-[#df8448]' : ''
+                                                        className={`text-zinc-400 transition-transform duration-300 ${openFaq === item.id ? 'rotate-180 text-secondary' : ''
                                                             }`}
                                                     />
                                                 </button>

@@ -34,12 +34,12 @@ export function CartDrawer() {
                     >
                         {/* Header - Centered & Premium */}
                         <div className="relative flex items-center justify-center p-8 border-b border-zinc-100/80">
-                            <h2 className="text-[14px] font-black text-[#3e4c57] uppercase tracking-[0.3em] ml-4">
+                            <h2 className="text-[14px] font-black text-primary uppercase tracking-[0.3em] ml-4">
                                 Cart
                             </h2>
                             <button
                                 onClick={() => setCartOpen(false)}
-                                className="absolute right-6 p-2 text-zinc-400 hover:text-[#3e4c57] transition-all hover:rotate-90 duration-300"
+                                className="absolute right-6 p-2 text-zinc-400 hover:text-primary transition-all hover:rotate-90 duration-300"
                             >
                                 <X size={20} strokeWidth={2.5} />
                             </button>
@@ -52,11 +52,11 @@ export function CartDrawer() {
                                     <div className="w-20 h-20 bg-zinc-50 rounded-full flex items-center justify-center mb-6">
                                         <ShoppingBag size={32} className="text-zinc-200" />
                                     </div>
-                                    <p className="text-[14px] font-bold text-[#3e4c57] uppercase tracking-widest mb-2">Your cart is empty</p>
+                                    <p className="text-[14px] font-bold text-primary uppercase tracking-widest mb-2">Your cart is empty</p>
                                     <p className="text-sm text-zinc-400 mb-8">Add items to get started</p>
                                     <button
                                         onClick={() => setCartOpen(false)}
-                                        className="bg-[#3e4c57] text-white px-8 py-4 rounded-[4px] text-sm font-black uppercase tracking-widest hover:bg-[#2c363e] transition-all shadow-lg shadow-zinc-200"
+                                        className="bg-primary text-white px-8 py-4 rounded-[4px] text-sm font-black uppercase tracking-widest hover:bg-[#2c363e] transition-all shadow-lg shadow-zinc-200"
                                     >
                                         Continue Shopping
                                     </button>
@@ -71,27 +71,27 @@ export function CartDrawer() {
 
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="text-sm font-bold text-[#3e4c57] leading-tight mb-1 hover:text-[#df8448] transition-colors cursor-pointer">
+                                            <h3 className="text-sm font-bold text-primary leading-tight mb-1 hover:text-secondary transition-colors cursor-pointer">
                                                 {item.name}
                                             </h3>
                                             <div className="flex items-center gap-2 text-sm font-medium text-zinc-400">
                                                 <span>{item.quantity}</span>
                                                 <span>&times;</span>
-                                                <span className="text-[#df8448] font-bold">${item.price.toFixed(2)}</span>
+                                                <span className="text-secondary font-bold">${item.price.toFixed(2)}</span>
                                             </div>
 
                                             {/* Quantity Adjuster Mini */}
                                             <div className="flex items-center mt-3 bg-zinc-50 rounded-[4px] w-fit border border-zinc-100">
                                                 <button
                                                     onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                                                    className="px-2.5 py-1 text-zinc-400 hover:text-[#3e4c57] transition-colors"
+                                                    className="px-2.5 py-1 text-zinc-400 hover:text-primary transition-colors"
                                                 >
                                                     <Minus size={10} strokeWidth={3} />
                                                 </button>
-                                                <span className="px-2 text-sm font-black text-[#3e4c57] min-w-[20px] text-center">{item.quantity}</span>
+                                                <span className="px-2 text-sm font-black text-primary min-w-[20px] text-center">{item.quantity}</span>
                                                 <button
                                                     onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                                                    className="px-2.5 py-1 text-zinc-400 hover:text-[#3e4c57] transition-colors"
+                                                    className="px-2.5 py-1 text-zinc-400 hover:text-primary transition-colors"
                                                 >
                                                     <Plus size={10} strokeWidth={3} />
                                                 </button>
@@ -114,21 +114,21 @@ export function CartDrawer() {
                         {items.length > 0 && (
                             <div className="p-8 bg-white border-t border-zinc-100 flex flex-col gap-4">
                                 <div className="flex items-center justify-between py-2">
-                                    <span className="text-[#3e4c57] text-sm font-bold uppercase tracking-widest">Subtotal:</span>
-                                    <span className="text-[18px] font-black text-[#3e4c57]">${totalAmount.toFixed(2)}</span>
+                                    <span className="text-primary text-sm font-bold uppercase tracking-widest">Subtotal:</span>
+                                    <span className="text-[18px] font-black text-primary">${totalAmount.toFixed(2)}</span>
                                 </div>
                                 <div className="h-[1px] bg-zinc-100 w-full mb-2" />
 
                                 <div className="flex flex-col gap-3">
                                     <button
                                         onClick={() => { setCartOpen(false); router.push('/cart'); }}
-                                        className="w-full bg-[#3e4c57] text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.25em] hover:bg-[#2c363e] transition-all flex items-center justify-center"
+                                        className="w-full bg-primary text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.25em] hover:bg-[#2c363e] transition-all flex items-center justify-center"
                                     >
                                         View Cart
                                     </button>
                                     <button
                                         onClick={() => { setCartOpen(false); router.push('/checkout'); }}
-                                        className="w-full bg-[#df8448] text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.25em] shadow-xl shadow-orange-500/10 hover:bg-[#c9713a] transition-all flex items-center justify-center"
+                                        className="w-full bg-secondary text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.25em] shadow-xl shadow-orange-500/10 hover:bg-secondary-dark transition-all flex items-center justify-center"
                                     >
                                         Checkout
                                     </button>

@@ -239,7 +239,7 @@ export default function RetryPaymentPanel({
                         type="button"
                         onClick={handlePrepareRetry}
                         disabled={isPreparing}
-                        className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[#df8448] px-5 text-sm font-semibold text-white transition hover:bg-[#c9713a] disabled:opacity-60"
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-secondary px-5 text-sm font-semibold text-white transition hover:bg-secondary-dark disabled:opacity-60"
                     >
                         {isPreparing ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}
                         {isPreparing ? "Preparing..." : "Retry card payment"}

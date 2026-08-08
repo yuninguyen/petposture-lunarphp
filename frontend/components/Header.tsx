@@ -36,16 +36,16 @@ export default function Header() {
 
   const navLinkClass = (path: string) =>
     `flex items-center h-full px-6 transition-colors ${isActive(path)
-      ? "bg-[#df8448] text-white"
-      : "text-[#e8eaec] hover:text-white hover:bg-[#df8448]"
+      ? "bg-secondary text-white"
+      : "text-gray-100 hover:text-white hover:bg-secondary"
     }`;
 
   return (
     <header className="w-full relative z-50 flex flex-col font-sans">
       {/* Announcement Top Bar - Professional Refinement */}
-      <div className="bg-[#3e4c57] text-white py-1.5 px-4 text-center text-xs md:text-sm font-medium tracking-[0.03em] md:tracking-[0.1em] uppercase w-full">
+      <div className="bg-primary text-white py-1.5 px-4 text-center text-xs md:text-sm font-medium tracking-[0.03em] md:tracking-[0.1em] uppercase w-full">
         <div className="flex items-center justify-center gap-1.5 md:gap-2 opacity-90">
-          <Truck size={13} className="text-[#df8448] flex-shrink-0" />
+          <Truck size={13} className="text-secondary flex-shrink-0" />
           <span className="whitespace-nowrap">Free Shipping on all US orders over $50</span>
         </div>
       </div>
@@ -84,7 +84,7 @@ export default function Header() {
                 className="flex-1 px-4 h-[44px] border-none outline-none focus:ring-0 text-[14px] text-primary bg-transparent"
               />
               <button
-                className="bg-[#df8448] text-white px-8 h-[44px] font-bold tracking-wider text-sm uppercase hover:bg-[#c9713a] transition-colors border-none m-0 rounded-none"
+                className="bg-secondary text-white px-8 h-[44px] font-bold tracking-wider text-sm uppercase hover:bg-secondary-dark transition-colors border-none m-0 rounded-none"
               >
                 Search
               </button>
@@ -93,39 +93,39 @@ export default function Header() {
 
           {/* Right: Icons */}
           <div className="flex items-center gap-4 md:gap-6 text-primary flex-shrink-0">
-            <Link href="/wishlist" className="relative hover:text-[#df8448] transition-colors hidden sm:block" aria-label="Wishlist">
+            <Link href="/wishlist" className="relative hover:text-secondary transition-colors hidden sm:block" aria-label="Wishlist">
               <Heart size={22} strokeWidth={2} />
               {wishlistItems.length > 0 && (
-                <span className="absolute -top-1 -right-1.5 bg-[#df8448] text-white text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
+                <span className="absolute -top-1 -right-1.5 bg-secondary text-white text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
                   {wishlistItems.length}
                 </span>
               )}
             </Link>
             {user ? (
               <div className="flex items-center gap-3">
-                <Link href="/account" className="text-sm font-bold uppercase tracking-widest text-[#df8448] hidden lg:block hover:underline">
+                <Link href="/account" className="text-sm font-bold uppercase tracking-widest text-secondary hidden lg:block hover:underline">
                   Hi, {user.name.split(' ')[0]}
                 </Link>
-                <Link href="/account" className="hover:text-[#df8448] transition-colors" title="My Account">
+                <Link href="/account" className="hover:text-secondary transition-colors" title="My Account">
                   <User size={22} strokeWidth={2} />
                 </Link>
-                <button onClick={logout} className="hover:text-[#df8448] transition-colors" title="Log Out">
+                <button onClick={logout} className="hover:text-secondary transition-colors" title="Log Out">
                   <LogOut size={22} strokeWidth={2} />
                 </button>
               </div>
             ) : (
-              <Link href="/sign-in" className="hover:text-[#df8448] transition-colors" title="Login / Register">
+              <Link href="/sign-in" className="hover:text-secondary transition-colors" title="Login / Register">
                 <User size={22} strokeWidth={2} />
               </Link>
             )}
             <button
               onClick={() => setCartOpen(true)}
-              className="relative group p-1 hover:text-[#df8448] transition-colors outline-none"
+              className="relative group p-1 hover:text-secondary transition-colors outline-none"
               aria-label="Shopping cart"
             >
               <ShoppingBag size={22} strokeWidth={2} />
               {items.length > 0 && (
-                <span className="absolute -top-1 -right-1.5 bg-[#df8448] text-white text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
+                <span className="absolute -top-1 -right-1.5 bg-secondary text-white text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
                   {items.reduce((total, item) => total + item.quantity, 0)}
                 </span>
               )}
@@ -136,7 +136,7 @@ export default function Header() {
       </div>
 
       {/* Secondary Navigation (Dark Blue) */}
-      <nav className="hidden md:block bg-[#3e4c57] text-[#e8eaec] h-[45px] relative z-40" aria-label="Main menu">
+      <nav className="hidden md:block bg-primary text-gray-100 h-[45px] relative z-40" aria-label="Main menu">
         <div className="max-w-[1200px] mx-auto w-full px-6 flex justify-between h-full">
 
           {/* Main Links */}
@@ -172,20 +172,20 @@ export default function Header() {
           {/* Utility Links */}
           <ul className="flex items-center text-[13px] font-bold uppercase tracking-[0.1em] divide-x divide-white/10 h-full" style={{ fontFamily: "var(--font-lato), sans-serif" }}>
             <li className="h-full relative group flex items-center hover:bg-white/10 transition-all duration-300">
-              <a href="mailto:support@petposture.com" className="flex items-center gap-2.5 h-full px-6 hover:text-[#df8448] transition-colors text-[#e8eaec]">
-                <Mail size={14} className="text-[#df8448]" /> Support
+              <a href="mailto:support@petposture.com" className="flex items-center gap-2.5 h-full px-6 hover:text-secondary transition-colors text-gray-100">
+                <Mail size={14} className="text-secondary" /> Support
               </a>
               <NavTooltip textCase="lowercase">support@petposture.com</NavTooltip>
             </li>
             <li className="h-full relative group flex items-center hover:bg-white/10 transition-all duration-300">
-              <span className="flex items-center gap-2.5 h-full px-6 text-[#e8eaec] cursor-default">
-                <Clock size={14} className="text-[#df8448]" /> 10:00 AM - 20:00 PM
+              <span className="flex items-center gap-2.5 h-full px-6 text-gray-100 cursor-default">
+                <Clock size={14} className="text-secondary" /> 10:00 AM - 20:00 PM
               </span>
               <NavTooltip textCase="uppercase">10:00 AM - 20:00 PM</NavTooltip>
             </li>
             <li className="h-full relative group flex items-center hover:bg-white/10 transition-all duration-300">
-              <a href="tel:19166680065" className="flex items-center gap-2.5 h-full px-6 hover:text-[#df8448] transition-colors text-[#e8eaec]">
-                <Phone size={14} className="text-[#df8448]" /> +1 (916) 668-0065
+              <a href="tel:19166680065" className="flex items-center gap-2.5 h-full px-6 hover:text-secondary transition-colors text-gray-100">
+                <Phone size={14} className="text-secondary" /> +1 (916) 668-0065
               </a>
               <NavTooltip textCase="lowercase">+1 (916) 668-0065</NavTooltip>
             </li>
@@ -202,7 +202,7 @@ export default function Header() {
             placeholder="Search products..."
             className="flex-1 px-3 py-2 outline-none text-sm"
           />
-          <button className="bg-[#df8448] px-4 text-white uppercase text-sm font-bold">
+          <button className="bg-secondary px-4 text-white uppercase text-sm font-bold">
             Search
           </button>
         </div>
@@ -263,13 +263,13 @@ export default function Header() {
                       key={item.label}
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
-                      className={`flex items-center justify-between px-4 py-4 rounded-xl group transition-all duration-300 mb-1 ${isActive(item.href) ? "bg-[#df8448]" : "text-primary hover:bg-zinc-50"
+                      className={`flex items-center justify-between px-4 py-4 rounded-xl group transition-all duration-300 mb-1 ${isActive(item.href) ? "bg-secondary" : "text-primary hover:bg-zinc-50"
                         }`}
                     >
-                      <span className={`text-[14px] font-bold uppercase tracking-widest transition-colors duration-300 ${isActive(item.href) ? "text-white" : "group-hover:text-[#df8448]"}`}>
+                      <span className={`text-[14px] font-bold uppercase tracking-widest transition-colors duration-300 ${isActive(item.href) ? "text-white" : "group-hover:text-secondary"}`}>
                         {item.label}
                       </span>
-                      <ChevronRight size={18} className={`transition-all duration-300 ${isActive(item.href) ? "text-white translate-x-1" : "group-hover:text-[#df8448] group-hover:translate-x-1"}`} />
+                      <ChevronRight size={18} className={`transition-all duration-300 ${isActive(item.href) ? "text-white translate-x-1" : "group-hover:text-secondary group-hover:translate-x-1"}`} />
                     </Link>
                   ))}
                 </nav>
@@ -316,7 +316,7 @@ export default function Header() {
 
 function NavTooltip({ children, textCase = 'lowercase' }: { children: React.ReactNode, textCase?: 'lowercase' | 'uppercase' }) {
   return (
-    <div className={`absolute bottom-[55px] left-1/2 -translate-x-1/2 px-4 py-2.5 bg-[#3e4c57] text-white text-sm rounded shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-2 group-hover:translate-y-0 whitespace-nowrap z-[9999] font-sans font-medium pointer-events-none ${textCase} after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-8 after:border-transparent after:border-t-[#3e4c57]`}>
+    <div className={`absolute bottom-[55px] left-1/2 -translate-x-1/2 px-4 py-2.5 bg-primary text-white text-sm rounded shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 translate-y-2 group-hover:translate-y-0 whitespace-nowrap z-[9999] font-sans font-medium pointer-events-none ${textCase} after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-8 after:border-transparent after:border-t-primary`}>
       {children}
     </div>
   );

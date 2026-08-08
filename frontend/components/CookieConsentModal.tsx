@@ -37,13 +37,13 @@ export function CookieConsentModal({ open, initialAnalytics, onClose, onSave }: 
                         aria-labelledby="cookie-preferences-title"
                     >
                         <div className="flex items-start justify-between mb-6">
-                            <h2 id="cookie-preferences-title" className="text-[20px] font-bold text-[#3e4c57]">
+                            <h2 id="cookie-preferences-title" className="text-[20px] font-bold text-primary">
                                 Cookie Preferences
                             </h2>
                             <button
                                 onClick={onClose}
                                 aria-label="Close"
-                                className="text-zinc-400 hover:text-[#3e4c57] transition-colors"
+                                className="text-zinc-400 hover:text-primary transition-colors"
                             >
                                 <X size={20} />
                             </button>
@@ -51,7 +51,7 @@ export function CookieConsentModal({ open, initialAnalytics, onClose, onSave }: 
 
                         <p className="text-[14px] text-zinc-500 leading-relaxed mb-6">
                             Choose which categories of cookies you allow. See our{" "}
-                            <Link href="/cookie-policy" className="text-[#df8448] hover:underline">
+                            <Link href="/cookie-policy" className="text-secondary hover:underline">
                                 Cookie Policy
                             </Link>{" "}
                             for details on what each category does.
@@ -60,7 +60,7 @@ export function CookieConsentModal({ open, initialAnalytics, onClose, onSave }: 
                         <div className="space-y-4">
                             <div className="flex items-start justify-between gap-4 rounded-xl border border-zinc-100 bg-zinc-50 p-4">
                                 <div>
-                                    <p className="text-[14px] font-bold text-[#3e4c57]">Essential</p>
+                                    <p className="text-[14px] font-bold text-primary">Essential</p>
                                     <p className="text-[13px] text-zinc-500 mt-1">
                                         Required to keep your cart and account signed in. Cannot be disabled.
                                     </p>
@@ -72,7 +72,7 @@ export function CookieConsentModal({ open, initialAnalytics, onClose, onSave }: 
 
                             <div className="flex items-start justify-between gap-4 rounded-xl border border-zinc-100 p-4">
                                 <div>
-                                    <p className="text-[14px] font-bold text-[#3e4c57]">Analytics</p>
+                                    <p className="text-[14px] font-bold text-primary">Analytics</p>
                                     <p className="text-[13px] text-zinc-500 mt-1">
                                         Helps us understand site traffic via Google Analytics. Off by default.
                                     </p>
@@ -82,7 +82,7 @@ export function CookieConsentModal({ open, initialAnalytics, onClose, onSave }: 
                                     aria-checked={analytics}
                                     aria-label="Toggle analytics cookies"
                                     onClick={() => setAnalytics((v) => !v)}
-                                    className={`shrink-0 relative w-11 h-6 rounded-full transition-colors ${analytics ? "bg-[#df8448]" : "bg-zinc-300"
+                                    className={`shrink-0 relative w-11 h-6 rounded-full transition-colors ${analytics ? "bg-secondary" : "bg-zinc-300"
                                         }`}
                                 >
                                     <span
@@ -96,13 +96,13 @@ export function CookieConsentModal({ open, initialAnalytics, onClose, onSave }: 
                         <div className="flex flex-col sm:flex-row gap-3 mt-8">
                             <button
                                 onClick={() => onSave(false)}
-                                className="flex-1 border border-zinc-200 text-[#3e4c57] text-[14px] font-bold uppercase tracking-wider px-6 py-3 rounded-lg hover:bg-zinc-50 transition-colors"
+                                className="flex-1 border border-zinc-200 text-primary text-[14px] font-bold uppercase tracking-wider px-6 py-3 rounded-lg hover:bg-zinc-50 transition-colors"
                             >
                                 Reject Non-Essential
                             </button>
                             <button
                                 onClick={() => onSave(analytics)}
-                                className="flex-1 bg-[#df8448] hover:bg-[#c9713a] text-white text-[14px] font-bold uppercase tracking-wider px-6 py-3 rounded-lg transition-colors"
+                                className="flex-1 bg-secondary hover:bg-secondary-dark text-white text-[14px] font-bold uppercase tracking-wider px-6 py-3 rounded-lg transition-colors"
                             >
                                 Save Preferences
                             </button>

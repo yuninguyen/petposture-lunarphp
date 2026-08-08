@@ -27,12 +27,12 @@ export function ScientificBreakdown({ product }: ScientificBreakdownProps) {
     ];
 
     return (
-        <section className="bg-[#3e4c57] py-24 px-4 md:px-8 relative overflow-hidden">
+        <section className="bg-primary py-24 px-4 md:px-8 relative overflow-hidden">
             <div className="max-w-[1200px] mx-auto relative z-10">
                 <div className="text-center mb-16 px-4">
-                    <h2 className="text-[#df8448] text-xs font-black uppercase tracking-[0.18em] mb-4">Ergo-Care Science</h2>
+                    <h2 className="text-secondary text-xs font-black uppercase tracking-[0.18em] mb-4">Ergo-Care Science</h2>
                     <h3 className="text-white text-[32px] md:text-[44px] font-bold leading-tight">THE BIOLOGY OF COMFORT</h3>
-                    <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mt-6"></div>
+                    <div className="w-12 h-1 bg-secondary mx-auto rounded-full mt-6"></div>
                 </div>
 
                 <div
@@ -47,7 +47,7 @@ export function ScientificBreakdown({ product }: ScientificBreakdownProps) {
                             transition={{ delay: index * 0.1 }}
                             className="group flex w-[78%] flex-shrink-0 snap-center flex-col items-center rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-10 text-center md:w-auto md:flex-shrink md:border-none md:bg-transparent md:px-0 md:py-0"
                         >
-                            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-[#df8448] mb-6 border border-white/10 group-hover:bg-[#df8448] group-hover:text-white transition-all duration-500">
+                            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-secondary mb-6 border border-white/10 group-hover:bg-secondary group-hover:text-white transition-all duration-500">
                                 {spec.icon}
                             </div>
                             <h4 className="text-white text-[14px] font-bold uppercase tracking-widest mb-3">{spec.title}</h4>

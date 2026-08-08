@@ -44,7 +44,7 @@ export default function ShopPage({
                 <div className="mx-auto max-w-[1280px]">
                     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                         <div>
-                            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#df8448]">
+                            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-secondary">
                                 {heroEyebrow}
                             </p>
                             <h1 className="max-w-[760px] text-[28px] font-bold leading-tight text-[#2d3a43] md:text-[40px]">
@@ -60,12 +60,12 @@ export default function ShopPage({
                             type="button"
                             onClick={() => setMobileFiltersOpen((open) => !open)}
                             aria-expanded={mobileFiltersOpen}
-                            className="flex items-center gap-2 self-start rounded-full border border-[#e3d6c9] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8f93] shadow-sm transition-colors hover:border-[#df8448] hover:text-[#df8448] lg:hidden [transform:translateZ(0)]"
+                            className="flex items-center gap-2 self-start rounded-full border border-[#e3d6c9] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8f93] shadow-sm transition-colors hover:border-secondary hover:text-secondary lg:hidden [transform:translateZ(0)]"
                         >
-                            <SlidersHorizontal size={14} className="text-[#df8448]" />
+                            <SlidersHorizontal size={14} className="text-secondary" />
                             {mobileFiltersOpen ? 'Hide Filters' : 'Show Filters'}
                             {shopLogic.hasActiveFilters && (
-                                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#df8448]" />
+                                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-secondary" />
                             )}
                             {mobileFiltersOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                         </button>
@@ -99,7 +99,7 @@ export default function ShopPage({
                         <div className="mb-5 flex flex-col gap-3 rounded-[24px] border border-[#eadfd3] bg-white px-5 py-4 shadow-[0_18px_50px_rgba(34,33,33,0.05)] md:flex-row md:items-center md:justify-between">
                             <div>
                                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#8b8f93]">
-                                    <SlidersHorizontal size={14} className="text-[#df8448]" />
+                                    <SlidersHorizontal size={14} className="text-secondary" />
                                     Storefront overview
                                 </div>
                                 <h2 className="mt-2 text-[21px] font-semibold text-[#2d3a43]">
@@ -150,9 +150,9 @@ export default function ShopPage({
 
             <section className="bg-[#ede5db] px-4 py-20 md:px-8">
                 <div className="mx-auto max-w-[1000px]">
-                    <div className="relative overflow-hidden rounded-2xl bg-[#3e4c57] p-8 text-center shadow-xl md:p-14">
+                    <div className="relative overflow-hidden rounded-2xl bg-primary p-8 text-center shadow-xl md:p-14">
                         <div className="relative z-10">
-                            <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-[#df8448]">
+                            <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-secondary">
                                 PetPosture Dispatch
                             </p>
                             <h2 className="mb-4 text-[32px] font-bold tracking-tight text-white md:text-[36px]">
@@ -165,9 +165,9 @@ export default function ShopPage({
                                 <input
                                     type="email"
                                     placeholder="Enter your email address"
-                                    className="w-full md:flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-[#3e4c57] outline-none"
+                                    className="w-full md:flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-primary outline-none"
                                 />
-                                <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-[#df8448] px-10 py-4 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-lg transition-all hover:bg-[#c9713a]">
+                                <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-secondary px-10 py-4 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-lg transition-all hover:bg-secondary-dark">
                                     Subscribe Now
                                 </button>
                             </div>
@@ -175,7 +175,7 @@ export default function ShopPage({
                                 By subscribing, you agree to our privacy policy and terms.
                             </p>
                         </div>
-                        <div className="absolute left-0 top-0 -ml-24 -mt-24 h-48 w-48 rounded-full bg-[#df8448]/10 blur-[80px]" />
+                        <div className="absolute left-0 top-0 -ml-24 -mt-24 h-48 w-48 rounded-full bg-secondary/10 blur-[80px]" />
                         <div className="absolute bottom-0 right-0 -mb-24 -mr-24 h-48 w-48 rounded-full bg-white/5 blur-[80px]" />
                     </div>
                 </div>

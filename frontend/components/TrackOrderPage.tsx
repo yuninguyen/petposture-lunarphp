@@ -153,18 +153,18 @@ export default function TrackOrderPage() {
                         <motion.span
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="inline-block px-4 py-1.5 bg-[#df8448]/10 text-[#df8448] text-xs font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
+                            className="inline-block px-4 py-1.5 bg-secondary/10 text-secondary text-xs font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
                         >
                             Order Tracking
                         </motion.span>
                         <motion.h1
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-[32px] md:text-[48px] font-bold text-[#3e4c57] mb-6 leading-tight tracking-[0.1em] uppercase"
+                            className="text-[32px] md:text-[48px] font-bold text-primary mb-6 leading-tight tracking-[0.1em] uppercase"
                         >
                             TRACK YOUR ORDER
                         </motion.h1>
-                        <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mb-6"></div>
+                        <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
                         <motion.p
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -189,12 +189,12 @@ export default function TrackOrderPage() {
                                 className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl shadow-slate-200/50 border border-zinc-100 relative z-10"
                             >
                                 <div className="flex items-center gap-4 mb-8">
-                                    <div className="w-12 h-12 bg-[#df8448] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
+                                    <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
                                         <Search size={24} strokeWidth={2.5} />
                                     </div>
                                     <div>
-                                        <h2 className="text-[24px] font-bold text-[#3e4c57]">Check Your Order Status</h2>
-                                        <div className="h-1 w-12 bg-[#df8448] mt-2 rounded-full" />
+                                        <h2 className="text-[24px] font-bold text-primary">Check Your Order Status</h2>
+                                        <div className="h-1 w-12 bg-secondary mt-2 rounded-full" />
                                     </div>
                                 </div>
 
@@ -205,26 +205,26 @@ export default function TrackOrderPage() {
                                 <form onSubmit={handleTrack} className="space-y-8">
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <div className="space-y-3">
-                                            <label className="text-sm font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Tracking Number</label>
+                                            <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Tracking Number</label>
                                             <input
                                                 type="text"
                                                 required
                                                 value={orderId}
                                                 onChange={(e) => setOrderId(e.target.value)}
                                                 placeholder="e.g. PP-XXXXXX-XXXX"
-                                                className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium"
+                                                className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium"
                                             />
                                             <p className="text-sm text-zinc-400 italic ml-1">(Found in your order confirmation email.)</p>
                                         </div>
                                         <div className="space-y-3">
-                                            <label className="text-sm font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Billing Email</label>
+                                            <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Billing Email</label>
                                             <input
                                                 type="email"
                                                 required
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 placeholder="email@example.com"
-                                                className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium"
+                                                className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium"
                                             />
                                             <p className="text-sm text-zinc-400 italic ml-1">(Email you used during checkout.)</p>
                                         </div>
@@ -233,7 +233,7 @@ export default function TrackOrderPage() {
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                        className="w-full bg-secondary text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                     >
                                         {isLoading ? 'Tracking...' : 'Track My Order'}
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -252,37 +252,37 @@ export default function TrackOrderPage() {
                                         animate={{ opacity: 1, y: 0 }}
                                         className="mt-10 space-y-4"
                                     >
-                                        <div className="rounded-2xl border border-[#df8448]/20 bg-[#f8f9fa] p-6 shadow-sm">
+                                        <div className="rounded-2xl border border-secondary/20 bg-[#f8f9fa] p-6 shadow-sm">
                                             <div className="flex items-center gap-3 mb-4 border-b border-zinc-200 pb-4">
                                                 <CheckCircle2 className="text-green-500" size={24} />
                                                 <div>
-                                                    <h3 className="text-[16px] font-bold text-[#3e4c57]">Order Found: {statusData.reference}</h3>
+                                                    <h3 className="text-[16px] font-bold text-primary">Order Found: {statusData.reference}</h3>
                                                     <p className="text-xs text-zinc-500 font-medium">Placed on {new Date(statusData.created_at).toLocaleDateString()}</p>
                                                 </div>
                                             </div>
                                             <div className="space-y-4 pt-2">
                                                 <div className="flex justify-between items-center text-sm">
                                                     <span className="text-zinc-500 font-bold uppercase tracking-wider">Status</span>
-                                                    <span className="bg-[#df8448] text-white px-3 py-1 rounded-[4px] font-black uppercase text-xs tracking-widest">{statusData.status_label}</span>
+                                                    <span className="bg-secondary text-white px-3 py-1 rounded-[4px] font-black uppercase text-xs tracking-widest">{statusData.status_label}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center text-sm">
                                                     <span className="text-zinc-500 font-bold uppercase tracking-wider">Total</span>
-                                                    <span className="font-black text-[#3e4c57]">${statusData.total.decimal.toFixed(2)}</span>
+                                                    <span className="font-black text-primary">${statusData.total.decimal.toFixed(2)}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center text-sm">
                                                     <span className="text-zinc-500 font-bold uppercase tracking-wider">Shipping</span>
-                                                    <span className="font-medium text-[#3e4c57]">{formatMethodLabel(statusData.shipping_method, "Standard")}</span>
+                                                    <span className="font-medium text-primary">{formatMethodLabel(statusData.shipping_method, "Standard")}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center text-sm">
                                                     <span className="text-zinc-500 font-bold uppercase tracking-wider">Payment</span>
                                                     <div className="text-right">
-                                                        <p className="font-medium text-[#3e4c57]">{formatMethodLabel(statusData.payment_label || statusData.payment_method, "Card")}</p>
+                                                        <p className="font-medium text-primary">{formatMethodLabel(statusData.payment_label || statusData.payment_method, "Card")}</p>
                                                         <p className="mt-0.5 text-xs uppercase tracking-[0.14em] text-zinc-400">{paymentStateHint(statusData)}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex justify-between items-start text-sm">
                                                     <span className="text-zinc-500 font-bold uppercase tracking-wider">Destination</span>
-                                                    <span className="font-medium text-[#3e4c57] text-right max-w-[220px]">{formatAddress(statusData.shipping_address)}</span>
+                                                    <span className="font-medium text-primary text-right max-w-[220px]">{formatAddress(statusData.shipping_address)}</span>
                                                 </div>
                                                 {latestShipment(statusData)?.tracking_url ? (
                                                     <div className="flex justify-between items-center text-sm">
@@ -291,7 +291,7 @@ export default function TrackOrderPage() {
                                                             href={latestShipment(statusData)?.tracking_url || "#"}
                                                             target="_blank"
                                                             rel="noreferrer"
-                                                            className="font-semibold text-[#df8448] hover:underline"
+                                                            className="font-semibold text-secondary hover:underline"
                                                         >
                                                             Open carrier tracking
                                                         </a>
@@ -308,7 +308,7 @@ export default function TrackOrderPage() {
                                                             <div key={`${event.type}-${event.created_at}-${index}`} className="rounded-xl border border-zinc-200 bg-white px-4 py-3">
                                                                 <div className="flex items-start justify-between gap-4">
                                                                     <div>
-                                                                        <p className="text-sm font-semibold text-[#3e4c57]">{event.title}</p>
+                                                                        <p className="text-sm font-semibold text-primary">{event.title}</p>
                                                                         {event.detail ? (
                                                                             <p className="mt-1 text-sm leading-5 text-zinc-500">{event.detail}</p>
                                                                         ) : null}
@@ -337,14 +337,14 @@ export default function TrackOrderPage() {
                                             }}
                                         />
                                         {(statusData.status === "delivered" || statusData.status === "shipped") && (
-                                            <div className="rounded-2xl border border-[#df8448]/20 bg-white p-6 shadow-sm flex items-center justify-between gap-4">
+                                            <div className="rounded-2xl border border-secondary/20 bg-white p-6 shadow-sm flex items-center justify-between gap-4">
                                                 <div>
-                                                    <p className="text-sm font-bold text-[#3e4c57]">Need to send something back?</p>
+                                                    <p className="text-sm font-bold text-primary">Need to send something back?</p>
                                                     <p className="mt-1 text-sm text-zinc-500">Request a return for this order.</p>
                                                 </div>
                                                 <Link
                                                     href={`/returns?ref=${encodeURIComponent(statusData.reference)}&email=${encodeURIComponent(email)}`}
-                                                    className="whitespace-nowrap text-sm font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
+                                                    className="whitespace-nowrap text-sm font-bold text-secondary hover:text-secondary-dark transition-colors"
                                                 >
                                                     Request a Return
                                                 </Link>
@@ -363,11 +363,11 @@ export default function TrackOrderPage() {
                                 className="lg:pt-12"
                             >
                                 <motion.div variants={fadeUp} className="mb-12">
-                                    <h3 className="text-[28px] font-bold text-[#3e4c57] mb-4 flex items-center gap-4">
+                                    <h3 className="text-[28px] font-bold text-primary mb-4 flex items-center gap-4">
                                         Tracking Questions?
-                                        <HelpCircle className="text-[#df8448]" size={24} />
+                                        <HelpCircle className="text-secondary" size={24} />
                                     </h3>
-                                    <div className="h-1 w-12 bg-[#df8448] mt-2 rounded-full" />
+                                    <div className="h-1 w-12 bg-secondary mt-2 rounded-full" />
                                 </motion.div>
 
                                 <div className="space-y-10">
@@ -389,42 +389,42 @@ export default function TrackOrderPage() {
                                         }
                                     ].map((item, idx) => (
                                         <motion.div key={idx} variants={fadeUp} className="flex gap-6 group">
-                                            <div className="w-14 h-14 rounded-2xl bg-[#f8f9fa] flex items-center justify-center text-[#3e4c57] group-hover:bg-[#df8448] group-hover:text-white transition-all duration-300 flex-shrink-0 shadow-sm">
+                                            <div className="w-14 h-14 rounded-2xl bg-[#f8f9fa] flex items-center justify-center text-primary group-hover:bg-secondary group-hover:text-white transition-all duration-300 flex-shrink-0 shadow-sm">
                                                 <item.icon size={26} strokeWidth={1.5} />
                                             </div>
                                             <div>
-                                                <h4 className="text-[17px] font-bold text-[#3e4c57] mb-2 group-hover:text-[#df8448] transition-colors">{item.title}</h4>
+                                                <h4 className="text-[17px] font-bold text-primary mb-2 group-hover:text-secondary transition-colors">{item.title}</h4>
                                                 <p className="text-zinc-500 text-[15px] leading-relaxed">{item.text}</p>
                                             </div>
                                         </motion.div>
                                     ))}
                                 </div>
 
-                                <motion.div variants={fadeUp} className="mt-16 p-8 bg-[#fdf2ea] rounded-3xl text-[#3e4c57] relative overflow-hidden border border-orange-100/50">
+                                <motion.div variants={fadeUp} className="mt-16 p-8 bg-secondary-light rounded-3xl text-primary relative overflow-hidden border border-orange-100/50">
                                     <div className="relative z-10">
                                         <h4 className="text-[18px] font-bold mb-4">Quality Guarantee</h4>
                                         <p className="text-zinc-600 text-[14px] leading-relaxed mb-6">
                                             Every PetPosture product undergoes rigorous quality checks before leaving our facility to ensure your pet receives only the best.
                                         </p>
-                                        <Link href="/contact" className="text-[#df8448] font-bold uppercase tracking-widest text-sm flex items-center gap-2 hover:text-[#3e4c57] transition-colors">
+                                        <Link href="/contact" className="text-secondary font-bold uppercase tracking-widest text-sm flex items-center gap-2 hover:text-primary transition-colors">
                                             Contact Support <ChevronRight size={14} />
                                         </Link>
                                     </div>
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#df8448]/5 rounded-full -mr-16 -mt-16 blur-2xl" />
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full -mr-16 -mt-16 blur-2xl" />
                                 </motion.div>
                             </motion.div>
                         </div>
                     </div>
 
                     {/* Background Decorative Elements */}
-                    <div className="absolute top-40 right-[-10%] w-[500px] h-[500px] bg-[#df8448]/5 rounded-full blur-[120px] pointer-events-none" />
-                    <div className="absolute bottom-20 left-[-10%] w-[400px] h-[400px] bg-[#3e4c57]/5 rounded-full blur-[100px] pointer-events-none" />
+                    <div className="absolute top-40 right-[-10%] w-[500px] h-[500px] bg-secondary/5 rounded-full blur-[120px] pointer-events-none" />
+                    <div className="absolute bottom-20 left-[-10%] w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
                 </section>
 
                 {/* Return Link Footer */}
                 <section className="py-16 bg-zinc-50">
                     <div className="max-w-[1200px] mx-auto px-4 text-center">
-                        <Link href="/" className="inline-flex items-center gap-3 text-[#3e4c57]/40 hover:text-[#df8448] font-bold uppercase tracking-[0.25em] text-sm transition-all">
+                        <Link href="/" className="inline-flex items-center gap-3 text-primary/40 hover:text-secondary font-bold uppercase tracking-[0.25em] text-sm transition-all">
                             <ArrowLeft size={16} /> Back to Homepage
                         </Link>
                     </div>

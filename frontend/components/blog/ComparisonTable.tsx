@@ -39,7 +39,7 @@ function Stars({ rating }: { rating: number }) {
                 <Star
                     key={i}
                     size={13}
-                    className={i < rounded ? 'fill-[#df8448] text-[#df8448]' : 'text-zinc-200'}
+                    className={i < rounded ? 'fill-secondary text-secondary' : 'text-zinc-200'}
                 />
             ))}
         </div>
@@ -52,7 +52,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
     return (
         <div className="flex flex-col rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
             {item.highlight ? (
-                <span className="mb-3 inline-block w-fit rounded-full bg-[#df8448]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#df8448]">
+                <span className="mb-3 inline-block w-fit rounded-full bg-secondary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-secondary">
                     {HIGHLIGHT_LABEL[item.highlight]}
                 </span>
             ) : (
@@ -71,7 +71,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
                 ) : null}
             </div>
 
-            <h4 className="mb-1 text-[15px] font-bold leading-snug text-[#3e4c57]">{item.product_name}</h4>
+            <h4 className="mb-1 text-[15px] font-bold leading-snug text-primary">{item.product_name}</h4>
             <span className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
                 {item.retailer_logo ? (
                     <Image src={item.retailer_logo} alt={retailerLabel} width={14} height={14} className="rounded-sm object-contain" />
@@ -85,7 +85,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
                 </div>
             ) : null}
 
-            <div className="mb-3 text-[20px] font-bold text-[#3e4c57]">{item.price_display}</div>
+            <div className="mb-3 text-[20px] font-bold text-primary">{item.price_display}</div>
 
             {(item.pros?.length || item.cons?.length) ? (
                 <ul className="mb-4 space-y-1 text-[12.5px] text-zinc-500">
@@ -106,7 +106,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
                 {item.in_house_match_url ? (
                     <a
                         href={item.in_house_match_url}
-                        className="text-center text-[11.5px] font-bold text-[#df8448] underline underline-offset-2"
+                        className="text-center text-[11.5px] font-bold text-secondary underline underline-offset-2"
                     >
                         We carry a similar product
                     </a>
@@ -115,7 +115,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
                     href={item.redirect_url || item.affiliate_url}
                     target="_blank"
                     rel="sponsored nofollow noopener"
-                    className="rounded-[3px] bg-[#df8448] py-3 text-center text-[13px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-[#c9713a]"
+                    className="rounded-[3px] bg-secondary py-3 text-center text-[13px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-secondary-dark"
                 >
                     View on {retailerLabel}
                 </a>
@@ -146,7 +146,7 @@ export default function ComparisonTable({ data }: { data: ComparisonData }) {
             ) : null}
 
             {data.intro ? (
-                <p className="text-[17px] leading-[1.8] text-[#3e4c57]">{data.intro}</p>
+                <p className="text-[17px] leading-[1.8] text-primary">{data.intro}</p>
             ) : null}
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

@@ -140,8 +140,8 @@ export default function CartPage() {
             <div className="bg-zinc-50 border-b border-zinc-100 py-12 px-4">
                 <div className="max-w-[1200px] mx-auto">
                     <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm font-black uppercase tracking-[0.2em]">
-                        <div className="flex items-center gap-3 text-[#df8448]">
-                            <span className="w-6 h-6 rounded-full bg-[#df8448] text-white flex items-center justify-center text-xs">1</span>
+                        <div className="flex items-center gap-3 text-secondary">
+                            <span className="w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-xs">1</span>
                             <span>Shopping Cart</span>
                         </div>
                         <ChevronRight size={16} className="text-zinc-300" />
@@ -164,9 +164,9 @@ export default function CartPage() {
                         <div className="w-24 h-24 bg-zinc-50 rounded-full flex items-center justify-center mb-8">
                             <X size={40} className="text-zinc-200" />
                         </div>
-                        <h2 className="text-[24px] font-bold text-[#3e4c57] mb-4 uppercase tracking-widest">Your Cart is Empty</h2>
+                        <h2 className="text-[24px] font-bold text-primary mb-4 uppercase tracking-widest">Your Cart is Empty</h2>
                         <p className="text-zinc-400 mb-8 max-w-md mx-auto">Looks like you haven&apos;t added anything to your cart yet. Explore our shop to find the best for your pet.</p>
-                        <Link href="/shop" className="bg-[#df8448] text-white px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-widest hover:bg-[#c9713a] transition-all shadow-xl shadow-orange-500/10">
+                        <Link href="/shop" className="bg-secondary text-white px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-widest hover:bg-secondary-dark transition-all shadow-xl shadow-orange-500/10">
                             Return to Shop
                         </Link>
                     </div>
@@ -176,7 +176,7 @@ export default function CartPage() {
                         <div className="flex-1 overflow-x-auto">
                             <table className="w-full text-left border-collapse min-w-[600px]">
                                 <thead>
-                                    <tr className="border-b border-zinc-200 text-sm font-black text-[#3e4c57] uppercase tracking-[0.2em]">
+                                    <tr className="border-b border-zinc-200 text-sm font-black text-primary uppercase tracking-[0.2em]">
                                         <th className="pb-6 w-12"></th>
                                         <th className="pb-6">Product</th>
                                         <th className="pb-6 text-center">Price</th>
@@ -200,7 +200,7 @@ export default function CartPage() {
                                                     <div className="relative w-[100px] h-[120px] bg-white rounded-[4px] overflow-hidden flex-shrink-0 border border-zinc-100">
                                                         <Image src={item.image} alt={item.name} fill sizes="100px" className="object-cover" />
                                                     </div>
-                                                    <h3 className="text-[14px] font-bold text-[#3e4c57] hover:text-[#df8448] transition-colors">
+                                                    <h3 className="text-[14px] font-bold text-primary hover:text-secondary transition-colors">
                                                         {item.name}
                                                     </h3>
                                                 </div>
@@ -216,7 +216,7 @@ export default function CartPage() {
                                                     >
                                                         <Minus size={14} strokeWidth={2.5} />
                                                     </button>
-                                                    <span className="px-6 text-[14px] font-bold text-[#3e4c57] min-w-[50px]">{item.quantity}</span>
+                                                    <span className="px-6 text-[14px] font-bold text-primary min-w-[50px]">{item.quantity}</span>
                                                     <button
                                                         onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
                                                         className="px-4 py-2.5 text-zinc-500 hover:bg-zinc-200 transition-colors"
@@ -225,7 +225,7 @@ export default function CartPage() {
                                                     </button>
                                                 </div>
                                             </td>
-                                            <td className="py-8 text-right text-[15px] font-black text-[#df8448]">
+                                            <td className="py-8 text-right text-[15px] font-black text-secondary">
                                                 ${(item.price * item.quantity).toFixed(2)}
                                             </td>
                                         </tr>
@@ -234,7 +234,7 @@ export default function CartPage() {
                             </table>
 
                             <div className="mt-12 flex justify-between items-center">
-                                <Link href="/shop" className="inline-flex items-center gap-2 group text-sm font-black uppercase tracking-widest text-[#3e4c57] border-2 border-zinc-100 px-8 py-4 rounded-[4px] hover:bg-zinc-50 transition-all">
+                                <Link href="/shop" className="inline-flex items-center gap-2 group text-sm font-black uppercase tracking-widest text-primary border-2 border-zinc-100 px-8 py-4 rounded-[4px] hover:bg-zinc-50 transition-all">
                                     <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
                                     Continue Shopping
                                 </Link>
@@ -244,38 +244,38 @@ export default function CartPage() {
                         {/* Sidebar Totals */}
                         <div className="w-full lg:w-[400px]">
                             <div className="bg-zinc-50 border border-zinc-100 rounded-[8px] p-8 md:p-10 sticky top-[130px]">
-                                <h2 className="text-[14px] font-black text-[#3e4c57] uppercase tracking-[0.2em] mb-10 pb-6 border-b border-zinc-200">
+                                <h2 className="text-[14px] font-black text-primary uppercase tracking-[0.2em] mb-10 pb-6 border-b border-zinc-200">
                                     Cart Totals
                                 </h2>
 
                                 <div className="space-y-6 mb-10">
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-zinc-500 font-bold uppercase tracking-wider">Subtotal</span>
-                                        <span className="font-bold text-[#3e4c57]">${totalAmount.toFixed(2)}</span>
+                                        <span className="font-bold text-primary">${totalAmount.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between items-start text-sm">
                                         <span className="text-zinc-500 font-bold uppercase tracking-wider">Shipping</span>
                                         <div className="text-right">
-                                            <p className="font-bold text-[#3e4c57]">{shippingPrice === 0 ? 'FREE' : `$${shippingPrice.toFixed(2)}`}</p>
+                                            <p className="font-bold text-primary">{shippingPrice === 0 ? 'FREE' : `$${shippingPrice.toFixed(2)}`}</p>
                                             <p className="text-xs text-zinc-400 mt-1">Free shipping on orders over $50</p>
                                         </div>
                                     </div>
                                     {coupon.discountAmount > 0 && (
-                                        <div className="flex justify-between items-center text-sm text-[#df8448]">
+                                        <div className="flex justify-between items-center text-sm text-secondary">
                                             <span className="font-bold uppercase tracking-wider">Discount</span>
                                             <span className="font-bold">-${coupon.discountAmount.toFixed(2)}</span>
                                         </div>
                                     )}
                                     <div className="h-[1px] bg-zinc-200 my-6" />
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[#3e4c57] font-black uppercase tracking-widest text-[14px]">Total</span>
-                                        <span className="text-[24px] font-black text-[#df8448]">${finalTotal.toFixed(2)}</span>
+                                        <span className="text-primary font-black uppercase tracking-widest text-[14px]">Total</span>
+                                        <span className="text-[24px] font-black text-secondary">${finalTotal.toFixed(2)}</span>
                                     </div>
                                 </div>
 
                                 <button
                                     onClick={() => router.push('/checkout')}
-                                    className="w-full bg-[#df8448] text-white py-5 rounded-[4px] font-black uppercase tracking-[0.25em] text-sm shadow-2xl shadow-orange-500/20 hover:bg-[#c9713a] transition-all"
+                                    className="w-full bg-secondary text-white py-5 rounded-[4px] font-black uppercase tracking-[0.25em] text-sm shadow-2xl shadow-orange-500/20 hover:bg-secondary-dark transition-all"
                                 >
                                     Proceed to Checkout
                                 </button>
@@ -283,8 +283,8 @@ export default function CartPage() {
                                 {/* Coupon Section */}
                                 <div className="mt-12 pt-10 border-t border-zinc-200">
                                     <div className="flex items-center gap-2 mb-4">
-                                        <Tag size={16} className="text-[#df8448]" />
-                                        <span className="text-sm font-black text-[#3e4c57] uppercase tracking-widest">Coupon Code</span>
+                                        <Tag size={16} className="text-secondary" />
+                                        <span className="text-sm font-black text-primary uppercase tracking-widest">Coupon Code</span>
                                     </div>
                                     <div className="flex flex-col gap-3">
                                         <input
@@ -292,12 +292,12 @@ export default function CartPage() {
                                             value={couponCode}
                                             onChange={(e) => setCouponCode(e.target.value)}
                                             placeholder="Coupon code"
-                                            className="w-full bg-white border border-zinc-200 rounded-[4px] px-6 py-4 text-sm outline-none focus:border-[#df8448] transition-colors"
+                                            className="w-full bg-white border border-zinc-200 rounded-[4px] px-6 py-4 text-sm outline-none focus:border-secondary transition-colors"
                                         />
                                         <button
                                             onClick={handleApplyCoupon}
                                             disabled={isApplying}
-                                            className="w-full bg-zinc-100 text-[#3e4c57] py-4 rounded-[4px] text-sm font-black uppercase tracking-widest hover:bg-zinc-200 transition-all disabled:opacity-50"
+                                            className="w-full bg-zinc-100 text-primary py-4 rounded-[4px] text-sm font-black uppercase tracking-widest hover:bg-zinc-200 transition-all disabled:opacity-50"
                                         >
                                             {isApplying ? 'Applying...' : 'Apply Coupon'}
                                         </button>

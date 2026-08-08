@@ -13,28 +13,7 @@ import { API_BASE_URL as apiBaseUrl } from '@/lib/api';
 /* ─────────────────────────────────────────────────────────────────
    DESIGN TOKENS
  ───────────────────────────────────────────────────────────────── */
-const C = {
-  primary: '#3e4c57',
-  primaryHover: '#2c3840',
-  secondary: '#df8448',
-  secondaryHover: '#c9713a',
-  secondaryText: '#df8448',
-  secondaryTextHover: '#c9713a',
-  secondaryLight: '#fdf2ea',
-  white: '#ffffff',
-  grayLight: '#f4f5f6',
-  grayMid: '#e8eaec',
-  grayText: '#4b5563',
-  border: '#e2e5e8',
-  borderHover: '#c8cdd2',
-};
-
-const F = {
-  heading: "var(--font-hanken), sans-serif",
-  body: "var(--font-hanken), sans-serif",
-  nav: "var(--font-lato), sans-serif",
-  alt: "var(--font-dancing), cursive",
-};
+import { C, F } from '@/lib/uiTheme';
 
 /* ── TypeScript Interfaces ──────────────────────────────────────── */
 

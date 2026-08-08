@@ -79,7 +79,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                             key={img.id ?? idx}
                                             type="button"
                                             onClick={() => setActiveImageIndex(idx)}
-                                            className={`relative h-16 w-16 overflow-hidden rounded-lg border-2 bg-white transition-colors ${displayImage === img.src ? 'border-[#df8448]' : 'border-zinc-100 hover:border-zinc-300'
+                                            className={`relative h-16 w-16 overflow-hidden rounded-lg border-2 bg-white transition-colors ${displayImage === img.src ? 'border-secondary' : 'border-zinc-100 hover:border-zinc-300'
                                                 }`}
                                         >
                                             <Image
@@ -103,7 +103,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                     className="object-contain"
                                 />
                                 {product.badge && (
-                                    <span className="absolute left-6 top-6 rounded-[2px] bg-[#df8448] px-4 py-1.5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/20">
+                                    <span className="absolute left-6 top-6 rounded-[2px] bg-secondary px-4 py-1.5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/20">
                                         {product.badge}
                                     </span>
                                 )}
@@ -117,10 +117,10 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                         className="flex flex-col"
                     >
                         <div className="mb-8">
-                            <p className="mb-4 text-xs font-black uppercase tracking-[0.15em] text-[#df8448]">
+                            <p className="mb-4 text-xs font-black uppercase tracking-[0.15em] text-secondary">
                                 {product.category} Ergonomics
                             </p>
-                            <h1 className="mb-6 text-[32px] font-bold leading-[1.1] text-[#3e4c57] md:text-[44px]">
+                            <h1 className="mb-6 text-[32px] font-bold leading-[1.1] text-primary md:text-[44px]">
                                 {product.name}
                             </h1>
 
@@ -130,7 +130,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                         <Star
                                             key={i}
                                             size={14}
-                                            className={product.reviews > 0 && i < product.rating ? 'fill-[#df8448] text-[#df8448]' : 'text-zinc-200'}
+                                            className={product.reviews > 0 && i < product.rating ? 'fill-secondary text-secondary' : 'text-zinc-200'}
                                         />
                                     ))}
                                     <span className="ml-1 text-xs font-bold text-zinc-400">
@@ -144,7 +144,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                             </div>
 
                             <div className="mb-4 flex items-baseline gap-4">
-                                <span className="text-[32px] font-bold text-[#df8448]">${displayPrice.toFixed(2)}</span>
+                                <span className="text-[32px] font-bold text-secondary">${displayPrice.toFixed(2)}</span>
                                 {displayOldPrice && (
                                     <span className="text-[20px] font-medium text-zinc-300 line-through">${displayOldPrice.toFixed(2)}</span>
                                 )}
@@ -155,7 +155,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                             <div className="mb-8 space-y-6">
                                 {options.map((option) => (
                                     <div key={option.id}>
-                                        <p className="mb-3 text-base font-black capitalize tracking-[0.05em] text-[#3e4c57]">
+                                        <p className="mb-3 text-base font-black capitalize tracking-[0.05em] text-primary">
                                             {option.name}
                                         </p>
                                         <div className="flex flex-wrap gap-2">
@@ -169,8 +169,8 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                             setSelectedValues((prev) => ({ ...prev, [option.name]: value.id }))
                                                         }
                                                         className={`rounded-[4px] border-2 px-4 py-2 text-sm font-bold uppercase tracking-wide transition-colors ${isSelected
-                                                                ? 'border-[#df8448] bg-[#df8448] text-white'
-                                                                : 'border-zinc-200 bg-white text-[#3e4c57] hover:border-[#df8448]'
+                                                                ? 'border-secondary bg-secondary text-white'
+                                                                : 'border-zinc-200 bg-white text-primary hover:border-secondary'
                                                             }`}
                                                     >
                                                         {value.name}
@@ -188,14 +188,14 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                 <div className="flex h-[54px] items-center rounded-[4px] border-2 border-white bg-white shadow-sm">
                                     <button
                                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                        className="flex h-full items-center px-2 text-zinc-400 transition-colors hover:text-[#3e4c57]"
+                                        className="flex h-full items-center px-2 text-zinc-400 transition-colors hover:text-primary"
                                     >
                                         -
                                     </button>
-                                    <span className="w-9 text-center font-bold text-[#3e4c57]">{quantity}</span>
+                                    <span className="w-9 text-center font-bold text-primary">{quantity}</span>
                                     <button
                                         onClick={() => setQuantity(quantity + 1)}
-                                        className="flex h-full items-center px-2 text-zinc-400 transition-colors hover:text-[#3e4c57]"
+                                        className="flex h-full items-center px-2 text-zinc-400 transition-colors hover:text-primary"
                                     >
                                         +
                                     </button>
@@ -214,7 +214,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                         for (let i = 0; i < quantity; i++) addItem(itemToAdd);
                                     }}
                                     disabled={!isAvailable}
-                                    className="h-[54px] flex-1 rounded-[4px] bg-[#df8448] text-base font-black uppercase tracking-[0.12em] text-white shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-[#c9713a] disabled:cursor-not-allowed disabled:opacity-40"
+                                    className="h-[54px] flex-1 rounded-[4px] bg-secondary text-base font-black uppercase tracking-[0.12em] text-white shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                     {isAvailable ? 'Add to cart' : 'Out of stock'}
                                 </button>
@@ -222,10 +222,10 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-zinc-400">
-                                    <Truck size={14} className="text-[#df8448]" /> Free Express Shipping
+                                    <Truck size={14} className="text-secondary" /> Free Express Shipping
                                 </div>
                                 <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-zinc-400">
-                                    <RotateCcw size={14} className="text-[#df8448]" /> 30-Day Health Trial
+                                    <RotateCcw size={14} className="text-secondary" /> 30-Day Health Trial
                                 </div>
                             </div>
                         </div>
@@ -239,16 +239,16 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                             type="button"
                                             onClick={() => toggleSection(section.id)}
                                             aria-expanded={isOpen}
-                                            className="flex w-full items-center justify-between py-5 text-left text-sm font-black uppercase tracking-wide text-[#3e4c57]"
+                                            className="flex w-full items-center justify-between py-5 text-left text-sm font-black uppercase tracking-wide text-primary"
                                         >
                                             {section.label}
-                                            {isOpen ? <Minus size={18} className="text-[#df8448]" /> : <Plus size={18} className="text-zinc-300" />}
+                                            {isOpen ? <Minus size={18} className="text-secondary" /> : <Plus size={18} className="text-zinc-300" />}
                                         </button>
 
                                         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[1000px] opacity-100 pb-6' : 'max-h-0 opacity-0'}`}>
                                             {section.id === 'description' && (
                                                 <div
-                                                    className="prose prose-zinc max-w-none text-[15px] leading-[1.8] text-zinc-500 prose-headings:text-[#3e4c57] prose-p:my-0 prose-p:leading-[1.8]"
+                                                    className="prose prose-zinc max-w-none text-[15px] leading-[1.8] text-zinc-500 prose-headings:text-primary prose-p:my-0 prose-p:leading-[1.8]"
                                                     dangerouslySetInnerHTML={{ __html: descriptionMarkup }}
                                                 />
                                             )}
@@ -257,7 +257,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                     {(product.specs && product.specs.length > 0) ? (
                                                         product.specs.map((spec, i) => (
                                                             <div key={i} className="flex justify-between border-b border-zinc-50 py-3 text-sm">
-                                                                <span className="font-bold uppercase tracking-wide text-[#3e4c57]">{spec.label}</span>
+                                                                <span className="font-bold uppercase tracking-wide text-primary">{spec.label}</span>
                                                                 <span className="text-zinc-500">{spec.value}</span>
                                                             </div>
                                                         ))
@@ -269,11 +269,11 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                             {section.id === 'shipping' && (
                                                 <ul className="space-y-4 text-[15px] leading-[1.8] text-zinc-500">
                                                     <li className="flex items-start gap-3">
-                                                        <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#df8448]" />
+                                                        <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" />
                                                         <span>Free standard shipping for all US orders over $50.</span>
                                                     </li>
                                                     <li className="flex items-start gap-3">
-                                                        <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#df8448]" />
+                                                        <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" />
                                                         <span>Express 2-day delivery available at checkout.</span>
                                                     </li>
                                                 </ul>

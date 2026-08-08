@@ -50,11 +50,11 @@ function ResetPasswordForm() {
                 <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle2 size={32} />
                 </div>
-                <h2 className="text-[24px] font-bold text-[#3e4c57]">Password updated!</h2>
+                <h2 className="text-[24px] font-bold text-primary">Password updated!</h2>
                 <p className="text-zinc-500 text-[14px]">Your password has been reset. You can now sign in with your new password.</p>
                 <button
                     onClick={() => router.push('/sign-in')}
-                    className="bg-[#df8448] text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-[#c9713a] transition-colors"
+                    className="bg-secondary text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-secondary-dark transition-colors"
                 >
                     Sign In
                 </button>
@@ -65,7 +65,7 @@ function ResetPasswordForm() {
     return (
         <div className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl shadow-slate-200/50 border border-zinc-100 max-w-md w-full">
             <div className="mb-10 text-center">
-                <h1 className="text-[28px] font-bold text-[#3e4c57] mb-2">Set New Password</h1>
+                <h1 className="text-[28px] font-bold text-primary mb-2">Set New Password</h1>
                 <p className="text-zinc-500 text-[14px]">Choose a strong password for your account.</p>
             </div>
 
@@ -80,7 +80,7 @@ function ResetPasswordForm() {
                             minLength={8}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full pl-12 pr-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium placeholder:text-zinc-300"
+                            className="w-full pl-12 pr-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-zinc-300"
                             placeholder="Min. 8 characters"
                         />
                     </div>
@@ -96,7 +96,7 @@ function ResetPasswordForm() {
                             minLength={8}
                             value={confirmation}
                             onChange={(e) => setConfirmation(e.target.value)}
-                            className="w-full pl-12 pr-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium placeholder:text-zinc-300"
+                            className="w-full pl-12 pr-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-zinc-300"
                             placeholder="••••••••"
                         />
                     </div>
@@ -112,7 +112,7 @@ function ResetPasswordForm() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                        className="w-full bg-secondary text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                     >
                         {isLoading ? 'Updating...' : 'Reset Password'}
                         {!isLoading && <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />}

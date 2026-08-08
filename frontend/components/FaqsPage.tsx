@@ -106,16 +106,16 @@ export default function FaqsPage() {
             <Header />
 
             {/* Hero */}
-            <section className="bg-[#f4f5f6] py-16 px-4 md:px-8">
+            <section className="bg-gray-50 py-16 px-4 md:px-8">
                 <div className="max-w-[1200px] mx-auto text-center">
                     <motion.div initial="initial" animate="animate" variants={fadeUp}>
-                        <h1 className="text-[32px] md:text-[42px] font-bold uppercase tracking-[0.1em] text-[#3e4c57] mb-6">
+                        <h1 className="text-[32px] md:text-[42px] font-bold uppercase tracking-[0.1em] text-primary mb-6">
                             Frequently Asked Questions
                         </h1>
                         <p className="text-[#666666] text-[16px] max-w-2xl mx-auto leading-relaxed">
                             Find answers to common questions about our ergonomic pet products, shipping, and return policies.
                         </p>
-                        <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mt-8"></div>
+                        <div className="w-12 h-1 bg-secondary mx-auto rounded-full mt-8"></div>
                     </motion.div>
                 </div>
             </section>
@@ -125,7 +125,7 @@ export default function FaqsPage() {
 
                     {/* Sidebar TOC */}
                     <aside className="hidden lg:block w-72 sticky top-36 h-fit">
-                        <h4 className="text-[14px] font-bold uppercase tracking-widest text-[#3e4c57] mb-8 opacity-40">
+                        <h4 className="text-[14px] font-bold uppercase tracking-widest text-primary mb-8 opacity-40">
                             Jump to Category
                         </h4>
                         <nav className="flex flex-col gap-5">
@@ -133,7 +133,7 @@ export default function FaqsPage() {
                                 <button
                                     key={cat.id}
                                     onClick={() => scrollTo(cat.id)}
-                                    className={`text-left text-[14px] font-bold uppercase tracking-wider transition-all hover:text-[#df8448] ${activeCategory === cat.id ? 'text-[#df8448] pl-3 border-l-2 border-[#df8448]' : 'text-[#3e4c57]/60 pl-3 border-l-2 border-transparent'
+                                    className={`text-left text-[14px] font-bold uppercase tracking-wider transition-all hover:text-secondary ${activeCategory === cat.id ? 'text-secondary pl-3 border-l-2 border-secondary' : 'text-primary/60 pl-3 border-l-2 border-transparent'
                                         }`}
                                 >
                                     {cat.title}
@@ -146,7 +146,7 @@ export default function FaqsPage() {
                     <div className="flex-1 max-w-[800px]">
                         {CATEGORIES.map((cat) => (
                             <div key={cat.id} id={cat.id} className="mb-12 scroll-mt-36 last:mb-0">
-                                <h2 className="text-[22px] font-medium text-[#3e4c57] uppercase tracking-[0.15em] mb-8 border-b border-zinc-100 pb-3">
+                                <h2 className="text-[22px] font-medium text-primary uppercase tracking-[0.15em] mb-8 border-b border-zinc-100 pb-3">
                                     {cat.title}
                                 </h2>
                                 <div className="space-y-0">
@@ -159,13 +159,13 @@ export default function FaqsPage() {
                                                     onClick={() => toggleItem(globalIdx)}
                                                     className="w-full flex items-center justify-between py-4 text-left group transition-all"
                                                 >
-                                                    <span className={`text-[17px] font-semibold transition-colors ${isOpen ? 'text-[#df8448]' : 'text-[#3e4c57] group-hover:text-[#df8448]'
+                                                    <span className={`text-[17px] font-semibold transition-colors ${isOpen ? 'text-secondary' : 'text-primary group-hover:text-secondary'
                                                         }`}>
                                                         {item.question}
                                                     </span>
                                                     <ChevronDown
                                                         size={20}
-                                                        className={`text-zinc-300 transition-transform duration-300 ${isOpen ? 'rotate-180 text-[#df8448]' : ''}`}
+                                                        className={`text-zinc-300 transition-transform duration-300 ${isOpen ? 'rotate-180 text-secondary' : ''}`}
                                                     />
                                                 </button>
                                                 <AnimatePresence>
@@ -193,15 +193,15 @@ export default function FaqsPage() {
                         {/* Contact CTA */}
                         <div className="mt-16 bg-[#f8f9fa] rounded-2xl p-10 text-center border border-zinc-100">
                             <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                                <MessageSquare className="text-[#df8448]" size={28} />
+                                <MessageSquare className="text-secondary" size={28} />
                             </div>
-                            <h3 className="text-[22px] font-bold text-[#3e4c57] mb-4 uppercase tracking-widest">Still have questions?</h3>
+                            <h3 className="text-[22px] font-bold text-primary mb-4 uppercase tracking-widest">Still have questions?</h3>
                             <p className="text-[#666666] mb-8 max-w-md mx-auto text-[15px]">
                                 Our friendly support team is here to help. We&apos;ll get back to you within 24 business hours.
                             </p>
                             <a
                                 href="/contact"
-                                className="inline-block bg-[#df8448] text-white px-10 py-4 rounded-[3px] border-2 border-[#df8448] font-bold uppercase tracking-[0.15em] text-sm hover:bg-[#c9713a] hover:border-[#c9713a] transition-all"
+                                className="inline-block bg-secondary text-white px-10 py-4 rounded-[3px] border-2 border-secondary font-bold uppercase tracking-[0.15em] text-sm hover:bg-secondary-dark hover:border-secondary-dark transition-all"
                             >
                                 Contact Support
                             </a>

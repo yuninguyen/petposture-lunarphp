@@ -237,18 +237,18 @@ function RequestReturnContent() {
                         <motion.span
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="inline-block px-4 py-1.5 bg-[#df8448]/10 text-[#df8448] text-xs font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
+                            className="inline-block px-4 py-1.5 bg-secondary/10 text-secondary text-xs font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
                         >
                             Returns
                         </motion.span>
                         <motion.h1
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-[32px] md:text-[48px] font-bold text-[#3e4c57] mb-6 leading-tight tracking-[0.1em] uppercase"
+                            className="text-[32px] md:text-[48px] font-bold text-primary mb-6 leading-tight tracking-[0.1em] uppercase"
                         >
                             Request a Return
                         </motion.h1>
-                        <div className="w-12 h-1 bg-[#df8448] mx-auto rounded-full mb-6"></div>
+                        <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
                         <motion.p
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -272,48 +272,48 @@ function RequestReturnContent() {
                             {submitted ? (
                                 <div className="text-center py-8">
                                     <CheckCircle2 className="mx-auto text-green-500 mb-6" size={48} />
-                                    <h2 className="text-[24px] font-bold text-[#3e4c57] mb-3">Return request submitted</h2>
+                                    <h2 className="text-[24px] font-bold text-primary mb-3">Return request submitted</h2>
                                     <p className="text-zinc-500 text-[15px] leading-relaxed mb-8">
                                         We&rsquo;ve received your request for order #{order?.reference}. Our team will review it and email you with next steps.
                                     </p>
-                                    <Link href="/" className="inline-flex items-center gap-3 text-[#df8448] font-bold uppercase tracking-[0.2em] text-sm hover:text-[#3e4c57] transition-all">
+                                    <Link href="/" className="inline-flex items-center gap-3 text-secondary font-bold uppercase tracking-[0.2em] text-sm hover:text-primary transition-all">
                                         <ArrowLeft size={16} /> Back to Homepage
                                     </Link>
                                 </div>
                             ) : !order ? (
                                 <>
                                     <div className="flex items-center gap-4 mb-8">
-                                        <div className="w-12 h-12 bg-[#df8448] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
+                                        <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
                                             <Search size={24} strokeWidth={2.5} />
                                         </div>
                                         <div>
-                                            <h2 className="text-[24px] font-bold text-[#3e4c57]">Find Your Order</h2>
-                                            <div className="h-1 w-12 bg-[#df8448] mt-2 rounded-full" />
+                                            <h2 className="text-[24px] font-bold text-primary">Find Your Order</h2>
+                                            <div className="h-1 w-12 bg-secondary mt-2 rounded-full" />
                                         </div>
                                     </div>
 
                                     <form onSubmit={handleLookup} className="space-y-8">
                                         <div className="grid md:grid-cols-2 gap-6">
                                             <div className="space-y-3">
-                                                <label className="text-sm font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Order Number</label>
+                                                <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Order Number</label>
                                                 <input
                                                     type="text"
                                                     required
                                                     value={orderReference}
                                                     onChange={(e) => setOrderReference(e.target.value)}
                                                     placeholder="e.g. 00000014"
-                                                    className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium"
+                                                    className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium"
                                                 />
                                             </div>
                                             <div className="space-y-3">
-                                                <label className="text-sm font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Email</label>
+                                                <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Email</label>
                                                 <input
                                                     type="email"
                                                     required
                                                     value={email}
                                                     onChange={(e) => setEmail(e.target.value)}
                                                     placeholder="email@example.com"
-                                                    className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium"
+                                                    className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium"
                                                 />
                                             </div>
                                         </div>
@@ -321,7 +321,7 @@ function RequestReturnContent() {
                                         <button
                                             type="submit"
                                             disabled={isLookingUp}
-                                            className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                            className="w-full bg-secondary text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                         >
                                             {isLookingUp ? "Looking up..." : "Find My Order"}
                                             <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -337,13 +337,13 @@ function RequestReturnContent() {
                             ) : (
                                 <form onSubmit={handleSubmit} className="space-y-8">
                                     <div>
-                                        <h2 className="text-[24px] font-bold text-[#3e4c57]">Order #{order.reference}</h2>
+                                        <h2 className="text-[24px] font-bold text-primary">Order #{order.reference}</h2>
                                         <p className="text-zinc-500 text-[14px] mt-2">Select the item(s) you&rsquo;d like to return.</p>
                                         {(() => {
                                             const windowMessage = getReturnWindowMessage(order);
                                             if (!windowMessage) return null;
                                             return (
-                                                <p className={`text-sm font-semibold mt-2 ${windowMessage.expired ? "text-red-500" : "text-[#df8448]"}`}>
+                                                <p className={`text-sm font-semibold mt-2 ${windowMessage.expired ? "text-red-500" : "text-secondary"}`}>
                                                     {windowMessage.text}
                                                 </p>
                                             );
@@ -354,26 +354,26 @@ function RequestReturnContent() {
                                         {productLines.map((line) => {
                                             const isSelected = line.id in selectedQuantities;
                                             return (
-                                                <div key={line.id} className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${isSelected ? "border-[#df8448] bg-[#fdf2ea]" : "border-zinc-100"}`}>
+                                                <div key={line.id} className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${isSelected ? "border-secondary bg-secondary-light" : "border-zinc-100"}`}>
                                                     <input
                                                         type="checkbox"
                                                         checked={isSelected}
                                                         onChange={() => toggleItem(line.id, line.quantity)}
-                                                        className="w-5 h-5 accent-[#df8448]"
+                                                        className="w-5 h-5 accent-secondary"
                                                     />
                                                     {line.image && (
                                                         // eslint-disable-next-line @next/next/no-img-element
                                                         <img src={line.image} alt="" className="w-12 h-12 rounded-lg object-cover border border-zinc-200" />
                                                     )}
                                                     <div className="flex-1">
-                                                        <p className="text-[14px] font-semibold text-[#3e4c57]">{line.description}</p>
+                                                        <p className="text-[14px] font-semibold text-primary">{line.description}</p>
                                                         <p className="text-xs text-zinc-400">Ordered: {line.quantity}</p>
                                                     </div>
                                                     {isSelected && line.quantity > 1 && (
                                                         <select
                                                             value={selectedQuantities[line.id]}
                                                             onChange={(e) => updateQuantity(line.id, Number(e.target.value))}
-                                                            className="px-3 py-2 rounded-lg border border-zinc-200 text-sm font-medium text-[#3e4c57]"
+                                                            className="px-3 py-2 rounded-lg border border-zinc-200 text-sm font-medium text-primary"
                                                         >
                                                             {Array.from({ length: line.quantity }, (_, i) => i + 1).map((q) => (
                                                                 <option key={q} value={q}>Qty: {q}</option>
@@ -386,11 +386,11 @@ function RequestReturnContent() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-sm font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Reason for return</label>
+                                        <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Reason for return</label>
                                         <select
                                             value={reason}
                                             onChange={(e) => setReason(e.target.value)}
-                                            className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium"
+                                            className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium"
                                         >
                                             {REASONS.map((r) => (
                                                 <option key={r} value={r}>{r}</option>
@@ -399,21 +399,21 @@ function RequestReturnContent() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="text-sm font-extrabold uppercase tracking-widest text-[#3e4c57] ml-1">Additional notes (optional)</label>
+                                        <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Additional notes (optional)</label>
                                         <textarea
                                             value={note}
                                             onChange={(e) => setNote(e.target.value)}
                                             rows={4}
                                             placeholder="Anything else we should know?"
-                                            className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium resize-none"
+                                            className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium resize-none"
                                         />
                                     </div>
 
                                     {isEstimating ? (
                                         <p className="text-sm text-zinc-400">Calculating estimated refund…</p>
                                     ) : estimate ? (
-                                        <div className="p-4 bg-[#fdf2ea] border border-[#df8448]/20 rounded-xl">
-                                            <p className="text-[14px] font-bold text-[#3e4c57]">
+                                        <div className="p-4 bg-secondary-light border border-secondary/20 rounded-xl">
+                                            <p className="text-[14px] font-bold text-primary">
                                                 Estimated refund: ${estimate.estimated_refund.toFixed(2)}
                                             </p>
                                             <p className="text-sm text-zinc-400 mt-1">
@@ -424,7 +424,7 @@ function RequestReturnContent() {
 
                                     <p className="text-sm text-zinc-400 leading-relaxed">
                                         Approved returns are refunded minus a 25% restocking fee and original shipping cost. See our{" "}
-                                        <Link href="/return-refund-policy" className="text-[#df8448] font-semibold underline underline-offset-2" target="_blank">
+                                        <Link href="/return-refund-policy" className="text-secondary font-semibold underline underline-offset-2" target="_blank">
                                             Return &amp; Refund Policy
                                         </Link>{" "}
                                         for full details.
@@ -439,7 +439,7 @@ function RequestReturnContent() {
                                     <button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                        className="w-full bg-secondary text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                     >
                                         {isSubmitting ? "Submitting..." : "Submit Return Request"}
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />

@@ -38,19 +38,19 @@ export function ProductCard({ product }: { product: Product }) {
                         }}
                         aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                         aria-pressed={wishlisted}
-                        className="absolute right-3 bottom-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-[#56616a] shadow-sm transition hover:text-[#df8448]"
+                        className="absolute right-3 bottom-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-[#56616a] shadow-sm transition hover:text-secondary"
                     >
-                        <Heart size={16} className={wishlisted ? 'fill-[#df8448] text-[#df8448]' : ''} />
+                        <Heart size={16} className={wishlisted ? 'fill-secondary text-secondary' : ''} />
                     </button>
 
                     <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
                         {product.badge && (
-                            <span className="rounded-full bg-[#df8448] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-orange-500/20">
+                            <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-orange-500/20">
                                 {product.badge}
                             </span>
                         )}
                         {product.isNew && (
-                            <span className="rounded-full bg-[#3e4c57] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
+                            <span className="rounded-full bg-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
                                 New
                             </span>
                         )}
@@ -60,7 +60,7 @@ export function ProductCard({ product }: { product: Product }) {
                             </span>
                         )}
                         {product.backorder && (
-                            <span className="rounded-full bg-[#6b7280] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
+                            <span className="rounded-full bg-gray-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
                                 Backorder
                             </span>
                         )}
@@ -74,7 +74,7 @@ export function ProductCard({ product }: { product: Product }) {
                         <Star
                             key={i}
                             size={11}
-                            className={product.reviews > 0 && i < product.rating ? "fill-[#df8448] text-[#df8448]" : "text-zinc-200"}
+                            className={product.reviews > 0 && i < product.rating ? "fill-secondary text-secondary" : "text-zinc-200"}
                         />
                     ))}
                     <span className="ml-1 text-xs font-medium text-[#8b8f93]">
@@ -83,14 +83,14 @@ export function ProductCard({ product }: { product: Product }) {
                 </div>
 
                 <Link href={`/shop/${product.categorySlug}/${product.slug}`} className="block">
-                    <h3 className="line-clamp-2 min-h-[48px] text-[16px] font-semibold leading-6 text-[#2d3a43] transition-colors group-hover:text-[#df8448]">
+                    <h3 className="line-clamp-2 min-h-[48px] text-[16px] font-semibold leading-6 text-[#2d3a43] transition-colors group-hover:text-secondary">
                         {product.name}
                     </h3>
                 </Link>
 
                 <div className="mt-3 flex items-end justify-between gap-3">
                     <div className="flex items-center gap-3 font-bold">
-                        <span className="text-[16px] text-[#df8448]">${product.price.toFixed(2)}</span>
+                        <span className="text-[16px] text-secondary">${product.price.toFixed(2)}</span>
                         {(product.comparePrice ?? product.oldPrice) != null && (
                             <span className="text-xs font-medium text-zinc-300 line-through">${(product.comparePrice ?? product.oldPrice)!.toFixed(2)}</span>
                         )}
@@ -98,7 +98,7 @@ export function ProductCard({ product }: { product: Product }) {
 
                     <Link
                         href={`/shop/${product.categorySlug}/${product.slug}`}
-                        className="inline-flex items-center gap-1 text-sm font-bold uppercase tracking-[0.06em] text-[#54646e] transition-colors hover:text-[#df8448]"
+                        className="inline-flex items-center gap-1 text-sm font-bold uppercase tracking-[0.06em] text-[#54646e] transition-colors hover:text-secondary"
                     >
                         View <ArrowUpRight size={14} />
                     </Link>
@@ -106,7 +106,7 @@ export function ProductCard({ product }: { product: Product }) {
 
                 <button
                     onClick={() => addItem(product)}
-                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#df8448] px-4 text-sm font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#c9713a]"
+                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-secondary px-4 text-sm font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-secondary-dark"
                 >
                     <ShoppingBag size={15} />
                     Add to Cart

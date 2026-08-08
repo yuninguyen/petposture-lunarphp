@@ -15,21 +15,21 @@ export function Breadcrumbs({ category, categorySlug, productName }: Breadcrumbs
 
     return (
         <nav className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-zinc-400 py-8 px-4 md:px-8 max-w-[1200px] mx-auto">
-            <Link href="/" className="shrink-0 hover:text-[#df8448] transition-colors flex items-center gap-1">
+            <Link href="/" className="shrink-0 hover:text-secondary transition-colors flex items-center gap-1">
                 <Home size={12} />
                 <span>Home</span>
             </Link>
 
             <ChevronRight size={13} className="shrink-0 text-zinc-300" />
 
-            <Link href="/shop" className="shrink-0 hover:text-[#df8448] transition-colors">
+            <Link href="/shop" className="shrink-0 hover:text-secondary transition-colors">
                 Shop
             </Link>
 
             {category && !isCategoryGeneric && (
                 <>
                     <ChevronRight size={13} className="shrink-0 text-zinc-300" />
-                    <Link href={`/shop/${categorySlug || 'categories'}`} className="shrink-0 hover:text-[#df8448] transition-colors">
+                    <Link href={`/shop/${categorySlug || 'categories'}`} className="shrink-0 hover:text-secondary transition-colors">
                         {category}
                     </Link>
                 </>
@@ -38,7 +38,7 @@ export function Breadcrumbs({ category, categorySlug, productName }: Breadcrumbs
             {productName && (
                 <>
                     <ChevronRight size={13} className="shrink-0 text-zinc-300" />
-                    <span className="min-w-0 truncate text-[#3e4c57]">
+                    <span className="min-w-0 truncate text-primary">
                         {productName}
                     </span>
                 </>

@@ -81,15 +81,15 @@ export function ProductReviews({ product }: ProductReviewsProps) {
 
                     {/* Summary Side */}
                     <div className="lg:col-span-1">
-                        <h2 className="text-[#3e4c57] text-xs font-black uppercase tracking-[0.18em] mb-4">Patient Feedback</h2>
-                        <h3 className="text-[#3e4c57] text-[32px] font-bold leading-tight uppercase mb-8">USER JOURNEYS</h3>
+                        <h2 className="text-primary text-xs font-black uppercase tracking-[0.18em] mb-4">Patient Feedback</h2>
+                        <h3 className="text-primary text-[32px] font-bold leading-tight uppercase mb-8">USER JOURNEYS</h3>
 
                         <div className="bg-white p-10 rounded-3xl border border-zinc-100 shadow-xl shadow-zinc-200/20 mb-8">
                             <div className="text-center">
-                                <span className="text-[64px] font-black text-[#3e4c57] leading-none">{averageRating ?? '—'}</span>
+                                <span className="text-[64px] font-black text-primary leading-none">{averageRating ?? '—'}</span>
                                 <div className="flex justify-center gap-1.5 my-4">
                                     {[...Array(5)].map((_, i) => (
-                                        <Star key={i} size={18} className={averageRating !== null && i < Math.round(Number(averageRating)) ? "text-[#df8448] fill-[#df8448]" : "text-zinc-100"} />
+                                        <Star key={i} size={18} className={averageRating !== null && i < Math.round(Number(averageRating)) ? "text-secondary fill-secondary" : "text-zinc-100"} />
                                     ))}
                                 </div>
                                 <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest">
@@ -99,7 +99,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
 
                             <button
                                 onClick={() => setIsFormOpen(!isFormOpen)}
-                                className="w-full mt-10 bg-[#3e4c57] text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[#df8448] transition-all"
+                                className="w-full mt-10 bg-primary text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-secondary transition-all"
                             >
                                 {isFormOpen ? 'Cancel Review' : 'Write a Review'}
                             </button>
@@ -111,7 +111,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                     <span className="text-xs font-bold text-zinc-400 w-4">{star}</span>
                                     <div className="flex-1 h-1.5 bg-zinc-100 rounded-full overflow-hidden">
                                         <div
-                                            className="h-full bg-[#df8448] rounded-full"
+                                            className="h-full bg-secondary rounded-full"
                                             style={{ width: `${reviews.length > 0 ? (reviews.filter(r => r.rating === star).length / reviews.length) * 100 : 0}%` }}
                                         />
                                     </div>
@@ -125,7 +125,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                     <div className="lg:col-span-2">
                         {isFormOpen ? (
                                 <div className="bg-white p-12 rounded-3xl border border-zinc-100 shadow-2xl shadow-zinc-200/30 mb-12">
-                                    <h4 className="text-[#3e4c57] text-[20px] font-bold mb-8 uppercase tracking-wide">Share your pet&apos;s journey</h4>
+                                    <h4 className="text-primary text-[20px] font-bold mb-8 uppercase tracking-wide">Share your pet&apos;s journey</h4>
                                     <form onSubmit={handleSubmit} className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
@@ -135,7 +135,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                                     type="text"
                                                     value={formData.customer_name}
                                                     onChange={e => setFormData({ ...formData, customer_name: e.target.value })}
-                                                    className="w-full bg-zinc-50 border-none rounded-lg p-4 text-[#3e4c57] font-bold text-[14px] focus:ring-2 focus:ring-[#df8448]/20 outline-none"
+                                                    className="w-full bg-zinc-50 border-none rounded-lg p-4 text-primary font-bold text-[14px] focus:ring-2 focus:ring-secondary/20 outline-none"
                                                     placeholder="e.g. Sarah J."
                                                 />
                                             </div>
@@ -147,7 +147,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                                             key={star}
                                                             type="button"
                                                             onClick={() => setFormData({ ...formData, rating: star })}
-                                                            className={`p-2 rounded-lg transition-colors ${formData.rating >= star ? 'text-[#df8448]' : 'text-zinc-200'}`}
+                                                            className={`p-2 rounded-lg transition-colors ${formData.rating >= star ? 'text-secondary' : 'text-zinc-200'}`}
                                                         >
                                                             <Star size={24} fill={formData.rating >= star ? 'currentColor' : 'none'} />
                                                         </button>
@@ -162,14 +162,14 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                                 rows={4}
                                                 value={formData.comment}
                                                 onChange={e => setFormData({ ...formData, comment: e.target.value })}
-                                                className="w-full bg-zinc-50 border-none rounded-lg p-4 text-[#3e4c57] font-bold text-[14px] focus:ring-2 focus:ring-[#df8448]/20 outline-none resize-none"
+                                                className="w-full bg-zinc-50 border-none rounded-lg p-4 text-primary font-bold text-[14px] focus:ring-2 focus:ring-secondary/20 outline-none resize-none"
                                                 placeholder="Tell us how it improved your pet's posture..."
                                             />
                                         </div>
                                         <button
                                             disabled={isSubmitting}
                                             type="submit"
-                                            className="bg-[#df8448] text-white px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[#c9713a] transition-all flex items-center gap-3 disabled:opacity-50"
+                                            className="bg-secondary text-white px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-secondary-dark transition-all flex items-center gap-3 disabled:opacity-50"
                                         >
                                             {isSubmitting ? 'Transmitting...' : (
                                                 <>Submit for Verification <Send size={14} /></>
@@ -182,7 +182,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                         <div className="space-y-8">
                             {isLoading ? (
                                 <div className="text-center py-20">
-                                    <div className="w-8 h-8 border-4 border-[#df8448] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                                    <div className="w-8 h-8 border-4 border-secondary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                                     <p className="text-xs font-black text-zinc-300 uppercase tracking-widest">Retrieving Social Proof...</p>
                                 </div>
                             ) : reviews.length === 0 ? (
@@ -198,11 +198,11 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                     >
                                         <div className="flex items-center justify-between mb-6">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-zinc-50 rounded-full flex items-center justify-center text-zinc-300 group-hover:bg-[#df8448]/10 group-hover:text-[#df8448] transition-colors">
+                                                <div className="w-12 h-12 bg-zinc-50 rounded-full flex items-center justify-center text-zinc-300 group-hover:bg-secondary/10 group-hover:text-secondary transition-colors">
                                                     <User size={20} />
                                                 </div>
                                                 <div>
-                                                    <h5 className="text-[14px] font-black uppercase tracking-wide text-[#3e4c57]">{review.customer_name}</h5>
+                                                    <h5 className="text-[14px] font-black uppercase tracking-wide text-primary">{review.customer_name}</h5>
                                                     <div className="flex items-center gap-2 text-xs font-bold text-green-500 uppercase tracking-widest mt-1">
                                                         <ShieldCheck size={12} /> Verified Owner
                                                     </div>
@@ -210,7 +210,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                             </div>
                                             <div className="flex gap-1">
                                                 {[...Array(5)].map((_, i) => (
-                                                    <Star key={i} size={14} className={i < review.rating ? "text-[#df8448] fill-[#df8448]" : "text-zinc-100"} />
+                                                    <Star key={i} size={14} className={i < review.rating ? "text-secondary fill-secondary" : "text-zinc-100"} />
                                                 ))}
                                             </div>
                                         </div>

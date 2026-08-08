@@ -80,9 +80,9 @@ function ShopLinkGroup({ heading, items }: { heading: string; items: string[] })
           <li key={item}>
             <Link
               href={getShopHref(item)}
-              className="text-[16px] text-white/60 hover:text-[#df8448] transition-colors flex items-center gap-2 group"
+              className="text-[16px] text-white/60 hover:text-secondary transition-colors flex items-center gap-2 group"
             >
-              <span className="w-0 h-[1px] bg-[#df8448] transition-all group-hover:w-3" />
+              <span className="w-0 h-[1px] bg-secondary transition-all group-hover:w-3" />
               {item}
             </Link>
           </li>
@@ -103,7 +103,7 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent, wr
           <h3 className="font-bold text-[14px] md:text-[16px] uppercase tracking-[0.15em] text-white inline-block">
             {title}
           </h3>
-          <div className="hidden lg:block w-8 h-[2px] bg-[#df8448] mt-3" />
+          <div className="hidden lg:block w-8 h-[2px] bg-secondary mt-3" />
         </div>
         <div className="lg:hidden text-white/40 group-hover:text-white transition-colors">
           {isOpen ? <Minus size={18} /> : <Plus size={18} />}
@@ -129,9 +129,9 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent, wr
                             item === "Track Your Order" ? "/track-order" :
                               item === "Request a Return" ? "/returns" : "#"
                   }
-                  className="text-[16px] text-white/60 hover:text-[#df8448] transition-colors flex items-center gap-2 group"
+                  className="text-[16px] text-white/60 hover:text-secondary transition-colors flex items-center gap-2 group"
                 >
-                  <span className="w-0 h-[1px] bg-[#df8448] transition-all group-hover:w-3" />
+                  <span className="w-0 h-[1px] bg-secondary transition-all group-hover:w-3" />
                   {item}
                 </Link>
               </li>
@@ -228,9 +228,9 @@ export default function Footer() {
                     <li key={link}>
                       <Link
                         href={getLegalHref(link)}
-                        className="text-[16px] text-white/60 hover:text-[#df8448] transition-colors flex items-center gap-2 group"
+                        className="text-[16px] text-white/60 hover:text-secondary transition-colors flex items-center gap-2 group"
                       >
-                        <span className="w-0 h-[1px] bg-[#df8448] transition-all group-hover:w-3" />
+                        <span className="w-0 h-[1px] bg-secondary transition-all group-hover:w-3" />
                         {link}
                       </Link>
                     </li>
@@ -255,7 +255,7 @@ export default function Footer() {
                     <Link
                       key={link}
                       href={getLegalHref(link)}
-                      className="text-[13px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
+                      className="text-[13px] uppercase tracking-[0.08em] text-white/70 hover:text-secondary transition-colors whitespace-nowrap"
                     >
                       {link}
                     </Link>
@@ -267,7 +267,7 @@ export default function Footer() {
                     <Link
                       key={link}
                       href={getLegalHref(link)}
-                      className="text-[13px] uppercase tracking-[0.08em] text-white/70 hover:text-[#df8448] transition-colors whitespace-nowrap"
+                      className="text-[13px] uppercase tracking-[0.08em] text-white/70 hover:text-secondary transition-colors whitespace-nowrap"
                     >
                       {link}
                     </Link>

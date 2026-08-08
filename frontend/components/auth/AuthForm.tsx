@@ -83,13 +83,13 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                         <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto">
                             <CheckCircle2 size={32} />
                         </div>
-                        <h2 className="text-[24px] font-bold text-[#3e4c57]">Check your inbox</h2>
+                        <h2 className="text-[24px] font-bold text-primary">Check your inbox</h2>
                         <p className="text-zinc-500 text-[14px] leading-relaxed">
                             If an account exists for <strong>{email}</strong>, we&apos;ve sent a password reset link. Check your spam folder if you don&apos;t see it.
                         </p>
                         <button
                             onClick={() => { setMode('login'); setEmail(''); }}
-                            className="text-[#df8448] text-sm font-bold underline underline-offset-2 hover:text-[#c9713a] transition-colors"
+                            className="text-secondary text-sm font-bold underline underline-offset-2 hover:text-secondary-dark transition-colors"
                         >
                             Back to Sign In
                         </button>
@@ -113,18 +113,18 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                             <div className="inline-flex overflow-hidden rounded-full border border-zinc-100 bg-[#f8f9fa] p-1 mb-8 shadow-sm">
                                 <Link
                                     href="/sign-in"
-                                    className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-colors ${mode === 'login' ? 'bg-white shadow text-[#df8448] border border-zinc-50' : 'text-zinc-400 hover:text-[#3e4c57]'}`}
+                                    className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-colors ${mode === 'login' ? 'bg-white shadow text-secondary border border-zinc-50' : 'text-zinc-400 hover:text-primary'}`}
                                 >
                                     Sign In
                                 </Link>
                                 <Link
                                     href="/sign-up"
-                                    className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-colors ${mode === 'register' ? 'bg-white shadow text-[#df8448] border border-zinc-50' : 'text-zinc-400 hover:text-[#3e4c57]'}`}
+                                    className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-colors ${mode === 'register' ? 'bg-white shadow text-secondary border border-zinc-50' : 'text-zinc-400 hover:text-primary'}`}
                                 >
                                     Register
                                 </Link>
                             </div>
-                            <h1 className="text-[28px] font-bold text-[#3e4c57] leading-tight mb-2">
+                            <h1 className="text-[28px] font-bold text-primary leading-tight mb-2">
                                 {mode === 'login' ? 'Sign In' : 'Sign Up'}
                             </h1>
                             <p className="text-zinc-500 text-[14px]">
@@ -135,7 +135,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
 
                     {mode === 'forgot' && (
                         <div className="mb-10 text-center">
-                            <h1 className="text-[28px] font-bold text-[#3e4c57] leading-tight mb-2">Forgot Password</h1>
+                            <h1 className="text-[28px] font-bold text-primary leading-tight mb-2">Forgot Password</h1>
                             <p className="text-zinc-500 text-[14px]">Enter your email and we&apos;ll send you a reset link.</p>
                         </div>
                     )}
@@ -153,7 +153,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                                         autoComplete="name"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        className="w-full pl-12 pr-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium placeholder:text-zinc-300"
+                                        className="w-full pl-12 pr-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-zinc-300"
                                         placeholder="John Doe"
                                     />
                                 </div>
@@ -170,7 +170,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                                     autoComplete="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-12 pr-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium placeholder:text-zinc-300"
+                                    className="w-full pl-12 pr-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-zinc-300"
                                     placeholder="email@example.com"
                                 />
                             </div>
@@ -184,7 +184,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                                         <button
                                             type="button"
                                             onClick={() => { setMode('forgot'); setError(null); }}
-                                            className="text-xs font-bold text-[#df8448] hover:text-[#c9713a] transition-colors"
+                                            className="text-xs font-bold text-secondary hover:text-secondary-dark transition-colors"
                                         >
                                             Forgot password?
                                         </button>
@@ -199,7 +199,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                                         autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full pl-12 pr-12 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-[#df8448] focus:bg-white outline-none transition-all text-[#3e4c57] font-medium placeholder:text-zinc-300"
+                                        className="w-full pl-12 pr-12 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-zinc-300"
                                         placeholder="••••••••"
                                     />
                                     <button
@@ -224,7 +224,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full bg-[#df8448] text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-[#c9713a] disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                className="w-full bg-secondary text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                             >
                                 {isLoading ? 'Processing...' : mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : 'Send Reset Link'}
                                 {!isLoading && <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />}
@@ -234,7 +234,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                                 <button
                                     type="button"
                                     onClick={() => { setMode('login'); setError(null); }}
-                                    className="w-full text-zinc-400 text-sm font-bold hover:text-[#3e4c57] transition-colors py-2"
+                                    className="w-full text-zinc-400 text-sm font-bold hover:text-primary transition-colors py-2"
                                 >
                                     Back to Sign In
                                 </button>

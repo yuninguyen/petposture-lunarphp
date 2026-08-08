@@ -17,7 +17,7 @@ export default function WishlistPage() {
 
             <section className="border-b border-[#e7ddd2] bg-[linear-gradient(180deg,_#faf6f1_0%,_#f3ede5_100%)] px-4 py-8 md:px-8 md:py-10">
                 <div className="mx-auto max-w-[1280px]">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#df8448]">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-secondary">
                         My Wishlist
                     </p>
                     <h1 className="max-w-[760px] text-[28px] font-bold leading-tight text-[#2d3a43] md:text-[40px]">
@@ -56,7 +56,7 @@ export default function WishlistPage() {
                                 </p>
                                 <Link
                                     href="/shop"
-                                    className="inline-flex items-center gap-2 rounded-full bg-[#df8448] px-6 py-3 text-sm font-bold uppercase tracking-[0.16em] text-white transition hover:bg-[#c9713a]"
+                                    className="inline-flex items-center gap-2 rounded-full bg-secondary px-6 py-3 text-sm font-bold uppercase tracking-[0.16em] text-white transition hover:bg-secondary-dark"
                                 >
                                     Browse the Shop <ArrowRight size={14} />
                                 </Link>
