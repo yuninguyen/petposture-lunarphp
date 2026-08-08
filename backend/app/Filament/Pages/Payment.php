@@ -280,6 +280,7 @@ class Payment extends Page
                                             ->color('gray')
                                             ->action(fn () => $this->testStripeConnection()),
                                     ])
+                                    ->key('stripe_test_section')
                                     ->schema([
                                 Select::make('stripe_mode')
                                     ->label(__('Stripe Mode'))
@@ -341,6 +342,7 @@ class Payment extends Page
                                             ->color('gray')
                                             ->action(fn () => $this->testPayPalConnection()),
                                     ])
+                                    ->key('paypal_test_section')
                                     ->schema([
                                 Select::make('paypal_mode')
                                     ->label(__('PayPal Mode'))
@@ -400,6 +402,7 @@ class Payment extends Page
                                             ->color('gray')
                                             ->action(fn () => $this->testAirwallexConnection()),
                                     ])
+                                    ->key('airwallex_test_section')
                                     ->schema([
                                 Select::make('airwallex_mode')
                                     ->label(__('Airwallex Mode'))
@@ -459,6 +462,7 @@ class Payment extends Page
                                             ->color('gray')
                                             ->action(fn () => $this->testPayoneerConnection()),
                                     ])
+                                    ->key('payoneer_test_section')
                                     ->schema([
                                 Select::make('payoneer_mode')
                                     ->label(__('Payoneer Mode'))
@@ -523,6 +527,7 @@ class Payment extends Page
                                             ->color('gray')
                                             ->action(fn () => $this->testPingPongConnection()),
                                     ])
+                                    ->key('pingpong_test_section')
                                     ->schema([
                                 Select::make('pingpong_mode')
                                     ->label(__('PingPong Mode'))
