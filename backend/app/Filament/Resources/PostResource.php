@@ -130,6 +130,24 @@ class PostResource extends Resource
                     ->default(fn () => auth()->user()?->name)
                     ->searchable(),
 
+                Forms\Components\Select::make('tags')
+                    ->label(__('Tags'))
+                    ->relationship('tags', 'name')
+                    ->multiple()
+                    ->searchable()
+                    ->preload()
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('name')
+                            ->label(__('Name'))
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn ($state, Set $set) => $set('slug', Str::slug($state))),
+                        Forms\Components\TextInput::make('slug')
+                            ->label(__('Slug'))
+                            ->required()
+                            ->unique('blog_tags', 'slug'),
+                    ]),
+
                 Forms\Components\FileUpload::make('featured_image')
                     ->label(__('Featured Image'))
                     ->image()
@@ -202,6 +220,11 @@ class PostResource extends Resource
                                         'budget_pick' => __('Budget Pick'),
                                     ])
                                     ->placeholder(__('None')),
+
+                                Forms\Components\Toggle::make('in_stock')
+                                    ->label(__('In Stock'))
+                                    ->default(true)
+                                    ->helperText(__('Turn off if this retailer is out of stock — flags the post in the list.')),
 
                                 Forms\Components\TextInput::make('price_display')
                                     ->label(__('Price (display)'))
@@ -334,37 +357,45 @@ class PostResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('featured_image')
-                    ->label(__('Featured Image')),
                 Tables\Columns\TextColumn::make('title')
                     ->label(__('Title'))
                     ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('type')
-                    ->label(__('Type'))
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        Post::TYPE_COMPARISON => 'warning',
-                        Post::TYPE_GUIDE => 'info',
-                        default => 'gray',
+                    ->sortable()
+                    ->html()
+                    ->formatStateUsing(function (Post $record): \Illuminate\Support\HtmlString {
+                        $badge = $record->hasOutOfStockComparisonItems()
+                            ? ' <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-danger-100 text-danger-700">⚠ '.__('Out of stock').'</span>'
+                            : '';
+
+                        return new \Illuminate\Support\HtmlString(e($record->title).$badge);
                     }),
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state))
                     ->color(fn (string $state): string => match ($state) {
                         'draft' => 'gray',
                         'published' => 'success',
                         default => 'gray',
                     }),
-                Tables\Columns\TextColumn::make('published_at')
-                    ->label(__('Published At'))
+                Tables\Columns\TextColumn::make('blogCategory.name')
+                    ->label(__('Category'))
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('type')
+                    ->label(__('Type'))
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state))
+                    ->color(fn (string $state): string => match ($state) {
+                        Post::TYPE_COMPARISON => 'warning',
+                        Post::TYPE_GUIDE => 'info',
+                        default => 'gray',
+                    }),
+                Tables\Columns\TextColumn::make('author')
+                    ->label(__('Assigned')),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label(__('Updated'))
                     ->dateTime()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label(__('Created At'))
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -380,6 +411,14 @@ class PostResource extends Resource
                     ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('view')
+                    ->label('')
+                    ->tooltip(__('View'))
+                    ->icon('heroicon-o-eye')
+                    ->color('gray')
+                    ->url(fn (Post $record): string => rtrim(config('app.frontend_url'), '/').'/blog/'.$record->slug)
+                    ->openUrlInNewTab()
+                    ->visible(fn (Post $record): bool => $record->status === 'published'),
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\ReplicateAction::make()

@@ -50,6 +50,11 @@ class Post extends Model
         return $this->hasMany(Comment::class);
     }
 
+    public function tags()
+    {
+        return $this->belongsToMany(BlogTag::class, 'blog_post_tag');
+    }
+
     public static function estimateReadTime(string $html): string
     {
         $words = str_word_count(strip_tags($html));
@@ -75,5 +80,20 @@ class Post extends Model
         }
 
         return $warnings;
+    }
+
+    public function hasOutOfStockComparisonItems(): bool
+    {
+        if ($this->type !== self::TYPE_COMPARISON) {
+            return false;
+        }
+
+        foreach ($this->getMeta('comparison_items', []) as $item) {
+            if (($item['in_stock'] ?? true) === false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

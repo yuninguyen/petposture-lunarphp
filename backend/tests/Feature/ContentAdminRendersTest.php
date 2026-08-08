@@ -1,0 +1,108 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Filament\Resources\BlogTagResource\Pages\CreateBlogTag;
+use App\Filament\Resources\BlogTagResource\Pages\EditBlogTag;
+use App\Filament\Resources\BlogTagResource\Pages\ListBlogTags;
+use App\Filament\Resources\PostResource\Pages\CreatePost;
+use App\Filament\Resources\PostResource\Pages\EditPost;
+use App\Filament\Resources\PostResource\Pages\ListPosts;
+use App\Models\BlogCategory;
+use App\Models\BlogTag;
+use App\Models\Post;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+class ContentAdminRendersTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+        $user = User::factory()->create();
+        $user->assignRole('super_admin');
+        $this->actingAs($user);
+    }
+
+    public function test_posts_list_renders_with_new_columns_and_out_of_stock_badge(): void
+    {
+        $category = BlogCategory::create(['name' => 'Test Category', 'slug' => 'test-category']);
+
+        $post = Post::create([
+            'blog_category_id' => $category->id,
+            'type' => Post::TYPE_COMPARISON,
+            'title' => 'Out of Stock Test Post',
+            'slug' => 'out-of-stock-test-post',
+            'content' => '<p>content</p>',
+            'author' => 'Test Author',
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+        $post->setMeta('comparison_items', [
+            ['product_name' => 'Widget', 'in_stock' => false],
+        ], 'json');
+
+        Livewire::test(ListPosts::class)
+            ->assertSuccessful()
+            ->assertSeeHtml('Out of stock');
+    }
+
+    public function test_post_create_and_edit_forms_render_with_tags_and_in_stock_toggle(): void
+    {
+        BlogCategory::create(['name' => 'Test Category', 'slug' => 'test-category']);
+
+        Livewire::test(CreatePost::class)->assertSuccessful();
+
+        $post = Post::create([
+            'blog_category_id' => BlogCategory::first()->id,
+            'type' => Post::TYPE_ARTICLE,
+            'title' => 'Editable Post',
+            'slug' => 'editable-post',
+            'content' => '<p>content</p>',
+            'status' => 'draft',
+        ]);
+
+        Livewire::test(EditPost::class, ['record' => $post->getRouteKey()])
+            ->assertSuccessful();
+    }
+
+    public function test_blog_tag_pages_render(): void
+    {
+        $tag = BlogTag::create(['name' => 'Ergonomics', 'slug' => 'ergonomics']);
+
+        Livewire::test(ListBlogTags::class)->assertSuccessful();
+        Livewire::test(CreateBlogTag::class)->assertSuccessful();
+        Livewire::test(EditBlogTag::class, ['record' => $tag->getRouteKey()])->assertSuccessful();
+    }
+
+    public function test_merging_blog_tags_moves_posts_and_deletes_source(): void
+    {
+        $category = BlogCategory::create(['name' => 'Test Category', 'slug' => 'test-category']);
+        $post = Post::create([
+            'blog_category_id' => $category->id,
+            'type' => Post::TYPE_ARTICLE,
+            'title' => 'Tagged Post',
+            'slug' => 'tagged-post',
+            'content' => '<p>content</p>',
+            'status' => 'draft',
+        ]);
+
+        $source = BlogTag::create(['name' => 'reactjs', 'slug' => 'reactjs']);
+        $target = BlogTag::create(['name' => 'React', 'slug' => 'react']);
+        $post->tags()->attach($source->id);
+
+        Livewire::test(ListBlogTags::class)
+            ->callTableAction('merge', $source, data: ['target_tag_id' => $target->id])
+            ->assertSuccessful();
+
+        $this->assertDatabaseMissing('blog_tags', ['id' => $source->id]);
+        $this->assertTrue($post->fresh()->tags->pluck('id')->contains($target->id));
+    }
+}
