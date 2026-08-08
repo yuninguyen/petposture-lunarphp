@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { CookieConsentModal } from '@/components/CookieConsentModal';
+import { getConsent, saveConsent } from '@/lib/cookieConsent';
 
 const fadeUp = {
     initial: { opacity: 0, y: 20 },
@@ -24,6 +26,7 @@ const SECTIONS = [
 
 export default function CookiePolicyPage() {
     const [activeSection, setActiveSection] = useState("");
+    const [preferencesOpen, setPreferencesOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -120,7 +123,19 @@ export default function CookiePolicyPage() {
 
                                 <section id="control-manager">
                                     <h2 className="text-[28px] font-bold text-[#3e4c57] uppercase tracking-tight mb-6">3. HOW CAN I CONTROL COOKIES?</h2>
-                                    <p>You have the right to decide whether to accept or reject cookies. When you first visit our Website, a cookie notice will let you know that we use cookies and link you to this Cookie Policy. Currently, the cookies we use are strictly necessary or functional cookies — for example, to keep items in your cart and to keep you signed in — so there is nothing non-essential to opt out of at this time. If we begin using analytics or advertising cookies in the future, we will update this Cookie Policy and provide a way to manage your preferences for those categories accordingly.</p>
+                                    <p>You have the right to decide whether to accept or reject cookies. When you first visit our Website, a cookie banner lets you choose <strong>Accept All</strong> or <strong>Customize</strong> your preferences by category:</p>
+                                    <ul className="list-disc pl-6 space-y-2 mt-4">
+                                        <li><strong>Essential cookies</strong> (always on) — required to keep your cart and account signed in. These cannot be disabled.</li>
+                                        <li><strong>Analytics cookies</strong> (off by default) — used to understand site traffic via Google Analytics. These only load after you opt in.</li>
+                                    </ul>
+                                    <p className="mt-4">Your choice is saved in your browser and respected on future visits. If your browser sends a Global Privacy Control (GPC) signal, we automatically treat it as a request to opt out of non-essential cookies and will not show the banner.</p>
+                                    <p className="mt-4">You can change your preferences at any time using the button below.</p>
+                                    <button
+                                        onClick={() => setPreferencesOpen(true)}
+                                        className="mt-6 inline-flex items-center border border-[#df8448] text-[#df8448] text-sm font-bold uppercase tracking-wider px-6 py-3 rounded-lg hover:bg-[#df8448] hover:text-white transition-colors"
+                                    >
+                                        Manage Cookie Preferences
+                                    </button>
                                 </section>
 
                                 <section id="control-browser">
@@ -170,6 +185,16 @@ export default function CookiePolicyPage() {
                     </div>
                 </div>
             </section>
+
+            <CookieConsentModal
+                open={preferencesOpen}
+                initialAnalytics={getConsent()?.analytics ?? false}
+                onClose={() => setPreferencesOpen(false)}
+                onSave={(analytics) => {
+                    saveConsent({ analytics, method: "customize" });
+                    setPreferencesOpen(false);
+                }}
+            />
 
             <Footer />
         </main>
