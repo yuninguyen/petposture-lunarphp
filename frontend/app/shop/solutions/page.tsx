@@ -9,6 +9,7 @@ import { SOLUTION_TYPES, SOLUTION_CONTENT } from '@/lib/shopData';
 export const metadata: Metadata = {
     title: 'Shop by Solution',
     description: 'Target your pet\'s specific health concerns — eating & digestion, mobility & support, comfort & safety.',
+    alternates: { canonical: '/shop/solutions' },
 };
 
 export default function Page() {

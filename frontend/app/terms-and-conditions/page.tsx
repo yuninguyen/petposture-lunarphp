@@ -14,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return {
         title: page?.meta_title || page?.title || 'Terms and Conditions',
         description: page?.meta_description || "Read the Terms and Conditions for using PetPosture services and website.",
+        alternates: { canonical: `/${SLUG}` },
     };
 }
 

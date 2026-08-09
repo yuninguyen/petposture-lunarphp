@@ -9,6 +9,7 @@ import { BREED_TYPES, BREED_CONTENT } from '@/lib/shopData';
 export const metadata: Metadata = {
     title: 'Shop by Breed',
     description: 'Ergonomic essentials matched to your dog\'s anatomy — flat-faced breeds, long-backed breeds, and more.',
+    alternates: { canonical: '/shop/breeds' },
 };
 
 export default function Page() {

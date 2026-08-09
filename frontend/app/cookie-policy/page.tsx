@@ -14,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return {
         title: page?.meta_title || page?.title || 'Cookie Policy',
         description: page?.meta_description || "Learn about how PetPosture uses cookies and your choices regarding them.",
+        alternates: { canonical: `/${SLUG}` },
     };
 }
 

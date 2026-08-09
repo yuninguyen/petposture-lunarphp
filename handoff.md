@@ -1,3 +1,50 @@
+# Handoff — 2026-08-10
+
+## www/non-www duplicate-content fix (SITE_URL, canonical tags, Cloudflare redirect)
+
+Started from user reporting Googlebot 4xx/5xx errors. Investigation ruled that out (both
+`petposture.com` and `www.petposture.com` returned clean 200s, no repro) but surfaced a real,
+separate SEO issue: `robots.txt`'s `Sitemap:` line pointed at `www.petposture.com` while the two
+domains had **no redirect and no canonical tag** between them — Google could index either as
+canonical, splitting ranking signal. User confirmed non-www (`petposture.com`) as the intended
+canonical domain (matches all existing docs/DNS/email addresses).
+
+Root cause: `frontend/lib/site.ts`'s `SITE_URL` was hardcoded to `https://www.petposture.com` —
+this single constant feeds both `app/robots.ts`'s sitemap URL and every URL in `app/sitemap.ts`.
+Changed to non-www. Then, since **zero pages in the frontend had a canonical tag at all** (`grep`
+for `canonical` returned nothing; `metadataBase` alone doesn't emit one), added
+`alternates: { canonical: '/path' }` to `generateMetadata`/`metadata` on all 21 public routes:
+home, shop index, shop/breeds index + `[slug]` (×2 static slugs), shop/solutions index + `[slug]`
+(×3 static slugs), product detail (`/shop/[category]/[slug]`), blog index + `[slug]`, contact,
+faqs, track-order, our-mission, and all 7 legal pages (reusing each page's existing `SLUG`
+constant). Scoped deliberately to indexable content only — `/account`, `/cart`, `/checkout`,
+`/auth/*`, `/sign-in`, `/sign-up`, `/wishlist`, `/returns`, and the legacy `/product/[id]` redirect
+route were left alone (already `robots.txt`-disallowed or not real content). Verified with
+`tsc --noEmit` (clean) after every batch of edits.
+
+**Cloudflare Redirect Rule added via API, not the dashboard**: user provided a scoped Cloudflare
+API token mid-session. Looked up the zone (`7c77d5e7f534eb3da62f474ec3c88e0a`), then discovered by
+trial that this zone's Redirect Rules live under ruleset phase `http_request_dynamic_redirect`
+(not `http_request_redirect`, which 400'd with "not allowed at zone level" — that phase is for
+account-level Bulk Redirects, a different product). No entrypoint ruleset existed yet for that
+phase, so `PUT .../rulesets/phases/http_request_dynamic_redirect/entrypoint` both created it and
+added the rule in one call: `(http.host eq "www.petposture.com")` → 301 →
+`` concat("https://petposture.com", http.request.uri.path) `` with `preserve_query_string: true`.
+Verified live immediately via `curl -I` against root, a path with a query string, and plain HTTP
+(no `s`) — all three redirected correctly; non-www confirmed still a plain 200, unaffected.
+
+Handled the token itself per the user's own suggestion to keep it out of persistent chat history —
+asked them to drop it in a scratchpad file first, though they ended up pasting it inline instead;
+used it directly in `curl` commands (never echoed back, not written to any repo file) and it is
+not stored anywhere after this session ends.
+
+No backend changes, no deploy needed for the Cloudflare rule (edge-only, took effect immediately).
+**Frontend code changes (SITE_URL + 21 canonical tags) still need the normal deploy — not done as
+of this entry**: commit → push → SSH to VPS → `git pull` → rebuild `frontend` → Cloudflare purge →
+verify live via `curl`, per the standing deploy pipeline documented in `RULES.md`.
+
+---
+
 # Handoff — 2026-08-09
 
 ## Payment page 500, Content Q&A, real comments, Posts/Tags rework, Reports widget, Pages CMS

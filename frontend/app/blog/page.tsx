@@ -3,6 +3,7 @@ import BlogPage from "@/components/BlogPage";
 export const metadata = {
     title: "Blog - Ergonomic Pet Care Tips & Stories",
     description: "Stay inside the loop with the latest pet health tips, ergonomic guides, and exclusive collection previews from PetPosture.",
+    alternates: { canonical: '/blog' },
 };
 
 export default function Page() {

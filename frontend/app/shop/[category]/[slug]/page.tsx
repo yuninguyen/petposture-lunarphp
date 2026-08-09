@@ -48,10 +48,11 @@ async function fetchProducts(): Promise<Product[]> {
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ category: string; slug: string }> }): Promise<Metadata> {
-    const { slug } = await params;
+    const { category, slug } = await params;
     const product = await fetchProduct(slug);
     return {
         title: product ? product.name : 'Product',
+        alternates: { canonical: `/shop/${category}/${slug}` },
     };
 }
 

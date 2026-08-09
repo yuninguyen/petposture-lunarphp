@@ -50,6 +50,7 @@ graph TB
 - Styling: Tailwind v4, no CSS-in-JS. Animation: `framer-motion`. Icons: `lucide-react`.
 - Production runs a custom `server.js` (not `next start`) inside `Dockerfile.prod` — single-stage Node 20 Alpine image, `npm run build` at image build time.
 - **`frontend/AGENTS.md` is load-bearing, not boilerplate**: this Next.js/React version is newer than most training data — read `node_modules/next/dist/docs/` before writing anything non-trivial.
+- **Domain canonicalization (added 2026-08-10)**: `petposture.com` (non-www) is canonical. `lib/site.ts`'s `SITE_URL` feeds `app/robots.ts` (sitemap URL) and `app/sitemap.ts` (every URL), and every one of the 21 public routes sets its own `alternates: { canonical: '/path' }` (no site-wide default — `metadataBase` on its own does not emit a canonical tag). `www.petposture.com` 301s to non-www via a Cloudflare Redirect Rule (zone `7c77d5e7f534eb3da62f474ec3c88e0a`, `http_request_dynamic_redirect` phase), created via the Cloudflare API rather than the dashboard. Fixed after discovering both domains served identical 200 content with neither a redirect nor a canonical tag between them — a duplicate-content risk found incidentally while investigating an unrelated (and ultimately unfounded) Googlebot 4xx/5xx report. See `RULES.md` for the rule this became for any new route.
 
 ## Backend — `backend/`
 

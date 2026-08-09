@@ -14,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return {
         title: page?.meta_title || page?.title || 'Acceptable Use Policy',
         description: page?.meta_description || "Learn about the acceptable use standards for PetPosture services and products.",
+        alternates: { canonical: `/${SLUG}` },
     };
 }
 

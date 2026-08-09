@@ -8,6 +8,7 @@ import { API_BASE_URL } from '@/lib/api';
 export const metadata: Metadata = {
     title: 'Shop',
     description: 'Elite ergonomic gear for your pet\'s best life. Shop our collection of bowls, ramps, beds, and harnesses.',
+    alternates: { canonical: '/shop' },
 };
 
 async function getInitialProducts(): Promise<Product[]> {

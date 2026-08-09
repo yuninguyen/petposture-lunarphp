@@ -195,7 +195,8 @@ petposture/
   future spam-pattern audits
 - Product reviews (storefront submit + admin moderation)
 - Multi-language support
-- SEO metadata & automatic sitemap
+- SEO metadata & automatic sitemap, `<link rel="canonical">` on all 21 public routes, and a
+  www → non-www 301 redirect at the edge (see "Domain canonicalization" below)
 - Static policy pages (FAQ, privacy, shipping, returns, etc.)
 - Full Filament admin panel with a custom dark sidebar theme (Haze-referenced), narrowed nav width,
   and reorganized nav groups (Commerce, Content, Finance, System — "Content Management" is displayed
@@ -216,6 +217,33 @@ petposture/
   per-order address snapshot) / Login Accounts (the actual login email/password manager —
   supports more than one linked login per customer) tabs.
 - Role-based access control via Filament Shield
+
+---
+
+## Domain canonicalization (www → non-www)
+
+`petposture.com` (non-www) is the canonical domain — `frontend/lib/site.ts`'s `SITE_URL` feeds
+both `app/robots.ts`'s sitemap URL and every URL emitted by `app/sitemap.ts`. Fixed 2026-08-10
+after discovering `www.petposture.com` and `petposture.com` both served identical 200 content
+with **no redirect and no canonical tag between them** — a duplicate-content SEO risk, found
+while investigating an unrelated Googlebot 4xx/5xx report (which turned out unrelated; both
+domains were healthy).
+
+- **Edge redirect**: a Cloudflare Redirect Rule (zone `7c77d5e7f534eb3da62f474ec3c88e0a`, phase
+  `http_request_dynamic_redirect`) 301s `www.petposture.com/*` → `petposture.com/*`, preserving
+  path and query string, for both HTTP and HTTPS. Created via the Cloudflare API (no dashboard UI
+  step needed) — see the ruleset entrypoint for `http_request_dynamic_redirect` on that zone if it
+  ever needs editing.
+- **Canonical tags**: all 21 public-content routes (home, shop + breed/solution index & `[slug]`
+  pages, product detail, blog index + `[slug]`, contact, faqs, track-order, our-mission, and all 7
+  legal pages) set `alternates: { canonical: '/path' }` in their `generateMetadata`/`metadata`
+  export, resolved against `SITE_URL` via `metadataBase` in `app/layout.tsx`. Utility/account
+  routes (`/cart`, `/checkout`, `/account`, `/auth/*`, `/sign-in`, `/sign-up`, `/wishlist`,
+  `/returns`, the legacy `/product/[id]` redirect) deliberately have no canonical — they're either
+  `robots.txt`-disallowed or not indexable content.
+- **Adding a new public route**: give it its own `alternates: { canonical: '/your-path' }` (or
+  build it from `params` for a dynamic route, e.g. `` `/blog/${slug}` ``) — there is no global
+  default; a page that skips this silently has no canonical tag at all.
 
 ---
 

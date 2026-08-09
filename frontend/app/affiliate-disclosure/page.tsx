@@ -14,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return {
         title: page?.meta_title || page?.title || 'Affiliate Disclosure',
         description: page?.meta_description || "Learn about PetPosture's affiliate relationships and how they may affect the product links on this site.",
+        alternates: { canonical: `/${SLUG}` },
     };
 }
 

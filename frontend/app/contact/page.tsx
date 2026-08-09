@@ -4,6 +4,7 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
     title: "Contact Us",
     description: "Get in touch with the PetPosture pack for ergonomic pet essentials, order support, and expert posture advice.",
+    alternates: { canonical: '/contact' },
 };
 
 export default function Contact() {

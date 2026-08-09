@@ -21,6 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     return {
         title: `Shop ${content.title.replace('Built for ', '')}`,
         description: content.metaDescription,
+        alternates: { canonical: `/shop/breeds/${slug}` },
     };
 }
 
