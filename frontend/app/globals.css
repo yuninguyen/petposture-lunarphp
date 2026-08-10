@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@config "../tailwind.config.ts";
 @import './tokens.css';
 @tailwind base;
 @tailwind components;
