@@ -187,26 +187,32 @@
 }
 
 
-/* ── UTILITY CLASSES (dùng được ngay không cần Tailwind) ────── */
+/* ── UTILITY CLASSES (dùng được ngay không cần Tailwind) ─────
+ * Wrapped in @layer utilities so these compete on normal
+ * specificity/source-order terms with Tailwind's own utilities
+ * instead of unconditionally winning the cascade (unlayered CSS
+ * always beats layered CSS regardless of specificity) — that
+ * exact bug previously pinned .bg-secondary/.text-secondary/etc.
+ * permanently, silently defeating every hover:/group-hover:
+ * variant targeting the same property site-wide. */
+@layer utilities {
+  /* Typography */
+  .font-heading  { font-family: var(--font-heading); font-weight: var(--font-weight-bold); }
+  .font-body     { font-family: var(--font-body); font-weight: var(--font-weight-regular); }
+  .font-nav      { font-family: var(--font-nav); font-weight: var(--font-weight-bold); }
+  .alt-font      { font-family: var(--font-alt); }
 
-/* Typography */
-.font-heading  { font-family: var(--font-heading); font-weight: var(--font-weight-bold); }
-.font-body     { font-family: var(--font-body); font-weight: var(--font-weight-regular); }
-.font-nav      { font-family: var(--font-nav); font-weight: var(--font-weight-bold); }
-.alt-font      { font-family: var(--font-alt); }
+  /* Text colors — text-primary/text-secondary intentionally NOT redefined here:
+     Tailwind (via the @config-loaded tailwind.config.ts colors.primary/secondary)
+     already generates these, correctly layered. */
+  .text-muted     { color: var(--color-gray-600); }
 
-/* Text colors */
-.text-primary   { color: var(--color-primary); }
-.text-secondary { color: var(--color-secondary); }
-.text-muted     { color: var(--color-gray-600); }
+  /* Backgrounds — bg-primary/bg-secondary intentionally NOT redefined here, same reason. */
+  .bg-page      { background-color: var(--color-bg-page); }
 
-/* Backgrounds */
-.bg-primary   { background-color: var(--color-primary); }
-.bg-secondary { background-color: var(--color-secondary); }
-.bg-page      { background-color: var(--color-bg-page); }
-
-/* Uppercase text transforms */
-.uppercase-btn       { text-transform: var(--text-transform-btn); letter-spacing: var(--tracking-wider); }
-.uppercase-nav       { text-transform: var(--text-transform-nav); letter-spacing: var(--tracking-widest); }
-.uppercase-section   { text-transform: var(--text-transform-section); letter-spacing: var(--tracking-wider); }
-.uppercase-badge     { text-transform: var(--text-transform-badge); letter-spacing: var(--tracking-wider); }
+  /* Uppercase text transforms */
+  .uppercase-btn       { text-transform: var(--text-transform-btn); letter-spacing: var(--tracking-wider); }
+  .uppercase-nav       { text-transform: var(--text-transform-nav); letter-spacing: var(--tracking-widest); }
+  .uppercase-section   { text-transform: var(--text-transform-section); letter-spacing: var(--tracking-wider); }
+  .uppercase-badge     { text-transform: var(--text-transform-badge); letter-spacing: var(--tracking-wider); }
+}
