@@ -149,11 +149,12 @@ export function ProductFilterBar({
                     )}
 
                     <div>
-                        <label className="mb-2 block text-sm font-bold uppercase tracking-[0.14em] text-[#8b8f93]">
+                        <label htmlFor="shop-sort-by" className="mb-2 block text-sm font-bold uppercase tracking-[0.14em] text-[#8b8f93]">
                             Sort By
                         </label>
                         <div className="relative">
                             <select
+                                id="shop-sort-by"
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
                                 className="h-[50px] w-full appearance-none rounded-[16px] border border-[#e7ddd2] bg-[#faf7f3] pl-4 pr-12 text-sm font-semibold text-[#2d3a43] outline-none transition focus:border-secondary focus:bg-white"
