@@ -24,7 +24,7 @@ export default function ShopPage({
     initialSolution = 'All',
     heroEyebrow = 'PetPosture Shop',
     heroTitle = 'Ergonomic essentials, organized like a real catalog.',
-    heroDescription = 'Products now load upfront, and the page is trimmed down so filters and items show sooner without a bulky hero getting in the way.',
+    heroDescription = "Shop ergonomic bowls, ramps, beds, and harnesses — engineered for your pet's posture and comfort.",
 }: ShopPageProps) {
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
     const shopLogic = useShopLogic(initialProducts, initialBreed, initialSolution);
