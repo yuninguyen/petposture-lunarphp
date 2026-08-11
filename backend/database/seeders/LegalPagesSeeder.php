@@ -119,10 +119,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>12. HOW CAN YOU CONTACT US ABOUT THIS NOTICE?</h2>
                 <p>If you have questions or comments about this notice, you may email us at <a href="mailto:support@petposture.com">support@petposture.com</a> or by post to:</p>
-                <p><strong>PetPosture LLC</strong></p>
-                <p>2017 I St A</p>
-                <p>Sacramento, CA 95811</p>
-                <p>United States</p>
+                <p><strong>PetPosture LLC</strong><br>2017 I St A<br>Sacramento, CA 95811<br>United States</p>
 
                 <h2>13. HOW CAN YOU REVIEW, UPDATE, OR DELETE THE DATA WE COLLECT FROM YOU?</h2>
                 <p>Based on the applicable laws of your country, you may have the right to request access to the personal information we collect from you, change that information, or delete it. To request to review, update, or delete your personal information, please visit: <a href="mailto:support@petposture.com">support@petposture.com</a>.</p>
@@ -212,11 +209,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>20. CONTACT US</h2>
                 <p>In order to resolve a complaint regarding the Site or to receive further information regarding use of the Site, please contact us at:</p>
-                <p><strong>PetPosture LLC</strong></p>
-                <p>2017 I St A</p>
-                <p>Sacramento, CA 95811</p>
-                <p>United States</p>
-                <p>Email: <a href="mailto:support@petposture.com">support@petposture.com</a></p>
+                <p><strong>PetPosture LLC</strong><br>2017 I St A<br>Sacramento, CA 95811<br>United States<br>Email: <a href="mailto:support@petposture.com">support@petposture.com</a></p>
                 HTML,
             ],
 
@@ -268,11 +261,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>9. WHERE CAN I GET FURTHER INFORMATION?</h2>
                 <p>If you have any questions about our use of cookies or other technologies, please email us at <a href="mailto:support@petposture.com">support@petposture.com</a> or by post to:</p>
-                <p><strong>PetPosture LLC</strong></p>
-                <p>2017 I St A</p>
-                <p>Sacramento, CA 95811</p>
-                <p>United States</p>
-                <p>Phone: +1 (916) 623-5368</p>
+                <p><strong>PetPosture LLC</strong><br>2017 I St A<br>Sacramento, CA 95811<br>United States<br>Phone: +1 (916) 623-5368</p>
                 HTML,
             ],
 
@@ -324,11 +313,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>7. HOW CAN YOU CONTACT US ABOUT THIS POLICY?</h2>
                 <p>If you have any further questions or comments, you may contact us at:</p>
-                <p><strong>PetPosture LLC</strong></p>
-                <p>2017 I St A</p>
-                <p>Sacramento, CA 95811</p>
-                <p>United States</p>
-                <p>Email: <a href="mailto:support@petposture.com">support@petposture.com</a></p>
+                <p><strong>PetPosture LLC</strong><br>2017 I St A<br>Sacramento, CA 95811<br>United States<br>Email: <a href="mailto:support@petposture.com">support@petposture.com</a></p>
                 HTML,
             ],
 
@@ -353,10 +338,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>5. HOW CAN YOU CONTACT US ABOUT THIS DISCLOSURE?</h2>
                 <p>If you have questions about our affiliate relationships, you may email us at <a href="mailto:support@petposture.com">support@petposture.com</a> or by post to:</p>
-                <p><strong>PetPosture LLC</strong></p>
-                <p>2017 I St A</p>
-                <p>Sacramento, CA 95811</p>
-                <p>United States</p>
+                <p><strong>PetPosture LLC</strong><br>2017 I St A<br>Sacramento, CA 95811<br>United States</p>
                 HTML,
             ],
 

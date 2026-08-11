@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PageResource\Pages;
 use App\Models\Page;
+use FilamentTiptapEditor\TiptapEditor;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
@@ -52,10 +53,13 @@ class PageResource extends Resource
                     ->disabled(fn (?Page $record): bool => (bool) $record?->is_core)
                     ->dehydrated()
                     ->helperText(__('Changing the slug breaks any link already pointing to this page.')),
-                Forms\Components\RichEditor::make('content')
+                TiptapEditor::make('content')
                     ->label(__('Content'))
                     ->required()
-                    ->columnSpanFull(),
+                    ->profile('blog')
+                    ->output(\FilamentTiptapEditor\Enums\TiptapOutput::Html)
+                    ->columnSpanFull()
+                    ->extraInputAttributes(['style' => 'min-height: 400px']),
                 Forms\Components\TextInput::make('meta_title')
                     ->label(__('Meta Title')),
                 Forms\Components\Textarea::make('meta_description')

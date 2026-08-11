@@ -1,4 +1,19 @@
+# Handoff — 2026-08-12
+
+## Legal page address spacing fix + TipTap editor upgrade
+
+**Legal page address margin-bottom fix**: `LegalPagesSeeder.php` used separate `<p>` tags for each address line (PetPosture LLC / 2017 I St A / Sacramento, CA 95811 / United States), causing `[&_p]:mb-4` in `LegalPageLayout.tsx` to add 1rem gap *between every line*. Fixed by collapsing all 5 address blocks (across Privacy Policy, Terms, Cookie Policy, Acceptable Use, and Affiliate Disclosure) into a single `<p>` using `<br>` for line breaks. Run `php artisan db:seed --class=LegalPagesSeeder` to apply.
+
+**TipTap editor upgrade** (`awcodes/filament-tiptap-editor`, already installed):
+- Replaced Filament's built-in `RichEditor` (Trix engine) with `TiptapEditor` in `PageResource.php` and `PostResource.php` — supports tables, text alignment, code blocks, and more.
+- Added a custom `'blog'` profile in `config/filament-tiptap-editor.php`: 15 curated tools in 6 logical groups (`heading | bold/italic/underline/strike | align-left/center/right | bullet-list/ordered-list/checked-list/blockquote/hr | link/media/table/code-block | color/highlight`), replacing the 30+ tool default profile.
+- CSS overrides injected via the existing `renderHook(HEAD_END)` inline `<style>` block in `AdminPanelProvider.php` (the established CSS pattern for this codebase — `theme.css` is not registered and not loaded): white toolbar background, 34×34px buttons with 17px icons, hover states with `#f1f5f9` background, orange focus ring on editor focus, ProseMirror typography (headings, blockquote with orange left-border, code block dark bg, table styling).
+- **Key lesson**: all panel-wide CSS must go in the `renderHook(HEAD_END)` inline `<style>` block in `AdminPanelProvider.php`. `resources/css/filament/admin/theme.css` is **never loaded** — it exists in the repo but is not registered in the panel provider.
+
+---
+
 # Handoff — 2026-08-10
+
 
 ## www/non-www duplicate-content fix (SITE_URL, canonical tags, Cloudflare redirect)
 

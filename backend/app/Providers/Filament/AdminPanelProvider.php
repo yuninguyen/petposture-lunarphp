@@ -298,6 +298,36 @@ class AdminPanelProvider extends PanelProvider
                     ::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:9px}
 
                     @keyframes pp-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+                    /* ── TipTap Editor ── */
+                    .tiptap-editor{border-radius:8px!important;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.1)!important}
+                    .tiptap-wrapper{border-radius:8px!important;background:#fff!important}
+                    .tiptap-wrapper:focus-within{box-shadow:0 0 0 2px #df8448!important}
+                    .tiptap-toolbar{padding:8px 12px!important;background:#fff!important;border-bottom:1px solid rgba(0,0,0,.09)!important;gap:0!important;flex-direction:row!important;align-items:center!important}
+                    .tiptap-toolbar.divide-x>*{border-left:none!important}
+                    .tiptap-toolbar-left{gap:3px!important;padding:0!important;align-items:center!important}
+                    .tiptap-toolbar-right{gap:3px!important;padding:0 0 0 8px!important;align-items:center!important;border-left:1px solid rgba(0,0,0,.08)!important}
+                    .tiptap-tool{width:34px!important;height:34px!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:6px!important;color:#374151!important;cursor:pointer!important;background:transparent!important;transition:background .12s,color .12s!important;ring:none!important;outline:none!important;box-shadow:none!important}
+                    .tiptap-tool:hover{background:#f1f5f9!important;color:#111827!important;box-shadow:none!important}
+                    .tiptap-tool:focus{outline:none!important;box-shadow:none!important}
+                    .tiptap-tool svg{width:17px!important;height:17px!important}
+                    .tiptap-toolbar-left>.border-l{height:18px!important;margin:0 4px!important;border-color:rgba(0,0,0,.1)!important}
+                    .tiptap-prosemirror-wrapper{max-height:none!important}
+                    .ProseMirror{padding:16px 20px!important;font-size:15px!important;line-height:1.75!important;color:#1e293b!important;outline:none!important}
+                    .ProseMirror h1{font-size:1.875rem;font-weight:700;margin:1.5rem 0 .6rem;color:#0f172a;line-height:1.25}
+                    .ProseMirror h2{font-size:1.5rem;font-weight:700;margin:1.25rem 0 .5rem;color:#0f172a;line-height:1.3}
+                    .ProseMirror h3{font-size:1.25rem;font-weight:600;margin:1rem 0 .4rem;color:#0f172a}
+                    .ProseMirror p{margin-bottom:.85rem}
+                    .ProseMirror ul,.ProseMirror ol{padding-left:1.5rem;margin-bottom:.85rem}
+                    .ProseMirror blockquote{border-left:3px solid #df8448!important;padding:.6rem 1rem;margin:1.25rem 0;background:#fff7f0;border-radius:0 6px 6px 0;color:#6b7280;font-style:italic}
+                    .ProseMirror code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:.15em .45em;font-size:.875em;color:#be123c}
+                    .ProseMirror pre{background:#1e293b;color:#e2e8f0;border-radius:10px;padding:1rem 1.25rem;overflow-x:auto;margin:1.25rem 0;font-size:.875rem;line-height:1.6}
+                    .ProseMirror pre code{background:transparent;border:none;color:inherit;padding:0}
+                    .ProseMirror hr{border:none;border-top:1px solid #e2e8f0;margin:1.5rem 0}
+                    .ProseMirror a{color:#df8448;text-decoration:underline;text-underline-offset:3px}
+                    .ProseMirror table{width:100%;border-collapse:collapse;margin:1rem 0}
+                    .ProseMirror th,.ProseMirror td{border:1px solid #e2e8f0;padding:.5rem .75rem;text-align:left}
+                    .ProseMirror th{background:#f8fafc;font-weight:600;color:#0f172a}
                     </style>
                     <script>
                     (function(){

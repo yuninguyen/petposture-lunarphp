@@ -4,6 +4,10 @@
     --brand-orange: #df8448;
 }
 
+/* ============================================================
+   Filament Sidebar & Topbar
+   ============================================================ */
+
 .fi-sidebar {
     background-color: var(--brand-dark) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.1);
@@ -75,4 +79,280 @@
 
 .fi-wi-widget {
     border-radius: 1.25rem !important;
+}
+
+/* ============================================================
+   TipTap Editor — Brand-aligned redesign
+   Classes verified from: tiptap-editor.blade.php + button.blade.php
+   ============================================================ */
+
+/* Outer editor container */
+.tiptap-editor {
+    border-radius: 0.75rem !important;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease !important;
+}
+
+/* Inner Alpine wrapper — focus ring override */
+.tiptap-wrapper {
+    border-radius: 0.75rem !important;
+}
+
+.tiptap-wrapper.focus-within\:ring:focus-within,
+.tiptap-wrapper:focus-within {
+    --tw-ring-color: var(--brand-orange) !important;
+    box-shadow: 0 0 0 3px rgba(223, 132, 72, 0.2) !important;
+}
+
+/* ── Toolbar container ── */
+.tiptap-toolbar {
+    padding: 6px 10px !important;
+    gap: 0 !important;
+    background-color: #f8fafc !important;
+}
+
+/* Left group (tools) */
+.tiptap-toolbar-left {
+    gap: 2px !important;
+    padding: 0 !important;
+    align-items: center !important;
+}
+
+/* Right group (undo/redo/erase/fullscreen) */
+.tiptap-toolbar-right {
+    gap: 2px !important;
+    padding: 0 0 0 8px !important;
+    align-items: center !important;
+}
+
+/* ── Individual tool buttons ── */
+.tiptap-tool {
+    width: 30px !important;
+    height: 30px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+    color: #4b5563 !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+    ring-color: transparent !important;
+}
+
+/* Hover state */
+.tiptap-tool:hover,
+.tiptap-tool.hover\:bg-gray-500\/20:hover {
+    background-color: #e9eef4 !important;
+    color: var(--brand-dark) !important;
+    ring: none !important;
+}
+
+/* Focus state */
+.tiptap-tool:focus,
+.tiptap-tool.focus\:ring-primary-500:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    background-color: #e9eef4 !important;
+}
+
+/* Active / pressed state (overrides the Alpine !bg-gray-500/30) */
+.tiptap-tool.is-active,
+.tiptap-tool[class*="!bg-gray-500"] {
+    background-color: rgba(223, 132, 72, 0.15) !important;
+    color: var(--brand-orange) !important;
+}
+
+/* SVG icons inside tool buttons */
+.tiptap-tool svg {
+    width: 15px !important;
+    height: 15px !important;
+    flex-shrink: 0;
+}
+
+/* Separator (|) between tool groups */
+.tiptap-toolbar-left > div.border-l {
+    height: 20px !important;
+    margin: 0 5px !important;
+    border-color: #d1d5db !important;
+    opacity: 0.8;
+}
+
+/* Heading select/dropdown if any */
+.tiptap-toolbar select {
+    height: 30px;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.tiptap-toolbar select:hover {
+    border-color: var(--brand-orange);
+}
+
+/* ============================================================
+   TipTap Content / ProseMirror Area
+   ============================================================ */
+
+.tiptap-prosemirror-wrapper {
+    max-height: none !important;
+}
+
+/* ProseMirror editable div */
+.tiptap-content.ProseMirror,
+.tiptap-content > .ProseMirror,
+[x-ref="element"].tiptap-content,
+.ProseMirror {
+    padding: 20px 24px !important;
+    font-size: 15px !important;
+    line-height: 1.8 !important;
+    color: #1e293b !important;
+    outline: none !important;
+}
+
+.ProseMirror h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin: 1.5rem 0 0.6rem;
+    color: var(--brand-dark);
+    line-height: 1.25;
+}
+
+.ProseMirror h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 1.25rem 0 0.5rem;
+    color: var(--brand-dark);
+    line-height: 1.3;
+}
+
+.ProseMirror h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1rem 0 0.4rem;
+    color: var(--brand-dark);
+}
+
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+    font-weight: 600;
+    margin: 1rem 0 0.4rem;
+    color: var(--brand-dark);
+}
+
+.ProseMirror p {
+    margin-bottom: 0.85rem;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.85rem;
+}
+
+.ProseMirror li {
+    margin-bottom: 0.25rem;
+}
+
+.ProseMirror blockquote {
+    border-left: 3px solid var(--brand-orange) !important;
+    padding: 0.6rem 1rem;
+    margin: 1.25rem 0;
+    background: #fff7f0;
+    border-radius: 0 6px 6px 0;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.ProseMirror code {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 0.15em 0.45em;
+    font-size: 0.875em;
+    color: #be123c;
+    font-family: 'Fira Code', 'Consolas', monospace;
+}
+
+.ProseMirror pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    margin: 1.25rem 0;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.ProseMirror pre code {
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+}
+
+.ProseMirror hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 1.5rem 0;
+}
+
+.ProseMirror a {
+    color: var(--brand-orange);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: opacity 0.15s;
+}
+
+.ProseMirror a:hover {
+    opacity: 0.75;
+}
+
+.ProseMirror img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 0.5rem 0;
+}
+
+.ProseMirror table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.ProseMirror th,
+.ProseMirror td {
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+}
+
+.ProseMirror th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: var(--brand-dark);
+}
+
+.ProseMirror tr:nth-child(even) td {
+    background: #fafafa;
+}
+
+/* Placeholder */
+.ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: #9ca3af !important;
+    pointer-events: none;
+    float: left;
+    height: 0;
 }

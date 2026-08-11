@@ -8,6 +8,7 @@ use App\Models\Post;
 use App\Models\User;
 use App\Services\AiSeoGeneratorService;
 use App\Support\ImageUploadResizer;
+use FilamentTiptapEditor\TiptapEditor;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -84,10 +85,13 @@ class PostResource extends Resource
                     ->live(onBlur: true)
                     ->columnSpanFull(),
 
-                Forms\Components\RichEditor::make('content')
+                TiptapEditor::make('content')
                     ->label(__('Content'))
                     ->required()
-                    ->columnSpanFull(),
+                    ->profile('blog')
+                    ->output(\FilamentTiptapEditor\Enums\TiptapOutput::Html)
+                    ->columnSpanFull()
+                    ->extraInputAttributes(['style' => 'min-height: 480px']),
             ]);
     }
 

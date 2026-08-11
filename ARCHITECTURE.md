@@ -1,4 +1,4 @@
-# PetPosture — Architecture
+﻿# PetPosture — Architecture
 
 Headless e-commerce: **Next.js 16 (App Router)** storefront + **Laravel 11 / Lunar PHP** commerce API, both deployed as separate Docker containers on a single VPS behind Cloudflare. No Vercel, no separate CI service — a `build.js` script run on `git push` is the entire deploy pipeline.
 
@@ -90,6 +90,10 @@ graph TB
 - **Footer redesign (2026-08-08)**: "Shop by Solution" and "Shop by Breed" (previously two separate columns) were merged into one "Shop" column with "By Solution"/"By Breed" sub-groups stacked vertically (not side-by-side — side-by-side halved each sub-group's width and wrapped every link onto two lines). A dedicated "Legal" column now lists all 6 legal pages plus a "Do Not Sell My Personal Information" entry that anchors to Privacy Policy's CCPA section (`/privacy-policy#us-state-rights`) rather than being its own page. The bottom bar separately keeps the original 4-link, two-group (`slice(0,2)`/`slice(2)`) legal-link layout from before this session — a full-width single-row `flex-wrap` version was tried and reverted after user feedback that it wasn't "like the original." The main column row uses `flex justify-between` (not an equal-width CSS grid) specifically because content length varies a lot column to column (a short "Shop" list vs. a long "Legal" list) — equal grid tracks left uneven-looking whitespace where short columns didn't fill their track; flex gives every column its natural content width with a consistent gap between them. The About column additionally needs an explicit width constraint (`wrapperClassName` prop on the shared `FooterSection`) since its paragraph text would otherwise be the widest column and visually dominate.
 - **Newsletter subscribe hardening (2026-08-08)**: `NewsletterController::subscribe()`'s confirmation `Mail::send()` previously had no error handling — an SMTP failure would throw past an already-successful DB write (subscriber created/updated), turning a real success into a 500 for the caller. Wrapped in try/catch + `Log::error()`, no rethrow (matches the "non-critical external call" convention in `RULES.md`). **Known unfixed instance of the same bug class**: `AuthController::register()`'s `Mail::send(new WelcomeEmail($user))` is still unguarded — a mail failure there blocks the whole registration response (including issuing the auth token) even though the user account was already created. Not fixed this session (out of scope of the newsletter work that surfaced it) — fix the same way if it's ever hit.
 
+
+- **Panel-wide CSS lives in the `renderHook(HEAD_END)` inline `<style>` block in `AdminPanelProvider.php` — not in `theme.css`.** `resources/css/filament/admin/theme.css` exists but is **never registered** and never loaded. The only working CSS injection point is the `renderHook(PanelsRenderHook::HEAD_END, ...)` call in `AdminPanelProvider::panel()`. All panel-wide CSS (dark sidebar, action colors, TipTap overrides) lives there.
+- **Content editor: TipTap (`awcodes/filament-tiptap-editor`, added 2026-08-12)**: `PageResource` and `PostResource` use `TiptapEditor` instead of `RichEditor`. A custom `'blog'` profile in `config/filament-tiptap-editor.php` defines 15 curated tools. Styling applied via `.tiptap-toolbar`, `.tiptap-tool`, and `.ProseMirror` rules in the `AdminPanelProvider` `<style>` block. Run `php artisan filament:assets` after any package update.
+
 ## Data flow: adding a customer-facing feature (reference shape)
 
 The "Request a Return" feature (Phase 1) is the current reference implementation for this shape — new features should follow it:
@@ -113,3 +117,4 @@ The "Request a Return" feature (Phase 1) is the current reference implementation
 
 ---
 *Superseded content removed: this file previously described a generic Vercel-hosted Next.js + "database TBD" architecture that never reflected this project. See `backend/README.md` / `frontend/README.md` for narrower per-app notes.*
+
