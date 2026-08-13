@@ -100,7 +100,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                     alt={product.name}
                                     fill
                                     sizes="(max-width: 1024px) 100vw, 480px"
-                                    className="object-contain"
+                                    className="object-contain p-8"
                                 />
                                 {product.badge && (
                                     <span className="absolute left-6 top-6 rounded-[2px] bg-secondary px-4 py-1.5 text-xs font-black uppercase tracking-widest text-ink shadow-xl shadow-orange-500/20">
@@ -120,7 +120,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                             <p className="mb-4 text-xs font-black uppercase tracking-[0.15em] text-primary">
                                 {product.category} Ergonomics
                             </p>
-                            <h1 className="mb-6 text-[32px] font-bold leading-[1.1] text-primary md:text-[44px]">
+                            <h1 className="mb-6 text-[32px] font-bold leading-[1.1] text-primary md:text-[36px]">
                                 {product.name}
                             </h1>
 

@@ -55,7 +55,7 @@ export function ProductCard({ product }: { product: Product }) {
                             </span>
                         )}
                         {product.lowStockWarning && !product.backorder && (
-                            <span className="rounded-full bg-[#d94e33] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-red-500/20">
+                            <span className="rounded-full bg-danger px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-danger/20">
                                 Low Stock
                             </span>
                         )}
@@ -98,7 +98,7 @@ export function ProductCard({ product }: { product: Product }) {
 
                     <Link
                         href={`/shop/${product.categorySlug}/${product.slug}`}
-                        className="inline-flex items-center gap-1 text-sm font-bold uppercase tracking-[0.06em] text-[#54646e] transition-colors hover:text-rust"
+                        className="inline-flex items-center gap-1 text-sm font-bold capitalize tracking-[0.05em] text-[#54646e] transition-colors hover:text-rust"
                     >
                         View <ArrowUpRight size={14} />
                     </Link>
