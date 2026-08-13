@@ -191,7 +191,7 @@ export default function TrackOrderPage() {
                                 className="bg-white rounded-3xl p-8 md:p-12 shadow-2xl shadow-slate-200/50 border border-zinc-100 relative z-10"
                             >
                                 <div className="flex items-center gap-4 mb-8">
-                                    <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
+                                    <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center text-ink shadow-lg shadow-orange-200">
                                         <Search size={24} strokeWidth={2.5} />
                                     </div>
                                     <div>
@@ -235,7 +235,7 @@ export default function TrackOrderPage() {
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full bg-secondary text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                        className="w-full bg-secondary text-ink py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                     >
                                         {isLoading ? 'Tracking...' : 'Track My Order'}
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -265,7 +265,7 @@ export default function TrackOrderPage() {
                                             <div className="space-y-4 pt-2">
                                                 <div className="flex justify-between items-center text-sm">
                                                     <span className="text-zinc-500 font-bold uppercase tracking-wider">Status</span>
-                                                    <span className="bg-secondary text-white px-3 py-1 rounded-[4px] font-black uppercase text-xs tracking-widest">{statusData.status_label}</span>
+                                                    <span className="bg-secondary text-ink px-3 py-1 rounded-[4px] font-black uppercase text-xs tracking-widest">{statusData.status_label}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center text-sm">
                                                     <span className="text-zinc-500 font-bold uppercase tracking-wider">Total</span>
@@ -391,7 +391,7 @@ export default function TrackOrderPage() {
                                         }
                                     ].map((item, idx) => (
                                         <motion.div key={idx} variants={fadeUp} className="flex gap-6 group">
-                                            <div className="w-14 h-14 rounded-2xl bg-[#f8f9fa] flex items-center justify-center text-primary group-hover:bg-secondary group-hover:text-white transition-all duration-300 flex-shrink-0 shadow-sm">
+                                            <div className="w-14 h-14 rounded-2xl bg-[#f8f9fa] flex items-center justify-center text-primary group-hover:bg-secondary group-hover:text-ink transition-all duration-300 flex-shrink-0 shadow-sm">
                                                 <item.icon size={26} strokeWidth={1.5} />
                                             </div>
                                             <div>

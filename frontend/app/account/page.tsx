@@ -230,7 +230,7 @@ export default function AccountPage() {
                                     <button
                                         key={t.id}
                                         onClick={() => setTab(t.id)}
-                                        className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wide transition-colors ${tab === t.id ? 'bg-secondary text-white' : 'bg-white text-primary hover:bg-zinc-50'}`}
+                                        className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wide transition-colors ${tab === t.id ? 'bg-secondary text-ink' : 'bg-white text-primary hover:bg-zinc-50'}`}
                                     >
                                         {t.icon} {t.label}
                                     </button>
@@ -441,7 +441,7 @@ export default function AccountPage() {
                                             <button
                                                 type="submit"
                                                 disabled={savingAddress}
-                                                className="bg-secondary text-white px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide hover:bg-secondary-dark disabled:opacity-50 transition-colors"
+                                                className="bg-secondary text-ink px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide hover:bg-secondary-dark disabled:opacity-50 transition-colors"
                                             >
                                                 {savingAddress ? 'Saving...' : 'Save Address'}
                                             </button>

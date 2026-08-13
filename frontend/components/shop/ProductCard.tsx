@@ -45,7 +45,7 @@ export function ProductCard({ product }: { product: Product }) {
 
                     <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
                         {product.badge && (
-                            <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-orange-500/20">
+                            <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-ink shadow-lg shadow-orange-500/20">
                                 {product.badge}
                             </span>
                         )}
@@ -106,7 +106,7 @@ export function ProductCard({ product }: { product: Product }) {
 
                 <button
                     onClick={() => addItem(product)}
-                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-secondary px-4 text-sm font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-secondary-dark"
+                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-secondary px-4 text-sm font-bold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-secondary-dark"
                 >
                     <ShoppingBag size={15} />
                     Add to Cart

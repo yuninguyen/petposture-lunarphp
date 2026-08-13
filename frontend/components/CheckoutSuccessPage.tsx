@@ -450,7 +450,7 @@ function OrderSuccessContent() {
                 </p>
                 <Link
                     href="/shop"
-                    className="mt-2 inline-flex h-11 items-center justify-center rounded-[6px] bg-secondary px-6 text-[14px] font-semibold text-white transition-colors hover:bg-secondary-dark"
+                    className="mt-2 inline-flex h-11 items-center justify-center rounded-[6px] bg-secondary px-6 text-[14px] font-semibold text-ink transition-colors hover:bg-secondary-dark"
                 >
                     Return to shop
                 </Link>
@@ -544,7 +544,7 @@ function OrderSuccessContent() {
                                         {index < timeline.length - 1 ? (
                                             <span className={`absolute left-[11px] top-6 h-[calc(100%+8px)] w-px ${step.done ? "bg-secondary" : "bg-[#e5e7eb]"}`} />
                                         ) : null}
-                                        <span className={`relative z-10 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border ${step.done ? "border-secondary bg-secondary text-white" : "border-gray-200 bg-white text-gray-400"}`}>
+                                        <span className={`relative z-10 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border ${step.done ? "border-secondary bg-secondary text-ink" : "border-gray-200 bg-white text-gray-400"}`}>
                                             {step.done ? <CheckCircle size={14} /> : <span className="h-2 w-2 rounded-full bg-current" />}
                                         </span>
                                         <div className="pb-1">
@@ -730,7 +730,7 @@ function OrderSuccessContent() {
                     <div className="flex flex-col sm:flex-row items-center gap-3 pb-8 pt-1 lg:pb-0">
                         <Link
                             href="/shop"
-                            className="flex h-11 w-full sm:w-auto items-center justify-center rounded-[6px] bg-secondary px-8 text-[14px] font-semibold text-white transition-all hover:bg-secondary-dark hover:shadow-md"
+                            className="flex h-11 w-full sm:w-auto items-center justify-center rounded-[6px] bg-secondary px-8 text-[14px] font-semibold text-ink transition-all hover:bg-secondary-dark hover:shadow-md"
                         >
                             Continue shopping
                         </Link>

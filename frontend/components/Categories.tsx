@@ -56,7 +56,7 @@ export default function Categories() {
                     <Link
                       key={li}
                       href={href}
-                      className="bg-secondary hover:bg-white hover:text-primary text-white px-5 py-2.5 text-sm font-black uppercase tracking-[0.2em] transition-all"
+                      className="bg-secondary hover:bg-white hover:text-primary text-ink px-5 py-2.5 text-sm font-black uppercase tracking-[0.2em] transition-all"
                     >
                       {label}
                     </Link>

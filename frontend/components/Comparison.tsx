@@ -94,7 +94,7 @@ export default function Comparison() {
         <div className="mt-20 text-center">
           <Link
             href="/shop"
-            className="inline-block bg-secondary hover:bg-secondary/90 text-white px-10 py-4 text-sm font-black uppercase tracking-[0.2em] transition-all hover:shadow-xl hover:-translate-y-1 active:scale-95"
+            className="inline-block bg-secondary hover:bg-secondary/90 text-ink px-10 py-4 text-sm font-black uppercase tracking-[0.2em] transition-all hover:shadow-xl hover:-translate-y-1 active:scale-95"
           >
             Protect Your Pet&apos;s Spine
           </Link>

@@ -99,7 +99,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
 
                             <button
                                 onClick={() => setIsFormOpen(!isFormOpen)}
-                                className="w-full mt-10 bg-primary text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-secondary transition-all"
+                                className="w-full mt-10 bg-primary text-ink py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-secondary transition-all"
                             >
                                 {isFormOpen ? 'Cancel Review' : 'Write a Review'}
                             </button>
@@ -169,7 +169,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                         <button
                                             disabled={isSubmitting}
                                             type="submit"
-                                            className="bg-secondary text-white px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-secondary-dark transition-all flex items-center gap-3 disabled:opacity-50"
+                                            className="bg-secondary text-ink px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-secondary-dark transition-all flex items-center gap-3 disabled:opacity-50"
                                         >
                                             {isSubmitting ? 'Transmitting...' : (
                                                 <>Submit for Verification <Send size={14} /></>

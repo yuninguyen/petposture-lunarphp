@@ -318,7 +318,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                                             <button
                                                                 type="submit"
                                                                 disabled={submitting}
-                                                                className="bg-secondary text-white px-8 py-3 rounded-[3px] font-bold uppercase tracking-[0.1em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-lg shadow-orange-200/50"
+                                                                className="bg-secondary text-ink px-8 py-3 rounded-[3px] font-bold uppercase tracking-[0.1em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-lg shadow-orange-200/50"
                                                             >
                                                                 {submitting ? 'Posting...' : 'Post Comment'}
                                                             </button>
@@ -428,7 +428,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                         placeholder="Your email"
                                         className="w-full px-5 py-4 rounded-[3px] bg-white border border-orange-200/50 text-primary placeholder:text-zinc-400 text-[14px] outline-none focus:border-secondary shadow-sm"
                                     />
-                                    <button className="w-full bg-secondary text-white py-4 rounded-[3px] font-bold uppercase tracking-widest text-sm hover:bg-secondary-dark transition-all shadow-lg shadow-orange-200/30">
+                                    <button className="w-full bg-secondary text-ink py-4 rounded-[3px] font-bold uppercase tracking-widest text-sm hover:bg-secondary-dark transition-all shadow-lg shadow-orange-200/30">
                                         Subscribe
                                     </button>
                                 </div>

@@ -15,7 +15,7 @@ import { useSettings } from '@/context/SettingsContext';
 function ContactInfoItem({ icon: Icon, label, value, href, note }: { icon: React.ElementType, label: string, value: string, href?: string, note?: string }) {
     const content = (
         <div className="flex items-start gap-4 p-5 rounded-lg border border-zinc-100 bg-white hover:border-secondary/30 transition-all duration-300 group shadow-sm hover:shadow-md h-full">
-            <div className="w-12 h-12 rounded-full bg-secondary/5 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-white transition-all shrink-0">
+            <div className="w-12 h-12 rounded-full bg-secondary/5 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-ink transition-all shrink-0">
                 <Icon size={20} />
             </div>
             <div className="flex-1">
@@ -282,7 +282,7 @@ export default function ContactPage() {
                                 type="submit"
                                 disabled={status === 'loading'}
                                 style={{ fontFamily: 'var(--font-lato), sans-serif' }}
-                                className="w-full md:w-auto bg-secondary hover:bg-secondary-dark text-white px-12 py-5 font-bold text-sm uppercase tracking-[0.12em] transition-colors rounded-sm shadow-md flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group"
+                                className="w-full md:w-auto bg-secondary hover:bg-secondary-dark text-ink px-12 py-5 font-bold text-sm uppercase tracking-[0.12em] transition-colors rounded-sm shadow-md flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group"
                             >
                                 {status === 'loading' ? (
                                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -167,7 +167,7 @@ export default function ShopPage({
                                     placeholder="Enter your email address"
                                     className="w-full md:flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-primary outline-none"
                                 />
-                                <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-secondary px-10 py-4 text-sm font-bold uppercase tracking-[0.12em] text-white shadow-lg transition-all hover:bg-secondary-dark">
+                                <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-secondary px-10 py-4 text-sm font-bold uppercase tracking-[0.12em] text-ink shadow-lg transition-all hover:bg-secondary-dark">
                                     Subscribe Now
                                 </button>
                             </div>

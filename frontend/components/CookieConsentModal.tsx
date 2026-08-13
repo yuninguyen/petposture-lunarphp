@@ -102,7 +102,7 @@ export function CookieConsentModal({ open, initialAnalytics, onClose, onSave }: 
                             </button>
                             <button
                                 onClick={() => onSave(analytics)}
-                                className="flex-1 bg-secondary hover:bg-secondary-dark text-white text-[14px] font-bold uppercase tracking-wider px-6 py-3 rounded-lg transition-colors"
+                                className="flex-1 bg-secondary hover:bg-secondary-dark text-ink text-[14px] font-bold uppercase tracking-wider px-6 py-3 rounded-lg transition-colors"
                             >
                                 Save Preferences
                             </button>

@@ -56,7 +56,7 @@ export default function Page() {
                                     <p className="mb-4 max-w-[380px] text-sm leading-relaxed text-white/80">
                                         {content.description}
                                     </p>
-                                    <span className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.16em] text-[#2d3a43] transition-colors group-hover:bg-secondary group-hover:text-white">
+                                    <span className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.16em] text-[#2d3a43] transition-colors group-hover:bg-secondary group-hover:text-ink">
                                         Shop Now <ArrowUpRight size={14} />
                                     </span>
                                 </div>

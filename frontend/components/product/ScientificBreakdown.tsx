@@ -47,7 +47,7 @@ export function ScientificBreakdown({ product }: ScientificBreakdownProps) {
                             transition={{ delay: index * 0.1 }}
                             className="group flex w-[78%] flex-shrink-0 snap-center flex-col items-center rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-10 text-center md:w-auto md:flex-shrink md:border-none md:bg-transparent md:px-0 md:py-0"
                         >
-                            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-secondary mb-6 border border-white/10 group-hover:bg-secondary group-hover:text-white transition-all duration-500">
+                            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-secondary mb-6 border border-white/10 group-hover:bg-secondary group-hover:text-ink transition-all duration-500">
                                 {spec.icon}
                             </div>
                             <h4 className="text-white text-[14px] font-bold uppercase tracking-widest mb-3">{spec.title}</h4>

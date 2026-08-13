@@ -48,6 +48,10 @@ const config: Config = {
           light: '#fdf2ea',
           dark: '#c9713a',
         },
+        // Near-black text color for use on top of the brand orange (secondary) —
+        // white-on-secondary fails WCAG AA contrast (2.78:1); this passes (5.63:1)
+        // without changing the orange itself. Matches CookieBanner's #1a2128.
+        ink: '#1a2128',
 
         // Semantic
         success: {

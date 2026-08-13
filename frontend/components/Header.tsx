@@ -38,8 +38,8 @@ export default function Header() {
 
   const navLinkClass = (path: string) =>
     `flex items-center h-full px-6 transition-colors ${isActive(path)
-      ? "bg-secondary text-white"
-      : "text-gray-100 hover:text-white hover:bg-secondary"
+      ? "bg-secondary text-ink"
+      : "text-gray-100 hover:text-ink hover:bg-secondary"
     }`;
 
   return (
@@ -87,7 +87,7 @@ export default function Header() {
                 className="flex-1 px-4 h-[44px] border-none outline-none focus:ring-0 text-[14px] text-primary bg-transparent"
               />
               <button
-                className="bg-secondary text-white px-8 h-[44px] font-bold tracking-wider text-sm uppercase hover:bg-secondary-dark transition-colors border-none m-0 rounded-none"
+                className="bg-secondary text-ink px-8 h-[44px] font-bold tracking-wider text-sm uppercase hover:bg-secondary-dark transition-colors border-none m-0 rounded-none"
               >
                 Search
               </button>
@@ -99,7 +99,7 @@ export default function Header() {
             <Link href="/wishlist" className="relative hover:text-secondary transition-colors hidden sm:block" aria-label="Wishlist">
               <Heart size={22} strokeWidth={2} />
               {wishlistItems.length > 0 && (
-                <span className="absolute -top-1 -right-1.5 bg-secondary text-white text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
+                <span className="absolute -top-1 -right-1.5 bg-secondary text-ink text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
                   {wishlistItems.length}
                 </span>
               )}
@@ -128,7 +128,7 @@ export default function Header() {
             >
               <ShoppingBag size={22} strokeWidth={2} />
               {items.length > 0 && (
-                <span className="absolute -top-1 -right-1.5 bg-secondary text-white text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
+                <span className="absolute -top-1 -right-1.5 bg-secondary text-ink text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
                   {items.reduce((total, item) => total + item.quantity, 0)}
                 </span>
               )}
@@ -205,7 +205,7 @@ export default function Header() {
             placeholder="Search products..."
             className="flex-1 px-3 py-2 outline-none text-sm"
           />
-          <button className="bg-secondary px-4 text-white uppercase text-sm font-bold">
+          <button className="bg-secondary px-4 text-ink uppercase text-sm font-bold">
             Search
           </button>
         </div>
@@ -304,7 +304,7 @@ export default function Header() {
                 {/* Social Links */}
                 <div className="mt-10 flex gap-4">
                   {[Facebook, Instagram, Twitter].map((Icon, idx) => (
-                    <a key={idx} href="#" className="w-10 h-10 rounded-full border border-zinc-100 flex items-center justify-center text-primary hover:bg-secondary hover:text-white transition-all duration-300 shadow-sm">
+                    <a key={idx} href="#" className="w-10 h-10 rounded-full border border-zinc-100 flex items-center justify-center text-primary hover:bg-secondary hover:text-ink transition-all duration-300 shadow-sm">
                       <Icon size={18} />
                     </a>
                   ))}

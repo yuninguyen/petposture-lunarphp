@@ -16,7 +16,7 @@ export function TrustBadgeBar() {
             <div className="max-w-[1200px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8">
                 {badges.map((badge, index) => (
                     <div key={index} className="flex flex-col items-center gap-3 text-center group">
-                        <div className="w-12 h-12 rounded-xl bg-zinc-50 flex items-center justify-center text-primary group-hover:bg-secondary group-hover:text-white transition-all duration-500">
+                        <div className="w-12 h-12 rounded-xl bg-zinc-50 flex items-center justify-center text-primary group-hover:bg-secondary group-hover:text-ink transition-all duration-500">
                             {badge.icon}
                         </div>
                         <div>

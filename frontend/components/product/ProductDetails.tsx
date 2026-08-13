@@ -103,7 +103,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                     className="object-contain"
                                 />
                                 {product.badge && (
-                                    <span className="absolute left-6 top-6 rounded-[2px] bg-secondary px-4 py-1.5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-orange-500/20">
+                                    <span className="absolute left-6 top-6 rounded-[2px] bg-secondary px-4 py-1.5 text-xs font-black uppercase tracking-widest text-ink shadow-xl shadow-orange-500/20">
                                         {product.badge}
                                     </span>
                                 )}
@@ -169,7 +169,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                             setSelectedValues((prev) => ({ ...prev, [option.name]: value.id }))
                                                         }
                                                         className={`rounded-[4px] border-2 px-4 py-2 text-sm font-bold uppercase tracking-wide transition-colors ${isSelected
-                                                                ? 'border-secondary bg-secondary text-white'
+                                                                ? 'border-secondary bg-secondary text-ink'
                                                                 : 'border-zinc-200 bg-white text-primary hover:border-secondary'
                                                             }`}
                                                     >
@@ -214,7 +214,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                         for (let i = 0; i < quantity; i++) addItem(itemToAdd);
                                     }}
                                     disabled={!isAvailable}
-                                    className="h-[54px] flex-1 rounded-[4px] bg-secondary text-base font-black uppercase tracking-[0.12em] text-white shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-40"
+                                    className="h-[54px] flex-1 rounded-[4px] bg-secondary text-base font-black uppercase tracking-[0.12em] text-ink shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                     {isAvailable ? 'Add to cart' : 'Out of stock'}
                                 </button>

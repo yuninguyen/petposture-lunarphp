@@ -66,13 +66,13 @@ export default function ProductGrid() {
                   loading="lazy"
                 />
                 {p.badge && (
-                  <span className="absolute top-4 left-4 bg-secondary text-white text-xs font-black py-1 px-3 uppercase tracking-wider shadow-sm">
+                  <span className="absolute top-4 left-4 bg-secondary text-ink text-xs font-black py-1 px-3 uppercase tracking-wider shadow-sm">
                     {p.badge}
                   </span>
                 )}
                 {/* Cart Icon / Action Overlay */}
                 <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                  <button className="w-full bg-primary hover:bg-secondary text-white text-sm font-black py-4 uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95">
+                  <button className="w-full bg-primary hover:bg-secondary text-ink text-sm font-black py-4 uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95">
                     Select Options
                   </button>
                 </div>

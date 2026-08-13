@@ -54,7 +54,7 @@ function ResetPasswordForm() {
                 <p className="text-zinc-500 text-[14px]">Your password has been reset. You can now sign in with your new password.</p>
                 <button
                     onClick={() => router.push('/sign-in')}
-                    className="bg-secondary text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-secondary-dark transition-colors"
+                    className="bg-secondary text-ink px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-secondary-dark transition-colors"
                 >
                     Sign In
                 </button>
@@ -112,7 +112,7 @@ function ResetPasswordForm() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-secondary text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                        className="w-full bg-secondary text-ink py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                     >
                         {isLoading ? 'Updating...' : 'Reset Password'}
                         {!isLoading && <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />}

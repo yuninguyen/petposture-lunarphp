@@ -201,7 +201,7 @@ export default function FaqsPage() {
                             </p>
                             <a
                                 href="/contact"
-                                className="inline-block bg-secondary text-white px-10 py-4 rounded-[3px] border-2 border-secondary font-bold uppercase tracking-[0.15em] text-sm hover:bg-secondary-dark hover:border-secondary-dark transition-all"
+                                className="inline-block bg-secondary text-ink px-10 py-4 rounded-[3px] border-2 border-secondary font-bold uppercase tracking-[0.15em] text-sm hover:bg-secondary-dark hover:border-secondary-dark transition-all"
                             >
                                 Contact Support
                             </a>

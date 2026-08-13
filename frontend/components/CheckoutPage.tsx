@@ -1899,7 +1899,7 @@ export default function CheckoutPage() {
                             <div className="pt-6">
                                 <button
                                     disabled={isLoading || items.length === 0}
-                                    className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[8px] bg-secondary px-6 text-[15px] font-bold text-white shadow-[0_14px_30px_rgba(223,132,72,0.22)] transition hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[8px] bg-secondary px-6 text-[15px] font-bold text-ink shadow-[0_14px_30px_rgba(223,132,72,0.22)] transition hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {isLoading ? (
                                         'Processing...'

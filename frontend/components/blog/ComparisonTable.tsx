@@ -115,7 +115,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
                     href={item.redirect_url || item.affiliate_url}
                     target="_blank"
                     rel="sponsored nofollow noopener"
-                    className="rounded-[3px] bg-secondary py-3 text-center text-[13px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-secondary-dark"
+                    className="rounded-[3px] bg-secondary py-3 text-center text-[13px] font-bold uppercase tracking-widest text-ink transition-colors hover:bg-secondary-dark"
                 >
                     View on {retailerLabel}
                 </a>

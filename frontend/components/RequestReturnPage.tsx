@@ -283,7 +283,7 @@ function RequestReturnContent() {
                             ) : !order ? (
                                 <>
                                     <div className="flex items-center gap-4 mb-8">
-                                        <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
+                                        <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center text-ink shadow-lg shadow-orange-200">
                                             <Search size={24} strokeWidth={2.5} />
                                         </div>
                                         <div>
@@ -321,7 +321,7 @@ function RequestReturnContent() {
                                         <button
                                             type="submit"
                                             disabled={isLookingUp}
-                                            className="w-full bg-secondary text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                            className="w-full bg-secondary text-ink py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                         >
                                             {isLookingUp ? "Looking up..." : "Find My Order"}
                                             <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -439,7 +439,7 @@ function RequestReturnContent() {
                                     <button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="w-full bg-secondary text-white py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                        className="w-full bg-secondary text-ink py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                     >
                                         {isSubmitting ? "Submitting..." : "Submit Return Request"}
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />

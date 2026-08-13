@@ -158,7 +158,7 @@ export default function BlogPage() {
                                     sizes="(max-width: 1024px) 100vw, 60vw"
                                 />
                                 <div className="absolute left-6 top-6">
-                                    <span className="rounded-[3px] bg-secondary px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-white shadow-lg">
+                                    <span className="rounded-[3px] bg-secondary px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-ink shadow-lg">
                                         Featured Article
                                     </span>
                                 </div>
@@ -352,7 +352,7 @@ export default function BlogPage() {
 
                         {latestPosts.length > 0 && (
                             <div className="mt-20 flex justify-center border-t border-zinc-100 pt-10">
-                                <button className="rounded-[3px] bg-secondary px-14 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white shadow-xl shadow-orange-100/50 transition-all hover:bg-secondary-dark">
+                                <button className="rounded-[3px] bg-secondary px-14 py-4 text-sm font-bold uppercase tracking-[0.2em] text-ink shadow-xl shadow-orange-100/50 transition-all hover:bg-secondary-dark">
                                     Load More Content
                                 </button>
                             </div>
@@ -409,7 +409,7 @@ export default function BlogPage() {
                                                 className="object-cover transition-transform duration-500 group-hover:scale-110"
                                                 sizes="320px"
                                             />
-                                            <span className="absolute left-3 top-3 w-fit rounded-[2px] bg-secondary px-2 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
+                                            <span className="absolute left-3 top-3 w-fit rounded-[2px] bg-secondary px-2 py-1 text-xs font-bold uppercase tracking-wide text-ink shadow-sm">
                                                 Editor&apos;s Pick
                                             </span>
                                         </div>
@@ -458,7 +458,7 @@ export default function BlogPage() {
                                 placeholder="Your email"
                                 className="mb-4 w-full rounded-[3px] border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-secondary"
                             />
-                            <button className="w-full rounded-[3px] bg-secondary py-3 text-sm font-bold uppercase tracking-[0.15em] text-white transition-all hover:bg-secondary-dark">
+                            <button className="w-full rounded-[3px] bg-secondary py-3 text-sm font-bold uppercase tracking-[0.15em] text-ink transition-all hover:bg-secondary-dark">
                                 Subscribe
                             </button>
                         </div>
@@ -498,7 +498,7 @@ export default function BlogPage() {
                                 placeholder="Enter your email address"
                                 className="w-full md:flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-primary outline-none"
                             />
-                            <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-secondary px-10 py-4 text-sm font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-all hover:bg-secondary-dark">
+                            <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-secondary px-10 py-4 text-sm font-bold uppercase tracking-[0.2em] text-ink shadow-lg transition-all hover:bg-secondary-dark">
                                 Subscribe Now
                             </button>
                         </div>

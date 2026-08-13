@@ -56,7 +56,7 @@ export default function WishlistPage() {
                                 </p>
                                 <Link
                                     href="/shop"
-                                    className="inline-flex items-center gap-2 rounded-full bg-secondary px-6 py-3 text-sm font-bold uppercase tracking-[0.16em] text-white transition hover:bg-secondary-dark"
+                                    className="inline-flex items-center gap-2 rounded-full bg-secondary px-6 py-3 text-sm font-bold uppercase tracking-[0.16em] text-ink transition hover:bg-secondary-dark"
                                 >
                                     Browse the Shop <ArrowRight size={14} />
                                 </Link>

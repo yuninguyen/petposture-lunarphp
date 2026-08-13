@@ -128,7 +128,7 @@ export function CartDrawer() {
                                     </button>
                                     <button
                                         onClick={() => { setCartOpen(false); router.push('/checkout'); }}
-                                        className="w-full bg-secondary text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.25em] shadow-xl shadow-orange-500/10 hover:bg-secondary-dark transition-all flex items-center justify-center"
+                                        className="w-full bg-secondary text-ink py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.25em] shadow-xl shadow-orange-500/10 hover:bg-secondary-dark transition-all flex items-center justify-center"
                                     >
                                         Checkout
                                     </button>
