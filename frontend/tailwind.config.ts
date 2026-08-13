@@ -46,7 +46,11 @@ const config: Config = {
         secondary: {
           DEFAULT: '#df8448',
           light: '#fdf2ea',
-          dark: '#c9713a',
+          // Darkened from #c9713a (fixed 2026-08-13) so text-secondary-dark
+          // passes WCAG AA (6.63:1) when used as text color on light
+          // backgrounds — #c9713a only reached 3.55:1. Also used for
+          // hover:bg-secondary-dark button states (still reads as "orange").
+          dark: '#8f4a1f',
         },
         // Near-black text color for use on top of the brand orange (secondary) —
         // white-on-secondary fails WCAG AA contrast (2.78:1); this passes (5.63:1)

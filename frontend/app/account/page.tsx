@@ -273,7 +273,7 @@ export default function AccountPage() {
                                                         </div>
                                                         <div className="flex items-center gap-3">
                                                             <div className="text-right">
-                                                                <p className="text-sm font-bold uppercase tracking-wide text-secondary">{order.status_label}</p>
+                                                                <p className="text-sm font-bold uppercase tracking-wide text-secondary-dark">{order.status_label}</p>
                                                                 <p className="text-[14px] font-bold text-primary">{order.total.formatted}</p>
                                                             </div>
                                                             <ChevronDown size={18} className={`text-zinc-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -299,7 +299,7 @@ export default function AccountPage() {
                                                                 <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Payment</p>
                                                                 <div className="flex items-center justify-between text-sm">
                                                                     <span className="text-zinc-600">{order.payment_label || 'N/A'}</span>
-                                                                    <span className="text-xs font-bold uppercase tracking-wide text-secondary">{order.payment_status_label}</span>
+                                                                    <span className="text-xs font-bold uppercase tracking-wide text-secondary-dark">{order.payment_status_label}</span>
                                                                 </div>
                                                                 <p className="mt-1 text-sm text-zinc-500">{orderPaymentMessage(order)}</p>
                                                             </div>
@@ -337,7 +337,7 @@ export default function AccountPage() {
                                                                                     href={shipment.tracking_url}
                                                                                     target="_blank"
                                                                                     rel="noreferrer"
-                                                                                    className="font-bold text-secondary hover:text-secondary-dark"
+                                                                                    className="font-bold text-secondary-dark hover:text-secondary-dark"
                                                                                 >
                                                                                     Track Package
                                                                                 </a>
@@ -372,7 +372,7 @@ export default function AccountPage() {
                                                                 <div className="pt-3 border-t border-zinc-100">
                                                                     <Link
                                                                         href={`/returns?ref=${encodeURIComponent(order.reference)}&email=${encodeURIComponent(order.customer_email)}`}
-                                                                        className="text-sm font-bold text-secondary hover:text-secondary-dark transition-colors"
+                                                                        className="text-sm font-bold text-secondary-dark hover:text-secondary-dark transition-colors"
                                                                     >
                                                                         Request a Return
                                                                     </Link>
@@ -402,7 +402,7 @@ export default function AccountPage() {
                                             <div className="text-sm text-primary">
                                                 <p className="font-bold">
                                                     {addr.first_name} {addr.last_name}{' '}
-                                                    {addr.is_default && <span className="text-xs uppercase text-secondary font-bold ml-2">Default</span>}
+                                                    {addr.is_default && <span className="text-xs uppercase text-secondary-dark font-bold ml-2">Default</span>}
                                                 </p>
                                                 <p className="text-zinc-500">{addr.line_one}{addr.line_two ? `, ${addr.line_two}` : ''}</p>
                                                 <p className="text-zinc-500">{addr.city}, {addr.state} {addr.postcode}</p>
@@ -449,7 +449,7 @@ export default function AccountPage() {
                                     ) : (
                                         <button
                                             onClick={() => setShowAddressForm(true)}
-                                            className="flex items-center gap-2 text-sm font-bold text-secondary hover:text-secondary-dark transition-colors"
+                                            className="flex items-center gap-2 text-sm font-bold text-secondary-dark hover:text-secondary-dark transition-colors"
                                         >
                                             <Plus size={16} /> Add New Address
                                         </button>

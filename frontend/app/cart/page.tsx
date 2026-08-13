@@ -140,7 +140,7 @@ export default function CartPage() {
             <div className="bg-zinc-50 border-b border-zinc-100 py-12 px-4">
                 <div className="max-w-[1200px] mx-auto">
                     <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm font-black uppercase tracking-[0.2em]">
-                        <div className="flex items-center gap-3 text-secondary">
+                        <div className="flex items-center gap-3 text-secondary-dark">
                             <span className="w-6 h-6 rounded-full bg-secondary text-ink flex items-center justify-center text-xs">1</span>
                             <span>Shopping Cart</span>
                         </div>
@@ -200,7 +200,7 @@ export default function CartPage() {
                                                     <div className="relative w-[100px] h-[120px] bg-white rounded-[4px] overflow-hidden flex-shrink-0 border border-zinc-100">
                                                         <Image src={item.image} alt={item.name} fill sizes="100px" className="object-cover" />
                                                     </div>
-                                                    <h3 className="text-[14px] font-bold text-primary hover:text-secondary transition-colors">
+                                                    <h3 className="text-[14px] font-bold text-primary hover:text-secondary-dark transition-colors">
                                                         {item.name}
                                                     </h3>
                                                 </div>
@@ -225,7 +225,7 @@ export default function CartPage() {
                                                     </button>
                                                 </div>
                                             </td>
-                                            <td className="py-8 text-right text-[15px] font-black text-secondary">
+                                            <td className="py-8 text-right text-[15px] font-black text-secondary-dark">
                                                 ${(item.price * item.quantity).toFixed(2)}
                                             </td>
                                         </tr>
@@ -261,7 +261,7 @@ export default function CartPage() {
                                         </div>
                                     </div>
                                     {coupon.discountAmount > 0 && (
-                                        <div className="flex justify-between items-center text-sm text-secondary">
+                                        <div className="flex justify-between items-center text-sm text-secondary-dark">
                                             <span className="font-bold uppercase tracking-wider">Discount</span>
                                             <span className="font-bold">-${coupon.discountAmount.toFixed(2)}</span>
                                         </div>
@@ -269,7 +269,7 @@ export default function CartPage() {
                                     <div className="h-[1px] bg-zinc-200 my-6" />
                                     <div className="flex justify-between items-center">
                                         <span className="text-primary font-black uppercase tracking-widest text-[14px]">Total</span>
-                                        <span className="text-[24px] font-black text-secondary">${finalTotal.toFixed(2)}</span>
+                                        <span className="text-[24px] font-black text-secondary-dark">${finalTotal.toFixed(2)}</span>
                                     </div>
                                 </div>
 
@@ -283,7 +283,7 @@ export default function CartPage() {
                                 {/* Coupon Section */}
                                 <div className="mt-12 pt-10 border-t border-zinc-200">
                                     <div className="flex items-center gap-2 mb-4">
-                                        <Tag size={16} className="text-secondary" />
+                                        <Tag size={16} className="text-secondary-dark" />
                                         <span className="text-sm font-black text-primary uppercase tracking-widest">Coupon Code</span>
                                     </div>
                                     <div className="flex flex-col gap-3">

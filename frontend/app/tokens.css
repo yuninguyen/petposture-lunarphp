@@ -16,7 +16,7 @@
 
   --color-secondary:      #df8448;   /* Warm orange — CTA, accents */
   --color-secondary-light:#fdf2ea;   /* Background tint */
-  --color-secondary-dark: #c9713a;   /* Hover state */
+  --color-secondary-dark: #8f4a1f;   /* Hover state; also text-on-light-bg (WCAG AA, fixed 2026-08-13) */
 
   /* ── COLORS: Semantic ────────────────────────────────────── */
   --color-success:        #28a745;

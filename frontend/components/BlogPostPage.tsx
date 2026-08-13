@@ -127,12 +127,12 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         animate="animate"
                         variants={fadeUp}
                     >
-                        <Link href="/blog" className="inline-flex items-center gap-2 text-secondary font-bold uppercase tracking-widest text-sm mb-8 hover:translate-x-[-4px] transition-transform">
+                        <Link href="/blog" className="inline-flex items-center gap-2 text-secondary-dark font-bold uppercase tracking-widest text-sm mb-8 hover:translate-x-[-4px] transition-transform">
                             <ArrowLeft size={14} /> Back to Blog
                         </Link>
 
                         <div className="flex justify-center mb-6">
-                            <span className="bg-secondary/10 text-secondary text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-[3px]">
+                            <span className="bg-secondary/10 text-secondary-dark text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-[3px]">
                                 {post.category}
                             </span>
                         </div>
@@ -149,11 +149,11 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                 <span className="text-primary font-bold">{post.author}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Calendar size={14} className="text-secondary" />
+                                <Calendar size={14} className="text-secondary-dark" />
                                 <span>{post.date}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Clock size={14} className="text-secondary" />
+                                <Clock size={14} className="text-secondary-dark" />
                                 <span>{post.readTime}</span>
                             </div>
                         </div>
@@ -189,7 +189,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         ) : null}
 
                         <article
-                            className="prose prose-zinc max-w-none text-primary text-[18px] md:text-[20px] leading-[1.8] font-medium [&>p:first-of-type]:first-letter:text-5xl [&>p:first-of-type]:first-letter:font-bold [&>p:first-of-type]:first-letter:text-secondary [&>p:first-of-type]:first-letter:mr-3 [&>p:first-of-type]:first-letter:float-left [&>*+*]:mt-8 [&_h2]:text-[28px] [&_h2]:md:text-[32px] [&_h2]:font-bold [&_h2]:text-primary [&_h2]:mt-12 [&_h2]:mb-6 [&_blockquote]:border-l-4 [&_blockquote]:border-secondary [&_blockquote]:pl-8 [&_blockquote]:py-4 [&_blockquote]:bg-secondary-light [&_blockquote]:rounded-r-xl [&_blockquote]:italic [&_blockquote]:text-[22px] [&_blockquote]:text-primary [&_blockquote]:font-semibold [&_blockquote]:not-italic"
+                            className="prose prose-zinc max-w-none text-primary text-[18px] md:text-[20px] leading-[1.8] font-medium [&>p:first-of-type]:first-letter:text-5xl [&>p:first-of-type]:first-letter:font-bold [&>p:first-of-type]:first-letter:text-secondary-dark [&>p:first-of-type]:first-letter:mr-3 [&>p:first-of-type]:first-letter:float-left [&>*+*]:mt-8 [&_h2]:text-[28px] [&_h2]:md:text-[32px] [&_h2]:font-bold [&_h2]:text-primary [&_h2]:mt-12 [&_h2]:mb-6 [&_blockquote]:border-l-4 [&_blockquote]:border-secondary [&_blockquote]:pl-8 [&_blockquote]:py-4 [&_blockquote]:bg-secondary-light [&_blockquote]:rounded-r-xl [&_blockquote]:italic [&_blockquote]:text-[22px] [&_blockquote]:text-primary [&_blockquote]:font-semibold [&_blockquote]:not-italic"
                             dangerouslySetInnerHTML={{ __html: contentHtml }}
                         />
 
@@ -204,7 +204,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                             { icon: Twitter, color: "#000000" },
                                             { icon: Share2, color: "#df8448" }
                                         ].map((soc, i) => (
-                                            <button key={i} className="w-10 h-10 rounded-full border border-zinc-100 flex items-center justify-center text-zinc-400 hover:border-secondary hover:text-secondary transition-all bg-white shadow-sm">
+                                            <button key={i} className="w-10 h-10 rounded-full border border-zinc-100 flex items-center justify-center text-zinc-400 hover:border-secondary hover:text-secondary-dark transition-all bg-white shadow-sm">
                                                 <soc.icon size={16} />
                                             </button>
                                         ))}
@@ -259,10 +259,10 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                     onClick={() => setIsCommenting(!isCommenting)}
                                     className="w-full flex items-center justify-center gap-3 py-4 border border-zinc-100 rounded-2xl hover:bg-zinc-50 hover:border-secondary/20 transition-all group"
                                 >
-                                    <h3 className="text-[16px] font-bold text-primary group-hover:text-secondary">Leave a Comment</h3>
+                                    <h3 className="text-[16px] font-bold text-primary group-hover:text-secondary-dark">Leave a Comment</h3>
                                     <motion.div
                                         animate={{ rotate: isCommenting ? 180 : 0 }}
-                                        className="text-secondary"
+                                        className="text-secondary-dark"
                                     >
                                         <ChevronRight size={18} className="rotate-90" />
                                     </motion.div>
@@ -339,7 +339,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         {/* Table of Contents Widget */}
                         {tocItems.length > 0 && (
                             <div className="bg-white rounded-2xl p-8 border border-zinc-100 shadow-xl shadow-zinc-100">
-                                <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-secondary mb-6 flex items-center gap-3">
+                                <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-secondary-dark mb-6 flex items-center gap-3">
                                     On This Page
                                     <div className="flex-1 h-[1px] bg-zinc-200" />
                                 </h4>
@@ -348,7 +348,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                         <a
                                             key={item.id}
                                             href={`#${item.id}`}
-                                            className={`block text-[14px] font-medium text-primary hover:text-secondary transition-colors ${item.level === 3 ? 'pl-4 text-[13px] text-zinc-500' : ''}`}
+                                            className={`block text-[14px] font-medium text-primary hover:text-secondary-dark transition-colors ${item.level === 3 ? 'pl-4 text-[13px] text-zinc-500' : ''}`}
                                         >
                                             {item.text}
                                         </a>
@@ -359,7 +359,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
 
                         {/* Featured Widget */}
                         <div className="bg-[#f8f9fa] rounded-2xl p-8 border border-zinc-100 relative overflow-hidden">
-                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-secondary mb-6 flex items-center gap-3">
+                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-secondary-dark mb-6 flex items-center gap-3">
                                 More Like This
                                 <div className="flex-1 h-[1px] bg-zinc-200" />
                             </h4>
@@ -376,7 +376,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                             />
                                         </div>
                                         <div>
-                                            <h5 className="text-[14px] font-bold text-primary leading-tight group-hover:text-secondary transition-colors mb-2 line-clamp-2">
+                                            <h5 className="text-[14px] font-bold text-primary leading-tight group-hover:text-secondary-dark transition-colors mb-2 line-clamp-2">
                                                 {rPost.title}
                                             </h5>
                                             <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">{rPost.date}</span>
@@ -388,7 +388,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
 
                         {/* Social Widget */}
                         <div className="bg-white rounded-2xl p-8 border border-zinc-100 shadow-xl shadow-zinc-100">
-                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-secondary mb-6">Join the Community</h4>
+                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-secondary-dark mb-6">Join the Community</h4>
                             <div className="grid grid-cols-1 gap-3">
                                 {[
                                     { icon: Facebook, label: "Facebook", color: "#1877F2", href: social.facebook },
@@ -459,16 +459,16 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                     className="object-cover transition-transform duration-500 group-hover:scale-110"
                                 />
                                 <div className="absolute top-4 left-4">
-                                    <span className="bg-white/90 backdrop-blur-sm text-secondary text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-[3px]">
+                                    <span className="bg-white/90 backdrop-blur-sm text-secondary-dark text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-[3px]">
                                         {rPost.category}
                                     </span>
                                 </div>
                             </div>
                             <div className="p-8">
-                                <h3 className="text-[18px] font-bold text-primary leading-tight mb-4 hover:text-secondary transition-colors cursor-pointer">
+                                <h3 className="text-[18px] font-bold text-primary leading-tight mb-4 hover:text-secondary-dark transition-colors cursor-pointer">
                                     {rPost.title}
                                 </h3>
-                                <Link href={`/blog/${rPost.id}`} className="text-primary font-bold uppercase tracking-[0.1em] text-sm flex items-center gap-2 transition-colors hover:text-secondary">
+                                <Link href={`/blog/${rPost.id}`} className="text-primary font-bold uppercase tracking-[0.1em] text-sm flex items-center gap-2 transition-colors hover:text-secondary-dark">
                                     Read Story <ChevronRight size={14} />
                                 </Link>
                             </div>

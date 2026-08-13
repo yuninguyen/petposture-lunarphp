@@ -48,7 +48,7 @@ function Btn({
     whiteSpace: 'nowrap', lineHeight: 1,
   };
   const styles: Record<string, React.CSSProperties> = {
-    solid: { background: C.secondaryText, borderColor: C.secondaryText, color: C.white },
+    solid: { background: C.secondaryText, borderColor: C.secondaryText, color: C.ink },
     outline: { background: 'transparent', borderColor: C.primary, color: C.primary },
     outlineWhite: { background: 'transparent', borderColor: C.white, color: C.white },
     white: { background: C.white, borderColor: C.white, color: C.primary },
@@ -1190,7 +1190,7 @@ function EmailCta() {
                 disabled={isSubmitting}
                 className="px-8 py-4 sm:py-0 rounded-[2px] font-bold uppercase tracking-[0.12em] text-[15px] whitespace-nowrap transition-colors disabled:opacity-60"
                 style={{
-                  background: C.secondaryText, color: C.white,
+                  background: C.secondaryText, color: C.ink,
                   fontFamily: F.nav,
                   cursor: isSubmitting ? 'default' : 'pointer',
                 }}

@@ -50,17 +50,17 @@ export default function Insights() {
                 />
               </div>
               
-              <span className="text-xs font-black uppercase tracking-[0.15em] text-primary/30 mb-4 group-hover:text-secondary transition-colors">
+              <span className="text-xs font-black uppercase tracking-[0.15em] text-primary/30 mb-4 group-hover:text-secondary-dark transition-colors">
                 {category}
               </span>
               
-              <h3 className="text-[14px] font-black uppercase tracking-[0.05em] text-primary px-4 mb-4 leading-relaxed group-hover:text-secondary transition-colors line-clamp-2">
+              <h3 className="text-[14px] font-black uppercase tracking-[0.05em] text-primary px-4 mb-4 leading-relaxed group-hover:text-secondary-dark transition-colors line-clamp-2">
                 {title}
               </h3>
               
               <div className="w-8 h-[1px] bg-secondary/30 mb-4 group-hover:w-16 transition-all duration-500" />
               
-              <span className="text-sm font-black uppercase tracking-[0.2em] text-primary/60 hover:text-secondary transition-colors border-b border-primary/10 group-hover:border-secondary pb-1">
+              <span className="text-sm font-black uppercase tracking-[0.2em] text-primary/60 hover:text-secondary-dark transition-colors border-b border-primary/10 group-hover:border-secondary pb-1">
                 Read More
               </span>
             </Link>

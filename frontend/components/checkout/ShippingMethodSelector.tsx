@@ -28,7 +28,7 @@ export function ShippingMethodSelector({
             onPointerDownCapture={onActivate}
         >
             <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-secondary">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-secondary-dark">
                     <Truck size={16} />
                 </div>
                 <h2 className="text-[18px] font-semibold text-[#333333]">Shipping method</h2>

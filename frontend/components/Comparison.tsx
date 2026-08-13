@@ -7,7 +7,7 @@ export default function Comparison() {
     <section className="py-20 px-4 md:px-8 bg-white overflow-hidden">
       <div className="container mx-auto max-w-5xl">
         <div className="text-center mb-12">
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-secondary mb-3">
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-secondary-dark mb-3">
             Mealtime Difference
           </p>
           <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight text-primary leading-tight max-w-2xl mx-auto">

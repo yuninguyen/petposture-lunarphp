@@ -117,7 +117,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                         className="flex flex-col"
                     >
                         <div className="mb-8">
-                            <p className="mb-4 text-xs font-black uppercase tracking-[0.15em] text-secondary">
+                            <p className="mb-4 text-xs font-black uppercase tracking-[0.15em] text-secondary-dark">
                                 {product.category} Ergonomics
                             </p>
                             <h1 className="mb-6 text-[32px] font-bold leading-[1.1] text-primary md:text-[44px]">
@@ -130,7 +130,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                         <Star
                                             key={i}
                                             size={14}
-                                            className={product.reviews > 0 && i < product.rating ? 'fill-secondary text-secondary' : 'text-zinc-200'}
+                                            className={product.reviews > 0 && i < product.rating ? 'fill-secondary text-secondary-dark' : 'text-zinc-200'}
                                         />
                                     ))}
                                     <span className="ml-1 text-xs font-bold text-zinc-400">
@@ -144,7 +144,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                             </div>
 
                             <div className="mb-4 flex items-baseline gap-4">
-                                <span className="text-[32px] font-bold text-secondary">${displayPrice.toFixed(2)}</span>
+                                <span className="text-[32px] font-bold text-secondary-dark">${displayPrice.toFixed(2)}</span>
                                 {displayOldPrice && (
                                     <span className="text-[20px] font-medium text-zinc-300 line-through">${displayOldPrice.toFixed(2)}</span>
                                 )}
@@ -222,10 +222,10 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-zinc-400">
-                                    <Truck size={14} className="text-secondary" /> Free Express Shipping
+                                    <Truck size={14} className="text-secondary-dark" /> Free Express Shipping
                                 </div>
                                 <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-zinc-400">
-                                    <RotateCcw size={14} className="text-secondary" /> 30-Day Health Trial
+                                    <RotateCcw size={14} className="text-secondary-dark" /> 30-Day Health Trial
                                 </div>
                             </div>
                         </div>
@@ -242,7 +242,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                             className="flex w-full items-center justify-between py-5 text-left text-sm font-black uppercase tracking-wide text-primary"
                                         >
                                             {section.label}
-                                            {isOpen ? <Minus size={18} className="text-secondary" /> : <Plus size={18} className="text-zinc-300" />}
+                                            {isOpen ? <Minus size={18} className="text-secondary-dark" /> : <Plus size={18} className="text-zinc-300" />}
                                         </button>
 
                                         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-[1000px] opacity-100 pb-6' : 'max-h-0 opacity-0'}`}>
@@ -270,7 +270,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                 <div className="space-y-6">
                                                     <div>
                                                         <h4 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary">
-                                                            <Truck size={16} className="text-secondary" /> Shipping
+                                                            <Truck size={16} className="text-secondary-dark" /> Shipping
                                                         </h4>
                                                         <ul className="space-y-3 text-[15px] leading-[1.8] text-zinc-500">
                                                             <li className="flex items-start gap-3">
@@ -286,14 +286,14 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                                 <span>You&apos;ll get a tracking number by email as soon as your order ships.</span>
                                                             </li>
                                                         </ul>
-                                                        <a href="/shipping-policy" className="mt-3 inline-block text-sm font-bold text-secondary hover:underline">
+                                                        <a href="/shipping-policy" className="mt-3 inline-block text-sm font-bold text-secondary-dark hover:underline">
                                                             Read the full Shipping Policy →
                                                         </a>
                                                     </div>
 
                                                     <div className="border-t border-zinc-100 pt-6">
                                                         <h4 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary">
-                                                            <RotateCcw size={16} className="text-secondary" /> Returns
+                                                            <RotateCcw size={16} className="text-secondary-dark" /> Returns
                                                         </h4>
                                                         <ul className="space-y-3 text-[15px] leading-[1.8] text-zinc-500">
                                                             <li className="flex items-start gap-3">
@@ -309,7 +309,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                                 <span>Damaged or defective items reported within 7 days ship back free, no restocking fee.</span>
                                                             </li>
                                                         </ul>
-                                                        <a href="/return-refund-policy" className="mt-3 inline-block text-sm font-bold text-secondary hover:underline">
+                                                        <a href="/return-refund-policy" className="mt-3 inline-block text-sm font-bold text-secondary-dark hover:underline">
                                                             Read the full Return &amp; Refund Policy →
                                                         </a>
                                                     </div>

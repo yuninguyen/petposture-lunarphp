@@ -170,7 +170,7 @@ export function ProductFilterBar({
                     {hasActiveFilters && (
                         <button
                             onClick={clearFilters}
-                            className="h-[48px] w-full rounded-[16px] border border-[#d9c6b5] text-sm font-bold uppercase tracking-[0.14em] text-[#7d5f49] transition hover:border-secondary hover:text-secondary"
+                            className="h-[48px] w-full rounded-[16px] border border-[#d9c6b5] text-sm font-bold uppercase tracking-[0.14em] text-[#7d5f49] transition hover:border-secondary hover:text-secondary-dark"
                         >
                             Reset Filters
                         </button>

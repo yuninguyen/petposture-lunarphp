@@ -51,7 +51,7 @@ export function CookieConsentModal({ open, initialAnalytics, onClose, onSave }: 
 
                         <p className="text-[14px] text-zinc-500 leading-relaxed mb-6">
                             Choose which categories of cookies you allow. See our{" "}
-                            <Link href="/cookie-policy" className="text-secondary hover:underline">
+                            <Link href="/cookie-policy" className="text-secondary-dark hover:underline">
                                 Cookie Policy
                             </Link>{" "}
                             for details on what each category does.

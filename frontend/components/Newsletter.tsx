@@ -77,7 +77,7 @@ export default function Newsletter() {
             </form>
 
             {message && (
-              <p className={`mt-3 text-xs font-bold uppercase tracking-[0.1em] text-center md:text-left ${status === "error" ? "text-red-500" : "text-secondary"}`}>
+              <p className={`mt-3 text-xs font-bold uppercase tracking-[0.1em] text-center md:text-left ${status === "error" ? "text-red-500" : "text-secondary-dark"}`}>
                 {message}
               </p>
             )}

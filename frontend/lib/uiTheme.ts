@@ -10,9 +10,12 @@ export const C = {
     secondary: '#df8448',
     secondaryHover: '#c9713a',
     secondaryText: '#df8448',
-    secondaryTextHover: '#c9713a',
+    secondaryTextHover: '#8f4a1f',
     secondaryLight: '#fdf2ea',
     white: '#ffffff',
+    // Near-black text for use on top of `secondary`/`secondaryText` orange —
+    // white-on-orange fails WCAG AA contrast (2.78:1); this passes (5.63:1).
+    ink: '#1a2128',
     grayLight: '#f4f5f6',
     grayMid: '#e8eaec',
     grayText: '#6b7280',

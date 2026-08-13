@@ -59,7 +59,7 @@ export function OrderSummary({
         <aside className="order-first w-full border-b border-[#e8e8ea] bg-[#fafafa] px-4 py-6 md:px-8 lg:order-last lg:w-[440px] lg:border-b-0 lg:border-l lg:px-10 lg:py-12">
             <div className="sticky top-12 space-y-8">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-secondary">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-secondary-dark">
                         <ShoppingBag size={16} />
                     </div>
                     <h2 className="text-[18px] font-semibold text-[#333333]">Order summary</h2>
@@ -210,7 +210,7 @@ export function OrderSummary({
                                 href="/shipping-policy"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block font-medium text-secondary hover:underline"
+                                className="inline-block font-medium text-secondary-dark hover:underline"
                             >
                                 Read the full shipping policy →
                             </a>
