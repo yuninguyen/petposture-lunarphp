@@ -57,13 +57,13 @@ export function CookieBanner() {
                             <div className="flex shrink-0 items-center gap-3">
                                 <button
                                     onClick={() => setModalOpen(true)}
-                                    className="bg-transparent border border-white/20 hover:border-white/40 text-white text-[14px] font-bold uppercase tracking-wider px-5 py-3 rounded-lg transition-colors"
+                                    className="bg-transparent border border-white/20 hover:border-white/40 text-white text-[13px] font-bold uppercase tracking-wide px-4 py-2.5 rounded-lg transition-colors"
                                 >
                                     Customize
                                 </button>
                                 <button
                                     onClick={acceptAll}
-                                    className="bg-white hover:bg-white/90 text-[#1a2128] text-[14px] font-bold uppercase tracking-wider px-5 py-3 rounded-lg transition-colors"
+                                    className="bg-white hover:bg-white/90 text-[#1a2128] text-[13px] font-bold uppercase tracking-wide px-4 py-2.5 rounded-lg transition-colors"
                                 >
                                     Accept All
                                 </button>
