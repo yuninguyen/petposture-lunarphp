@@ -42,6 +42,17 @@ class CategoryResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Select::make('parent_id')
+                    ->label(__('Parent Category'))
+                    ->relationship(
+                        name: 'parent',
+                        titleAttribute: 'name',
+                        modifyQueryUsing: fn ($query, $record) => $query
+                            ->when($record, fn ($q) => $q->where('id', '!=', $record->id)),
+                    )
+                    ->searchable()
+                    ->preload()
+                    ->placeholder(__('None (top-level category)')),
                 Forms\Components\TextInput::make('name')
                     ->label(__('Name'))
                     ->required()
@@ -96,7 +107,11 @@ class CategoryResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label(__('Name'))
+                    ->formatStateUsing(fn ($record) => $record->parent ? '— '.$record->name : $record->name)
                     ->searchable(),
+                Tables\Columns\TextColumn::make('parent.name')
+                    ->label(__('Parent'))
+                    ->placeholder(__('— Top level —')),
                 Tables\Columns\TextColumn::make('slug')
                     ->label(__('Slug')),
                 Tables\Columns\TextColumn::make('products_count')
