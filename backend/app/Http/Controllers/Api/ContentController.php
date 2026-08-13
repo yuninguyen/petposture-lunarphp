@@ -69,9 +69,27 @@ class ContentController extends Controller
 
         return str_replace(
             ['{{business_phone}}', '{{business_address}}', '{{business_address_inline}}'],
-            [$phone, str_replace(', ', '<br>', $address), $address],
+            [$phone, $this->formatAddressMultiline($address), $address],
             $content
         );
+    }
+
+    /**
+     * "Street, City, State Zip, Country" -> "Street<br>City, State Zip<br>Country"
+     * (3 display lines, not one per comma) — matches the standard mailing-address
+     * layout: street / city+state+zip / country.
+     */
+    private function formatAddressMultiline(string $address): string
+    {
+        $parts = array_map('trim', explode(',', $address));
+
+        if (count($parts) === 4) {
+            [$street, $city, $stateZip, $country] = $parts;
+
+            return "{$street}<br>{$city}, {$stateZip}<br>{$country}";
+        }
+
+        return str_replace(', ', '<br>', $address);
     }
 
     public function categories()
