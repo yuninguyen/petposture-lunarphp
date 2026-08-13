@@ -44,7 +44,7 @@ export default function ShopPage({
                 <div className="mx-auto max-w-[1280px]">
                     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                         <div>
-                            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-secondary-dark">
+                            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-rust">
                                 {heroEyebrow}
                             </p>
                             <h1 className="max-w-[760px] text-[28px] font-bold leading-tight text-[#2d3a43] md:text-[40px]">
@@ -60,9 +60,9 @@ export default function ShopPage({
                             type="button"
                             onClick={() => setMobileFiltersOpen((open) => !open)}
                             aria-expanded={mobileFiltersOpen}
-                            className="flex items-center gap-2 self-start rounded-full border border-[#e3d6c9] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8f93] shadow-sm transition-colors hover:border-secondary hover:text-secondary-dark lg:hidden [transform:translateZ(0)]"
+                            className="flex items-center gap-2 self-start rounded-full border border-[#e3d6c9] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8f93] shadow-sm transition-colors hover:border-secondary hover:text-rust lg:hidden [transform:translateZ(0)]"
                         >
-                            <SlidersHorizontal size={14} className="text-secondary-dark" />
+                            <SlidersHorizontal size={14} className="text-rust" />
                             {mobileFiltersOpen ? 'Hide Filters' : 'Show Filters'}
                             {shopLogic.hasActiveFilters && (
                                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-secondary" />
@@ -99,7 +99,7 @@ export default function ShopPage({
                         <div className="mb-5 flex flex-col gap-3 rounded-[24px] border border-[#eadfd3] bg-white px-5 py-4 shadow-[0_18px_50px_rgba(34,33,33,0.05)] md:flex-row md:items-center md:justify-between">
                             <div>
                                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#8b8f93]">
-                                    <SlidersHorizontal size={14} className="text-secondary-dark" />
+                                    <SlidersHorizontal size={14} className="text-rust" />
                                     Storefront overview
                                 </div>
                                 <h2 className="mt-2 text-[21px] font-semibold text-[#2d3a43]">
@@ -152,7 +152,7 @@ export default function ShopPage({
                 <div className="mx-auto max-w-[1000px]">
                     <div className="relative overflow-hidden rounded-2xl bg-primary p-8 text-center shadow-xl md:p-14">
                         <div className="relative z-10">
-                            <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-secondary-dark">
+                            <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-rust">
                                 PetPosture Dispatch
                             </p>
                             <h2 className="mb-4 text-[32px] font-bold tracking-tight text-white md:text-[36px]">

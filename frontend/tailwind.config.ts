@@ -46,16 +46,18 @@ const config: Config = {
         secondary: {
           DEFAULT: '#df8448',
           light: '#fdf2ea',
-          // Darkened from #c9713a (fixed 2026-08-13) so text-secondary-dark
-          // passes WCAG AA (6.63:1) when used as text color on light
-          // backgrounds — #c9713a only reached 3.55:1. Also used for
-          // hover:bg-secondary-dark button states (still reads as "orange").
-          dark: '#8f4a1f',
+          dark: '#c9713a',   // hover:bg-secondary-dark — moderate darken, not too jarring
         },
         // Near-black text color for use on top of the brand orange (secondary) —
         // white-on-secondary fails WCAG AA contrast (2.78:1); this passes (5.63:1)
         // without changing the orange itself. Matches CookieBanner's #1a2128.
         ink: '#1a2128',
+        // Dark orange for TEXT use on light backgrounds only (eyebrow labels,
+        // prices) — text-secondary (#df8448) fails WCAG AA as text (2.78:1);
+        // this passes (6.63:1). Deliberately separate from secondary.dark,
+        // which stays lighter since it's a hover *background* (fixed
+        // 2026-08-13 after #8f4a1f made button hovers feel too dark).
+        rust: '#8f4a1f',
 
         // Semantic
         success: {

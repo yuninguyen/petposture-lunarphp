@@ -106,7 +106,7 @@ function paymentTone(status?: string | null) {
         case "cancelled":
             return "bg-[#fff1f1] text-[#c03d3d]";
         default:
-            return "bg-[#fff3eb] text-secondary-dark";
+            return "bg-[#fff3eb] text-rust";
     }
 }
 
@@ -440,7 +440,7 @@ function OrderSuccessContent() {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#faf9f8] px-6 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#fff3eb]">
-                    <Package size={26} className="text-secondary-dark" />
+                    <Package size={26} className="text-rust" />
                 </div>
                 <h1 className="text-[22px] font-semibold text-[#1a1a1a]">
                     Order not found
@@ -495,11 +495,11 @@ function OrderSuccessContent() {
                             <CheckCircle
                                 size={28}
                                 strokeWidth={2}
-                                className="text-secondary-dark"
+                                className="text-rust"
                             />
                         </div>
                         <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary-dark">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rust">
                                 Order #{order.reference}
                             </p>
                             <h1 className="mt-0.5 text-[26px] font-bold leading-tight tracking-tight text-[#2f3d46] md:text-[30px]">
@@ -513,7 +513,7 @@ function OrderSuccessContent() {
                         <p className="flex items-start gap-2.5 text-[14px] leading-[1.65] text-[#7a4020]">
                             <Mail
                                 size={15}
-                                className="mt-0.5 flex-shrink-0 text-secondary-dark"
+                                className="mt-0.5 flex-shrink-0 text-rust"
                             />
                             <span>
                                 Your order is confirmed. We&apos;ve sent a confirmation email to{" "}
@@ -581,7 +581,7 @@ function OrderSuccessContent() {
                                     href={shipment.tracking_url}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex h-10 items-center justify-center rounded-[6px] border border-secondary px-4 text-sm font-semibold text-secondary-dark transition hover:bg-[#fff4ec]"
+                                    className="inline-flex h-10 items-center justify-center rounded-[6px] border border-secondary px-4 text-sm font-semibold text-rust transition hover:bg-[#fff4ec]"
                                 >
                                     Open tracking
                                 </a>
@@ -795,12 +795,12 @@ function OrderSuccessContent() {
                             {parseFloat(order.discount_total) > 0 && (
                                 <div className="flex items-center justify-between text-sm">
                                     <div className="flex items-center gap-2">
-                                        <Tag className="w-3.5 h-3.5 text-secondary-dark" />
+                                        <Tag className="w-3.5 h-3.5 text-rust" />
                                         <span className="text-[#707070]">
                                             Discount {order.coupon_code && <span className="uppercase font-medium text-[#1a1a1a]">({order.coupon_code})</span>}
                                         </span>
                                     </div>
-                                    <span className="font-semibold text-secondary-dark">
+                                    <span className="font-semibold text-rust">
                                         −${order.discount_total}
                                     </span>
                                 </div>

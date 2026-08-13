@@ -71,13 +71,13 @@ export function CartDrawer() {
 
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="text-sm font-bold text-primary leading-tight mb-1 hover:text-secondary-dark transition-colors cursor-pointer">
+                                            <h3 className="text-sm font-bold text-primary leading-tight mb-1 hover:text-rust transition-colors cursor-pointer">
                                                 {item.name}
                                             </h3>
                                             <div className="flex items-center gap-2 text-sm font-medium text-zinc-400">
                                                 <span>{item.quantity}</span>
                                                 <span>&times;</span>
-                                                <span className="text-secondary-dark font-bold">${item.price.toFixed(2)}</span>
+                                                <span className="text-rust font-bold">${item.price.toFixed(2)}</span>
                                             </div>
 
                                             {/* Quantity Adjuster Mini */}

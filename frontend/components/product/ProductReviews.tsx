@@ -89,7 +89,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                 <span className="text-[64px] font-black text-primary leading-none">{averageRating ?? '—'}</span>
                                 <div className="flex justify-center gap-1.5 my-4">
                                     {[...Array(5)].map((_, i) => (
-                                        <Star key={i} size={18} className={averageRating !== null && i < Math.round(Number(averageRating)) ? "text-secondary-dark fill-secondary" : "text-zinc-100"} />
+                                        <Star key={i} size={18} className={averageRating !== null && i < Math.round(Number(averageRating)) ? "text-rust fill-secondary" : "text-zinc-100"} />
                                     ))}
                                 </div>
                                 <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest">
@@ -147,7 +147,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                                             key={star}
                                                             type="button"
                                                             onClick={() => setFormData({ ...formData, rating: star })}
-                                                            className={`p-2 rounded-lg transition-colors ${formData.rating >= star ? 'text-secondary-dark' : 'text-zinc-200'}`}
+                                                            className={`p-2 rounded-lg transition-colors ${formData.rating >= star ? 'text-rust' : 'text-zinc-200'}`}
                                                         >
                                                             <Star size={24} fill={formData.rating >= star ? 'currentColor' : 'none'} />
                                                         </button>
@@ -198,7 +198,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                     >
                                         <div className="flex items-center justify-between mb-6">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-zinc-50 rounded-full flex items-center justify-center text-zinc-300 group-hover:bg-secondary/10 group-hover:text-secondary-dark transition-colors">
+                                                <div className="w-12 h-12 bg-zinc-50 rounded-full flex items-center justify-center text-zinc-300 group-hover:bg-secondary/10 group-hover:text-rust transition-colors">
                                                     <User size={20} />
                                                 </div>
                                                 <div>
@@ -210,7 +210,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                             </div>
                                             <div className="flex gap-1">
                                                 {[...Array(5)].map((_, i) => (
-                                                    <Star key={i} size={14} className={i < review.rating ? "text-secondary-dark fill-secondary" : "text-zinc-100"} />
+                                                    <Star key={i} size={14} className={i < review.rating ? "text-rust fill-secondary" : "text-zinc-100"} />
                                                 ))}
                                             </div>
                                         </div>

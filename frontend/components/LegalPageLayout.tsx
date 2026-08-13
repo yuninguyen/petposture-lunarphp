@@ -114,7 +114,7 @@ export default function LegalPageLayout({ page }: { page: LegalPage }) {
                                     <button
                                         key={s.id}
                                         onClick={() => scrollTo(s.id)}
-                                        className={`text-left text-sm font-bold uppercase tracking-wider transition-all hover:text-secondary ${activeSection === s.id ? 'text-secondary-dark pl-2 border-l-2 border-secondary' : 'text-[#666666]'
+                                        className={`text-left text-sm font-bold uppercase tracking-wider transition-all hover:text-secondary ${activeSection === s.id ? 'text-rust pl-2 border-l-2 border-secondary' : 'text-[#666666]'
                                             }`}
                                     >
                                         {s.title}
@@ -126,7 +126,7 @@ export default function LegalPageLayout({ page }: { page: LegalPage }) {
 
                     <div className="flex-1 max-w-[800px]">
                         <div
-                            className="max-w-none text-[#4a4a4a] text-[16px] leading-[1.8] [&_h2]:text-[28px] [&_h2]:font-bold [&_h2]:text-primary [&_h2]:uppercase [&_h2]:tracking-tight [&_h2]:mt-12 [&_h2]:mb-6 [&_h3]:text-[20px] [&_h3]:font-bold [&_h3]:text-primary [&_h3]:mt-8 [&_h3]:mb-4 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-6 [&_ul]:space-y-2 [&_li]:pl-1 [&_a]:text-secondary-dark [&_a:hover]:underline [&_strong]:font-bold [&_em]:italic [&_blockquote]:bg-[#f8fafc] [&_blockquote]:border [&_blockquote]:border-zinc-100 [&_blockquote]:rounded-2xl [&_blockquote]:p-8 [&_blockquote]:mb-8 [&_blockquote_p]:mb-3 [&_blockquote_p:last-child]:mb-0 [&_blockquote]:not-italic"
+                            className="max-w-none text-[#4a4a4a] text-[16px] leading-[1.8] [&_h2]:text-[28px] [&_h2]:font-bold [&_h2]:text-primary [&_h2]:uppercase [&_h2]:tracking-tight [&_h2]:mt-12 [&_h2]:mb-6 [&_h3]:text-[20px] [&_h3]:font-bold [&_h3]:text-primary [&_h3]:mt-8 [&_h3]:mb-4 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-6 [&_ul]:space-y-2 [&_li]:pl-1 [&_a]:text-rust [&_a:hover]:underline [&_strong]:font-bold [&_em]:italic [&_blockquote]:bg-[#f8fafc] [&_blockquote]:border [&_blockquote]:border-zinc-100 [&_blockquote]:rounded-2xl [&_blockquote]:p-8 [&_blockquote]:mb-8 [&_blockquote_p]:mb-3 [&_blockquote_p:last-child]:mb-0 [&_blockquote]:not-italic"
                             dangerouslySetInnerHTML={{ __html: contentWithIds }}
                         />
                     </div>

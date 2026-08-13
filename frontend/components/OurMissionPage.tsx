@@ -110,7 +110,7 @@ export default function OurMissionPage() {
                             viewport={{ once: true }}
                             transition={{ duration: 0.8 }}
                         >
-                            <h3 className="text-[14px] font-bold uppercase tracking-[0.15em] text-secondary-dark mb-6">Our Origin Story</h3>
+                            <h3 className="text-[14px] font-bold uppercase tracking-[0.15em] text-rust mb-6">Our Origin Story</h3>
                             <h4 className="text-[24px] font-bold text-primary tracking-[0.1em] leading-tight mb-8">WHY WE STARTED PETPOSTURE</h4>
                             <p className="text-[15px] md:text-[17px] text-[#333333] leading-relaxed mb-6 font-medium">
                                 We saw pets struggling with products not built for them. We saw flat-faced breeds like Pugs and Frenchies straining their necks and struggling to breathe at mealtimes.
@@ -227,7 +227,7 @@ export default function OurMissionPage() {
 
                         <Link
                             href="/shop"
-                            className="inline-block px-10 py-3 border-2 border-secondary text-secondary-dark font-bold uppercase tracking-[.2em] text-[15px] hover:bg-secondary hover:text-ink transition-all duration-500 rounded relative group overflow-hidden"
+                            className="inline-block px-10 py-3 border-2 border-secondary text-rust font-bold uppercase tracking-[.2em] text-[15px] hover:bg-secondary hover:text-ink transition-all duration-500 rounded relative group overflow-hidden"
                         >
                             <span className="relative z-10">Shop Our Solutions</span>
                             <div className="absolute inset-0 bg-secondary translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>

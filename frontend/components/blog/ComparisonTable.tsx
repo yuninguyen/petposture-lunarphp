@@ -39,7 +39,7 @@ function Stars({ rating }: { rating: number }) {
                 <Star
                     key={i}
                     size={13}
-                    className={i < rounded ? 'fill-secondary text-secondary-dark' : 'text-zinc-200'}
+                    className={i < rounded ? 'fill-secondary text-rust' : 'text-zinc-200'}
                 />
             ))}
         </div>
@@ -52,7 +52,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
     return (
         <div className="flex flex-col rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
             {item.highlight ? (
-                <span className="mb-3 inline-block w-fit rounded-full bg-secondary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-secondary-dark">
+                <span className="mb-3 inline-block w-fit rounded-full bg-secondary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-rust">
                     {HIGHLIGHT_LABEL[item.highlight]}
                 </span>
             ) : (
@@ -106,7 +106,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
                 {item.in_house_match_url ? (
                     <a
                         href={item.in_house_match_url}
-                        className="text-center text-[11.5px] font-bold text-secondary-dark underline underline-offset-2"
+                        className="text-center text-[11.5px] font-bold text-rust underline underline-offset-2"
                     >
                         We carry a similar product
                     </a>

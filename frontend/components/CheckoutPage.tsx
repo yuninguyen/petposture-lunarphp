@@ -939,7 +939,7 @@ export default function CheckoutPage() {
                         }}
                         className="flex w-full items-start gap-3 border-b border-[#f1f1f3] px-4 py-3 text-left transition hover:bg-[#faf7f3] last:border-b-0"
                     >
-                        <MapPinHouse size={16} className="mt-0.5 flex-shrink-0 text-secondary-dark" />
+                        <MapPinHouse size={16} className="mt-0.5 flex-shrink-0 text-rust" />
                         <div className="min-w-0">
                             <p className="text-[14px] font-medium text-[#333333]">{suggestion.mainText}</p>
                             <p className="text-sm leading-5 text-[#707070]">
@@ -1548,7 +1548,7 @@ export default function CheckoutPage() {
                         >
                             <div className="mb-4 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-secondary-dark">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-rust">
                                         <Mail size={16} />
                                     </div>
                                     <h2 className="text-[18px] font-semibold text-[#333333]">Contact</h2>
@@ -1592,7 +1592,7 @@ export default function CheckoutPage() {
                             onPointerDownCapture={() => activateStep('shipping')}
                         >
                             <div className="mb-4 flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-secondary-dark">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-rust">
                                     <MapPinHouse size={16} />
                                 </div>
                                 <h2 className="text-[18px] font-semibold text-[#333333]">Delivery</h2>
@@ -1679,7 +1679,7 @@ export default function CheckoutPage() {
                         >
                             <div className="mb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-secondary-dark">
+                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-rust">
                                         <CreditCard size={16} />
                                     </div>
                                     <h2 className="text-[18px] font-semibold text-[#333333]">Payment</h2>

@@ -133,7 +133,7 @@ export default function FaqsPage() {
                                 <button
                                     key={cat.id}
                                     onClick={() => scrollTo(cat.id)}
-                                    className={`text-left text-[14px] font-bold uppercase tracking-wider transition-all hover:text-secondary ${activeCategory === cat.id ? 'text-secondary-dark pl-3 border-l-2 border-secondary' : 'text-primary/60 pl-3 border-l-2 border-transparent'
+                                    className={`text-left text-[14px] font-bold uppercase tracking-wider transition-all hover:text-secondary ${activeCategory === cat.id ? 'text-rust pl-3 border-l-2 border-secondary' : 'text-primary/60 pl-3 border-l-2 border-transparent'
                                         }`}
                                 >
                                     {cat.title}
@@ -159,13 +159,13 @@ export default function FaqsPage() {
                                                     onClick={() => toggleItem(globalIdx)}
                                                     className="w-full flex items-center justify-between py-4 text-left group transition-all"
                                                 >
-                                                    <span className={`text-[17px] font-semibold transition-colors ${isOpen ? 'text-secondary-dark' : 'text-primary group-hover:text-secondary-dark'
+                                                    <span className={`text-[17px] font-semibold transition-colors ${isOpen ? 'text-rust' : 'text-primary group-hover:text-rust'
                                                         }`}>
                                                         {item.question}
                                                     </span>
                                                     <ChevronDown
                                                         size={20}
-                                                        className={`text-zinc-300 transition-transform duration-300 ${isOpen ? 'rotate-180 text-secondary-dark' : ''}`}
+                                                        className={`text-zinc-300 transition-transform duration-300 ${isOpen ? 'rotate-180 text-rust' : ''}`}
                                                     />
                                                 </button>
                                                 <AnimatePresence>
@@ -193,7 +193,7 @@ export default function FaqsPage() {
                         {/* Contact CTA */}
                         <div className="mt-16 bg-[#f8f9fa] rounded-2xl p-10 text-center border border-zinc-100">
                             <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                                <MessageSquare className="text-secondary-dark" size={28} />
+                                <MessageSquare className="text-rust" size={28} />
                             </div>
                             <h3 className="text-[22px] font-bold text-primary mb-4 uppercase tracking-widest">Still have questions?</h3>
                             <p className="text-[#666666] mb-8 max-w-md mx-auto text-[15px]">

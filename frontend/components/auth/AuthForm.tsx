@@ -97,7 +97,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                         </p>
                         <button
                             onClick={() => { setMode('login'); setEmail(''); }}
-                            className="text-secondary-dark text-sm font-bold underline underline-offset-2 hover:text-secondary-dark transition-colors"
+                            className="text-rust text-sm font-bold underline underline-offset-2 hover:text-rust transition-colors"
                         >
                             Back to Sign In
                         </button>
@@ -121,13 +121,13 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                             <div className="inline-flex overflow-hidden rounded-full border border-zinc-100 bg-[#f8f9fa] p-1 mb-8 shadow-sm">
                                 <Link
                                     href="/sign-in"
-                                    className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-colors ${mode === 'login' ? 'bg-white shadow text-secondary-dark border border-zinc-50' : 'text-zinc-400 hover:text-primary'}`}
+                                    className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-colors ${mode === 'login' ? 'bg-white shadow text-rust border border-zinc-50' : 'text-zinc-400 hover:text-primary'}`}
                                 >
                                     Sign In
                                 </Link>
                                 <Link
                                     href="/sign-up"
-                                    className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-colors ${mode === 'register' ? 'bg-white shadow text-secondary-dark border border-zinc-50' : 'text-zinc-400 hover:text-primary'}`}
+                                    className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-widest transition-colors ${mode === 'register' ? 'bg-white shadow text-rust border border-zinc-50' : 'text-zinc-400 hover:text-primary'}`}
                                 >
                                     Register
                                 </Link>
@@ -192,7 +192,7 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                                         <button
                                             type="button"
                                             onClick={() => { setMode('forgot'); setError(null); }}
-                                            className="text-xs font-bold text-secondary-dark hover:text-secondary-dark transition-colors"
+                                            className="text-xs font-bold text-rust hover:text-rust transition-colors"
                                         >
                                             Forgot password?
                                         </button>

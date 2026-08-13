@@ -58,7 +58,7 @@ export default function Header() {
 
           {/* Mobile Menu Toggle */}
           <button
-            className="md:hidden text-primary hover:text-secondary-dark transition-colors p-1"
+            className="md:hidden text-primary hover:text-rust transition-colors p-1"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Menu"
           >
@@ -96,7 +96,7 @@ export default function Header() {
 
           {/* Right: Icons */}
           <div className="flex items-center gap-4 md:gap-6 text-primary flex-shrink-0">
-            <Link href="/wishlist" className="relative hover:text-secondary-dark transition-colors hidden sm:block" aria-label="Wishlist">
+            <Link href="/wishlist" className="relative hover:text-rust transition-colors hidden sm:block" aria-label="Wishlist">
               <Heart size={22} strokeWidth={2} />
               {wishlistItems.length > 0 && (
                 <span className="absolute -top-1 -right-1.5 bg-secondary text-ink text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
@@ -106,24 +106,24 @@ export default function Header() {
             </Link>
             {user ? (
               <div className="flex items-center gap-3">
-                <Link href="/account" className="text-sm font-bold uppercase tracking-widest text-secondary-dark hidden lg:block hover:underline">
+                <Link href="/account" className="text-sm font-bold uppercase tracking-widest text-rust hidden lg:block hover:underline">
                   Hi, {user.name.split(' ')[0]}
                 </Link>
-                <Link href="/account" className="hover:text-secondary-dark transition-colors" title="My Account">
+                <Link href="/account" className="hover:text-rust transition-colors" title="My Account">
                   <User size={22} strokeWidth={2} />
                 </Link>
-                <button onClick={logout} className="hover:text-secondary-dark transition-colors" title="Log Out">
+                <button onClick={logout} className="hover:text-rust transition-colors" title="Log Out">
                   <LogOut size={22} strokeWidth={2} />
                 </button>
               </div>
             ) : (
-              <Link href="/sign-in" className="hover:text-secondary-dark transition-colors" title="Login / Register">
+              <Link href="/sign-in" className="hover:text-rust transition-colors" title="Login / Register">
                 <User size={22} strokeWidth={2} />
               </Link>
             )}
             <button
               onClick={() => setCartOpen(true)}
-              className="relative group p-1 hover:text-secondary-dark transition-colors outline-none"
+              className="relative group p-1 hover:text-rust transition-colors outline-none"
               aria-label="Shopping cart"
             >
               <ShoppingBag size={22} strokeWidth={2} />
@@ -270,10 +270,10 @@ export default function Header() {
                       className={`flex items-center justify-between px-4 py-4 rounded-xl group transition-all duration-300 mb-1 ${isActive(item.href) ? "bg-secondary" : "text-primary hover:bg-zinc-50"
                         }`}
                     >
-                      <span className={`text-[14px] font-bold uppercase tracking-widest transition-colors duration-300 ${isActive(item.href) ? "text-ink" : "group-hover:text-secondary-dark"}`}>
+                      <span className={`text-[14px] font-bold uppercase tracking-widest transition-colors duration-300 ${isActive(item.href) ? "text-ink" : "group-hover:text-rust"}`}>
                         {item.label}
                       </span>
-                      <ChevronRight size={18} className={`transition-all duration-300 ${isActive(item.href) ? "text-ink translate-x-1" : "group-hover:text-secondary-dark group-hover:translate-x-1"}`} />
+                      <ChevronRight size={18} className={`transition-all duration-300 ${isActive(item.href) ? "text-ink translate-x-1" : "group-hover:text-rust group-hover:translate-x-1"}`} />
                     </Link>
                   ))}
                 </nav>
@@ -281,7 +281,7 @@ export default function Header() {
                 {/* Secondary Info */}
                 <div className="mt-10 pt-8 border-t border-zinc-100 space-y-6">
                   <div className="flex items-center gap-4 text-primary">
-                    <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center text-secondary-dark shadow-sm">
+                    <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center text-rust shadow-sm">
                       <Phone size={18} />
                     </div>
                     <div>
@@ -291,7 +291,7 @@ export default function Header() {
                   </div>
 
                   <div className="flex items-center gap-4 text-primary">
-                    <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center text-secondary-dark shadow-sm">
+                    <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center text-rust shadow-sm">
                       <Mail size={18} />
                     </div>
                     <div>

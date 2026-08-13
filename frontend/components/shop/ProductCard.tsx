@@ -38,9 +38,9 @@ export function ProductCard({ product }: { product: Product }) {
                         }}
                         aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                         aria-pressed={wishlisted}
-                        className="absolute right-3 bottom-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-[#56616a] shadow-sm transition hover:text-secondary-dark"
+                        className="absolute right-3 bottom-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-[#56616a] shadow-sm transition hover:text-rust"
                     >
-                        <Heart size={16} className={wishlisted ? 'fill-secondary text-secondary-dark' : ''} />
+                        <Heart size={16} className={wishlisted ? 'fill-secondary text-rust' : ''} />
                     </button>
 
                     <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
@@ -74,7 +74,7 @@ export function ProductCard({ product }: { product: Product }) {
                         <Star
                             key={i}
                             size={11}
-                            className={product.reviews > 0 && i < product.rating ? "fill-secondary text-secondary-dark" : "text-zinc-200"}
+                            className={product.reviews > 0 && i < product.rating ? "fill-secondary text-rust" : "text-zinc-200"}
                         />
                     ))}
                     <span className="ml-1 text-xs font-medium text-[#8b8f93]">
@@ -83,14 +83,14 @@ export function ProductCard({ product }: { product: Product }) {
                 </div>
 
                 <Link href={`/shop/${product.categorySlug}/${product.slug}`} className="block">
-                    <h3 className="line-clamp-2 min-h-[48px] text-[16px] font-semibold leading-6 text-[#2d3a43] transition-colors group-hover:text-secondary-dark">
+                    <h3 className="line-clamp-2 min-h-[48px] text-[16px] font-semibold leading-6 text-[#2d3a43] transition-colors group-hover:text-rust">
                         {product.name}
                     </h3>
                 </Link>
 
                 <div className="mt-3 flex items-end justify-between gap-3">
                     <div className="flex items-center gap-3 font-bold">
-                        <span className="text-[16px] text-secondary-dark">${product.price.toFixed(2)}</span>
+                        <span className="text-[16px] text-rust">${product.price.toFixed(2)}</span>
                         {(product.comparePrice ?? product.oldPrice) != null && (
                             <span className="text-xs font-medium text-zinc-300 line-through">${(product.comparePrice ?? product.oldPrice)!.toFixed(2)}</span>
                         )}
@@ -98,7 +98,7 @@ export function ProductCard({ product }: { product: Product }) {
 
                     <Link
                         href={`/shop/${product.categorySlug}/${product.slug}`}
-                        className="inline-flex items-center gap-1 text-sm font-bold uppercase tracking-[0.06em] text-[#54646e] transition-colors hover:text-secondary-dark"
+                        className="inline-flex items-center gap-1 text-sm font-bold uppercase tracking-[0.06em] text-[#54646e] transition-colors hover:text-rust"
                     >
                         View <ArrowUpRight size={14} />
                     </Link>

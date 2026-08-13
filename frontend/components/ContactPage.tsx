@@ -15,11 +15,11 @@ import { useSettings } from '@/context/SettingsContext';
 function ContactInfoItem({ icon: Icon, label, value, href, note }: { icon: React.ElementType, label: string, value: string, href?: string, note?: string }) {
     const content = (
         <div className="flex items-start gap-4 p-5 rounded-lg border border-zinc-100 bg-white hover:border-secondary/30 transition-all duration-300 group shadow-sm hover:shadow-md h-full">
-            <div className="w-12 h-12 rounded-full bg-secondary/5 flex items-center justify-center text-secondary-dark group-hover:bg-secondary group-hover:text-ink transition-all shrink-0">
+            <div className="w-12 h-12 rounded-full bg-secondary/5 flex items-center justify-center text-rust group-hover:bg-secondary group-hover:text-ink transition-all shrink-0">
                 <Icon size={20} />
             </div>
             <div className="flex-1">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-secondary-dark mb-1">{label}</p>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-rust mb-1">{label}</p>
                 <p className="text-[15px] font-bold text-primary leading-tight">{value}</p>
                 {note && (
                     <p className="text-xs text-zinc-400 mt-1 font-medium italic">
@@ -133,7 +133,7 @@ export default function ContactPage() {
             {/* Hero Section - Clean & High-End */}
             <section className="bg-gray-50 py-12 px-4 md:px-8 border-b border-zinc-100">
                 <div className="max-w-[1200px] mx-auto text-center">
-                    <div className="inline-block px-4 py-1.5 bg-secondary/5 border border-secondary/20 rounded text-xs font-black uppercase tracking-[0.25em] text-secondary-dark mb-6">
+                    <div className="inline-block px-4 py-1.5 bg-secondary/5 border border-secondary/20 rounded text-xs font-black uppercase tracking-[0.25em] text-rust mb-6">
                         Get in touch
                     </div>
                     <h1 className="text-[32px] md:text-[48px] font-black uppercase tracking-[0.1em] text-primary mb-6 leading-tight">
@@ -185,7 +185,7 @@ export default function ContactPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Full Name */}
                                 <div className="relative group">
-                                    <label htmlFor="name" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-secondary-dark ${fieldErrors.name ? 'text-red-500' : 'text-primary/40'}`}>Full Name *</label>
+                                    <label htmlFor="name" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-rust ${fieldErrors.name ? 'text-red-500' : 'text-primary/40'}`}>Full Name *</label>
                                     <input
                                         type="text"
                                         id="name"
@@ -201,7 +201,7 @@ export default function ContactPage() {
 
                                 {/* Email Address */}
                                 <div className="relative group">
-                                    <label htmlFor="email" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-secondary-dark ${fieldErrors.email ? 'text-red-500' : 'text-primary/40'}`}>Email Address *</label>
+                                    <label htmlFor="email" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-rust ${fieldErrors.email ? 'text-red-500' : 'text-primary/40'}`}>Email Address *</label>
                                     <input
                                         type="email"
                                         id="email"
@@ -219,7 +219,7 @@ export default function ContactPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Order Number */}
                                 <div className="relative group">
-                                    <label htmlFor="orderNumber" className="text-sm font-semibold uppercase tracking-[0.08em] text-primary/40 mb-2 block transition-colors group-focus-within:text-secondary-dark">Order Number (Optional)</label>
+                                    <label htmlFor="orderNumber" className="text-sm font-semibold uppercase tracking-[0.08em] text-primary/40 mb-2 block transition-colors group-focus-within:text-rust">Order Number (Optional)</label>
                                     <input
                                         type="text"
                                         id="orderNumber"
@@ -233,7 +233,7 @@ export default function ContactPage() {
 
                                 {/* Subject */}
                                 <div className="relative group">
-                                    <label htmlFor="subject" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-secondary-dark ${fieldErrors.subject ? 'text-red-500' : 'text-primary/40'}`}>Subject / Inquiry Type *</label>
+                                    <label htmlFor="subject" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-rust ${fieldErrors.subject ? 'text-red-500' : 'text-primary/40'}`}>Subject / Inquiry Type *</label>
                                     <input
                                         type="text"
                                         id="subject"
@@ -250,7 +250,7 @@ export default function ContactPage() {
 
                             {/* Message */}
                             <div className="relative group">
-                                <label htmlFor="message" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-secondary-dark ${fieldErrors.message ? 'text-red-500' : 'text-primary/40'}`}>Your Message *</label>
+                                <label htmlFor="message" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-rust ${fieldErrors.message ? 'text-red-500' : 'text-primary/40'}`}>Your Message *</label>
                                 <textarea
                                     id="message"
                                     name="message"
@@ -330,7 +330,7 @@ export default function ContactPage() {
                                 <p className="text-white/60 text-sm leading-relaxed mb-6">
                                     Many common questions about shipping, returns, and breed-specific fits are answered in our Help Center.
                                 </p>
-                                <Link href="/faqs" className="inline-flex items-center gap-2 text-secondary-dark font-black text-sm uppercase tracking-widest hover:text-white transition-colors group">
+                                <Link href="/faqs" className="inline-flex items-center gap-2 text-rust font-black text-sm uppercase tracking-widest hover:text-white transition-colors group">
                                     Visit Help Center <span className="group-hover:translate-x-1 transition-transform">→</span>
                                 </Link>
                             </div>

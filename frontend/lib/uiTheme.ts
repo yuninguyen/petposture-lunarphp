@@ -10,7 +10,10 @@ export const C = {
     secondary: '#df8448',
     secondaryHover: '#c9713a',
     secondaryText: '#df8448',
-    secondaryTextHover: '#8f4a1f',
+    secondaryTextHover: '#c9713a',
+    // Text-only accessible orange (WCAG AA, 6.63:1) — for eyebrow labels/prices
+    // on light backgrounds. Not for hover backgrounds (use secondaryTextHover).
+    rust: '#8f4a1f',
     secondaryLight: '#fdf2ea',
     white: '#ffffff',
     // Near-black text for use on top of `secondary`/`secondaryText` orange —

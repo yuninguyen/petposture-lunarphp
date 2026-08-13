@@ -86,16 +86,16 @@ export default function ProductGrid() {
                       key={i}
                       size={9}
                       fill={i < p.rating ? "currentColor" : "none"}
-                      className={i < p.rating ? "text-secondary-dark" : "text-zinc-300"}
+                      className={i < p.rating ? "text-rust" : "text-zinc-300"}
                       aria-hidden="true"
                     />
                   ))}
                 </div>
-                <h3 className="text-sm font-bold uppercase tracking-[0.05em] text-primary mb-3 leading-tight group-hover:text-secondary-dark transition-colors">
+                <h3 className="text-sm font-bold uppercase tracking-[0.05em] text-primary mb-3 leading-tight group-hover:text-rust transition-colors">
                   {p.name}
                 </h3>
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-sm font-black text-secondary-dark">{p.price}</span>
+                  <span className="text-sm font-black text-rust">{p.price}</span>
                   {p.oldPrice && (
                     <span className="text-sm text-zinc-300 line-through font-medium">{p.oldPrice}</span>
                   )}

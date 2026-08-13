@@ -17,7 +17,7 @@ export default function WishlistPage() {
 
             <section className="border-b border-[#e7ddd2] bg-[linear-gradient(180deg,_#faf6f1_0%,_#f3ede5_100%)] px-4 py-8 md:px-8 md:py-10">
                 <div className="mx-auto max-w-[1280px]">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-secondary-dark">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-rust">
                         My Wishlist
                     </p>
                     <h1 className="max-w-[760px] text-[28px] font-bold leading-tight text-[#2d3a43] md:text-[40px]">

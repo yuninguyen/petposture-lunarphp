@@ -155,7 +155,7 @@ export default function TrackOrderPage() {
                         <motion.span
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="inline-block px-4 py-1.5 bg-secondary/10 text-secondary-dark text-xs font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
+                            className="inline-block px-4 py-1.5 bg-secondary/10 text-rust text-xs font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
                         >
                             Order Tracking
                         </motion.span>
@@ -293,7 +293,7 @@ export default function TrackOrderPage() {
                                                             href={latestShipment(statusData)?.tracking_url || "#"}
                                                             target="_blank"
                                                             rel="noreferrer"
-                                                            className="font-semibold text-secondary-dark hover:underline"
+                                                            className="font-semibold text-rust hover:underline"
                                                         >
                                                             Open carrier tracking
                                                         </a>
@@ -346,7 +346,7 @@ export default function TrackOrderPage() {
                                                 </div>
                                                 <Link
                                                     href={`/returns?ref=${encodeURIComponent(statusData.reference)}&email=${encodeURIComponent(email)}`}
-                                                    className="whitespace-nowrap text-sm font-bold text-secondary-dark hover:text-secondary-dark transition-colors"
+                                                    className="whitespace-nowrap text-sm font-bold text-rust hover:text-rust transition-colors"
                                                 >
                                                     Request a Return
                                                 </Link>
@@ -367,7 +367,7 @@ export default function TrackOrderPage() {
                                 <motion.div variants={fadeUp} className="mb-12">
                                     <h3 className="text-[28px] font-bold text-primary mb-4 flex items-center gap-4">
                                         Tracking Questions?
-                                        <HelpCircle className="text-secondary-dark" size={24} />
+                                        <HelpCircle className="text-rust" size={24} />
                                     </h3>
                                     <div className="h-1 w-12 bg-secondary mt-2 rounded-full" />
                                 </motion.div>
@@ -395,7 +395,7 @@ export default function TrackOrderPage() {
                                                 <item.icon size={26} strokeWidth={1.5} />
                                             </div>
                                             <div>
-                                                <h4 className="text-[17px] font-bold text-primary mb-2 group-hover:text-secondary-dark transition-colors">{item.title}</h4>
+                                                <h4 className="text-[17px] font-bold text-primary mb-2 group-hover:text-rust transition-colors">{item.title}</h4>
                                                 <p className="text-zinc-500 text-[15px] leading-relaxed">{item.text}</p>
                                             </div>
                                         </motion.div>
@@ -408,7 +408,7 @@ export default function TrackOrderPage() {
                                         <p className="text-zinc-600 text-[14px] leading-relaxed mb-6">
                                             Every PetPosture product undergoes rigorous quality checks before leaving our facility to ensure your pet receives only the best.
                                         </p>
-                                        <Link href="/contact" className="text-secondary-dark font-bold uppercase tracking-widest text-sm flex items-center gap-2 hover:text-primary transition-colors">
+                                        <Link href="/contact" className="text-rust font-bold uppercase tracking-widest text-sm flex items-center gap-2 hover:text-primary transition-colors">
                                             Contact Support <ChevronRight size={14} />
                                         </Link>
                                     </div>
@@ -426,7 +426,7 @@ export default function TrackOrderPage() {
                 {/* Return Link Footer */}
                 <section className="py-16 bg-zinc-50">
                     <div className="max-w-[1200px] mx-auto px-4 text-center">
-                        <Link href="/" className="inline-flex items-center gap-3 text-primary/40 hover:text-secondary-dark font-bold uppercase tracking-[0.25em] text-sm transition-all">
+                        <Link href="/" className="inline-flex items-center gap-3 text-primary/40 hover:text-rust font-bold uppercase tracking-[0.25em] text-sm transition-all">
                             <ArrowLeft size={16} /> Back to Homepage
                         </Link>
                     </div>

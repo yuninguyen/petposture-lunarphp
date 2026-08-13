@@ -237,7 +237,7 @@ function RequestReturnContent() {
                         <motion.span
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="inline-block px-4 py-1.5 bg-secondary/10 text-secondary-dark text-xs font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
+                            className="inline-block px-4 py-1.5 bg-secondary/10 text-rust text-xs font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
                         >
                             Returns
                         </motion.span>
@@ -276,7 +276,7 @@ function RequestReturnContent() {
                                     <p className="text-zinc-500 text-[15px] leading-relaxed mb-8">
                                         We&rsquo;ve received your request for order #{order?.reference}. Our team will review it and email you with next steps.
                                     </p>
-                                    <Link href="/" className="inline-flex items-center gap-3 text-secondary-dark font-bold uppercase tracking-[0.2em] text-sm hover:text-primary transition-all">
+                                    <Link href="/" className="inline-flex items-center gap-3 text-rust font-bold uppercase tracking-[0.2em] text-sm hover:text-primary transition-all">
                                         <ArrowLeft size={16} /> Back to Homepage
                                     </Link>
                                 </div>
@@ -343,7 +343,7 @@ function RequestReturnContent() {
                                             const windowMessage = getReturnWindowMessage(order);
                                             if (!windowMessage) return null;
                                             return (
-                                                <p className={`text-sm font-semibold mt-2 ${windowMessage.expired ? "text-red-500" : "text-secondary-dark"}`}>
+                                                <p className={`text-sm font-semibold mt-2 ${windowMessage.expired ? "text-red-500" : "text-rust"}`}>
                                                     {windowMessage.text}
                                                 </p>
                                             );
@@ -424,7 +424,7 @@ function RequestReturnContent() {
 
                                     <p className="text-sm text-zinc-400 leading-relaxed">
                                         Approved returns are refunded minus a 25% restocking fee and original shipping cost. See our{" "}
-                                        <Link href="/return-refund-policy" className="text-secondary-dark font-semibold underline underline-offset-2" target="_blank">
+                                        <Link href="/return-refund-policy" className="text-rust font-semibold underline underline-offset-2" target="_blank">
                                             Return &amp; Refund Policy
                                         </Link>{" "}
                                         for full details.

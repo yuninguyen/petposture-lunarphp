@@ -127,7 +127,7 @@ export default function BlogPage() {
         return (
             <div className="flex min-h-screen items-center justify-center bg-white font-hanken">
                 <div className="text-center">
-                    <Loader2 className="mx-auto mb-6 animate-spin text-secondary-dark" size={48} />
+                    <Loader2 className="mx-auto mb-6 animate-spin text-rust" size={48} />
                     <p className="text-sm font-bold uppercase tracking-widest text-primary">
                         Curating your feed...
                     </p>
@@ -165,7 +165,7 @@ export default function BlogPage() {
                             </div>
                             <div className="flex flex-col justify-center p-8 md:p-12 lg:w-2/5">
                                 <div className="mb-6 flex items-center gap-3">
-                                    <span className="text-sm font-bold uppercase tracking-widest text-secondary-dark">
+                                    <span className="text-sm font-bold uppercase tracking-widest text-rust">
                                         {featuredPost.blog_category?.name || "Insights"}
                                     </span>
                                     <span className="h-1 w-1 rounded-full bg-zinc-300" />
@@ -180,7 +180,7 @@ export default function BlogPage() {
                                     </span>
                                 </div>
                                 <Link href={`/blog/${featuredPost.slug || featuredPost.id}`}>
-                                    <h1 className="mb-6 cursor-pointer text-[28px] font-bold leading-tight text-primary transition-colors hover:text-secondary-dark md:text-[36px]">
+                                    <h1 className="mb-6 cursor-pointer text-[28px] font-bold leading-tight text-primary transition-colors hover:text-rust md:text-[36px]">
                                         {featuredPost.title}
                                     </h1>
                                 </Link>
@@ -203,7 +203,7 @@ export default function BlogPage() {
                                     </div>
                                     <Link
                                         href={`/blog/${featuredPost.slug || featuredPost.id}`}
-                                        className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-primary transition-all hover:text-secondary-dark"
+                                        className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-primary transition-all hover:text-rust"
                                     >
                                         Continue <ArrowRight size={14} />
                                     </Link>
@@ -305,14 +305,14 @@ export default function BlogPage() {
                                                 sizes="(max-width: 768px) 100vw, 35vw"
                                             />
                                             <div className="absolute left-4 top-4">
-                                                <span className="rounded-[3px] bg-white/90 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-secondary-dark shadow-sm backdrop-blur-sm">
+                                                <span className="rounded-[3px] bg-white/90 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-rust shadow-sm backdrop-blur-sm">
                                                     {post.blog_category?.name || "Insights"}
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="flex flex-1 flex-col py-1">
                                             <div className="mb-3 flex items-center gap-3 text-xs font-bold uppercase tracking-wider text-zinc-400">
-                                                <span className="text-secondary-dark">
+                                                <span className="text-rust">
                                                     {post.author || "PetPosture Editorial"}
                                                 </span>
                                                 <span className="h-1 w-1 rounded-full bg-zinc-200" />
@@ -321,7 +321,7 @@ export default function BlogPage() {
                                                 </span>
                                             </div>
                                             <Link href={`/blog/${post.slug || post.id}`}>
-                                                <h3 className="mb-4 line-clamp-2 cursor-pointer text-[22px] font-bold leading-tight text-primary transition-colors hover:text-secondary-dark md:text-[26px]">
+                                                <h3 className="mb-4 line-clamp-2 cursor-pointer text-[22px] font-bold leading-tight text-primary transition-colors hover:text-rust md:text-[26px]">
                                                     {post.title}
                                                 </h3>
                                             </Link>
@@ -330,16 +330,16 @@ export default function BlogPage() {
                                             </p>
                                             <div className="mt-auto flex items-center justify-between border-t border-zinc-50 pt-5">
                                                 <div className="flex items-center gap-6">
-                                                    <button className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-secondary-dark">
+                                                    <button className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-rust">
                                                         <Share2 size={14} /> Share
                                                     </button>
-                                                    <button className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-secondary-dark">
+                                                    <button className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-rust">
                                                         <MessageSquare size={14} /> Discuss
                                                     </button>
                                                 </div>
                                                 <Link
                                                     href={`/blog/${post.slug || post.id}`}
-                                                    className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.1em] text-primary transition-all hover:text-secondary-dark"
+                                                    className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.1em] text-primary transition-all hover:text-rust"
                                                 >
                                                     Read Story <ChevronRight size={14} />
                                                 </Link>
@@ -361,7 +361,7 @@ export default function BlogPage() {
 
                     <aside className="space-y-12 lg:w-80">
                         <div className="rounded-2xl border border-zinc-100 bg-white p-8 shadow-sm">
-                            <h4 className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.1em] text-secondary-dark">
+                            <h4 className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.1em] text-rust">
                                 Follow PetPosture
                                 <div className="h-1.5 w-1.5 rounded-full bg-secondary/20" />
                             </h4>
@@ -395,7 +395,7 @@ export default function BlogPage() {
 
                         {posts.length > 0 && (
                             <div>
-                                <h4 className="mb-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.1em] text-secondary-dark">
+                                <h4 className="mb-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.1em] text-rust">
                                     Most Discussed
                                     <div className="h-[1px] flex-1 bg-zinc-100" />
                                 </h4>
@@ -413,7 +413,7 @@ export default function BlogPage() {
                                                 Editor&apos;s Pick
                                             </span>
                                         </div>
-                                        <h5 className="mt-3 line-clamp-2 text-[15px] font-bold leading-tight text-primary transition-colors group-hover:text-secondary-dark">
+                                        <h5 className="mt-3 line-clamp-2 text-[15px] font-bold leading-tight text-primary transition-colors group-hover:text-rust">
                                             {posts[0].title}
                                         </h5>
                                     </Link>
@@ -433,7 +433,7 @@ export default function BlogPage() {
                                                 />
                                             </div>
                                             <div className="flex-1">
-                                                <h6 className="mb-1 line-clamp-2 text-sm font-bold leading-snug text-primary transition-colors group-hover:text-secondary-dark">
+                                                <h6 className="mb-1 line-clamp-2 text-sm font-bold leading-snug text-primary transition-colors group-hover:text-rust">
                                                     {post.title}
                                                 </h6>
                                                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
@@ -465,7 +465,7 @@ export default function BlogPage() {
 
                         <div className="relative overflow-hidden rounded-2xl border border-zinc-100 bg-[#f8f9fa] p-8 text-center text-primary">
                             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
-                                <Bookmark className="text-secondary-dark" size={20} />
+                                <Bookmark className="text-rust" size={20} />
                             </div>
                             <p className="relative z-10 text-[15px] font-bold italic leading-relaxed">
                                 &quot;A dog doesn&apos;t need much, but they deserve to be comfortable while they wait for you.&quot;

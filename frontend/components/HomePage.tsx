@@ -236,7 +236,7 @@ function ShopCategories() {
                 <div style={{
                   display: 'inline-block',
                   fontSize: 11, fontWeight: 800,
-                  color: C.secondaryText,
+                  color: C.rust,
                   background: C.white,
                   border: 'none',
                   padding: '4px 10px', borderRadius: 2,
@@ -554,7 +554,7 @@ function MealtimeDiff() {
             <div style={{
               display: 'inline-block',
               fontFamily: F.nav, fontSize: 10, fontWeight: 800,
-              color: C.secondaryText, letterSpacing: '0.14em',
+              color: C.rust, letterSpacing: '0.14em',
               textTransform: 'uppercase', marginBottom: 20,
               background: C.white,
               padding: '6px 16px',
@@ -697,7 +697,7 @@ function BreedBanners() {
               <div style={{
                 display: 'inline-block',
                 fontFamily: F.nav, fontSize: 11, fontWeight: 800,
-                color: C.secondaryText, letterSpacing: '0.12em',
+                color: C.rust, letterSpacing: '0.12em',
                 textTransform: 'uppercase', marginBottom: 14,
                 background: C.white,
                 padding: '6px 16px',
@@ -972,7 +972,7 @@ function PostCard({ post }: { post: BlogPost }) {
       {/* Category Badge */}
       <div style={{
         display: 'inline-block', fontSize: 11, fontWeight: 800,
-        color: C.secondaryText,
+        color: C.rust,
         background: C.secondaryLight,
         border: `1px solid rgba(223,132,72,0.2)`,
         padding: '3px 10px', borderRadius: 2,
@@ -1131,7 +1131,7 @@ function EmailCta() {
         {/* Eyebrow */}
         <div style={{
           fontFamily: F.nav, fontSize: 12, fontWeight: 800,
-          color: C.secondaryText, letterSpacing: '0.2em',
+          color: C.rust, letterSpacing: '0.2em',
           textTransform: 'uppercase', marginBottom: 20,
         }}>
           Join the Pack
