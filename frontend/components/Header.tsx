@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, User, ShoppingBag, Menu, Phone, Mail, Clock, Truck, X, Facebook, Instagram, Twitter, ChevronRight, LogOut } from "lucide-react";
+import { Heart, User, ShoppingBag, Menu, Phone, Mail, Clock, Truck, X, Facebook, Instagram, Twitter, Youtube, ChevronRight, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,6 +10,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useSettings } from "@/context/SettingsContext";
+import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -17,7 +18,7 @@ export default function Header() {
   const { items, setCartOpen } = useCart();
   const { items: wishlistItems } = useWishlist();
   const { user, logout } = useAuth();
-  const { shop_name, shop_logo, contact } = useSettings();
+  const { shop_name, shop_logo, contact, social } = useSettings();
   const logoSrc = shop_logo || "/assets/Logo-PetPosture-1-e1761840892773.png";
   const phone = contact.phone || "+1 (916) 668-0065";
   const phoneHref = `tel:${phone.replace(/[^\d+]/g, "")}`;
@@ -302,12 +303,28 @@ export default function Header() {
                 </div>
 
                 {/* Social Links */}
-                <div className="mt-10 flex gap-4">
-                  {[Facebook, Instagram, Twitter].map((Icon, idx) => (
-                    <a key={idx} href="#" className="w-10 h-10 rounded-full border border-zinc-100 flex items-center justify-center text-primary hover:bg-secondary hover:text-ink transition-all duration-300 shadow-sm">
-                      <Icon size={18} />
-                    </a>
-                  ))}
+                <div className="mt-10 flex flex-wrap gap-4">
+                  {[
+                    { Icon: Facebook, label: "Facebook", href: social.facebook },
+                    { Icon: Instagram, label: "Instagram", href: social.instagram },
+                    { Icon: Twitter, label: "Twitter", href: social.twitter },
+                    { Icon: TikTokIcon, label: "TikTok", href: social.tiktok },
+                    { Icon: PinterestIcon, label: "Pinterest", href: social.pinterest },
+                    { Icon: Youtube, label: "Youtube", href: social.youtube },
+                  ]
+                    .filter(({ href }) => href)
+                    .map(({ Icon, label, href }) => (
+                      <a
+                        key={label}
+                        href={href!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={label}
+                        className="w-10 h-10 rounded-full border border-zinc-100 flex items-center justify-center text-primary hover:bg-secondary hover:text-ink transition-all duration-300 shadow-sm"
+                      >
+                        <Icon size={18} />
+                      </a>
+                    ))}
                 </div>
               </div>
             </motion.div>
