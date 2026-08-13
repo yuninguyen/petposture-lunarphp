@@ -61,7 +61,7 @@ export default function ShopPage({
                             type="button"
                             onClick={() => setMobileFiltersOpen((open) => !open)}
                             aria-expanded={mobileFiltersOpen}
-                            className="flex items-center gap-2 self-start rounded-full border border-[#e3d6c9] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#8b8f93] shadow-sm transition-colors hover:border-secondary hover:text-rust lg:hidden [transform:translateZ(0)]"
+                            className="flex items-center gap-2 self-start rounded-full border border-[#e3d6c9] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-[#8b8f93] shadow-sm transition-colors hover:border-secondary hover:text-rust lg:hidden [transform:translateZ(0)]"
                         >
                             <SlidersHorizontal size={14} className="text-rust" />
                             {mobileFiltersOpen ? 'Hide Filters' : 'Show Filters'}
@@ -99,7 +99,7 @@ export default function ShopPage({
                     <div className="min-w-0">
                         <div className="mb-5 flex flex-col gap-3 rounded-[24px] border border-[#eadfd3] bg-white px-5 py-4 shadow-[0_18px_50px_rgba(34,33,33,0.05)] md:flex-row md:items-center md:justify-between">
                             <div>
-                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#8b8f93]">
+                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.05em] text-[#8b8f93]">
                                     <SlidersHorizontal size={14} className="text-rust" />
                                     Storefront overview
                                 </div>
@@ -115,22 +115,22 @@ export default function ShopPage({
 
                             <div className="flex flex-wrap items-center gap-2">
                                 {shopLogic.activeCategory !== 'All' && (
-                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#b36a3b]">
+                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-[#b36a3b]">
                                         {activeCategoryLabel || shopLogic.activeCategory}
                                     </span>
                                 )}
                                 {shopLogic.activeBreed !== 'All' && (
-                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#b36a3b]">
+                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-[#b36a3b]">
                                         {activeBreedLabel || shopLogic.activeBreed}
                                     </span>
                                 )}
                                 {shopLogic.activeSolution !== 'All' && (
-                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#b36a3b]">
+                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-[#b36a3b]">
                                         {activeSolutionLabel || shopLogic.activeSolution}
                                     </span>
                                 )}
                                 {shopLogic.searchQuery && (
-                                    <span className="rounded-full bg-[#eef3f5] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#54646e]">
+                                    <span className="rounded-full bg-[#eef3f5] px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-[#54646e]">
                                         Search: {shopLogic.searchQuery}
                                     </span>
                                 )}

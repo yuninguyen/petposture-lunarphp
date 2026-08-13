@@ -106,7 +106,7 @@ export function ProductCard({ product }: { product: Product }) {
 
                 <button
                     onClick={() => addItem(product)}
-                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-secondary px-4 text-sm font-bold uppercase tracking-[0.16em] text-ink transition-colors hover:bg-secondary-dark"
+                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-secondary px-4 text-sm font-bold uppercase tracking-[0.05em] text-ink transition-colors hover:bg-secondary-dark"
                 >
                     <ShoppingBag size={15} />
                     Add to Cart
