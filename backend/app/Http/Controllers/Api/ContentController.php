@@ -44,12 +44,34 @@ class ContentController extends Controller
             'data' => [
                 'slug' => $page->slug,
                 'title' => $page->title,
-                'content' => $page->content,
+                'content' => $this->renderPlaceholders($page->content),
                 'meta_title' => $page->meta_title,
                 'meta_description' => $page->meta_description,
                 'updated_at' => $page->updated_at,
             ],
         ]);
+    }
+
+    /**
+     * Substitute {{business_phone}}/{{business_address}}/{{business_address_inline}}
+     * tokens in page content with the live Settings values, so legal-page copy
+     * stays in sync with admin edits instead of needing the phone/address
+     * re-typed into every page's rich text separately.
+     */
+    private function renderPlaceholders(?string $content): ?string
+    {
+        if ($content === null) {
+            return null;
+        }
+
+        $phone = setting('business_phone') ?: '+1 (916) 668-0065';
+        $address = setting('business_address') ?: '2017 I St A, Sacramento, CA 95811, United States';
+
+        return str_replace(
+            ['{{business_phone}}', '{{business_address}}', '{{business_address_inline}}'],
+            [$phone, str_replace(', ', '<br>', $address), $address],
+            $content
+        );
     }
 
     public function categories()
