@@ -93,6 +93,166 @@ it isn't a Windows service here, so it needs starting by hand after a machine re
 
 ---
 
+# Handoff — 2026-08-13 (later)
+
+## Affiliate widget 500, legal-page contact placeholders, sitewide WCAG contrast fixes (2 rounds + a hover-color regression), and mobile drawer social icons
+
+Follow-up session, same day as the entry above. Nine commits (`0982853`..`9d81917`), each built,
+container-rebuilt, and Cloudflare-purged on the production VPS as it landed — nothing here is
+pending deploy.
+
+**Affiliate report widgets 500ing on any AJAX interaction, fixed**: `AffiliateClicksOverview`,
+`TopClickedPostsWidget`, and `ClicksByNetworkWidget` (the 3 widgets backing the Finance → Reports
+page, added 2026-08-09) were only ever referenced through the `AffiliateReports` Filament Page's
+`getHeaderWidgets()` — never through the panel's global `->widgets([...])` list, and
+`discoverWidgets()` is commented out in `AdminPanelProvider.php`. That meant Livewire's
+`ComponentRegistry` never registered them: the page's first server-rendered load worked fine (the
+widget HTML is already baked into that response), but any subsequent AJAX round-trip against one
+of them — a poll, a filter change, anything Livewire itself has to dispatch — threw
+`ComponentNotFoundException` and 500'd. Fixed by adding all 3 widget classes to the existing
+`->livewireComponents([...])` array in `AdminPanelProvider.php` (line ~479), alongside whatever
+else is already registered there. Verified with a small diagnostic script calling
+`ComponentRegistry::getName()`/`getClass()` directly for each widget, both locally and against the
+production container, rather than just trusting that the page rendered without error.
+
+**Legal pages' phone/address now sync from admin Settings, extending the existing
+Header/ContactPage/TrackOrderPage sync from earlier today** to the 7 legal CMS pages
+(privacy-policy, cookie-policy, shipping-policy, return-refund-policy, terms-and-conditions,
+acceptable-use-policy, affiliate-disclosure). Added `ContentController::renderPlaceholders()`,
+called from `page()` before the content is returned: it substitutes three tokens —
+`{{business_phone}}`, `{{business_address}}`, `{{business_address_inline}}` — using
+`setting('business_phone')`/`setting('business_address')`, falling back to the known real values
+if Settings is somehow empty. `{{business_address}}` and `{{business_address_inline}}` both
+resolve from the same single Settings value but render differently: `_inline` is the raw
+comma-separated string, while the bare `{{business_address}}` token runs through a new
+`formatAddressMultiline()` helper for multi-line display (see the follow-up fix below — the first
+version of this helper was wrong). Ran a one-time, **production-only** migration script
+(`fix_legal_contact.php`, executed via `docker cp` + `php` directly inside the backend container,
+then deleted immediately after — never committed, per the standing "no hotpatch left behind" rule)
+to replace the hardcoded phone/address text previously typed into each of the 7 pages' DB rows
+with these placeholder tokens. While doing that replacement by hand, found and fixed **2 real,
+pre-existing content bugs** unrelated to the placeholder work itself: a wrong phone number in
+Cookie Policy, and an address typo in Shipping Policy — both just happened to be caught because
+fixing the placeholder sync required reading every legal page's contact text line by line.
+
+**Regression reported by screenshot: `{{business_address}}` produced 4 cramped lines instead of
+3.** The first version of `formatAddressMultiline()` naively converted every comma in the address
+string to `<br>` — for a 4-part address ("Street, City, State Zip, Country") that's 4 lines, not
+the intended "Street / City, State Zip / Country" 3-line mailing-address format. Fixed by having
+the helper split on comma and, specifically when there are exactly 4 parts, group the 2nd and 3rd
+parts (city, state+zip) back onto one line before joining with `<br>` — `{street}<br>{city},
+{stateZip}<br>{country}`. Any address that doesn't split into exactly 4 parts falls back to the
+original "every comma becomes `<br>`" behavior, so this doesn't silently break for an address
+shaped differently than the current one.
+
+**Sitewide WCAG AA contrast audit and fix, done in two passes plus one caught-and-reverted
+regression** — the single biggest chunk of this session. Started from a real production Lighthouse
+audit (via the `chrome-devtools` MCP tooling running against the actual live site, not just a
+pasted PageSpeed screenshot) that found two distinct sitewide contrast failures against the brand
+orange (`#df8448`, `secondary` token): white text sitting on orange backgrounds (buttons, badges —
+2.78:1, needs 4.5:1) and orange used as the text color itself on white/light backgrounds (eyebrow
+labels, prices — also below 4.5:1). The user was shown a published Artifact comparing 4 candidate
+fixes (keep-orange-darken-text vs. darken-the-orange-itself vs. others) and picked "Option A":
+leave the brand orange exactly as-is, only change what sits on top of or reads as text against it.
+
+*Pass 1 (`0f732e2`, white-on-orange)*: added a new `ink` token — `#1a2128`, near-black, computed via
+manual WCAG relative-luminance math to clear 4.5:1 against the orange (actual: 5.63:1) — synced
+across all three of this repo's token sources per the established triplication convention:
+`tailwind.config.ts` (`colors.ink`), `frontend/lib/uiTheme.ts` (`C.ink`, the inline-style `C`/`F`
+object pattern `HomePage.tsx` and a few others use instead of Tailwind classes), and
+`frontend/app/tokens.css`. Applied across 30+ files via scoped Node.js regex scripts — matching
+only inside quoted Tailwind class-string literals, and only where a target substring
+(`text-white`/`bg-secondary` co-occurrence, etc.) actually indicated white-on-orange — plus manual
+fixes for the handful of cases no script could safely see: `HomePage.tsx`'s inline-style `C`/`F`
+theme-object pattern (5 separate instances, since those aren't Tailwind class strings at all), and
+cross-element cases like `Header.tsx`'s mobile-drawer active nav item, where the orange background
+(`bg-secondary`) lives on the parent `<Link>` and the white text (`text-white`) lives on a child
+`<span>`/`<ChevronRight>` in a completely separate template literal a regex over one string
+couldn't connect. Also had to manually **revert several false-positive darkenings** the blind
+script made on dark-background sections where the original lighter orange already passed contrast
+comfortably: `Header.tsx`'s topbar icons (sit on the dark `bg-primary` bar, not on orange),
+`OurMissionPage.tsx`'s icon circle, and `ScientificBreakdown.tsx`'s entire dark section — found by
+grepping for `bg-primary` near each script hit and confirming by reading the surrounding markup,
+not just trusting the script's own substring match.
+
+*Pass 2 (`355cb28`, orange-as-text-on-white)*: eyebrow labels and prices using `text-secondary`
+directly on white/light backgrounds also failed AA (orange needs ~6.6:1 as text, well above the
+4.5:1 white-on-orange threshold, since text is thinner/harder to read than a filled background).
+This pass reused the already-existing `secondary.dark`/`secondaryTextHover` token (`#c9713a`) for
+the fix — which turned out to be the wrong call, see below.
+
+**Caught regression, `f337fb6`**: the user reported directly, from a live screenshot, "Khi hover
+mấy nút màu cam hơi tối nhỉ" (the orange buttons look too dark on hover now). Root cause: Pass 2
+had reused **one single token** (`secondary.dark` / `secondaryTextHover` / the Tailwind class
+`text-secondary-dark`) for two incompatible purposes at once — (a) button **hover backgrounds**,
+where the pre-existing, lighter `#c9713a` had always looked fine, and (b) the new **WCAG-AA text**
+requirement, which needed a much darker ~6.6:1-contrast value. Since text and hover-backgrounds
+share the same token, satisfying the text requirement (darkening it) directly made every hover
+background look muddy and over-dark — a real user-visible product regression caused directly by
+token reuse. Fixed by splitting the two purposes into two separate tokens, propagated across all
+three token sources again: `secondary.dark`/`secondaryHover` was **reverted** back to the original
+lighter `#c9713a` (hover-background only, its original and only intended purpose), and a brand-new
+`rust: #8f4a1f` token was added (6.63:1 against white, **text-only**, never a background color).
+Every `text-secondary-dark` class usage sitewide (34 files, via `sed`) was renamed to `text-rust`
+to point at the correct token. The intended single-purpose usage of each token is now documented
+directly in code comments next to the values in `tokens.css`/`uiTheme.ts`/`tailwind.config.ts`, so
+the next person touching either doesn't have to rediscover this the hard way. Note:
+`frontend/app/tokens.css` only gained the new `--color-rust` value in this pass — `ink` (from Pass
+1) was never added as a CSS custom property there, only to `tailwind.config.ts`/`uiTheme.ts`; it's
+consumed exclusively via Tailwind's `text-ink`/`bg-ink` classes and the `C.ink` inline-style
+constant, neither of which needs the CSS variable form. Not flagged as a bug — just noting the
+three "sources" aren't a strict 1:1:1 mirror when a token has no CSS-variable consumer.
+
+**Smaller, direct user-feedback follow-ups bundled into the same contrast-fix window** (in
+`ProductDetails.tsx`, folded into the `f337fb6` commit): the category eyebrow ("Ergonomics") and
+the price both got changed from `text-rust` to `text-primary`, per the user's direct request, so
+they'd match the product title's color instead of standing out in orange — the star-rating fill
+was deliberately left alone (`fill-secondary text-rust`, i.e. amber fill with a rust outline/empty
+state), since that wasn't part of the complaint. Separately, the user asked whether "THE ERGONOMIC
+DIFFERENCE" section label should get the same `text-primary` treatment — answered no and left
+unchanged: that label sits on a dark `bg-primary` background, where `text-primary` (a dark
+navy/charcoal) would be functionally invisible against its own background color. This was a design
+question answered, not a bug — no code changed for that specific element.
+
+**Real mobile PageSpeed report (score 95) pasted by the user drove a small performance + a11y
+cleanup (`ee517df`)**: added `"browserslist": ["chrome >= 91", "firefox >= 90", "safari >= 15",
+"edge >= 91"]` to `frontend/package.json` so the build stops shipping legacy-browser JS polyfills
+to browsers that don't need them (a PageSpeed flag: "Avoid serving legacy JavaScript to modern
+browsers"). Added `sizes="150px"`/`sizes="120px"` to the two logo `<Image>` tags in `Header.tsx` so
+Next.js's image pipeline serves an appropriately-sized image instead of an oversized one shrunk
+down by CSS. Bundled into the same commit, two cookie-banner fixes surfaced by the same audit pass:
+rewrote the consent paragraph from a short generic line to longer, more professional copy, and
+changed the "Cookie Policy" link from `hover:underline` (invisible until hover — a
+contrast/discoverability finding, not just style) to a permanent `underline underline-offset-2`.
+
+**Cookie banner button sizing, direct feedback (`ac1b159`)**: "Nút Customize và Accept All hơi to
+thì phải" (the Customize/Accept All buttons look a bit too big) — shrank `CookieBanner.tsx`'s
+button padding/text from `px-5 py-3 text-[14px]` to `px-4 py-2.5 text-[13px]`, and tightened
+`tracking-wider` to `tracking-wide`.
+
+**Mobile hamburger drawer social icons wired to real URLs, fixed (`9d81917`)**: user-reported bug
+via screenshot, initially described as "white text on white background in the footer" on mobile —
+investigating that specific claim found it wasn't a real bug at all: it's iOS Safari's own native
+call-confirmation dialog that appears when tapping a `tel:` link, which is outside the app's
+styling control and needs no fix (nor is one possible from the frontend). The **actual** bug,
+found while looking at the same drawer: the 3 social icons (Facebook/Instagram/Twitter) in
+`Header.tsx`'s mobile hamburger drawer were hardcoded non-functional `href="#"` stubs, unlike
+`Footer.tsx`, which already correctly reads real URLs from `useSettings().social`. Fixed by
+replacing the hardcoded 3-icon block with a `.filter().map()` pattern mirroring `Footer.tsx`,
+extending coverage from 3 to all 6 configured platforms (Facebook, Instagram, Twitter, TikTok via
+a local `TikTokIcon`, Pinterest via a local `PinterestIcon`, YouTube via `lucide-react`'s
+`Youtube`), each with a real `href`, `target="_blank"`, `rel="noopener noreferrer"`, and
+`aria-label`. Also explicitly confirmed (no fix needed) that "Call Us"/"Email Us" in the same
+drawer were already wired correctly — `href={phoneHref}` sourced from `useSettings().contact.phone`
+(the sync built earlier today), and a real `mailto:` link.
+
+**Deploy**: every commit above was built and deployed to the VPS as it landed (container rebuild +
+`up -d --force-recreate` for the affected service, Cloudflare cache purge for anything
+frontend/content-facing, verified live via `curl`/browser). Nothing in this entry is pending
+deploy.
+
+---
+
 # Handoff — 2026-08-12
 
 ## Legal page address spacing fix + TipTap editor upgrade
