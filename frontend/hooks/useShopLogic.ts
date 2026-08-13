@@ -5,6 +5,7 @@ import { getApiBaseUrl } from '@/lib/api';
 
 export type ShopCategoryOption = {
     name: string;
+    slug: string;
     count: number;
 };
 
@@ -38,18 +39,25 @@ export function useShopLogic(
     const isFilterMountRef = useRef(true);
     const isSearchMountRef = useRef(true);
 
-    // Categories derived from the full initial (unfiltered) product set
+    // Categories derived from the full initial (unfiltered) product set.
+    // Grouped by slug (what the API filters on), not name, since two
+    // categories could theoretically share a display name.
     const categories = useMemo<ShopCategoryOption[]>(() => {
         const base = initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS;
-        const counts = base.reduce<Record<string, number>>((acc, p) => {
-            if (p.category) acc[p.category] = (acc[p.category] || 0) + 1;
+        const bySlug = base.reduce<Record<string, { name: string; count: number }>>((acc, p) => {
+            if (p.category && p.categorySlug) {
+                acc[p.categorySlug] = {
+                    name: p.category,
+                    count: (acc[p.categorySlug]?.count || 0) + 1,
+                };
+            }
             return acc;
         }, {});
         return [
-            { name: 'All', count: base.length },
-            ...Object.entries(counts)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([name, count]) => ({ name, count })),
+            { name: 'All', slug: 'All', count: base.length },
+            ...Object.entries(bySlug)
+                .sort(([, a], [, b]) => a.name.localeCompare(b.name))
+                .map(([slug, { name, count }]) => ({ name, slug, count })),
         ];
     }, [initialProducts]);
 

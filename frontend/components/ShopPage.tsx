@@ -30,8 +30,9 @@ export default function ShopPage({
     const shopLogic = useShopLogic(initialProducts, initialBreed, initialSolution);
     const activeBreedLabel = shopLogic.breeds.find((b) => b.slug === shopLogic.activeBreed)?.label;
     const activeSolutionLabel = shopLogic.solutions.find((s) => s.slug === shopLogic.activeSolution)?.label;
+    const activeCategoryLabel = shopLogic.categories.find((c) => c.slug === shopLogic.activeCategory)?.name;
     const activeFilterLabel = [
-        shopLogic.activeCategory !== 'All' ? shopLogic.activeCategory : null,
+        shopLogic.activeCategory !== 'All' ? activeCategoryLabel : null,
         shopLogic.activeBreed !== 'All' ? activeBreedLabel : null,
         shopLogic.activeSolution !== 'All' ? activeSolutionLabel : null,
     ].filter(Boolean).join(' + ');
@@ -115,7 +116,7 @@ export default function ShopPage({
                             <div className="flex flex-wrap items-center gap-2">
                                 {shopLogic.activeCategory !== 'All' && (
                                     <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#b36a3b]">
-                                        {shopLogic.activeCategory}
+                                        {activeCategoryLabel || shopLogic.activeCategory}
                                     </span>
                                 )}
                                 {shopLogic.activeBreed !== 'All' && (

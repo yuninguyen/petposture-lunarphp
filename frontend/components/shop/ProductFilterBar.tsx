@@ -68,9 +68,9 @@ export function ProductFilterBar({
                         <div className="space-y-2">
                             {categories.map((category) => (
                                 <button
-                                    key={category.name}
-                                    onClick={() => setActiveCategory(category.name)}
-                                    className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-sm transition ${activeCategory === category.name
+                                    key={category.slug}
+                                    onClick={() => setActiveCategory(category.slug)}
+                                    className={`flex w-full items-center justify-between rounded-[16px] border px-4 py-3 text-left text-sm transition ${activeCategory === category.slug
                                         ? 'border-secondary bg-[#fff3eb] text-[#2d3a43] shadow-[0_12px_24px_rgba(223,132,72,0.12)]'
                                         : 'border-[#efe5dc] bg-white text-[#687076] hover:border-[#d9c6b5] hover:bg-[#faf7f3]'
                                         }`}
