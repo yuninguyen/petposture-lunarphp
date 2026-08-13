@@ -3,6 +3,8 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
+use App\Filament\Widgets\AffiliateClicksOverview;
+use App\Filament\Widgets\ClicksByNetworkWidget;
 use App\Filament\Widgets\EcommerceStatsOverview;
 use App\Filament\Widgets\LatestOrdersTable;
 use App\Filament\Widgets\OrderPipelineWidget;
@@ -12,6 +14,7 @@ use App\Filament\Widgets\SalesByCategoryChart;
 use App\Filament\Widgets\SalesOverviewChart;
 use App\Filament\Widgets\SalesSidebarWidget;
 use App\Filament\Widgets\SiteOverviewStatsWidget;
+use App\Filament\Widgets\TopClickedPostsWidget;
 use App\Filament\Widgets\TopProductsWidget;
 use App\Http\Middleware\SetLocale;
 use App\Models\Setting;
@@ -476,6 +479,9 @@ class AdminPanelProvider extends PanelProvider
             ->livewireComponents([
                 Resources\OrderResource\Pages\Components\OrderItemsTable::class,
                 CollectionTreeView::class,
+                AffiliateClicksOverview::class,
+                TopClickedPostsWidget::class,
+                ClicksByNetworkWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
