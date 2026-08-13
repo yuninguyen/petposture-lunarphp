@@ -72,6 +72,7 @@ export default function Header() {
               alt={`${shop_name} Logo`}
               width={400}
               height={140}
+              sizes="150px"
               priority
               className="h-[38px] md:h-[52px] w-auto object-contain"
             />
@@ -239,6 +240,7 @@ export default function Header() {
                     alt={`${shop_name} Logo`}
                     width={320}
                     height={100}
+                    sizes="120px"
                     className="h-[38px] w-auto object-contain"
                   />
                 </Link>
