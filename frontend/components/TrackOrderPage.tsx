@@ -8,6 +8,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import { getApiBaseUrl } from "@/lib/api";
 import RetryPaymentPanel from "./orders/RetryPaymentPanel";
+import { useSettings } from "@/context/SettingsContext";
 
 type OrderAddress = {
     first_name: string | null;
@@ -88,6 +89,7 @@ const staggerContainer = {
 };
 
 export default function TrackOrderPage() {
+    const { contact } = useSettings();
     const [orderId, setOrderId] = useState("");
     const [email, setEmail] = useState("");
     const [statusData, setStatusData] = useState<TrackedOrder | null>(null);
@@ -385,7 +387,7 @@ export default function TrackOrderPage() {
                                         {
                                             icon: Mail,
                                             title: "Still need help?",
-                                            text: "Reach out to our support team at support@petposture.com or call us directly at +1 (916) 668-0065."
+                                            text: `Reach out to our support team at support@petposture.com or call us directly at ${contact.phone || "+1 (916) 668-0065"}.`
                                         }
                                     ].map((item, idx) => (
                                         <motion.div key={idx} variants={fadeUp} className="flex gap-6 group">

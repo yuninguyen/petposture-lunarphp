@@ -508,10 +508,10 @@ composer analyse   # PHPStan level 3
 php artisan test   # PHPUnit feature/unit suite
 ```
 
-`php artisan test` currently has ~21 pre-existing failures unrelated to feature work in progress
-(`AdminAuthTest`, `CartApiTest`, `CheckoutApiTest` — a role/language seeding collision between a
-migration and test setup; see `ARCHITECTURE.md`'s "Known gap" note). New work should still add
-its own passing tests; don't let the pre-existing red mask a new regression.
+`php artisan test` should be fully green (fixed 2026-08-13 — a role/language/currency seeding
+collision between migrations and test setup previously caused ~21 failures across `AdminAuthTest`/
+`CartApiTest`/`CheckoutApiTest`; see `ARCHITECTURE.md` for the root cause and fix). If you see red
+here, treat it as a real regression, not pre-existing noise.
 
 ```bash
 cd frontend

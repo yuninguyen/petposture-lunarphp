@@ -12,12 +12,18 @@ interface ShopSocialLinks {
     youtube: string | null;
 }
 
+interface ShopContact {
+    phone: string | null;
+    address: string | null;
+}
+
 interface ShopSettings {
     shop_name: string;
     shop_logo: string | null;
     shop_favicon: string | null;
     description: string | null;
     social: ShopSocialLinks;
+    contact: ShopContact;
 }
 
 const defaults: ShopSettings = {
@@ -33,6 +39,10 @@ const defaults: ShopSettings = {
         tiktok: null,
         pinterest: null,
         youtube: null,
+    },
+    contact: {
+        phone: "+1 (916) 668-0065",
+        address: "2017 I St A, Sacramento, CA 95811, United States",
     },
 };
 
@@ -58,6 +68,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                         tiktok: d.social?.tiktok || null,
                         pinterest: d.social?.pinterest || null,
                         youtube: d.social?.youtube || null,
+                    },
+                    contact: {
+                        phone: d.contact?.phone || defaults.contact.phone,
+                        address: d.contact?.address || defaults.contact.address,
                     },
                 });
             })

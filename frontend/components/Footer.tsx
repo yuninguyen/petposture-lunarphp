@@ -169,7 +169,7 @@ export default function Footer() {
                   <p className="text-[16px] text-white/60 leading-[1.75] mb-6">
                     {description}
                   </p>
-                  <div className="flex gap-4">
+                  <div className="flex flex-wrap gap-3">
                     {[
                       { Icon: Facebook, label: "Facebook", href: social.facebook },
                       { Icon: Instagram, label: "Instagram", href: social.instagram },
@@ -186,7 +186,7 @@ export default function Footer() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={label}
-                          className="w-11 h-11 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
+                          className="w-11 h-11 shrink-0 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
                         >
                           <Icon size={18} strokeWidth={2} className="transition-transform duration-300 group-hover:scale-125" />
                         </a>
@@ -194,7 +194,7 @@ export default function Footer() {
                     <Link
                       href="/contact"
                       aria-label="Email"
-                      className="w-11 h-11 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
+                      className="w-11 h-11 shrink-0 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
                     >
                       <Mail size={18} strokeWidth={2} className="transition-transform duration-300 group-hover:scale-125" />
                     </Link>

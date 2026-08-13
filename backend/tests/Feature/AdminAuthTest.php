@@ -16,9 +16,9 @@ class AdminAuthTest extends TestCase
     {
         parent::setUp();
         // Spatie requires roles table to exist
-        Role::create(['name' => 'super_admin', 'guard_name' => 'web']);
-        Role::create(['name' => 'admin',       'guard_name' => 'web']);
-        Role::create(['name' => 'customer',    'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'admin',       'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'customer',    'guard_name' => 'web']);
     }
 
     public function test_unauthenticated_request_to_admin_posts_returns_401(): void

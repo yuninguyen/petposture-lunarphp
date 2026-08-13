@@ -267,16 +267,53 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                 </div>
                                             )}
                                             {section.id === 'shipping' && (
-                                                <ul className="space-y-4 text-[15px] leading-[1.8] text-zinc-500">
-                                                    <li className="flex items-start gap-3">
-                                                        <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" />
-                                                        <span>Free standard shipping for all US orders over $50.</span>
-                                                    </li>
-                                                    <li className="flex items-start gap-3">
-                                                        <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" />
-                                                        <span>Express 2-day delivery available at checkout.</span>
-                                                    </li>
-                                                </ul>
+                                                <div className="space-y-6">
+                                                    <div>
+                                                        <h4 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary">
+                                                            <Truck size={16} className="text-secondary" /> Shipping
+                                                        </h4>
+                                                        <ul className="space-y-3 text-[15px] leading-[1.8] text-zinc-500">
+                                                            <li className="flex items-start gap-3">
+                                                                <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" />
+                                                                <span>Free standard shipping for all US orders over $50; express 2-day delivery available at checkout.</span>
+                                                            </li>
+                                                            <li className="flex items-start gap-3">
+                                                                <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" />
+                                                                <span>Orders are processed within 2–4 business days, then arrive in 7–10 business days total (US only).</span>
+                                                            </li>
+                                                            <li className="flex items-start gap-3">
+                                                                <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" />
+                                                                <span>You&apos;ll get a tracking number by email as soon as your order ships.</span>
+                                                            </li>
+                                                        </ul>
+                                                        <a href="/shipping-policy" className="mt-3 inline-block text-sm font-bold text-secondary hover:underline">
+                                                            Read the full Shipping Policy →
+                                                        </a>
+                                                    </div>
+
+                                                    <div className="border-t border-zinc-100 pt-6">
+                                                        <h4 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary">
+                                                            <RotateCcw size={16} className="text-secondary" /> Returns
+                                                        </h4>
+                                                        <ul className="space-y-3 text-[15px] leading-[1.8] text-zinc-500">
+                                                            <li className="flex items-start gap-3">
+                                                                <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" />
+                                                                <span>30-day return window from delivery, for items in original, unused condition with all packaging and tags.</span>
+                                                            </li>
+                                                            <li className="flex items-start gap-3">
+                                                                <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" />
+                                                                <span>A 25% restocking fee applies to standard returns; original shipping costs aren&apos;t refunded.</span>
+                                                            </li>
+                                                            <li className="flex items-start gap-3">
+                                                                <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" />
+                                                                <span>Damaged or defective items reported within 7 days ship back free, no restocking fee.</span>
+                                                            </li>
+                                                        </ul>
+                                                        <a href="/return-refund-policy" className="mt-3 inline-block text-sm font-bold text-secondary hover:underline">
+                                                            Read the full Return &amp; Refund Policy →
+                                                        </a>
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     </div>

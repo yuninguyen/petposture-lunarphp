@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\UserResource\Pages;
 
 use App\Filament\Resources\UserResource;
+use App\Models\User;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -14,14 +15,22 @@ class ViewUser extends ViewRecord
 
     protected static string $view = 'filament.resources.user-resource.pages.view-user';
 
+    private function user(): User
+    {
+        /** @var User $record */
+        $record = $this->record;
+
+        return $record;
+    }
+
     public function getTitle(): string
     {
-        return $this->record->name;
+        return $this->user()->name;
     }
 
     public function getInitials(): string
     {
-        $name = trim((string) $this->record->name);
+        $name = trim($this->user()->name);
 
         if ($name === '') {
             return '?';
@@ -34,7 +43,7 @@ class ViewUser extends ViewRecord
 
     public function getRoleLabel(): string
     {
-        $role = $this->record->getRoleNames()->first();
+        $role = $this->user()->getRoleNames()->first();
 
         return $role ? Str::headline($role) : '—';
     }

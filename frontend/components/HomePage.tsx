@@ -1096,10 +1096,32 @@ function EmailCta() {
   const [email, setEmail] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) setSubmitted(true);
+    if (!email || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setError('');
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/newsletter/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data?.message || 'Something went wrong. Please try again.');
+        return;
+      }
+      setSubmitted(true);
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -1135,46 +1157,55 @@ function EmailCta() {
         </p>
 
         {!submitted ? (
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col sm:flex-row gap-2 sm:gap-0 bg-white rounded-[4px] p-1 sm:p-[4px] transition-all duration-300"
-            style={{
-              maxWidth: 500, margin: '0 auto',
-              boxShadow: isFocused
-                ? '0 10px 32px -4px rgba(223,132,72,0.2)'
-                : '0 4px 16px rgba(0,0,0,0.06)',
-              border: `1px solid ${isFocused ? C.secondary : C.border}`,
-            }}
-          >
-            <input
-              type="email"
-              placeholder="Enter your email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              required
+          <>
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col sm:flex-row gap-2 sm:gap-0 bg-white rounded-[4px] p-1 sm:p-[4px] transition-all duration-300"
               style={{
-                flex: 1, border: 'none', outline: 'none',
-                padding: '16px 20px',
-                fontFamily: F.body, fontSize: 15,
-                color: C.primary, background: 'transparent',
+                maxWidth: 500, margin: '0 auto',
+                boxShadow: isFocused
+                  ? '0 10px 32px -4px rgba(223,132,72,0.2)'
+                  : '0 4px 16px rgba(0,0,0,0.06)',
+                border: `1px solid ${isFocused ? C.secondary : C.border}`,
               }}
-            />
-            <button
-              type="submit"
-              className="px-8 py-4 sm:py-0 rounded-[2px] font-bold uppercase tracking-[0.12em] text-[15px] whitespace-nowrap transition-colors"
-              style={{
-                background: C.secondaryText, color: C.white,
-                fontFamily: F.nav,
-                cursor: 'pointer',
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = C.secondaryTextHover}
-              onMouseOut={(e) => e.currentTarget.style.background = C.secondaryText}
             >
-              Get 10% Off
-            </button>
-          </form>
+              <input
+                type="email"
+                placeholder="Enter your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                required
+                disabled={isSubmitting}
+                style={{
+                  flex: 1, border: 'none', outline: 'none',
+                  padding: '16px 20px',
+                  fontFamily: F.body, fontSize: 15,
+                  color: C.primary, background: 'transparent',
+                }}
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-8 py-4 sm:py-0 rounded-[2px] font-bold uppercase tracking-[0.12em] text-[15px] whitespace-nowrap transition-colors disabled:opacity-60"
+                style={{
+                  background: C.secondaryText, color: C.white,
+                  fontFamily: F.nav,
+                  cursor: isSubmitting ? 'default' : 'pointer',
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = C.secondaryTextHover}
+                onMouseOut={(e) => e.currentTarget.style.background = C.secondaryText}
+              >
+                {isSubmitting ? 'Subscribing…' : 'Get 10% Off'}
+              </button>
+            </form>
+            {error && (
+              <p style={{ color: '#dc2626', fontSize: 13, fontWeight: 700, marginTop: 12 }}>
+                {error}
+              </p>
+            )}
+          </>
         ) : (
           <div style={{
             maxWidth: 500, margin: '0 auto',

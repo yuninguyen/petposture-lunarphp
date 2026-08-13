@@ -1,3 +1,98 @@
+# Handoff — 2026-08-13
+
+## Test suite fully green, Cloudflare `/checkout` cache root-caused, admin↔storefront contact-info sync, footer icon fix, single-product Shipping & Returns summary, 2 unguarded-email fixes, Anthropic key set (blocked on billing)
+
+Started from a review of outstanding items from `RULES.md`/`ARCHITECTURE.md`/`handoff.md`, then a
+follow-up batch of storefront/admin fixes requested directly. Everything below is verified
+(PHPStan clean, `php artisan test` green, `tsc --noEmit`/`eslint` clean, and UI changes checked in
+a real browser at mobile/tablet/desktop) but **not yet deployed as of this entry** — that's the
+next step.
+
+**Two unguarded `Mail::send()` calls fixed** (same bug class as the earlier Newsletter fix):
+`AuthController::register()`'s `WelcomeEmail` send is now wrapped in try/catch + `Log::error()` —
+an SMTP failure no longer blocks the whole registration response/token issuance. Homepage's
+`EmailCta` ("Get 10% Off Your First Order") had a fake submit handler that only set local state —
+now actually calls `POST /api/newsletter/subscribe` with loading/error states, matching the
+`Newsletter.tsx` component's real implementation.
+
+**`ANTHROPIC_API_KEY` set on the VPS** — added to `backend/.env`, but `env_file:` values only load
+at container *start*, not live, so the backend container had to be recreated
+(`up -d --force-recreate backend`) and the 5-minute `anthropic_api_key` cache flushed
+(`cache:clear`) before it took effect. Verified end-to-end by calling
+`AiSeoGeneratorService::generate()` directly (not just checking `isConfigured()`): the key
+authenticates successfully, but the Anthropic account has **no credit balance** — every request
+fails with a billing error. The "Generate with AI" button will keep erroring until the Anthropic
+Console account is topped up; nothing further to fix on the code side.
+
+**Backend test suite: 21 pre-existing failures → 0**, root-caused (see `ARCHITECTURE.md` for the
+full technical writeup): a seeding collision (tests using `Role::create()`/
+`Language::factory()->create()`/`Currency::factory()->create()` unconditionally, colliding with
+migration-seeded rows) was masking 3 further real, independent bugs — a Lunar morph-map mismatch
+in `CartApiTest`'s price fixture (`MissingCurrencyPriceException`), several stale `CheckoutApiTest`
+assertions (money fields asserted as strings against now-float responses, an `order_events`
+assertion against a resource that deliberately excludes it, an invalid direct state-machine
+transition, an off-by-one shipments-array index, a payload missing the now-required `items`
+field). All fixed; full suite now 116 passing, 0 regressions. New `RULES.md` entries document both
+the seeding pattern and the morph-map gotcha so they don't get reintroduced.
+
+**Cloudflare `/checkout` stale-cache mystery, open since 2026-07-26, finally root-caused and
+fixed**: not the documented `/api/*` Cache Rule (never the cause) — a separate, previously-
+undocumented zone-wide "Cache HTML pages" Cache Settings rule caches any non-`/api/` path whose
+origin sends a cacheable `Cache-Control` header. `/checkout` and `/checkout/success` had no
+`export const dynamic = 'force-dynamic'`, so Next statically prerendered them with
+`Cache-Control: s-maxage=3600` — confirmed via `curl -I` on the VPS (`x-nextjs-prerender: 1`).
+Since `dynamic` can't be exported from a `"use client"` file (both pages had it at the top level),
+fixed by moving each page's content unchanged into `components/CheckoutPage.tsx`/
+`CheckoutSuccessPage.tsx` and replacing `app/checkout/page.tsx`/`app/checkout/success/page.tsx`
+with thin server wrappers exporting `force-dynamic` — same "thin page, real component" convention
+already used everywhere else in `frontend/app/`. Verified via a production build: both routes
+flipped from prerendered to `ƒ (Dynamic)` in the route-type table.
+
+**Business contact info (phone, address) now actually syncs from admin to storefront**: the
+backend already exposed `contact.phone`/`contact.address` on `/api/settings` (sourced from the
+admin's Business Phone/Address fields, SEO & Social page) but the frontend never consumed it —
+`ContactPage.tsx`, `Header.tsx` (3 occurrences: topbar, tooltip, mobile drawer), and
+`TrackOrderPage.tsx`'s FAQ copy all had the real phone number/address hardcoded as literal
+strings, so an admin edit never showed up anywhere. Added `contact` to `SettingsContext.tsx`
+(same shape/pattern as the existing `social` field) and wired all three consumers to it. Verified
+live: changed the DB value, confirmed it propagated to `/contact`, the header topbar, and
+`/track-order` without a rebuild (client-side fetch on every page load).
+
+**Footer social icons were egg-shaped, not circular** — root cause: the icon row sits in a
+fixed-width `lg:w-64` (256px) "About" column, and once 5–6 platforms are configured the row (44px
+icons + gaps) needs more width than the column has. Flex items shrink on the main axis by default
+(`flex-shrink: 1`), so each icon's *width* silently shrank to ~30px while *height* stayed pinned
+at 44px (`h-11`, cross-axis, unaffected by shrink) — confirmed by measuring
+`getBoundingClientRect()` in a live browser session, then reproduced dramatically with a debug
+`scale(3)` CSS transform. Fixed with `flex-wrap` on the row + `shrink-0` on each icon — verified
+circular (45×45px) and wrapping correctly at 1024px/1440px, single-row at ≤768px (tablet accordion
+layout). Local dev DB was seeded with 5 fake social URLs to reproduce the bug visually, then
+cleared back to empty after verification — no residual test data left behind.
+
+**Single product page's "Shipping & Returns" tab now actually mentions returns** — it previously
+showed only 2 generic shipping bullets with no return information despite the section title.
+Replaced with a real summary of the live `/shipping-policy` and `/return-refund-policy` CMS
+content (processing/transit times, free-shipping threshold; 30-day return window, 25% restocking
+fee, 7-day damaged/defective exception) plus a "Read the full ... Policy →" link to each page.
+This is a **static, hand-written summary, not a live CMS pull** — flagged in `ARCHITECTURE.md`
+that editing either policy's core terms in Filament needs a matching update to
+`ProductDetails.tsx`, or the product page will quietly contradict the real policy.
+
+**Business next-steps question answered (not code)**: user asked what to do next given 5 social
+platforms registered but no LLC/payment gateways/affiliate networks yet, and how to use the
+petposture.com domain email for each. Recommended sequence: LLC (California) → EIN → business bank
+account → *then* Stripe/PayPal Business accounts → affiliate networks last (several require an
+operating business with live sales history). Recommended `accounts@petposture.com` (already
+provisioned, see the 4-mailbox architecture below) for all of LLC/EIN/payment-gateway/affiliate
+correspondence, kept separate from the public-facing `support@`.
+
+**Local dev environment notes**: `frontend`/`backend` dev servers were both left running
+(`npm run dev` on :3000, `php artisan serve` on :8000) for continued verification in this session
+— stop them if picking this up cold. Local MySQL (Laragon) was also started manually this session;
+it isn't a Windows service here, so it needs starting by hand after a machine restart.
+
+---
+
 # Handoff — 2026-08-12
 
 ## Legal page address spacing fix + TipTap editor upgrade

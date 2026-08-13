@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from "lucide-react";
 import { getApiBaseUrl } from '@/lib/api';
+import { useSettings } from '@/context/SettingsContext';
 
 
 /* ─────────────────────────────────────────────────────────────────
@@ -48,6 +49,8 @@ const MESSAGES = {
 };
 
 export default function ContactPage() {
+    const { contact } = useSettings();
+    const phoneHref = `tel:${(contact.phone || '').replace(/[^\d+]/g, '')}`;
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -307,13 +310,13 @@ export default function ContactPage() {
                                     <ContactInfoItem
                                         icon={Phone}
                                         label="Call Us"
-                                        value="+1 (916) 668-0065"
-                                        href="tel:19166680065"
+                                        value={contact.phone || '+1 (916) 668-0065'}
+                                        href={phoneHref}
                                     />
                                     <ContactInfoItem
                                         icon={MapPin}
                                         label="Our Office"
-                                        value="2017 I St A, Sacramento,CA 95811, United States"
+                                        value={contact.address || '2017 I St A, Sacramento, CA 95811, United States'}
                                         note="This is not retail location"
                                         href="https://maps.app.goo.gl/B9HUyLdTnm4etSrL9"
                                     />

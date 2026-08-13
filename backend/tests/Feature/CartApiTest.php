@@ -9,7 +9,6 @@ use Laravel\Sanctum\Sanctum;
 use Lunar\Models\Channel;
 use Lunar\Models\Currency;
 use Lunar\Models\Language;
-use Lunar\Models\Price;
 use Lunar\Models\Product;
 use Lunar\Models\ProductType;
 use Lunar\Models\ProductVariant;
@@ -89,7 +88,11 @@ class CartApiTest extends TestCase
             'quantity' => 3,
         ])->assertStatus(201)->assertJsonPath('lines.0.quantity', 3);
 
-        // Guest with no token gets its own empty cart
+        // Guest with no token gets its own empty cart — reset the guard so this
+        // request is genuinely unauthenticated (Sanctum::actingAs otherwise stays
+        // in effect for every request made by the rest of this test method).
+        $this->app['auth']->forgetGuards();
+
         $guestToken = Str::uuid()->toString();
         $this->getJson('/api/cart', ['X-Cart-Token' => $guestToken])
             ->assertOk()
@@ -137,8 +140,8 @@ class CartApiTest extends TestCase
 
     private function setUpLunarPrerequisites(): void
     {
-        Language::factory()->create(['code' => 'en', 'name' => 'English', 'default' => true]);
-        Currency::factory()->create(['code' => 'USD', 'name' => 'US Dollar', 'exchange_rate' => 1, 'decimal_places' => 2, 'default' => true, 'enabled' => true, 'factor' => 100]);
+        Language::firstOrCreate(['code' => 'en'], ['name' => 'English', 'default' => true]);
+        Currency::firstOrCreate(['code' => 'USD'], ['name' => 'US Dollar', 'exchange_rate' => 1, 'decimal_places' => 2, 'default' => true, 'enabled' => true, 'factor' => 100]);
         Channel::factory()->create(['name' => 'Web', 'handle' => 'web', 'default' => true, 'url' => 'http://localhost']);
         TaxClass::factory()->create(['name' => 'Default Tax Class', 'default' => true]);
     }
@@ -151,11 +154,13 @@ class CartApiTest extends TestCase
             'status' => 'published',
         ]);
 
-        $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+        $variant = ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'stock' => 100,
+            'backorder' => false,
+        ]);
 
-        Price::factory()->create([
-            'priceable_type' => ProductVariant::class,
-            'priceable_id' => $variant->id,
+        $variant->prices()->create([
             'price' => 2999,
             'currency_id' => Currency::getDefault()->id,
             'customer_group_id' => null,

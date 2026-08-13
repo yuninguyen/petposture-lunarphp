@@ -62,7 +62,11 @@ class AuthController extends Controller
             Log::error('Customer link failed for user '.$user->id.': '.$e->getMessage());
         }
 
-        Mail::send(new WelcomeEmail($user));
+        try {
+            Mail::send(new WelcomeEmail($user));
+        } catch (\Throwable $e) {
+            Log::error('Welcome email failed for user '.$user->id.': '.$e->getMessage());
+        }
 
         Notification::send(User::staffRecipients(), new NewCustomerRegisteredNotification($user));
 

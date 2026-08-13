@@ -17,8 +17,10 @@ export default function Header() {
   const { items, setCartOpen } = useCart();
   const { items: wishlistItems } = useWishlist();
   const { user, logout } = useAuth();
-  const { shop_name, shop_logo } = useSettings();
+  const { shop_name, shop_logo, contact } = useSettings();
   const logoSrc = shop_logo || "/assets/Logo-PetPosture-1-e1761840892773.png";
+  const phone = contact.phone || "+1 (916) 668-0065";
+  const phoneHref = `tel:${phone.replace(/[^\d+]/g, "")}`;
 
   const isActive = (path: string) => pathname === path;
 
@@ -184,10 +186,10 @@ export default function Header() {
               <NavTooltip textCase="uppercase">10:00 AM - 20:00 PM</NavTooltip>
             </li>
             <li className="h-full relative group flex items-center hover:bg-white/10 transition-all duration-300">
-              <a href="tel:19166680065" className="flex items-center gap-2.5 h-full px-6 hover:text-secondary transition-colors text-gray-100">
-                <Phone size={14} className="text-secondary" /> +1 (916) 668-0065
+              <a href={phoneHref} className="flex items-center gap-2.5 h-full px-6 hover:text-secondary transition-colors text-gray-100">
+                <Phone size={14} className="text-secondary" /> {phone}
               </a>
-              <NavTooltip textCase="lowercase">+1 (916) 668-0065</NavTooltip>
+              <NavTooltip textCase="lowercase">{phone}</NavTooltip>
             </li>
           </ul>
 
@@ -282,7 +284,7 @@ export default function Header() {
                     </div>
                     <div>
                       <div className="text-xs uppercase font-bold text-gray-400 tracking-wider">Call Us</div>
-                      <a href="tel:19166680065" className="text-[14px] font-bold">+1 (916) 668-0065</a>
+                      <a href={phoneHref} className="text-[14px] font-bold">{phone}</a>
                     </div>
                   </div>
 
