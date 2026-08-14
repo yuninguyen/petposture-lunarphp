@@ -24,6 +24,7 @@ type ApiPost = {
         name: string;
         slug?: string | null;
     } | null;
+    tags?: { name: string; slug: string }[];
     seo?: {
         title?: string;
         keyphrase?: string;
@@ -48,6 +49,7 @@ type BlogPostViewModel = {
     author: string;
     date: string;
     readTime: string;
+    tags: { name: string; slug: string }[];
 };
 
 function toViewModel(post: ApiPost): BlogPostViewModel {
@@ -67,6 +69,7 @@ function toViewModel(post: ApiPost): BlogPostViewModel {
         author: post.author || 'PetPosture Editorial',
         date: post.created_at ? formatDate(post.created_at) : 'Recently published',
         readTime: post.read_time || '5 min read',
+        tags: post.tags || [],
     };
 }
 

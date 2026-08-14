@@ -18,7 +18,7 @@ class ContentController extends Controller
     {
         $posts = Post::where('status', 'published')
             ->where('published_at', '<=', now())
-            ->with(['blogCategory', 'metadata'])
+            ->with(['blogCategory', 'metadata', 'tags'])
             ->latest()
             ->paginate(12);
 
@@ -33,7 +33,7 @@ class ContentController extends Controller
             $query->where('status', 'published');
         }
 
-        $post = $query->with(['blogCategory', 'metadata'])->firstOrFail();
+        $post = $query->with(['blogCategory', 'metadata', 'tags'])->firstOrFail();
 
         return new PostResource($post);
     }

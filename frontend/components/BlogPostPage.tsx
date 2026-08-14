@@ -5,14 +5,18 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronRight,
-    Share2,
+    Check,
+    Link2,
     User,
     Calendar,
     Clock,
     ArrowLeft,
     Facebook,
     Twitter,
-    Instagram
+    Instagram,
+    Youtube,
+    PawPrint,
+    HeartHandshake
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -22,6 +26,8 @@ import { useSettings } from '@/context/SettingsContext';
 import { withTableOfContents } from '@/lib/text';
 import { getApiBaseUrl } from '@/lib/api';
 import { formatDate } from '@/lib/date';
+import { SITE_URL } from '@/lib/site';
+import { TikTokIcon, PinterestIcon } from '@/lib/socialIcons';
 
 const fadeUp = {
     initial: { opacity: 0, y: 20 },
@@ -42,6 +48,7 @@ interface BlogPost {
     author: string;
     date: string;
     readTime: string;
+    tags: { name: string; slug: string }[];
 }
 
 interface BlogPostPageProps {
@@ -59,6 +66,7 @@ type Comment = {
 export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
     const { social } = useSettings();
     const [isCommenting, setIsCommenting] = React.useState(false);
+    const shareUrl = `${SITE_URL}/blog/${post.slug}`;
     const { html: contentHtml, items: tocItems } = React.useMemo(
         () => withTableOfContents(post.content || `<p>${post.excerpt}</p>`),
         [post.content, post.excerpt]
@@ -71,6 +79,44 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
     const [submitting, setSubmitting] = React.useState(false);
     const [submitError, setSubmitError] = React.useState<string | null>(null);
     const [submitted, setSubmitted] = React.useState(false);
+
+    const [linkCopied, setLinkCopied] = React.useState(false);
+    const [newsletterEmail, setNewsletterEmail] = React.useState('');
+    const [newsletterStatus, setNewsletterStatus] = React.useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [newsletterMessage, setNewsletterMessage] = React.useState('');
+
+    const handleCopyLink = () => {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        });
+    };
+
+    const handleNewsletterSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newsletterEmail || newsletterStatus === 'loading') return;
+
+        setNewsletterStatus('loading');
+        try {
+            const res = await fetch(`${getApiBaseUrl()}/api/newsletter/subscribe`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: newsletterEmail }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                setNewsletterStatus('error');
+                setNewsletterMessage(data?.message || 'Something went wrong. Please try again.');
+                return;
+            }
+            setNewsletterStatus('success');
+            setNewsletterMessage(data?.message || 'Successfully subscribed!');
+            setNewsletterEmail('');
+        } catch {
+            setNewsletterStatus('error');
+            setNewsletterMessage('Something went wrong. Please try again.');
+        }
+    };
 
     React.useEffect(() => {
         let cancelled = false;
@@ -141,7 +187,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                             {post.title}
                         </h1>
 
-                        <div className="flex flex-wrap items-center justify-center gap-6 text-zinc-400 text-xs font-medium">
+                        <div className="flex flex-wrap items-center justify-center gap-6 text-zinc-500 text-xs font-medium">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-zinc-200 flex items-center justify-center overflow-hidden border border-zinc-300">
                                     <User size={16} className="text-zinc-500" />
@@ -149,11 +195,11 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                 <span className="text-primary font-bold">{post.author}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Calendar size={14} className="text-rust" />
+                                <Calendar size={14} className="text-secondary" />
                                 <span>{post.date}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Clock size={14} className="text-rust" />
+                                <Clock size={14} className="text-secondary" />
                                 <span>{post.readTime}</span>
                             </div>
                         </div>
@@ -189,7 +235,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         ) : null}
 
                         <article
-                            className="prose prose-zinc max-w-none text-primary text-[18px] md:text-[20px] leading-[1.8] font-medium [&>p:first-of-type]:first-letter:text-5xl [&>p:first-of-type]:first-letter:font-bold [&>p:first-of-type]:first-letter:text-rust [&>p:first-of-type]:first-letter:mr-3 [&>p:first-of-type]:first-letter:float-left [&>*+*]:mt-8 [&_h2]:text-[28px] [&_h2]:md:text-[32px] [&_h2]:font-bold [&_h2]:text-primary [&_h2]:mt-12 [&_h2]:mb-6 [&_blockquote]:border-l-4 [&_blockquote]:border-secondary [&_blockquote]:pl-8 [&_blockquote]:py-4 [&_blockquote]:bg-secondary-light [&_blockquote]:rounded-r-xl [&_blockquote]:italic [&_blockquote]:text-[22px] [&_blockquote]:text-primary [&_blockquote]:font-semibold [&_blockquote]:not-italic"
+                            className="prose prose-zinc max-w-none text-primary text-[18px] md:text-[20px] leading-[1.8] font-medium [&>p:first-of-type]:first-letter:text-5xl [&>p:first-of-type]:first-letter:font-bold [&>p:first-of-type]:first-letter:text-secondary [&>p:first-of-type]:first-letter:mr-3 [&>p:first-of-type]:first-letter:float-left [&>*+*]:mt-8 [&_h2]:text-[28px] [&_h2]:md:text-[32px] [&_h2]:font-bold [&_h2]:text-primary [&_h2]:mt-12 [&_h2]:mb-6 [&_blockquote]:border-l-4 [&_blockquote]:border-secondary [&_blockquote]:pl-8 [&_blockquote]:py-4 [&_blockquote]:bg-secondary-light [&_blockquote]:rounded-r-xl [&_blockquote]:italic [&_blockquote]:text-[22px] [&_blockquote]:text-primary [&_blockquote]:font-semibold [&_blockquote]:not-italic"
                             dangerouslySetInnerHTML={{ __html: contentHtml }}
                         />
 
@@ -197,26 +243,52 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         <div className="mt-16 pt-10 border-t border-zinc-100">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                 <div className="flex items-center gap-4">
-                                    <span className="text-zinc-400 text-sm font-bold uppercase tracking-wider">Share this story:</span>
+                                    <span className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Share this story:</span>
                                     <div className="flex items-center gap-2">
-                                        {[
-                                            { icon: Facebook, color: "#1877F2" },
-                                            { icon: Twitter, color: "#000000" },
-                                            { icon: Share2, color: "#df8448" }
-                                        ].map((soc, i) => (
-                                            <button key={i} className="w-10 h-10 rounded-full border border-zinc-100 flex items-center justify-center text-zinc-400 hover:border-secondary hover:text-rust transition-all bg-white shadow-sm">
-                                                <soc.icon size={16} />
-                                            </button>
-                                        ))}
+                                        <a
+                                            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label="Share on Facebook"
+                                            className="w-10 h-10 rounded-full border border-zinc-100 flex items-center justify-center text-zinc-400 hover:border-secondary hover:text-rust transition-all bg-white shadow-sm"
+                                        >
+                                            <Facebook size={16} />
+                                        </a>
+                                        <a
+                                            href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(shareUrl)}&media=${encodeURIComponent(post.image)}&description=${encodeURIComponent(post.title)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label="Share on Pinterest"
+                                            className="w-10 h-10 rounded-full border border-zinc-100 flex items-center justify-center text-zinc-400 hover:border-secondary hover:text-rust transition-all bg-white shadow-sm"
+                                        >
+                                            <PinterestIcon size={16} />
+                                        </a>
+                                        <button
+                                            onClick={handleCopyLink}
+                                            aria-label="Copy link"
+                                            className="w-10 h-10 rounded-full border border-zinc-100 flex items-center justify-center text-zinc-400 hover:border-secondary hover:text-rust transition-all bg-white shadow-sm"
+                                        >
+                                            {linkCopied ? <Check size={16} className="text-success" /> : <Link2 size={16} />}
+                                        </button>
+                                        {linkCopied && (
+                                            <span className="text-xs font-bold text-success">Link copied!</span>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {["Health", "Guideline", "Senior Pets"].map(tag => (
-                                        <span key={tag} className="text-xs font-bold text-primary/60 border border-zinc-200 px-4 py-1.5 rounded-[3px] hover:bg-zinc-50 cursor-pointer transition-colors bg-white shadow-sm uppercase tracking-widest">
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
+                                {post.tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 md:justify-end">
+                                        {post.tags.slice(0, 5).map(tag => (
+                                            <span key={tag.slug} className="text-xs font-bold text-primary/60 border border-zinc-200 px-4 py-1.5 rounded-[3px] bg-white shadow-sm uppercase tracking-widest">
+                                                {tag.name}
+                                            </span>
+                                        ))}
+                                        {post.tags.length > 5 && (
+                                            <span className="text-xs font-bold text-zinc-400 border border-zinc-200 px-4 py-1.5 rounded-[3px] bg-white shadow-sm uppercase tracking-widest">
+                                                +{post.tags.length - 5}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -358,6 +430,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         )}
 
                         {/* Featured Widget */}
+                        {recentPosts.length > 0 && (
                         <div className="bg-[#f8f9fa] rounded-2xl p-8 border border-zinc-100 relative overflow-hidden">
                             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-rust mb-6 flex items-center gap-3">
                                 More Like This
@@ -365,7 +438,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                             </h4>
                             <div className="space-y-8">
                                 {recentPosts.map((rPost) => (
-                                    <Link href={`/blog/${rPost.id}`} key={rPost.id} className="flex gap-4 group">
+                                    <Link href={`/blog/${rPost.slug}`} key={rPost.id} className="flex gap-4 group">
                                         <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-zinc-200 shadow-sm">
                                             <Image
                                                 src={rPost.image}
@@ -385,6 +458,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                 ))}
                             </div>
                         </div>
+                        )}
 
                         {/* Social Widget */}
                         <div className="bg-white rounded-2xl p-8 border border-zinc-100 shadow-xl shadow-zinc-100">
@@ -394,6 +468,9 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                     { icon: Facebook, label: "Facebook", color: "#1877F2", href: social.facebook },
                                     { icon: Instagram, label: "Instagram", color: "#E4405F", href: social.instagram },
                                     { icon: Twitter, label: "X", color: "#000000", href: social.twitter },
+                                    { icon: TikTokIcon, label: "TikTok", color: "#000000", href: social.tiktok },
+                                    { icon: PinterestIcon, label: "Pinterest", color: "#E60023", href: social.pinterest },
+                                    { icon: Youtube, label: "YouTube", color: "#FF0000", href: social.youtube },
                                 ]
                                     .filter((item) => item.href)
                                     .map((item) => (
@@ -415,23 +492,38 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                             </div>
                         </div>
 
-                        {/* Newsletter Widget - FIXED CONTRAST */}
+                        {/* Newsletter Widget */}
                         <div className="bg-secondary-light rounded-3xl p-8 text-primary relative overflow-hidden border border-orange-100/50">
                             <div className="relative z-10">
                                 <h4 className="text-[18px] font-bold mb-4 uppercase tracking-[0.1em]">Ergo-Tips in your inbox</h4>
                                 <p className="text-zinc-600 text-sm leading-relaxed mb-8">
                                     The science of pet care is evolving. Get our monthly digest of breed-specific ergonomics.
                                 </p>
-                                <div className="space-y-3">
-                                    <input
-                                        type="email"
-                                        placeholder="Your email"
-                                        className="w-full px-5 py-4 rounded-[3px] bg-white border border-orange-200/50 text-primary placeholder:text-zinc-400 text-[14px] outline-none focus:border-secondary shadow-sm"
-                                    />
-                                    <button className="w-full bg-secondary text-ink py-4 rounded-[3px] font-bold uppercase tracking-widest text-sm hover:bg-secondary-dark transition-all shadow-lg shadow-orange-200/30">
-                                        Subscribe
-                                    </button>
-                                </div>
+                                {newsletterStatus === 'success' ? (
+                                    <p className="text-[14px] font-bold text-primary">{newsletterMessage}</p>
+                                ) : (
+                                    <form className="space-y-3" onSubmit={handleNewsletterSubmit}>
+                                        <input
+                                            type="email"
+                                            required
+                                            value={newsletterEmail}
+                                            onChange={(e) => setNewsletterEmail(e.target.value)}
+                                            disabled={newsletterStatus === 'loading'}
+                                            placeholder="Your email"
+                                            className="w-full px-5 py-4 rounded-[3px] bg-white border border-orange-200/50 text-primary placeholder:text-zinc-400 text-[14px] outline-none focus:border-secondary shadow-sm disabled:opacity-60"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={newsletterStatus === 'loading'}
+                                            className="w-full bg-secondary text-ink py-4 rounded-[3px] font-bold uppercase tracking-widest text-sm hover:bg-secondary-dark transition-all shadow-lg shadow-orange-200/30 disabled:opacity-60"
+                                        >
+                                            {newsletterStatus === 'loading' ? 'Subscribing…' : 'Subscribe'}
+                                        </button>
+                                        {newsletterStatus === 'error' && (
+                                            <p className="text-red-500 text-xs font-bold">{newsletterMessage}</p>
+                                        )}
+                                    </form>
+                                )}
                             </div>
                             <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
                         </div>
@@ -443,38 +535,61 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
             {/* Recommendations Section */}
             <section className="bg-[#f8f9fa] py-20 px-4 md:px-8 border-t border-zinc-100">
                 <div className="max-w-[1200px] mx-auto text-center mb-16">
-                    <h2 className="text-[32px] font-bold text-primary mb-4">Recommended for You</h2>
+                    <h2 className="text-[32px] font-bold text-primary mb-4">
+                        {recentPosts.length > 0 ? 'Recommended for You' : 'Explore More'}
+                    </h2>
                     <div className="w-16 h-1 bg-secondary mx-auto rounded-full"></div>
                 </div>
 
-                <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {recentPosts.slice(0, 3).map((rPost) => (
-                        <article key={rPost.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-zinc-100 group">
-                            <div className="aspect-[16/10] overflow-hidden relative">
-                                <Image
-                                    src={rPost.image}
-                                    alt={rPost.title}
-                                    fill
-                                    sizes="(max-width: 768px) 100vw, 33vw"
-                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                />
-                                <div className="absolute top-4 left-4">
-                                    <span className="bg-white/90 backdrop-blur-sm text-rust text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-[3px]">
-                                        {rPost.category}
-                                    </span>
+                {recentPosts.length > 0 ? (
+                    <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {recentPosts.slice(0, 3).map((rPost) => (
+                            <article key={rPost.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-zinc-100 group">
+                                <div className="aspect-[16/10] overflow-hidden relative">
+                                    <Image
+                                        src={rPost.image}
+                                        alt={rPost.title}
+                                        fill
+                                        sizes="(max-width: 768px) 100vw, 33vw"
+                                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                    />
+                                    <div className="absolute top-4 left-4">
+                                        <span className="bg-white/90 backdrop-blur-sm text-rust text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-[3px]">
+                                            {rPost.category}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="p-8">
-                                <h3 className="text-[18px] font-bold text-primary leading-tight mb-4 hover:text-rust transition-colors cursor-pointer">
-                                    {rPost.title}
-                                </h3>
-                                <Link href={`/blog/${rPost.id}`} className="text-primary font-bold uppercase tracking-[0.1em] text-sm flex items-center gap-2 transition-colors hover:text-rust">
-                                    Read Story <ChevronRight size={14} />
-                                </Link>
-                            </div>
-                        </article>
-                    ))}
-                </div>
+                                <div className="p-8">
+                                    <h3 className="text-[18px] font-bold text-primary leading-tight mb-4 hover:text-rust transition-colors cursor-pointer">
+                                        {rPost.title}
+                                    </h3>
+                                    <Link href={`/blog/${rPost.slug}`} className="text-primary font-bold uppercase tracking-[0.1em] text-sm flex items-center gap-2 transition-colors hover:text-rust">
+                                        Read Story <ChevronRight size={14} />
+                                    </Link>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="max-w-[800px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <Link href="/dogs" className="bg-white rounded-2xl p-10 border border-zinc-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group text-center">
+                            <PawPrint size={32} className="text-secondary mx-auto mb-4" />
+                            <h3 className="text-[20px] font-bold text-primary mb-2 group-hover:text-rust transition-colors">Explore by Breed</h3>
+                            <p className="text-zinc-500 text-sm mb-6">Find products matched to your dog&apos;s body type and needs.</p>
+                            <span className="text-primary font-bold uppercase tracking-[0.1em] text-sm inline-flex items-center gap-2 group-hover:text-rust transition-colors">
+                                Browse Breeds <ChevronRight size={14} />
+                            </span>
+                        </Link>
+                        <Link href="/solutions" className="bg-white rounded-2xl p-10 border border-zinc-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group text-center">
+                            <HeartHandshake size={32} className="text-secondary mx-auto mb-4" />
+                            <h3 className="text-[20px] font-bold text-primary mb-2 group-hover:text-rust transition-colors">Explore by Need</h3>
+                            <p className="text-zinc-500 text-sm mb-6">Feeding, comfort, mobility and walking — find what your dog needs.</p>
+                            <span className="text-primary font-bold uppercase tracking-[0.1em] text-sm inline-flex items-center gap-2 group-hover:text-rust transition-colors">
+                                Browse Needs <ChevronRight size={14} />
+                            </span>
+                        </Link>
+                    </div>
+                )}
             </section>
 
             <Footer />

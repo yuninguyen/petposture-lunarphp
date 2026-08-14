@@ -38,6 +38,10 @@ class PostResource extends JsonResource
             ] : null,
             'comparison' => $this->type === Post::TYPE_COMPARISON ? $this->resolveComparison() : null,
             'seo' => $this->resolveSeo(),
+            'tags' => $this->tags->map(fn ($tag) => [
+                'name' => $tag->name,
+                'slug' => $tag->slug,
+            ])->values(),
         ];
     }
 
