@@ -60,6 +60,11 @@ class Post extends Model
         return $this->belongsToMany(Breed::class, 'post_breed');
     }
 
+    public function solutions()
+    {
+        return $this->belongsToMany(Solution::class, 'post_solution');
+    }
+
     public static function estimateReadTime(string $html): string
     {
         $words = str_word_count(strip_tags($html));

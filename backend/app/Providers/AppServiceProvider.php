@@ -6,6 +6,7 @@ use App\Lunar\DiscountTypes\FixedAmountOffPerUnit;
 use App\Lunar\ShippingModifiers\DefaultShippingModifier;
 use App\Models\Breed;
 use App\Models\OrderEvent;
+use App\Models\Solution;
 use App\Models\OrderShipment;
 use App\Models\Post;
 use App\Models\Setting;
@@ -94,6 +95,11 @@ class AppServiceProvider extends ServiceProvider
         });
         Product::resolveRelationUsing('breeds', function (Product $product) {
             return $product->belongsToMany(Breed::class, 'breed_product', 'lunar_product_id', 'breed_id')
+                ->withPivot('priority')
+                ->orderByPivot('priority');
+        });
+        Product::resolveRelationUsing('solutions', function (Product $product) {
+            return $product->belongsToMany(Solution::class, 'solution_product', 'lunar_product_id', 'solution_id')
                 ->withPivot('priority')
                 ->orderByPivot('priority');
         });
