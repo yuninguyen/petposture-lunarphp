@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AfterShipWebhookController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BrandController;
+use App\Http\Controllers\Api\BreedController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\CommentController;
@@ -60,6 +61,8 @@ Route::get('/products/{slug}/reviews', [ProductController::class, 'reviews']);
 Route::get('/products/{slug}/related', [ProductController::class, 'related']);
 Route::get('/brands', [BrandController::class, 'index']);
 Route::get('/brands/{id}/products', [BrandController::class, 'products']);
+Route::get('/breeds', [BreedController::class, 'index']);
+Route::get('/breeds/{slug}', [BreedController::class, 'show']);
 Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('throttle:api-write');
 Route::post('/orders/track', [OrderController::class, 'track'])->middleware('throttle:10,1');
 Route::get('/orders/by-payment-session', [OrderController::class, 'byPaymentSession'])->middleware('throttle:10,1');
