@@ -81,6 +81,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
     const [submitted, setSubmitted] = React.useState(false);
 
     const [linkCopied, setLinkCopied] = React.useState(false);
+    const [tagsExpanded, setTagsExpanded] = React.useState(false);
     const [newsletterEmail, setNewsletterEmail] = React.useState('');
     const [newsletterStatus, setNewsletterStatus] = React.useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [newsletterMessage, setNewsletterMessage] = React.useState('');
@@ -209,7 +210,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
 
             {/* Main Content Area */}
             <section className="py-16 md:py-24 px-4 md:px-8">
-                <div className="max-w-[1200px] mx-auto flex flex-col lg:flex-row gap-16">
+                <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-16">
 
                     {/* Article Content column */}
                     <div className="lg:w-[70%]">
@@ -235,7 +236,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         ) : null}
 
                         <article
-                            className="prose prose-zinc max-w-none text-primary text-[18px] md:text-[20px] leading-[1.8] font-medium [&>p:first-of-type]:first-letter:text-5xl [&>p:first-of-type]:first-letter:font-bold [&>p:first-of-type]:first-letter:text-secondary [&>p:first-of-type]:first-letter:mr-3 [&>p:first-of-type]:first-letter:float-left [&>*+*]:mt-8 [&_h2]:text-[28px] [&_h2]:md:text-[32px] [&_h2]:font-bold [&_h2]:text-primary [&_h2]:mt-12 [&_h2]:mb-6 [&_blockquote]:border-l-4 [&_blockquote]:border-secondary [&_blockquote]:pl-8 [&_blockquote]:py-4 [&_blockquote]:bg-secondary-light [&_blockquote]:rounded-r-xl [&_blockquote]:italic [&_blockquote]:text-[22px] [&_blockquote]:text-primary [&_blockquote]:font-semibold [&_blockquote]:not-italic"
+                            className="prose prose-zinc max-w-none text-primary text-[17px] md:text-[18px] leading-[1.8] font-medium [&>p:first-of-type]:first-letter:text-5xl [&>p:first-of-type]:first-letter:font-bold [&>p:first-of-type]:first-letter:text-secondary [&>p:first-of-type]:first-letter:mr-3 [&>p:first-of-type]:first-letter:float-left [&>*+*]:mt-8 [&_h2]:text-[28px] [&_h2]:md:text-[32px] [&_h2]:font-bold [&_h2]:text-primary [&_h2]:mt-12 [&_h2]:mb-6 [&_blockquote]:border-l-4 [&_blockquote]:border-secondary [&_blockquote]:pl-8 [&_blockquote]:py-4 [&_blockquote]:bg-secondary-light [&_blockquote]:rounded-r-xl [&_blockquote]:italic [&_blockquote]:text-[22px] [&_blockquote]:text-primary [&_blockquote]:font-semibold [&_blockquote]:not-italic"
                             dangerouslySetInnerHTML={{ __html: contentHtml }}
                         />
 
@@ -243,7 +244,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         <div className="mt-16 pt-10 border-t border-zinc-100">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                 <div className="flex items-center gap-4">
-                                    <span className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Share this story:</span>
+                                    <span className="text-zinc-500 text-sm font-bold whitespace-nowrap">Share:</span>
                                     <div className="flex items-center gap-2">
                                         <a
                                             href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
@@ -277,15 +278,18 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                 </div>
                                 {post.tags.length > 0 && (
                                     <div className="flex flex-wrap gap-2 md:justify-end">
-                                        {post.tags.slice(0, 5).map(tag => (
-                                            <span key={tag.slug} className="text-xs font-bold text-primary/60 border border-zinc-200 px-4 py-1.5 rounded-[3px] bg-white shadow-sm uppercase tracking-widest">
+                                        {(tagsExpanded ? post.tags : post.tags.slice(0, 5)).map(tag => (
+                                            <span key={tag.slug} className="text-xs font-bold text-primary/60 border border-zinc-200 px-4 py-1.5 rounded-[3px] bg-white shadow-sm">
                                                 {tag.name}
                                             </span>
                                         ))}
-                                        {post.tags.length > 5 && (
-                                            <span className="text-xs font-bold text-zinc-400 border border-zinc-200 px-4 py-1.5 rounded-[3px] bg-white shadow-sm uppercase tracking-widest">
-                                                +{post.tags.length - 5}
-                                            </span>
+                                        {!tagsExpanded && post.tags.length > 5 && (
+                                            <button
+                                                onClick={() => setTagsExpanded(true)}
+                                                className="text-xs font-bold text-zinc-400 border border-zinc-200 px-4 py-1.5 rounded-[3px] bg-white shadow-sm hover:text-rust hover:border-secondary transition-colors"
+                                            >
+                                                +{post.tags.length - 5} more
+                                            </button>
                                         )}
                                     </div>
                                 )}
@@ -534,7 +538,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
 
             {/* Recommendations Section */}
             <section className="bg-[#f8f9fa] py-20 px-4 md:px-8 border-t border-zinc-100">
-                <div className="max-w-[1200px] mx-auto text-center mb-16">
+                <div className="max-w-[1400px] mx-auto text-center mb-16">
                     <h2 className="text-[32px] font-bold text-primary mb-4">
                         {recentPosts.length > 0 ? 'Recommended for You' : 'Explore More'}
                     </h2>
@@ -542,7 +546,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                 </div>
 
                 {recentPosts.length > 0 ? (
-                    <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
                         {recentPosts.slice(0, 3).map((rPost) => (
                             <article key={rPost.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-zinc-100 group">
                                 <div className="aspect-[16/10] overflow-hidden relative">
