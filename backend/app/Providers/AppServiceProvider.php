@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Lunar\DiscountTypes\FixedAmountOffPerUnit;
 use App\Lunar\ShippingModifiers\DefaultShippingModifier;
+use App\Models\Breed;
 use App\Models\OrderEvent;
 use App\Models\OrderShipment;
 use App\Models\Post;
@@ -90,6 +91,11 @@ class AppServiceProvider extends ServiceProvider
         });
         Order::resolveRelationUsing('shipments', function (Order $order) {
             return $order->hasMany(OrderShipment::class, 'order_id');
+        });
+        Product::resolveRelationUsing('breeds', function (Product $product) {
+            return $product->belongsToMany(Breed::class, 'breed_product', 'lunar_product_id', 'breed_id')
+                ->withPivot('priority')
+                ->orderByPivot('priority');
         });
 
         $legacyVariantMorph = ProductVariant::class;

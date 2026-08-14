@@ -55,6 +55,11 @@ class Post extends Model
         return $this->belongsToMany(BlogTag::class, 'blog_post_tag');
     }
 
+    public function breeds()
+    {
+        return $this->belongsToMany(Breed::class, 'post_breed');
+    }
+
     public static function estimateReadTime(string $html): string
     {
         $words = str_word_count(strip_tags($html));
