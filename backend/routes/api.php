@@ -101,7 +101,7 @@ Route::post('/webhooks/pingpong', [CheckoutController::class, 'pingpongWebhook']
 Route::post('/webhooks/aftership', [AfterShipWebhookController::class, 'handle']);
 
 Route::get('/posts', [ContentController::class, 'posts']);
-Route::get('/posts/{slug}', [ContentController::class, 'post'])->name('api.posts.show');
+Route::get('/posts/{slug}', [ContentController::class, 'post']);
 Route::get('/posts/{slug}/comments', [CommentController::class, 'index']);
 Route::post('/posts/{slug}/comments', [CommentController::class, 'store'])->middleware('throttle:api-write');
 Route::get('/categories', [ContentController::class, 'categories']);

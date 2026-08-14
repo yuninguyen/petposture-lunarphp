@@ -96,13 +96,13 @@ async function fetchPost(slug: string, previewQuery?: string): Promise<ApiPost |
 
 function buildPreviewQuery(searchParams: Record<string, string | string[] | undefined>): string | undefined {
     const expires = searchParams.expires;
-    const signature = searchParams.signature;
+    const token = searchParams.preview_token;
 
-    if (typeof expires !== 'string' || typeof signature !== 'string') {
+    if (typeof expires !== 'string' || typeof token !== 'string') {
         return undefined;
     }
 
-    return `expires=${encodeURIComponent(expires)}&signature=${encodeURIComponent(signature)}`;
+    return `expires=${encodeURIComponent(expires)}&preview_token=${encodeURIComponent(token)}`;
 }
 
 async function fetchRecentPosts(currentSlug: string): Promise<ApiPost[]> {
