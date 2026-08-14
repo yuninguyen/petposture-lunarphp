@@ -426,3 +426,26 @@
     scrollbar-width: none;
   }
 }
+
+/*
+ * Blog post CTA hover states (rich-text content, e.g. the "Explore Breeds"
+ * CTA block). Lives here instead of an inline <style> tag inside the post's
+ * saved HTML because the Admin's TipTap editor re-serializes content through
+ * its own schema on every save and silently drops <style>/bare <div> tags —
+ * only class/style attributes on standard elements (like these <a> tags)
+ * survive. See RULES.md.
+ */
+.pp-cta-primary {
+  transition: background-color .2s ease, transform .2s ease;
+}
+.pp-cta-primary:hover {
+  background-color: #c9713a !important;
+  transform: translateY(-2px);
+}
+.pp-cta-pill {
+  transition: background-color .2s ease, border-color .2s ease;
+}
+.pp-cta-pill:hover {
+  background-color: #fdf2ea !important;
+  border-color: #c9713a !important;
+}
