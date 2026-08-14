@@ -172,10 +172,10 @@ export default function BlogPage() {
                                     <span className="text-xs text-zinc-400">
                                         {featuredPost.created_at
                                             ? new Date(featuredPost.created_at).toLocaleDateString("en-US", {
-                                                  month: "long",
-                                                  day: "numeric",
-                                                  year: "numeric",
-                                              })
+                                                month: "long",
+                                                day: "numeric",
+                                                year: "numeric",
+                                            })
                                             : "Recently published"}
                                     </span>
                                 </div>
@@ -223,11 +223,10 @@ export default function BlogPage() {
                     >
                         <button
                             onClick={() => setActiveTab("All")}
-                            className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors md:text-sm ${
-                                activeTab === "All"
-                                    ? "text-white"
-                                    : "text-primary/60 hover:text-primary"
-                            }`}
+                            className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors md:text-sm ${activeTab === "All"
+                                ? "text-white"
+                                : "text-primary/60 hover:text-primary"
+                                }`}
                         >
                             {activeTab === "All" && (
                                 <motion.div
@@ -242,11 +241,10 @@ export default function BlogPage() {
                             <button
                                 key={cat.id}
                                 onClick={() => setActiveTab(cat.name)}
-                                className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors md:text-sm ${
-                                    activeTab === cat.name
-                                        ? "text-white"
-                                        : "text-primary/60 hover:text-primary"
-                                }`}
+                                className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors md:text-sm ${activeTab === cat.name
+                                    ? "text-white"
+                                    : "text-primary/60 hover:text-primary"
+                                    }`}
                             >
                                 {activeTab === cat.name && (
                                     <motion.div
@@ -276,7 +274,7 @@ export default function BlogPage() {
             <section className="px-4 py-16 md:px-8">
                 <div className="mx-auto flex max-w-[1200px] flex-col gap-16 lg:flex-row">
                     <div className="flex-1">
-                        <h2 className="mb-10 flex items-center gap-4 text-[20px] font-bold uppercase tracking-[0.2em] text-primary">
+                        <h2 className="mb-10 flex items-center gap-4 text-[20px] font-bold uppercase tracking-[0.08em] text-primary">
                             Latest Stories
                             <div className="h-[1px] flex-1 bg-zinc-100" />
                         </h2>
