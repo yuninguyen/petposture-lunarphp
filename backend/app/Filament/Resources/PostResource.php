@@ -332,9 +332,11 @@ class PostResource extends Resource
                                         Forms\Components\Placeholder::make('serp_preview')
                                             ->label(__('Search Preview'))
                                             ->content(function (Get $get) {
-                                                $title = Str::limit((string) ($get('seo.title') ?: $get('title') ?: __('Untitled Post')), 60, '');
-                                                $description = Str::limit((string) ($get('seo.description') ?: strip_tags((string) $get('content'))), 160, '');
-                                                $url = rtrim(config('app.frontend_url'), '/').'/blog/'.($get('slug') ?: 'post-slug');
+                                                $toStr = fn ($value) => is_array($value) ? '' : (string) $value;
+
+                                                $title = Str::limit($toStr($get('seo.title')) ?: $toStr($get('title')) ?: __('Untitled Post'), 60, '');
+                                                $description = Str::limit($toStr($get('seo.description')) ?: strip_tags($toStr($get('content'))), 160, '');
+                                                $url = rtrim(config('app.frontend_url'), '/').'/blog/'.($toStr($get('slug')) ?: 'post-slug');
 
                                                 return new \Illuminate\Support\HtmlString(
                                                     view('filament.forms.serp-preview', compact('title', 'description', 'url'))->render()
