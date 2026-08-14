@@ -29,6 +29,9 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Raise default PHP upload limits (stock 2M/8M is too small for admin image uploads)
+COPY docker/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
 # Set working directory
 WORKDIR /app
 

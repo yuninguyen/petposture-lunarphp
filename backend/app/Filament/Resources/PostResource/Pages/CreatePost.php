@@ -45,6 +45,11 @@ class CreatePost extends CreateRecord
         }
 
         $seo = $this->data['seo'] ?? [];
+        $ogImage = $seo['og_image'] ?? null;
+
+        if (is_array($ogImage)) {
+            $ogImage = $ogImage[array_key_first($ogImage)] ?? null;
+        }
 
         if (array_filter($seo)) {
             $this->record->seo()->create([
@@ -53,7 +58,7 @@ class CreatePost extends CreateRecord
                 'description' => $seo['description'] ?? null,
                 'og_title' => $seo['og_title'] ?? null,
                 'og_description' => $seo['og_description'] ?? null,
-                'og_image' => $seo['og_image'] ?? null,
+                'og_image' => $ogImage,
             ]);
         }
 
