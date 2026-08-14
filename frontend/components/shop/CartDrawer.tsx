@@ -34,7 +34,7 @@ export function CartDrawer() {
                     >
                         {/* Header - Centered & Premium */}
                         <div className="relative flex items-center justify-center p-8 border-b border-zinc-100/80">
-                            <h2 className="text-[14px] font-black text-primary uppercase tracking-[0.3em] ml-4">
+                            <h2 className="text-[16px] font-black text-primary uppercase tracking-[0.08em] ml-4">
                                 Cart
                             </h2>
                             <button
@@ -114,7 +114,7 @@ export function CartDrawer() {
                         {items.length > 0 && (
                             <div className="p-8 bg-white border-t border-zinc-100 flex flex-col gap-4">
                                 <div className="flex items-center justify-between py-2">
-                                    <span className="text-primary text-sm font-bold uppercase tracking-widest">Subtotal:</span>
+                                    <span className="text-primary text-sm font-bold uppercase tracking-wider">Subtotal:</span>
                                     <span className="text-[18px] font-black text-primary">${totalAmount.toFixed(2)}</span>
                                 </div>
                                 <div className="h-[1px] bg-zinc-100 w-full mb-2" />
@@ -122,13 +122,13 @@ export function CartDrawer() {
                                 <div className="flex flex-col gap-3">
                                     <button
                                         onClick={() => { setCartOpen(false); router.push('/cart'); }}
-                                        className="w-full bg-primary text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.25em] hover:bg-[#2c363e] transition-all flex items-center justify-center"
+                                        className="w-full bg-primary text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.15em] hover:bg-[#2c363e] transition-all flex items-center justify-center"
                                     >
                                         View Cart
                                     </button>
                                     <button
                                         onClick={() => { setCartOpen(false); router.push('/checkout'); }}
-                                        className="w-full bg-secondary text-ink py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.25em] shadow-xl shadow-orange-500/10 hover:bg-secondary-dark transition-all flex items-center justify-center"
+                                        className="w-full bg-secondary text-ink py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.15em] shadow-xl shadow-orange-500/10 hover:bg-secondary-dark transition-all flex items-center justify-center"
                                     >
                                         Checkout
                                     </button>
