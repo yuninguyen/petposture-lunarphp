@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { Star, ArrowUpRight, ShoppingBag, Heart } from 'lucide-react';
 import Image from 'next/image';
