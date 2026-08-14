@@ -242,7 +242,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
 
                         {/* Article Footer */}
                         <div className="mt-16 pt-10 border-t border-zinc-100">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                                 <div className="flex items-center gap-4">
                                     <span className="text-zinc-500 text-sm font-bold whitespace-nowrap">Share:</span>
                                     <div className="flex items-center gap-2">
