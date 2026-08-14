@@ -21,6 +21,10 @@ class EditPost extends EditRecord
     {
         $data['read_time'] = Post::estimateReadTime($data['content'] ?? '');
 
+        if (($data['status'] ?? null) === 'published' && empty($data['published_at'])) {
+            $data['published_at'] = now();
+        }
+
         return $data;
     }
 
@@ -87,6 +91,11 @@ class EditPost extends EditRecord
                 ->color('gray')
                 ->url(fn (): string => $this->getPreviewUrl())
                 ->openUrlInNewTab(),
+            Actions\Action::make('save')
+                ->label(fn () => ($this->data['status'] ?? 'draft') === 'published' ? __('Update & Publish') : __('Save Draft'))
+                ->icon(fn () => ($this->data['status'] ?? 'draft') === 'published' ? 'heroicon-o-paper-airplane' : 'heroicon-o-document')
+                ->action(fn () => $this->save())
+                ->extraAttributes(['onclick' => "localStorage.removeItem('petposture-draft:' + window.location.pathname)"]),
             Actions\DeleteAction::make(),
         ];
     }

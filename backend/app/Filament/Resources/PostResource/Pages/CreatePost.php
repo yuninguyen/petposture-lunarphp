@@ -21,6 +21,10 @@ class CreatePost extends CreateRecord
     {
         $data['read_time'] = Post::estimateReadTime($data['content'] ?? '');
 
+        if (($data['status'] ?? null) === 'published' && empty($data['published_at'])) {
+            $data['published_at'] = now();
+        }
+
         return $data;
     }
 
@@ -30,6 +34,17 @@ class CreatePost extends CreateRecord
             ->label(fn () => ($this->data['status'] ?? 'draft') === 'published' ? __('Publish') : __('Save Draft'))
             ->icon(fn () => ($this->data['status'] ?? 'draft') === 'published' ? 'heroicon-o-paper-airplane' : 'heroicon-o-document')
             ->extraAttributes(['onclick' => "localStorage.removeItem('petposture-draft:' + window.location.pathname)"]);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('save')
+                ->label(fn () => ($this->data['status'] ?? 'draft') === 'published' ? __('Publish') : __('Save Draft'))
+                ->icon(fn () => ($this->data['status'] ?? 'draft') === 'published' ? 'heroicon-o-paper-airplane' : 'heroicon-o-document')
+                ->action(fn () => $this->create())
+                ->extraAttributes(['onclick' => "localStorage.removeItem('petposture-draft:' + window.location.pathname)"]),
+        ];
     }
 
     protected function afterCreate(): void

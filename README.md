@@ -144,6 +144,19 @@ petposture/
   Walmart (via Impact) has a currently-usable price API among the 5 retailers; Amazon's real API is
   gated behind an Associates sales history this site doesn't have yet; the others have no public
   price API at all.
+- Draft post preview (added 2026-08-15): the Edit Post page's "Preview" button opens the live
+  `/blog/{slug}` frontend route with a one-time HMAC token (`?expires=...&preview_token=...`,
+  1-day expiry) so an unpublished draft can be reviewed on the real storefront layout before
+  publishing. Not a Laravel signed route — see `ARCHITECTURE.md` for why (`routes/api.php` gets
+  registered twice by `bootstrap/app.php`, so any named route there collides with itself under
+  `route:cache`).
+- Breed and Solution content hubs (`/dogs`, `/solutions`), Phase 1/2 of the breed-first product
+  recommendation strategy: two admin-manageable entities (Filament: PetPosture → Breeds/Solutions),
+  each with its own products (`belongsToMany` pivot with a `priority`/ordering column) and posts,
+  SEO metadata (`HasSeo` trait, same as Post), and a public index/detail page pair mirroring the
+  existing Blog page structure. A `Product::resolveRelationUsing('breeds'|'solutions', ...)`
+  registered in `AppServiceProvider::boot()` (same pattern as the pre-existing `orderEvents`
+  relation) makes both queryable directly off Lunar's `Product` model without modifying vendor code.
 - Legal/compliance pages, editable from admin without a code deploy (rebuilt as a CMS 2026-08-09):
   Privacy Policy (incl. a CCPA/CPRA "Your U.S. State Privacy Rights" section — the site doesn't
   sell/share personal data, so this is a disclosure + contact-based rights process, not an opt-out
