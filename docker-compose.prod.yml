@@ -22,6 +22,7 @@ services:
       - ./backend/.env
     volumes:
       - ./backend/storage/app/public:/app/storage/app/public
+      - ./backend/storage/logs:/app/storage/logs
 
   frontend:
     build:
