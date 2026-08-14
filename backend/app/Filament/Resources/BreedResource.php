@@ -17,7 +17,7 @@ class BreedResource extends Resource
 {
     protected static ?string $model = Breed::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-fingerprint';
+    protected static ?string $navigationIcon = 'heroicon-o-finger-print';
 
     public static function getNavigationGroup(): ?string
     {
