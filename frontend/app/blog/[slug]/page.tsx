@@ -70,10 +70,16 @@ function toViewModel(post: ApiPost): BlogPostViewModel {
     };
 }
 
-async function fetchPost(slug: string): Promise<ApiPost | null> {
+async function fetchPost(slug: string, previewQuery?: string): Promise<ApiPost | null> {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/posts/${slug}`, {
-            next: { revalidate: 60 },
+        const url = previewQuery
+            ? `${API_BASE_URL}/api/posts/${slug}?${previewQuery}`
+            : `${API_BASE_URL}/api/posts/${slug}`;
+
+        const response = await fetch(url, {
+            // Preview links carry a one-time signature; never cache them.
+            cache: previewQuery ? 'no-store' : undefined,
+            next: previewQuery ? undefined : { revalidate: 60 },
         });
 
         if (!response.ok) {
@@ -86,6 +92,17 @@ async function fetchPost(slug: string): Promise<ApiPost | null> {
         console.error('Failed to fetch blog post:', error);
         return null;
     }
+}
+
+function buildPreviewQuery(searchParams: Record<string, string | string[] | undefined>): string | undefined {
+    const expires = searchParams.expires;
+    const signature = searchParams.signature;
+
+    if (typeof expires !== 'string' || typeof signature !== 'string') {
+        return undefined;
+    }
+
+    return `expires=${encodeURIComponent(expires)}&signature=${encodeURIComponent(signature)}`;
 }
 
 async function fetchRecentPosts(currentSlug: string): Promise<ApiPost[]> {
@@ -108,9 +125,11 @@ async function fetchRecentPosts(currentSlug: string): Promise<ApiPost[]> {
     }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: SearchParams }): Promise<Metadata> {
     const { slug } = await params;
-    const post = await fetchPost(slug);
+    const post = await fetchPost(slug, buildPreviewQuery(await searchParams));
 
     if (!post) {
         return { title: 'Blog Post' };
@@ -142,11 +161,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
 }
 
-export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: SearchParams }) {
     const { slug } = await params;
+    const previewQuery = buildPreviewQuery(await searchParams);
 
     const [post, recentPosts] = await Promise.all([
-        fetchPost(slug),
+        fetchPost(slug, previewQuery),
         fetchRecentPosts(slug),
     ]);
 

@@ -8,6 +8,7 @@ use App\Models\BlogCategory;
 use App\Models\Page;
 use App\Models\Post;
 use App\Traits\HttpResponses;
+use Illuminate\Http\Request;
 
 class ContentController extends Controller
 {
@@ -24,12 +25,15 @@ class ContentController extends Controller
         return PostResource::collection($posts);
     }
 
-    public function post($slug)
+    public function post(Request $request, $slug)
     {
-        $post = Post::where('slug', $slug)
-            ->where('status', 'published')
-            ->with(['blogCategory', 'metadata'])
-            ->firstOrFail();
+        $query = Post::where('slug', $slug);
+
+        if (! $request->hasValidSignature()) {
+            $query->where('status', 'published');
+        }
+
+        $post = $query->with(['blogCategory', 'metadata'])->firstOrFail();
 
         return new PostResource($post);
     }

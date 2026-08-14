@@ -7,6 +7,7 @@ use App\Models\Post;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\URL;
 
 class EditPost extends EditRecord
 {
@@ -81,8 +82,22 @@ class EditPost extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('preview')
+                ->label(__('Preview'))
+                ->icon('heroicon-o-eye')
+                ->color('gray')
+                ->url(fn (): string => $this->getPreviewUrl())
+                ->openUrlInNewTab(),
             Actions\DeleteAction::make(),
         ];
+    }
+
+    protected function getPreviewUrl(): string
+    {
+        $signed = URL::temporarySignedRoute('api.posts.show', now()->addDay(), ['slug' => $this->record->slug]);
+        $query = parse_url($signed, PHP_URL_QUERY);
+
+        return rtrim(config('app.frontend_url'), '/')."/blog/{$this->record->slug}?{$query}";
     }
 
     protected function getSaveFormAction(): Actions\Action

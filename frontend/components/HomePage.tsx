@@ -9,6 +9,8 @@ import Footer from '@/components/Footer';
 import { ProductCard } from '@/components/shop/ProductCard';
 import type { Product } from '@/types/shop';
 import { API_BASE_URL as apiBaseUrl } from '@/lib/api';
+import { formatDate } from '@/lib/date';
+import { stripHtml } from '@/lib/text';
 
 /* ─────────────────────────────────────────────────────────────────
    DESIGN TOKENS
@@ -18,6 +20,7 @@ import { C, F } from '@/lib/uiTheme';
 /* ── TypeScript Interfaces ──────────────────────────────────────── */
 
 interface BlogPost {
+  slug: string;
   cat: string;
   title: string;
   excerpt: string;
@@ -936,7 +939,7 @@ function PostCard({ post }: { post: BlogPost }) {
 
   return (
     <Link
-      href="#"
+      href={`/blog/${post.slug}`}
       style={{ textDecoration: 'none', display: 'block' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -1012,38 +1015,58 @@ function PostCard({ post }: { post: BlogPost }) {
 
 function Insights() {
   const [activeSlide, setActiveSlide] = useState(0);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     const index = Math.round(el.scrollLeft / (el.clientWidth * 0.85));
     if (index !== activeSlide) setActiveSlide(index);
   };
 
-  const posts = [
-    {
-      cat: 'Pet Health',
-      title: 'Why Does My Pug Reverse Sneeze After Eating? (And 5 Easy Fixes)',
-      excerpt: 'If your flat-faced dog makes that alarming honking sound after meals, here\'s why it happens and what ergonomics can do about it.',
-      date: 'Nov 6, 2025',
-      readTime: '5 min read',
-      img: '/assets/Pug-Dog-Bed.jpg',
-    },
-    {
-      cat: 'Buyer\'s Guide',
-      title: 'Ergonomic Mealtime: What Every Flat-Faced Breed Owner Needs to Know',
-      excerpt: 'A complete guide to choosing the right bowl height, angle, and material for brachycephalic dogs.',
-      date: 'Oct 13, 2025',
-      readTime: '7 min read',
-      img: null,
-    },
-    {
-      cat: 'Product Spotlight',
-      title: 'Top 5 Gear Solutions for Senior Corgis Living Their Best Life',
-      excerpt: 'Aging Corgis face unique challenges. These five ergonomic products made the biggest difference for our community.',
-      date: 'Nov 19, 2025',
-      readTime: '4 min read',
-      img: null,
-    },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`${apiBaseUrl}/api/posts`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((data) => {
+        if (cancelled) return;
+        const rows = Array.isArray(data?.data) ? data.data : [];
+        setPosts(
+          rows.slice(0, 3).map((p: {
+            slug: string;
+            title: string;
+            content?: string;
+            featured_image?: string | null;
+            read_time?: string | null;
+            published_at?: string | null;
+            created_at?: string | null;
+            blog_category?: { name?: string } | null;
+          }) => ({
+            slug: p.slug,
+            cat: p.blog_category?.name || 'Insights',
+            title: p.title,
+            excerpt: stripHtml(p.content || '').slice(0, 140),
+            date: formatDate(p.published_at || p.created_at || new Date().toISOString()),
+            readTime: p.read_time || '5 min read',
+            img: p.featured_image || null,
+          }))
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setPosts([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!loading && posts.length === 0) {
+    return null;
+  }
 
   return (
     <section style={{ background: C.white, padding: '40px 24px' }}>
