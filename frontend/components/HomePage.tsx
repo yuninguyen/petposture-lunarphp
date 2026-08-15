@@ -45,7 +45,7 @@ function Btn({
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     gap: 6, padding: '12px 24px', borderRadius: 3, /* ~tokens --radius-sm */
     fontFamily: F.nav, fontSize: 12, fontWeight: 700,
-    letterSpacing: '0.1em', textTransform: 'uppercase',
+    letterSpacing: '0.03em', textTransform: 'uppercase',
     border: '2px solid', cursor: 'pointer',
     transition: 'all 0.2s ease', textDecoration: 'none',
     whiteSpace: 'nowrap', lineHeight: 1,
@@ -86,8 +86,8 @@ function SectionTitle({
   return (
     <div style={{ textAlign: align, marginBottom: 56 }}>
       <h2 style={{
-        fontFamily: F.heading, fontSize: 'clamp(22px, 2.8vw, 30px)',
-        fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+        fontFamily: F.heading, fontSize: 'clamp(26px, 3.2vw, 36px)',
+        fontWeight: 700, letterSpacing: '0.01em',
         color: C.primary, margin: '0 0 16px',
       }}>
         {children}
@@ -117,35 +117,78 @@ function SectionTitle({
  ───────────────────────────────────────────────────────────────── */
 function SocialProofStrip() {
   const stats = [
-    { value: 'Breed-Focused', label: 'Designed Around Your Dog' },
-    { value: 'Curated', label: 'A Smaller, Relevant Selection' },
-    { value: '30-Day', label: 'Money-Back Guarantee' },
-    { value: 'Free', label: 'Shipping Over $50' },
+    {
+      value: 'Breed-Focused',
+      label: 'Designed around specific dog body types and everyday use.',
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="15" r="4.2" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="5.5" cy="8" r="2" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="18.5" cy="8" r="2" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="9" cy="4.5" r="1.7" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="15" cy="4.5" r="1.7" stroke="currentColor" strokeWidth="1.6" />
+        </svg>
+      ),
+    },
+    {
+      value: 'Curated Selection',
+      label: 'A smaller selection of relevant products, not an endless catalog.',
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3l2.6 5.4 6 .8-4.3 4.2 1 6-5.3-2.9-5.3 2.9 1-6-4.3-4.2 6-.8L12 3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+    {
+      value: '30-Day Guarantee',
+      label: 'Love it or return it within 30 days of delivery.',
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3.5c4.7 0 8.5 3.8 8.5 8.5s-3.8 8.5-8.5 8.5-8.5-3.8-8.5-8.5S7.3 3.5 12 3.5Z" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M8.5 12l2.4 2.4 4.6-4.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+    },
+    {
+      value: 'Free Shipping $50+',
+      label: 'Free standard shipping on orders over $50 in the US.',
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <path d="M3 7h11v9H3z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+          <path d="M14 10h4l3 3v3h-7z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+          <circle cx="7" cy="18" r="1.6" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="17.5" cy="18" r="1.6" stroke="currentColor" strokeWidth="1.6" />
+        </svg>
+      ),
+    },
   ];
 
   return (
-    <div style={{
-      background: C.primary,
-      padding: '0 24px',
-    }}>
-      <div className="max-w-[1200px] mx-auto grid grid-cols-2 lg:grid-cols-4 border-l border-white/10">
+    <div style={{ background: C.grayLight, padding: '36px 24px', borderBottom: `1px solid ${C.border}` }}>
+      <div className="max-w-[1200px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8">
         {stats.map((s, i) => (
-          <div key={i} className={`
-            py-6 px-4 border-r border-white/10 text-center flex flex-col items-center justify-center
-            ${i < 2 ? 'border-b' : ''} lg:border-b-0
-          `}>
+          <div key={i} className="flex flex-col items-center text-center gap-3">
             <div style={{
-              fontFamily: F.heading, fontSize: 24, fontWeight: 700,
-              color: C.secondary, marginBottom: 2, letterSpacing: '-0.01em',
+              width: 52, height: 52, borderRadius: '50%',
+              background: `${C.secondary}1a`,
+              color: C.secondary,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              {s.value}
+              {s.icon}
             </div>
-            <div style={{
-              fontFamily: F.nav, fontSize: 10, fontWeight: 700,
-              color: 'rgba(255,255,255,0.8)', letterSpacing: '0.12em',
-              textTransform: 'uppercase', lineHeight: 1.2,
-            }}>
-              {s.label}
+            <div>
+              <div style={{
+                fontFamily: F.heading, fontSize: 15, fontWeight: 700,
+                color: C.primary, marginBottom: 4,
+              }}>
+                {s.value}
+              </div>
+              <div style={{
+                fontFamily: F.body, fontSize: 12.5, lineHeight: 1.5,
+                color: C.grayText, maxWidth: 180, margin: '0 auto',
+              }}>
+                {s.label}
+              </div>
             </div>
           </div>
         ))}
