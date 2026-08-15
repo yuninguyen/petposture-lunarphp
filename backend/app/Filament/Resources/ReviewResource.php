@@ -9,6 +9,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Lunar\Models\Product;
 
 class ReviewResource extends Resource
@@ -52,11 +53,14 @@ class ReviewResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('lunar_product_id')
                             ->label(__('Product'))
-                            ->options(fn () => Product::all()->mapWithKeys(
-                                fn (Product $product) => [$product->id => $product->translateAttribute('name')]
-                            ))
-                            ->required()
-                            ->searchable(),
+                            ->searchable()
+                            ->getSearchResultsUsing(fn (string $search) => Product::query()
+                                ->where('attribute_data', 'like', "%{$search}%")
+                                ->limit(50)
+                                ->get()
+                                ->mapWithKeys(fn (Product $product) => [$product->id => $product->translateAttribute('name')]))
+                            ->getOptionLabelUsing(fn ($value) => Product::find($value)?->translateAttribute('name'))
+                            ->required(),
                         Forms\Components\TextInput::make('customer_name')
                             ->label(__('Customer Name'))
                             ->required()
@@ -85,6 +89,7 @@ class ReviewResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('product'))
             ->columns([
                 Tables\Columns\TextColumn::make('product.name')
                     ->label(__('Product'))
@@ -106,10 +111,21 @@ class ReviewResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('lunar_product_id')
-                    ->label(__('Product'))
-                    ->options(fn () => Product::all()->mapWithKeys(
-                        fn (Product $product) => [$product->id => $product->translateAttribute('name')]
+                Tables\Filters\Filter::make('lunar_product_id')
+                    ->form([
+                        Forms\Components\Select::make('value')
+                            ->label(__('Product'))
+                            ->searchable()
+                            ->getSearchResultsUsing(fn (string $search) => Product::query()
+                                ->where('attribute_data', 'like', "%{$search}%")
+                                ->limit(50)
+                                ->get()
+                                ->mapWithKeys(fn (Product $product) => [$product->id => $product->translateAttribute('name')]))
+                            ->getOptionLabelUsing(fn ($value) => Product::find($value)?->translateAttribute('name')),
+                    ])
+                    ->query(fn (Builder $query, array $data) => $query->when(
+                        $data['value'] ?? null,
+                        fn (Builder $q, $value) => $q->where('lunar_product_id', $value)
                     )),
             ])
             ->actions([

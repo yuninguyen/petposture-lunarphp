@@ -36,6 +36,9 @@ class ProductResource extends JsonResource
             'badge' => $this->translateAttribute('badge'),
             'isNew' => $this->translateAttribute('is_new') === '1',
 
+            // Brand
+            'brand' => $this->brand?->name,
+
             // Pricing
             'price' => $this->minorToDecimal($price?->getRawOriginal('price')),
             'comparePrice' => $this->minorToDecimal($price?->getRawOriginal('compare_price')),
@@ -166,7 +169,36 @@ class ProductResource extends JsonResource
         foreach ($specHandles as $handle => $label) {
             $value = $this->translateAttribute($handle);
             if ($value) {
-                $specs[] = ['label' => $label, 'value' => $value];
+                if (is_array($value) || is_object($value)) {
+                    $value = json_encode($value);
+                }
+                $specs[] = ['label' => $label, 'value' => (string) $value];
+            }
+        }
+
+        // Fallback to variant weight and dimensions if not set as attributes
+        $defaultVariant = $this->variants->first();
+        if ($defaultVariant) {
+            $hasWeight = collect($specs)->contains('label', 'Weight');
+            if (!$hasWeight && $defaultVariant->weight_value) {
+                $specs[] = [
+                    'label' => 'Weight',
+                    'value' => $defaultVariant->weight_value . ' ' . ($defaultVariant->weight_unit ?: 'kg')
+                ];
+            }
+
+            $hasDimensions = collect($specs)->contains('label', 'Dimensions');
+            if (!$hasDimensions) {
+                $dims = [];
+                if ($defaultVariant->length_value) $dims[] = $defaultVariant->length_value;
+                if ($defaultVariant->width_value) $dims[] = $defaultVariant->width_value;
+                if ($defaultVariant->height_value) $dims[] = $defaultVariant->height_value;
+                if (count($dims) > 0) {
+                    $specs[] = [
+                        'label' => 'Dimensions',
+                        'value' => implode(' x ', $dims) . ' ' . ($defaultVariant->length_unit ?: 'cm')
+                    ];
+                }
             }
         }
 

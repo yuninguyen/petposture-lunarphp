@@ -2,17 +2,21 @@
 
 namespace App\Observers;
 
+use App\Models\Setting;
 use App\Services\CloudflareCacheService;
+use Illuminate\Support\Facades\Cache;
 
 class SettingCacheObserver
 {
-    public function saved(): void
+    public function saved(Setting $setting): void
     {
-        app(CloudflareCacheService::class)->purgeAll();
+        Cache::forget("setting:{$setting->key}");
+        dispatch(fn () => app(CloudflareCacheService::class)->purgeAll())->afterResponse();
     }
 
-    public function deleted(): void
+    public function deleted(Setting $setting): void
     {
-        app(CloudflareCacheService::class)->purgeAll();
+        Cache::forget("setting:{$setting->key}");
+        dispatch(fn () => app(CloudflareCacheService::class)->purgeAll())->afterResponse();
     }
 }

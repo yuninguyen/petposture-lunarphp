@@ -8,11 +8,11 @@ class PostCacheObserver
 {
     public function saved(): void
     {
-        app(CloudflareCacheService::class)->purgeAll();
+        dispatch(fn () => app(CloudflareCacheService::class)->purgeAll())->afterResponse();
     }
 
     public function deleted(): void
     {
-        app(CloudflareCacheService::class)->purgeAll();
+        dispatch(fn () => app(CloudflareCacheService::class)->purgeAll())->afterResponse();
     }
 }

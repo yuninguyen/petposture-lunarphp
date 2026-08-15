@@ -13,8 +13,28 @@ interface ProductDetailsProps {
 }
 
 export function ProductDetails({ product }: ProductDetailsProps) {
+    const rawDescription = product.description?.trim();
+    const descriptionMarkup = rawDescription 
+        ? ((rawDescription.includes('<') && rawDescription.includes('>'))
+            ? rawDescription
+            : rawDescription.replace(/\n/g, '<br/>'))
+        : '';
+
+    const displaySpecs = product.specs || [];
+
+    const allSections = [
+        { id: 'description', label: 'Description' },
+        { id: 'specs', label: 'Technical Specs' },
+        { id: 'shipping', label: 'Shipping & Returns' },
+    ];
+
+    const sections = allSections.filter(section => {
+        if (section.id === 'description') return !!descriptionMarkup;
+        return true; // specs and shipping always show
+    });
+
     const [quantity, setQuantity] = useState(1);
-    const [openSection, setOpenSection] = useState<string | null>('description');
+    const [openSection, setOpenSection] = useState<string | null>(sections[0]?.id ?? null);
     const toggleSection = (id: string) => setOpenSection((current) => (current === id ? null : id));
     const { addItem } = useCart();
 
@@ -50,15 +70,6 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         : (galleryImages[activeImageIndex]?.src ?? product.image);
 
     const isAvailable = selectedVariant ? selectedVariant.available : true;
-    const descriptionMarkup = product.description?.trim()
-        ? (product.description.includes('<') ? product.description : `<p>${product.description}</p>`)
-        : '<p>Expertly crafted for superior spinal alignment and long-term pet health.</p>';
-
-    const sections = [
-        { id: 'description', label: 'Description' },
-        { id: 'specs', label: 'Technical Specs' },
-        { id: 'shipping', label: 'Shipping & Returns' },
-    ];
 
     return (
         <div className="bg-white">
@@ -117,12 +128,15 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                         className="flex flex-col"
                     >
                         <div className="mb-8">
-                            <p className="mb-4 text-xs font-black uppercase tracking-[0.15em] text-primary">
+                            <p className="mb-4 text-xs font-black capitalize tracking-[0.05em] text-primary">
                                 {product.category} Ergonomics
                             </p>
-                            <h1 className="mb-6 text-[32px] font-bold leading-[1.1] text-primary md:text-[36px]">
+                            <h1 className="mb-1 text-[30px] font-bold leading-[1.1] text-primary">
                                 {product.name}
                             </h1>
+                            <p className="mb-6 text-sm text-zinc-500">
+                                By <span className="font-semibold text-primary">{product.brand || 'PetPosture'}</span>
+                            </p>
 
                             <div className="mb-8 flex items-center gap-6">
                                 <div className="flex items-center gap-1.5">
@@ -136,10 +150,6 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                     <span className="ml-1 text-xs font-bold text-zinc-400">
                                         {product.reviews > 0 ? `(${product.reviews} Verified)` : 'No reviews yet'}
                                     </span>
-                                </div>
-                                <div className="h-4 w-px bg-zinc-100"></div>
-                                <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${isAvailable ? 'text-green-600' : 'text-zinc-400'}`}>
-                                    <ShieldCheck size={14} /> {isAvailable ? 'In Stock' : 'Out of Stock'}
                                 </div>
                             </div>
 
@@ -169,8 +179,8 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                             setSelectedValues((prev) => ({ ...prev, [option.name]: value.id }))
                                                         }
                                                         className={`rounded-[4px] border-2 px-4 py-2 text-sm font-bold uppercase tracking-wide transition-colors ${isSelected
-                                                                ? 'border-secondary bg-secondary text-ink'
-                                                                : 'border-zinc-200 bg-white text-primary hover:border-secondary'
+                                                            ? 'border-secondary bg-secondary text-ink'
+                                                            : 'border-zinc-200 bg-white text-primary hover:border-secondary'
                                                             }`}
                                                     >
                                                         {value.name}
@@ -184,21 +194,29 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                         )}
 
                         <div className="mb-12 space-y-6 rounded-2xl border border-zinc-100 bg-zinc-50 p-8 shadow-sm shadow-zinc-200/20">
-                            <div className="flex items-center gap-4">
-                                <div className="flex h-[54px] items-center rounded-[4px] border-2 border-white bg-white shadow-sm">
-                                    <button
-                                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                        className="flex h-full items-center px-2 text-zinc-400 transition-colors hover:text-primary"
-                                    >
-                                        -
-                                    </button>
-                                    <span className="w-9 text-center font-bold text-primary">{quantity}</span>
-                                    <button
-                                        onClick={() => setQuantity(quantity + 1)}
-                                        className="flex h-full items-center px-2 text-zinc-400 transition-colors hover:text-primary"
-                                    >
-                                        +
-                                    </button>
+                            <div className="flex flex-col gap-5">
+                                <div className="flex items-center gap-6">
+                                    <div className="flex h-[54px] items-center rounded-[4px] border-2 border-white bg-white shadow-sm">
+                                        <button
+                                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                            className="flex h-full items-center px-3 text-zinc-400 transition-colors hover:text-primary"
+                                        >
+                                            -
+                                        </button>
+                                        <span className="w-10 text-center font-bold text-primary">{quantity}</span>
+                                        <button
+                                            onClick={() => setQuantity(quantity + 1)}
+                                            className="flex h-full items-center px-3 text-zinc-400 transition-colors hover:text-primary"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <div className={`flex items-center gap-2 text-sm font-bold capitalize tracking-wider ${isAvailable ? 'text-green-600' : 'text-zinc-400'}`}>
+                                            <ShieldCheck size={18} /> {isAvailable ? 'In Stock' : 'Out of Stock'}
+                                        </div>
+                                        <p className="mt-1 text-xs text-zinc-500">Free shipping on orders over $50</p>
+                                    </div>
                                 </div>
                                 <button
                                     onClick={() => {
@@ -214,7 +232,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                         for (let i = 0; i < quantity; i++) addItem(itemToAdd);
                                     }}
                                     disabled={!isAvailable}
-                                    className="h-[54px] flex-1 rounded-[4px] bg-secondary text-base font-black uppercase tracking-[0.12em] text-ink shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-40"
+                                    className="h-[54px] w-full rounded-[4px] bg-secondary text-base font-black uppercase tracking-[0.12em] text-ink shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                     {isAvailable ? 'Add to cart' : 'Out of stock'}
                                 </button>
@@ -254,15 +272,15 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                             )}
                                             {section.id === 'specs' && (
                                                 <div className="grid grid-cols-1 gap-4">
-                                                    {(product.specs && product.specs.length > 0) ? (
-                                                        product.specs.map((spec, i) => (
+                                                    {(displaySpecs && displaySpecs.length > 0) ? (
+                                                        displaySpecs.map((spec, i) => (
                                                             <div key={i} className="flex justify-between border-b border-zinc-50 py-3 text-sm">
                                                                 <span className="font-bold uppercase tracking-wide text-primary">{spec.label}</span>
                                                                 <span className="text-zinc-500">{spec.value}</span>
                                                             </div>
                                                         ))
                                                     ) : (
-                                                        <p className="text-zinc-400">No technical specifications available for this product yet.</p>
+                                                        <p className="text-zinc-400 text-sm">No technical specifications available for this product yet.</p>
                                                     )}
                                                 </div>
                                             )}

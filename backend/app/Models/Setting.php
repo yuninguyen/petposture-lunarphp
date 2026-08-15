@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class Setting extends Model
 {
@@ -31,12 +32,21 @@ class Setting extends Model
 
     /**
      * Helper to get a setting by key.
+     *
+     * Cached indefinitely — SettingCacheObserver forgets the per-key cache entry
+     * whenever a Setting is saved/deleted, so this stays correct without a TTL.
+     * The "exists" flag is cached separately from $default so two call sites
+     * passing different defaults for the same missing key don't cross-contaminate.
      */
     public static function get(string $key, $default = null)
     {
-        $setting = self::where('key', $key)->first();
+        $cached = Cache::rememberForever("setting:{$key}", function () use ($key) {
+            $setting = self::where('key', $key)->first();
 
-        return $setting ? $setting->cast_value : $default;
+            return $setting ? ['exists' => true, 'value' => $setting->cast_value] : ['exists' => false, 'value' => null];
+        });
+
+        return $cached['exists'] ? $cached['value'] : $default;
     }
 
     /**

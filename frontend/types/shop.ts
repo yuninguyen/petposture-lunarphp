@@ -58,6 +58,7 @@ export interface Product {
     lowStockWarning?: boolean;
     backorder?: boolean;
     description?: string;
+    brand?: string;
     specs?: ProductSpec[];
     options?: ProductOption[];
     variants?: ProductVariant[];

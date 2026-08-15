@@ -81,8 +81,8 @@ export function ProductReviews({ product }: ProductReviewsProps) {
 
                     {/* Summary Side */}
                     <div className="lg:col-span-1">
-                        <h2 className="text-primary text-xs font-black uppercase tracking-[0.18em] mb-4">Patient Feedback</h2>
-                        <h3 className="text-primary text-[32px] font-bold leading-tight uppercase mb-8">USER JOURNEYS</h3>
+                        <h2 className="text-primary text-xs font-black capitalize tracking-[0.05em] mb-4">Patient Feedback</h2>
+                        <h3 className="text-primary text-[32px] font-bold leading-tight uppercase mb-8">User Journeys</h3>
 
                         <div className="bg-white p-10 rounded-3xl border border-zinc-100 shadow-xl shadow-zinc-200/20 mb-8">
                             <div className="text-center">
@@ -99,7 +99,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
 
                             <button
                                 onClick={() => setIsFormOpen(!isFormOpen)}
-                                className="w-full mt-10 bg-primary text-ink py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-secondary transition-all"
+                                className="w-full mt-10 bg-secondary text-ink py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.1em] shadow-xl hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 {isFormOpen ? 'Cancel Review' : 'Write a Review'}
                             </button>
@@ -124,60 +124,60 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                     {/* Review List & Form */}
                     <div className="lg:col-span-2">
                         {isFormOpen ? (
-                                <div className="bg-white p-12 rounded-3xl border border-zinc-100 shadow-2xl shadow-zinc-200/30 mb-12">
-                                    <h4 className="text-primary text-[20px] font-bold mb-8 uppercase tracking-wide">Share your pet&apos;s journey</h4>
-                                    <form onSubmit={handleSubmit} className="space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Customer Name</label>
-                                                <input
-                                                    required
-                                                    type="text"
-                                                    value={formData.customer_name}
-                                                    onChange={e => setFormData({ ...formData, customer_name: e.target.value })}
-                                                    className="w-full bg-zinc-50 border-none rounded-lg p-4 text-primary font-bold text-[14px] focus:ring-2 focus:ring-secondary/20 outline-none"
-                                                    placeholder="e.g. Sarah J."
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Biometric Rating</label>
-                                                <div className="flex gap-2">
-                                                    {[1, 2, 3, 4, 5].map(star => (
-                                                        <button
-                                                            key={star}
-                                                            type="button"
-                                                            onClick={() => setFormData({ ...formData, rating: star })}
-                                                            className={`p-2 rounded-lg transition-colors ${formData.rating >= star ? 'text-rust' : 'text-zinc-200'}`}
-                                                        >
-                                                            <Star size={24} fill={formData.rating >= star ? 'currentColor' : 'none'} />
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
+                            <div className="bg-white p-12 rounded-3xl border border-zinc-100 shadow-2xl shadow-zinc-200/30 mb-12">
+                                <h4 className="text-primary text-[20px] font-bold mb-8 uppercase tracking-wide">Share your pet&apos;s journey</h4>
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Professional Feedback</label>
-                                            <textarea
+                                            <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Customer Name</label>
+                                            <input
                                                 required
-                                                rows={4}
-                                                value={formData.comment}
-                                                onChange={e => setFormData({ ...formData, comment: e.target.value })}
-                                                className="w-full bg-zinc-50 border-none rounded-lg p-4 text-primary font-bold text-[14px] focus:ring-2 focus:ring-secondary/20 outline-none resize-none"
-                                                placeholder="Tell us how it improved your pet's posture..."
+                                                type="text"
+                                                value={formData.customer_name}
+                                                onChange={e => setFormData({ ...formData, customer_name: e.target.value })}
+                                                className="w-full bg-zinc-50 border-none rounded-lg p-4 text-primary font-bold text-[14px] focus:ring-2 focus:ring-secondary/20 outline-none"
+                                                placeholder="e.g. Sarah J."
                                             />
                                         </div>
-                                        <button
-                                            disabled={isSubmitting}
-                                            type="submit"
-                                            className="bg-secondary text-ink px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-secondary-dark transition-all flex items-center gap-3 disabled:opacity-50"
-                                        >
-                                            {isSubmitting ? 'Transmitting...' : (
-                                                <>Submit for Verification <Send size={14} /></>
-                                            )}
-                                        </button>
-                                    </form>
-                                </div>
-                            ) : null}
+                                        <div>
+                                            <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Biometric Rating</label>
+                                            <div className="flex gap-2">
+                                                {[1, 2, 3, 4, 5].map(star => (
+                                                    <button
+                                                        key={star}
+                                                        type="button"
+                                                        onClick={() => setFormData({ ...formData, rating: star })}
+                                                        className={`p-2 rounded-lg transition-colors ${formData.rating >= star ? 'text-rust' : 'text-zinc-200'}`}
+                                                    >
+                                                        <Star size={24} fill={formData.rating >= star ? 'currentColor' : 'none'} />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Professional Feedback</label>
+                                        <textarea
+                                            required
+                                            rows={4}
+                                            value={formData.comment}
+                                            onChange={e => setFormData({ ...formData, comment: e.target.value })}
+                                            className="w-full bg-zinc-50 border-none rounded-lg p-4 text-primary font-bold text-[14px] focus:ring-2 focus:ring-secondary/20 outline-none resize-none"
+                                            placeholder="Tell us how it improved your pet's posture..."
+                                        />
+                                    </div>
+                                    <button
+                                        disabled={isSubmitting}
+                                        type="submit"
+                                        className="bg-secondary text-ink px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-secondary-dark transition-all flex items-center gap-3 disabled:opacity-50"
+                                    >
+                                        {isSubmitting ? 'Transmitting...' : (
+                                            <>Submit for Verification <Send size={14} /></>
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
+                        ) : null}
 
                         <div className="space-y-8">
                             {isLoading ? (
@@ -188,7 +188,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                             ) : reviews.length === 0 ? (
                                 <div className="bg-white p-12 rounded-3xl border border-zinc-100 text-center">
                                     <MessageSquare size={32} className="mx-auto text-zinc-100 mb-6" />
-                                    <p className="text-zinc-400 font-bold uppercase tracking-widest text-sm">No journeys shared yet. Be the first to lead the pack.</p>
+                                    <p className="text-zinc-400  text-sm">No journeys shared yet. Be the first to lead the pack.</p>
                                 </div>
                             ) : (
                                 reviews.map((review) => (

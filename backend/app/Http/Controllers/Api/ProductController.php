@@ -39,6 +39,7 @@ class ProductController extends Controller
                 'urls',
                 'collections.defaultUrl',
                 'productOptions.values',
+                'brand',
             ]);
 
         // Filter by category: slug lives in lunar_urls, not lunar_collections
@@ -242,6 +243,7 @@ class ProductController extends Controller
                 'urls',
                 'collections.defaultUrl',
                 'productOptions.values',
+                'brand',
             ]);
 
         // Same collection first, fall back to same brand
@@ -336,6 +338,7 @@ class ProductController extends Controller
             'urls',
             'collections.defaultUrl',
             'productOptions.values',
+            'brand',
         ];
 
         $product = Product::with($with)
