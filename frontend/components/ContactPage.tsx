@@ -19,7 +19,7 @@ function ContactInfoItem({ icon: Icon, label, value, href, note }: { icon: React
                 <Icon size={20} />
             </div>
             <div className="flex-1">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-rust mb-1">{label}</p>
+                <p className="text-xs font-black uppercase tracking-[0.08em] text-rust mb-1">{label}</p>
                 <p className="text-[15px] font-bold text-primary leading-tight">{value}</p>
                 {note && (
                     <p className="text-xs text-zinc-400 mt-1 font-medium italic">
@@ -37,12 +37,12 @@ type FieldErrors = Partial<Record<'name' | 'email' | 'subject' | 'message', stri
 
 const MESSAGES = {
     success: "Thank you! Your message has been sent. We'll get back to you within 24 business hours.",
-    error:   'Unable to send your message. Please try again or email us directly.',
+    error: 'Unable to send your message. Please try again or email us directly.',
     sending: 'Sending your message...',
-    spam:    'Too many requests. Please wait a moment before trying again.',
+    spam: 'Too many requests. Please wait a moment before trying again.',
     validation: {
-        name:    'Please enter your full name.',
-        email:   'Please enter a valid email address.',
+        name: 'Please enter your full name.',
+        email: 'Please enter a valid email address.',
         subject: 'Please enter a subject for your message.',
         message: 'Please enter your message (min. 10 characters).',
     },
@@ -133,10 +133,10 @@ export default function ContactPage() {
             {/* Hero Section - Clean & High-End */}
             <section className="bg-gray-50 py-12 px-4 md:px-8 border-b border-zinc-100">
                 <div className="max-w-[1200px] mx-auto text-center">
-                    <div className="inline-block px-4 py-1.5 bg-secondary/5 border border-secondary/20 rounded text-xs font-black uppercase tracking-[0.25em] text-rust mb-6">
+                    <div className="inline-block px-4 py-1.5 bg-secondary/5 border border-secondary/20 rounded text-xs font-black uppercase tracking-[0.08em] text-rust mb-6">
                         Get in touch
                     </div>
-                    <h1 className="text-[32px] md:text-[48px] font-black uppercase tracking-[0.1em] text-primary mb-6 leading-tight">
+                    <h1 className="text-[32px] md:text-[48px] font-black uppercase tracking-[0.08em] text-primary mb-6 leading-tight">
                         How Can We Help <br className="hidden md:block" /> Your Pack Today?
                     </h1>
                     <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
@@ -158,7 +158,7 @@ export default function ContactPage() {
                     {/* Left Side: Contact Form (7 cols) */}
                     <div className="lg:col-span-7 bg-white p-8 md:p-12 rounded-2xl border border-zinc-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)]">
                         <div className="mb-10">
-                            <h3 className="text-2xl font-black uppercase tracking-widest text-primary mb-3">Send Us a Message</h3>
+                            <h3 className="text-2xl font-black uppercase tracking-[0.08em] text-primary mb-3">Send Us a Message</h3>
                             <p className="text-sm text-zinc-400 font-medium">We typically respond to all inquiries within 24 business hours.</p>
                         </div>
 
@@ -282,7 +282,7 @@ export default function ContactPage() {
                                 type="submit"
                                 disabled={status === 'loading'}
                                 style={{ fontFamily: 'var(--font-lato), sans-serif' }}
-                                className="w-full md:w-auto bg-secondary hover:bg-secondary-dark text-ink px-12 py-5 font-bold text-sm uppercase tracking-[0.12em] transition-colors rounded-sm shadow-md flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group"
+                                className="w-full md:w-auto bg-secondary hover:bg-secondary-dark text-ink px-12 py-5 font-bold text-sm uppercase tracking-[0.08em] transition-colors rounded-sm shadow-md flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group"
                             >
                                 {status === 'loading' ? (
                                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -299,7 +299,7 @@ export default function ContactPage() {
                     <div className="lg:col-span-5 lg:pt-12">
                         <div className="space-y-10">
                             <div>
-                                <h3 className="text-2xl font-black uppercase tracking-widest text-primary mb-6">Contact Details</h3>
+                                <h3 className="text-2xl font-black uppercase tracking-[0.08em] text-primary mb-6">Contact Details</h3>
                                 <div className="space-y-4">
                                     <ContactInfoItem
                                         icon={Mail}
@@ -326,11 +326,11 @@ export default function ContactPage() {
                             {/* Quick Question Section */}
                             <div className="p-8 bg-primary rounded-2xl relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700" />
-                                <h4 className="text-white text-lg font-black uppercase tracking-widest mb-4">Have a Quick Question?</h4>
+                                <h4 className="text-white text-lg font-black uppercase tracking-[0.08em] mb-4">Have a Quick Question?</h4>
                                 <p className="text-white/60 text-sm leading-relaxed mb-6">
                                     Many common questions about shipping, returns, and breed-specific fits are answered in our Help Center.
                                 </p>
-                                <Link href="/faqs" className="inline-flex items-center gap-2 text-rust font-black text-sm uppercase tracking-widest hover:text-white transition-colors group">
+                                <Link href="/faqs" className="inline-flex items-center gap-2 text-secondary font-black text-sm uppercase tracking-[0.08em] hover:text-white transition-colors group">
                                     Visit Help Center <span className="group-hover:translate-x-1 transition-transform">→</span>
                                 </Link>
                             </div>

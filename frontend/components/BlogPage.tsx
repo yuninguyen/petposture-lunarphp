@@ -158,14 +158,14 @@ export default function BlogPage() {
                                     sizes="(max-width: 1024px) 100vw, 60vw"
                                 />
                                 <div className="absolute left-6 top-6">
-                                    <span className="rounded-[3px] bg-secondary px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] text-ink shadow-lg">
+                                    <span className="rounded-[3px] bg-secondary px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-ink shadow-lg">
                                         Featured Article
                                     </span>
                                 </div>
                             </div>
                             <div className="flex flex-col justify-center p-8 md:p-12 lg:w-2/5">
                                 <div className="mb-6 flex items-center gap-3">
-                                    <span className="text-sm font-bold uppercase tracking-widest text-rust">
+                                    <span className="text-sm font-bold uppercase tracking-wider text-rust">
                                         {featuredPost.blog_category?.name || "Insights"}
                                     </span>
                                     <span className="h-1 w-1 rounded-full bg-zinc-300" />
@@ -203,7 +203,7 @@ export default function BlogPage() {
                                     </div>
                                     <Link
                                         href={`/blog/${featuredPost.slug || featuredPost.id}`}
-                                        className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-primary transition-all hover:text-rust"
+                                        className="flex items-center gap-2 text-sm font-bold text-primary transition-all hover:text-rust"
                                     >
                                         Continue <ArrowRight size={14} />
                                     </Link>
@@ -223,7 +223,7 @@ export default function BlogPage() {
                     >
                         <button
                             onClick={() => setActiveTab("All")}
-                            className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors md:text-sm ${activeTab === "All"
+                            className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-colors md:text-sm ${activeTab === "All"
                                 ? "text-white"
                                 : "text-primary/60 hover:text-primary"
                                 }`}
@@ -241,7 +241,7 @@ export default function BlogPage() {
                             <button
                                 key={cat.id}
                                 onClick={() => setActiveTab(cat.name)}
-                                className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors md:text-sm ${activeTab === cat.name
+                                className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-colors md:text-sm ${activeTab === cat.name
                                     ? "text-white"
                                     : "text-primary/60 hover:text-primary"
                                     }`}
@@ -309,7 +309,7 @@ export default function BlogPage() {
                                             </div>
                                         </div>
                                         <div className="flex flex-1 flex-col py-1">
-                                            <div className="mb-3 flex items-center gap-3 text-xs font-bold uppercase tracking-wider text-zinc-400">
+                                            <div className="mb-3 flex items-center gap-3 text-xs font-bold text-zinc-400">
                                                 <span className="text-rust">
                                                     {post.author || "PetPosture Editorial"}
                                                 </span>
@@ -337,7 +337,7 @@ export default function BlogPage() {
                                                 </div>
                                                 <Link
                                                     href={`/blog/${post.slug || post.id}`}
-                                                    className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.1em] text-primary transition-all hover:text-rust"
+                                                    className="flex items-center gap-2 text-sm font-bold text-primary transition-all hover:text-rust"
                                                 >
                                                     Read Story <ChevronRight size={14} />
                                                 </Link>
@@ -350,7 +350,7 @@ export default function BlogPage() {
 
                         {latestPosts.length > 0 && (
                             <div className="mt-20 flex justify-center border-t border-zinc-100 pt-10">
-                                <button className="rounded-[3px] bg-secondary px-14 py-4 text-sm font-bold uppercase tracking-[0.2em] text-ink shadow-xl shadow-orange-100/50 transition-all hover:bg-secondary-dark">
+                                <button className="rounded-[3px] bg-secondary px-14 py-4 text-sm font-bold uppercase tracking-[0.08em] text-ink shadow-xl shadow-orange-100/50 transition-all hover:bg-secondary-dark">
                                     Load More Content
                                 </button>
                             </div>
@@ -359,7 +359,7 @@ export default function BlogPage() {
 
                     <aside className="space-y-12 lg:w-80">
                         <div className="rounded-2xl border border-zinc-100 bg-white p-8 shadow-sm">
-                            <h4 className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.1em] text-rust">
+                            <h4 className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.08em] text-rust">
                                 Follow PetPosture
                                 <div className="h-1.5 w-1.5 rounded-full bg-secondary/20" />
                             </h4>
@@ -393,7 +393,7 @@ export default function BlogPage() {
 
                         {posts.length > 0 && (
                             <div>
-                                <h4 className="mb-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.1em] text-rust">
+                                <h4 className="mb-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.08em] text-rust">
                                     Most Discussed
                                     <div className="h-[1px] flex-1 bg-zinc-100" />
                                 </h4>
@@ -445,7 +445,7 @@ export default function BlogPage() {
                         )}
 
                         <div className="relative overflow-hidden rounded-2xl border border-zinc-100 bg-[#f8f9fa] p-8">
-                            <h4 className="mb-4 text-[14px] font-bold uppercase tracking-[0.1em] text-primary">
+                            <h4 className="mb-4 text-[14px] font-bold uppercase tracking-[0.08em] text-primary">
                                 Never miss a post
                             </h4>
                             <p className="mb-6 text-sm text-[#666666]">
@@ -456,7 +456,7 @@ export default function BlogPage() {
                                 placeholder="Your email"
                                 className="mb-4 w-full rounded-[3px] border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-secondary"
                             />
-                            <button className="w-full rounded-[3px] bg-secondary py-3 text-sm font-bold uppercase tracking-[0.15em] text-ink transition-all hover:bg-secondary-dark">
+                            <button className="w-full rounded-[3px] bg-secondary py-3 text-sm font-bold uppercase tracking-[0.08em] text-ink transition-all hover:bg-secondary-dark">
                                 Subscribe
                             </button>
                         </div>
@@ -496,7 +496,7 @@ export default function BlogPage() {
                                 placeholder="Enter your email address"
                                 className="w-full md:flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-primary outline-none"
                             />
-                            <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-secondary px-10 py-4 text-sm font-bold uppercase tracking-[0.2em] text-ink shadow-lg transition-all hover:bg-secondary-dark">
+                            <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-secondary px-10 py-4 text-sm font-bold uppercase tracking-[0.08em] text-ink shadow-lg transition-all hover:bg-secondary-dark">
                                 Subscribe Now
                             </button>
                         </div>

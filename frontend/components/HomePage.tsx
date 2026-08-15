@@ -357,8 +357,8 @@ function WhyChoose() {
           <circle cx="26" cy="25" r="2.5" stroke="currentColor" strokeWidth="1.5" />
         </svg>
       ),
-      title: 'Ships in 24 Hours',
-      desc: 'Every order is packed and shipped from our US warehouse within one business day.',
+      title: 'Breed-Focused',
+      desc: 'We consider body type, size and everyday use so products make more sense for your dog.',
       accent: '#4f9cf9',
     },
     {
@@ -368,8 +368,8 @@ function WhyChoose() {
           <path d="M11 16l3.5 3.5 6.5-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ),
-      title: '30-Day Guarantee',
-      desc: 'Not satisfied? Return it hassle-free within 30 days — no questions asked.',
+      title: 'Practical Research',
+      desc: 'We look at fit, materials, sizing and usability-not just what\'s popular.',
       accent: '#38c68b',
     },
     {
@@ -378,8 +378,8 @@ function WhyChoose() {
           <path d="M16 5l2.6 6.6H26l-5.8 4.2 2.2 7.2-6.4-4.6-6.4 4.6 2.2-7.2L6 11.6h7.4L16 5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
         </svg>
       ),
-      title: 'Practical Research',
-      desc: 'We look at fit, materials, sizing and everyday usability before anything makes the cut.',
+      title: 'Carefully Selected',
+      desc: 'We would rather recommend a smaller number of relevant products than an endless catalog.',
       accent: '#f5a623',
     },
     {
@@ -388,8 +388,8 @@ function WhyChoose() {
           <path d="M16 28s-10-6.4-10-13a7 7 0 0 1 10-6.3A7 7 0 0 1 26 15c0 6.6-10 13-10 13Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
         </svg>
       ),
-      title: 'Built for Your Breed',
-      desc: 'Specialty ergonomics for flat-faced, long-backed, and senior dog breeds.',
+      title: 'Transparent Reviews',
+      desc: 'We clearly distinguish between products we\'ve researched and products we\'ve physical tested.',
       accent: C.secondary,
     },
   ];
@@ -842,7 +842,7 @@ function StartWithYourDog() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   INSIGHTS
+   From the PetPosture Blog
  ───────────────────────────────────────────────────────────────── */
 function PostCard({ post }: { post: BlogPost }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -912,7 +912,7 @@ function PostCard({ post }: { post: BlogPost }) {
         display: 'flex', alignItems: 'center', gap: 6,
         fontFamily: F.nav, fontSize: 11, fontWeight: 700,
         color: isHovered ? C.secondary : C.grayText,
-        letterSpacing: '0.08em', textTransform: 'uppercase',
+        letterSpacing: '0.05em', textTransform: 'capitalize',
         transition: 'color 0.25s ease',
       }}>
         <span>{post.date}</span>
