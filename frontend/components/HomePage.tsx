@@ -212,6 +212,9 @@ function SocialProofStrip() {
    SHOP WHAT YOU NEED
  ───────────────────────────────────────────────────────────────── */
 function ShopCategories() {
+  const [hoveredBreed, setHoveredBreed] = useState<string | null>(null);
+  const [hoveredSolution, setHoveredSolution] = useState<string | null>(null);
+
   const breeds = [
     { name: 'Dachshund', slug: 'dachshund', img: '/assets/dog-sofa.jpg' },
     { name: 'French Bulldog', slug: 'french-bulldog', img: '/assets/French-Bulldog.png' },
@@ -276,9 +279,9 @@ function ShopCategories() {
         <SectionTitle sub="Start with your dog's breed or the everyday challenge you're trying to solve.">
           Find What Fits Your Dog
         </SectionTitle>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Shop by Breed */}
-          <div style={{ background: '#eef4fb', borderRadius: 16, padding: '32px' }}>
+          <div style={{ background: '#eef4fb', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column' }}>
             <div className="flex items-start gap-4 mb-6">
               <div style={{
                 width: 48, height: 48, flexShrink: 0, borderRadius: '50%',
@@ -308,14 +311,29 @@ function ShopCategories() {
                   key={b.slug}
                   href={`/dogs/${b.slug}`}
                   className="text-center"
-                  style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '10px 6px' }}
+                  onMouseEnter={() => setHoveredBreed(b.slug)}
+                  onMouseLeave={() => setHoveredBreed(null)}
+                  style={{
+                    background: C.white,
+                    border: `1px solid ${hoveredBreed === b.slug ? C.secondary : C.border}`,
+                    borderRadius: 14, padding: '10px 6px',
+                    transform: hoveredBreed === b.slug ? 'translateY(-3px)' : 'none',
+                    boxShadow: hoveredBreed === b.slug ? '0 8px 20px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.2s ease',
+                  }}
                 >
                   <div style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 10, overflow: 'hidden', background: C.grayLight, marginBottom: 8 }}>
                     <Image src={b.img} alt={b.name} fill sizes="120px" className="object-cover" />
                   </div>
-                  <span style={{ fontFamily: F.body, fontSize: 12, fontWeight: 700, color: C.primary }}>
-                    {b.name}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 30 }}>
+                    <span style={{
+                      fontFamily: F.body, fontSize: 11.5, fontWeight: 700, lineHeight: 1.25,
+                      color: hoveredBreed === b.slug ? C.secondary : C.primary,
+                      transition: 'color 0.2s ease',
+                    }}>
+                      {b.name}
+                    </span>
+                  </div>
                 </Link>
               ))}
             </div>
@@ -323,13 +341,14 @@ function ShopCategories() {
               display: 'block', textAlign: 'center', fontFamily: F.nav,
               fontSize: 12, fontWeight: 800, color: C.secondary,
               textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
+              marginTop: 'auto',
             }}>
               View All Breeds →
             </Link>
           </div>
 
           {/* Shop by Solutions */}
-          <div style={{ background: '#fbf1e8', borderRadius: 16, padding: '32px' }}>
+          <div style={{ background: '#fbf1e8', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column' }}>
             <div className="flex items-start gap-4 mb-6">
               <div style={{
                 width: 48, height: 48, flexShrink: 0, borderRadius: '50%',
@@ -349,17 +368,31 @@ function ShopCategories() {
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-4 md:gap-5 mb-6">
+            <div className="grid grid-cols-4 gap-3 mb-6">
               {solutions.map((s) => (
-                <Link key={s.slug} href={`/solutions/${s.slug}`} className="flex flex-col items-center gap-2" style={{ width: 76 }}>
+                <Link
+                  key={s.slug}
+                  href={`/solutions/${s.slug}`}
+                  className="flex flex-col items-center gap-2"
+                  onMouseEnter={() => setHoveredSolution(s.slug)}
+                  onMouseLeave={() => setHoveredSolution(null)}
+                >
                   <div style={{
-                    width: 76, height: 76, borderRadius: '50%',
-                    background: `${s.accent}26`, color: s.accent,
+                    width: 72, height: 72, borderRadius: '50%',
+                    background: `${s.accent}${hoveredSolution === s.slug ? '3d' : '26'}`,
+                    color: s.accent,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transform: hoveredSolution === s.slug ? 'translateY(-3px) scale(1.05)' : 'none',
+                    boxShadow: hoveredSolution === s.slug ? `0 8px 20px ${s.accent}33` : 'none',
+                    transition: 'all 0.2s ease',
                   }}>
                     {s.icon}
                   </div>
-                  <span style={{ fontFamily: F.body, fontSize: 12.5, fontWeight: 600, color: C.primary, textAlign: 'center' }}>
+                  <span style={{
+                    fontFamily: F.body, fontSize: 12.5, fontWeight: 600, textAlign: 'center',
+                    color: hoveredSolution === s.slug ? s.accent : C.primary,
+                    transition: 'color 0.2s ease',
+                  }}>
                     {s.name}
                   </span>
                 </Link>
@@ -369,6 +402,7 @@ function ShopCategories() {
               display: 'block', textAlign: 'center', fontFamily: F.nav,
               fontSize: 12, fontWeight: 800, color: C.secondary,
               textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
+              marginTop: 'auto',
             }}>
               View All Solutions →
             </Link>
