@@ -313,16 +313,14 @@ function ShopCategories() {
                   className="text-center"
                   onMouseEnter={() => setHoveredBreed(b.slug)}
                   onMouseLeave={() => setHoveredBreed(null)}
-                  style={{
-                    background: C.white,
-                    border: `1px solid ${hoveredBreed === b.slug ? C.secondary : C.border}`,
-                    borderRadius: 14, padding: '10px 6px',
-                    transform: hoveredBreed === b.slug ? 'translateY(-3px)' : 'none',
-                    boxShadow: hoveredBreed === b.slug ? '0 8px 20px rgba(0,0,0,0.1)' : 'none',
-                    transition: 'all 0.2s ease',
-                  }}
                 >
-                  <div style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 10, overflow: 'hidden', background: C.grayLight, marginBottom: 8 }}>
+                  <div style={{
+                    position: 'relative', aspectRatio: '4 / 5', borderRadius: 12,
+                    overflow: 'hidden', background: C.grayLight, marginBottom: 8,
+                    boxShadow: hoveredBreed === b.slug ? '0 10px 22px rgba(0,0,0,0.18)' : '0 2px 6px rgba(0,0,0,0.06)',
+                    transform: hoveredBreed === b.slug ? 'translateY(-3px)' : 'none',
+                    transition: 'all 0.2s ease',
+                  }}>
                     <Image src={b.img} alt={b.name} fill sizes="120px" className="object-cover" />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 30 }}>
