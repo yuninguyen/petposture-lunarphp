@@ -14,7 +14,7 @@ interface ProductDetailsProps {
 
 export function ProductDetails({ product }: ProductDetailsProps) {
     const rawDescription = product.description?.trim();
-    const descriptionMarkup = rawDescription 
+    const descriptionMarkup = rawDescription
         ? ((rawDescription.includes('<') && rawDescription.includes('>'))
             ? rawDescription
             : rawDescription.replace(/\n/g, '<br/>'))
@@ -275,7 +275,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                     {(displaySpecs && displaySpecs.length > 0) ? (
                                                         displaySpecs.map((spec, i) => (
                                                             <div key={i} className="flex justify-between border-b border-zinc-50 py-3 text-sm">
-                                                                <span className="font-bold uppercase tracking-wide text-primary">{spec.label}</span>
+                                                                <span className="font-bold capitalize tracking-wide text-primary">{spec.label}</span>
                                                                 <span className="text-zinc-500">{spec.value}</span>
                                                             </div>
                                                         ))
