@@ -121,49 +121,25 @@ function SocialProofStrip() {
       value: 'Breed-Focused',
       label: 'Designed around specific dog body types and everyday use.',
       accent: '#4f9cf9',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="15" r="4.2" stroke="currentColor" strokeWidth="1.6" />
-          <circle cx="5.5" cy="8" r="2" stroke="currentColor" strokeWidth="1.6" />
-          <circle cx="18.5" cy="8" r="2" stroke="currentColor" strokeWidth="1.6" />
-          <circle cx="9" cy="4.5" r="1.7" stroke="currentColor" strokeWidth="1.6" />
-          <circle cx="15" cy="4.5" r="1.7" stroke="currentColor" strokeWidth="1.6" />
-        </svg>
-      ),
+      img: '/assets/Trust-Breed-Focused.png',
     },
     {
       value: 'Curated Selection',
       label: 'A smaller selection of relevant products, not an endless catalog.',
       accent: '#f5a623',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M12 3l2.6 5.4 6 .8-4.3 4.2 1 6-5.3-2.9-5.3 2.9 1-6-4.3-4.2 6-.8L12 3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-        </svg>
-      ),
+      img: '/assets/Trust-Curated-Selection.png',
     },
     {
       value: '30-Day Guarantee',
       label: 'Love it or return it within 30 days of delivery.',
       accent: '#38c68b',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M12 3.5c4.7 0 8.5 3.8 8.5 8.5s-3.8 8.5-8.5 8.5-8.5-3.8-8.5-8.5S7.3 3.5 12 3.5Z" stroke="currentColor" strokeWidth="1.6" />
-          <path d="M8.5 12l2.4 2.4 4.6-4.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      ),
+      img: '/assets/Trust-30-Day-Guarantee.png',
     },
     {
       value: 'Free Shipping $50+',
       label: 'Free standard shipping on orders over $50 in the US.',
       accent: C.secondary,
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M3 7h11v9H3z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-          <path d="M14 10h4l3 3v3h-7z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-          <circle cx="7" cy="18" r="1.6" stroke="currentColor" strokeWidth="1.6" />
-          <circle cx="17.5" cy="18" r="1.6" stroke="currentColor" strokeWidth="1.6" />
-        </svg>
-      ),
+      img: '/assets/Trust-Free-Shipping.png',
     },
   ];
 
@@ -180,12 +156,11 @@ function SocialProofStrip() {
             }}
           >
             <div style={{
+              position: 'relative',
               width: 48, height: 48, flexShrink: 0, borderRadius: '50%',
               background: `${s.accent}26`,
-              color: s.accent,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              {s.icon}
+              <Image src={s.img} alt={s.value} fill sizes="48px" className="object-contain p-1.5" />
             </div>
             <div>
               <div style={{
@@ -241,17 +216,11 @@ function ShopCategories() {
           <div style={{ background: '#eef4fb', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column' }}>
             <div className="flex items-start gap-4 mb-6">
               <div style={{
+                position: 'relative',
                 width: 48, height: 48, flexShrink: 0, borderRadius: '50%',
-                background: '#dbe7f7', color: '#4f74a8',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: '#dbe7f7',
               }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="15" r="4.2" stroke="currentColor" strokeWidth="1.7" />
-                  <circle cx="5.5" cy="8" r="2" stroke="currentColor" strokeWidth="1.7" />
-                  <circle cx="18.5" cy="8" r="2" stroke="currentColor" strokeWidth="1.7" />
-                  <circle cx="9" cy="4.5" r="1.7" stroke="currentColor" strokeWidth="1.7" />
-                  <circle cx="15" cy="4.5" r="1.7" stroke="currentColor" strokeWidth="1.7" />
-                </svg>
+                <Image src="/assets/Icon-Header-Breed.png" alt="Shop by Breed" fill sizes="48px" className="object-contain p-2" />
               </div>
               <div>
                 <h3 style={{ fontFamily: F.heading, fontSize: 20, fontWeight: 700, color: C.primary, margin: '0 0 4px' }}>
@@ -306,13 +275,11 @@ function ShopCategories() {
           <div style={{ background: '#fbf1e8', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column' }}>
             <div className="flex items-start gap-4 mb-6">
               <div style={{
+                position: 'relative',
                 width: 48, height: 48, flexShrink: 0, borderRadius: '50%',
-                background: '#f6e2c8', color: '#c8862c',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: '#f6e2c8',
               }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 21s-7-4.5-9.5-9A5 5 0 0112 6a5 5 0 019.5 6c-2.5 4.5-9.5 9-9.5 9Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-                </svg>
+                <Image src="/assets/Icon-Header-Solutions.png" alt="Shop by Solutions" fill sizes="48px" className="object-contain p-2" />
               </div>
               <div>
                 <h3 style={{ fontFamily: F.heading, fontSize: 20, fontWeight: 700, color: C.primary, margin: '0 0 4px' }}>
