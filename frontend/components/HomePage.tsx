@@ -319,7 +319,11 @@ function ShopCategories() {
                 </Link>
               ))}
             </div>
-            <Link href="/shop/breeds" style={{ fontFamily: F.nav, fontSize: 13, fontWeight: 700, color: C.rust, textDecoration: 'none' }}>
+            <Link href="/shop/breeds" style={{
+              display: 'block', textAlign: 'center', fontFamily: F.nav,
+              fontSize: 12, fontWeight: 800, color: C.secondary,
+              textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
+            }}>
               View All Breeds →
             </Link>
           </div>
@@ -361,7 +365,11 @@ function ShopCategories() {
                 </Link>
               ))}
             </div>
-            <Link href="/shop/solutions" style={{ fontFamily: F.nav, fontSize: 13, fontWeight: 700, color: C.rust, textDecoration: 'none' }}>
+            <Link href="/shop/solutions" style={{
+              display: 'block', textAlign: 'center', fontFamily: F.nav,
+              fontSize: 12, fontWeight: 800, color: C.secondary,
+              textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
+            }}>
               View All Solutions →
             </Link>
           </div>
