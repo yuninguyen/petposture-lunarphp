@@ -117,8 +117,8 @@ function SectionTitle({
  ───────────────────────────────────────────────────────────────── */
 function SocialProofStrip() {
   const stats = [
-    { value: '10,000+', label: 'Happy Pets' },
-    { value: '4.9★', label: 'Average Rating' },
+    { value: 'Breed-Focused', label: 'Designed Around Your Dog' },
+    { value: 'Curated', label: 'A Smaller, Relevant Selection' },
     { value: '30-Day', label: 'Money-Back Guarantee' },
     { value: 'Free', label: 'Shipping Over $50' },
   ];
@@ -175,13 +175,13 @@ function ShopCategories() {
     },
     {
       label: 'Shop by Solutions',
-      desc: 'Target your pet\'s specific health concerns — digestion, mobility, joint support, and everyday comfort.',
+      desc: 'Explore products by the everyday challenge you\'re trying to solve — feeding, mobility, and comfort.',
       bgColor: '#7a8a8f',
       img: '/assets/shop-by-solutions.jpg',
       align: 'flex-start' as const,
       textAlign: 'left' as const,
       buttons: [
-        { label: 'Digestion', href: '/shop/solutions/eating-digestion', variant: 'white' as const },
+        { label: 'Feeding', href: '/shop/solutions/eating-digestion', variant: 'white' as const },
         { label: 'Mobility', href: '/shop/solutions/mobility-support', variant: 'white' as const },
         { label: 'Comfort', href: '/shop/solutions/comfort-safety', variant: 'white' as const },
       ],
@@ -191,8 +191,8 @@ function ShopCategories() {
   return (
     <section style={{ background: C.grayLight, padding: '40px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <SectionTitle sub="Designed around your pet's body, not generic one-size solutions.">
-          Shop What You Need
+        <SectionTitle sub="Start with your dog's breed or the everyday challenge you're trying to solve.">
+          Find What Fits Your Dog
         </SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {panels.map((p, i) => (
@@ -336,8 +336,8 @@ function WhyChoose() {
           <path d="M16 5l2.6 6.6H26l-5.8 4.2 2.2 7.2-6.4-4.6-6.4 4.6 2.2-7.2L6 11.6h7.4L16 5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
         </svg>
       ),
-      title: 'Vet-Approved Design',
-      desc: 'Our products are developed in collaboration with veterinary ergonomics experts.',
+      title: 'Practical Research',
+      desc: 'We look at fit, materials, sizing and everyday usability before anything makes the cut.',
       accent: '#f5a623',
     },
     {
@@ -462,7 +462,7 @@ function BestSellers() {
       <section style={{ background: C.white, padding: '40px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <SectionTitle sub="Loading our most-loved products...">
-            Our Best Sellers
+            PetPosture Picks
           </SectionTitle>
           <p style={{ color: C.grayText }}>Loading products...</p>
         </div>
@@ -475,7 +475,7 @@ function BestSellers() {
       <section style={{ background: C.white, padding: '40px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <SectionTitle sub="Failed to load products.">
-            Our Best Sellers
+            PetPosture Picks
           </SectionTitle>
           <p style={{ color: C.primary, fontWeight: 600 }}>Error: {error}</p>
           <p style={{ color: C.grayText }}>Please check the API connection or try again later.</p>
@@ -489,7 +489,7 @@ function BestSellers() {
       <section style={{ background: C.white, padding: '40px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <SectionTitle sub="No products available at the moment.">
-            Our Best Sellers
+            PetPosture Picks
           </SectionTitle>
           <p style={{ color: C.grayText }}>Please check back soon!</p>
         </div>
@@ -500,8 +500,8 @@ function BestSellers() {
   return (
     <section style={{ background: C.white, padding: '40px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <SectionTitle sub="Our most-loved products — rated 4.9★ by pet parents across the US.">
-          Our Best Sellers
+        <SectionTitle sub="A curated selection chosen around the dogs and everyday needs we focus on.">
+          PetPosture Picks
         </SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           {products.map((p) => (
@@ -530,7 +530,7 @@ function MealtimeDiff() {
         </svg>
       ),
       bold: 'The Problem:',
-      text: 'Standard pet bowls force flat-faced and long-backed breeds into painful, unnatural eating positions — leading to joint strain, bloating, and breathing issues.',
+      text: 'Many pet products are designed for a broad range of dogs. But body shape, size and everyday habits can affect which products feel practical for a particular dog.',
       bgColor: '#fff5f5',
       borderColor: '#fed7d7'
     },
@@ -540,8 +540,8 @@ function MealtimeDiff() {
           <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ),
-      bold: 'The Solution:',
-      text: "PetPosture's ergonomic gear is engineered around specific breed anatomy, so every meal, walk, and rest is comfortable and healthy.",
+      bold: 'The PetPosture Approach:',
+      text: "PetPosture organizes products and guides around breed, body type and everyday use — helping owners narrow down the options.",
       bgColor: '#f0fff4',
       borderColor: '#c6f6d5'
     },
@@ -573,7 +573,7 @@ function MealtimeDiff() {
               textTransform: 'uppercase', letterSpacing: '0.05em',
               margin: 0,
             }}>
-              Standard Gear Wasn&apos;t<br className="hidden lg:block" /> Built for Your Pet.
+              Not Every Product Fits<br className="hidden lg:block" /> Every Dog the Same Way.
             </h2>
           </div>
 
@@ -619,7 +619,7 @@ function MealtimeDiff() {
 
             <div className="flex justify-center lg:justify-start">
               <Btn variant="solid" href="/our-mission" style={{ padding: '16px 40px', fontSize: 14 }}>
-                Our Mission &amp; Science →
+                Our Mission &amp; Method →
               </Btn>
             </div>
           </div>
