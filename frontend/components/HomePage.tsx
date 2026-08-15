@@ -640,7 +640,7 @@ function BreedBanners() {
     {
       eyebrow: 'Brachycephalic Breeds',
       title: 'For Flat-Faced Breeds',
-      sub: 'Pugs, Bulldogs & French Bulldogs benefit most from elevated, tilted bowls and anti-strain harnesses.',
+      sub: 'Pugs, Bulldogs & French Bulldogs often do best with elevated, tilted bowls and harnesses fitted for a shorter snout and broader chest.',
       bg: '#4a5058',
       img: '/assets/Flat-Faced-Breeds.png',
       align: 'flex-end' as const,
@@ -649,7 +649,7 @@ function BreedBanners() {
     {
       eyebrow: 'Chondrodystrophic Breeds',
       title: 'For Long-Backed Breeds',
-      sub: 'Dachshunds & Corgis need ramps, orthopedic beds, and harnesses that protect the intervertebral discs.',
+      sub: 'Dachshunds & Corgis often need ramps, supportive beds, and harnesses sized for a longer body and shorter legs.',
       bg: '#3d4a3e',
       img: '/assets/Corgi.png',
       align: 'flex-start' as const,
