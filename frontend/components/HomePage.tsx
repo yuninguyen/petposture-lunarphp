@@ -735,195 +735,63 @@ function BreedBanners() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   TESTIMONIALS
+   START WITH YOUR DOG
+   Replaces the old Testimonials section: those reviews were
+   placeholder copy (not real customers) and made unsupported medical
+   claims (joint/back pain relief, "no more coughing"). Until real,
+   verifiable reviews exist, this breed-picker section fits the
+   brand's actual discovery model (Breed → Solution → Product).
  ───────────────────────────────────────────────────────────────── */
-function Testimonials() {
-  const [activeSlide, setActiveSlide] = useState(0);
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    const index = Math.round(el.scrollLeft / (el.clientWidth * 0.85));
-    if (index !== activeSlide) setActiveSlide(index);
-  };
-
-  const reviews = [
-    {
-      heading: 'The Perfect Pug Bowl!',
-      quote: "The tilted bowl has been a game-changer for my pug's digestion! No more coughing or regurgitating after meals.",
-      author: 'Ryan R.',
-      location: 'Austin, TX',
-      initials: 'RR',
-      color: '#4f9cf9',
-      product: 'PosturePro™ Tilted Bowl',
-    },
-    {
-      heading: 'Worth Every Penny',
-      quote: 'My dachshund uses his ramp every single day. I feel so much better knowing he\'s not jumping and hurting his back on the couch.',
-      author: 'Bret S.',
-      location: 'Seattle, WA',
-      initials: 'BS',
-      color: '#38c68b',
-      product: 'ErgoStep™ Pet Ramp',
-    },
-    {
-      heading: 'Morning Stiffness Is Gone',
-      quote: 'This orthopedic bed is incredible. My 11-year-old Corgi is more mobile in the mornings than he\'s been in years.',
-      author: 'Kelly O.',
-      location: 'Chicago, IL',
-      initials: 'KO',
-      color: C.secondary,
-      product: 'ComfortRest™ Memory Bed',
-    },
+function StartWithYourDog() {
+  const breeds = [
+    { name: 'Dachshund', slug: 'dachshund', img: '/assets/petposture-corgi-1.jpg' },
+    { name: 'French Bulldog', slug: 'french-bulldog', img: '/assets/French-Bulldog.png' },
+    { name: 'Pug', slug: 'pug', img: '/assets/Pug-Dog-Bed.jpg' },
+    { name: 'Corgi', slug: 'corgi', img: '/assets/Corgi.png' },
+    { name: 'Bulldog', slug: 'bulldog', img: '/assets/Flat-Faced-Breeds.png' },
   ];
 
   return (
-    <section style={{ background: C.grayLight, padding: '40px 24px' }}>
+    <section style={{ background: C.grayLight, padding: '64px 24px' }}>
       <div style={{ maxWidth: 1210, margin: '0 auto' }}>
-        <SectionTitle sub="Verified reviews from pet parents across the United States.">
-          Happy Pets, Happier Owners
+        <SectionTitle sub="Every breed moves, eats and rests a little differently. Pick yours to see what fits.">
+          Start With Your Dog
         </SectionTitle>
-        <div
-          className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
-          style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
-          onScroll={handleScroll}
-        >
-          {reviews.map((r, i) => (
-            <div key={i}
-              className="min-w-[85vw] sm:min-w-0 snap-center"
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+          {breeds.map((breed) => (
+            <Link
+              key={breed.slug}
+              href={`/dogs/${breed.slug}`}
               style={{
-                padding: '36px 36px 32px',
+                position: 'relative',
+                display: 'block',
+                borderRadius: 8,
+                overflow: 'hidden',
+                aspectRatio: '3 / 4',
                 background: C.white,
                 border: `1px solid ${C.border}`,
-                borderRadius: 8,
-                display: 'flex', flexDirection: 'column',
-                position: 'relative',
-                overflow: 'hidden',
-              }}>
-              {/* Top accent */}
-              <div style={{
-                position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-                background: r.color,
-              }} />
-
-              {/* Stars */}
-              <div style={{
-                color: '#f59e0b', fontSize: 15,
-                letterSpacing: '2px', marginBottom: 20,
-              }}>
-                ★★★★★
-              </div>
-
-              {/* Heading */}
-              <h3 style={{
-                fontFamily: F.heading, fontSize: 16, fontWeight: 700,
-                color: C.primary, margin: '0 0 12px', lineHeight: 1.3,
-              }}>
-                {r.heading}
-              </h3>
-
-              {/* Quote */}
-              <p style={{
-                fontFamily: F.body, fontSize: 15, color: C.grayText,
-                lineHeight: 1.8, margin: '0 0 auto', flexGrow: 1,
-                fontStyle: 'italic', paddingBottom: 24,
-              }}>
-                &ldquo;{r.quote}&rdquo;
-              </p>
-
-              {/* Divider */}
-              <div style={{ height: 1, background: C.border, marginBottom: 20 }} />
-
-              {/* Author row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {/* Avatar */}
-                <div style={{
-                  width: 40, height: 40, borderRadius: '50%',
-                  background: r.color + '20',
-                  border: `2px solid ${r.color}40`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: F.nav, fontSize: 12, fontWeight: 800,
-                  color: r.color, flexShrink: 0,
-                }}>
-                  {r.initials}
-                </div>
-                <div>
-                  <div style={{
-                    fontFamily: F.nav, fontSize: 12, fontWeight: 800,
-                    color: C.primary, letterSpacing: '0.08em',
-                  }}>
-                    {r.author}
-                  </div>
-                  <div style={{
-                    fontFamily: F.body, fontSize: 12, color: C.grayText,
-                    marginTop: 2,
-                  }}>
-                    {r.location}
-                  </div>
-                </div>
-                {/* Verified badge */}
-                <div style={{
-                  marginLeft: 'auto',
-                  fontFamily: F.nav, fontSize: 11, fontWeight: 800,
-                  color: '#38c68b', letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  display: 'flex', alignItems: 'center', gap: 4,
-                }}>
-                  <span>✓</span> Verified
-                </div>
-              </div>
-
-              {/* Product tag */}
-              <div style={{
-                marginTop: 16,
-                fontFamily: F.nav, fontSize: 11, fontWeight: 700,
-                color: C.grayText, letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-              }}>
-                Purchased: {r.product}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Mobile Pagination Dots */}
-        <div className="flex sm:hidden justify-center gap-2 mt-8">
-          {reviews.map((_, idx) => (
-            <div
-              key={idx}
-              style={{
-                width: activeSlide === idx ? 24 : 8,
-                height: 8,
-                borderRadius: 4,
-                background: activeSlide === idx ? C.secondary : C.border,
-                transition: 'all 0.3s ease',
               }}
-            />
-          ))}
-        </div>
-
-        {/* Trust bar */}
-        <div className="grid grid-cols-2 lg:flex items-center justify-center gap-y-8 gap-x-4 mt-12 p-6 sm:p-8 bg-white border border-[#e2e5e8] rounded-lg">
-          {[
-            { label: '10,000+ Reviews', icon: '⭐' },
-            { label: 'Verified Buyers Only', icon: '✅' },
-            { label: 'US-Based Customers', icon: '🇺🇸' },
-            { label: 'No Fake Reviews Policy', icon: '🛡️' },
-          ].map(t => (
-            <div key={t.label} style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
-              gap: 8,
-              fontFamily: F.nav,
-              fontSize: 10,
-              fontWeight: 800,
-              color: C.grayText,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-            }}>
-              <span style={{ fontSize: 20 }}>{t.icon}</span>
-              <span style={{ lineHeight: 1.4 }}>{t.label}</span>
-            </div>
+            >
+              <Image
+                src={breed.img}
+                alt={breed.name}
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                className="object-cover"
+              />
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.05) 55%)',
+              }} />
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                padding: '14px 12px',
+                fontFamily: F.nav, fontSize: 13, fontWeight: 800,
+                color: C.white, textAlign: 'center',
+              }}>
+                {breed.name}
+              </div>
+            </Link>
           ))}
         </div>
       </div>
@@ -1277,7 +1145,7 @@ export default function HomePage() {
         <BestSellers />
         <MealtimeDiff />
         <BreedBanners />
-        <Testimonials />
+        <StartWithYourDog />
         <Insights />
         <EmailCta />
       </main>
