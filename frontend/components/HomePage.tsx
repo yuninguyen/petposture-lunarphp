@@ -216,61 +216,18 @@ function ShopCategories() {
   const [hoveredSolution, setHoveredSolution] = useState<string | null>(null);
 
   const breeds = [
-    { name: 'Dachshund', slug: 'dachshund', img: '/assets/dog-sofa.jpg' },
-    { name: 'French Bulldog', slug: 'french-bulldog', img: '/assets/French-Bulldog.png' },
-    { name: 'Pug', slug: 'pug', img: '/assets/Pug-Dog-Bed.jpg' },
-    { name: 'Corgi', slug: 'corgi', img: '/assets/Corgi.png' },
-    { name: 'Bulldog', slug: 'bulldog', img: '/assets/Flat-Faced-Breeds.png' },
+    { name: 'Dachshund', slug: 'dachshund', img: '/assets/Breed-Dachshund.png' },
+    { name: 'French Bulldog', slug: 'french-bulldog', img: '/assets/Breed-French-Bulldog.png' },
+    { name: 'Pug', slug: 'pug', img: '/assets/Breed-Pug.png' },
+    { name: 'Corgi', slug: 'corgi', img: '/assets/Breed-Corgi.png' },
+    { name: 'English Bulldog', slug: 'bulldog', img: '/assets/Breed-English-Bulldog.png' },
   ];
 
   const solutions = [
-    {
-      name: 'Feeding',
-      slug: 'feeding',
-      accent: '#f5a623',
-      icon: (
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-          <path d="M3 12a9 9 0 0018 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          <path d="M3 12h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          <path d="M12 7v2M9 8v1M15 8v1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        </svg>
-      ),
-    },
-    {
-      name: 'Comfort',
-      slug: 'comfort',
-      accent: '#e0685c',
-      icon: (
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-          <path d="M4 13v-2a2 2 0 012-2h12a2 2 0 012 2v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          <path d="M3 13h18v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-          <path d="M4 17v2M20 17v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        </svg>
-      ),
-    },
-    {
-      name: 'Mobility',
-      slug: 'mobility',
-      accent: '#8a9a4e',
-      icon: (
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-          <path d="M3 19h18M3 19V9l13-3v13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M6.5 19v-8.7M10 19v-7.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        </svg>
-      ),
-    },
-    {
-      name: 'Walking',
-      slug: 'walking',
-      accent: '#5fa88a',
-      icon: (
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-          <path d="M4 5c4 0 3 5 7 5s3-5 7-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          <path d="M11 10v9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          <circle cx="11" cy="20" r="1.7" fill="currentColor" />
-        </svg>
-      ),
-    },
+    { name: 'Feeding', slug: 'feeding', accent: '#f5a623', img: '/assets/Icon-Feeding.png' },
+    { name: 'Comfort', slug: 'comfort', accent: '#e0685c', img: '/assets/Icon-Comfort.png' },
+    { name: 'Mobility', slug: 'mobility', accent: '#8a9a4e', img: '/assets/Icon-Mobility.png' },
+    { name: 'Walking', slug: 'walking', accent: '#5fa88a', img: '/assets/Icon-Walking.png' },
   ];
 
   return (
@@ -376,15 +333,14 @@ function ShopCategories() {
                   onMouseLeave={() => setHoveredSolution(null)}
                 >
                   <div style={{
+                    position: 'relative',
                     width: 72, height: 72, borderRadius: '50%',
                     background: `${s.accent}${hoveredSolution === s.slug ? '3d' : '26'}`,
-                    color: s.accent,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transform: hoveredSolution === s.slug ? 'translateY(-3px) scale(1.05)' : 'none',
                     boxShadow: hoveredSolution === s.slug ? `0 8px 20px ${s.accent}33` : 'none',
                     transition: 'all 0.2s ease',
                   }}>
-                    {s.icon}
+                    <Image src={s.img} alt={s.name} fill sizes="72px" className="object-contain p-3" />
                   </div>
                   <span style={{
                     fontFamily: F.body, fontSize: 12.5, fontWeight: 600, textAlign: 'center',
@@ -863,11 +819,11 @@ function BreedBanners() {
  ───────────────────────────────────────────────────────────────── */
 function StartWithYourDog() {
   const breeds = [
-    { name: 'Dachshund', slug: 'dachshund', img: '/assets/dog-sofa.jpg' },
-    { name: 'French Bulldog', slug: 'french-bulldog', img: '/assets/French-Bulldog.png' },
-    { name: 'Pug', slug: 'pug', img: '/assets/Pug-Dog-Bed.jpg' },
-    { name: 'Corgi', slug: 'corgi', img: '/assets/Corgi.png' },
-    { name: 'Bulldog', slug: 'bulldog', img: '/assets/Flat-Faced-Breeds.png' },
+    { name: 'Dachshund', slug: 'dachshund', img: '/assets/Breed-Dachshund.png' },
+    { name: 'French Bulldog', slug: 'french-bulldog', img: '/assets/Breed-French-Bulldog.png' },
+    { name: 'Pug', slug: 'pug', img: '/assets/Breed-Pug.png' },
+    { name: 'Corgi', slug: 'corgi', img: '/assets/Breed-Corgi.png' },
+    { name: 'English Bulldog', slug: 'bulldog', img: '/assets/Breed-English-Bulldog.png' },
   ];
 
   return (
