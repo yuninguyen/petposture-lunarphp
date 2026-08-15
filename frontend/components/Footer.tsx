@@ -8,9 +8,10 @@ import { useSettings } from "@/context/SettingsContext";
 import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
 
 const shopBySolution = [
-  "Eating & Digestion",
-  "Mobility & Support",
-  "Comfort & Safety",
+  "Feeding",
+  "Comfort",
+  "Mobility",
+  "Walking",
 ];
 const shopByBreed = ["Flat-Faced Breeds", "Long-Backed Breeds"];
 const customerService = [
@@ -60,9 +61,10 @@ const getLegalHref = (link: string) => {
 
 const getShopHref = (item: string) => {
   switch (item) {
-    case "Eating & Digestion": return "/shop/solutions/eating-digestion";
-    case "Mobility & Support": return "/shop/solutions/mobility-support";
-    case "Comfort & Safety": return "/shop/solutions/comfort-safety";
+    case "Feeding": return "/solutions/feeding";
+    case "Comfort": return "/solutions/comfort";
+    case "Mobility": return "/solutions/mobility";
+    case "Walking": return "/solutions/walking";
     case "Flat-Faced Breeds": return "/shop/breeds/flat-faced";
     case "Long-Backed Breeds": return "/shop/breeds/long-backed";
     default: return "#";

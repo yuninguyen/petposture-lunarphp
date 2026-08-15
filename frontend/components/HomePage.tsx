@@ -175,15 +175,16 @@ function ShopCategories() {
     },
     {
       label: 'Shop by Solutions',
-      desc: 'Explore products by the everyday challenge you\'re trying to solve — feeding, mobility, and comfort.',
+      desc: 'Explore products by the everyday challenge you\'re trying to solve — feeding, comfort, mobility and walking.',
       bgColor: '#7a8a8f',
       img: '/assets/shop-by-solutions.jpg',
       align: 'flex-start' as const,
       textAlign: 'left' as const,
       buttons: [
-        { label: 'Feeding', href: '/shop/solutions/eating-digestion', variant: 'white' as const },
-        { label: 'Mobility', href: '/shop/solutions/mobility-support', variant: 'white' as const },
-        { label: 'Comfort', href: '/shop/solutions/comfort-safety', variant: 'white' as const },
+        { label: 'Feeding', href: '/solutions/feeding', variant: 'white' as const },
+        { label: 'Comfort', href: '/solutions/comfort', variant: 'white' as const },
+        { label: 'Mobility', href: '/solutions/mobility', variant: 'white' as const },
+        { label: 'Walking', href: '/solutions/walking', variant: 'white' as const },
       ],
     },
   ];
@@ -267,7 +268,7 @@ function ShopCategories() {
                 </p>
                 <div className="flex flex-row gap-2 md:gap-3 w-full" style={{
                   justifyContent: p.align,
-                  maxWidth: p.buttons.length === 2 ? 460 : 540,
+                  maxWidth: p.buttons.length === 2 ? 460 : p.buttons.length >= 4 ? 640 : 540,
                 }}>
                   {p.buttons.map(b => (
                     <div key={b.label} style={{ flex: 1, display: 'flex' }}>
