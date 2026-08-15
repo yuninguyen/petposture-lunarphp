@@ -120,8 +120,9 @@ function SocialProofStrip() {
     {
       value: 'Breed-Focused',
       label: 'Designed around specific dog body types and everyday use.',
+      accent: '#4f9cf9',
       icon: (
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="15" r="4.2" stroke="currentColor" strokeWidth="1.6" />
           <circle cx="5.5" cy="8" r="2" stroke="currentColor" strokeWidth="1.6" />
           <circle cx="18.5" cy="8" r="2" stroke="currentColor" strokeWidth="1.6" />
@@ -133,8 +134,9 @@ function SocialProofStrip() {
     {
       value: 'Curated Selection',
       label: 'A smaller selection of relevant products, not an endless catalog.',
+      accent: '#f5a623',
       icon: (
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M12 3l2.6 5.4 6 .8-4.3 4.2 1 6-5.3-2.9-5.3 2.9 1-6-4.3-4.2 6-.8L12 3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
         </svg>
       ),
@@ -142,8 +144,9 @@ function SocialProofStrip() {
     {
       value: '30-Day Guarantee',
       label: 'Love it or return it within 30 days of delivery.',
+      accent: '#38c68b',
       icon: (
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M12 3.5c4.7 0 8.5 3.8 8.5 8.5s-3.8 8.5-8.5 8.5-8.5-3.8-8.5-8.5S7.3 3.5 12 3.5Z" stroke="currentColor" strokeWidth="1.6" />
           <path d="M8.5 12l2.4 2.4 4.6-4.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -152,8 +155,9 @@ function SocialProofStrip() {
     {
       value: 'Free Shipping $50+',
       label: 'Free standard shipping on orders over $50 in the US.',
+      accent: C.secondary,
       icon: (
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M3 7h11v9H3z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
           <path d="M14 10h4l3 3v3h-7z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
           <circle cx="7" cy="18" r="1.6" stroke="currentColor" strokeWidth="1.6" />
@@ -164,28 +168,35 @@ function SocialProofStrip() {
   ];
 
   return (
-    <div style={{ background: C.grayLight, padding: '36px 24px', borderBottom: `1px solid ${C.border}` }}>
-      <div className="max-w-[1200px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8">
+    <div style={{ background: C.white, padding: '32px 24px', borderBottom: `1px solid ${C.border}` }}>
+      <div className="max-w-[1200px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-6">
         {stats.map((s, i) => (
-          <div key={i} className="flex flex-col items-center text-center gap-3">
+          <div
+            key={i}
+            className="flex items-center text-left gap-3"
+            style={{
+              borderLeft: i % 4 !== 0 ? `1px solid ${C.border}` : 'none',
+              paddingLeft: i % 4 !== 0 ? 24 : 0,
+            }}
+          >
             <div style={{
-              width: 52, height: 52, borderRadius: '50%',
-              background: `${C.secondary}1a`,
-              color: C.secondary,
+              width: 48, height: 48, flexShrink: 0, borderRadius: '50%',
+              background: `${s.accent}26`,
+              color: s.accent,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               {s.icon}
             </div>
             <div>
               <div style={{
-                fontFamily: F.heading, fontSize: 15, fontWeight: 700,
-                color: C.primary, marginBottom: 4,
+                fontFamily: F.heading, fontSize: 14, fontWeight: 700,
+                color: C.primary, marginBottom: 2,
               }}>
                 {s.value}
               </div>
               <div style={{
-                fontFamily: F.body, fontSize: 12.5, lineHeight: 1.5,
-                color: C.grayText, maxWidth: 180, margin: '0 auto',
+                fontFamily: F.body, fontSize: 12, lineHeight: 1.4,
+                color: C.grayText,
               }}>
                 {s.label}
               </div>
