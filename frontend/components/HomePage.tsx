@@ -588,8 +588,8 @@ function MealtimeDiff() {
           }}>
             <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', borderRadius: 16, overflow: 'hidden' }}>
               <Image
-                src="/assets/petposture-corgi-1.jpg"
-                alt="Ergonomic mealtime difference illustration"
+                src="/assets/dog-sofa.jpg"
+                alt="Dog using a ramp to safely access a couch"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 style={{ objectFit: 'cover' }}
@@ -745,7 +745,7 @@ function BreedBanners() {
  ───────────────────────────────────────────────────────────────── */
 function StartWithYourDog() {
   const breeds = [
-    { name: 'Dachshund', slug: 'dachshund', img: '/assets/petposture-corgi-1.jpg' },
+    { name: 'Dachshund', slug: 'dachshund', img: '/assets/dog-sofa.jpg' },
     { name: 'French Bulldog', slug: 'french-bulldog', img: '/assets/French-Bulldog.png' },
     { name: 'Pug', slug: 'pug', img: '/assets/Pug-Dog-Bed.jpg' },
     { name: 'Corgi', slug: 'corgi', img: '/assets/Corgi.png' },
