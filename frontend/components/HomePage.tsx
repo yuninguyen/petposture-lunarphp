@@ -334,13 +334,13 @@ function ShopCategories() {
                 >
                   <div style={{
                     position: 'relative',
-                    width: 72, height: 72, borderRadius: '50%',
+                    width: 88, height: 88, borderRadius: '50%',
                     background: `${s.accent}${hoveredSolution === s.slug ? '3d' : '26'}`,
                     transform: hoveredSolution === s.slug ? 'translateY(-3px) scale(1.05)' : 'none',
                     boxShadow: hoveredSolution === s.slug ? `0 8px 20px ${s.accent}33` : 'none',
                     transition: 'all 0.2s ease',
                   }}>
-                    <Image src={s.img} alt={s.name} fill sizes="72px" className="object-contain p-3" />
+                    <Image src={s.img} alt={s.name} fill sizes="88px" className="object-contain p-1.5" />
                   </div>
                   <span style={{
                     fontFamily: F.body, fontSize: 12.5, fontWeight: 600, textAlign: 'center',
