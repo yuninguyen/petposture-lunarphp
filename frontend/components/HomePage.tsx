@@ -212,34 +212,61 @@ function SocialProofStrip() {
    SHOP WHAT YOU NEED
  ───────────────────────────────────────────────────────────────── */
 function ShopCategories() {
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const breeds = [
+    { name: 'Dachshund', slug: 'dachshund', img: '/assets/dog-sofa.jpg' },
+    { name: 'French Bulldog', slug: 'french-bulldog', img: '/assets/French-Bulldog.png' },
+    { name: 'Pug', slug: 'pug', img: '/assets/Pug-Dog-Bed.jpg' },
+    { name: 'Corgi', slug: 'corgi', img: '/assets/Corgi.png' },
+    { name: 'Bulldog', slug: 'bulldog', img: '/assets/Flat-Faced-Breeds.png' },
+  ];
 
-  const panels = [
+  const solutions = [
     {
-      label: 'Shop by Breeds',
-      desc: 'Ergonomic essentials tailored to your breed\'s unique anatomy — from flat-faced Pugs to long-backed Dachshunds.',
-      bgColor: '#5a6a74',
-      img: '/assets/Shop-by-Breed.jpg',
-      align: 'flex-end' as const,
-      textAlign: 'right' as const,
-      buttons: [
-        { label: 'Flat-Faced Breeds', href: '/shop/breeds/flat-faced', variant: 'solid' as const },
-        { label: 'Long-Backed Breeds', href: '/shop/breeds/long-backed', variant: 'outlineWhite' as const },
-      ],
+      name: 'Feeding',
+      slug: 'feeding',
+      accent: '#f5a623',
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <path d="M3 12a9 9 0 0018 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M3 12h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M12 7v2M9 8v1M15 8v1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      ),
     },
     {
-      label: 'Shop by Solutions',
-      desc: 'Explore products by the everyday challenge you\'re trying to solve — feeding, comfort, mobility and walking.',
-      bgColor: '#7a8a8f',
-      img: '/assets/shop-by-solutions.jpg',
-      align: 'flex-start' as const,
-      textAlign: 'left' as const,
-      buttons: [
-        { label: 'Feeding', href: '/solutions/feeding', variant: 'white' as const },
-        { label: 'Comfort', href: '/solutions/comfort', variant: 'white' as const },
-        { label: 'Mobility', href: '/solutions/mobility', variant: 'white' as const },
-        { label: 'Walking', href: '/solutions/walking', variant: 'white' as const },
-      ],
+      name: 'Comfort',
+      slug: 'comfort',
+      accent: '#e0685c',
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <path d="M4 13v-2a2 2 0 012-2h12a2 2 0 012 2v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M3 13h18v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+          <path d="M4 17v2M20 17v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Mobility',
+      slug: 'mobility',
+      accent: '#8a9a4e',
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <path d="M3 19h18M3 19V9l13-3v13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M6.5 19v-8.7M10 19v-7.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Walking',
+      slug: 'walking',
+      accent: '#5fa88a',
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <path d="M4 5c4 0 3 5 7 5s3-5 7-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M11 10v9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <circle cx="11" cy="20" r="1.7" fill="currentColor" />
+        </svg>
+      ),
     },
   ];
 
@@ -249,98 +276,95 @@ function ShopCategories() {
         <SectionTitle sub="Start with your dog's breed or the everyday challenge you're trying to solve.">
           Find What Fits Your Dog
         </SectionTitle>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-          {panels.map((p, i) => (
-            <div
-              key={i}
-              style={{
-                position: 'relative',
-                minHeight: 340,
-                overflow: 'hidden',
-                background: p.bgColor,
-                cursor: 'pointer',
-                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                transform: hoveredIdx === i ? 'translateY(-4px)' : 'none',
-                boxShadow: hoveredIdx === i
-                  ? '0 20px 48px rgba(0,0,0,0.2)'
-                  : '0 4px 16px rgba(0,0,0,0.1)',
-              }}
-              onMouseEnter={() => setHoveredIdx(i)}
-              onMouseLeave={() => setHoveredIdx(null)}
-            >
-              <Image
-                src={p.img}
-                alt={p.label}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover"
-              />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Shop by Breed */}
+          <div style={{ background: '#eef4fb', borderRadius: 16, padding: '32px' }}>
+            <div className="flex items-start gap-4 mb-6">
               <div style={{
-                position: 'absolute', inset: 0,
-                background: `linear-gradient(to bottom,
-                  rgba(30,38,44,0.38) 0%,
-                  rgba(30,38,44,0.55) 60%,
-                  rgba(30,38,44,0.75) 100%)`,
-              }} />
-              <div style={{
-                position: 'relative',
-                height: '100%',
-                display: 'flex', flexDirection: 'column',
-                justifyContent: 'flex-end',
-                alignItems: p.align,
-                padding: '40px 36px',
-                textAlign: p.textAlign,
+                width: 48, height: 48, flexShrink: 0, borderRadius: '50%',
+                background: '#dbe7f7', color: '#4f74a8',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <div style={{
-                  display: 'inline-block',
-                  fontSize: 11, fontWeight: 800,
-                  color: C.rust,
-                  background: C.white,
-                  border: 'none',
-                  padding: '4px 10px', borderRadius: 2,
-                  letterSpacing: '0.14em', textTransform: 'uppercase',
-                  marginBottom: 12,
-                }}>
-                  Browse Collection
-                </div>
-                <h3 style={{
-                  fontFamily: F.heading, fontSize: 'clamp(20px, 2.5vw, 26px)',
-                  fontWeight: 700, color: C.white,
-                  textTransform: 'uppercase', letterSpacing: '0.06em',
-                  margin: '0 0 12px', maxWidth: 340,
-                  minHeight: 56, display: 'flex', alignItems: 'flex-end',
-                }}>
-                  {p.label}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="15" r="4.2" stroke="currentColor" strokeWidth="1.7" />
+                  <circle cx="5.5" cy="8" r="2" stroke="currentColor" strokeWidth="1.7" />
+                  <circle cx="18.5" cy="8" r="2" stroke="currentColor" strokeWidth="1.7" />
+                  <circle cx="9" cy="4.5" r="1.7" stroke="currentColor" strokeWidth="1.7" />
+                  <circle cx="15" cy="4.5" r="1.7" stroke="currentColor" strokeWidth="1.7" />
+                </svg>
+              </div>
+              <div>
+                <h3 style={{ fontFamily: F.heading, fontSize: 20, fontWeight: 700, color: C.primary, margin: '0 0 4px' }}>
+                  Shop by Breed
                 </h3>
-                <p style={{
-                  color: 'rgba(255,255,255,0.82)', fontSize: 15,
-                  margin: '0 0 28px', maxWidth: 360,
-                  lineHeight: 1.7, letterSpacing: '0.01em',
-                  minHeight: 76,
-                }}>
-                  {p.desc}
+                <p style={{ fontFamily: F.body, fontSize: 14, color: C.grayText, margin: 0, lineHeight: 1.5 }}>
+                  Find products and guides tailored to your dog&apos;s breed.
                 </p>
-                <div className="flex flex-row gap-2 md:gap-3 w-full" style={{
-                  justifyContent: p.align,
-                  maxWidth: p.buttons.length === 2 ? 460 : p.buttons.length >= 4 ? 640 : 540,
-                }}>
-                  {p.buttons.map(b => (
-                    <div key={b.label} style={{ flex: 1, display: 'flex' }}>
-                      <Btn variant={b.variant} href={b.href} style={{
-                        fontSize: '11px',
-                        padding: '10px 4px',
-                        width: '100%',
-                        textAlign: 'center',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {b.label}
-                      </Btn>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
-          ))}
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-6">
+              {breeds.map((b) => (
+                <Link
+                  key={b.slug}
+                  href={`/dogs/${b.slug}`}
+                  className="text-center"
+                  style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '10px 6px' }}
+                >
+                  <div style={{ position: 'relative', aspectRatio: '1 / 1', borderRadius: 10, overflow: 'hidden', background: C.grayLight, marginBottom: 8 }}>
+                    <Image src={b.img} alt={b.name} fill sizes="120px" className="object-cover" />
+                  </div>
+                  <span style={{ fontFamily: F.body, fontSize: 12, fontWeight: 700, color: C.primary }}>
+                    {b.name}
+                  </span>
+                </Link>
+              ))}
+            </div>
+            <Link href="/shop/breeds" style={{ fontFamily: F.nav, fontSize: 13, fontWeight: 700, color: C.rust, textDecoration: 'none' }}>
+              View All Breeds →
+            </Link>
+          </div>
+
+          {/* Shop by Solutions */}
+          <div style={{ background: '#fbf1e8', borderRadius: 16, padding: '32px' }}>
+            <div className="flex items-start gap-4 mb-6">
+              <div style={{
+                width: 48, height: 48, flexShrink: 0, borderRadius: '50%',
+                background: '#f6e2c8', color: '#c8862c',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 21s-7-4.5-9.5-9A5 5 0 0112 6a5 5 0 019.5 6c-2.5 4.5-9.5 9-9.5 9Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div>
+                <h3 style={{ fontFamily: F.heading, fontSize: 20, fontWeight: 700, color: C.primary, margin: '0 0 4px' }}>
+                  Shop by Solutions
+                </h3>
+                <p style={{ fontFamily: F.body, fontSize: 14, color: C.grayText, margin: 0, lineHeight: 1.5 }}>
+                  Explore products by the everyday needs you&apos;re looking to solve.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-4 md:gap-5 mb-6">
+              {solutions.map((s) => (
+                <Link key={s.slug} href={`/solutions/${s.slug}`} className="flex flex-col items-center gap-2" style={{ width: 76 }}>
+                  <div style={{
+                    width: 76, height: 76, borderRadius: '50%',
+                    background: `${s.accent}26`, color: s.accent,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {s.icon}
+                  </div>
+                  <span style={{ fontFamily: F.body, fontSize: 12.5, fontWeight: 600, color: C.primary, textAlign: 'center' }}>
+                    {s.name}
+                  </span>
+                </Link>
+              ))}
+            </div>
+            <Link href="/shop/solutions" style={{ fontFamily: F.nav, fontSize: 13, fontWeight: 700, color: C.rust, textDecoration: 'none' }}>
+              View All Solutions →
+            </Link>
+          </div>
         </div>
       </div>
     </section>
