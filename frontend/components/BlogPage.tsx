@@ -68,6 +68,35 @@ export default function BlogPage() {
     const tabsScrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
+    const [nlEmail, setNlEmail] = useState("");
+    const [nlStatus, setNlStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [nlMessage, setNlMessage] = useState("");
+
+    const handleNewsletterSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!nlEmail || nlStatus === "loading") return;
+
+        setNlStatus("loading");
+        try {
+            const res = await fetch(`${getApiBaseUrl()}/api/newsletter/subscribe`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: nlEmail }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                setNlStatus("error");
+                setNlMessage(data?.message || "Something went wrong. Please try again.");
+                return;
+            }
+            setNlStatus("success");
+            setNlMessage(data?.message || "Successfully subscribed!");
+            setNlEmail("");
+        } catch {
+            setNlStatus("error");
+            setNlMessage("Something went wrong. Please try again.");
+        }
+    };
 
     const updateTabsScrollState = () => {
         const el = tabsScrollRef.current;
@@ -451,14 +480,31 @@ export default function BlogPage() {
                             <p className="mb-6 text-sm text-[#666666]">
                                 Join 5,000+ pet parents getting our weekly ergonomics report.
                             </p>
-                            <input
-                                type="email"
-                                placeholder="Your email"
-                                className="mb-4 w-full rounded-[3px] border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-secondary"
-                            />
-                            <button className="w-full rounded-[3px] bg-secondary py-3 text-sm font-bold uppercase tracking-[0.08em] text-ink transition-all hover:bg-secondary-dark">
-                                Subscribe
-                            </button>
+                            {nlStatus === "success" ? (
+                                <p className="text-sm font-bold text-primary">{nlMessage}</p>
+                            ) : (
+                                <form onSubmit={handleNewsletterSubmit}>
+                                    <input
+                                        type="email"
+                                        placeholder="Your email"
+                                        value={nlEmail}
+                                        onChange={(e) => setNlEmail(e.target.value)}
+                                        required
+                                        disabled={nlStatus === "loading"}
+                                        className="mb-4 w-full rounded-[3px] border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-secondary disabled:opacity-60"
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={nlStatus === "loading"}
+                                        className="w-full rounded-[3px] bg-secondary py-3 text-sm font-bold capitalize tracking-[0.05em] text-ink transition-all hover:bg-secondary-dark disabled:opacity-60"
+                                    >
+                                        {nlStatus === "loading" ? "Subscribing…" : "Subscribe"}
+                                    </button>
+                                    {nlStatus === "error" && (
+                                        <p className="mt-2 text-xs font-bold text-red-600">{nlMessage}</p>
+                                    )}
+                                </form>
+                            )}
                         </div>
 
                         <div className="relative overflow-hidden rounded-2xl border border-zinc-100 bg-[#f8f9fa] p-8 text-center text-primary">
@@ -472,40 +518,6 @@ export default function BlogPage() {
                             <div className="absolute bottom-0 left-0 -mb-12 -ml-12 h-24 w-24 rounded-full bg-primary/5" />
                         </div>
                     </aside>
-                </div>
-            </section>
-
-            <section className="border-t border-zinc-50 bg-white px-4 py-12 md:px-8">
-                <div className="relative mx-auto max-w-[1000px] overflow-hidden rounded-2xl bg-primary p-8 text-center shadow-xl md:p-14">
-                    <motion.div
-                        initial="initial"
-                        whileInView="animate"
-                        viewport={{ once: true }}
-                        variants={fadeUp}
-                        className="relative z-10"
-                    >
-                        <h2 className="mb-4 text-[32px] font-bold tracking-tight text-white md:text-[36px]">
-                            Stay Inside The Loop
-                        </h2>
-                        <p className="mx-auto mb-8 max-w-lg text-[15px] leading-relaxed text-white/70 md:text-[16px]">
-                            Get the latest pet ergonomics news, breed-specific guides, and exclusive collection previews delivered to your inbox.
-                        </p>
-                        <div className="mx-auto flex max-w-xl flex-col gap-3 md:flex-row">
-                            <input
-                                type="email"
-                                placeholder="Enter your email address"
-                                className="w-full md:flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-primary outline-none"
-                            />
-                            <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-secondary px-10 py-4 text-sm font-bold uppercase tracking-[0.08em] text-ink shadow-lg transition-all hover:bg-secondary-dark">
-                                Subscribe Now
-                            </button>
-                        </div>
-                        <p className="mt-6 text-xs font-bold uppercase tracking-widest text-white/30">
-                            By subscribing, you agree to our privacy policy and terms.
-                        </p>
-                    </motion.div>
-                    <div className="absolute left-0 top-0 -ml-24 -mt-24 h-48 w-48 rounded-full bg-secondary/10 blur-[80px]" />
-                    <div className="absolute bottom-0 right-0 -mb-24 -mr-24 h-48 w-48 rounded-full bg-white/5 blur-[80px]" />
                 </div>
             </section>
 

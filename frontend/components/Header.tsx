@@ -20,7 +20,7 @@ export default function Header() {
   const { user, logout } = useAuth();
   const { shop_name, shop_logo, contact, social } = useSettings();
   const logoSrc = shop_logo || "/assets/Logo-PetPosture-1-e1761840892773.png";
-  const phone = contact.phone || "+1 (916) 668-0065";
+  const phone = contact.phone || "+1 (916) 623-5368";
   const phoneHref = `tel:${phone.replace(/[^\d+]/g, "")}`;
 
   const isActive = (path: string) => pathname === path;
@@ -88,7 +88,7 @@ export default function Header() {
                 className="flex-1 px-4 h-[44px] border-none outline-none focus:ring-0 text-[14px] text-primary bg-transparent"
               />
               <button
-                className="bg-secondary text-ink px-8 h-[44px] font-bold tracking-wider text-sm uppercase hover:bg-secondary-dark transition-colors border-none m-0 rounded-none"
+                className="bg-secondary text-ink px-8 h-[44px] font-bold tracking-wider text-sm capitalize hover:bg-secondary-dark transition-colors border-none m-0 rounded-none"
               >
                 Search
               </button>
@@ -206,7 +206,7 @@ export default function Header() {
             placeholder="Search products..."
             className="flex-1 px-3 py-2 outline-none text-sm"
           />
-          <button className="bg-secondary px-4 text-ink uppercase text-sm font-bold">
+          <button className="bg-secondary px-4 text-ink capitalize text-sm font-bold">
             Search
           </button>
         </div>

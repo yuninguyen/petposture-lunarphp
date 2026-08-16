@@ -1,3 +1,51 @@
+# Handoff — 2026-08-17
+
+## Wyoming LLC prep: business address/phone updated everywhere; governing-law clause still pending
+
+User is about to register a Wyoming LLC. Updated the business address (old: `2017 I St A,
+Sacramento, CA 95811`) to `1501 South Greeley Hwy, Ste C #1465, Cheyenne, WY 82007` and
+consolidated the phone number to `+1 (916) 623-5368` (previously two different numbers were
+inconsistently used: `623-5368` in the seeded Cookie Policy vs `668-0065` everywhere else —
+`623-5368` is now the single canonical number) across: `LegalPagesSeeder.php` (re-seeded into the
+live `pages` DB rows via `php artisan db:seed --class=LegalPagesSeeder`, which is safe to re-run —
+it's `updateOrCreate` keyed by slug), the `business_address`/`business_phone` rows in the
+`settings` table (updated directly + cache cleared, since a bulk `->update()` doesn't fire
+`SettingCacheObserver`), `ContentController.php`'s fallback defaults, `SettingsContext.tsx`,
+`ContactPage.tsx`, `Header.tsx`, `TrackOrderPage.tsx`, and all 6 transactional email Blade
+templates.
+
+**Still pending — do NOT change until the user gives the actual Wyoming formation date/confirms
+the LLC is registered**: Terms & Conditions §10 (seeded in `LegalPagesSeeder.php`, search
+"governed by and construed in accordance with the laws of the State of California") still names
+California as the governing-law state. This should flip to Wyoming once the LLC is actually
+formed there — changing it prematurely (before the entity legally exists in Wyoming) would make
+the Terms inaccurate. Ask the user for the effective date before touching this.
+
+## Full homepage/shop visual pass + backend fixes + Breed/Solution gap closure + Filament nav groups
+
+Large single-session pass, all verified via local build (`npx next build`, exit 0) and `php -l`/local DB checks — **not yet deployed to production** until this session's commit/push/deploy step runs.
+
+**Frontend visual/UX changes** (all in `frontend/`): removed the "Start With Your Dog" homepage section (100% duplicate of the existing "Shop by Breed" panel — same 5 breeds, same images); redesigned "Explore by Body Type" (`BreedBanners()` in `HomePage.tsx`) from dark-overlay lifestyle banners to a light card layout matching a user-supplied mockup, and fixed a real dead link in the process (`Shop Now` had `href="#"`, now links to the real `/shop/breeds/flat-faced`/`/shop/breeds/long-backed`); blog guide cards now show a "Read Guide →" link instead of a date/read-time row; consolidated 4 separate hand-rolled newsletter forms (`HomePage.tsx`'s `EmailCta`, a dead-unused `Newsletter.tsx`, and inline forms in `ShopPage.tsx`/`BlogPage.tsx`) into one canonical `components/Newsletter.tsx`, now rendered once inside `Footer.tsx` so every page with a footer gets it automatically — `BlogPage.tsx`'s sidebar "Never miss a post" widget was previously a static, non-functional form and is now wired to the real `/api/newsletter/subscribe` endpoint; new hero banner image (two-dog "built differently" concept — Frenchie eating from an elevated bowl, Dachshund on a ramp) replacing a feeding-only single-dog photo, to actually match the new headline's "feeding, comfort, mobility and walking" copy; fixed a real Tailwind bug on `OurMissionPage.tsx`'s CTA button — nested unnamed `group`/`group-hover:` classes on both the outer `<section>` and the inner `<Link>` meant hovering *anywhere* in the section (not just the button) triggered the button's orange fill-in, hiding its text; changed the global `rust` color token (`#8f4a1f` → `#a8551a`) per explicit user request — same hue as `secondary` but less "muddy brown," still ~5.3:1 contrast (passes WCAG AA text), cascades automatically to all 142 existing `text-rust`/`border-rust` usages since it's one Tailwind token, not per-file edits; redesigned `/shop` (`ShopPage.tsx`/`ProductFilterBar.tsx`/`ProductGrid.tsx`) to remove 3 redundant nested cards (a boxed sidebar filter panel with its own "Refine Catalog/Filters" header, a "Storefront overview" card, and `ProductGrid`'s own "Catalog Results" card — all three were partly re-stating "Showing X of Y products") down to one slim results bar + a flat filter list, matching the user's "feels disjointed, not like Chewy" complaint; changed `/shop`'s page background from `#f7f3ee` to white after the redesign made it visually blend into the Footer's `Newsletter` peach strip right below it.
+
+**Backend fix — real, measurable N+1 bug**: `Api\PostResource::resolveSeo()` unconditionally reads `$this->seo`, but none of the 4 controllers building `Post::with([...])` queries (`ContentController::posts()`/`post()`, `PostController::index()`, `BreedController`, `SolutionController`) eager-loaded that relation — every post in a list response triggered its own extra SQL query. This was the actual root cause of a user-reported slow `/blog` page load (separately, `/api/products`/`/api/posts` were also returning 500 mid-session because MySQL wasn't running locally yet — unrelated, resolved once the user started it). Fixed by adding `'seo'` to all 4 eager-load arrays. See `RULES.md` for the enforceable rule this created.
+
+**Legal/business info**: see the Wyoming LLC entry above this one in today's log.
+
+**Breed/Solution "close the gap" task — turned out to be much closer to done than an initial audit suggested.** User asked, referencing the PetPosture Master Strategy Blueprint, whether the codebase matches the business-model direction. A first-pass research-agent audit reported Breed/Solution entities as "PARTIAL — not seeded, frontend still hardcoded" and Filament nav groups as "MISSING." **Both claims were wrong when checked directly against the running app** (lesson: verify agent audit findings against live state before acting on them, especially anything phrased as "missing"):
+- `breeds` (5 rows, correct `body_type`) and `solutions` (4 rows: Feeding/Comfort/Mobility/Walking) were **already populated** in the DB — added `BreedSeeder.php`/`SolutionSeeder.php` (idempotent, registered in `DatabaseSeeder`) so this survives a fresh install, not because the table was empty.
+- `/dogs`, `/dogs/[slug]`, `/solutions`, `/solutions/[slug]` were **already** calling the real `GET /api/breeds`/`GET /api/solutions` endpoints, not hardcoded. The audit had checked `frontend/lib/shopData.ts`'s `BREED_TYPES`/`SOLUTION_TYPES`, which back a *different, intentionally separate* concept (the Body-Type shop-collection pages, `/shop/breeds/[slug]` etc. — per the blueprint's own "Breed Hubs and Shop Collections are not the same thing" section, both are correct to keep as-is).
+- `BreedResource`/`SolutionResource` already declared `getNavigationGroup() → 'PetPosture'` via a method override — the audit only checked for the static `$navigationGroup` property and missed it.
+- **The real, still-open gap**: `breed_product`/`solution_product` pivot tables are empty — not a code bug. `Lunar\Models\Product::count()` is 7, and every one of them is Lunar demo/test data ("Test Product", "Interactive Smart Cat Toy", "Smart GPS Pet Tracker," a cat food item) — **there are no real PetPosture dog SKUs in the catalog yet** to link to a breed or solution. This blocks the whole "Recommended Products" section of every `/dogs/{slug}` and `/solutions/{slug}` page from showing anything.
+- Linked `post_breed`/`post_solution` for the 3 existing blog posts with an unambiguous match (Dachshunding 101 → Dachshund; Orthopedic-bed post → Comfort; "Traditional Bowls" post → Feeding), via `$model->posts()->syncWithoutDetaching()` directly — real content curation, not seed/fixture data.
+- **Also found while doing this**: most of the 7 existing blog posts are generic/imported placeholders — several literally contain the sentence "This is an imported mock post for testing purposes." in their `content` field. Real breed-specific "money cluster" content (per the blueprint's `Best Dog Ramps for Dachshunds` style article list) has not actually been written yet — only 1 real comparison post and 1 real launch article exist.
+- Filament: moved `AffiliateReports` from the `'Finance'` group to a new `'Reports'` group, and added both `'PetPosture'` and `'Reports'` to `AdminPanelProvider`'s explicit `->navigationGroups([...])` ordering array (they worked before, just rendered unpositioned in the nav).
+
+**Next task, in priority order** (see the "Next steps" section of today's user-facing summary for the full reasoning):
+1. Source/list real PetPosture dog SKUs in Lunar (even 3–5 to start) — this is the actual blocker for `breed_product`/`solution_product`, the homepage "PetPosture Picks" section showing real products, and for the blueprint's whole Shop-side flywheel. Nothing else in the breed/solution/content pipeline can produce real signal until this exists.
+2. Write the first real breed-specific "money cluster" articles (blueprint's suggested first 10: Best Dog Ramps for Dachshunds, Best Orthopedic Beds for Dachshunds, Best Harnesses for French Bulldogs, etc.) and link each to its breed + solution via `post_breed`/`post_solution` as it's published.
+3. `post_product` pivot (Phase 3 of the blueprint — petposture_pick/recommended/alternative/mentioned relation types) — not started, deliberately sequenced after 1–2 since it needs both real products and real posts to link.
+4. `product_profiles`/`suppliers`/`product_tests` (Phase 4) — not started, correctly not a priority yet per the blueprint's own phase ordering.
+
 # Handoff — 2026-08-15
 
 ## Blog goes live: Breed/Solution content hubs finished, Draft Preview shipped, first real post published, blog post page redesigned end-to-end, `published_at` auto-fill bug found and fixed

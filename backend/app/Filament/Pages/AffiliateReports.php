@@ -17,7 +17,7 @@ class AffiliateReports extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Finance');
+        return __('Reports');
     }
 
     public static function getNavigationLabel(): string

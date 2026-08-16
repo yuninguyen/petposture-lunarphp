@@ -15,6 +15,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RoleSeeder::class,
+            BreedSeeder::class,
+            SolutionSeeder::class,
         ]);
 
         // 1. Create Categories

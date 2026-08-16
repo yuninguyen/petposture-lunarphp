@@ -157,6 +157,12 @@ petposture/
   existing Blog page structure. A `Product::resolveRelationUsing('breeds'|'solutions', ...)`
   registered in `AppServiceProvider::boot()` (same pattern as the pre-existing `orderEvents`
   relation) makes both queryable directly off Lunar's `Product` model without modifying vendor code.
+  **2026-08-17**: `BreedSeeder`/`SolutionSeeder` added (idempotent, run via `db:seed`) so a fresh
+  install gets the 5 real breeds (Dachshund, French Bulldog, Pug, Bulldog, Corgi) and 4 solutions
+  (Feeding, Comfort, Mobility, Walking) without manual data entry — the frontend (`/dogs`,
+  `/solutions` and their `[slug]` pages) was already calling the real API, not hardcoded. The
+  `breed_product`/`solution_product` pivots are still empty: the live catalog only has Lunar demo
+  fixtures (test/cat products), no real PetPosture dog SKUs yet to link.
 - Legal/compliance pages, editable from admin without a code deploy (rebuilt as a CMS 2026-08-09):
   Privacy Policy (incl. a CCPA/CPRA "Your U.S. State Privacy Rights" section — the site doesn't
   sell/share personal data, so this is a disclosure + contact-based rights process, not an opt-out

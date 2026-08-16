@@ -38,20 +38,20 @@ export default function ShopPage({
     ].filter(Boolean).join(' + ');
 
     return (
-        <main className="min-h-screen bg-[#f7f3ee] font-hanken">
+        <main className="min-h-screen bg-white font-hanken">
             <Header />
 
-            <section className="border-b border-[#e7ddd2] bg-[linear-gradient(180deg,_#faf6f1_0%,_#f3ede5_100%)] px-4 py-8 md:px-8 md:py-10">
+            <section className="px-4 pb-6 pt-6 md:px-8 md:pb-8 md:pt-8">
                 <div className="mx-auto max-w-[1280px]">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                         <div>
-                            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-rust">
+                            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-rust">
                                 {heroEyebrow}
                             </p>
-                            <h1 className="max-w-[760px] text-[28px] font-bold leading-tight text-[#2d3a43] md:text-[40px]">
+                            <h1 className="max-w-[640px] text-[22px] font-bold leading-tight text-[#2d3a43] md:text-[28px]">
                                 {heroTitle}
                             </h1>
-                            <p className="mt-3 max-w-[760px] text-[14px] leading-7 text-[#62666a]">
+                            <p className="mt-2 max-w-[640px] text-[13px] leading-6 text-[#62666a]">
                                 {heroDescription}
                             </p>
                         </div>
@@ -74,8 +74,8 @@ export default function ShopPage({
                 </div>
             </section>
 
-            <section className="px-4 py-8 md:px-8 md:py-10">
-                <div className="mx-auto grid max-w-[1280px] gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+            <section className="px-4 pb-10 md:px-8">
+                <div className="mx-auto grid max-w-[1280px] gap-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
                     <div className={mobileFiltersOpen ? 'block' : 'hidden lg:block'}>
                         <ProductFilterBar
                             categories={shopLogic.categories}
@@ -97,87 +97,44 @@ export default function ShopPage({
                     </div>
 
                     <div className="min-w-0">
-                        <div className="mb-5 flex flex-col gap-3 rounded-[24px] border border-[#eadfd3] bg-white px-5 py-4 shadow-[0_18px_50px_rgba(34,33,33,0.05)] md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.05em] text-[#8b8f93]">
-                                    <SlidersHorizontal size={14} className="text-rust" />
-                                    Storefront overview
-                                </div>
-                                <h2 className="mt-2 text-[21px] font-semibold text-[#2d3a43]">
-                                    Showing {shopLogic.filteredProducts.length} of {shopLogic.totalProducts} products
-                                </h2>
-                                <p className="mt-1 text-sm text-[#6a6f73]">
-                                    {activeFilterLabel
-                                        ? `Filtered to ${activeFilterLabel}.`
-                                        : 'Browse the full catalog or narrow it down from the left sidebar.'}
-                                </p>
-                            </div>
+                        <div className="mb-6 flex flex-col gap-3 border-b border-[#e7ddd2] pb-4 md:flex-row md:items-center md:justify-between">
+                            <p className="text-sm text-[#6a6f73]">
+                                Showing <span className="font-semibold text-[#2d3a43]">{shopLogic.filteredProducts.length}</span> of{' '}
+                                <span className="font-semibold text-[#2d3a43]">{shopLogic.totalProducts}</span> products
+                                {activeFilterLabel ? ` · Filtered to ${activeFilterLabel}` : ''}
+                            </p>
 
-                            <div className="flex flex-wrap items-center gap-2">
-                                {shopLogic.activeCategory !== 'All' && (
-                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-[#b36a3b]">
-                                        {activeCategoryLabel || shopLogic.activeCategory}
-                                    </span>
-                                )}
-                                {shopLogic.activeBreed !== 'All' && (
-                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-[#b36a3b]">
-                                        {activeBreedLabel || shopLogic.activeBreed}
-                                    </span>
-                                )}
-                                {shopLogic.activeSolution !== 'All' && (
-                                    <span className="rounded-full bg-[#f7efe8] px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-[#b36a3b]">
-                                        {activeSolutionLabel || shopLogic.activeSolution}
-                                    </span>
-                                )}
-                                {shopLogic.searchQuery && (
-                                    <span className="rounded-full bg-[#eef3f5] px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-[#54646e]">
-                                        Search: {shopLogic.searchQuery}
-                                    </span>
-                                )}
-                            </div>
+                            {(shopLogic.activeCategory !== 'All' || shopLogic.activeBreed !== 'All' || shopLogic.activeSolution !== 'All' || shopLogic.searchQuery) && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {shopLogic.activeCategory !== 'All' && (
+                                        <span className="rounded-full bg-[#f7efe8] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.05em] text-[#b36a3b]">
+                                            {activeCategoryLabel || shopLogic.activeCategory}
+                                        </span>
+                                    )}
+                                    {shopLogic.activeBreed !== 'All' && (
+                                        <span className="rounded-full bg-[#f7efe8] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.05em] text-[#b36a3b]">
+                                            {activeBreedLabel || shopLogic.activeBreed}
+                                        </span>
+                                    )}
+                                    {shopLogic.activeSolution !== 'All' && (
+                                        <span className="rounded-full bg-[#f7efe8] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.05em] text-[#b36a3b]">
+                                            {activeSolutionLabel || shopLogic.activeSolution}
+                                        </span>
+                                    )}
+                                    {shopLogic.searchQuery && (
+                                        <span className="rounded-full bg-[#eef3f5] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.05em] text-[#54646e]">
+                                            Search: {shopLogic.searchQuery}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <ProductGrid
                             filteredProducts={shopLogic.filteredProducts}
-                            totalProducts={shopLogic.totalProducts}
-                            activeCategory={shopLogic.activeCategory}
-                            searchQuery={shopLogic.searchQuery}
                             clearFilters={shopLogic.clearFilters}
                             loading={shopLogic.loading}
                         />
-                    </div>
-                </div>
-            </section>
-
-            <section className="bg-[#ede5db] px-4 py-20 md:px-8">
-                <div className="mx-auto max-w-[1000px]">
-                    <div className="relative overflow-hidden rounded-2xl bg-primary p-8 text-center shadow-xl md:p-14">
-                        <div className="relative z-10">
-                            <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-rust">
-                                PetPosture Dispatch
-                            </p>
-                            <h2 className="mb-4 text-[32px] font-bold tracking-tight text-white md:text-[36px]">
-                                Get new product drops and posture-focused picks before everyone else.
-                            </h2>
-                            <p className="mx-auto mb-8 max-w-lg text-[15px] leading-relaxed text-white/70 md:text-[16px]">
-                                A tighter catalog deserves a tighter email list. We send launches, restocks, and practical buying guidance.
-                            </p>
-                            <div className="mx-auto flex max-w-xl flex-col gap-3 md:flex-row">
-                                <input
-                                    type="email"
-                                    placeholder="Enter your email address"
-                                    className="w-full md:flex-1 rounded-[3px] bg-white px-6 py-4 text-[14px] font-medium text-primary outline-none"
-                                />
-                                <button className="w-full md:w-auto whitespace-nowrap rounded-[3px] bg-secondary px-10 py-4 text-sm font-bold uppercase tracking-[0.12em] text-ink shadow-lg transition-all hover:bg-secondary-dark">
-                                    Subscribe Now
-                                </button>
-                            </div>
-                            <p className="mt-6 text-xs font-bold uppercase tracking-widest text-white/30">
-                                By subscribing, you agree to our privacy policy and terms.
-                            </p>
-                        </div>
-                        <div className="absolute left-0 top-0 -ml-24 -mt-24 h-48 w-48 rounded-full bg-secondary/10 blur-[80px]" />
-                        <div className="absolute bottom-0 right-0 -mb-24 -mr-24 h-48 w-48 rounded-full bg-white/5 blur-[80px]" />
                     </div>
                 </div>
             </section>

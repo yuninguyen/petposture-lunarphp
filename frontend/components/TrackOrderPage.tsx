@@ -387,7 +387,7 @@ export default function TrackOrderPage() {
                                         {
                                             icon: Mail,
                                             title: "Still need help?",
-                                            text: `Reach out to our support team at support@petposture.com or call us directly at ${contact.phone || "+1 (916) 668-0065"}.`
+                                            text: `Reach out to our support team at support@petposture.com or call us directly at ${contact.phone || "+1 (916) 623-5368"}.`
                                         }
                                     ].map((item, idx) => (
                                         <motion.div key={idx} variants={fadeUp} className="flex gap-6 group">

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getApiBaseUrl } from "@/lib/api";
 
-const DEFAULT_HERO_IMAGE = "/assets/banner-5.jpg";
+const DEFAULT_HERO_IMAGE = "/assets/hero-banner-homepage.png";
 
 export default function Hero() {
   const [heroImage, setHeroImage] = useState(DEFAULT_HERO_IMAGE);
@@ -45,7 +45,7 @@ export default function Hero() {
           <div className="max-w-fit flex flex-col items-center lg:items-start text-center lg:text-left">
             {/* Obsidian Glass Box */}
             <div className="bg-black/20 backdrop-blur-[4px] border border-white/20 rounded-2xl p-6 lg:px-10 lg:py-8 shadow-2xl">
-              <h1 className="text-white text-[24px] md:text-[30px] font-black uppercase tracking-[0.1em] leading-[1.3] mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" style={{ fontFamily: 'var(--font-hanken)' }}>
+              <h1 className="text-white text-[24px] md:text-[30px] font-black uppercase tracking-[0.08em] leading-[1.3] mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" style={{ fontFamily: 'var(--font-hanken)' }}>
                 Better Products for the<br />
                 Way Your Dog Is Built.
               </h1>

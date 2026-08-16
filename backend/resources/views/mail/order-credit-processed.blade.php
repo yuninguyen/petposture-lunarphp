@@ -89,7 +89,7 @@ If you have further questions on your {{ config('app.name') }}.com order, please
 </tr>
 </table>
 <p style="{{ $font }} margin:10px 0 0; font-size:13px; color:#1a1a1a;">
-<a href="tel:+19166680065" style="{{ $font }} color:#1a1a1a; text-decoration:none; font-weight:600;">+1 (916) 668-0065</a>
+<a href="tel:+19166235368" style="{{ $font }} color:#1a1a1a; text-decoration:none; font-weight:600;">+1 (916) 623-5368</a>
 </p>
 </td>
 </tr>
@@ -117,7 +117,7 @@ If you have further questions on your {{ config('app.name') }}.com order, please
 <td align="center" style="{{ $font }} padding-top:12px;">
 <p style="{{ $font }} margin:0; font-size:12px; line-height:1.7; color:#c2c2c2;">
 {{ config('app.name') }}<br>
-2017 I St A, Sacramento, CA 95811, United States
+1501 South Greeley Hwy, Ste C #1465, Cheyenne, WY 82007, United States
 </p>
 </td>
 </tr>

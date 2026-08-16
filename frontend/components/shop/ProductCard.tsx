@@ -91,8 +91,8 @@ export function ProductCard({ product }: { product: Product }) {
                 </Link>
 
                 <div className="mt-3 flex items-end justify-between gap-3">
-                    <div className="flex items-center gap-3 font-bold">
-                        <span className="text-[16px] text-rust">${product.price.toFixed(2)}</span>
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-[22px] font-bold text-primary">${product.price.toFixed(2)}</span>
                         {(product.comparePrice ?? product.oldPrice) != null && (
                             <span className="text-xs font-medium text-zinc-300 line-through">${(product.comparePrice ?? product.oldPrice)!.toFixed(2)}</span>
                         )}
@@ -100,15 +100,15 @@ export function ProductCard({ product }: { product: Product }) {
 
                     <Link
                         href={`/shop/${product.categorySlug}/${product.slug}`}
-                        className="inline-flex items-center gap-1 text-sm font-bold capitalize tracking-[0.05em] text-[#54646e] transition-colors hover:text-rust"
+                        className="inline-flex items-center gap-1 text-xs font-semibold capitalize text-[#8b8f93] transition-colors hover:text-rust"
                     >
-                        View <ArrowUpRight size={14} />
+                        View <ArrowUpRight size={12} />
                     </Link>
                 </div>
 
                 <button
                     onClick={() => addItem(product)}
-                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center whitespace-nowrap rounded-[14px] border-2 border-rust bg-white px-2 text-xs font-bold uppercase tracking-[0.02em] text-rust transition-colors hover:bg-rust hover:text-white sm:px-4 sm:text-sm sm:tracking-[0.05em]"
+                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center whitespace-nowrap rounded-[14px] border-2 border-secondary bg-white px-2 text-xs font-bold tracking-[0.02em] text-secondary transition-colors hover:bg-secondary hover:text-ink sm:px-4 sm:text-sm sm:tracking-[0.05em]"
                 >
                     Add to Cart
                 </button>

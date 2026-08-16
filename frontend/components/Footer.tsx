@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Facebook, Instagram, Twitter, Youtube, Mail, Plus, Minus } from "lucide-react";
 import PaymentIcons from "./PaymentIcons";
+import Newsletter from "./Newsletter";
 import { useSettings } from "@/context/SettingsContext";
 import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
 
@@ -155,6 +156,7 @@ export default function Footer() {
 
   return (
     <footer className="bg-primary text-white font-hanken">
+      <Newsletter />
       {/* Main Footer */}
       <div className="py-10 md:py-10 px-4 md:px-8 border-t border-white/5">
         <div className="max-w-[1200px] w-full mx-auto">

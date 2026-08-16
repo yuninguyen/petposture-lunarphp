@@ -59,7 +59,7 @@ export default function OurMissionPage() {
                         className="flex flex-col items-center"
                     >
                         {/* Eyebrow */}
-                        <h1 className="text-[32px] md:text-[48px] font-bold uppercase tracking-[0.1em] text-primary mb-6 leading-tight">
+                        <h1 className="text-[32px] md:text-[48px] font-bold uppercase tracking-[0.08em] text-primary mb-6 leading-tight">
                             Our Mission
                         </h1>
                         {/* Divider Line */}
@@ -82,7 +82,7 @@ export default function OurMissionPage() {
                         viewport={{ once: true }}
                         variants={fadeUp}
                     >
-                        <h2 className="text-[24px] md:text-[36px] font-bold text-[#1A2B3C] uppercase tracking-[0.15em] leading-tight mb-4">
+                        <h2 className="text-[24px] md:text-[36px] font-bold text-[#1A2B3C] uppercase tracking-[0.08em] leading-tight mb-4">
                             The &quot;Standard&quot; Isn&apos;t Good Enough
                         </h2>
                         <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
@@ -110,8 +110,8 @@ export default function OurMissionPage() {
                             viewport={{ once: true }}
                             transition={{ duration: 0.8 }}
                         >
-                            <h3 className="text-[14px] font-bold uppercase tracking-[0.15em] text-rust mb-6">Our Origin Story</h3>
-                            <h4 className="text-[24px] font-bold text-primary tracking-[0.1em] leading-tight mb-8">WHY WE STARTED PETPOSTURE</h4>
+                            <h3 className="text-[14px] font-bold uppercase tracking-[0.08em] text-rust mb-6">Our Origin Story</h3>
+                            <h4 className="text-[24px] font-bold text-primary tracking-[0.02em] leading-tight mb-8">Why We Started PetPosture</h4>
                             <p className="text-[15px] md:text-[17px] text-[#333333] leading-relaxed mb-6 font-medium">
                                 We saw pets struggling with products not built for them. We saw flat-faced breeds like Pugs and Frenchies straining their necks and struggling to breathe at mealtimes.
                             </p>
@@ -132,7 +132,7 @@ export default function OurMissionPage() {
                         viewport={{ once: true }}
                         variants={fadeUp}
                     >
-                        <h2 className="text-[24px] md:text-[36px] font-bold uppercase tracking-[0.15em] text-[#1A2B3C] mb-4">
+                        <h2 className="text-[24px] md:text-[36px] font-bold uppercase tracking-[0.08em] text-[#1A2B3C] mb-4">
                             Our Core Mission
                         </h2>
                         <div className="w-10 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
@@ -150,7 +150,7 @@ export default function OurMissionPage() {
             <section className="py-8 md:py-12 px-4 bg-gray-50">
                 <div className="max-w-[1200px] mx-auto">
                     <div className="text-center mb-12">
-                        <h2 className="text-[24px] md:text-[36px] font-bold text-[#1A2B3C] uppercase tracking-[0.15em] mb-4">
+                        <h2 className="text-[24px] md:text-[36px] font-bold text-[#1A2B3C] uppercase tracking-[0.08em] mb-4">
                             How We Make A Difference
                         </h2>
                         <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
@@ -194,14 +194,14 @@ export default function OurMissionPage() {
             </section>
 
             {/* 5. Join Us CTA Section - Enhanced with Image Overlay & Depth */}
-            <section className="py-6 md:py-10 px-4 bg-primary text-white text-center relative overflow-hidden group">
+            <section className="py-6 md:py-10 px-4 bg-primary text-white text-center relative overflow-hidden group/section">
                 {/* Visual Depth: Background Image Overlay */}
                 <div className="absolute inset-0 z-0">
                     <Image
                         src="https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
                         alt="Join background"
                         fill
-                        className="object-cover opacity-10 group-hover:scale-110 transition-transform duration-[10s] ease-linear"
+                        className="object-cover opacity-10 group-hover/section:scale-110 transition-transform duration-[10s] ease-linear"
                     />
                     {/* Radial Glow */}
                     <div className="absolute inset-0 bg-radial-gradient from-transparent via-primary/50 to-primary"></div>
@@ -216,7 +216,7 @@ export default function OurMissionPage() {
                         viewport={{ once: true }}
                         transition={{ duration: 1 }}
                     >
-                        <h2 className="text-[16px] md:text-[20px] font-bold uppercase tracking-[0.3em] text-white/90 mb-6">
+                        <h2 className="text-[16px] md:text-[20px] font-bold uppercase tracking-[0.08em] text-white/90 mb-6">
                             Join Us In Our Mission
                         </h2>
                         <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
@@ -227,7 +227,7 @@ export default function OurMissionPage() {
 
                         <Link
                             href="/shop"
-                            className="inline-block px-10 py-3 border-2 border-secondary text-secondary font-bold uppercase tracking-[0.04em] text-[15px] hover:text-ink transition-all duration-500 rounded relative group overflow-hidden"
+                            className="inline-block px-10 py-3 border-2 border-secondary text-secondary font-bold uppercase tracking-[0.08em] text-[15px] hover:text-ink transition-all duration-500 rounded relative group overflow-hidden"
                         >
                             <span className="relative z-10">Shop Our Solutions</span>
                             <div className="absolute inset-0 bg-secondary translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>

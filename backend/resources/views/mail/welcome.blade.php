@@ -138,7 +138,7 @@ Thanks,<br>The {{ config('app.name') }} Team
 <td align="center" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:12px; line-height:1.6; color:#a0a0a0;">
 This is an automated message, please don&rsquo;t reply directly to this email.<br>
 &copy; {{ date('Y') }} {{ config('app.name') }} LLC. All rights reserved.<br>
-2017 I St A, Sacramento, CA 95811, United States
+1501 South Greeley Hwy, Ste C #1465, Cheyenne, WY 82007, United States
 </td>
 </tr>
 </table>

@@ -15,11 +15,11 @@ import { useSettings } from '@/context/SettingsContext';
 function ContactInfoItem({ icon: Icon, label, value, href, note }: { icon: React.ElementType, label: string, value: string, href?: string, note?: string }) {
     const content = (
         <div className="flex items-start gap-4 p-5 rounded-lg border border-zinc-100 bg-white hover:border-secondary/30 transition-all duration-300 group shadow-sm hover:shadow-md h-full">
-            <div className="w-12 h-12 rounded-full bg-secondary/5 flex items-center justify-center text-rust group-hover:bg-secondary group-hover:text-ink transition-all shrink-0">
+            <div className="w-12 h-12 rounded-full bg-secondary/5 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-ink transition-all shrink-0">
                 <Icon size={20} />
             </div>
             <div className="flex-1">
-                <p className="text-xs font-black uppercase tracking-[0.08em] text-rust mb-1">{label}</p>
+                <p className="text-xs font-black uppercase tracking-[0.08em] text-secondary mb-1">{label}</p>
                 <p className="text-[15px] font-bold text-primary leading-tight">{value}</p>
                 {note && (
                     <p className="text-xs text-zinc-400 mt-1 font-medium italic">
@@ -310,13 +310,13 @@ export default function ContactPage() {
                                     <ContactInfoItem
                                         icon={Phone}
                                         label="Call Us"
-                                        value={contact.phone || '+1 (916) 668-0065'}
+                                        value={contact.phone || '+1 (916) 623-5368'}
                                         href={phoneHref}
                                     />
                                     <ContactInfoItem
                                         icon={MapPin}
                                         label="Our Office"
-                                        value={contact.address || '2017 I St A, Sacramento, CA 95811, United States'}
+                                        value={contact.address || '1501 South Greeley Hwy, Ste C #1465, Cheyenne, WY 82007, United States'}
                                         note="This is not retail location"
                                         href="https://maps.app.goo.gl/B9HUyLdTnm4etSrL9"
                                     />

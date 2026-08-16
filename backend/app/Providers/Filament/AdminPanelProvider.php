@@ -146,7 +146,9 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 __('lunarpanel::global.sections.catalog'),
                 __('lunarpanel::global.sections.sales'),
+                __('PetPosture'),
                 __('Content Management'),
+                __('Reports'),
                 __('Finance'),
                 __('System'),
                 __('lunarpanel::global.sections.settings'),

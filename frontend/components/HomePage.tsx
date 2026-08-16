@@ -551,8 +551,6 @@ function MealtimeDiff() {
       ),
       bold: 'The Problem:',
       text: 'Many pet products are designed for a broad range of dogs. But body shape, size and everyday habits can affect which products feel practical for a particular dog.',
-      bgColor: '#fff5f5',
-      borderColor: '#fed7d7'
     },
     {
       icon: (
@@ -562,8 +560,6 @@ function MealtimeDiff() {
       ),
       bold: 'The PetPosture Approach:',
       text: "PetPosture organizes products and guides around breed, body type and everyday use — helping owners narrow down the options.",
-      bgColor: '#f0fff4',
-      borderColor: '#c6f6d5'
     },
   ];
 
@@ -577,7 +573,7 @@ function MealtimeDiff() {
             <div style={{
               display: 'inline-block',
               fontFamily: F.nav, fontSize: 10, fontWeight: 800,
-              color: C.rust, letterSpacing: '0.14em',
+              color: C.secondary, letterSpacing: '0.14em',
               textTransform: 'uppercase', marginBottom: 20,
               background: C.white,
               padding: '6px 16px',
@@ -590,7 +586,7 @@ function MealtimeDiff() {
             <h2 style={{
               fontFamily: F.heading, fontSize: 'clamp(26px, 4vw, 38px)',
               fontWeight: 700, color: C.primary, lineHeight: 1.2,
-              textTransform: 'uppercase', letterSpacing: '0.05em',
+              textTransform: 'capitalize', letterSpacing: '0.01em',
               margin: 0,
             }}>
               Not Every Product Fits<br className="hidden lg:block" /> Every Dog the Same Way.
@@ -607,7 +603,7 @@ function MealtimeDiff() {
           }}>
             <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', borderRadius: 16, overflow: 'hidden' }}>
               <Image
-                src="/assets/dog-sofa.jpg"
+                src="/assets/dog-sofa.png"
                 alt="Dog using a ramp to safely access a couch"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
@@ -658,158 +654,76 @@ function BreedBanners() {
 
   const breeds = [
     {
-      eyebrow: 'Brachycephalic Breeds',
-      title: 'For Flat-Faced Breeds',
-      sub: 'Pugs, Bulldogs & French Bulldogs often do best with elevated, tilted bowls and harnesses fitted for a shorter snout and broader chest.',
-      bg: '#4a5058',
-      img: '/assets/Flat-Faced-Breeds.png',
-      align: 'flex-end' as const,
-      textAlign: 'right' as const,
+      slug: 'flat-faced',
+      title: 'Flat-Faced Dogs',
+      sub: 'Pugs, French Bulldogs and English Bulldogs have distinctive body and head shapes that can influence product fit and everyday usability.',
+      img: '/assets/Breed-French-Bulldog.png',
     },
     {
-      eyebrow: 'Chondrodystrophic Breeds',
-      title: 'For Long-Backed Breeds',
-      sub: 'Dachshunds & Corgis often need ramps, supportive beds, and harnesses sized for a longer body and shorter legs.',
-      bg: '#3d4a3e',
-      img: '/assets/Corgi.png',
-      align: 'flex-start' as const,
-      textAlign: 'left' as const,
+      slug: 'long-backed',
+      title: 'Long-Backed & Low-Bodied Dogs',
+      sub: 'Dachshunds and Corgis have body proportions that make mobility, furniture access and product sizing especially worth considering.',
+      img: '/assets/Breed-Corgi.png',
     },
   ];
 
   return (
     <section style={{ background: C.white, padding: '56px 24px' }}>
-      <div className="max-w-[1210px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-        {breeds.map((breed, idx) => (
-          <div
-            key={breed.title}
-            style={{
-              position: 'relative',
-              height: 380, borderRadius: 6, overflow: 'hidden',
-              background: breed.bg,
-              cursor: 'pointer',
-              transition: 'transform 0.3s ease',
-              transform: hovered === idx ? 'scale(1.012)' : 'scale(1)',
-            }}
-            onMouseEnter={() => setHovered(idx)}
-            onMouseLeave={() => setHovered(null)}
-          >
-            <Image
-              src={breed.img}
-              alt={breed.title}
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-            />
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: `linear-gradient(to top,
-                rgba(0,0,0,0.78) 0%,
-                rgba(0,0,0,0.32) 50%,
-                rgba(0,0,0,0.10) 100%)`,
-            }} />
-            <div style={{
-              position: 'relative',
-              height: '100%',
-              display: 'flex', flexDirection: 'column',
-              justifyContent: 'flex-end',
-              alignItems: breed.align,
-              textAlign: breed.textAlign,
-              padding: '44px 48px',
-            }}>
-              <div style={{
-                display: 'inline-block',
-                fontFamily: F.nav, fontSize: 11, fontWeight: 800,
-                color: C.rust, letterSpacing: '0.12em',
-                textTransform: 'uppercase', marginBottom: 14,
-                background: C.white,
-                padding: '6px 16px',
-                borderRadius: 4,
-                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-              }}>
-                {breed.eyebrow}
-              </div>
-              <h3 style={{
-                fontFamily: F.heading, fontSize: 'clamp(20px, 2.5vw, 26px)',
-                fontWeight: 700, color: C.white,
-                textTransform: 'uppercase', letterSpacing: '0.05em',
-                margin: '0 0 12px', maxWidth: 320,
-              }}>
-                {breed.title}
-              </h3>
-              <p style={{
-                color: 'rgba(255,255,255,0.78)',
-                fontSize: 15, margin: '0 0 28px', maxWidth: 320, lineHeight: 1.7,
-              }}>
-                {breed.sub}
-              </p>
-              <Btn variant="solid" style={{ fontSize: 12, padding: '11px 22px' }}>
-                Shop Now →
-              </Btn>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────
-   START WITH YOUR DOG
-   Replaces the old Testimonials section: those reviews were
-   placeholder copy (not real customers) and made unsupported medical
-   claims (joint/back pain relief, "no more coughing"). Until real,
-   verifiable reviews exist, this breed-picker section fits the
-   brand's actual discovery model (Breed → Solution → Product).
- ───────────────────────────────────────────────────────────────── */
-function StartWithYourDog() {
-  const breeds = [
-    { name: 'Dachshund', slug: 'dachshund', img: '/assets/Breed-Dachshund.png' },
-    { name: 'French Bulldog', slug: 'french-bulldog', img: '/assets/Breed-French-Bulldog.png' },
-    { name: 'Pug', slug: 'pug', img: '/assets/Breed-Pug.png' },
-    { name: 'Corgi', slug: 'corgi', img: '/assets/Breed-Corgi.png' },
-    { name: 'English Bulldog', slug: 'bulldog', img: '/assets/Breed-English-Bulldog.png' },
-  ];
-
-  return (
-    <section style={{ background: C.grayLight, padding: '64px 24px' }}>
       <div style={{ maxWidth: 1210, margin: '0 auto' }}>
-        <SectionTitle sub="Every breed moves, eats and rests a little differently. Pick yours to see what fits.">
-          Start With Your Dog
+        <SectionTitle sub="Body shape can influence which products are more comfortable and practical.">
+          Explore by Body Type
         </SectionTitle>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-          {breeds.map((breed) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          {breeds.map((breed, idx) => (
             <Link
               key={breed.slug}
-              href={`/dogs/${breed.slug}`}
+              href={`/shop/breeds/${breed.slug}`}
+              className="flex items-stretch"
               style={{
-                position: 'relative',
-                display: 'block',
-                borderRadius: 8,
-                overflow: 'hidden',
-                aspectRatio: '3 / 4',
-                background: C.white,
-                border: `1px solid ${C.border}`,
+                borderRadius: 8, overflow: 'hidden',
+                background: C.grayLight,
+                transition: 'transform 0.3s ease',
+                transform: hovered === idx ? 'scale(1.012)' : 'scale(1)',
               }}
+              onMouseEnter={() => setHovered(idx)}
+              onMouseLeave={() => setHovered(null)}
             >
-              <Image
-                src={breed.img}
-                alt={breed.name}
-                fill
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                className="object-cover"
-              />
+              <div style={{ position: 'relative', width: '38%', flexShrink: 0 }}>
+                <Image
+                  src={breed.img}
+                  alt={breed.title}
+                  fill
+                  sizes="(max-width: 768px) 40vw, 20vw"
+                  className="object-cover"
+                />
+              </div>
               <div style={{
-                position: 'absolute', inset: 0,
-                background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.05) 55%)',
-              }} />
-              <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
-                padding: '14px 12px',
-                fontFamily: F.nav, fontSize: 13, fontWeight: 800,
-                color: C.white, textAlign: 'center',
+                flex: 1,
+                display: 'flex', flexDirection: 'column',
+                justifyContent: 'center',
+                padding: '28px 32px',
               }}>
-                {breed.name}
+                <h3 style={{
+                  fontFamily: F.heading, fontSize: 'clamp(18px, 2vw, 22px)',
+                  fontWeight: 700, color: C.primary,
+                  margin: '0 0 10px',
+                }}>
+                  {breed.title}
+                </h3>
+                <p style={{
+                  color: C.grayText,
+                  fontSize: 14, margin: '0 0 18px', lineHeight: 1.6,
+                }}>
+                  {breed.sub}
+                </p>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  fontFamily: F.nav, fontSize: 12, fontWeight: 800,
+                  color: C.secondary, letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                }}>
+                  Explore →
+                </span>
               </div>
             </Link>
           ))}
@@ -820,7 +734,7 @@ function StartWithYourDog() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   From the PetPosture Blog
+   Insight
  ───────────────────────────────────────────────────────────────── */
 function PostCard({ post }: { post: BlogPost }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -888,14 +802,10 @@ function PostCard({ post }: { post: BlogPost }) {
 
       <div style={{
         display: 'flex', alignItems: 'center', gap: 6,
-        fontFamily: F.nav, fontSize: 11, fontWeight: 700,
-        color: isHovered ? C.secondary : C.grayText,
-        letterSpacing: '0.05em', textTransform: 'capitalize',
-        transition: 'color 0.25s ease',
+        fontFamily: F.nav, fontSize: 13, fontWeight: 700,
+        color: C.secondary,
       }}>
-        <span>{post.date}</span>
-        <span>·</span>
-        <span>{post.readTime}</span>
+        Read →
       </div>
     </Link>
   );
@@ -960,7 +870,7 @@ function Insights() {
     <section style={{ background: C.white, padding: '40px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <SectionTitle sub="Expert guides, breed-specific tips, and health insights for pet parents.">
-          From the PetPosture Blog
+          Lastest PetPosture Guides
         </SectionTitle>
         <div
           className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"
@@ -1001,156 +911,6 @@ function Insights() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   EMAIL CTA
- ───────────────────────────────────────────────────────────────── */
-function EmailCta() {
-  const [email, setEmail] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || isSubmitting) return;
-
-    setIsSubmitting(true);
-    setError('');
-    try {
-      const res = await fetch(`${apiBaseUrl}/api/newsletter/subscribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data?.message || 'Something went wrong. Please try again.');
-        return;
-      }
-      setSubmitted(true);
-    } catch {
-      setError('Something went wrong. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <section style={{ background: C.secondaryLight, padding: '40px 24px' }}>
-      <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
-
-        {/* Eyebrow */}
-        <div style={{
-          fontFamily: F.nav, fontSize: 12, fontWeight: 800,
-          color: C.rust, letterSpacing: '0.2em',
-          textTransform: 'uppercase', marginBottom: 20,
-        }}>
-          Join the Pack
-        </div>
-
-        <h2 style={{
-          fontFamily: F.heading,
-          fontSize: 'clamp(30px, 5vw, 46px)',
-          fontWeight: 700, color: C.primary,
-          textTransform: 'uppercase',
-          letterSpacing: '-0.01em', lineHeight: 1.1,
-          margin: '0 0 20px',
-        }}>
-          Get 10% Off Your<br />First Order
-        </h2>
-
-        <p style={{
-          color: C.grayText, fontSize: 15, lineHeight: 1.7,
-          margin: '0 auto 40px', maxWidth: 460,
-        }}>
-          Subscribe for breed-specific tips, early product launches, and exclusive
-          member-only discounts — delivered to your inbox.
-        </p>
-
-        {!submitted ? (
-          <>
-            <form
-              onSubmit={handleSubmit}
-              className="flex flex-col sm:flex-row gap-2 sm:gap-0 bg-white rounded-[4px] p-1 sm:p-[4px] transition-all duration-300"
-              style={{
-                maxWidth: 500, margin: '0 auto',
-                boxShadow: isFocused
-                  ? '0 10px 32px -4px rgba(223,132,72,0.2)'
-                  : '0 4px 16px rgba(0,0,0,0.06)',
-                border: `1px solid ${isFocused ? C.secondary : C.border}`,
-              }}
-            >
-              <input
-                type="email"
-                placeholder="Enter your email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                required
-                disabled={isSubmitting}
-                style={{
-                  flex: 1, border: 'none', outline: 'none',
-                  padding: '16px 20px',
-                  fontFamily: F.body, fontSize: 15,
-                  color: C.primary, background: 'transparent',
-                }}
-              />
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="px-8 py-4 sm:py-0 rounded-[2px] font-bold uppercase tracking-[0.12em] text-[15px] whitespace-nowrap transition-colors disabled:opacity-60"
-                style={{
-                  background: C.secondaryText, color: C.ink,
-                  fontFamily: F.nav,
-                  cursor: isSubmitting ? 'default' : 'pointer',
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = C.secondaryTextHover}
-                onMouseOut={(e) => e.currentTarget.style.background = C.secondaryText}
-              >
-                {isSubmitting ? 'Subscribing…' : 'Get 10% Off'}
-              </button>
-            </form>
-            {error && (
-              <p style={{ color: '#dc2626', fontSize: 13, fontWeight: 700, marginTop: 12 }}>
-                {error}
-              </p>
-            )}
-          </>
-        ) : (
-          <div style={{
-            maxWidth: 500, margin: '0 auto',
-            padding: '24px 32px',
-            background: C.white,
-            border: `1px solid #38c68b40`,
-            borderRadius: 4,
-            textAlign: 'center',
-          }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🎉</div>
-            <p style={{
-              fontFamily: F.heading, fontSize: 16, fontWeight: 700,
-              color: C.primary, margin: '0 0 6px',
-            }}>
-              You&apos;re in! Check your inbox.
-            </p>
-            <p style={{ fontSize: 15, color: C.grayText, margin: 0 }}>
-              Your 10% discount code is on its way.
-            </p>
-          </div>
-        )}
-
-        {/* Trust micro-copy */}
-        <div className="flex flex-row flex-wrap items-center justify-center gap-x-6 gap-y-3 mt-8 sm:mt-6 opacity-80 uppercase tracking-[0.08em] font-bold text-xs" style={{ fontFamily: F.nav, color: C.grayText }}>
-          {['🔒 No spam, ever', '✉️ Unsubscribe anytime', '🐾 Pet-exclusive offers'].map(t => (
-            <span key={t} className="flex items-center whitespace-nowrap">{t}</span>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────
    PAGE ROOT
  ───────────────────────────────────────────────────────────────── */
 export default function HomePage() {
@@ -1165,9 +925,7 @@ export default function HomePage() {
         <BestSellers />
         <MealtimeDiff />
         <BreedBanners />
-        <StartWithYourDog />
         <Insights />
-        <EmailCta />
       </main>
       <Footer />
     </div>

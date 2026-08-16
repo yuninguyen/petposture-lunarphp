@@ -41,8 +41,8 @@ const defaults: ShopSettings = {
         youtube: null,
     },
     contact: {
-        phone: "+1 (916) 668-0065",
-        address: "2017 I St A, Sacramento, CA 95811, United States",
+        phone: "+1 (916) 623-5368",
+        address: "1501 South Greeley Hwy, Ste C #1465, Cheyenne, WY 82007, United States",
     },
 };
 

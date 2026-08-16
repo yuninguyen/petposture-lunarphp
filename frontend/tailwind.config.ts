@@ -55,10 +55,11 @@ const config: Config = {
         ink: '#1a2128',
         // Dark orange for TEXT use on light backgrounds only (eyebrow labels,
         // prices) — text-secondary (#df8448) fails WCAG AA as text (2.78:1);
-        // this passes (6.63:1). Deliberately separate from secondary.dark,
-        // which stays lighter since it's a hover *background* (fixed
-        // 2026-08-13 after #8f4a1f made button hovers feel too dark).
-        rust: '#8f4a1f',
+        // this passes (~5.3:1). Deliberately separate from secondary.dark,
+        // which stays lighter since it's a hover *background*. Kept in the
+        // same hue as secondary (~24°) but with less lightness drop than the
+        // original #8f4a1f, so it reads as "darker orange" rather than brown.
+        rust: '#a8551a',
 
         // Semantic
         success: {

@@ -146,7 +146,7 @@ export default function FaqsPage() {
                     <div className="flex-1 max-w-[800px]">
                         {CATEGORIES.map((cat) => (
                             <div key={cat.id} id={cat.id} className="mb-12 scroll-mt-36 last:mb-0">
-                                <h2 className="text-[22px] font-medium text-primary uppercase tracking-[0.15em] mb-8 border-b border-zinc-100 pb-3">
+                                <h2 className="text-[22px] font-medium text-primary uppercase tracking-[0.04em] mb-8 border-b border-zinc-100 pb-3">
                                     {cat.title}
                                 </h2>
                                 <div className="space-y-0">

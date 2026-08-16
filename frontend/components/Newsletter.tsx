@@ -1,18 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { MailOpen, Lock, Ban, Tag } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api";
 
 export default function Newsletter() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [message, setMessage] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || status === "loading") return;
+    if (!email || isSubmitting) return;
 
-    setStatus("loading");
+    setIsSubmitting(true);
+    setError("");
     try {
       const res = await fetch(`${getApiBaseUrl()}/api/newsletter/subscribe`, {
         method: "POST",
@@ -21,73 +25,80 @@ export default function Newsletter() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setStatus("error");
-        setMessage(data?.message || "Something went wrong. Please try again.");
+        setError(data?.message || "Something went wrong. Please try again.");
         return;
       }
-      setStatus("success");
-      setMessage(data?.message || "Successfully subscribed!");
-      setEmail("");
+      setSubmitted(true);
     } catch {
-      setStatus("error");
-      setMessage("Something went wrong. Please try again.");
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <section className="py-24 px-4 md:px-8 bg-white border-b border-zinc-50 overflow-hidden">
-      <div className="container mx-auto">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12">
-          {/* Text Area */}
-          <div className="flex-1 text-center md:text-left">
-            <h2 className="text-3xl md:text-4xl font-black uppercase tracking-[0.2em] text-primary mb-4 leading-tight">
-              Get 10% Off <br className="hidden md:block" /> Your First <br className="hidden md:block" /> Order
+    <section className="bg-secondary-light px-4 py-8 md:px-8">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-secondary/15">
+            <MailOpen size={24} className="text-secondary" strokeWidth={1.75} />
+          </div>
+          <div>
+            <h2 className="mb-1.5 text-[20px] font-bold text-primary">
+              Better recommendations for your dog.
             </h2>
-            <p className="text-md font-black uppercase tracking-[0.3em] text-primary/30 max-w-sm mx-auto md:mx-0">
-              Join our pack and get exclusive deals, posture tips, and early access.
+            <p className="max-w-[380px] text-sm leading-relaxed text-primary/60">
+              Get breed-focused guides, product updates and 10% off your first PetPosture order.
             </p>
           </div>
+        </div>
 
-          {/* Form Area */}
-          <div className="w-full max-w-md">
-            <form className="flex flex-col gap-3 group" noValidate onSubmit={handleSubmit}>
-              <div className="relative">
-                <label htmlFor="nl-email" className="sr-only">Email address</label>
+        <div className="w-full shrink-0 md:max-w-[460px]">
+          {!submitted ? (
+            <>
+              <form
+                onSubmit={handleSubmit}
+                className={`flex flex-col gap-2 rounded-[4px] border bg-white p-1 transition-all duration-300 sm:flex-row sm:gap-0 sm:p-[4px] ${isFocused
+                    ? "border-secondary shadow-[0_10px_32px_-4px_rgba(223,132,72,0.2)]"
+                    : "border-zinc-200 shadow-[0_4px_16px_rgba(0,0,0,0.06)]"
+                  }`}
+              >
+                <label htmlFor="footer-newsletter-email" className="sr-only">Email address</label>
                 <input
-                  id="nl-email"
+                  id="footer-newsletter-email"
                   type="email"
-                  name="email"
+                  placeholder="Enter your email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Your email address…"
-                  autoComplete="email"
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
                   required
-                  disabled={status === "loading" || status === "success"}
-                  spellCheck={false}
-                  className="w-full border-b-2 border-zinc-100 py-4 px-1 text-sm font-bold uppercase tracking-widest focus:outline-none focus:border-secondary transition-all bg-transparent placeholder:text-zinc-200 disabled:opacity-60"
+                  disabled={isSubmitting}
+                  className="flex-1 border-none bg-transparent px-[18px] py-3.5 text-sm text-primary outline-none"
                 />
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="whitespace-nowrap rounded-[2px] bg-secondary px-6 py-3 text-[13px] font-bold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-secondary-dark disabled:opacity-60 sm:py-0"
+                >
+                  {isSubmitting ? "Subscribing…" : "Join & Get 10% Off"}
+                </button>
+              </form>
+              {error && (
+                <p className="mt-2.5 text-[13px] font-bold text-red-600">{error}</p>
+              )}
+              <div className="mt-3 flex flex-row flex-wrap items-center gap-x-5 gap-y-2 text-xs text-primary/60">
+                <span className="flex items-center gap-1.5"><Lock size={13} /> No spam ever</span>
+                <span className="flex items-center gap-1.5"><Ban size={13} /> Unsubscribe anytime</span>
+                <span className="flex items-center gap-1.5"><Tag size={13} /> Exclusive offers</span>
               </div>
-              <button
-                type="submit"
-                disabled={status === "loading" || status === "success"}
-                className="bg-secondary hover:bg-primary text-ink px-8 py-4 font-black text-sm uppercase tracking-[0.25em] transition-all shadow-xl hover:-translate-y-1 active:scale-95 whitespace-nowrap disabled:opacity-60 disabled:hover:translate-y-0"
-              >
-                {status === "loading" ? "Subscribing…" : status === "success" ? "Subscribed" : "Subscribe"}
-              </button>
-            </form>
-
-            {message && (
-              <p className={`mt-3 text-xs font-bold uppercase tracking-[0.1em] text-center md:text-left ${status === "error" ? "text-red-500" : "text-rust"}`}>
-                {message}
-              </p>
-            )}
-
-            <p className="mt-6 text-xs font-bold uppercase tracking-[0.1em] text-primary/20 text-center md:text-left leading-relaxed">
-              By subscribing you agree to our{" "}
-              <a href="/privacy-policy" className="underline hover:text-primary transition-colors">Privacy Policy</a>
-              . Unsubscribe at any time.
-            </p>
-          </div>
+            </>
+          ) : (
+            <div className="rounded-[4px] border border-[#38c68b40] bg-white px-6 py-[18px]">
+              <p className="mb-1 text-[15px] font-bold text-primary">🎉 You&apos;re in! Check your inbox.</p>
+              <p className="text-[13px] text-primary/60">Your 10% discount code is on its way.</p>
+            </div>
+          )}
         </div>
       </div>
     </section>

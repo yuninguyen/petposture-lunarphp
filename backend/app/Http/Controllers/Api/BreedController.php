@@ -50,7 +50,7 @@ class BreedController extends Controller
         $posts = $breed->posts()
             ->where('status', 'published')
             ->where('published_at', '<=', now())
-            ->with(['blogCategory', 'metadata'])
+            ->with(['blogCategory', 'metadata', 'seo'])
             ->latest('published_at')
             ->get();
 

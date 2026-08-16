@@ -119,7 +119,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>12. HOW CAN YOU CONTACT US ABOUT THIS NOTICE?</h2>
                 <p>If you have questions or comments about this notice, you may email us at <a href="mailto:support@petposture.com">support@petposture.com</a> or by post to:</p>
-                <p><strong>PetPosture LLC</strong><br>2017 I St A<br>Sacramento, CA 95811<br>United States</p>
+                <p><strong>PetPosture LLC</strong><br>1501 South Greeley Hwy<br>Ste C #1465<br>Cheyenne, WY 82007<br>United States</p>
 
                 <h2>13. HOW CAN YOU REVIEW, UPDATE, OR DELETE THE DATA WE COLLECT FROM YOU?</h2>
                 <p>Based on the applicable laws of your country, you may have the right to request access to the personal information we collect from you, change that information, or delete it. To request to review, update, or delete your personal information, please visit: <a href="mailto:support@petposture.com">support@petposture.com</a>.</p>
@@ -209,7 +209,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>20. CONTACT US</h2>
                 <p>In order to resolve a complaint regarding the Site or to receive further information regarding use of the Site, please contact us at:</p>
-                <p><strong>PetPosture LLC</strong><br>2017 I St A<br>Sacramento, CA 95811<br>United States<br>Email: <a href="mailto:support@petposture.com">support@petposture.com</a></p>
+                <p><strong>PetPosture LLC</strong><br>1501 South Greeley Hwy<br>Ste C #1465<br>Cheyenne, WY 82007<br>United States<br>Email: <a href="mailto:support@petposture.com">support@petposture.com</a></p>
                 HTML,
             ],
 
@@ -261,7 +261,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>9. WHERE CAN I GET FURTHER INFORMATION?</h2>
                 <p>If you have any questions about our use of cookies or other technologies, please email us at <a href="mailto:support@petposture.com">support@petposture.com</a> or by post to:</p>
-                <p><strong>PetPosture LLC</strong><br>2017 I St A<br>Sacramento, CA 95811<br>United States<br>Phone: +1 (916) 623-5368</p>
+                <p><strong>PetPosture LLC</strong><br>1501 South Greeley Hwy<br>Ste C #1465<br>Cheyenne, WY 82007<br>United States<br>Phone: +1 (916) 623-5368</p>
                 HTML,
             ],
 
@@ -270,7 +270,7 @@ class LegalPagesSeeder extends Seeder
                 'meta_description' => 'Rules for acceptable use of the PetPosture website and services.',
                 'content' => <<<'HTML'
                 <h2>1. WHO WE ARE</h2>
-                <p>PetPosture LLC ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>," or "<strong>our</strong>") is a company registered in the United States at 2017 I St A, Sacramento, CA 95811. We operate the website http://petposture.com (the "<strong>Site</strong>"), and any other related products and services that refer or link to this Acceptable Use Policy (collectively, the "<strong>Services</strong>").</p>
+                <p>PetPosture LLC ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>," or "<strong>our</strong>") is a company registered in the United States at 1501 South Greeley Hwy, Ste C #1465, Cheyenne, WY 82007. We operate the website http://petposture.com (the "<strong>Site</strong>"), and any other related products and services that refer or link to this Acceptable Use Policy (collectively, the "<strong>Services</strong>").</p>
 
                 <h2>2. USE OF THE SERVICES</h2>
                 <p>When you use the Services, you agree to abide by this Acceptable Use Policy and our Terms and Conditions. You may not use the Services:</p>
@@ -313,7 +313,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>7. HOW CAN YOU CONTACT US ABOUT THIS POLICY?</h2>
                 <p>If you have any further questions or comments, you may contact us at:</p>
-                <p><strong>PetPosture LLC</strong><br>2017 I St A<br>Sacramento, CA 95811<br>United States<br>Email: <a href="mailto:support@petposture.com">support@petposture.com</a></p>
+                <p><strong>PetPosture LLC</strong><br>1501 South Greeley Hwy<br>Ste C #1465<br>Cheyenne, WY 82007<br>United States<br>Email: <a href="mailto:support@petposture.com">support@petposture.com</a></p>
                 HTML,
             ],
 
@@ -338,7 +338,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>5. HOW CAN YOU CONTACT US ABOUT THIS DISCLOSURE?</h2>
                 <p>If you have questions about our affiliate relationships, you may email us at <a href="mailto:support@petposture.com">support@petposture.com</a> or by post to:</p>
-                <p><strong>PetPosture LLC</strong><br>2017 I St A<br>Sacramento, CA 95811<br>United States</p>
+                <p><strong>PetPosture LLC</strong><br>1501 South Greeley Hwy<br>Ste C #1465<br>Cheyenne, WY 82007<br>United States</p>
                 HTML,
             ],
 
@@ -376,9 +376,9 @@ class LegalPagesSeeder extends Seeder
                 <h2>6. CONTACT INFORMATION</h2>
                 <p>Our dedicated support team is here to help with any shipping-related questions or concerns:</p>
                 <p><strong>Email:</strong> <a href="mailto:support@petposture.com">support@petposture.com</a></p>
-                <p><strong>Phone:</strong> +1 (916) 668-0065</p>
+                <p><strong>Phone:</strong> +1 (916) 623-5368</p>
                 <p><strong>Operating Hours:</strong> 10:00 AM – 20:00 PM (Monday – Friday)</p>
-                <p>PetPosture LLC<br>2017 I STA, Sacramento, CA 95811</p>
+                <p>PetPosture LLC<br>1501 South Greeley Hwy, Ste C #1465, Cheyenne, WY 82007</p>
 
                 <h2>7. FREQUENTLY ASKED QUESTIONS</h2>
                 <h3>Why did I only receive part of my order?</h3>
@@ -428,10 +428,10 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>6. LOGISTICS & CONTACT</h2>
                 <p>Because PetPosture partners with specialized warehouses across the US, items from different categories may need to be returned to different locations.</p>
-                <p><strong>Do not send returns to our Sacramento administrative office.</strong></p>
+                <p><strong>Do not send returns to our Cheyenne administrative office.</strong></p>
                 <p>We will provide you with the correct warehouse address during the RMA process. If you have any questions, please reach out:</p>
                 <p><strong>Support Email:</strong> <a href="mailto:support@petposture.com">support@petposture.com</a></p>
-                <p><strong>Support Phone:</strong> +1 (916) 668-0065</p>
+                <p><strong>Support Phone:</strong> +1 (916) 623-5368</p>
 
                 <h2>7. FREQUENTLY ASKED QUESTIONS</h2>
                 <h3>What is a 25% restocking fee?</h3>
