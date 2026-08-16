@@ -801,11 +801,27 @@ function PostCard({ post }: { post: BlogPost }) {
       </p>
 
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-        fontFamily: F.nav, fontSize: 13, fontWeight: 700,
-        color: C.secondary,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        fontFamily: F.nav,
       }}>
-        Read →
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontSize: 11, fontWeight: 700,
+          color: isHovered ? C.secondary : C.grayText,
+          letterSpacing: '0.05em', textTransform: 'capitalize',
+          transition: 'color 0.25s ease',
+        }}>
+          <span>{post.date}</span>
+          <span>·</span>
+          <span>{post.readTime}</span>
+        </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontSize: 13, fontWeight: 700,
+          color: C.secondary,
+        }}>
+          Read →
+        </div>
       </div>
     </Link>
   );
