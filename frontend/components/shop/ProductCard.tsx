@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Star, ArrowUpRight, ShoppingBag, Heart } from 'lucide-react';
+import { Star, ArrowUpRight, Heart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
@@ -108,9 +108,8 @@ export function ProductCard({ product }: { product: Product }) {
 
                 <button
                     onClick={() => addItem(product)}
-                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-[14px] bg-secondary px-2 text-xs font-bold uppercase tracking-[0.02em] text-ink transition-colors hover:bg-secondary-dark sm:gap-2 sm:px-4 sm:text-sm sm:tracking-[0.05em]"
+                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center whitespace-nowrap rounded-[14px] border-2 border-rust bg-white px-2 text-xs font-bold uppercase tracking-[0.02em] text-rust transition-colors hover:bg-rust hover:text-white sm:px-4 sm:text-sm sm:tracking-[0.05em]"
                 >
-                    <ShoppingBag size={14} className="shrink-0 sm:size-[15px]" />
                     Add to Cart
                 </button>
             </div>

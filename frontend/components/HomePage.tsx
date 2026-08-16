@@ -406,16 +406,16 @@ function WhyChoose() {
   ];
 
   return (
-    <section style={{ background: C.white, padding: '40px 24px' }}>
+    <section className="hidden sm:block" style={{ background: C.white, padding: '40px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <SectionTitle sub="Every product engineered with a specific body type in mind.">
           Why Choose PetPosture
         </SectionTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-0">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-0">
           {features.map((f, i) => (
             <div
               key={f.title}
-              className={`flex items-start text-left gap-3 border-l-0 ${i % 2 !== 0 ? 'sm:border-l' : 'sm:border-l-0'} ${i % 4 !== 0 ? 'lg:border-l' : 'lg:border-l-0'} border-zinc-200`}
+              className={`flex items-start text-left gap-3 ${i % 2 !== 0 ? 'border-l' : 'border-l-0'} ${i % 4 !== 0 ? 'lg:border-l' : 'lg:border-l-0'} border-zinc-200`}
               style={{
                 padding: '8px 20px',
                 cursor: 'default',
@@ -518,9 +518,14 @@ function BestSellers() {
         <SectionTitle sub="A curated selection chosen around the dogs and everyday needs we focus on.">
           PetPosture Picks
         </SectionTitle>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+        <div
+          className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 md:gap-8"
+          style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
+        >
           {products.map((p) => (
-            <ProductCard key={p.variantId} product={p} />
+            <div key={p.variantId} className="w-[72%] shrink-0 snap-start sm:w-auto">
+              <ProductCard product={p} />
+            </div>
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: 48 }}>
