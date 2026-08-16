@@ -150,10 +150,6 @@ function SocialProofStrip() {
           <div
             key={i}
             className="flex items-center text-left gap-3"
-            style={{
-              borderLeft: i % 4 !== 0 ? `1px solid ${C.border}` : 'none',
-              paddingLeft: i % 4 !== 0 ? 24 : 0,
-            }}
           >
             <div style={{
               position: 'relative',
@@ -452,11 +448,11 @@ function WhyChoose() {
           {features.map((f, i) => (
             <div
               key={f.title}
-              className={`min-w-[85vw] sm:min-w-0 snap-center ${i > 0 ? 'sm:-ml-px' : ''} flex items-center text-left gap-4`}
+              className={`min-w-[85vw] sm:min-w-0 snap-center flex items-center text-left gap-4`}
               style={{
-                padding: '28px 24px',
-                border: `1px solid ${hoveredIdx === i ? f.accent : C.border}`,
-                background: hoveredIdx === i ? '#fafbfc' : C.white,
+                padding: '20px',
+                borderRadius: 14,
+                background: hoveredIdx === i ? '#fafbfc' : 'transparent',
                 cursor: 'default',
                 transition: 'all 0.25s ease',
               }}
