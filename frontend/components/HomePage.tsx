@@ -433,8 +433,8 @@ function WhyChoose() {
                 cursor: 'default',
               }}
             >
-              <div style={{ position: 'relative', width: 34, height: 34, flexShrink: 0, marginTop: 2 }}>
-                <Image src={f.img} alt={f.title} fill sizes="34px" className="object-contain" />
+              <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0, marginTop: 2 }}>
+                <Image src={f.img} alt={f.title} fill sizes="44px" className="object-contain" />
               </div>
 
               <div>
