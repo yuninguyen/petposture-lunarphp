@@ -25,8 +25,8 @@ export function ProductCard({ product }: { product: Product }) {
                         className="object-contain p-8 transition duration-500 group-hover:scale-[1.03]"
                     />
 
-                    <div className="absolute left-3 top-3">
-                        <span className="rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#56616a] shadow-sm">
+                    <div className="absolute left-2 top-2 max-w-[45%] sm:left-3 sm:top-3">
+                        <span className="block truncate rounded-full bg-white/92 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-[#56616a] shadow-sm sm:px-2.5 sm:text-[10px] sm:tracking-[0.16em]">
                             {product.category}
                         </span>
                     </div>
@@ -45,24 +45,24 @@ export function ProductCard({ product }: { product: Product }) {
                         <Heart size={16} className={wishlisted ? 'fill-secondary text-rust' : ''} />
                     </button>
 
-                    <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
+                    <div className="absolute right-2 top-2 flex max-w-[52%] flex-col items-end gap-1.5 sm:right-3 sm:top-3 sm:gap-2">
                         {product.badge && (
-                            <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-ink shadow-lg shadow-orange-500/20">
+                            <span className="truncate rounded-full bg-secondary px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-ink shadow-lg shadow-orange-500/20 sm:px-2.5 sm:text-[10px] sm:tracking-[0.16em]">
                                 {product.badge}
                             </span>
                         )}
                         {product.isNew && (
-                            <span className="rounded-full bg-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
+                            <span className="truncate rounded-full bg-primary px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-white shadow-lg shadow-zinc-500/20 sm:px-2.5 sm:text-[10px] sm:tracking-[0.16em]">
                                 New
                             </span>
                         )}
                         {product.lowStockWarning && !product.backorder && (
-                            <span className="rounded-full bg-danger px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-danger/20">
+                            <span className="truncate rounded-full bg-danger px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-white shadow-lg shadow-danger/20 sm:px-2.5 sm:text-[10px] sm:tracking-[0.16em]">
                                 Low Stock
                             </span>
                         )}
                         {product.backorder && (
-                            <span className="rounded-full bg-gray-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg shadow-zinc-500/20">
+                            <span className="truncate rounded-full bg-gray-600 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-white shadow-lg shadow-zinc-500/20 sm:px-2.5 sm:text-[10px] sm:tracking-[0.16em]">
                                 Backorder
                             </span>
                         )}
@@ -108,9 +108,9 @@ export function ProductCard({ product }: { product: Product }) {
 
                 <button
                     onClick={() => addItem(product)}
-                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-[14px] bg-secondary px-4 text-sm font-bold uppercase tracking-[0.05em] text-ink transition-colors hover:bg-secondary-dark"
+                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-[14px] bg-secondary px-2 text-xs font-bold uppercase tracking-[0.02em] text-ink transition-colors hover:bg-secondary-dark sm:gap-2 sm:px-4 sm:text-sm sm:tracking-[0.05em]"
                 >
-                    <ShoppingBag size={15} />
+                    <ShoppingBag size={14} className="shrink-0 sm:size-[15px]" />
                     Add to Cart
                 </button>
             </div>

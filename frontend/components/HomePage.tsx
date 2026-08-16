@@ -411,11 +411,11 @@ function WhyChoose() {
         <SectionTitle sub="Every product engineered with a specific body type in mind.">
           Why Choose PetPosture
         </SectionTitle>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-0">
           {features.map((f, i) => (
             <div
               key={f.title}
-              className={`flex items-start text-left gap-3 ${i % 2 !== 0 ? 'border-l' : 'border-l-0'} ${i % 4 !== 0 ? 'lg:border-l' : 'lg:border-l-0'} border-zinc-200`}
+              className={`flex items-start text-left gap-3 border-l-0 ${i % 2 !== 0 ? 'sm:border-l' : 'sm:border-l-0'} ${i % 4 !== 0 ? 'lg:border-l' : 'lg:border-l-0'} border-zinc-200`}
               style={{
                 padding: '8px 20px',
                 cursor: 'default',
