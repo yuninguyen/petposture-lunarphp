@@ -189,6 +189,16 @@ function SocialProofStrip() {
 function ShopCategories() {
   const [hoveredBreed, setHoveredBreed] = useState<string | null>(null);
   const [hoveredSolution, setHoveredSolution] = useState<string | null>(null);
+  const [activeBreedSlide, setActiveBreedSlide] = useState(0);
+  const [activeSolutionSlide, setActiveSolutionSlide] = useState(0);
+
+  const makeScrollHandler = (count: number, setter: (i: number) => void) =>
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const el = e.currentTarget;
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      const progress = maxScroll > 0 ? el.scrollLeft / maxScroll : 0;
+      setter(Math.round(progress * (count - 1)));
+    };
 
   const breeds = [
     { name: 'Dachshund', slug: 'dachshund', img: '/assets/Breed-Dachshund.png' },
@@ -213,7 +223,7 @@ function ShopCategories() {
         </SectionTitle>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Shop by Breed */}
-          <div style={{ background: '#eef4fb', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: '#f6faff', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column' }}>
             <div className="flex items-start gap-4 mb-6">
               <div style={{
                 position: 'relative',
@@ -231,12 +241,16 @@ function ShopCategories() {
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-6">
+            <div
+              className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-5 gap-3 mb-4 sm:mb-6"
+              style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
+              onScroll={makeScrollHandler(breeds.length, setActiveBreedSlide)}
+            >
               {breeds.map((b) => (
                 <Link
                   key={b.slug}
                   href={`/dogs/${b.slug}`}
-                  className="text-center"
+                  className="text-center shrink-0 basis-[30%] sm:basis-auto snap-start"
                   onMouseEnter={() => setHoveredBreed(b.slug)}
                   onMouseLeave={() => setHoveredBreed(null)}
                 >
@@ -261,6 +275,19 @@ function ShopCategories() {
                 </Link>
               ))}
             </div>
+            <div className="flex sm:hidden justify-center gap-2 mb-6">
+              {breeds.map((_, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    width: activeBreedSlide === idx ? 20 : 6,
+                    height: 6, borderRadius: 3,
+                    background: activeBreedSlide === idx ? C.secondary : C.border,
+                    transition: 'all 0.3s ease',
+                  }}
+                />
+              ))}
+            </div>
             <Link href="/shop/breeds" style={{
               display: 'block', textAlign: 'center', fontFamily: F.nav,
               fontSize: 12, fontWeight: 800, color: C.secondary,
@@ -272,7 +299,7 @@ function ShopCategories() {
           </div>
 
           {/* Shop by Solutions */}
-          <div style={{ background: '#fbf1e8', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: '#fdf7f0', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column' }}>
             <div className="flex items-start gap-4 mb-6">
               <div style={{
                 position: 'relative',
@@ -290,12 +317,16 @@ function ShopCategories() {
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-3 mb-6">
+            <div
+              className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-4 gap-3 mb-4 sm:mb-6"
+              style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
+              onScroll={makeScrollHandler(solutions.length, setActiveSolutionSlide)}
+            >
               {solutions.map((s) => (
                 <Link
                   key={s.slug}
                   href={`/solutions/${s.slug}`}
-                  className="flex flex-col items-center gap-2"
+                  className="flex flex-col items-center gap-2 shrink-0 basis-[30%] sm:basis-auto snap-start"
                   onMouseEnter={() => setHoveredSolution(s.slug)}
                   onMouseLeave={() => setHoveredSolution(null)}
                 >
@@ -317,6 +348,19 @@ function ShopCategories() {
                     {s.name}
                   </span>
                 </Link>
+              ))}
+            </div>
+            <div className="flex sm:hidden justify-center gap-2 mb-6">
+              {solutions.map((_, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    width: activeSolutionSlide === idx ? 20 : 6,
+                    height: 6, borderRadius: 3,
+                    background: activeSolutionSlide === idx ? C.secondary : C.border,
+                    transition: 'all 0.3s ease',
+                  }}
+                />
               ))}
             </div>
             <Link href="/shop/solutions" style={{
@@ -408,47 +452,40 @@ function WhyChoose() {
           {features.map((f, i) => (
             <div
               key={f.title}
-              className={`min-w-[85vw] sm:min-w-0 snap-center ${i > 0 ? 'sm:-ml-px' : ''}`}
+              className={`min-w-[85vw] sm:min-w-0 snap-center ${i > 0 ? 'sm:-ml-px' : ''} flex items-center text-left gap-4`}
               style={{
-                padding: '48px 32px',
+                padding: '28px 24px',
                 border: `1px solid ${hoveredIdx === i ? f.accent : C.border}`,
                 background: hoveredIdx === i ? '#fafbfc' : C.white,
-                textAlign: 'center',
                 cursor: 'default',
                 transition: 'all 0.25s ease',
-                position: 'relative',
               }}
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
             >
               <div style={{
-                position: 'absolute', top: 0, left: 0, right: 0, height: 4,
-                background: hoveredIdx === i ? f.accent : 'transparent',
-                transition: 'background 0.25s',
-              }} />
-
-              <div style={{
-                width: 64, height: 64, borderRadius: '50%',
-                background: hoveredIdx === i ? `${f.accent}20` : C.grayLight,
-                color: hoveredIdx === i ? f.accent : C.primary,
+                width: 56, height: 56, flexShrink: 0, borderRadius: '50%',
+                background: `${f.accent}26`,
+                color: f.accent,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 24px', transition: 'all 0.25s',
+                transition: 'all 0.25s',
               }}>
                 {f.icon}
               </div>
 
-              <h3 style={{
-                fontFamily: F.heading, fontSize: 18, fontWeight: 700,
-                color: C.primary, marginBottom: 12, textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}>
-                {f.title}
-              </h3>
-              <p style={{
-                color: C.grayText, fontSize: 14, lineHeight: 1.6, margin: 0,
-              }}>
-                {f.desc}
-              </p>
+              <div>
+                <h3 style={{
+                  fontFamily: F.heading, fontSize: 15, fontWeight: 700,
+                  color: C.primary, marginBottom: 4,
+                }}>
+                  {f.title}
+                </h3>
+                <p style={{
+                  color: C.grayText, fontSize: 13, lineHeight: 1.5, margin: 0,
+                }}>
+                  {f.desc}
+                </p>
+              </div>
             </div>
           ))}
         </div>
