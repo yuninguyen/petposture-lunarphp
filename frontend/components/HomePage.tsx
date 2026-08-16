@@ -378,7 +378,6 @@ function ShopCategories() {
    WHY CHOOSE PETPOSTURE
  ───────────────────────────────────────────────────────────────── */
 function WhyChoose() {
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -389,45 +388,25 @@ function WhyChoose() {
 
   const features = [
     {
-      icon: (
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-          <path d="M4 16h24M4 11h9M4 21h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <rect x="17" y="9" width="11" height="14" rx="1.5" stroke="currentColor" strokeWidth="2" />
-          <circle cx="7" cy="25" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-          <circle cx="26" cy="25" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
-      ),
+      img: '/assets/Why-Breed-Focused.png',
       title: 'Breed-Focused',
       desc: 'We consider body type, size and everyday use so products make more sense for your dog.',
       accent: '#4f9cf9',
     },
     {
-      icon: (
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-          <path d="M16 4C9.37 4 4 9.37 4 16s5.37 12 12 12 12-5.37 12-12S22.63 4 16 4Z" stroke="currentColor" strokeWidth="2" />
-          <path d="M11 16l3.5 3.5 6.5-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      ),
+      img: '/assets/Why-Practical-Research.png',
       title: 'Practical Research',
       desc: 'We look at fit, materials, sizing and usability-not just what\'s popular.',
       accent: '#38c68b',
     },
     {
-      icon: (
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-          <path d="M16 5l2.6 6.6H26l-5.8 4.2 2.2 7.2-6.4-4.6-6.4 4.6 2.2-7.2L6 11.6h7.4L16 5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-        </svg>
-      ),
+      img: '/assets/Why-Carefully-Selected.png',
       title: 'Carefully Selected',
       desc: 'We would rather recommend a smaller number of relevant products than an endless catalog.',
       accent: '#f5a623',
     },
     {
-      icon: (
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-          <path d="M16 28s-10-6.4-10-13a7 7 0 0 1 10-6.3A7 7 0 0 1 26 15c0 6.6-10 13-10 13Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-        </svg>
-      ),
+      img: '/assets/Why-Transparent-Reviews.png',
       title: 'Transparent Reviews',
       desc: 'We clearly distinguish between products we\'ve researched and products we\'ve physical tested.',
       accent: C.secondary,
@@ -448,36 +427,25 @@ function WhyChoose() {
           {features.map((f, i) => (
             <div
               key={f.title}
-              className={`min-w-[85vw] sm:min-w-0 snap-center flex items-center text-left gap-4`}
+              className={`min-w-[85vw] sm:min-w-0 snap-center flex items-start text-left gap-3 ${i % 2 !== 0 ? 'sm:border-l' : 'sm:border-l-0'} ${i % 4 !== 0 ? 'lg:border-l' : 'lg:border-l-0'} border-zinc-200`}
               style={{
-                padding: '20px',
-                borderRadius: 14,
-                background: hoveredIdx === i ? '#fafbfc' : 'transparent',
+                padding: '8px 20px',
                 cursor: 'default',
-                transition: 'all 0.25s ease',
               }}
-              onMouseEnter={() => setHoveredIdx(i)}
-              onMouseLeave={() => setHoveredIdx(null)}
             >
-              <div style={{
-                width: 56, height: 56, flexShrink: 0, borderRadius: '50%',
-                background: `${f.accent}26`,
-                color: f.accent,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.25s',
-              }}>
-                {f.icon}
+              <div style={{ position: 'relative', width: 34, height: 34, flexShrink: 0, marginTop: 2 }}>
+                <Image src={f.img} alt={f.title} fill sizes="34px" className="object-contain" />
               </div>
 
               <div>
                 <h3 style={{
-                  fontFamily: F.heading, fontSize: 15, fontWeight: 700,
+                  fontFamily: F.heading, fontSize: 14, fontWeight: 700,
                   color: C.primary, marginBottom: 4,
                 }}>
                   {f.title}
                 </h3>
                 <p style={{
-                  color: C.grayText, fontSize: 13, lineHeight: 1.5, margin: 0,
+                  color: C.grayText, fontSize: 12.5, lineHeight: 1.5, margin: 0,
                 }}>
                   {f.desc}
                 </p>
