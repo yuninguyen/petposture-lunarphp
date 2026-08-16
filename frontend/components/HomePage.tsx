@@ -378,14 +378,6 @@ function ShopCategories() {
    WHY CHOOSE PETPOSTURE
  ───────────────────────────────────────────────────────────────── */
 function WhyChoose() {
-  const [activeSlide, setActiveSlide] = useState(0);
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    const index = Math.round(el.scrollLeft / (el.clientWidth * 0.85));
-    if (index !== activeSlide) setActiveSlide(index);
-  };
-
   const features = [
     {
       img: '/assets/Why-Breed-Focused.png',
@@ -419,22 +411,18 @@ function WhyChoose() {
         <SectionTitle sub="Every product engineered with a specific body type in mind.">
           Why Choose PetPosture
         </SectionTitle>
-        <div
-          className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-0"
-          style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
-          onScroll={handleScroll}
-        >
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-0">
           {features.map((f, i) => (
             <div
               key={f.title}
-              className={`min-w-[85vw] sm:min-w-0 snap-center flex items-start text-left gap-3 ${i % 2 !== 0 ? 'sm:border-l' : 'sm:border-l-0'} ${i % 4 !== 0 ? 'lg:border-l' : 'lg:border-l-0'} border-zinc-200`}
+              className={`flex items-start text-left gap-3 ${i % 2 !== 0 ? 'border-l' : 'border-l-0'} ${i % 4 !== 0 ? 'lg:border-l' : 'lg:border-l-0'} border-zinc-200`}
               style={{
                 padding: '8px 20px',
                 cursor: 'default',
               }}
             >
-              <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0, marginTop: 2 }}>
-                <Image src={f.img} alt={f.title} fill sizes="44px" className="object-contain" />
+              <div style={{ position: 'relative', width: 58, height: 58, flexShrink: 0, marginTop: 2 }}>
+                <Image src={f.img} alt={f.title} fill sizes="58px" className="object-contain" />
               </div>
 
               <div>
@@ -451,22 +439,6 @@ function WhyChoose() {
                 </p>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Mobile Pagination Dots */}
-        <div className="flex sm:hidden justify-center gap-2 mt-8">
-          {features.map((_, idx) => (
-            <div
-              key={idx}
-              style={{
-                width: activeSlide === idx ? 24 : 8,
-                height: 8,
-                borderRadius: 4,
-                background: activeSlide === idx ? C.secondary : C.border,
-                transition: 'all 0.3s ease',
-              }}
-            />
           ))}
         </div>
       </div>
@@ -546,7 +518,7 @@ function BestSellers() {
         <SectionTitle sub="A curated selection chosen around the dogs and everyday needs we focus on.">
           PetPosture Picks
         </SectionTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
           {products.map((p) => (
             <ProductCard key={p.variantId} product={p} />
           ))}
