@@ -28,7 +28,7 @@ return [
             'bold', 'italic', 'underline', 'strike', '|',
             'align-left', 'align-center', 'align-right', '|',
             'bullet-list', 'ordered-list', 'checked-list', 'blockquote', 'hr', '|',
-            'link', 'media', 'table', 'code-block', '|',
+            'link', 'media', 'table', 'code-block', 'source', '|',
             'color', 'highlight',
         ],
         'simple' => ['heading', 'hr', 'bullet-list', 'ordered-list', 'checked-list', '|', 'bold', 'italic', 'lead', 'small', '|', 'link', 'media'],
