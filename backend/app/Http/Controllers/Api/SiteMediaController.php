@@ -13,10 +13,10 @@ class SiteMediaController extends Controller
 
     /**
      * Public read-only feed of admin-uploaded site media (Media Library →
-     * Upload Files), used by storefront components (Hero, PromoBanners) to
-     * swap out their default static images without a code change. Match by
+     * Upload Files), used by storefront components (currently just Hero) to
+     * swap out their default static image without a code change. Match by
      * `title` — e.g. a SiteMedia record titled "hero" overrides the Hero
-     * background; "flat-faced" / "long-backed" override the two PromoBanners.
+     * background.
      */
     public function index(Request $request)
     {

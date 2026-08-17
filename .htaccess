@@ -6,6 +6,6 @@
 
     # Route specific backend endpoints to Laravel (PHP)
     # This bypasses the Node.js application and allows Apache to process them as PHP
-    RewriteCond %{REQUEST_URI} ^/(api|sanctum|storage|vendor|livewire|admin)
+    RewriteCond %{REQUEST_URI} ^/(api|sanctum|storage|vendor|livewire|admin|css|js|build)
     RewriteRule ^(.*)$ backend/public/$1 [L]
 </IfModule>

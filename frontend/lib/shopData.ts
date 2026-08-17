@@ -2,55 +2,6 @@ import { Product } from '@/types/shop';
 
 export const CATEGORIES = ["All", "Bowls", "Ramps", "Beds", "Harnesses"];
 
-export const BREED_TYPES = [
-    { slug: "flat-faced", label: "Flat-Faced Breeds" },
-    { slug: "long-backed", label: "Long-Backed Breeds" },
-];
-
-export const SOLUTION_TYPES = [
-    { slug: "eating-digestion", label: "Eating & Digestion" },
-    { slug: "mobility-support", label: "Mobility & Support" },
-    { slug: "comfort-safety", label: "Comfort & Safety" },
-];
-
-export type LandingContent = { title: string; description: string; metaDescription: string; image: string };
-
-export const BREED_CONTENT: Record<string, LandingContent> = {
-    'flat-faced': {
-        title: 'Built for Flat-Faced Breeds',
-        description: 'Pugs, Bulldogs & French Bulldogs benefit most from elevated, tilted bowls and anti-strain harnesses that ease pressure on short snouts and airways.',
-        metaDescription: 'Elevated, tilted bowls and anti-strain harnesses built for Pugs, Bulldogs, and French Bulldogs.',
-        image: '/assets/Flat-Faced-Breeds.png',
-    },
-    'long-backed': {
-        title: 'Built for Long-Backed Breeds',
-        description: 'Dachshunds & Corgis need ramps, orthopedic beds, and harnesses that protect the intervertebral discs from everyday strain.',
-        metaDescription: 'Ramps, orthopedic beds, and disc-protecting harnesses built for Dachshunds and Corgis.',
-        image: '/assets/Corgi.png',
-    },
-};
-
-export const SOLUTION_CONTENT: Record<string, LandingContent> = {
-    'eating-digestion': {
-        title: 'Better Eating & Digestion',
-        description: 'Tilted bowls, slow feeders, and fountains that ease strain and support healthy digestion at every meal.',
-        metaDescription: 'Tilted bowls, slow feeders, and pet fountains built to ease mealtime strain and support digestion.',
-        image: '/assets/Dog-Bowls-5.png',
-    },
-    'mobility-support': {
-        title: 'Built for Mobility & Support',
-        description: 'Ramps, stairs, and strollers that protect joints and keep pets moving comfortably, indoors and out.',
-        metaDescription: 'Ramps, stairs, and strollers that protect joints and support pets with limited mobility.',
-        image: '/assets/Shop-by-Breed.jpg',
-    },
-    'comfort-safety': {
-        title: 'Comfort & Safety, Every Day',
-        description: 'Orthopedic beds, cooling mats, and supportive harnesses designed around your pet\'s everyday wellbeing.',
-        metaDescription: 'Orthopedic beds, cooling mats, and supportive harnesses for everyday pet comfort and safety.',
-        image: '/assets/Pug-Dog-Bed.jpg',
-    },
-};
-
 export const SORT_OPTIONS = [
     { label: "Default Sorting", value: "newest" },
     { label: "Price: Low to High", value: "price_asc" },
@@ -72,7 +23,7 @@ export const PRODUCTS: Product[] = [
         oldPrice: 85.00,
         rating: 5,
         reviews: 214,
-        image: "/assets/Dog-Bowls-5.png",
+        image: "/assets/product/Dog-Bowls-5.webp",
         badge: "SALE",
         isNew: false
     },
@@ -90,7 +41,7 @@ export const PRODUCTS: Product[] = [
         oldPrice: 69.99,
         rating: 5,
         reviews: 156,
-        image: "/assets/Corgi.png",
+        image: "/assets/product/Corgi.webp",
         badge: "SALE",
         isNew: true
     },
@@ -107,7 +58,7 @@ export const PRODUCTS: Product[] = [
         price: 29.00,
         rating: 5,
         reviews: 308,
-        image: "/assets/Flat-Faced-Breeds.png",
+        image: "/assets/product/Flat-Faced-Breeds.webp",
         badge: "BEST SELLER",
         isNew: false
     },
@@ -124,7 +75,7 @@ export const PRODUCTS: Product[] = [
         price: 49.00,
         rating: 5,
         reviews: 182,
-        image: "/assets/Shop-by-Breed.jpg",
+        image: "/assets/breeds/Shop-by-Breed.webp",
         isNew: true
     },
     {
@@ -140,7 +91,7 @@ export const PRODUCTS: Product[] = [
         price: 89.00,
         rating: 5,
         reviews: 425,
-        image: "/assets/Pug-Dog-Bed.jpg",
+        image: "/assets/product/Pug-Dog-Bed.webp",
         badge: "PREMIUM",
         isNew: false
     },
@@ -157,7 +108,7 @@ export const PRODUCTS: Product[] = [
         price: 34.00,
         rating: 4,
         reviews: 97,
-        image: "/assets/shop-by-solutions.jpg",
+        image: "/assets/icons/shop-by-solutions.webp",
         isNew: true
     }
 ];

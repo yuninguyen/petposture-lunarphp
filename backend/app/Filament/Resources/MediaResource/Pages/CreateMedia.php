@@ -43,8 +43,8 @@ class CreateMedia extends Page
             ->schema([
                 TextInput::make('title')
                     ->label('Title / Alt text')
-                    ->placeholder('e.g. hero, flat-faced, long-backed')
-                    ->helperText('For Banner uploads, use "hero" to replace the homepage hero image, or "flat-faced" / "long-backed" to replace the two homepage promo banners.')
+                    ->placeholder('e.g. hero')
+                    ->helperText('For Banner uploads, use "hero" to replace the homepage hero image. Breed banner overrides are no longer available here — breed images now come from /admin/breeds.')
                     ->columnSpanFull(),
 
                 Select::make('collection')

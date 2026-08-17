@@ -13,6 +13,9 @@ interface ShopPageProps {
     initialProducts: Product[];
     initialBreed?: string;
     initialSolution?: string;
+    initialSearch?: string;
+    allBreeds?: { slug: string; label: string }[];
+    allSolutions?: { slug: string; label: string }[];
     heroEyebrow?: string;
     heroTitle?: string;
     heroDescription?: string;
@@ -22,12 +25,15 @@ export default function ShopPage({
     initialProducts,
     initialBreed = 'All',
     initialSolution = 'All',
+    initialSearch = '',
+    allBreeds = [],
+    allSolutions = [],
     heroEyebrow = 'PetPosture Shop',
     heroTitle = 'Ergonomic essentials, organized like a real catalog.',
     heroDescription = "Shop ergonomic bowls, ramps, beds, and harnesses — engineered for your pet's posture and comfort.",
 }: ShopPageProps) {
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-    const shopLogic = useShopLogic(initialProducts, initialBreed, initialSolution);
+    const shopLogic = useShopLogic(initialProducts, initialBreed, initialSolution, initialSearch, allBreeds, allSolutions);
     const activeBreedLabel = shopLogic.breeds.find((b) => b.slug === shopLogic.activeBreed)?.label;
     const activeSolutionLabel = shopLogic.solutions.find((s) => s.slug === shopLogic.activeSolution)?.label;
     const activeCategoryLabel = shopLogic.categories.find((c) => c.slug === shopLogic.activeCategory)?.name;

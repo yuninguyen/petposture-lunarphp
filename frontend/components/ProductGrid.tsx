@@ -9,7 +9,7 @@ const products = [
     price: "$59.99",
     oldPrice: "$85.00",
     rating: 5,
-    image: "/assets/Dog-Bowls-5.png",
+    image: "/assets/product/Dog-Bowls-5.webp",
     badge: "SALE",
   },
   {
@@ -18,7 +18,7 @@ const products = [
     price: "$49.99",
     oldPrice: "$69.99",
     rating: 5,
-    image: "/assets/Corgi.png",
+    image: "/assets/product/Corgi.webp",
     badge: "SALE",
   },
   {
@@ -27,7 +27,7 @@ const products = [
     price: "$45.00",
     oldPrice: null,
     rating: 4,
-    image: "/assets/Flat-Faced-Breeds.png",
+    image: "/assets/product/Flat-Faced-Breeds.webp",
     badge: "BEST SELLER",
   },
   {
@@ -36,7 +36,7 @@ const products = [
     price: "$79.99",
     oldPrice: "$99.99",
     rating: 5,
-    image: "/assets/Pug-Dog-Bed.jpg",
+    image: "/assets/product/Pug-Dog-Bed.webp",
     badge: "SALE",
   },
 ];

@@ -59,7 +59,7 @@ export default function OurMissionPage() {
                         className="flex flex-col items-center"
                     >
                         {/* Eyebrow */}
-                        <h1 className="text-[32px] md:text-[48px] font-bold uppercase tracking-[0.08em] text-primary mb-6 leading-tight">
+                        <h1 className="text-[32px] md:text-[40px] font-bold uppercase tracking-[0.08em] text-primary mb-6 leading-tight">
                             Our Mission
                         </h1>
                         {/* Divider Line */}
@@ -97,7 +97,7 @@ export default function OurMissionPage() {
                             className="relative aspect-square md:aspect-[4/4] rounded-xl overflow-hidden shadow-2xl shadow-primary/10 bg-white"
                         >
                             <Image
-                                src="/assets/badposture-goodposture.jpg"
+                                src="/assets/blog/badposture-goodposture.webp"
                                 alt="Standard vs PetPosture"
                                 fill
                                 className="object-contain p-4"
@@ -198,7 +198,7 @@ export default function OurMissionPage() {
                 {/* Visual Depth: Background Image Overlay */}
                 <div className="absolute inset-0 z-0">
                     <Image
-                        src="https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
+                        src="/assets/banner/Our-Mission-CTA-Background.webp"
                         alt="Join background"
                         fill
                         className="object-cover opacity-10 group-hover/section:scale-110 transition-transform duration-[10s] ease-linear"

@@ -87,7 +87,7 @@ export default function Newsletter() {
               {error && (
                 <p className="mt-2.5 text-[13px] font-bold text-red-600">{error}</p>
               )}
-              <div className="mt-3 flex flex-row flex-wrap items-center gap-x-5 gap-y-2 text-xs text-primary/60">
+              <div className="mt-3 flex flex-row flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-xs text-primary/60 sm:justify-start sm:text-left">
                 <span className="flex items-center gap-1.5"><Lock size={13} /> No spam ever</span>
                 <span className="flex items-center gap-1.5"><Ban size={13} /> Unsubscribe anytime</span>
                 <span className="flex items-center gap-1.5"><Tag size={13} /> Exclusive offers</span>

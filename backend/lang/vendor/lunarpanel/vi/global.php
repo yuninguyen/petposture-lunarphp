@@ -5,6 +5,6 @@ return [
         'catalog' => '📦 Danh mục',
         'sales' => '🛒 Thương mại',
         'reports' => '📊 Báo cáo',
-        'settings' => '⚙️ Cài đặt',
+        'settings' => '🏬 Cấu hình cửa hàng',
     ],
 ];

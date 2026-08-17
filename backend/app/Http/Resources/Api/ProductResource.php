@@ -88,12 +88,24 @@ class ProductResource extends JsonResource
 
     // ─── Private helpers ──────────────────────────────────────────────────────
 
+    /**
+     * Prefer the WebP conversion when it's been generated (new uploads,
+     * or media re-processed via `media-library:regenerate`); fall back to
+     * the original file for media uploaded before this conversion existed.
+     */
+    private function mediaUrl($media): string
+    {
+        return $media->hasGeneratedConversion('webp')
+            ? $media->getUrl('webp')
+            : $media->getUrl();
+    }
+
     private function resolvePrimaryImageUrl(): ?string
     {
         // 1. Lunar media collection (uploaded via admin)
         $thumbnail = $this->thumbnail;
         if ($thumbnail) {
-            return $thumbnail->getUrl();
+            return $this->mediaUrl($thumbnail);
         }
 
         // 2. Legacy synced image URL stored as attribute
@@ -114,7 +126,7 @@ class ProductResource extends JsonResource
             foreach ($this->images as $media) {
                 $images[] = [
                     'id' => $media->id,
-                    'src' => $media->getUrl(),
+                    'src' => $this->mediaUrl($media),
                     'alt' => $media->name ?? $this->translateAttribute('name'),
                 ];
             }
@@ -246,7 +258,7 @@ class ProductResource extends JsonResource
         $variantImage = null;
         if ($v->relationLoaded('images') && $v->images->isNotEmpty()) {
             $primary = $v->images->first(fn ($m) => (bool) $m->pivot?->primary) ?? $v->images->first();
-            $variantImage = $primary?->getUrl();
+            $variantImage = $primary ? $this->mediaUrl($primary) : null;
         }
 
         $inventory = app(InventoryService::class)->stockSnapshot($v);

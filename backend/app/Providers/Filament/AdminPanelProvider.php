@@ -5,7 +5,6 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Widgets\AffiliateClicksOverview;
 use App\Filament\Widgets\ClicksByNetworkWidget;
-use App\Filament\Widgets\EcommerceStatsOverview;
 use App\Filament\Widgets\LatestOrdersTable;
 use App\Filament\Widgets\OrderPipelineWidget;
 use App\Filament\Widgets\PendingReturnRequestsWidget;
@@ -146,9 +145,8 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 __('lunarpanel::global.sections.catalog'),
                 __('lunarpanel::global.sections.sales'),
-                __('PetPosture'),
                 __('Content Management'),
-                __('Reports'),
+                __('Affiliate'),
                 __('Finance'),
                 __('System'),
                 __('lunarpanel::global.sections.settings'),
@@ -468,7 +466,6 @@ class AdminPanelProvider extends PanelProvider
             // ->discoverWidgets(in: app_path('Filament\\Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 SiteOverviewStatsWidget::class,
-                EcommerceStatsOverview::class,
                 PendingReturnRequestsWidget::class,
                 SalesOverviewChart::class,
                 SalesSidebarWidget::class,

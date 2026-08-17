@@ -10,6 +10,7 @@ import { ProductReviews } from '@/components/product/ProductReviews';
 import { notFound } from 'next/navigation';
 
 import { API_BASE_URL } from '@/lib/api';
+import { stripHtml } from '@/lib/text';
 
 async function fetchProduct(slug: string): Promise<Product | null> {
     try {
@@ -50,9 +51,31 @@ async function fetchProducts(): Promise<Product[]> {
 export async function generateMetadata({ params }: { params: Promise<{ category: string; slug: string }> }): Promise<Metadata> {
     const { category, slug } = await params;
     const product = await fetchProduct(slug);
+
+    if (!product) {
+        return { title: 'Product' };
+    }
+
+    const description = product.description
+        ? stripHtml(product.description).slice(0, 160)
+        : `${product.name} — ergonomic essentials from PetPosture.`;
+
     return {
-        title: product ? product.name : 'Product',
+        title: product.name,
+        description,
         alternates: { canonical: `/shop/${category}/${slug}` },
+        openGraph: {
+            title: product.name,
+            description,
+            type: 'website',
+            images: product.image ? [{ url: product.image }] : undefined,
+        },
+        twitter: {
+            card: product.image ? 'summary_large_image' : 'summary',
+            title: product.name,
+            description,
+            images: product.image ? [product.image] : undefined,
+        },
     };
 }
 

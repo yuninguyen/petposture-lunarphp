@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Product } from '@/types/shop';
-import { PRODUCTS as MOCK_PRODUCTS, BREED_TYPES, SOLUTION_TYPES } from '@/lib/shopData';
+import { PRODUCTS as MOCK_PRODUCTS } from '@/lib/shopData';
 import { getApiBaseUrl } from '@/lib/api';
 
 export type ShopCategoryOption = {
@@ -24,13 +24,16 @@ export type ShopSolutionOption = {
 export function useShopLogic(
     initialProducts: Product[] = MOCK_PRODUCTS,
     initialBreed: string = 'All',
-    initialSolution: string = 'All'
+    initialSolution: string = 'All',
+    initialSearch: string = '',
+    allBreeds: { slug: string; label: string }[] = [],
+    allSolutions: { slug: string; label: string }[] = []
 ) {
     const [activeCategory, setActiveCategory] = useState('All');
     const [activeBreed, setActiveBreed] = useState(initialBreed);
     const [activeSolution, setActiveSolution] = useState(initialSolution);
     const [sortBy, setSortBy] = useState('newest');
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(initialSearch);
     const [filteredProducts, setFilteredProducts] = useState<Product[]>(
         initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS
     );
@@ -70,10 +73,10 @@ export function useShopLogic(
             });
             return acc;
         }, {});
-        return BREED_TYPES
+        return allBreeds
             .map((b) => ({ ...b, count: counts[b.slug] || 0 }))
             .filter((b) => b.count > 0);
-    }, [initialProducts]);
+    }, [initialProducts, allBreeds]);
 
     // Solutions derived from the full initial (unfiltered) product set
     const solutions = useMemo<ShopSolutionOption[]>(() => {
@@ -84,10 +87,10 @@ export function useShopLogic(
             });
             return acc;
         }, {});
-        return SOLUTION_TYPES
+        return allSolutions
             .map((s) => ({ ...s, count: counts[s.slug] || 0 }))
             .filter((s) => s.count > 0);
-    }, [initialProducts]);
+    }, [initialProducts, allSolutions]);
 
     const hasActiveFilters = activeCategory !== 'All' || activeBreed !== 'All' || activeSolution !== 'All' || sortBy !== 'newest' || searchQuery.trim() !== '';
 

@@ -64,7 +64,7 @@ function toViewModel(post: ApiPost): BlogPostViewModel {
         content,
         type: post.type || 'article',
         comparison: post.comparison ?? null,
-        image: post.featured_image || '/assets/placeholder-post.jpg',
+        image: post.featured_image || '/assets/blog/placeholder-post.webp',
         imageAlt: post.featured_image_alt || undefined,
         author: post.author || 'PetPosture Editorial',
         date: post.created_at ? formatDate(post.created_at) : 'Recently published',

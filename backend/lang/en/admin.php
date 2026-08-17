@@ -85,17 +85,11 @@ return [
             'aov' => [
                 'label' => 'Avg. Order Value',
             ],
-            'conversion_rate' => [
-                'label' => 'Conversion Rate',
-            ],
             'refund_rate' => [
                 'label' => 'Refund Rate',
             ],
             'active_users' => [
                 'label' => 'Active Users',
-            ],
-            'page_views' => [
-                'label' => 'Page Views',
             ],
             'not_connected' => 'Not connected yet',
         ],
@@ -143,11 +137,6 @@ return [
             'target' => 'Target',
         ],
         'filters' => [
-            'granularity' => [
-                'today' => 'Today',
-                'month' => 'This Month',
-                'year' => 'This Year',
-            ],
             'range' => [
                 'label' => 'Date range',
                 '7' => 'Last 7 days',
@@ -158,7 +147,7 @@ return [
             ],
         ],
         'returns' => [
-            'heading' => 'Return Requests',
+            'heading' => 'Returns & Refunds',
             'pending_review' => [
                 'label' => 'Pending Review',
                 'description' => 'Awaiting admin decision',

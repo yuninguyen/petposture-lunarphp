@@ -1497,7 +1497,7 @@ export default function CheckoutPage() {
                     <header className="mb-10 relative h-16">
                         <Link href="/" className="flex-shrink-0 relative w-[240px] h-full flex items-center -ml-2 transition hover:opacity-80">
                             <Image
-                                src="/assets/Logo-PetPosture-1.png"
+                                src="/assets/logo/Logo-PetPosture-1.webp"
                                 alt="PetPosture Logo"
                                 width={300}
                                 height={150}

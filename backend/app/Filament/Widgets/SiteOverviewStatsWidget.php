@@ -31,14 +31,14 @@ class SiteOverviewStatsWidget extends BaseWidget
         $periodStart = $rangeDays ? $now->copy()->subDays($rangeDays) : null;
         $prevPeriodStart = $rangeDays ? $now->copy()->subDays($rangeDays * 2) : null;
 
-        $revenue = Order::whereNotIn('status', ['cancelled'])
+        $sales = Order::whereNotIn('status', ['cancelled'])
             ->when($periodStart, fn ($query) => $query->where('created_at', '>=', $periodStart))
             ->sum('total');
-        $revenuePrev = $rangeDays
+        $salesPrev = $rangeDays
             ? Order::whereNotIn('status', ['cancelled'])
                 ->whereBetween('created_at', [$prevPeriodStart, $periodStart])->sum('total')
             : 0;
-        $revenueTrend = $revenuePrev > 0 ? round((($revenue - $revenuePrev) / $revenuePrev) * 100, 1) : 0;
+        $salesTrend = $salesPrev > 0 ? round((($sales - $salesPrev) / $salesPrev) * 100, 1) : 0;
 
         $totalOrders = Order::when($periodStart, fn ($query) => $query->where('created_at', '>=', $periodStart))->count();
         $ordersPrev = $rangeDays
@@ -46,12 +46,22 @@ class SiteOverviewStatsWidget extends BaseWidget
             : 0;
         $ordersTrend = $ordersPrev > 0 ? round((($totalOrders - $ordersPrev) / $ordersPrev) * 100, 1) : 0;
 
+        $aov = $totalOrders > 0 ? $sales / $totalOrders : 0;
+        $aovPrev = $ordersPrev > 0 ? $salesPrev / $ordersPrev : 0;
+        $aovTrend = $aovPrev > 0 ? round((($aov - $aovPrev) / $aovPrev) * 100, 1) : 0;
+
         return [
-            Stat::make(__('admin.dashboard.stats.revenue.label'), '$'.number_format($revenue / 100, 2))
-                ->description($rangeDays ? $this->trendLabel($revenueTrend) : __('admin.dashboard.trend.all_time'))
-                ->descriptionIcon($rangeDays ? $this->trendIcon($revenueTrend) : null)
+            Stat::make(__('admin.dashboard.stats.sales.label'), '$'.number_format($sales / 100, 2))
+                ->description($rangeDays ? $this->trendLabel($salesTrend) : __('admin.dashboard.trend.all_time'))
+                ->descriptionIcon($rangeDays ? $this->trendIcon($salesTrend) : null)
                 ->icon('heroicon-o-banknotes')
                 ->color('success'),
+
+            Stat::make(__('admin.dashboard.stats.aov.label'), '$'.number_format($aov / 100, 2))
+                ->description($rangeDays ? $this->trendLabel($aovTrend) : __('admin.dashboard.trend.all_time'))
+                ->descriptionIcon($rangeDays ? $this->trendIcon($aovTrend) : null)
+                ->icon('heroicon-o-calculator')
+                ->color('info'),
 
             Stat::make(__('admin.dashboard.stats.active_users.label'), '—')
                 ->description(__('admin.dashboard.stats.not_connected'))
@@ -64,12 +74,6 @@ class SiteOverviewStatsWidget extends BaseWidget
                 ->descriptionIcon($rangeDays ? $this->trendIcon($ordersTrend) : null)
                 ->icon('heroicon-o-shopping-bag')
                 ->color('primary'),
-
-            Stat::make(__('admin.dashboard.stats.page_views.label'), '—')
-                ->description(__('admin.dashboard.stats.not_connected'))
-                ->descriptionIcon('heroicon-m-link-slash')
-                ->icon('heroicon-o-eye')
-                ->color('gray'),
         ];
     }
 

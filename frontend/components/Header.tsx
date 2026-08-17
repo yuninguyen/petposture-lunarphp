@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, User, ShoppingBag, Menu, Phone, Mail, Clock, Truck, X, Facebook, Instagram, Twitter, Youtube, ChevronRight, LogOut } from "lucide-react";
+import { Heart, User, ShoppingBag, Menu, Phone, Mail, Clock, Truck, X, Facebook, Instagram, Twitter, Youtube, ChevronRight, LogOut, Search } from "lucide-react";
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -14,12 +14,23 @@ import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const router = useRouter();
   const pathname = usePathname();
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const term = searchTerm.trim();
+    if (!term) return;
+    router.push(`/shop?q=${encodeURIComponent(term)}`);
+    setMobileSearchOpen(false);
+  };
   const { items, setCartOpen } = useCart();
   const { items: wishlistItems } = useWishlist();
   const { user, logout } = useAuth();
   const { shop_name, shop_logo, contact, social } = useSettings();
-  const logoSrc = shop_logo || "/assets/Logo-PetPosture-1-e1761840892773.png";
+  const logoSrc = shop_logo || "/assets/logo/Logo-PetPosture-1-e1761840892773.webp";
   const phone = contact.phone || "+1 (916) 623-5368";
   const phoneHref = `tel:${phone.replace(/[^\d+]/g, "")}`;
 
@@ -80,23 +91,34 @@ export default function Header() {
           </Link>
 
           {/* Center: Search (Desktop) */}
-          <div className="hidden md:flex flex-1 max-w-[500px]">
+          <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-[500px]">
             <div className="flex w-full border border-zinc-300 rounded overflow-hidden focus-within:border-zinc-400 transition-colors">
               <input
                 type="text"
                 placeholder="Search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-4 h-[44px] border-none outline-none focus:ring-0 text-[14px] text-primary bg-transparent"
               />
               <button
+                type="submit"
                 className="bg-secondary text-ink px-8 h-[44px] font-bold tracking-wider text-sm capitalize hover:bg-secondary-dark transition-colors border-none m-0 rounded-none"
               >
                 Search
               </button>
             </div>
-          </div>
+          </form>
 
           {/* Right: Icons */}
           <div className="flex items-center gap-4 md:gap-6 text-primary flex-shrink-0">
+            <button
+              className="md:hidden hover:text-rust transition-colors"
+              onClick={() => setMobileSearchOpen((open) => !open)}
+              aria-label="Search"
+              aria-expanded={mobileSearchOpen}
+            >
+              <Search size={22} strokeWidth={2} />
+            </button>
             <Link href="/wishlist" className="relative hover:text-rust transition-colors hidden sm:block" aria-label="Wishlist">
               <Heart size={22} strokeWidth={2} />
               {wishlistItems.length > 0 && (
@@ -198,19 +220,34 @@ export default function Header() {
         </div>
       </nav>
 
-      {/* Mobile Search Bar */}
-      <div className="md:hidden bg-white p-4 border-b border-zinc-100">
-        <div className="flex w-full border-2 border-zinc-200 rounded overflow-hidden">
-          <input
-            type="text"
-            placeholder="Search products..."
-            className="flex-1 px-3 py-2 outline-none text-sm"
-          />
-          <button className="bg-secondary px-4 text-ink capitalize text-sm font-bold">
-            Search
-          </button>
-        </div>
-      </div>
+      {/* Mobile Search Bar - opens on demand via the header search icon */}
+      <AnimatePresence>
+        {mobileSearchOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden overflow-hidden bg-white border-b border-zinc-100"
+          >
+            <form onSubmit={handleSearchSubmit} className="p-4">
+              <div className="flex w-full border-2 border-zinc-200 rounded overflow-hidden">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  autoFocus
+                  className="flex-1 px-3 py-2 outline-none text-sm"
+                />
+                <button type="submit" className="bg-secondary px-4 text-ink capitalize text-sm font-bold">
+                  Search
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Mobile Drawer Overlay - Professional Redesign */}
       <AnimatePresence>

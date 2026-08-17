@@ -179,4 +179,59 @@ class ContentAdminRendersTest extends TestCase
         $this->assertDatabaseMissing('pages', ['id' => $customPage->id]);
         $this->assertDatabaseHas('pages', ['id' => $corePage->id]);
     }
+
+    public function test_edit_post_header_update_and_publish_action_saves(): void
+    {
+        $category = BlogCategory::create(['name' => 'Test Category', 'slug' => 'test-category']);
+        $post = Post::create([
+            'blog_category_id' => $category->id,
+            'type' => Post::TYPE_ARTICLE,
+            'title' => 'Editable Post',
+            'slug' => 'editable-post',
+            'content' => '<p>content</p>',
+            'status' => 'draft',
+        ]);
+
+        Livewire::test(EditPost::class, ['record' => $post->getRouteKey()])
+            ->fillForm([
+                'title' => 'Updated From Header',
+                'slug' => 'editable-post',
+                'content' => '<p>updated content</p>',
+                'blog_category_id' => $category->id,
+                'type' => Post::TYPE_ARTICLE,
+                'status' => 'published',
+            ])
+            ->call('mountAction', 'headerSave')
+            ->assertSuccessful();
+
+        $this->assertDatabaseHas('posts', [
+            'id' => $post->id,
+            'title' => 'Updated From Header',
+            'status' => 'published',
+        ]);
+        $this->assertNotNull($post->fresh()->published_at);
+    }
+
+    public function test_create_post_header_save_action_creates_post(): void
+    {
+        $category = BlogCategory::create(['name' => 'Test Category', 'slug' => 'test-category']);
+
+        Livewire::test(CreatePost::class)
+            ->fillForm([
+                'title' => 'Created From Header',
+                'slug' => 'created-from-header',
+                'content' => '<p>content</p>',
+                'blog_category_id' => $category->id,
+                'type' => Post::TYPE_ARTICLE,
+                'author' => 'Test Author',
+                'status' => 'published',
+            ])
+            ->call('mountAction', 'save')
+            ->assertSuccessful();
+
+        $this->assertDatabaseHas('posts', [
+            'title' => 'Created From Header',
+            'status' => 'published',
+        ]);
+    }
 }

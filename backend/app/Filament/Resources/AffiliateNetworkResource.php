@@ -24,7 +24,7 @@ class AffiliateNetworkResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('Content Management');
+        return __('Affiliate');
     }
 
     public static function getLabel(): string

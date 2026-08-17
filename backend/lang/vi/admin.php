@@ -85,17 +85,11 @@ return [
             'aov' => [
                 'label' => 'Giá trị đơn TB',
             ],
-            'conversion_rate' => [
-                'label' => 'Tỷ lệ chuyển đổi',
-            ],
             'refund_rate' => [
                 'label' => 'Tỷ lệ hoàn trả',
             ],
             'active_users' => [
                 'label' => 'Người dùng hoạt động',
-            ],
-            'page_views' => [
-                'label' => 'Lượt xem trang',
             ],
             'not_connected' => 'Chưa kết nối',
         ],
@@ -143,11 +137,6 @@ return [
             'target' => 'Mục tiêu',
         ],
         'filters' => [
-            'granularity' => [
-                'today' => 'Hôm nay',
-                'month' => 'Tháng này',
-                'year' => 'Năm nay',
-            ],
             'range' => [
                 'label' => 'Khoảng thời gian',
                 '7' => '7 ngày qua',
@@ -158,7 +147,7 @@ return [
             ],
         ],
         'returns' => [
-            'heading' => 'Yêu cầu trả hàng',
+            'heading' => 'Hoàn trả & Hoàn tiền',
             'pending_review' => [
                 'label' => 'Chờ duyệt',
                 'description' => 'Đang chờ admin quyết định',

@@ -131,7 +131,7 @@ export default function ContactPage() {
             <Header />
 
             {/* Hero Section - Clean & High-End */}
-            <section className="bg-gray-50 py-12 px-4 md:px-8 border-b border-zinc-100">
+            <section className="bg-gray-50 py-8 px-4 md:py-12 md:px-8 border-b border-zinc-100">
                 <div className="max-w-[1200px] mx-auto text-center">
                     <div className="inline-block px-4 py-1.5 bg-secondary/5 border border-secondary/20 rounded text-xs font-black uppercase tracking-[0.08em] text-rust mb-6">
                         Get in touch
@@ -140,7 +140,7 @@ export default function ContactPage() {
                         How Can We Help <br className="hidden md:block" /> Your Pack Today?
                     </h1>
                     <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
-                    <p className="text-[18px] text-zinc-500 max-w-xl mx-auto leading-relaxed font-medium">
+                    <p className="hidden md:block text-[18px] text-zinc-500 max-w-xl mx-auto leading-relaxed font-medium">
                         Have a question about ergonomics, order tracking, or breed-specific needs?
                         Our PetPosture specialists are here to ensure your pet gets the support they deserve.
                     </p>
@@ -336,13 +336,6 @@ export default function ContactPage() {
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
-
-            {/* Trust Elements / Band */}
-            <section className="py-12 border-t border-zinc-50 bg-[#fafbfc]">
-                <div className="max-w-[1200px] mx-auto px-6 flex flex-wrap justify-center gap-x-16 gap-y-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
-                    {/* Placeholder for Trust Badges/Logos if needed */}
                 </div>
             </section>
 

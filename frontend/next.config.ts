@@ -26,6 +26,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'http',
+        hostname: 'petposture.test',
+      },
+      {
+        protocol: 'http',
         hostname: 'localhost',
         port: '8000',
       },

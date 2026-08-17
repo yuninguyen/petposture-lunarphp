@@ -21,10 +21,10 @@ class BreedResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('PetPosture');
+        return __('lunarpanel::global.sections.catalog');
     }
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 10;
 
     public static function getLabel(): string
     {

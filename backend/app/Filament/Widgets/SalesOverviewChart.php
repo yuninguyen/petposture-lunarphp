@@ -2,12 +2,15 @@
 
 namespace App\Filament\Widgets;
 
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Illuminate\Support\Carbon;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 use Lunar\Models\Order;
 
 class SalesOverviewChart extends ApexChartWidget
 {
+    use InteractsWithPageFilters;
+
     protected static ?string $chartId = 'salesOverviewChart';
 
     protected static ?int $sort = 1;
@@ -18,17 +21,6 @@ class SalesOverviewChart extends ApexChartWidget
         'xl' => 2,
     ];
 
-    public ?string $filter = 'month';
-
-    protected function getFilters(): ?array
-    {
-        return [
-            'today' => __('admin.dashboard.filters.granularity.today'),
-            'month' => __('admin.dashboard.filters.granularity.month'),
-            'year' => __('admin.dashboard.filters.granularity.year'),
-        ];
-    }
-
     public function getHeading(): ?string
     {
         return __('admin.dashboard.sales_overview');
@@ -37,47 +29,49 @@ class SalesOverviewChart extends ApexChartWidget
     protected function getOptions(): array
     {
         $now = Carbon::now();
+        $rangeDays = match ($this->filters['range'] ?? '30') {
+            '7' => 7,
+            '90' => 90,
+            '365' => 365,
+            'all' => null,
+            default => 30,
+        };
+
         $labels = [];
         $revenueData = [];
         $ordersData = [];
 
-        switch ($this->filter) {
-            case 'today':
-                for ($hour = 0; $hour < 24; $hour++) {
-                    $slotStart = $now->copy()->startOfDay()->addHours($hour);
-                    $slotEnd = $slotStart->copy()->addHour();
-                    $labels[] = $slotStart->format('ga');
+        if ($rangeDays !== null && $rangeDays <= 90) {
+            // Short ranges: one point per day.
+            for ($i = $rangeDays - 1; $i >= 0; $i--) {
+                $dayStart = $now->copy()->subDays($i)->startOfDay();
+                $dayEnd = $dayStart->copy()->endOfDay();
+                $labels[] = $dayStart->format('M j');
 
-                    $query = Order::whereBetween('created_at', [$slotStart, $slotEnd]);
-                    $ordersData[] = (clone $query)->count();
-                    $revenueData[] = round((clone $query)->whereNotIn('status', ['cancelled'])->sum('total') / 100, 2);
+                $query = Order::whereBetween('created_at', [$dayStart, $dayEnd]);
+                $ordersData[] = (clone $query)->count();
+                $revenueData[] = round((clone $query)->whereNotIn('status', ['cancelled'])->sum('total') / 100, 2);
+            }
+        } else {
+            // 365 days or "all time": one point per month.
+            $monthsBack = 11;
+
+            if ($rangeDays === null) {
+                $earliestOrder = Order::oldest('created_at')->value('created_at');
+                if ($earliestOrder) {
+                    $monthsBack = min(23, $now->diffInMonths(Carbon::parse($earliestOrder)));
                 }
-                break;
+            }
 
-            case 'year':
-                for ($i = 11; $i >= 0; $i--) {
-                    $monthStart = $now->copy()->subMonths($i)->startOfMonth();
-                    $monthEnd = $monthStart->copy()->endOfMonth();
-                    $labels[] = ucfirst($monthStart->translatedFormat('M Y'));
+            for ($i = $monthsBack; $i >= 0; $i--) {
+                $monthStart = $now->copy()->subMonths($i)->startOfMonth();
+                $monthEnd = $monthStart->copy()->endOfMonth();
+                $labels[] = ucfirst($monthStart->translatedFormat('M Y'));
 
-                    $query = Order::whereBetween('created_at', [$monthStart, $monthEnd]);
-                    $ordersData[] = (clone $query)->count();
-                    $revenueData[] = round((clone $query)->whereNotIn('status', ['cancelled'])->sum('total') / 100, 2);
-                }
-                break;
-
-            default: // month
-                $daysInMonth = $now->daysInMonth;
-                for ($day = 1; $day <= $daysInMonth; $day++) {
-                    $dayStart = $now->copy()->startOfMonth()->addDays($day - 1);
-                    $dayEnd = $dayStart->copy()->endOfDay();
-                    $labels[] = $dayStart->format('j');
-
-                    $query = Order::whereBetween('created_at', [$dayStart, $dayEnd]);
-                    $ordersData[] = (clone $query)->count();
-                    $revenueData[] = round((clone $query)->whereNotIn('status', ['cancelled'])->sum('total') / 100, 2);
-                }
-                break;
+                $query = Order::whereBetween('created_at', [$monthStart, $monthEnd]);
+                $ordersData[] = (clone $query)->count();
+                $revenueData[] = round((clone $query)->whereNotIn('status', ['cancelled'])->sum('total') / 100, 2);
+            }
         }
 
         return [

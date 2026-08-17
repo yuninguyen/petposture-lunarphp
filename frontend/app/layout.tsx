@@ -45,7 +45,7 @@ async function getShopSettings() {
 export async function generateMetadata(): Promise<Metadata> {
   const { shopName, shopLogo, shopFavicon, description } = await getShopSettings();
 
-  const faviconUrl = shopFavicon || '/assets/Logo PetPosture-icon.png';
+  const faviconUrl = shopFavicon || '/favicon.ico';
   const metaDescription = description || DEFAULT_DESCRIPTION;
 
   return {

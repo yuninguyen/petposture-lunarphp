@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getApiBaseUrl } from "@/lib/api";
 
-const DEFAULT_HERO_IMAGE = "/assets/hero-banner-homepage.png";
+const DEFAULT_HERO_IMAGE = "/assets/banner/hero-banner-homepage.webp";
 
 export default function Hero() {
   const [heroImage, setHeroImage] = useState(DEFAULT_HERO_IMAGE);

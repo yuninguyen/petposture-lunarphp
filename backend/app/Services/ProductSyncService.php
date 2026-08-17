@@ -21,7 +21,7 @@ use Lunar\Models\Url;
 
 class ProductSyncService
 {
-    public static function normalizePublicImageUrl(?string $value, string $fallback = '/assets/Pug-Dog-Bed.jpg'): string
+    public static function normalizePublicImageUrl(?string $value, string $fallback = '/assets/product/Pug-Dog-Bed.webp'): string
     {
         $value = trim((string) $value);
 

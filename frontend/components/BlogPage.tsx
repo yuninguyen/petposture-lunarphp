@@ -14,6 +14,7 @@ import {
     Instagram,
     Loader2,
     MessageSquare,
+    Search,
     Share2,
     User,
     Youtube,
@@ -68,35 +69,9 @@ export default function BlogPage() {
     const tabsScrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
-    const [nlEmail, setNlEmail] = useState("");
-    const [nlStatus, setNlStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-    const [nlMessage, setNlMessage] = useState("");
-
-    const handleNewsletterSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!nlEmail || nlStatus === "loading") return;
-
-        setNlStatus("loading");
-        try {
-            const res = await fetch(`${getApiBaseUrl()}/api/newsletter/subscribe`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: nlEmail }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-                setNlStatus("error");
-                setNlMessage(data?.message || "Something went wrong. Please try again.");
-                return;
-            }
-            setNlStatus("success");
-            setNlMessage(data?.message || "Successfully subscribed!");
-            setNlEmail("");
-        } catch {
-            setNlStatus("error");
-            setNlMessage("Something went wrong. Please try again.");
-        }
-    };
+    const [searchQuery, setSearchQuery] = useState("");
+    const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isSearchMountRef = useRef(true);
 
     const updateTabsScrollState = () => {
         const el = tabsScrollRef.current;
@@ -141,6 +116,35 @@ export default function BlogPage() {
         void fetchData();
     }, []);
 
+    // Debounced re-fetch of posts on search input (300ms)
+    useEffect(() => {
+        if (isSearchMountRef.current) {
+            isSearchMountRef.current = false;
+            return;
+        }
+
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = setTimeout(async () => {
+            try {
+                const apiBase = getApiBaseUrl();
+                const params = new URLSearchParams();
+                if (searchQuery.trim()) params.set("q", searchQuery.trim());
+
+                const res = await fetch(`${apiBase}/api/posts?${params.toString()}`);
+                if (!res.ok) throw new Error("Search failed");
+
+                const data = (await res.json()) as PostsResponse;
+                setPosts(Array.isArray(data.data) ? data.data : []);
+            } catch {
+                setPosts([]);
+            }
+        }, 300);
+
+        return () => {
+            if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        };
+    }, [searchQuery]);
+
     const filteredPosts =
         activeTab === "All"
             ? posts
@@ -180,7 +184,7 @@ export default function BlogPage() {
                         >
                             <div className="group relative h-[300px] overflow-hidden md:h-[450px] lg:w-3/5">
                                 <Image
-                                    src={featuredPost.featured_image || "/assets/placeholder-post.jpg"}
+                                    src={featuredPost.featured_image || "/assets/blog/placeholder-post.webp"}
                                     alt={featuredPost.featured_image_alt || featuredPost.title}
                                     fill
                                     className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -244,11 +248,21 @@ export default function BlogPage() {
             )}
 
             <nav className="sticky top-[65px] z-40 border-y border-zinc-100 bg-white md:top-[100px]">
-                <div className="relative mx-auto max-w-[1200px]">
+                <div className="relative mx-auto flex max-w-[1200px] flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between md:px-8">
+                    <div className="relative w-full md:max-w-[280px]">
+                        <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search articles..."
+                            className="w-full rounded-full border border-zinc-200 py-2 pl-9 pr-4 text-sm outline-none focus:border-secondary"
+                        />
+                    </div>
                     <div
                         ref={tabsScrollRef}
                         onScroll={updateTabsScrollState}
-                        className="flex items-center gap-2 overflow-x-auto whitespace-nowrap px-4 py-4 no-scrollbar md:px-8"
+                        className="flex items-center gap-2 overflow-x-auto whitespace-nowrap no-scrollbar"
                     >
                         <button
                             onClick={() => setActiveTab("All")}
@@ -325,7 +339,7 @@ export default function BlogPage() {
                                     <article key={post.id} className="group flex flex-col gap-8 md:flex-row">
                                         <div className="relative aspect-[4/3] shrink-0 overflow-hidden rounded-xl shadow-sm md:w-[35%]">
                                             <Image
-                                                src={post.featured_image || "/assets/placeholder-post.jpg"}
+                                                src={post.featured_image || "/assets/blog/placeholder-post.webp"}
                                                 alt={post.featured_image_alt || post.title}
                                                 fill
                                                 className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -430,7 +444,7 @@ export default function BlogPage() {
                                     <Link href={`/blog/${posts[0].slug || posts[0].id}`} className="group block">
                                         <div className="relative aspect-[16/10] overflow-hidden rounded-xl shadow-sm">
                                             <Image
-                                                src={posts[0].featured_image || "/assets/placeholder-post.jpg"}
+                                                src={posts[0].featured_image || "/assets/blog/placeholder-post.webp"}
                                                 alt={posts[0].featured_image_alt || posts[0].title}
                                                 fill
                                                 className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -452,7 +466,7 @@ export default function BlogPage() {
                                         >
                                             <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-zinc-100 shadow-sm">
                                                 <Image
-                                                    src={post.featured_image || "/assets/placeholder-post.jpg"}
+                                                    src={post.featured_image || "/assets/blog/placeholder-post.webp"}
                                                     alt={post.featured_image_alt || post.title}
                                                     fill
                                                     className="object-cover transition-transform group-hover:scale-110"
@@ -472,40 +486,6 @@ export default function BlogPage() {
                                 </div>
                             </div>
                         )}
-
-                        <div className="relative overflow-hidden rounded-2xl border border-zinc-100 bg-[#f8f9fa] p-8">
-                            <h4 className="mb-4 text-[14px] font-bold uppercase tracking-[0.08em] text-primary">
-                                Never miss a post
-                            </h4>
-                            <p className="mb-6 text-sm text-[#666666]">
-                                Join 5,000+ pet parents getting our weekly ergonomics report.
-                            </p>
-                            {nlStatus === "success" ? (
-                                <p className="text-sm font-bold text-primary">{nlMessage}</p>
-                            ) : (
-                                <form onSubmit={handleNewsletterSubmit}>
-                                    <input
-                                        type="email"
-                                        placeholder="Your email"
-                                        value={nlEmail}
-                                        onChange={(e) => setNlEmail(e.target.value)}
-                                        required
-                                        disabled={nlStatus === "loading"}
-                                        className="mb-4 w-full rounded-[3px] border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-secondary disabled:opacity-60"
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={nlStatus === "loading"}
-                                        className="w-full rounded-[3px] bg-secondary py-3 text-sm font-bold capitalize tracking-[0.05em] text-ink transition-all hover:bg-secondary-dark disabled:opacity-60"
-                                    >
-                                        {nlStatus === "loading" ? "Subscribing…" : "Subscribe"}
-                                    </button>
-                                    {nlStatus === "error" && (
-                                        <p className="mt-2 text-xs font-bold text-red-600">{nlMessage}</p>
-                                    )}
-                                </form>
-                            )}
-                        </div>
 
                         <div className="relative overflow-hidden rounded-2xl border border-zinc-100 bg-[#f8f9fa] p-8 text-center text-primary">
                             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">

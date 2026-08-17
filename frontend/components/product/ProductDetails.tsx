@@ -82,15 +82,15 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                         animate={{ opacity: 1, x: 0 }}
                         className="relative lg:sticky lg:top-24"
                     >
-                        <div className="flex gap-3">
+                        <div className="flex flex-col gap-3 md:flex-row">
                             {galleryImages.length > 1 && (
-                                <div className="flex flex-col gap-3">
+                                <div className="order-2 flex gap-3 overflow-x-auto md:order-1 md:flex-col md:overflow-visible">
                                     {galleryImages.map((img, idx) => (
                                         <button
                                             key={img.id ?? idx}
                                             type="button"
                                             onClick={() => setActiveImageIndex(idx)}
-                                            className={`relative h-16 w-16 overflow-hidden rounded-lg border-2 bg-white transition-colors ${displayImage === img.src ? 'border-secondary' : 'border-zinc-100 hover:border-zinc-300'
+                                            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-white transition-colors ${displayImage === img.src ? 'border-secondary' : 'border-zinc-100 hover:border-zinc-300'
                                                 }`}
                                         >
                                             <Image
@@ -105,7 +105,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                 </div>
                             )}
 
-                            <div className="relative aspect-square w-full max-w-[480px] overflow-hidden rounded-2xl border border-zinc-100 bg-white">
+                            <div className="relative order-1 aspect-square w-full max-w-[480px] overflow-hidden rounded-2xl border border-zinc-100 bg-white md:order-2">
                                 <Image
                                     src={displayImage}
                                     alt={product.name}

@@ -5,6 +5,6 @@ return [
         'catalog' => '📦 Catalogue',
         'sales' => '🛒 Commerce',
         'reports' => '📊 Reports',
-        'settings' => '⚙️ Settings',
+        'settings' => '🏬 Store Configuration',
     ],
 ];

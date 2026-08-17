@@ -7,11 +7,14 @@ use Filament\Forms\Components\BaseFileUpload;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 /**
- * Guards against admins accidentally uploading oversized images (e.g. a
- * multi-megabyte, multi-thousand-pixel photo straight from a phone/camera)
- * by downscaling anything larger than the given bounds before it's stored.
- * Aspect ratio is preserved and images already within bounds are left
- * untouched (no upscaling, no re-compression).
+ * Downscales oversized uploads (e.g. a multi-megabyte, multi-thousand-pixel
+ * photo straight from a phone/camera) and re-encodes them as WebP, which is
+ * meaningfully smaller than PNG/JPEG at equivalent visual quality. Aspect
+ * ratio is preserved and images already within bounds are not upscaled.
+ *
+ * Animated GIFs are the one exception: GD's imagewebp() only captures a
+ * single frame, so converting one would silently drop the animation. Those
+ * are downscaled (if oversized) but kept as GIF.
  */
 class ImageUploadResizer
 {
@@ -46,7 +49,12 @@ class ImageUploadResizer
 
             [$width, $height] = $dimensions;
 
-            if ($width <= $maxWidth && $height <= $maxHeight) {
+            $isAnimatedGif = $mime === 'image/gif' && self::isAnimatedGif($file->getRealPath());
+            $withinBounds = $width <= $maxWidth && $height <= $maxHeight;
+
+            // Animated GIF within bounds: nothing to do (no resize needed,
+            // and we deliberately don't touch its format).
+            if ($isAnimatedGif && $withinBounds) {
                 return $storeOriginal();
             }
 
@@ -61,30 +69,40 @@ class ImageUploadResizer
                 return $storeOriginal();
             }
 
-            $ratio = min($maxWidth / $width, $maxHeight / $height);
+            // Clamp to 1.0 so images already within bounds aren't upscaled;
+            // they still pass through the canvas below to be re-encoded.
+            $ratio = min($maxWidth / $width, $maxHeight / $height, 1.0);
             $newWidth = max(1, (int) round($width * $ratio));
             $newHeight = max(1, (int) round($height * $ratio));
 
-            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            $canvas = imagecreatetruecolor($newWidth, $newHeight);
+            imagealphablending($canvas, false);
+            imagesavealpha($canvas, true);
+            imagecopyresampled($canvas, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+            imagedestroy($source);
 
-            if (in_array($mime, ['image/png', 'image/gif', 'image/webp'], true)) {
-                imagealphablending($resized, false);
-                imagesavealpha($resized, true);
+            if ($isAnimatedGif) {
+                $tmpPath = tempnam(sys_get_temp_dir(), 'resize_').'.gif';
+                $saved = imagegif($canvas, $tmpPath);
+                imagedestroy($canvas);
+
+                if (! $saved) {
+                    @unlink($tmpPath);
+
+                    return $storeOriginal();
+                }
+
+                $path = trim($directory.'/'.$filename, '/');
+                $component->getDisk()->put($path, file_get_contents($tmpPath), $component->getVisibility());
+
+                @unlink($tmpPath);
+
+                return $path;
             }
 
-            imagecopyresampled($resized, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-
-            $tmpPath = tempnam(sys_get_temp_dir(), 'resize_').'.'.pathinfo($filename, PATHINFO_EXTENSION);
-
-            $saved = match ($mime) {
-                'image/jpeg' => imagejpeg($resized, $tmpPath, 85),
-                'image/png' => imagepng($resized, $tmpPath, 6),
-                'image/gif' => imagegif($resized, $tmpPath),
-                'image/webp' => imagewebp($resized, $tmpPath, 85),
-            };
-
-            imagedestroy($source);
-            imagedestroy($resized);
+            $tmpPath = tempnam(sys_get_temp_dir(), 'webp_').'.webp';
+            $saved = imagewebp($canvas, $tmpPath, 85);
+            imagedestroy($canvas);
 
             if (! $saved) {
                 @unlink($tmpPath);
@@ -92,12 +110,24 @@ class ImageUploadResizer
                 return $storeOriginal();
             }
 
-            $path = trim($directory.'/'.$filename, '/');
+            $webpFilename = preg_replace('/\.[^.]+$/', '', $filename).'.webp';
+            $path = trim($directory.'/'.$webpFilename, '/');
             $component->getDisk()->put($path, file_get_contents($tmpPath), $component->getVisibility());
 
             @unlink($tmpPath);
 
             return $path;
         };
+    }
+
+    private static function isAnimatedGif(string $path): bool
+    {
+        $raw = file_get_contents($path);
+
+        if ($raw === false) {
+            return false;
+        }
+
+        return substr_count($raw, "\x00\x21\xF9\x04") > 1;
     }
 }

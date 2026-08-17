@@ -82,41 +82,12 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
 
     const [linkCopied, setLinkCopied] = React.useState(false);
     const [tagsExpanded, setTagsExpanded] = React.useState(false);
-    const [newsletterEmail, setNewsletterEmail] = React.useState('');
-    const [newsletterStatus, setNewsletterStatus] = React.useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-    const [newsletterMessage, setNewsletterMessage] = React.useState('');
 
     const handleCopyLink = () => {
         navigator.clipboard.writeText(shareUrl).then(() => {
             setLinkCopied(true);
             setTimeout(() => setLinkCopied(false), 2000);
         });
-    };
-
-    const handleNewsletterSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newsletterEmail || newsletterStatus === 'loading') return;
-
-        setNewsletterStatus('loading');
-        try {
-            const res = await fetch(`${getApiBaseUrl()}/api/newsletter/subscribe`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: newsletterEmail }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-                setNewsletterStatus('error');
-                setNewsletterMessage(data?.message || 'Something went wrong. Please try again.');
-                return;
-            }
-            setNewsletterStatus('success');
-            setNewsletterMessage(data?.message || 'Successfully subscribed!');
-            setNewsletterEmail('');
-        } catch {
-            setNewsletterStatus('error');
-            setNewsletterMessage('Something went wrong. Please try again.');
-        }
     };
 
     React.useEffect(() => {
@@ -494,42 +465,6 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                         </a>
                                     ))}
                             </div>
-                        </div>
-
-                        {/* Newsletter Widget */}
-                        <div className="bg-secondary-light rounded-3xl p-8 text-primary relative overflow-hidden border border-orange-100/50">
-                            <div className="relative z-10">
-                                <h4 className="text-[18px] font-bold mb-4 uppercase tracking-[0.1em]">Ergo-Tips in your inbox</h4>
-                                <p className="text-zinc-600 text-sm leading-relaxed mb-8">
-                                    The science of pet care is evolving. Get our monthly digest of breed-specific ergonomics.
-                                </p>
-                                {newsletterStatus === 'success' ? (
-                                    <p className="text-[14px] font-bold text-primary">{newsletterMessage}</p>
-                                ) : (
-                                    <form className="space-y-3" onSubmit={handleNewsletterSubmit}>
-                                        <input
-                                            type="email"
-                                            required
-                                            value={newsletterEmail}
-                                            onChange={(e) => setNewsletterEmail(e.target.value)}
-                                            disabled={newsletterStatus === 'loading'}
-                                            placeholder="Your email"
-                                            className="w-full px-5 py-4 rounded-[3px] bg-white border border-orange-200/50 text-primary placeholder:text-zinc-400 text-[14px] outline-none focus:border-secondary shadow-sm disabled:opacity-60"
-                                        />
-                                        <button
-                                            type="submit"
-                                            disabled={newsletterStatus === 'loading'}
-                                            className="w-full bg-secondary text-ink py-4 rounded-[3px] font-bold uppercase tracking-widest text-sm hover:bg-secondary-dark transition-all shadow-lg shadow-orange-200/30 disabled:opacity-60"
-                                        >
-                                            {newsletterStatus === 'loading' ? 'Subscribing…' : 'Subscribe'}
-                                        </button>
-                                        {newsletterStatus === 'error' && (
-                                            <p className="text-red-500 text-xs font-bold">{newsletterMessage}</p>
-                                        )}
-                                    </form>
-                                )}
-                            </div>
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
                         </div>
 
                     </aside>

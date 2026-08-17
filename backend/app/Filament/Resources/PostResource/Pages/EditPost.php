@@ -91,7 +91,7 @@ class EditPost extends EditRecord
                 ->color('gray')
                 ->url(fn (): string => $this->getPreviewUrl())
                 ->openUrlInNewTab(),
-            Actions\Action::make('save')
+            Actions\Action::make('headerSave')
                 ->label(fn () => ($this->data['status'] ?? 'draft') === 'published' ? __('Update & Publish') : __('Save Draft'))
                 ->icon(fn () => ($this->data['status'] ?? 'draft') === 'published' ? 'heroicon-o-paper-airplane' : 'heroicon-o-document')
                 ->action(fn () => $this->save())

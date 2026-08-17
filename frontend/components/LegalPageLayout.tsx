@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -55,6 +56,7 @@ export default function LegalPageLayout({ page }: { page: LegalPage }) {
     const sections = useTableOfContents(page.content);
     const contentWithIds = useMemo(() => annotateHeadingsWithIds(page.content), [page.content]);
     const [activeSection, setActiveSection] = useState('');
+    const [mobileTocOpen, setMobileTocOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -80,13 +82,14 @@ export default function LegalPageLayout({ page }: { page: LegalPage }) {
         if (el) {
             window.scrollTo({ top: el.offsetTop - 100, behavior: 'smooth' });
         }
+        setMobileTocOpen(false);
     };
 
     return (
         <main className="min-h-screen bg-white font-hanken">
             <Header />
 
-            <section className="bg-gray-50 py-20 px-4 md:px-8 border-b border-zinc-100">
+            <section className="bg-gray-50 py-12 px-4 md:py-20 md:px-8 border-b border-zinc-100">
                 <div className="max-w-[1200px] mx-auto text-center">
                     <motion.div initial="initial" animate="animate" variants={fadeUp}>
                         <h1 className="text-[32px] md:text-[42px] font-bold uppercase tracking-[0.1em] text-primary mb-4">
@@ -104,6 +107,34 @@ export default function LegalPageLayout({ page }: { page: LegalPage }) {
 
             <section className="py-16 px-4 md:px-8">
                 <div className="max-w-[1200px] mx-auto flex flex-col lg:flex-row gap-16">
+                    {sections.length > 0 && (
+                        <div className="lg:hidden">
+                            <button
+                                onClick={() => setMobileTocOpen((open) => !open)}
+                                aria-expanded={mobileTocOpen}
+                                className="flex w-full items-center justify-between rounded-lg border border-zinc-100 bg-gray-50 px-5 py-4 text-left"
+                            >
+                                <span className="text-[13px] font-bold uppercase tracking-widest text-primary">
+                                    Jump to Section
+                                </span>
+                                <ChevronDown size={18} className={`text-[#666666] transition-transform ${mobileTocOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                            {mobileTocOpen && (
+                                <nav className="mt-2 flex flex-col gap-1 rounded-lg border border-zinc-100 p-2">
+                                    {sections.map((s) => (
+                                        <button
+                                            key={s.id}
+                                            onClick={() => scrollTo(s.id)}
+                                            className={`rounded-md px-3 py-2.5 text-left text-sm font-bold uppercase tracking-wider transition-colors ${activeSection === s.id ? 'bg-secondary/10 text-rust' : 'text-[#666666] hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            {s.title}
+                                        </button>
+                                    ))}
+                                </nav>
+                            )}
+                        </div>
+                    )}
                     {sections.length > 0 && (
                         <aside className="hidden lg:block w-80 sticky top-32 h-fit">
                             <h4 className="text-[14px] font-bold uppercase tracking-widest text-primary mb-8 border-b border-zinc-100 pb-4">

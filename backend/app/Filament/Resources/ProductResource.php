@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages\ListProducts;
+use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Enums\IconPosition;
@@ -16,6 +17,15 @@ use Lunar\Admin\Support\Tables\Columns\TranslatedTextColumn;
 
 class ProductResource extends BaseProductResource
 {
+    // Tags aren't shown anywhere on the storefront (only Lunar's internal
+    // admin search reads them) and add nothing meaningful for a small
+    // catalog — hidden here rather than in Lunar's form() to keep this
+    // override tiny and easy to revert.
+    protected static function getTagsFormComponent(): Component
+    {
+        return parent::getTagsFormComponent()->hidden();
+    }
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()

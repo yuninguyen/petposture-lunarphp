@@ -121,25 +121,25 @@ function SocialProofStrip() {
       value: 'Breed-Focused',
       label: 'Designed around specific dog body types and everyday use.',
       accent: '#4f9cf9',
-      img: '/assets/Trust-Breed-Focused.png',
+      img: '/assets/icons/Trust-Breed-Focused.webp',
     },
     {
       value: 'Curated Selection',
       label: 'A smaller selection of relevant products, not an endless catalog.',
       accent: '#f5a623',
-      img: '/assets/Trust-Curated-Selection.png',
+      img: '/assets/icons/Trust-Curated-Selection.webp',
     },
     {
       value: '30-Day Guarantee',
       label: 'Love it or return it within 30 days of delivery.',
       accent: '#38c68b',
-      img: '/assets/Trust-30-Day-Guarantee.png',
+      img: '/assets/icons/Trust-30-Day-Guarantee.webp',
     },
     {
       value: 'Free Shipping $50+',
       label: 'Free standard shipping on orders over $50 in the US.',
       accent: C.secondary,
-      img: '/assets/Trust-Free-Shipping.png',
+      img: '/assets/icons/Trust-Free-Shipping.webp',
     },
   ];
 
@@ -197,18 +197,18 @@ function ShopCategories() {
     };
 
   const breeds = [
-    { name: 'Dachshund', slug: 'dachshund', img: '/assets/Breed-Dachshund.png' },
-    { name: 'French Bulldog', slug: 'french-bulldog', img: '/assets/Breed-French-Bulldog.png' },
-    { name: 'Pug', slug: 'pug', img: '/assets/Breed-Pug.png' },
-    { name: 'Corgi', slug: 'corgi', img: '/assets/Breed-Corgi.png' },
-    { name: 'English Bulldog', slug: 'bulldog', img: '/assets/Breed-English-Bulldog.png' },
+    { name: 'Dachshund', slug: 'dachshund', img: '/assets/breeds/Breed-Dachshund.webp' },
+    { name: 'French Bulldog', slug: 'french-bulldog', img: '/assets/breeds/Breed-French-Bulldog.webp' },
+    { name: 'Pug', slug: 'pug', img: '/assets/breeds/Breed-Pug.webp' },
+    { name: 'Corgi', slug: 'corgi', img: '/assets/breeds/Breed-Corgi.webp' },
+    { name: 'English Bulldog', slug: 'bulldog', img: '/assets/breeds/Breed-English-Bulldog.webp' },
   ];
 
   const solutions = [
-    { name: 'Feeding', slug: 'feeding', accent: '#f5a623', img: '/assets/Icon-Feeding.png' },
-    { name: 'Comfort', slug: 'comfort', accent: '#e0685c', img: '/assets/Icon-Comfort.png' },
-    { name: 'Mobility', slug: 'mobility', accent: '#8a9a4e', img: '/assets/Icon-Mobility.png' },
-    { name: 'Walking', slug: 'walking', accent: '#5fa88a', img: '/assets/Icon-Walking.png' },
+    { name: 'Feeding', slug: 'feeding', accent: '#f5a623', img: '/assets/icons/Icon-Feeding.webp' },
+    { name: 'Comfort', slug: 'comfort', accent: '#e0685c', img: '/assets/icons/Icon-Comfort.webp' },
+    { name: 'Mobility', slug: 'mobility', accent: '#8a9a4e', img: '/assets/icons/Icon-Mobility.webp' },
+    { name: 'Walking', slug: 'walking', accent: '#5fa88a', img: '/assets/icons/Icon-Walking.webp' },
   ];
 
   return (
@@ -226,7 +226,7 @@ function ShopCategories() {
                 width: 48, height: 48, flexShrink: 0, borderRadius: '50%',
                 background: '#dbe7f7',
               }}>
-                <Image src="/assets/Icon-Header-Breed.png" alt="Shop by Breed" fill sizes="48px" className="object-contain p-2" />
+                <Image src="/assets/icons/Icon-Header-Breed.webp" alt="Shop by Breed" fill sizes="48px" className="object-contain p-2" />
               </div>
               <div>
                 <h3 style={{ fontFamily: F.heading, fontSize: 20, fontWeight: 700, color: C.primary, margin: '0 0 4px' }}>
@@ -302,7 +302,7 @@ function ShopCategories() {
                 width: 48, height: 48, flexShrink: 0, borderRadius: '50%',
                 background: '#f6e2c8',
               }}>
-                <Image src="/assets/Icon-Header-Solutions.png" alt="Shop by Solutions" fill sizes="48px" className="object-contain p-2" />
+                <Image src="/assets/icons/Icon-Header-Solutions.webp" alt="Shop by Solutions" fill sizes="48px" className="object-contain p-2" />
               </div>
               <div>
                 <h3 style={{ fontFamily: F.heading, fontSize: 20, fontWeight: 700, color: C.primary, margin: '0 0 4px' }}>
@@ -380,25 +380,25 @@ function ShopCategories() {
 function WhyChoose() {
   const features = [
     {
-      img: '/assets/Why-Breed-Focused.png',
+      img: '/assets/icons/Why-Breed-Focused.webp',
       title: 'Breed-Focused',
       desc: 'We consider body type, size and everyday use so products make more sense for your dog.',
       accent: '#4f9cf9',
     },
     {
-      img: '/assets/Why-Practical-Research.png',
+      img: '/assets/icons/Why-Practical-Research.webp',
       title: 'Practical Research',
       desc: 'We look at fit, materials, sizing and usability-not just what\'s popular.',
       accent: '#38c68b',
     },
     {
-      img: '/assets/Why-Carefully-Selected.png',
+      img: '/assets/icons/Why-Carefully-Selected.webp',
       title: 'Carefully Selected',
       desc: 'We would rather recommend a smaller number of relevant products than an endless catalog.',
       accent: '#f5a623',
     },
     {
-      img: '/assets/Why-Transparent-Reviews.png',
+      img: '/assets/icons/Why-Transparent-Reviews.webp',
       title: 'Transparent Reviews',
       desc: 'We clearly distinguish between products we\'ve researched and products we\'ve physical tested.',
       accent: C.secondary,
@@ -603,7 +603,7 @@ function MealtimeDiff() {
           }}>
             <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', borderRadius: 16, overflow: 'hidden' }}>
               <Image
-                src="/assets/dog-sofa.png"
+                src="/assets/banner/dog-sofa.webp"
                 alt="Dog using a ramp to safely access a couch"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
@@ -657,13 +657,13 @@ function BreedBanners() {
       slug: 'flat-faced',
       title: 'Flat-Faced Dogs',
       sub: 'Pugs, French Bulldogs and English Bulldogs have distinctive body and head shapes that can influence product fit and everyday usability.',
-      img: '/assets/Breed-French-Bulldog.png',
+      img: '/assets/breeds/Breed-French-Bulldog.webp',
     },
     {
       slug: 'long-backed',
       title: 'Long-Backed & Low-Bodied Dogs',
       sub: 'Dachshunds and Corgis have body proportions that make mobility, furniture access and product sizing especially worth considering.',
-      img: '/assets/Breed-Corgi.png',
+      img: '/assets/breeds/Breed-Corgi.webp',
     },
   ];
 

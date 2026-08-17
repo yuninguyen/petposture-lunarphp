@@ -14,13 +14,20 @@ class ContentController extends Controller
 {
     use HttpResponses;
 
-    public function posts()
+    public function posts(Request $request)
     {
-        $posts = Post::where('status', 'published')
+        $query = Post::where('status', 'published')
             ->where('published_at', '<=', now())
-            ->with(['blogCategory', 'metadata', 'tags', 'seo'])
-            ->latest()
-            ->paginate(12);
+            ->with(['blogCategory', 'metadata', 'tags', 'seo']);
+
+        if ($request->filled('q')) {
+            $term = '%'.strtolower($request->input('q')).'%';
+            $query->where(fn ($q) => $q->whereRaw('LOWER(title) LIKE ?', [$term])
+                ->orWhereRaw('LOWER(content) LIKE ?', [$term])
+            );
+        }
+
+        $posts = $query->latest()->paginate(12);
 
         return PostResource::collection($posts);
     }

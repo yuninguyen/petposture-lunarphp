@@ -74,13 +74,21 @@ petposture/
 
 ## Features
 
-- Product catalog with categories, variants, attributes, and brands
-- Shop by Breed / Shop by Solution (added 2026-08-02): two independent product facets on top of
-  category — breed (`flat-faced`/`long-backed`) and health-concern solution
-  (`eating-digestion`/`mobility-support`/`comfort-safety`) — each with a picker index page
-  (`/shop/breeds`, `/shop/solutions`) and dedicated landing pages per variant
-  (`/shop/breeds/flat-faced`, `/shop/solutions/comfort-safety`, …), plus matching filter facets in
-  the main shop sidebar. A product can carry both a breed and a solution tag at once.
+- Product catalog with categories, variants, attributes, and brands. Product/variant images
+  auto-convert to WebP on upload (Spatie MediaLibrary conversion, added 2026-08-18) — a separate
+  mechanism from the WebP conversion already applied to other admin image uploads (Posts, Pages,
+  Media, Settings), since Product images go through Lunar's own media system, not a plain file
+  upload field.
+- Site search (added 2026-08-18): the header search box submits to `/shop?q=...`, and blog posts
+  are searchable via `/api/posts?q=...` (title + content match).
+- Shop by Breed / Shop by Solution (added 2026-08-02, taxonomy migrated off hardcoded data
+  2026-08-18): two independent product facets on top of category — breed (`flat-faced`/
+  `long-backed`) and health-concern solution (`eating-digestion`/`mobility-support`/
+  `comfort-safety`) — each with a picker index page (`/shop/breeds`, `/shop/solutions`) and
+  dedicated landing pages per variant (`/shop/breeds/flat-faced`, `/shop/solutions/comfort-safety`,
+  …), plus matching filter facets in the main shop sidebar, now all fetched from the real
+  `/api/breeds`/`/api/solutions` endpoints instead of a hardcoded local copy that had drifted
+  out of sync. A product can carry both a breed and a solution tag at once.
 - Shopping cart & checkout flow (guest + authenticated), Stripe card and PayPal (Smart
   Buttons rendered inline, popup approval — not a full-page redirect) payments, plus Airwallex,
   Payoneer, and PingPong (redirect/hosted-checkout — customer is bounced to the gateway's own
@@ -151,7 +159,7 @@ petposture/
   registered twice by `bootstrap/app.php`, so any named route there collides with itself under
   `route:cache`).
 - Breed and Solution content hubs (`/dogs`, `/solutions`), Phase 1/2 of the breed-first product
-  recommendation strategy: two admin-manageable entities (Filament: PetPosture → Breeds/Solutions),
+  recommendation strategy: two admin-manageable entities (Filament: Catalog → Breeds/Solutions),
   each with its own products (`belongsToMany` pivot with a `priority`/ordering column) and posts,
   SEO metadata (`HasSeo` trait, same as Post), and a public index/detail page pair mirroring the
   existing Blog page structure. A `Product::resolveRelationUsing('breeds'|'solutions', ...)`
@@ -218,9 +226,13 @@ petposture/
   www → non-www 301 redirect at the edge (see "Domain canonicalization" below)
 - Static policy pages (FAQ, privacy, shipping, returns, etc.)
 - Full Filament admin panel with a custom dark sidebar theme (Haze-referenced), narrowed nav width,
-  and reorganized nav groups (Commerce, Content, Finance, System — "Content Management" is displayed
-  as "Content" today, a label-only rename). Real dashboard widgets
-  (revenue/orders/AOV, sales-by-category, order pipeline, return-request aging), a real DB-backed
+  and reorganized nav groups (Catalog, Commerce, Content, Affiliate, Finance, System, Store
+  Configuration — "Content Management" displays as "Content" and "Settings" displays as
+  "🏬 Store Configuration" today, both label-only renames; the former standalone "PetPosture" and
+  "Reports" groups were merged into Catalog and Affiliate respectively, 2026-08-18). Real dashboard
+  widgets (Total Sales/AOV/Active Users/Orders, a combined Returns & Refunds row, a sales chart
+  synced to the dashboard's own date-range filter, order pipeline, return-request aging), a real
+  DB-backed
   notification center (order placed, new review, new customer — polling every 30s), Users with real
   active/inactive status and last-login tracking, a Roles card grid + Permissions matrix, and a real
   file manager (Files) replacing the old bare media table. Products table shows a thumbnail + name +
