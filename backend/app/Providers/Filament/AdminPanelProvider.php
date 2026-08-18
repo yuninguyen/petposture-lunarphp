@@ -310,10 +310,19 @@ class AdminPanelProvider extends PanelProvider
                     .tiptap-toolbar.divide-x>*{border-left:none!important}
                     .tiptap-toolbar-left{gap:3px!important;padding:0!important;align-items:center!important}
                     .tiptap-toolbar-right{gap:3px!important;padding:0 0 0 8px!important;align-items:center!important;border-left:1px solid rgba(0,0,0,.08)!important}
-                    .tiptap-tool{width:34px!important;height:34px!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:6px!important;color:#374151!important;cursor:pointer!important;background:transparent!important;transition:background .12s,color .12s!important;ring:none!important;outline:none!important;box-shadow:none!important}
-                    .tiptap-tool:hover{background:#f1f5f9!important;color:#111827!important;box-shadow:none!important}
+                    .tiptap-tool{width:34px!important;height:34px!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:6px!important;cursor:pointer!important;background:transparent!important;transition:background .12s,color .12s!important;ring:none!important;outline:none!important;box-shadow:none!important}
                     .tiptap-tool:focus{outline:none!important;box-shadow:none!important}
                     .tiptap-tool svg{width:17px!important;height:17px!important}
+                    /* Main toolbar sits on a white background — dark icon color for contrast. */
+                    .tiptap-toolbar .tiptap-tool{color:#374151!important}
+                    .tiptap-toolbar .tiptap-tool:hover{background:#f1f5f9!important;color:#111827!important;box-shadow:none!important}
+                    /* Bubble/floating/link/image/table menus render inside a Tippy popup with a dark
+                       (#333) background (vendor package ships no custom theme CSS for
+                       data-theme="tiptap-editor-bubble", so it falls back to Tippy default dark
+                       theme) — the toolbar dark icon color above is invisible there, so give this
+                       context its own light icon color instead of reusing the toolbar one. */
+                    .tippy-box[data-theme="tiptap-editor-bubble"] .tiptap-tool{color:#f1f5f9!important}
+                    .tippy-box[data-theme="tiptap-editor-bubble"] .tiptap-tool:hover{background:rgba(255,255,255,.15)!important;color:#fff!important}
                     .tiptap-toolbar-left>.border-l{height:18px!important;margin:0 4px!important;border-color:rgba(0,0,0,.1)!important}
                     .tiptap-prosemirror-wrapper{max-height:none!important}
                     .ProseMirror{padding:16px 20px!important;font-size:15px!important;line-height:1.75!important;color:#1e293b!important;outline:none!important}
