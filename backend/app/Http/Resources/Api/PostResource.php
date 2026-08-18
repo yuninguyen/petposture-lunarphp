@@ -95,8 +95,14 @@ class PostResource extends JsonResource
         ];
     }
 
-    protected function resolveAssetUrl(?string $path): ?string
+    protected function resolveAssetUrl(mixed $path): ?string
     {
+        // Filament's FileUpload stores `[]` (not null) for an empty single-file field --
+        // e.g. a comparison item saved before its image was uploaded.
+        if (is_array($path)) {
+            $path = $path[0] ?? null;
+        }
+
         if (! $path) {
             return null;
         }
