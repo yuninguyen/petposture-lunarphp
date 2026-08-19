@@ -83,6 +83,10 @@ class PostResource extends JsonResource
                     'retailer_label' => $network?->name ?? $item['retailer'] ?? null,
                     'retailer_logo' => $network ? $this->resolveAssetUrl($network->logo) : null,
                     'redirect_url' => url("/go/{$this->id}/{$index}"),
+                    // Older items were seeded with string numerics in metadata JSON;
+                    // the frontend does a strict `typeof === 'number'` check on rating.
+                    'rating' => isset($item['rating']) && $item['rating'] !== '' ? (float) $item['rating'] : null,
+                    'price_cents' => isset($item['price_cents']) ? (int) $item['price_cents'] : null,
                 ];
             })
             ->values()
@@ -97,10 +101,11 @@ class PostResource extends JsonResource
 
     protected function resolveAssetUrl(mixed $path): ?string
     {
-        // Filament's FileUpload stores `[]` (not null) for an empty single-file field --
-        // e.g. a comparison item saved before its image was uploaded.
+        // Filament's FileUpload stores `[]` for an empty single-file field, and a
+        // populated one as `[<uuid> => 'path/to/file.webp']` -- keyed by a random
+        // UUID, not index 0 -- so grab the first value regardless of its key.
         if (is_array($path)) {
-            $path = $path[0] ?? null;
+            $path = array_values($path)[0] ?? null;
         }
 
         if (! $path) {
