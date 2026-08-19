@@ -41,7 +41,8 @@ function attach(textarea) {
 }
 
 function scan() {
-    document.querySelectorAll('textarea.source_code_editor').forEach(attach);
+    // Vendor's extraAttributes() class lands on the field wrapper div, not the textarea itself.
+    document.querySelectorAll('.source_code_editor textarea').forEach(attach);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
