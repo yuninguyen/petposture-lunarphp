@@ -13,6 +13,7 @@ import {
     MapPinHouse,
     Search,
     ShieldCheck,
+    ShoppingBag,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -1492,20 +1493,34 @@ export default function CheckoutPage() {
     return (
         <main className="min-h-screen bg-[#fcfcfd] font-hanken text-[#333333]">
             <div ref={placesContainerRef} className="hidden" />
+
+            {/* Sticky top bar: logo left, cart right — always visible at the top, mobile and desktop */}
+            <div className="sticky top-0 z-40 border-b border-[#e8e8ea] bg-white">
+                <div className="mx-auto flex max-w-[1100px] items-center justify-between px-4 py-3 lg:px-12 lg:py-4">
+                    <Link href="/" className="flex items-center transition hover:opacity-80">
+                        <Image
+                            src="/assets/logo/Logo-PetPosture-1.webp"
+                            alt="PetPosture Logo"
+                            width={160}
+                            height={80}
+                            priority
+                            className="h-9 w-auto object-contain lg:h-11"
+                        />
+                    </Link>
+                    <Link href="/cart" className="relative flex items-center justify-center p-1 text-[#333333] transition hover:text-rust" aria-label="Shopping cart">
+                        <ShoppingBag size={22} />
+                        {items.length > 0 && (
+                            <span className="absolute -right-1.5 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-secondary text-[10px] font-black text-ink shadow-sm">
+                                {items.reduce((total, item) => total + item.quantity, 0)}
+                            </span>
+                        )}
+                    </Link>
+                </div>
+            </div>
+
             <div className="mx-auto flex min-h-screen max-w-[1100px] flex-col lg:flex-row">
                 <div className="flex-1 border-r border-[#e8e8ea] bg-white px-4 pt-4 pb-8 md:px-8 lg:px-12 lg:pt-6 lg:pb-12">
-                    <header className="mb-10 relative h-16">
-                        <Link href="/" className="flex-shrink-0 relative w-[240px] h-full flex items-center -ml-2 transition hover:opacity-80">
-                            <Image
-                                src="/assets/logo/Logo-PetPosture-1.webp"
-                                alt="PetPosture Logo"
-                                width={300}
-                                height={150}
-                                priority
-                                className="absolute top-1/2 -translate-y-[56%] left-0 h-[120px] md:h-[130px] w-auto object-contain z-50 drop-shadow-sm"
-                            />
-                        </Link>
-
+                    <header className="mb-10 hidden lg:block">
                         <nav className="flex items-center gap-2 text-[14px] text-[#707070]">
                             <Link href="/cart" className="hover:text-[#333333]">Cart</Link>
                             <ChevronLeft size={10} className="rotate-180 opacity-50" />

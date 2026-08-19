@@ -1,3 +1,36 @@
+# Handoff — 2026-08-19
+
+## Filament admin polish, first real blog post, checkout page redesign, and a session-long dev-environment bug finally root-caused
+
+**Filament admin fixes** (all deployed to production earlier in the session, before the checkout work below):
+- `resolveAssetUrl()` on `Api\PostResource` fixed to accept `mixed` instead of `?string` — was 500ing on any comparison post with an item missing its image (Filament's `FileUpload` stores `[]`, not `null`, for "nothing uploaded"). This was the real cause of a "Preview button 404s" report.
+- TipTap bubble-menu (text-selection popup) icons were invisible — dark-gray-on-dark-gray, because `.tiptap-tool`'s toolbar color rule was unscoped and leaked into the popup, which renders on a dark Tippy background the vendor package never themes. Scoped the color rule per context.
+- Added the missing `source` (raw HTML) tool to the `'blog'` TipTap toolbar profile, so Post/Page content can accept pasted pre-formatted HTML (e.g. AI-generated drafts).
+
+**First real comparison post created**: "Best Dog Ramps for Dachshunds" (`best-dog-ramps-for-dachshunds`, id 4 on production, status **draft**) — created directly via `tinker` on the VPS with full SEO/social metadata, 3 comparison items (PRIORPET/TRIXIE/PetSafe), tagged and linked to Breed: Dachshund / Solution: Mobility, category later changed to "Breed Guides". **Still needs before publishing**: real verified prices (currently `[VERIFY]`-flagged), real affiliate URLs for items #1/#2 (currently placeholder/wrong), real product photos for all 3 items (sourced from the retailer, not AI-generated — the affiliate link has to match the actual pictured product), and a featured/hero image for the post itself (AI-gen is fine for this one, prompt already drafted earlier in the session).
+
+**Blog page (`BlogPage.tsx`) visual polish**: "Featured Article" and "Editor's Pick" badges were solid-orange (`bg-secondary`/`text-ink`), inconsistent with the frosted-glass category badges (`bg-white/90 backdrop-blur-sm`/`text-rust`) used everywhere else on the page (Latest Stories, etc.) — restyled both to match. Search box widened `280px` → `380px` on desktop.
+
+**Cart page (`app/cart/page.tsx`)**: the "1 Shopping Cart / 2 Checkout Details / 3 Order Complete" stepper is now `hidden md:block` — it looked cramped/unnecessary on mobile.
+
+**Checkout page redesign** (`CheckoutPage.tsx`, `checkout/OrderSummary.tsx`, `CheckoutSuccessPage.tsx`) — modeled on a Society6 reference the user supplied:
+- Replaced the old oversized-logo `relative h-16` absolute-positioned header (which had uneven top/bottom padding and a logo that visually bled outside its own container) with a plain flex row, smaller logo (`h-9 lg:h-11`).
+- `CheckoutPage.tsx` gained a full-width sticky top bar — logo left, cart icon + item-count badge right — shared by mobile and desktop, aligned to the same `max-w-[1100px]` container as the two-column layout below (learned the hard way: the bar's own content needs that same container, or the logo/cart don't line up with the columns underneath it).
+- `OrderSummary.tsx` gained a mobile-only collapsible "Order Summary" toggle (closed by default, showing just the total — matches the reference exactly) instead of always showing the full price breakdown above the form. Its "Line items" block is now fully omitted (not just visually hidden) when the cart is empty, since an empty-but-rendered block still consumed a full `space-y-8` gap.
+- `CheckoutSuccessPage.tsx` got the same header treatment, plus the "Continue shopping"/"Back to home" CTA buttons now share an explicit `sm:w-[200px]` — they already had identical heights, the "bigger" look the user flagged was purely the longer text + solid-color-vs-outline optical effect, not an actual size bug.
+
+**The real story of the session — a silent, app-wide client hydration crash from `crypto.randomUUID()`.** What started as "the Order Summary toggle button does nothing" and "the checkout-success page just hangs on a spinner forever" turned out to be the *same* underlying bug, and it took an enormous amount of dead-end debugging to find (stale-dev-server theories, Suspense-boundary experiments, `force-dynamic` vs `connection()`, all ruled out one by one). The actual cause: `crypto.randomUUID()` only exists in secure contexts (HTTPS, or the literal hostname `localhost`) — `CartContext.tsx`'s `getOrCreateCartToken()` called it unconditionally inside `CartProvider`'s `useState` initializer, and `CartProvider` wraps the *entire app*. Visiting locally via `http://petposture.test` (not `localhost`, not HTTPS) with no cart token already cached in `localStorage` threw immediately at the app root, before any page-specific code ever ran — with a completely silent browser console and zero network requests, since nothing got far enough to make one. Only visible by running `npm run dev` directly and reading its own terminal, where a newer Turbopack feature forwards uncaught browser exceptions as `[browser] Uncaught TypeError: ...` — never spotted in the in-browser DevTools console across many earlier attempts. Fixed with a manual UUID-v4 fallback. Two more genuine (secondary) local-only issues were found once this stopped masking them: `next.config.ts` needed `allowedDevOrigins: ['petposture.test']` (explains the `ERR_INVALID_HTTP_RESPONSE` WebSocket errors seen in console *all session*), and `backend/.env` needed `FRONTEND_URL` to include `http://petposture.test:3000` for CORS. See `RULES.md`/`ARCHITECTURE.md` for the full writeup — this is a durable lesson worth re-reading if a similar "page hangs forever, nothing in console" bug shows up again.
+
+**Docs updated**: `RULES.md` and `ARCHITECTURE.md` got new entries for everything above. `README.md` didn't need changes — today's work was internal/architectural, not new customer-facing features.
+
+## Immediate follow-ups (next session)
+
+1. **Finish the Dachshund ramps post before publishing**: real prices, real affiliate URLs (2 of 3 are currently wrong/placeholder), real product photos ×3, one AI-gen hero image, then flip Status → Published.
+2. Spot-check the checkout redesign on a real mobile device (not just devtools emulation) — the mobile Order Summary collapse/expand and the sticky top bar in particular.
+3. If another "page hangs forever with silent console" bug turns up locally, check `CartContext.tsx`'s `crypto.randomUUID` fallback is still in place before spending hours on it again — and remember to check the dev server's own terminal output early, not just the browser console.
+
+---
+
 # Handoff — 2026-08-18
 
 ## Full-day pass: mobile UX audit, WebP everywhere, asset cleanup, admin sidebar/dashboard reorg, real site search, breed/solution taxonomy migration, OG image fixes, dev-env bugs, Our Mission polish

@@ -137,9 +137,9 @@ export default function CartPage() {
             <Header />
 
             {/* Stepper Section */}
-            <div className="bg-zinc-50 border-b border-zinc-100 py-12 px-4">
+            <div className="hidden md:block bg-zinc-50 border-b border-zinc-100 py-12 px-4">
                 <div className="max-w-[1200px] mx-auto">
-                    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm font-black uppercase tracking-[0.2em]">
+                    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm font-black uppercase tracking-[0.05em]">
                         <div className="flex items-center gap-3 text-rust">
                             <span className="w-6 h-6 rounded-full bg-secondary text-ink flex items-center justify-center text-xs">1</span>
                             <span>Shopping Cart</span>
@@ -164,9 +164,9 @@ export default function CartPage() {
                         <div className="w-24 h-24 bg-zinc-50 rounded-full flex items-center justify-center mb-8">
                             <X size={40} className="text-zinc-200" />
                         </div>
-                        <h2 className="text-[24px] font-bold text-primary mb-4 uppercase tracking-widest">Your Cart is Empty</h2>
+                        <h2 className="text-[24px] font-bold text-primary mb-4 uppercase tracking-wider">Your Cart is Empty</h2>
                         <p className="text-zinc-400 mb-8 max-w-md mx-auto">Looks like you haven&apos;t added anything to your cart yet. Explore our shop to find the best for your pet.</p>
-                        <Link href="/shop" className="bg-secondary text-ink px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-widest hover:bg-secondary-dark transition-all shadow-xl shadow-orange-500/10">
+                        <Link href="/shop" className="bg-secondary text-ink px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-wider hover:bg-secondary-dark transition-all shadow-xl shadow-orange-500/10">
                             Return to Shop
                         </Link>
                     </div>
@@ -176,7 +176,7 @@ export default function CartPage() {
                         <div className="flex-1 overflow-x-auto">
                             <table className="w-full text-left border-collapse min-w-[600px]">
                                 <thead>
-                                    <tr className="border-b border-zinc-200 text-sm font-black text-primary uppercase tracking-[0.2em]">
+                                    <tr className="border-b border-zinc-200 text-sm font-black text-primary uppercase tracking-[0.05em]">
                                         <th className="pb-6 w-12"></th>
                                         <th className="pb-6">Product</th>
                                         <th className="pb-6 text-center">Price</th>
@@ -234,7 +234,7 @@ export default function CartPage() {
                             </table>
 
                             <div className="mt-12 flex justify-between items-center">
-                                <Link href="/shop" className="inline-flex items-center gap-2 group text-sm font-black uppercase tracking-widest text-primary border-2 border-zinc-100 px-8 py-4 rounded-[4px] hover:bg-zinc-50 transition-all">
+                                <Link href="/shop" className="inline-flex items-center gap-2 group text-sm font-black uppercase tracking-wider text-primary border-2 border-zinc-100 px-8 py-4 rounded-[4px] hover:bg-zinc-50 transition-all">
                                     <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
                                     Continue Shopping
                                 </Link>
@@ -244,7 +244,7 @@ export default function CartPage() {
                         {/* Sidebar Totals */}
                         <div className="w-full lg:w-[400px]">
                             <div className="bg-zinc-50 border border-zinc-100 rounded-[8px] p-8 md:p-10 sticky top-[130px]">
-                                <h2 className="text-[14px] font-black text-primary uppercase tracking-[0.2em] mb-10 pb-6 border-b border-zinc-200">
+                                <h2 className="text-[14px] font-black text-primary uppercase tracking-[0.05em] mb-10 pb-6 border-b border-zinc-200">
                                     Cart Totals
                                 </h2>
 
@@ -268,14 +268,14 @@ export default function CartPage() {
                                     )}
                                     <div className="h-[1px] bg-zinc-200 my-6" />
                                     <div className="flex justify-between items-center">
-                                        <span className="text-primary font-black uppercase tracking-widest text-[14px]">Total</span>
+                                        <span className="text-primary font-black uppercase tracking-wider text-[14px]">Total</span>
                                         <span className="text-[24px] font-black text-rust">${finalTotal.toFixed(2)}</span>
                                     </div>
                                 </div>
 
                                 <button
                                     onClick={() => router.push('/checkout')}
-                                    className="w-full bg-secondary text-ink py-5 rounded-[4px] font-black uppercase tracking-[0.25em] text-sm shadow-2xl shadow-orange-500/20 hover:bg-secondary-dark transition-all"
+                                    className="w-full bg-secondary text-ink py-5 rounded-[4px] font-black uppercase tracking-[0.05em] text-sm shadow-2xl shadow-orange-500/20 hover:bg-secondary-dark transition-all"
                                 >
                                     Proceed to Checkout
                                 </button>
@@ -297,7 +297,7 @@ export default function CartPage() {
                                         <button
                                             onClick={handleApplyCoupon}
                                             disabled={isApplying}
-                                            className="w-full bg-zinc-100 text-primary py-4 rounded-[4px] text-sm font-black uppercase tracking-widest hover:bg-zinc-200 transition-all disabled:opacity-50"
+                                            className="w-full bg-zinc-100 text-primary py-4 rounded-[4px] text-sm font-black uppercase tracking-wider hover:bg-zinc-200 transition-all disabled:opacity-50"
                                         >
                                             {isApplying ? 'Applying...' : 'Apply Coupon'}
                                         </button>

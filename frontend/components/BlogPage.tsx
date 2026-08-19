@@ -191,7 +191,7 @@ export default function BlogPage() {
                                     sizes="(max-width: 1024px) 100vw, 60vw"
                                 />
                                 <div className="absolute left-6 top-6">
-                                    <span className="rounded-[3px] bg-secondary px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-ink shadow-lg">
+                                    <span className="rounded-[3px] bg-white/90 px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-rust shadow-sm backdrop-blur-sm">
                                         Featured Article
                                     </span>
                                 </div>
@@ -249,7 +249,7 @@ export default function BlogPage() {
 
             <nav className="sticky top-[65px] z-40 border-y border-zinc-100 bg-white md:top-[100px]">
                 <div className="relative mx-auto flex max-w-[1200px] flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between md:px-8">
-                    <div className="relative w-full md:max-w-[280px]">
+                    <div className="relative w-full md:max-w-[380px]">
                         <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                         <input
                             type="text"
@@ -450,7 +450,7 @@ export default function BlogPage() {
                                                 className="object-cover transition-transform duration-500 group-hover:scale-110"
                                                 sizes="320px"
                                             />
-                                            <span className="absolute left-3 top-3 w-fit rounded-[2px] bg-secondary px-2 py-1 text-xs font-bold uppercase tracking-wide text-ink shadow-sm">
+                                            <span className="absolute left-3 top-3 w-fit rounded-[2px] bg-white/90 px-2 py-1 text-xs font-bold uppercase tracking-wide text-rust shadow-sm backdrop-blur-sm">
                                                 Editor&apos;s Pick
                                             </span>
                                         </div>

@@ -344,7 +344,7 @@ function AddressBlock({ title, address }: { title: string; address: Address }) {
 
     return (
         <div>
-            <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+            <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">
                 {title}
             </p>
             <div className="space-y-0.5 text-[14px] leading-[1.8] text-[#555555]">
@@ -473,15 +473,15 @@ function OrderSuccessContent() {
 
             {/* ── Site header ── */}
             <header className="border-b border-[#ececef] bg-white">
-                <div className="mx-auto max-w-[1120px] px-5 pt-4 lg:pt-6 relative h-16">
-                    <Link href="/" className="flex-shrink-0 relative w-[240px] h-full flex items-center -ml-2 transition hover:opacity-80">
+                <div className="mx-auto flex max-w-[1120px] items-center px-5 py-3 lg:py-4">
+                    <Link href="/" className="flex items-center transition hover:opacity-80">
                         <Image
                             src="/assets/logo/Logo-PetPosture-1.webp"
                             alt="PetPosture Logo"
-                            width={300}
-                            height={150}
+                            width={160}
+                            height={80}
                             priority
-                            className="absolute top-1/2 -translate-y-[56%] left-0 h-[120px] md:h-[130px] w-auto object-contain z-50 drop-shadow-sm"
+                            className="h-9 w-auto object-contain lg:h-11"
                         />
                     </Link>
                 </div>
@@ -499,10 +499,10 @@ function OrderSuccessContent() {
                             />
                         </div>
                         <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rust">
+                            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-rust">
                                 Order #{order.reference}
                             </p>
-                            <h1 className="mt-0.5 text-[26px] font-bold leading-tight tracking-tight text-[#2f3d46] md:text-[30px]">
+                            <h1 className="mt-0.5 text-[26px] font-bold leading-tight tracking-[0.02em] text-[#2f3d46] md:text-[30px]">
                                 Thank you, {order.shipping_address.first_name}!
                             </h1>
                         </div>
@@ -598,7 +598,7 @@ function OrderSuccessContent() {
                         </div>
                         <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                             <div className="px-6 py-4">
-                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
+                                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">
                                     Order number
                                 </p>
                                 <p className="mt-1.5 text-[14px] font-semibold text-[#1a1a1a]">
@@ -606,7 +606,7 @@ function OrderSuccessContent() {
                                 </p>
                             </div>
                             <div className="px-6 py-4">
-                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
+                                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">
                                     Date
                                 </p>
                                 <p className="mt-1.5 text-[14px] font-medium text-[#555555]">
@@ -618,7 +618,7 @@ function OrderSuccessContent() {
                                 </p>
                             </div>
                             <div className="px-6 py-4">
-                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
+                                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">
                                     Order total
                                 </p>
                                 <p className="mt-1.5 text-[14px] font-semibold text-[#1a1a1a]">
@@ -637,7 +637,7 @@ function OrderSuccessContent() {
                         </div>
                         <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
                             <div className="px-6 py-5">
-                                <p className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
+                                <p className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">
                                     <Mail size={12} />
                                     Contact
                                 </p>
@@ -646,7 +646,7 @@ function OrderSuccessContent() {
                                 </p>
                             </div>
                             <div className="px-6 py-5">
-                                <p className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
+                                <p className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">
                                     <Truck size={12} />
                                     Shipping method
                                 </p>
@@ -730,13 +730,13 @@ function OrderSuccessContent() {
                     <div className="flex flex-col sm:flex-row items-center gap-3 pb-8 pt-1 lg:pb-0">
                         <Link
                             href="/shop"
-                            className="flex h-11 w-full sm:w-auto items-center justify-center rounded-[6px] bg-secondary px-8 text-[14px] font-semibold text-ink transition-all hover:bg-secondary-dark hover:shadow-md"
+                            className="flex h-11 w-full sm:w-[200px] items-center justify-center rounded-[6px] bg-secondary px-8 text-[14px] font-semibold text-ink transition-all hover:bg-secondary-dark hover:shadow-md"
                         >
                             Continue shopping
                         </Link>
                         <Link
                             href="/"
-                            className="flex h-11 w-full sm:w-auto items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white px-8 text-[14px] font-semibold text-[#555555] transition-all hover:bg-[#faf9f8] hover:shadow-sm"
+                            className="flex h-11 w-full sm:w-[200px] items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white px-8 text-[14px] font-semibold text-[#555555] transition-all hover:bg-[#faf9f8] hover:shadow-sm"
                         >
                             Back to home
                         </Link>
@@ -839,7 +839,7 @@ function OrderSuccessContent() {
                                     Total
                                 </span>
                                 <div className="text-right">
-                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-gray-400">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">
                                         {order.total.currency}
                                     </p>
                                     <p className="text-[22px] font-bold tracking-tight text-[#1a1a1a]">

@@ -87,12 +87,25 @@ function writeCartStorage(next: { items?: CartItem[]; coupon?: CouponState }) {
     window.dispatchEvent(new Event(CART_STORAGE_EVENT));
 }
 
+/** Generates a random UUID-v4-shaped string without relying on crypto.randomUUID(),
+ * which only exists in secure contexts (HTTPS or the literal "localhost" host) — a
+ * custom HTTP dev hostname like petposture.test doesn't qualify and throws instead. */
+function generateFallbackUuid(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
+
 /** Returns the stable guest cart UUID, creating one if it doesn't exist. */
 function getOrCreateCartToken(): string {
     if (typeof window === 'undefined') return '';
     let token = localStorage.getItem(CART_TOKEN_KEY);
     if (!token) {
-        token = crypto.randomUUID();
+        token = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : generateFallbackUuid();
         localStorage.setItem(CART_TOKEN_KEY, token);
     }
     return token;

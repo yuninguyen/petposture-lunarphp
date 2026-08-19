@@ -406,33 +406,33 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
 
                         {/* Featured Widget */}
                         {recentPosts.length > 0 && (
-                        <div className="bg-[#f8f9fa] rounded-2xl p-8 border border-zinc-100 relative overflow-hidden">
-                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-rust mb-6 flex items-center gap-3">
-                                More Like This
-                                <div className="flex-1 h-[1px] bg-zinc-200" />
-                            </h4>
-                            <div className="space-y-8">
-                                {recentPosts.map((rPost) => (
-                                    <Link href={`/blog/${rPost.slug}`} key={rPost.id} className="flex gap-4 group">
-                                        <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-zinc-200 shadow-sm">
-                                            <Image
-                                                src={rPost.image}
-                                                alt={rPost.title}
-                                                fill
-                                                sizes="80px"
-                                                className="object-cover transition-transform group-hover:scale-110"
-                                            />
-                                        </div>
-                                        <div>
-                                            <h5 className="text-[14px] font-bold text-primary leading-tight group-hover:text-rust transition-colors mb-2 line-clamp-2">
-                                                {rPost.title}
-                                            </h5>
-                                            <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">{rPost.date}</span>
-                                        </div>
-                                    </Link>
-                                ))}
+                            <div className="bg-[#f8f9fa] rounded-2xl p-8 border border-zinc-100 relative overflow-hidden">
+                                <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-rust mb-6 flex items-center gap-3">
+                                    More Like This
+                                    <div className="flex-1 h-[1px] bg-zinc-200" />
+                                </h4>
+                                <div className="space-y-8">
+                                    {recentPosts.map((rPost) => (
+                                        <Link href={`/blog/${rPost.slug}`} key={rPost.id} className="flex gap-4 group">
+                                            <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-zinc-200 shadow-sm">
+                                                <Image
+                                                    src={rPost.image}
+                                                    alt={rPost.title}
+                                                    fill
+                                                    sizes="80px"
+                                                    className="object-cover transition-transform group-hover:scale-110"
+                                                />
+                                            </div>
+                                            <div>
+                                                <h5 className="text-[14px] font-bold text-primary leading-tight group-hover:text-rust transition-colors mb-2 line-clamp-2">
+                                                    {rPost.title}
+                                                </h5>
+                                                <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">{rPost.date}</span>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
                         )}
 
                         {/* Social Widget */}
@@ -502,7 +502,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                     <h3 className="text-[18px] font-bold text-primary leading-tight mb-4 hover:text-rust transition-colors cursor-pointer">
                                         {rPost.title}
                                     </h3>
-                                    <Link href={`/blog/${rPost.slug}`} className="text-primary font-bold uppercase tracking-[0.1em] text-sm flex items-center gap-2 transition-colors hover:text-rust">
+                                    <Link href={`/blog/${rPost.slug}`} className="text-secondary font-bold capitalize tracking-[0.05em] text-sm flex items-center gap-2 transition-colors hover:text-rust">
                                         Read Story <ChevronRight size={14} />
                                     </Link>
                                 </div>
