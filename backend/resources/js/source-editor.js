@@ -1,7 +1,17 @@
-import { html_beautify } from 'js-beautify';
+// js-beautify 2.x exports html_beautify on its default export only — a named
+// import resolves to undefined (silently breaking pretty-print) in this version.
+import beautify from 'js-beautify';
+
+const { html_beautify } = beautify;
 
 function prettyPrint(textarea) {
-    if (textarea.dataset.formatted) return;
+    // The modal's textarea is inserted before Livewire fills its value, and
+    // Livewire may also re-fill it after our first pass (overwriting the
+    // formatted copy on the same element). Skip empty values and anything
+    // already multi-line (already formatted, or user-edited), and format
+    // whatever still looks like raw one-line HTML — the interval below keeps
+    // re-scanning so a late Livewire fill still gets formatted.
+    if (!textarea.value || textarea.value.includes('\n')) return;
     textarea.dataset.formatted = '1';
 
     // Display-only: reformat for readability, but do NOT sync this back to
@@ -29,6 +39,10 @@ function scan() {
 document.addEventListener('DOMContentLoaded', () => {
     scan();
     new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
+
+    // Retry until Livewire has populated the value (the observer only sees the
+    // element insertion, not the later value fill).
+    setInterval(scan, 500);
 });
 
 // Capture phase so this runs before Livewire's own click handler reads the

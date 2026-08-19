@@ -58,6 +58,7 @@ class PageResource extends Resource
                     ->required()
                     ->profile('blog')
                     ->output(\FilamentTiptapEditor\Enums\TiptapOutput::Html)
+                    ->stateBindingModifiers([])
                     ->columnSpanFull()
                     ->extraInputAttributes(['style' => 'min-height: 400px']),
                 Forms\Components\TextInput::make('meta_title')

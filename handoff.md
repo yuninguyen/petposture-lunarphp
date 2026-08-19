@@ -1,3 +1,25 @@
+# Handoff — 2026-08-19 (later)
+
+## Post editor "Save Draft does nothing" + "clicks jump back to the content box" + source-code modal stuck on one line — full chain fixed (partly committed, rest in this uncommitted batch)
+
+Continued from the 08-19 entry below. The user (Yuni) root-caused and fixed most of the "Save Draft silently failing" saga themselves (commits at the top of this file's git log); this session verified, completed, and documented the rest. **Nothing in this batch is deployed yet.**
+
+**The two real root causes the user found (committed):**
+1. **onclick escaping** (c1e05c9): ->extraAttributes(['onclick' => "localStorage.removeItem('...')"]) had its single quotes HTML-escaped by Filament to &#039;, so the browser tried to parse that literal text as JS on click and threw "Uncaught SyntaxError: Unexpected token '&'" — silently killing the click before Livewire's own save handler ran. Fix: moved the localStorage cleanup into resources/js/source-editor.js as a real click listener (label-matched), loaded panel-wide via @vite in AdminPanelProvider's BODY_END hook.
+2. **CodeMirror infinite re-render loop** (ab3b63f / 9138fd4): the source-code editor synced on CodeMirror's change event, which also fired for its own initial setValue → input round-trip through Livewire → modal re-render → fresh attach + sync → forever, hanging the tab ("đơ nhảy lung tung" when pasting source code). Replaced CodeMirror with a display-only js-beautify pretty-print in source-editor.js (9138fd4), with a submit-time capture-phase listener that collapses the whitespace back out so the TipTap HTML→JSON converter sees the same tag-adjacency as the original compact HTML (0284588).
+
+**Still-open pieces this session closed (uncommitted):**
+- **CreatePost.php still had the same broken onclick extraAttributes** on both the header action and getCreateFormAction() — removed both (the JS label listener already covers them; the button keeps working).
+- **"Click any other section → the page jumps back to the content box at the just-edited spot"**: the vendor Tiptap Alpine component's updateEditorContent() unconditionally called editor.chain().focus() + setTextSelection({from,to}) whenever the entangled state echo differed — scrolling/focusing the editor and swallowing clicks on other controls. Yuni fixed it in AdminPanelProvider with an alpine:init patch that overrides the tiptap component: updateEditorContent now only focuses when the editor is already focused (editor.isFocused) or explicitly force-focused (ppForceFocus, set around insertSource/refreshEditorContent). Complementary fix in this batch: ->stateBindingModifiers([]) on both PostResource and PageResource content fields — the entangle becomes $entangle(..., false) (non-optimistic), so typing no longer fires a Livewire round-trip per keystroke (the vendor afterStateUpdated → validateOnly hook rides the same traffic). Tradeoff: the SERP-preview placeholder no longer live-updates while typing.
+- **Source-code modal stuck on ONE line — pretty-print had never actually worked.** Two stacked bugs in resources/js/source-editor.js: (a) import { html_beautify } from 'js-beautify' resolves undefined in js-beautify 2.x (the function lives on the default export) → html_beautify(...) throws right after data-formatted is stamped, so the one-shot guard never retries; (b) even with the import fixed, Livewire re-fills the modal textarea's value after the MutationObserver formats it (same element, guard blocks re-format). Fixed with a default-import + destructure, a guard that re-formats anything still one-line (skips multi-line = already formatted or user-edited), and a setInterval(scan, 500) retry. Verified on the real post-8 edit page: source modal went from 1 line to 98 lines.
+- **AdminPanelProvider.php reformatted** (display-only): the HEAD_END CSS block's longest one-line rules (22) + the TipTap Editor section (28 rules) + 5 banner SVG/span elements expanded to readable multi-line; zero value changes (verified the rendered login page still carries --pp-orange and the expanded rules).
+- composer.json/composer.lock: laravel/pail constraint ^1.2.5 → ^1.2 (Yuni). Pail is dev-only (composer dev streams logs); the earlier 20MB log of Class "Laravel\Pail\PailServiceProvider" not found was from missing dev deps + a stale auto-discovery cache — cleared the log.
+
+**Verification**: ContentAdminRendersTest green (9 tests, 37 assertions — includes the EditPost header-save and CreatePost header-save regression tests); php -l clean on all touched files; Vite npm run build clean (bundle source-editor-D65fMgMG.js; public/build is gitignored so the Docker build regenerates it); pretty-print verified in a real browser on /admin/posts/8/edit.
+
+**Not yet deployed** — commit + push + VPS deploy (git pull + docker compose build/up -d --force-recreate backend frontend + optimize:clear per README) is the next step.
+
+# Handoff — 2026-08-19
 # Handoff — 2026-08-19
 
 ## Filament admin polish, first real blog post, checkout page redesign, and a session-long dev-environment bug finally root-caused

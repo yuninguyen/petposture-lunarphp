@@ -90,6 +90,7 @@ class PostResource extends Resource
                     ->required()
                     ->profile('blog')
                     ->output(\FilamentTiptapEditor\Enums\TiptapOutput::Html)
+                    ->stateBindingModifiers([])
                     ->columnSpanFull()
                     ->disableBubbleMenus()
                     ->extraInputAttributes(['style' => 'min-height: 480px']),

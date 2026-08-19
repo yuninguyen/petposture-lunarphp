@@ -180,21 +180,72 @@ class AdminPanelProvider extends PanelProvider
                     /* ── Sidebar (Haze-matched: flat charcoal-navy #1c252e, real fi-sidebar-item-* classes) ── */
                     nav.fi-sidebar,aside.fi-sidebar{background:#1c252e!important;border-right:none!important;box-shadow:none!important}
                     nav.fi-sidebar *,aside.fi-sidebar *{border-color:rgba(255,255,255,.05)!important}
-                    header.fi-sidebar-header,.fi-sidebar-header{background:transparent!important;height:auto!important;min-height:4rem!important;padding:.85rem 1.1rem!important;border-bottom:none!important;display:flex!important;align-items:center!important}
+                    header.fi-sidebar-header,
+                    .fi-sidebar-header {
+                        background: transparent !important;
+                        height: auto !important;
+                        min-height: 4rem !important;
+                        padding: .85rem 1.1rem !important;
+                        border-bottom: none !important;
+                        display: flex !important;
+                        align-items: center !important;
+                    }
                     .fi-sidebar-header img.fi-logo{height:32px!important;width:auto!important;max-width:160px!important;object-fit:contain!important;display:block!important}
                     .fi-sidebar-header span{color:#f8fafc!important;font-weight:700!important}
-                    [class*="fi-sidebar-group-label"],[class*="fi-sidebar-nav-label"]{color:rgba(148,163,184,.5)!important;font-size:12.5px!important;font-weight:500!important;letter-spacing:normal!important;text-transform:uppercase!important;padding:1.1rem 1.1rem .4rem .2rem!important}
+                    [class*="fi-sidebar-group-label"],
+                    [class*="fi-sidebar-nav-label"] {
+                        color: rgba(148,163,184,.5) !important;
+                        font-size: 12.5px !important;
+                        font-weight: 500 !important;
+                        letter-spacing: normal !important;
+                        text-transform: uppercase !important;
+                        padding: 1.1rem 1.1rem .4rem .2rem !important;
+                    }
 
-                    nav.fi-sidebar .fi-sidebar-item-button,aside.fi-sidebar .fi-sidebar-item-button{color:#8b93a0!important;border-radius:10px!important;margin:1px 0!important;padding:.5rem .75rem!important;transition:background .12s,color .12s!important}
-                    nav.fi-sidebar .fi-sidebar-item-button:hover,aside.fi-sidebar .fi-sidebar-item-button:hover,nav.fi-sidebar .fi-sidebar-item-button:focus-visible,aside.fi-sidebar .fi-sidebar-item-button:focus-visible{background:rgba(255,255,255,.06)!important;color:#f1f4f8!important}
+                    nav.fi-sidebar .fi-sidebar-item-button,
+                    aside.fi-sidebar .fi-sidebar-item-button {
+                        color: #8b93a0 !important;
+                        border-radius: 10px !important;
+                        margin: 1px 0 !important;
+                        padding: .5rem .75rem !important;
+                        transition: background .12s,color .12s !important;
+                    }
+                    nav.fi-sidebar .fi-sidebar-item-button:hover,
+                    aside.fi-sidebar .fi-sidebar-item-button:hover,
+                    nav.fi-sidebar .fi-sidebar-item-button:focus-visible,
+                    aside.fi-sidebar .fi-sidebar-item-button:focus-visible {
+                        background: rgba(255,255,255,.06) !important;
+                        color: #f1f4f8 !important;
+                    }
                     nav.fi-sidebar .fi-sidebar-item-icon,aside.fi-sidebar .fi-sidebar-item-icon{color:#6b7280!important;width:16px!important;height:16px!important}
                     nav.fi-sidebar .fi-sidebar-item-label,aside.fi-sidebar .fi-sidebar-item-label{color:inherit!important;font-size:13.5px!important;font-weight:500!important}
 
-                    nav.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-button,aside.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-button{background:#26313c!important;color:#fff!important}
+                    nav.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-button,
+                    aside.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-button {
+                        background: #26313c !important;
+                        color: #fff !important;
+                    }
                     nav.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-icon,aside.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-icon{color:#fff!important}
-                    nav.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-label,aside.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-label{color:#fff!important;font-weight:600!important}
+                    nav.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-label,
+                    aside.fi-sidebar .fi-sidebar-item-active .fi-sidebar-item-label {
+                        color: #fff !important;
+                        font-weight: 600 !important;
+                    }
 
-                    nav.fi-sidebar .fi-sidebar-item [class*="fi-badge"],aside.fi-sidebar .fi-sidebar-item [class*="fi-badge"]{background:var(--pp-orange)!important;color:#fff!important;font-size:10px!important;font-weight:800!important;min-width:18px!important;height:18px!important;padding:0 5px!important;border-radius:99px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+                    nav.fi-sidebar .fi-sidebar-item [class*="fi-badge"],
+                    aside.fi-sidebar .fi-sidebar-item [class*="fi-badge"] {
+                        background: var(--pp-orange) !important;
+                        color: #fff !important;
+                        font-size: 10px !important;
+                        font-weight: 800 !important;
+                        min-width: 18px !important;
+                        height: 18px !important;
+                        padding: 0 5px !important;
+                        border-radius: 99px !important;
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                    }
                     .fi-sidebar-nav{padding:.4rem .75rem 1rem!important}
                     aside.fi-sidebar ::-webkit-scrollbar-thumb,nav.fi-sidebar ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16)!important}
                     aside.fi-sidebar ::-webkit-scrollbar-track,nav.fi-sidebar ::-webkit-scrollbar-track{background:transparent!important}
@@ -207,7 +258,13 @@ class AdminPanelProvider extends PanelProvider
 
                     /* ── Login / simple page (logo was inheriting the sidebar 32px override; heading was default Filament 2xl/bold) ── */
                     .fi-simple-header img.fi-logo{height:44px!important;width:auto!important;max-width:190px!important;margin-bottom:1.25rem!important}
-                    .fi-simple-header-heading{font-size:1.3rem!important;font-weight:650!important;color:#111827!important;font-family:"Public Sans","Public Sans Fallback",ui-sans-serif,sans-serif!important;letter-spacing:normal!important}
+                    .fi-simple-header-heading {
+                        font-size: 1.3rem !important;
+                        font-weight: 650 !important;
+                        color: #111827 !important;
+                        font-family: "Public Sans","Public Sans Fallback",ui-sans-serif,sans-serif !important;
+                        letter-spacing: normal !important;
+                    }
                     .fi-simple-main .fi-btn{box-shadow:0 1px 3px rgba(223,132,72,.22)!important}
 
                     /* ── Topbar ── */
@@ -227,15 +284,40 @@ class AdminPanelProvider extends PanelProvider
                     main.fi-main,div.fi-main,.fi-main-ctn{background:#f4f6f9!important}
 
                     /* ── Stat cards ── */
-                    .fi-wi-stats-overview-stat{background:#fff!important;border:1px solid #eaecf0!important;border-radius:14px!important;box-shadow:0 1px 4px rgba(0,0,0,.05)!important;transition:transform .18s,box-shadow .18s!important}
+                    .fi-wi-stats-overview-stat {
+                        background: #fff !important;
+                        border: 1px solid #eaecf0 !important;
+                        border-radius: 14px !important;
+                        box-shadow: 0 1px 4px rgba(0,0,0,.05) !important;
+                        transition: transform .18s,box-shadow .18s !important;
+                    }
                     .fi-wi-stats-overview-stat:hover{transform:translateY(-2px)!important;box-shadow:0 6px 24px rgba(0,0,0,.09)!important}
-                    .fi-wi-stats-overview-stat-value{font-size:1.8rem!important;font-weight:650!important;color:#0f172a!important;letter-spacing:-.04em!important;line-height:1!important}
-                    .fi-wi-stats-overview-stat-label{font-size:13px!important;font-weight:500!important;color:#6b7280!important;text-transform:capitalize!important;letter-spacing:normal!important}
+                    .fi-wi-stats-overview-stat-value {
+                        font-size: 1.8rem !important;
+                        font-weight: 650 !important;
+                        color: #0f172a !important;
+                        letter-spacing: -.04em !important;
+                        line-height: 1 !important;
+                    }
+                    .fi-wi-stats-overview-stat-label {
+                        font-size: 13px !important;
+                        font-weight: 500 !important;
+                        color: #6b7280 !important;
+                        text-transform: capitalize !important;
+                        letter-spacing: normal !important;
+                    }
 
                     /* ── Sections / cards ── */
                     .fi-section{background:#fff!important;border:1px solid #eaecf0!important;border-radius:14px!important;box-shadow:0 1px 4px rgba(0,0,0,.04)!important}
                     .fi-section-header{border-bottom:1px solid #f1f3f6!important}
-                    .fi-section-header-heading,.fi-ta-header-heading,.filament-apex-charts-heading{font-size:14px!important;font-weight:700!important;color:#111827!important;font-family:"Public Sans","Public Sans Fallback",ui-sans-serif,sans-serif!important}
+                    .fi-section-header-heading,
+                    .fi-ta-header-heading,
+                    .filament-apex-charts-heading {
+                        font-size: 14px !important;
+                        font-weight: 700 !important;
+                        color: #111827 !important;
+                        font-family: "Public Sans","Public Sans Fallback",ui-sans-serif,sans-serif !important;
+                    }
 
                     /* ── ApexCharts widget header — matches Top Products (fi-ta-header, p-4 sm:px-6 = 16px top/bottom)
                        heading position AND border distance, not just the border distance alone. The x-filament::card
@@ -268,10 +350,26 @@ class AdminPanelProvider extends PanelProvider
                     .fi-ta-actions{gap:.25rem!important}
                     .fi-ta-actions .fi-link{padding:.4rem!important;border-radius:8px!important;gap:0!important}
                     .fi-ta-actions .fi-link:hover{background:rgba(0,0,0,.045)!important}
-                    .fi-ta-actions .fi-link>span{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+                    .fi-ta-actions .fi-link>span {
+                        position: absolute !important;
+                        width: 1px !important;
+                        height: 1px !important;
+                        padding: 0 !important;
+                        margin: -1px !important;
+                        overflow: hidden !important;
+                        clip: rect(0,0,0,0) !important;
+                        white-space: nowrap !important;
+                        border: 0 !important;
+                    }
 
                     /* ── Primary buttons (solid CTAs only — outlined actions like Edit keep their border-only look) ── */
-                    [class*="fi-btn"][class*="primary"]:not(.fi-btn-outlined){background:var(--pp-orange)!important;border-color:var(--pp-orange)!important;border-radius:9px!important;font-weight:700!important;box-shadow:0 2px 8px rgba(223,132,72,.28)!important}
+                    [class*="fi-btn"][class*="primary"]:not(.fi-btn-outlined) {
+                        background: var(--pp-orange) !important;
+                        border-color: var(--pp-orange) !important;
+                        border-radius: 9px !important;
+                        font-weight: 700 !important;
+                        box-shadow: 0 2px 8px rgba(223,132,72,.28) !important;
+                    }
                     [class*="fi-btn"][class*="primary"]:not(.fi-btn-outlined):hover{background:var(--pp-orange-dk)!important}
                     .fi-btn-outlined{border-radius:9px!important;font-weight:500!important}
 
@@ -280,9 +378,23 @@ class AdminPanelProvider extends PanelProvider
                     [class*="fi-input"]:focus{border-color:var(--pp-orange)!important;box-shadow:0 0 0 3px var(--pp-orange-glow)!important;outline:none!important}
 
                     /* ── Multi-select tag chips (Choices.js) — smaller, more compact ── */
-                    .choices__inner{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:4px!important;min-height:auto!important;padding:5px 6px!important}
+                    .choices__inner {
+                        display: flex !important;
+                        flex-wrap: wrap !important;
+                        align-items: center !important;
+                        gap: 4px !important;
+                        min-height: auto !important;
+                        padding: 5px 6px !important;
+                    }
                     .choices__list--multiple{display:flex!important;flex-wrap:wrap!important;gap:4px!important;flex:0 1 auto!important}
-                    .choices__list--multiple .choices__item{font-size:13px!important;font-weight:400!important;padding:2px 6px!important;height:auto!important;line-height:18px!important;border-radius:6px!important}
+                    .choices__list--multiple .choices__item {
+                        font-size: 13px !important;
+                        font-weight: 400 !important;
+                        padding: 2px 6px !important;
+                        height: auto !important;
+                        line-height: 18px !important;
+                        border-radius: 6px !important;
+                    }
                     .choices__button{margin-left:6px!important}
                     .choices__input{flex:1 1 auto!important;width:auto!important;min-width:80px!important;margin:0!important;font-size:14px!important}
                     .choices__list--dropdown .choices__item{font-size:14px!important;font-weight:400!important;padding:8px 12px!important}
@@ -291,7 +403,17 @@ class AdminPanelProvider extends PanelProvider
                     [class*="fi-tabs-tab"][aria-selected="true"]{color:var(--pp-orange)!important;background:var(--pp-orange-glow)!important}
 
                     /* ── Apex chart period pill filter ── */
-                    .apex-charts-single-filter{border-radius:999px!important;border:1px solid #e2e8f0!important;font-size:13px!important;font-weight:600!important;padding:.5rem 2rem .5rem 1.1rem!important;background-color:#fff!important;color:#374151!important;box-shadow:0 1px 2px rgba(0,0,0,.04)!important;cursor:pointer!important}
+                    .apex-charts-single-filter {
+                        border-radius: 999px !important;
+                        border: 1px solid #e2e8f0 !important;
+                        font-size: 13px !important;
+                        font-weight: 600 !important;
+                        padding: .5rem 2rem .5rem 1.1rem !important;
+                        background-color: #fff !important;
+                        color: #374151 !important;
+                        box-shadow: 0 1px 2px rgba(0,0,0,.04) !important;
+                        cursor: pointer !important;
+                    }
                     .apex-charts-single-filter:hover{border-color:#d7dbe1!important}
                     .apex-charts-single-filter:focus{border-color:var(--pp-orange)!important;box-shadow:0 0 0 3px var(--pp-orange-glow)!important;outline:none!important}
 
@@ -303,43 +425,186 @@ class AdminPanelProvider extends PanelProvider
                     @keyframes pp-pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
                     /* ── TipTap Editor ── */
-                    .tiptap-editor{border-radius:8px!important;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.1)!important}
-                    .tiptap-wrapper{border-radius:8px!important;background:#fff!important}
-                    .tiptap-wrapper:focus-within{box-shadow:0 0 0 2px #df8448!important}
-                    .tiptap-toolbar{padding:8px 12px!important;background:#fff!important;border-bottom:1px solid rgba(0,0,0,.09)!important;gap:0!important;flex-direction:row!important;align-items:center!important}
-                    .tiptap-toolbar.divide-x>*{border-left:none!important}
-                    .tiptap-toolbar-left{gap:3px!important;padding:0!important;align-items:center!important}
-                    .tiptap-toolbar-right{gap:3px!important;padding:0 0 0 8px!important;align-items:center!important;border-left:1px solid rgba(0,0,0,.08)!important}
-                    .tiptap-tool{width:34px!important;height:34px!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:6px!important;cursor:pointer!important;background:transparent!important;transition:background .12s,color .12s!important;ring:none!important;outline:none!important;box-shadow:none!important}
-                    .tiptap-tool:focus{outline:none!important;box-shadow:none!important}
-                    .tiptap-tool svg{width:17px!important;height:17px!important}
+                    .tiptap-editor {
+                        border-radius: 8px !important;
+                        overflow: hidden;
+                        box-shadow: 0 0 0 1px rgba(0,0,0,.1) !important;
+                    }
+                    .tiptap-wrapper {
+                        border-radius: 8px !important;
+                        background: #fff !important;
+                    }
+                    .tiptap-wrapper:focus-within {
+                        box-shadow: 0 0 0 2px #df8448 !important;
+                    }
+                    .tiptap-toolbar {
+                        padding: 8px 12px !important;
+                        background: #fff !important;
+                        border-bottom: 1px solid rgba(0,0,0,.09) !important;
+                        gap: 0 !important;
+                        flex-direction: row !important;
+                        align-items: center !important;
+                    }
+                    .tiptap-toolbar.divide-x>* {
+                        border-left: none !important;
+                    }
+                    .tiptap-toolbar-left {
+                        gap: 3px !important;
+                        padding: 0 !important;
+                        align-items: center !important;
+                    }
+                    .tiptap-toolbar-right {
+                        gap: 3px !important;
+                        padding: 0 0 0 8px !important;
+                        align-items: center !important;
+                        border-left: 1px solid rgba(0,0,0,.08) !important;
+                    }
+                    .tiptap-tool {
+                        width: 34px !important;
+                        height: 34px !important;
+                        padding: 0 !important;
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        border-radius: 6px !important;
+                        cursor: pointer !important;
+                        background: transparent !important;
+                        transition: background .12s,color .12s !important;
+                        ring: none !important;
+                        outline: none !important;
+                        box-shadow: none !important;
+                    }
+                    .tiptap-tool:focus {
+                        outline: none !important;
+                        box-shadow: none !important;
+                    }
+                    .tiptap-tool svg {
+                        width: 17px !important;
+                        height: 17px !important;
+                    }
                     /* Main toolbar sits on a white background — dark icon color for contrast. */
-                    .tiptap-toolbar .tiptap-tool{color:#374151!important}
-                    .tiptap-toolbar .tiptap-tool:hover{background:#f1f5f9!important;color:#111827!important;box-shadow:none!important}
+                    .tiptap-toolbar .tiptap-tool {
+                        color: #374151 !important;
+                    }
+                    .tiptap-toolbar .tiptap-tool:hover {
+                        background: #f1f5f9 !important;
+                        color: #111827 !important;
+                        box-shadow: none !important;
+                    }
                     /* Bubble/floating/link/image/table menus render inside a Tippy popup with a dark
                        (#333) background (vendor package ships no custom theme CSS for
                        data-theme="tiptap-editor-bubble", so it falls back to Tippy default dark
                        theme) — the toolbar dark icon color above is invisible there, so give this
                        context its own light icon color instead of reusing the toolbar one. */
-                    .tippy-box[data-theme="tiptap-editor-bubble"] .tiptap-tool{color:#f1f5f9!important}
-                    .tippy-box[data-theme="tiptap-editor-bubble"] .tiptap-tool:hover{background:rgba(255,255,255,.15)!important;color:#fff!important}
-                    .tiptap-toolbar-left>.border-l{height:18px!important;margin:0 4px!important;border-color:rgba(0,0,0,.1)!important}
-                    .tiptap-prosemirror-wrapper{max-height:none!important}
-                    .ProseMirror{padding:16px 20px!important;font-size:15px!important;line-height:1.75!important;color:#1e293b!important;outline:none!important}
-                    .ProseMirror h1{font-size:1.875rem;font-weight:700;margin:1.5rem 0 .6rem;color:#0f172a;line-height:1.25}
-                    .ProseMirror h2{font-size:1.5rem;font-weight:700;margin:1.25rem 0 .5rem;color:#0f172a;line-height:1.3}
-                    .ProseMirror h3{font-size:1.25rem;font-weight:600;margin:1rem 0 .4rem;color:#0f172a}
-                    .ProseMirror p{margin-bottom:.85rem}
-                    .ProseMirror ul,.ProseMirror ol{padding-left:1.5rem;margin-bottom:.85rem}
-                    .ProseMirror blockquote{border-left:3px solid #df8448!important;padding:.6rem 1rem;margin:1.25rem 0;background:#fff7f0;border-radius:0 6px 6px 0;color:#6b7280;font-style:italic}
-                    .ProseMirror code{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:.15em .45em;font-size:.875em;color:#be123c}
-                    .ProseMirror pre{background:#1e293b;color:#e2e8f0;border-radius:10px;padding:1rem 1.25rem;overflow-x:auto;margin:1.25rem 0;font-size:.875rem;line-height:1.6}
-                    .ProseMirror pre code{background:transparent;border:none;color:inherit;padding:0}
-                    .ProseMirror hr{border:none;border-top:1px solid #e2e8f0;margin:1.5rem 0}
-                    .ProseMirror a{color:#df8448;text-decoration:underline;text-underline-offset:3px}
-                    .ProseMirror table{width:100%;border-collapse:collapse;margin:1rem 0}
-                    .ProseMirror th,.ProseMirror td{border:1px solid #e2e8f0;padding:.5rem .75rem;text-align:left}
-                    .ProseMirror th{background:#f8fafc;font-weight:600;color:#0f172a}
+                    .tippy-box[data-theme="tiptap-editor-bubble"] .tiptap-tool {
+                        color: #f1f5f9 !important;
+                    }
+                    .tippy-box[data-theme="tiptap-editor-bubble"] .tiptap-tool:hover {
+                        background: rgba(255,255,255,.15) !important;
+                        color: #fff !important;
+                    }
+                    .tiptap-toolbar-left>.border-l {
+                        height: 18px !important;
+                        margin: 0 4px !important;
+                        border-color: rgba(0,0,0,.1) !important;
+                    }
+                    .tiptap-prosemirror-wrapper {
+                        max-height: none !important;
+                    }
+                    .ProseMirror {
+                        padding: 16px 20px !important;
+                        font-size: 15px !important;
+                        line-height: 1.75 !important;
+                        color: #1e293b !important;
+                        outline: none !important;
+                    }
+                    .ProseMirror h1 {
+                        font-size: 1.875rem;
+                        font-weight: 700;
+                        margin: 1.5rem 0 .6rem;
+                        color: #0f172a;
+                        line-height: 1.25;
+                    }
+                    .ProseMirror h2 {
+                        font-size: 1.5rem;
+                        font-weight: 700;
+                        margin: 1.25rem 0 .5rem;
+                        color: #0f172a;
+                        line-height: 1.3;
+                    }
+                    .ProseMirror h3 {
+                        font-size: 1.25rem;
+                        font-weight: 600;
+                        margin: 1rem 0 .4rem;
+                        color: #0f172a;
+                    }
+                    .ProseMirror p {
+                        margin-bottom: .85rem;
+                    }
+                    .ProseMirror ul,
+                    .ProseMirror ol {
+                        padding-left: 1.5rem;
+                        margin-bottom: .85rem;
+                    }
+                    .ProseMirror blockquote {
+                        border-left: 3px solid #df8448 !important;
+                        padding: .6rem 1rem;
+                        margin: 1.25rem 0;
+                        background: #fff7f0;
+                        border-radius: 0 6px 6px 0;
+                        color: #6b7280;
+                        font-style: italic;
+                    }
+                    .ProseMirror code {
+                        background: #f1f5f9;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 4px;
+                        padding: .15em .45em;
+                        font-size: .875em;
+                        color: #be123c;
+                    }
+                    .ProseMirror pre {
+                        background: #1e293b;
+                        color: #e2e8f0;
+                        border-radius: 10px;
+                        padding: 1rem 1.25rem;
+                        overflow-x: auto;
+                        margin: 1.25rem 0;
+                        font-size: .875rem;
+                        line-height: 1.6;
+                    }
+                    .ProseMirror pre code {
+                        background: transparent;
+                        border: none;
+                        color: inherit;
+                        padding: 0;
+                    }
+                    .ProseMirror hr {
+                        border: none;
+                        border-top: 1px solid #e2e8f0;
+                        margin: 1.5rem 0;
+                    }
+                    .ProseMirror a {
+                        color: #df8448;
+                        text-decoration: underline;
+                        text-underline-offset: 3px;
+                    }
+                    .ProseMirror table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 1rem 0;
+                    }
+                    .ProseMirror th,
+                    .ProseMirror td {
+                        border: 1px solid #e2e8f0;
+                        padding: .5rem .75rem;
+                        text-align: left;
+                    }
+                    .ProseMirror th {
+                        background: #f8fafc;
+                        font-weight: 600;
+                        color: #0f172a;
+                    }
                     </style>
                     <script>
                     (function(){
@@ -414,6 +679,50 @@ class AdminPanelProvider extends PanelProvider
                                 mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
                             });
                         }
+
+                        document.addEventListener("alpine:init", function(){
+                            var register = window.Alpine.data.bind(window.Alpine);
+
+                            window.Alpine.data = function(name, factory){
+                                if (name !== "tiptap") return register(name, factory);
+
+                                return register(name, function(){
+                                    var component = factory.apply(this, arguments);
+                                    var insertSource = component.insertSource;
+
+                                    component.updateEditorContent = function(content){
+                                        var editor = this.editor();
+                                        if (!editor || !editor.isEditable) return;
+
+                                        var selection = editor.state.selection;
+                                        var shouldFocus = this.ppForceFocus === true || editor.isFocused;
+
+                                        editor.commands.setContent(content, true);
+
+                                        var chain = editor.chain();
+                                        if (shouldFocus) chain = chain.focus();
+                                        chain.setTextSelection({ from: selection.from, to: selection.to }).run();
+                                    };
+
+                                    component.insertSource = function(event){
+                                        this.ppForceFocus = true;
+                                        try { insertSource.call(this, event); }
+                                        finally { this.ppForceFocus = false; }
+                                    };
+
+                                    component.refreshEditorContent = function(){
+                                        var self = this;
+                                        this.$nextTick(function(){
+                                            self.ppForceFocus = true;
+                                            try { self.updateEditorContent(self.state); }
+                                            finally { self.ppForceFocus = false; }
+                                        });
+                                    };
+
+                                    return component;
+                                });
+                            };
+                        });
                     })();
                     </script>',
             )
@@ -425,10 +734,34 @@ class AdminPanelProvider extends PanelProvider
 
                     return '
                     <style>
-                    .pp-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#fff;border:1px solid #eaecf0;border-radius:14px;padding:14px 22px;margin:18px 24px 14px;box-shadow:0 1px 4px rgba(0,0,0,.05);flex-wrap:wrap;}
+                    .pp-banner {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 16px;
+                        background: #fff;
+                        border: 1px solid #eaecf0;
+                        border-radius: 14px;
+                        padding: 14px 22px;
+                        margin: 18px 24px 14px;
+                        box-shadow: 0 1px 4px rgba(0,0,0,.05);
+                        flex-wrap: wrap;
+                    }
                     .pp-banner-title{font-size:18px;font-weight:650;color:#0f172a;letter-spacing:0.01em;line-height:1.25;}
                     .pp-banner-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;}
-                    .pp-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 14px;border-radius:9px;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;transition:background .15s,transform .15s;}
+                    .pp-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 7px;
+                        padding: 9px 14px;
+                        border-radius: 9px;
+                        font-size: 13px;
+                        font-weight: 600;
+                        text-decoration: none;
+                        white-space: nowrap;
+                        transition: background .15s,transform .15s;
+                    }
                     .pp-btn-primary{background:#df8448;color:#fff;box-shadow:0 2px 8px rgba(223,132,72,.3);}
                     .pp-btn-secondary{background:#f8fafc;color:#374151;border:1.5px solid #e2e8f0;}
                     @media(min-width:640px){
@@ -442,29 +775,64 @@ class AdminPanelProvider extends PanelProvider
                                 '.__('admin.dashboard.welcome', ['name' => '<span style="color:#df8448;">'.e($name).'</span>']).'
                             </div>
                             <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-                                <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 6px rgba(52,211,153,.65);animation:pp-pulse 2s infinite;flex-shrink:0"></span>
+                                <span
+                                    style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 6px rgba(52,211,153,.65);animation:pp-pulse 2s infinite;flex-shrink:0"
+                                ></span>
                                 <span style="font-size:12px;font-weight:500;color:#94a3b8;">'.$date.'</span>
                             </div>
                         </div>
                         <div class="pp-banner-actions">
                             <a href="/admin/products?mountedActions[0]=create" class="pp-btn pp-btn-primary"
                                onmouseover="this.style.background=\'#c9713a\'" onmouseout="this.style.background=\'#df8448\'">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 5v14M5 12h14"/></svg>
+                                <svg
+                                    width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2.5"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    style="flex-shrink:0"
+                                >
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
                                 '.__('admin.dashboard.actions.new_product').'
                             </a>
                             <a href="/admin/orders" class="pp-btn pp-btn-secondary"
                                onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#f8fafc\'">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                                <svg
+                                    width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2.5"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    style="flex-shrink:0;opacity:.7"
+                                >
+                                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                                    <path d="M3 6h18"/>
+                                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                                </svg>
                                 '.__('admin.dashboard.actions.orders').'
                             </a>
                             <a href="/admin/customers" class="pp-btn pp-btn-secondary"
                                onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#f8fafc\'">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                <svg
+                                    width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2.5"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    style="flex-shrink:0;opacity:.7"
+                                >
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                                </svg>
                                 '.__('admin.dashboard.actions.customers').'
                             </a>
                             <a href="/admin/discounts" class="pp-btn pp-btn-secondary"
                                onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'#f8fafc\'">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7"><circle cx="12" cy="12" r="10"/><path d="M14.5 9.5 9.5 14.5M9.5 9.5h.01M14.5 14.5h.01"/></svg>
+                                <svg
+                                    width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2.5"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    style="flex-shrink:0;opacity:.7"
+                                >
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M14.5 9.5 9.5 14.5M9.5 9.5h.01M14.5 14.5h.01"/>
+                                </svg>
                                 '.__('admin.dashboard.actions.discounts').'
                             </a>
                         </div>

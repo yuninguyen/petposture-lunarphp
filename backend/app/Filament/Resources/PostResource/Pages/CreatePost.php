@@ -32,8 +32,7 @@ class CreatePost extends CreateRecord
     {
         return parent::getCreateFormAction()
             ->label(fn () => ($this->data['status'] ?? 'draft') === 'published' ? __('Publish') : __('Save Draft'))
-            ->icon(fn () => ($this->data['status'] ?? 'draft') === 'published' ? 'heroicon-o-paper-airplane' : 'heroicon-o-document')
-            ->extraAttributes(['onclick' => "localStorage.removeItem('petposture-draft:' + window.location.pathname)"]);
+            ->icon(fn () => ($this->data['status'] ?? 'draft') === 'published' ? 'heroicon-o-paper-airplane' : 'heroicon-o-document');
     }
 
     protected function getHeaderActions(): array
@@ -42,8 +41,7 @@ class CreatePost extends CreateRecord
             Action::make('save')
                 ->label(fn () => ($this->data['status'] ?? 'draft') === 'published' ? __('Publish') : __('Save Draft'))
                 ->icon(fn () => ($this->data['status'] ?? 'draft') === 'published' ? 'heroicon-o-paper-airplane' : 'heroicon-o-document')
-                ->action(fn () => $this->create())
-                ->extraAttributes(['onclick' => "localStorage.removeItem('petposture-draft:' + window.location.pathname)"]),
+                ->action(fn () => $this->create()),
         ];
     }
 
