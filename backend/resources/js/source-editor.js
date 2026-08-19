@@ -34,7 +34,12 @@ function attach(textarea) {
 
     cm.setSize('100%', '60vh');
 
-    cm.on('change', () => {
+    // Sync on blur only (not on every keystroke/`change`) -- Livewire's wire:model
+    // on this textarea round-trips over the network on each dispatched input event,
+    // and re-syncing on every CodeMirror change (including its own initial setValue)
+    // caused the modal to re-render, re-attach a fresh CodeMirror, and loop forever.
+    // A blur reliably fires before the Submit button's click handler runs.
+    cm.on('blur', () => {
         textarea.value = cm.getValue();
         textarea.dispatchEvent(new Event('input', { bubbles: true }));
     });
