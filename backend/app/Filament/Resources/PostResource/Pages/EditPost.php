@@ -89,8 +89,7 @@ class EditPost extends EditRecord
             Actions\Action::make('headerSave')
                 ->label(fn () => ($this->data['status'] ?? 'draft') === 'published' ? __('Update & Publish') : __('Save Draft'))
                 ->icon(fn () => ($this->data['status'] ?? 'draft') === 'published' ? 'heroicon-o-paper-airplane' : 'heroicon-o-document')
-                ->action(fn () => $this->save())
-                ->extraAttributes(['onclick' => "localStorage.removeItem('petposture-draft:' + window.location.pathname)"]),
+                ->action(fn () => $this->save()),
             Actions\DeleteAction::make(),
         ];
     }
@@ -107,7 +106,6 @@ class EditPost extends EditRecord
     protected function getSaveFormAction(): Actions\Action
     {
         return parent::getSaveFormAction()
-            ->label(fn () => ($this->data['status'] ?? 'draft') === 'published' ? __('Update & Publish') : __('Save Draft'))
-            ->extraAttributes(['onclick' => "localStorage.removeItem('petposture-draft:' + window.location.pathname)"]);
+            ->label(fn () => ($this->data['status'] ?? 'draft') === 'published' ? __('Update & Publish') : __('Save Draft'));
     }
 }

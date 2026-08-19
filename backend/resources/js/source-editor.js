@@ -51,3 +51,19 @@ document.addEventListener(
     },
     true,
 );
+
+// Clear the local autosave-draft snapshot on Save Draft / Update & Publish.
+// This used to be an inline onclick="localStorage.removeItem('...')" built
+// from a PHP string; Filament's HTML-escaping of the single quotes produced
+// a literal "&#039;" in the attribute value, which the browser then tried to
+// parse as JS and threw "Uncaught SyntaxError: Unexpected token '&'" --
+// silently breaking the click before Livewire's own handler ever ran.
+document.addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (!button) return;
+
+    const label = button.textContent.trim();
+    if (label !== 'Save Draft' && label !== 'Update & Publish') return;
+
+    localStorage.removeItem('petposture-draft:' + window.location.pathname);
+});
