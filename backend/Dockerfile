@@ -1,3 +1,10 @@
+FROM node:20-alpine AS assets
+WORKDIR /app
+COPY package.json package-lock.json vite.config.js ./
+RUN npm ci
+COPY resources ./resources
+RUN npm run build
+
 FROM dunglas/frankenphp:1.2-php8.3-alpine
 
 # Install system dependencies & PHP extensions
@@ -38,6 +45,9 @@ WORKDIR /app
 
 # Copy application code
 COPY . .
+
+# Bring in the Vite-built admin assets (Filament theme, source-code editor JS)
+COPY --from=assets /app/public/build ./public/build
 
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader --no-scripts
