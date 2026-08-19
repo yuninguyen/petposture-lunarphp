@@ -12,11 +12,6 @@ class EditPost extends EditRecord
 {
     protected static string $resource = PostResource::class;
 
-    protected function getRedirectUrl(): string
-    {
-        return $this->getResource()::getUrl('index');
-    }
-
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data['read_time'] = Post::estimateReadTime($data['content'] ?? '');
