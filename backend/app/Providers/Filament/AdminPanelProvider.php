@@ -472,6 +472,11 @@ class AdminPanelProvider extends PanelProvider
                 },
                 scopes: [Dashboard::class],
             )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => \Illuminate\Support\Facades\Blade::render("@vite(['resources/js/source-editor.js'])")
+                    .'<style>.source-code-mirror{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}.source-code-mirror .CodeMirror{height:60vh;font-size:13px}</style>',
+            )
             // ->discoverWidgets(in: app_path('Filament\\Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 SiteOverviewStatsWidget::class,
