@@ -91,6 +91,7 @@ class PostResource extends Resource
                     ->profile('blog')
                     ->output(\FilamentTiptapEditor\Enums\TiptapOutput::Html)
                     ->columnSpanFull()
+                    ->disableBubbleMenus()
                     ->extraInputAttributes(['style' => 'min-height: 480px']),
             ]);
     }
