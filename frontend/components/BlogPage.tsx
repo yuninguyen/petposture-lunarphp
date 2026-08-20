@@ -150,9 +150,9 @@ export default function BlogPage() {
             ? posts
             : posts.filter((post) => post.blog_category?.name === activeTab);
 
-    const featuredPost = posts.length > 0 ? posts[0] : null;
+    const featuredPost = filteredPosts.length > 0 ? filteredPosts[0] : null;
     const latestPosts =
-        posts.length > 1 && featuredPost
+        filteredPosts.length > 1 && featuredPost
             ? filteredPosts.filter((post) => post.id !== featuredPost.id)
             : filteredPosts;
 

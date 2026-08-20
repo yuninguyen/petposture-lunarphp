@@ -1,6 +1,6 @@
 # PetPosture
 
-An e-commerce platform for pet posture products, built as a monorepo with Next.js (frontend) and Laravel + Lunar PHP (backend).
+A breed-focused pet product recommendation platform, built as a monorepo with Next.js (frontend) and Laravel + Lunar PHP (backend).
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?logo=laravel&logoColor=white)
@@ -11,6 +11,14 @@ An e-commerce platform for pet posture products, built as a monorepo with Next.j
 
 **Live site:** https://petposture.com  
 **Admin panel:** https://api.petposture.com/admin
+
+---
+
+## Product Direction
+
+PetPosture is a **breed-focused product recommendation brand**: *better products for the way your dog is built.* Discovery runs Breed → Everyday Challenge → Solution ("Feeding"/"Comfort"/"Mobility"/"Walking" — never "Need") → Product Type → Product. Every Breed and Solution has two parallel routes — an editorial hub (`/dogs/{breed}`, `/solutions/{slug}`) for discovery/comparison content, and a commerce collection (`/shop/breeds/{breed}`, `/shop/solutions/{slug}`) for browsing/buying — with deliberately non-duplicated copy between the two. No unsupported medical/clinical claims anywhere in customer-facing copy (no "vet-approved," "clinically proven," "prevents injury," or "posture" used as an outcome claim — the brand name itself is exempt).
+
+**Full spec, taxonomy, claim-safety wordlist, and content-cluster process**: [`docs/PETPOSTURE-BLUEPRINT-V5.md`](docs/PETPOSTURE-BLUEPRINT-V5.md). Read it before adding a new route, label, or piece of blog content — this README stays deployment-focused.
 
 ---
 
