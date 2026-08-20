@@ -879,7 +879,8 @@ class AdminPanelProvider extends PanelProvider
             ->plugins([
                 FilamentShieldPlugin::make(),
                 FilamentApexChartsPlugin::make(),
-                CuratorPlugin::make(),
+                CuratorPlugin::make()
+                    ->resource(\App\Filament\Resources\CuratorMediaResource::class),
             ])
             ->profile(isSimple: false)
             ->sidebarWidth('16rem')

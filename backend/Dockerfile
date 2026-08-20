@@ -66,6 +66,7 @@ RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint.sh && \
     echo 'set -e' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'echo "Running migrations..."' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'php artisan migrate --force || echo "Migration failed, but continuing..."' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'php artisan filament:assets' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'php artisan config:cache' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'php artisan route:cache' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'php artisan view:cache' >> /usr/local/bin/docker-entrypoint.sh && \
