@@ -25,6 +25,7 @@ class PostResource extends JsonResource
             'type' => $this->type,
             'featured_image' => $featuredImage,
             'featured_image_alt' => $this->featured_image_alt,
+            'featured_media_id' => $this->featured_media_id ? (string) $this->featured_media_id : null,
             'author' => $this->author,
             'read_time' => $this->read_time,
             'status' => $this->status,
