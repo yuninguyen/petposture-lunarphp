@@ -4,6 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { AppShell } from '@/layouts/AppShell';
 import { LoginPage } from '@/features/auth/LoginPage';
+import { PostsListPage } from '@/features/posts/PostsListPage';
 import { AdminUser, fetchCurrentUser, getToken, isAdminRole } from '@/lib/auth';
 
 export default function App() {
@@ -33,7 +34,7 @@ export default function App() {
         <AppShell userName={user.name}>
           <Routes>
             <Route path="/" element={<Navigate to="/posts" replace />} />
-            <Route path="/posts" element={<div>Posts list — Task 7</div>} />
+            <Route path="/posts" element={<PostsListPage />} />
             <Route path="/posts/new" element={<div>Post form — Task 8</div>} />
             <Route path="/posts/:id" element={<div>Post form — Task 8</div>} />
           </Routes>
