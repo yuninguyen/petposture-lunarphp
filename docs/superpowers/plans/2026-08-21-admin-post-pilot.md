@@ -718,6 +718,8 @@ git commit -m "feat(admin): scaffold Vite/React app with brand-token Tailwind an
 ### Task 5: API client + auth (login, token storage, session check)
 
 **Files:**
+- Create: `admin/vitest.config.ts`
+- Modify: `admin/package.json` (add `jsdom` devDependency)
 - Create: `admin/src/lib/api.ts`
 - Create: `admin/src/lib/auth.ts`
 - Create: `admin/src/lib/auth.test.ts`
@@ -726,6 +728,31 @@ git commit -m "feat(admin): scaffold Vite/React app with brand-token Tailwind an
 **Interfaces:**
 - Consumes: nothing from earlier tasks except `Input`/`Button` (Task 4).
 - Produces: `fetchApi(endpoint: string, options?: FetchApiOptions): Promise<Response>`, `getToken(): string | null`, `setToken(token: string | null): void`, `login(email: string, password: string): Promise<{ user: AdminUser; token: string }>` — later tasks (AppShell, Post pages) import `fetchApi` and `getToken`/`setToken` from `@/lib/auth` and `@/lib/api`. `AdminUser` type: `{ id: string; name: string; email: string; roles: string[] }`.
+
+- [ ] **Step 0: Add a jsdom test environment before writing any test**
+
+The tests in this task use `localStorage`, which does not exist in Vitest's default `node` environment — only in a browser or a simulated DOM like `jsdom`. Without this step, Step 2 (verify the test fails) would fail for the wrong reason (`localStorage is not defined`) rather than the real reason (module doesn't exist yet).
+
+Create `admin/vitest.config.ts`:
+
+```typescript
+import { defineConfig, mergeConfig } from 'vitest/config';
+import viteConfig from './vite.config';
+
+export default mergeConfig(
+  viteConfig,
+  defineConfig({
+    test: {
+      environment: 'jsdom',
+      globals: true,
+    },
+  })
+);
+```
+
+Add `"jsdom": "^25.0.0"` to `admin/package.json`'s `devDependencies`, then run `cd admin && npm install`.
+
+(Task 9 will add `.gitignore` and `README.md` later — this file does not need to be created again there.)
 
 - [ ] **Step 1: Write the failing test for token storage**
 
@@ -929,7 +956,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
 - [ ] **Step 7: Commit**
 
 ```bash
-git add admin/src/lib/api.ts admin/src/lib/auth.ts admin/src/lib/auth.test.ts admin/src/features/auth/LoginPage.tsx
+git add admin/vitest.config.ts admin/package.json admin/package-lock.json admin/src/lib/api.ts admin/src/lib/auth.ts admin/src/lib/auth.test.ts admin/src/features/auth/LoginPage.tsx
 git commit -m "feat(admin): add API client, token-based auth, and login page"
 ```
 
@@ -1586,33 +1613,15 @@ git commit -m "feat(admin): add post create/edit form with TipTap editor and ima
 
 ---
 
-### Task 9: Vitest config, .gitignore, and README
+### Task 9: .gitignore and README
 
 **Files:**
-- Create: `admin/vitest.config.ts`
 - Create: `admin/.gitignore`
 - Create: `admin/README.md`
 
 **Interfaces:** None — project hygiene only.
 
-- [ ] **Step 1: Create `admin/vitest.config.ts`**
-
-```typescript
-import { defineConfig, mergeConfig } from 'vitest/config';
-import viteConfig from './vite.config';
-
-export default mergeConfig(
-  viteConfig,
-  defineConfig({
-    test: {
-      environment: 'jsdom',
-      globals: true,
-    },
-  })
-);
-```
-
-Also add `"jsdom": "^25.0.0"` to `admin/package.json`'s `devDependencies` and run `cd admin && npm install`.
+Note: `admin/vitest.config.ts` and the `jsdom` devDependency were already added in Task 5 (Step 0), because Task 5's tests needed a DOM environment for `localStorage` — nothing to do here for that.
 
 - [ ] **Step 2: Create `admin/.gitignore`**
 
@@ -1654,6 +1663,6 @@ Expected: PASS — all Vitest tests from Tasks 5 and 8 pass together.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add admin/vitest.config.ts admin/.gitignore admin/README.md admin/package.json admin/package-lock.json
+git add admin/.gitignore admin/README.md
 git commit -m "chore(admin): add vitest config, gitignore, and README"
 ```
