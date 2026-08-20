@@ -8,6 +8,7 @@ use App\Models\Post;
 use App\Models\User;
 use App\Services\AiSeoGeneratorService;
 use App\Support\ImageUploadResizer;
+use Awcodes\Curator\Components\Forms\CuratorPicker;
 use FilamentTiptapEditor\TiptapEditor;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -168,11 +169,9 @@ class PostResource extends Resource
                             ->unique('blog_tags', 'slug'),
                     ]),
 
-                Forms\Components\FileUpload::make('featured_image')
+                CuratorPicker::make('featured_media_id')
                     ->label(__('Featured Image'))
-                    ->image()
-                    ->directory('blog')
-                    ->saveUploadedFileUsing(ImageUploadResizer::make(1600, 1600)),
+                    ->helperText(__('Pick a previously uploaded image or upload a new one.')),
 
                 Forms\Components\TextInput::make('featured_image_alt')
                     ->label(__('Image Alt Text'))

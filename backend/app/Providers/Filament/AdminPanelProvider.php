@@ -17,6 +17,7 @@ use App\Filament\Widgets\TopClickedPostsWidget;
 use App\Filament\Widgets\TopProductsWidget;
 use App\Http\Middleware\SetLocale;
 use App\Models\Setting;
+use Awcodes\Curator\CuratorPlugin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -878,6 +879,7 @@ class AdminPanelProvider extends PanelProvider
             ->plugins([
                 FilamentShieldPlugin::make(),
                 FilamentApexChartsPlugin::make(),
+                CuratorPlugin::make(),
             ])
             ->profile(isSimple: false)
             ->sidebarWidth('16rem')

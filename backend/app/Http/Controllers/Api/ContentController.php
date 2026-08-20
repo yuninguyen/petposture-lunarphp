@@ -18,7 +18,7 @@ class ContentController extends Controller
     {
         $query = Post::where('status', 'published')
             ->where('published_at', '<=', now())
-            ->with(['blogCategory', 'metadata', 'tags', 'seo']);
+            ->with(['blogCategory', 'metadata', 'tags', 'seo', 'featuredMedia']);
 
         if ($request->filled('q')) {
             $term = '%'.strtolower($request->input('q')).'%';
@@ -40,7 +40,7 @@ class ContentController extends Controller
             $query->where('status', 'published');
         }
 
-        $post = $query->with(['blogCategory', 'metadata', 'tags', 'seo'])->firstOrFail();
+        $post = $query->with(['blogCategory', 'metadata', 'tags', 'seo', 'featuredMedia'])->firstOrFail();
 
         return new PostResource($post);
     }

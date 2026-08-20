@@ -25,6 +25,7 @@ class Post extends Model
         'content',
         'featured_image',
         'featured_image_alt',
+        'featured_media_id',
         'author',
         'read_time',
         'status',
@@ -38,6 +39,11 @@ class Post extends Model
     public function blogCategory()
     {
         return $this->belongsTo(BlogCategory::class, 'blog_category_id');
+    }
+
+    public function featuredMedia()
+    {
+        return $this->belongsTo(CuratorMedia::class, 'featured_media_id');
     }
 
     public function clicks()

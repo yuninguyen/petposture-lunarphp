@@ -23,7 +23,7 @@ class PostController extends Controller
     {
         $this->authorizeAdmin();
 
-        $query = Post::with(['blogCategory', 'metadata', 'tags', 'seo'])->latest();
+        $query = Post::with(['blogCategory', 'metadata', 'tags', 'seo', 'featuredMedia'])->latest();
 
         if ($request->has('category')) {
             $query->whereHas('blogCategory', function ($q) use ($request) {

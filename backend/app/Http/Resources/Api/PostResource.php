@@ -12,7 +12,10 @@ class PostResource extends JsonResource
     public function toArray(Request $request): array
     {
         $blogCategory = $this->blogCategory;
-        $featuredImage = $this->resolveAssetUrl($this->featured_image);
+        // Prefer the new Curator-managed image (lets an editor re-pick a
+        // previously uploaded file); fall back to the legacy plain-string
+        // path for posts created before this field existed.
+        $featuredImage = $this->featuredMedia?->url ?? $this->resolveAssetUrl($this->featured_image);
 
         return [
             'id' => (string) $this->id,

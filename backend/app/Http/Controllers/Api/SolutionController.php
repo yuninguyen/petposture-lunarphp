@@ -49,7 +49,7 @@ class SolutionController extends Controller
         $posts = $solution->posts()
             ->where('status', 'published')
             ->where('published_at', '<=', now())
-            ->with(['blogCategory', 'metadata', 'seo'])
+            ->with(['blogCategory', 'metadata', 'seo', 'featuredMedia'])
             ->latest('published_at')
             ->get();
 
