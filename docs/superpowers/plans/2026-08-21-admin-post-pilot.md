@@ -1478,6 +1478,7 @@ export function PostFormPage() {
     handleSubmit,
     control,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<PostFormValues>({
     resolver: zodResolver(postFormSchema),
@@ -1487,6 +1488,9 @@ export function PostFormPage() {
   const editor = useEditor({
     extensions: [StarterKit],
     content: '',
+    onUpdate: ({ editor }) => {
+      setValue('content', editor.getHTML(), { shouldValidate: true });
+    },
   });
 
   useEffect(() => {
@@ -1540,6 +1544,7 @@ export function PostFormPage() {
             <div className="border border-gray-300 rounded-lg p-3 min-h-[200px]">
               <EditorContent editor={editor} />
             </div>
+            {errors.content && <p className="text-xs text-red-600 mt-1">{errors.content.message}</p>}
           </Card>
         </div>
 
