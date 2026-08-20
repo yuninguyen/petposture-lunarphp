@@ -1,9 +1,9 @@
 <?php
 
+use App\Filament\Resources\CuratorMediaResource;
 use App\Models\CuratorMedia;
 use Awcodes\Curator\Curations\ThumbnailPreset;
 use Awcodes\Curator\Glide\DefaultServerFactory;
-use Awcodes\Curator\Resources\MediaResource;
 
 return [
     'accepted_file_types' => [
@@ -58,7 +58,7 @@ return [
         'navigation_icon' => 'heroicon-o-photo',
         'navigation_sort' => null,
         'navigation_count_badge' => false,
-        'resource' => MediaResource::class,
+        'resource' => CuratorMediaResource::class,
     ],
     'should_preserve_filenames' => false,
     // The app already has its own Media/File Manager Resource (Spatie-backed,
