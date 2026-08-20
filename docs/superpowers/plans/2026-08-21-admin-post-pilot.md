@@ -231,8 +231,8 @@ git commit -m "feat(admin-api): add media upload and list endpoints"
 - Test: `backend/tests/Feature/Api/Admin/PostControllerMediaTest.php`
 
 **Interfaces:**
-- Consumes: `CuratorMedia` model (Task 1), `PostResource` (already reads `featuredMedia` — no change needed there).
-- Produces: `POST /api/admin/posts` and `PUT/PATCH /api/admin/posts/{post}` now also accept `featured_media_id: string|null` in the body; `featured_image` (plain string) remains supported as before, unchanged.
+- Consumes: `CuratorMedia` model (Task 1).
+- Produces: `POST /api/admin/posts` and `PUT/PATCH /api/admin/posts/{post}` now also accept `featured_media_id: string|null` in the body; `featured_image` (plain string) remains supported as before, unchanged. `PostResource` (used by both list and show responses) now also returns `featured_media_id: string|null` — later tasks (frontend `PostFormPage`, Task 8) rely on this exact field name to restore the selected image when editing.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -302,6 +302,24 @@ class PostControllerMediaTest extends TestCase
 
         $this->assertSame($media->id, $post->fresh()->featured_media_id);
     }
+
+    public function test_show_response_includes_featured_media_id(): void
+    {
+        $category = BlogCategory::factory()->create();
+        $media = CuratorMedia::create([
+            'disk' => 'public', 'directory' => 'media', 'visibility' => 'public',
+            'name' => 'photo.jpg', 'path' => 'media/photo.jpg', 'type' => 'image', 'ext' => 'jpg',
+        ]);
+        $post = Post::create([
+            'blog_category_id' => $category->id,
+            'title' => 'Existing', 'slug' => 'existing', 'content' => '<p>x</p>', 'status' => 'draft',
+            'featured_media_id' => $media->id,
+        ]);
+
+        $this->getJson("/api/admin/posts/{$post->id}")
+            ->assertOk()
+            ->assertJsonPath('data.featured_media_id', (string) $media->id);
+    }
 }
 ```
 
@@ -322,21 +340,31 @@ In `backend/app/Http/Controllers/Api/PostController.php`, in both `store()` and 
 
 (In `store()` it's `'nullable|exists:curator_media,id'`; in `update()` use the same rule string — both are already optional fields, no `sometimes|required` needed since it's nullable.)
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [ ] **Step 4: Add `featured_media_id` to `PostResource`'s output**
+
+In `backend/app/Http/Resources/Api/PostResource.php`, in `toArray()`, add one line right after the existing `'featured_image_alt' => $this->featured_image_alt,` line:
+
+```php
+            'featured_media_id' => $this->featured_media_id ? (string) $this->featured_media_id : null,
+```
+
+This is required so the admin frontend can tell which media item is currently selected when editing a post (the existing `featured_image` field only carries a resolved URL, not the underlying id).
+
+- [ ] **Step 5: Run the tests to verify they pass**
 
 Run: `cd backend && php artisan test tests/Feature/Api/Admin/PostControllerMediaTest.php`
-Expected: PASS (2 tests)
+Expected: PASS (3 tests)
 
-- [ ] **Step 5: Run the full existing Post test suite to check for regressions**
+- [ ] **Step 6: Run the full existing Post test suite to check for regressions**
 
 Run: `cd backend && php artisan test --filter=Post`
 Expected: PASS — no existing Post-related test should break.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add backend/app/Http/Controllers/Api/PostController.php backend/tests/Feature/Api/Admin/PostControllerMediaTest.php
-git commit -m "feat(admin-api): accept featured_media_id when creating/updating posts"
+git add backend/app/Http/Controllers/Api/PostController.php backend/app/Http/Resources/Api/PostResource.php backend/tests/Feature/Api/Admin/PostControllerMediaTest.php
+git commit -m "feat(admin-api): accept and expose featured_media_id on posts"
 ```
 
 ---
@@ -1398,6 +1426,7 @@ interface PostDetail {
   status: 'draft' | 'published';
   blog_category: { id: string; name: string } | null;
   featured_image: string | null;
+  featured_media_id: string | null;
 }
 
 export function PostFormPage() {
@@ -1440,7 +1469,7 @@ export function PostFormPage() {
         content: existingPost.content,
         blog_category_id: existingPost.blog_category?.id ?? '',
         status: existingPost.status,
-        featured_media_id: null,
+        featured_media_id: existingPost.featured_media_id,
       });
       editor.commands.setContent(existingPost.content);
     }
@@ -1546,7 +1575,7 @@ Replace the two placeholder routes:
 
 - [ ] **Step 8: Manually verify end-to-end in the browser**
 
-Run: `cd backend && php artisan serve` in one terminal, `cd admin && npm run dev` in another. Log in, click "Bài viết mới", fill in title/content/category, upload a real image via "Tải ảnh lên", save. Expected: redirected to `/posts`, new post appears in the table with the uploaded image linked. Open it again via the title link — form should be pre-filled including the uploaded image. Stop both dev servers once confirmed.
+Run: `cd backend && php artisan serve` in one terminal, `cd admin && npm run dev` in another. Log in, click "Bài viết mới", fill in title/content/category, upload a real image via "Tải ảnh lên", save. Expected: redirected to `/posts`, new post appears in the table with the uploaded image linked. Open it again via the title link — form should be pre-filled including the uploaded image (the `MediaPicker` should show the existing image, not the empty "Chưa có ảnh" state). Save again **without** touching the image field, then reopen once more — the image must still be there (this specifically verifies the `featured_media_id` round-trip fix from Task 2 Step 4). Stop both dev servers once confirmed.
 
 - [ ] **Step 9: Commit**
 
