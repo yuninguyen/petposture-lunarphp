@@ -5,6 +5,7 @@ import { queryClient } from '@/lib/queryClient';
 import { AppShell } from '@/layouts/AppShell';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { PostsListPage } from '@/features/posts/PostsListPage';
+import { PostFormPage } from '@/features/posts/PostFormPage';
 import { AdminUser, fetchCurrentUser, getToken, isAdminRole } from '@/lib/auth';
 
 export default function App() {
@@ -35,8 +36,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/posts" replace />} />
             <Route path="/posts" element={<PostsListPage />} />
-            <Route path="/posts/new" element={<div>Post form — Task 8</div>} />
-            <Route path="/posts/:id" element={<div>Post form — Task 8</div>} />
+            <Route path="/posts/new" element={<PostFormPage />} />
+            <Route path="/posts/:id" element={<PostFormPage />} />
           </Routes>
         </AppShell>
       </BrowserRouter>
