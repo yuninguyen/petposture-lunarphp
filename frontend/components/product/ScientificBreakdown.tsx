@@ -20,18 +20,18 @@ export function ScientificBreakdown({ product }: ScientificBreakdownProps) {
     };
 
     const specs = [
-        { icon: <Beaker size={24} />, title: "BIOMETRIC FIT", desc: "Digital mapping ensures zero pressure points on joints." },
-        { icon: <Activity size={24} />, title: "VET-VALIDATED", desc: "Clinically tested to improve spinal alignment by 22%." },
-        { icon: <Heart size={24} />, title: "RECOVERY CORE", desc: "Materials chosen for optimal heat regulation and bloodflow." },
-        { icon: <Shield size={24} />, title: "DURA-HYGIENE", desc: "Anti-microbial surfaces for long-term respiratory safety." }
+        { icon: <Beaker size={24} />, title: "PRECISION FIT", desc: "Sized and shaped using real breed measurements to reduce awkward pressure points." },
+        { icon: <Activity size={24} />, title: "PRACTICAL RESEARCH", desc: "Reviewed for fit, sizing and everyday usability before we recommend it." },
+        { icon: <Heart size={24} />, title: "COMFORT MATERIALS", desc: "Materials chosen for everyday comfort and breathability." },
+        { icon: <Shield size={24} />, title: "EASY TO CLEAN", desc: "Surfaces built for easy wiping and everyday cleaning." }
     ];
 
     return (
         <section className="bg-primary py-24 px-4 md:px-8 relative overflow-hidden">
             <div className="max-w-[1200px] mx-auto relative z-10">
                 <div className="text-center mb-16 px-4">
-                    <h2 className="text-secondary text-xs font-black uppercase tracking-[0.18em] mb-4">Ergo-Care Science</h2>
-                    <h3 className="text-white text-[32px] md:text-[44px] font-bold leading-tight">THE BIOLOGY OF COMFORT</h3>
+                    <h2 className="text-secondary text-xs font-black uppercase tracking-[0.18em] mb-4">Product Design Details</h2>
+                    <h3 className="text-white text-[32px] md:text-[44px] font-bold leading-tight">BUILT FOR EVERYDAY FIT</h3>
                     <div className="w-12 h-1 bg-secondary mx-auto rounded-full mt-6"></div>
                 </div>
 

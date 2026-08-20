@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
         destination: '/sign-in',
         permanent: true,
       },
+      // Canonical breed slug is `english-bulldog` — old variants must 301,
+      // not 404, in case they were ever indexed or linked externally.
+      { source: '/dogs/bulldog', destination: '/dogs/english-bulldog', permanent: true },
+      { source: '/dogs/bulldogs', destination: '/dogs/english-bulldog', permanent: true },
+      { source: '/dogs/english-bulldogs', destination: '/dogs/english-bulldog', permanent: true },
+      { source: '/shop/breeds/bulldog', destination: '/shop/breeds/english-bulldog', permanent: true },
+      { source: '/shop/breeds/bulldogs', destination: '/shop/breeds/english-bulldog', permanent: true },
+      { source: '/shop/breeds/english-bulldogs', destination: '/shop/breeds/english-bulldog', permanent: true },
     ];
   },
   images: {

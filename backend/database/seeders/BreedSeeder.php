@@ -36,8 +36,8 @@ class BreedSeeder extends Seeder
                 'description' => 'Flat-faced dogs prone to overheating and feeding difficulty, benefiting from cooling and slow-feeding products.',
             ],
             [
-                'name' => 'Bulldog',
-                'slug' => 'bulldog',
+                'name' => 'English Bulldog',
+                'slug' => 'english-bulldog',
                 'body_type' => 'flat-faced',
                 'description' => 'Flat-faced, broad-chested dogs that do best with supportive bedding and feeding gear sized for their build.',
             ],

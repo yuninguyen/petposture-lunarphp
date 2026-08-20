@@ -29,18 +29,18 @@ export default function OurMissionPage() {
     const features = [
         {
             icon: Compass,
-            title: "Ergonomic-First Design",
-            desc: "Every product in our store is chosen because it solves a specific anatomical or postural challenge."
+            title: "Breed-Focused Selection",
+            desc: "Every product we recommend is chosen with a specific breed, body type or everyday use case in mind — not picked because it's trending."
         },
         {
             icon: ShieldCheck,
-            title: "Health & Safety Focus",
-            desc: "We consult with pet health professionals to ensure our solutions are safe, effective, and truly beneficial."
+            title: "Practical Research",
+            desc: "We look closely at fit, sizing, materials and everyday usability before recommending a product — not just what's popular."
         },
         {
             icon: Footprints,
             title: "A Community of Care",
-            desc: "We are more than a store. We are a resource for pet owners dedicated to giving their companions the best quality of life."
+            desc: "We're more than a store. We're a resource for dog owners looking for practical, breed-specific product guidance."
         }
     ];
 
@@ -83,7 +83,7 @@ export default function OurMissionPage() {
                         variants={fadeUp}
                     >
                         <h2 className="text-[24px] md:text-[36px] font-bold text-[#1A2B3C] uppercase tracking-[0.08em] leading-tight mb-4">
-                            The &quot;Standard&quot; Isn&apos;t Good Enough
+                            Not Every Product Fits Every Dog the Same Way
                         </h2>
                         <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
                     </motion.div>
@@ -94,13 +94,13 @@ export default function OurMissionPage() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             whileInView={{ opacity: 1, scale: 1 }}
                             viewport={{ once: true }}
-                            className="relative aspect-square md:aspect-[4/4] rounded-xl overflow-hidden shadow-2xl shadow-primary/10 bg-white"
+                            className="relative aspect-[4/3] md:aspect-[3/2] rounded-xl overflow-hidden shadow-2xl shadow-primary/10 bg-white"
                         >
                             <Image
-                                src="/assets/blog/badposture-goodposture.webp"
-                                alt="Standard vs PetPosture"
+                                src="/assets/blog/dog-ramp-furniture-access.webp"
+                                alt="Dachshund using a ramp to reach the sofa"
                                 fill
-                                className="object-contain p-4"
+                                className="object-cover"
                             />
                         </motion.div>
 
@@ -113,10 +113,10 @@ export default function OurMissionPage() {
                             <h3 className="text-[14px] font-bold uppercase tracking-[0.08em] text-rust mb-6">Our Origin Story</h3>
                             <h4 className="text-[24px] font-bold text-primary tracking-[0.02em] leading-tight mb-8">Why We Started PetPosture</h4>
                             <p className="text-[15px] md:text-[17px] text-[#333333] leading-relaxed mb-6 font-medium">
-                                We saw pets struggling with products not built for them. We saw flat-faced breeds like Pugs and Frenchies straining their necks and struggling to breathe at mealtimes.
+                                We noticed how many pet products are designed for a broad range of dogs, without much thought for how differently dogs are actually built. Flat-faced breeds like Pugs and French Bulldogs often have a harder time with standard bowls and feeding setups. Long-backed breeds like Dachshunds and Corgis often need extra consideration around furniture access and everyday movement.
                             </p>
                             <p className="text-[15px] md:text-[17px] text-[#333333] leading-relaxed mb-8 font-medium">
-                                We saw long-backed breeds like Dachshunds and Corgis risking serious spinal injury every time they jumped off the couch. <strong>We knew there had to be a better way to support their unique posture.</strong>
+                                We started PetPosture to make it easier for owners to find products that actually fit their dog&apos;s breed, body type and daily habits — instead of guessing from a generic catalog.
                             </p>
                         </motion.div>
                     </div>
@@ -138,9 +138,9 @@ export default function OurMissionPage() {
                         <div className="w-10 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
 
                         <blockquote className="text-[18px] md:text-[22px] text-[#333333] leading-[1.6] font-medium italic max-w-3xl mx-auto mb-2">
-                            &quot;Our mission is to improve the health and daily comfort of every pet by providing
-                            expertly designed, breed-specific ergonomic solutions. We believe that better posture
-                            leads to a longer, happier life.&quot;
+                            &quot;Our mission is to help dog owners make better product decisions by organizing
+                            recommendations around breed, body type and everyday use — so choosing the right
+                            product feels less like guesswork.&quot;
                         </blockquote>
                     </motion.div>
                 </div>
@@ -222,7 +222,7 @@ export default function OurMissionPage() {
                         <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
 
                         <p className="text-[15px] md:text-[18px] text-zinc-300 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-                            Help your pet live their most comfortable, healthy, and happy life.
+                            Explore products and guides organized around your dog&apos;s breed and everyday needs.
                         </p>
 
                         <Link

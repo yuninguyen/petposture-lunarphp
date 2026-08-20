@@ -216,7 +216,7 @@ export default function Footer() {
               isCustomContent={
                 <div className="pb-4 lg:pb-0 space-y-6">
                   <ShopLinkGroup heading="By Solution" items={shopBySolution} />
-                  <ShopLinkGroup heading="By Breed" items={shopByBreed} />
+                  <ShopLinkGroup heading="By Body Type" items={shopByBreed} />
                 </div>
               }
             />

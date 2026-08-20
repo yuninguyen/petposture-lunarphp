@@ -30,7 +30,7 @@ export default function ShopPage({
     allSolutions = [],
     heroEyebrow = 'PetPosture Shop',
     heroTitle = 'Ergonomic essentials, organized like a real catalog.',
-    heroDescription = "Shop ergonomic bowls, ramps, beds, and harnesses — engineered for your pet's posture and comfort.",
+    heroDescription = "Shop bowls, ramps, beds and harnesses chosen to fit your dog's breed, body type and everyday habits.",
 }: ShopPageProps) {
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
     const shopLogic = useShopLogic(initialProducts, initialBreed, initialSolution, initialSearch, allBreeds, allSolutions);

@@ -201,7 +201,7 @@ function ShopCategories() {
     { name: 'French Bulldog', slug: 'french-bulldog', img: '/assets/breeds/Breed-French-Bulldog.webp' },
     { name: 'Pug', slug: 'pug', img: '/assets/breeds/Breed-Pug.webp' },
     { name: 'Corgi', slug: 'corgi', img: '/assets/breeds/Breed-Corgi.webp' },
-    { name: 'English Bulldog', slug: 'bulldog', img: '/assets/breeds/Breed-English-Bulldog.webp' },
+    { name: 'English Bulldog', slug: 'english-bulldog', img: '/assets/breeds/Breed-English-Bulldog.webp' },
   ];
 
   const solutions = [
@@ -230,7 +230,7 @@ function ShopCategories() {
               </div>
               <div>
                 <h3 style={{ fontFamily: F.heading, fontSize: 20, fontWeight: 700, color: C.primary, margin: '0 0 4px' }}>
-                  Shop by Breed
+                  Explore by Breed
                 </h3>
                 <p style={{ fontFamily: F.body, fontSize: 14, color: C.grayText, margin: 0, lineHeight: 1.5 }}>
                   Find products and guides tailored to your dog&apos;s breed.
@@ -254,7 +254,6 @@ function ShopCategories() {
                     position: 'relative', aspectRatio: '4 / 5', borderRadius: 12,
                     overflow: 'hidden', background: C.grayLight, marginBottom: 8,
                     boxShadow: hoveredBreed === b.slug ? '0 10px 22px rgba(0,0,0,0.18)' : '0 2px 6px rgba(0,0,0,0.06)',
-                    transform: hoveredBreed === b.slug ? 'translateY(-3px)' : 'none',
                     transition: 'all 0.2s ease',
                   }}>
                     <Image src={b.img} alt={b.name} fill sizes="120px" className="object-cover" />
@@ -284,13 +283,13 @@ function ShopCategories() {
                 />
               ))}
             </div>
-            <Link href="/shop/breeds" style={{
+            <Link href="/dogs" style={{
               display: 'block', textAlign: 'center', fontFamily: F.nav,
               fontSize: 12, fontWeight: 800, color: C.secondary,
               textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
               marginTop: 'auto',
             }}>
-              View All Breeds →
+              Explore All Breeds →
             </Link>
           </div>
 
@@ -306,7 +305,7 @@ function ShopCategories() {
               </div>
               <div>
                 <h3 style={{ fontFamily: F.heading, fontSize: 20, fontWeight: 700, color: C.primary, margin: '0 0 4px' }}>
-                  Shop by Solutions
+                  Explore Solutions
                 </h3>
                 <p style={{ fontFamily: F.body, fontSize: 14, color: C.grayText, margin: 0, lineHeight: 1.5 }}>
                   Explore products by the everyday needs you&apos;re looking to solve.
@@ -330,7 +329,6 @@ function ShopCategories() {
                     position: 'relative',
                     width: 88, height: 88, borderRadius: '50%',
                     background: `${s.accent}${hoveredSolution === s.slug ? '3d' : '26'}`,
-                    transform: hoveredSolution === s.slug ? 'translateY(-3px) scale(1.05)' : 'none',
                     boxShadow: hoveredSolution === s.slug ? `0 8px 20px ${s.accent}33` : 'none',
                     transition: 'all 0.2s ease',
                   }}>
@@ -359,13 +357,13 @@ function ShopCategories() {
                 />
               ))}
             </div>
-            <Link href="/shop/solutions" style={{
+            <Link href="/solutions" style={{
               display: 'block', textAlign: 'center', fontFamily: F.nav,
               fontSize: 12, fontWeight: 800, color: C.secondary,
               textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
               marginTop: 'auto',
             }}>
-              View All Solutions →
+              Explore All Solutions →
             </Link>
           </div>
         </div>
@@ -886,7 +884,7 @@ function Insights() {
     <section style={{ background: C.white, padding: '40px 24px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <SectionTitle sub="Expert guides, breed-specific tips, and health insights for pet parents.">
-          Lastest PetPosture Guides
+          Latest PetPosture Guides
         </SectionTitle>
         <div
           className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"

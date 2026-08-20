@@ -31,7 +31,7 @@ const defaults: ShopSettings = {
     shop_logo: null,
     shop_favicon: null,
     description:
-        "At PetPosture, we believe pets deserve comfort built for them. We provide ergonomic essentials designed to support your pet's unique posture and improve their health.",
+        "Dogs aren't one-size-fits-all. PetPosture helps owners choose products that fit their dog's breed, body type and everyday habits — for feeding, comfort, mobility and walking.",
     social: {
         facebook: null,
         instagram: null,

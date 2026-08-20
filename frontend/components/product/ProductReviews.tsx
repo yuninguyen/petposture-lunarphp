@@ -163,7 +163,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                             value={formData.comment}
                                             onChange={e => setFormData({ ...formData, comment: e.target.value })}
                                             className="w-full bg-zinc-50 border-none rounded-lg p-4 text-primary font-bold text-[14px] focus:ring-2 focus:ring-secondary/20 outline-none resize-none"
-                                            placeholder="Tell us how it improved your pet's posture..."
+                                            placeholder="Tell us how it's worked for your dog..."
                                         />
                                     </div>
                                     <button

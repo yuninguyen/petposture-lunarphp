@@ -23,7 +23,7 @@ const products = [
   },
   {
     id: 3,
-    name: "Frenchie Posture Support Bowl",
+    name: "Frenchie Tilted Feeding Bowl",
     price: "$45.00",
     oldPrice: null,
     rating: 4,

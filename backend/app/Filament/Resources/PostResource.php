@@ -136,6 +136,20 @@ class PostResource extends Resource
                     ->default(fn () => auth()->user()?->name)
                     ->searchable(),
 
+                Forms\Components\Select::make('breeds')
+                    ->label(__('Breeds'))
+                    ->relationship('breeds', 'name')
+                    ->multiple()
+                    ->searchable()
+                    ->preload(),
+
+                Forms\Components\Select::make('solutions')
+                    ->label(__('Solutions'))
+                    ->relationship('solutions', 'name')
+                    ->multiple()
+                    ->searchable()
+                    ->preload(),
+
                 Forms\Components\Select::make('tags')
                     ->label(__('Tags'))
                     ->relationship('tags', 'name')

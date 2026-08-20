@@ -7,9 +7,9 @@ import Footer from '@/components/Footer';
 import { API_BASE_URL } from '@/lib/api';
 
 export const metadata: Metadata = {
-    title: 'Shop by Breed',
-    description: 'Ergonomic essentials matched to your dog\'s anatomy.',
-    alternates: { canonical: '/shop/breeds' },
+    title: 'Long-Backed Breeds',
+    description: 'Everyday gear for long-backed breeds like Dachshunds and Corgis — built around furniture access, ramps and everyday movement.',
+    alternates: { canonical: '/shop/breeds/long-backed' },
     openGraph: {
         images: ['/assets/breeds/Shop-by-Breed.webp'],
     },
@@ -18,11 +18,10 @@ export const metadata: Metadata = {
 type BreedSummary = {
     name: string;
     slug: string;
+    body_type: string | null;
     description: string | null;
 };
 
-// Photo per breed slug when we have one; anything else (new breeds added in
-// admin later) falls back to the generic "shop by breed" banner.
 const BREED_IMAGES: Record<string, string> = {
     dachshund: '/assets/breeds/Breed-Dachshund.webp',
     'french-bulldog': '/assets/breeds/Breed-French-Bulldog.webp',
@@ -48,28 +47,8 @@ async function getBreeds(): Promise<BreedSummary[]> {
     }
 }
 
-async function getBannerOverrides(): Promise<Record<string, string>> {
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/site-media?collection=banner`, {
-            next: { revalidate: 60 },
-        });
-
-        if (!res.ok) return {};
-
-        const json = await res.json();
-        const items: { title: string | null; url: string }[] = json?.data ?? [];
-
-        return items.reduce<Record<string, string>>((map, item) => {
-            if (item.title) map[item.title] = item.url;
-            return map;
-        }, {});
-    } catch {
-        return {};
-    }
-}
-
 export default async function Page() {
-    const [breeds, overrides] = await Promise.all([getBreeds(), getBannerOverrides()]);
+    const breeds = (await getBreeds()).filter((b) => b.body_type === 'long-backed');
 
     return (
         <main className="min-h-screen bg-[#f7f3ee] font-hanken">
@@ -81,10 +60,10 @@ export default async function Page() {
                         Shop by Breed
                     </p>
                     <h1 className="max-w-[760px] text-[28px] font-bold leading-tight text-[#2d3a43] md:text-[40px]">
-                        Ergonomic essentials matched to your dog&apos;s anatomy.
+                        Long-Backed Breeds
                     </h1>
                     <p className="mt-3 max-w-[760px] text-[14px] leading-7 text-[#62666a]">
-                        Pick your dog&apos;s breed to shop the gear built specifically for it.
+                        Dachshunds and Corgis often need extra consideration around furniture access and everyday movement. Shop gear built for their build — ramps, stairs and supportive beds sized for a longer body and shorter legs.
                     </p>
                 </div>
             </section>
@@ -95,7 +74,7 @@ export default async function Page() {
                 ) : (
                     <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {breeds.map((breed) => {
-                            const image = overrides[breed.slug] ?? BREED_IMAGES[breed.slug] ?? DEFAULT_BREED_IMAGE;
+                            const image = BREED_IMAGES[breed.slug] ?? DEFAULT_BREED_IMAGE;
                             return (
                                 <Link
                                     key={breed.slug}

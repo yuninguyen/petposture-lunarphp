@@ -6,9 +6,9 @@ import { ShieldCheck, Truck, RotateCcw, Award } from 'lucide-react';
 export function TrustBadgeBar() {
     const badges = [
         { icon: <Truck size={20} />, label: "USA NEXT-DAY SHIPPING", sub: "Orders over $50" },
-        { icon: <Award size={20} />, label: "CERTIFIED ERGONOMIC", sub: "BVet Approved" },
+        { icon: <Award size={20} />, label: "CAREFULLY SELECTED", sub: "Practical research first" },
         { icon: <ShieldCheck size={20} />, label: "LIFETIME REPLACEMENT", sub: "On all hardware" },
-        { icon: <RotateCcw size={20} />, label: "30-DAY RISK FREE", sub: "Health trial" }
+        { icon: <RotateCcw size={20} />, label: "30-DAY RISK FREE", sub: "Money-back trial" }
     ];
 
     return (
