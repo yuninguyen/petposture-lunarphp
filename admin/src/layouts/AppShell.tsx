@@ -12,7 +12,7 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-primary px-5 py-3 flex items-center justify-between">
+      <header className="bg-primary px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2 text-white font-bold text-sm">
           <span className="w-2 h-2 rounded-full bg-secondary" />
           {t('app.title')}
@@ -33,20 +33,24 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
         </div>
       </header>
       <div className="flex flex-1">
-        <nav className="w-44 bg-primary-dark py-4">
+        <nav className="w-52 bg-primary-dark py-4">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `block px-5 py-2.5 text-sm ${isActive ? 'text-white bg-primary font-semibold border-r-4 border-secondary' : 'text-gray-300'}`
+                `block px-5 py-2.5 text-sm transition-colors ${
+                  isActive
+                    ? 'text-white bg-primary font-semibold border-r-4 border-secondary'
+                    : 'text-gray-300 hover:text-white hover:bg-primary/40'
+                }`
               }
             >
               {item.label}
             </NavLink>
           ))}
         </nav>
-        <main className="flex-1 bg-gray-100 p-6">{children}</main>
+        <main className="flex-1 bg-gray-100 p-8">{children}</main>
       </div>
     </div>
   );
