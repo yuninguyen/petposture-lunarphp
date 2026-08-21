@@ -28,7 +28,8 @@ class MediaController extends Controller
         $directory = config('curator.directory');
 
         $path = $file->store($directory, $disk);
-        [$width, $height] = getimagesize($file->getRealPath()) ?: [null, null];
+        $path = \App\Support\ImageOptimizer::optimize($disk, $path);
+        [$width, $height] = getimagesize(Storage::disk($disk)->path($path)) ?: [null, null];
 
         $media = CuratorMedia::create([
             'disk' => $disk,

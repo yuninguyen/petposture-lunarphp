@@ -54,6 +54,49 @@ class MediaControllerTest extends TestCase
         $this->assertDatabaseCount('curator_media', 1);
     }
 
+    public function test_uploading_a_jpeg_is_converted_to_webp(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+        Sanctum::actingAs($user);
+
+        $image = imagecreatetruecolor(400, 300);
+        imagefill($image, 0, 0, imagecolorallocate($image, 100, 150, 200));
+        ob_start();
+        imagejpeg($image, null, 90);
+        $contents = ob_get_clean();
+        imagedestroy($image);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('photo.jpg', $contents);
+
+        $response = $this->postJson('/api/admin/media', ['file' => $file])->assertCreated();
+
+        $this->assertStringEndsWith('.webp', $response->json('data.url'));
+    }
+
+    public function test_uploading_an_animated_gif_is_preserved_as_gif(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+        Sanctum::actingAs($user);
+
+        $image = imagecreatetruecolor(400, 300);
+        imagefill($image, 0, 0, imagecolorallocate($image, 200, 100, 50));
+        ob_start();
+        imagegif($image);
+        $contents = ob_get_clean();
+        imagedestroy($image);
+
+        $marker = "\x00\x21\xF9\x04";
+        $contents .= $marker.str_repeat("\x00", 4).$marker.str_repeat("\x00", 4);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('animated.gif', $contents);
+
+        $response = $this->postJson('/api/admin/media', ['file' => $file])->assertCreated();
+
+        $this->assertStringEndsWith('.gif', $response->json('data.url'));
+    }
+
     public function test_admin_can_list_media(): void
     {
         $user = User::factory()->create();
