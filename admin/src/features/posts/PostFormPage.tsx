@@ -26,6 +26,7 @@ interface PostDetail {
   blog_category: { id: string; name: string } | null;
   featured_image: string | null;
   featured_media_id: string | null;
+  author: string | null;
 }
 
 export function PostFormPage() {
@@ -66,7 +67,7 @@ export function PostFormPage() {
     formState: { errors, isSubmitting },
   } = useForm<PostFormValues>({
     resolver: zodResolver(getPostFormSchema(t)),
-    defaultValues: { title: '', content: '', blog_category_id: '', status: 'draft', featured_media_id: null },
+    defaultValues: { title: '', content: '', blog_category_id: '', status: 'draft', featured_media_id: null, author: '' },
   });
 
   const editor = useEditor({
@@ -85,6 +86,7 @@ export function PostFormPage() {
         blog_category_id: existingPost.blog_category?.id ?? '',
         status: existingPost.status,
         featured_media_id: existingPost.featured_media_id,
+        author: existingPost.author ?? '',
       });
       editor.commands.setContent(existingPost.content);
     }
@@ -116,62 +118,75 @@ export function PostFormPage() {
       </div>
 
       <div className="flex gap-5">
-        <div className="flex-[2] space-y-4">
+        <div className="flex-[2]">
           <Card>
-            <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_title')}</label>
-            <Input {...register('title')} />
-            {errors.title && <p className="text-xs text-red-600 mt-1">{errors.title.message}</p>}
-          </Card>
+            <h2 className="text-sm font-bold text-ink mb-3">{t('posts.section_content')}</h2>
 
-          <Card>
-            <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_content')}</label>
-            <div className="border border-gray-300 rounded-lg p-3 min-h-[200px]">
-              <EditorContent editor={editor} />
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_title')}</label>
+              <Input {...register('title')} />
+              {errors.title && <p className="text-xs text-red-600 mt-1">{errors.title.message}</p>}
             </div>
-            {errors.content && <p className="text-xs text-red-600 mt-1">{errors.content.message}</p>}
+
+            <div>
+              <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_content')}</label>
+              <div className="border border-gray-300 rounded-lg p-3 min-h-[200px]">
+                <EditorContent editor={editor} />
+              </div>
+              {errors.content && <p className="text-xs text-red-600 mt-1">{errors.content.message}</p>}
+            </div>
           </Card>
         </div>
 
-        <div className="flex-1 space-y-4">
+        <div className="flex-1">
           <Card>
-            <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_category')}</label>
-            <select {...register('blog_category_id')} className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
-              <option value="">{t('posts.form_label_category_placeholder')}</option>
-              {categories?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            {errors.blog_category_id && <p className="text-xs text-red-600 mt-1">{errors.blog_category_id.message}</p>}
-          </Card>
+            <h2 className="text-sm font-bold text-ink mb-3">{t('posts.section_settings')}</h2>
 
-          <Card>
-            <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_status')}</label>
-            <select {...register('status')} className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
-              <option value="draft">{t('posts.status_draft')}</option>
-              <option value="published">{t('posts.status_published')}</option>
-            </select>
-          </Card>
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_category')}</label>
+              <select {...register('blog_category_id')} className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
+                <option value="">{t('posts.form_label_category_placeholder')}</option>
+                {categories?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              {errors.blog_category_id && <p className="text-xs text-red-600 mt-1">{errors.blog_category_id.message}</p>}
+            </div>
 
-          <Card>
-            <label className="block text-xs font-semibold text-primary-light mb-2">{t('posts.form_label_featured_image')}</label>
-            <Controller
-              name="featured_media_id"
-              control={control}
-              render={({ field }) => {
-                const mediaUrl = field.value && mediaLibrary
-                  ? mediaLibrary.find(m => m.id === field.value)?.url ?? existingPost?.featured_image
-                  : existingPost?.featured_image;
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_status')}</label>
+              <select {...register('status')} className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
+                <option value="draft">{t('posts.status_draft')}</option>
+                <option value="published">{t('posts.status_published')}</option>
+              </select>
+            </div>
 
-                return (
-                  <MediaPicker
-                    value={field.value ? { id: field.value, url: mediaUrl ?? '' } : null}
-                    onChange={(media) => field.onChange(media?.id ?? null)}
-                  />
-                );
-              }}
-            />
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_author')}</label>
+              <Input {...register('author')} />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-primary-light mb-2">{t('posts.form_label_featured_image')}</label>
+              <Controller
+                name="featured_media_id"
+                control={control}
+                render={({ field }) => {
+                  const mediaUrl = field.value && mediaLibrary
+                    ? mediaLibrary.find(m => m.id === field.value)?.url ?? existingPost?.featured_image
+                    : existingPost?.featured_image;
+
+                  return (
+                    <MediaPicker
+                      value={field.value ? { id: field.value, url: mediaUrl ?? '' } : null}
+                      onChange={(media) => field.onChange(media?.id ?? null)}
+                    />
+                  );
+                }}
+              />
+            </div>
           </Card>
         </div>
       </div>

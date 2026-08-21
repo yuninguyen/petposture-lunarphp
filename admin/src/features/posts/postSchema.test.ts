@@ -40,4 +40,17 @@ describe('postFormSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts an optional author field', () => {
+    const postFormSchema = getPostFormSchema(mockT);
+    const result = postFormSchema.safeParse({
+      title: 'Title',
+      content: '<p>Body</p>',
+      blog_category_id: '1',
+      status: 'draft',
+      featured_media_id: null,
+      author: 'Yuni Nguyen',
+    });
+    expect(result.success).toBe(true);
+  });
 });
