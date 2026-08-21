@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,10 +12,30 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MediaPicker } from '@/features/media/MediaPicker';
 import { getPostFormSchema, PostFormValues } from './postSchema';
+import { useAffiliateNetworks } from './postsApi';
+import { ComparisonDetailsSection } from './ComparisonDetailsSection';
 
 interface BlogCategory {
   id: number;
   name: string;
+}
+
+interface ComparisonItemApiItem {
+  product_name: string;
+  image_url: string | null;
+  retailer: string | null;
+  retailer_label: string | null;
+  retailer_logo: string | null;
+  highlight: string | null;
+  in_stock: boolean;
+  price_display: string | null;
+  price_cents: number | null;
+  rating: number | null;
+  affiliate_url: string;
+  redirect_url: string;
+  pros: string[];
+  cons: string[];
+  in_house_match_url: string | null;
 }
 
 interface PostDetail {
@@ -27,6 +47,12 @@ interface PostDetail {
   featured_image: string | null;
   featured_media_id: string | null;
   author: string | null;
+  type: 'article' | 'guide' | 'comparison';
+  comparison: {
+    intro: string | null;
+    disclosure_shown: boolean;
+    items: ComparisonItemApiItem[];
+  } | null;
 }
 
 export function PostFormPage() {
@@ -54,9 +80,12 @@ export function PostFormPage() {
 
   const { data: existingPost } = useQuery({
     queryKey: ['posts', id],
-    queryFn: () => fetchJson<{ data: PostDetail }>(`/admin/posts/${id}`).then((res) => res.data),
+    queryFn: () => fetchJson<{ data: PostDetail }>(`/admin/posts/${'${id}'}`).then((res) => res.data),
     enabled: isEdit,
   });
+
+  const { data: affiliateNetworksData } = useAffiliateNetworks();
+  const affiliateNetworks = affiliateNetworksData ?? [];
 
   const {
     register,
@@ -67,8 +96,21 @@ export function PostFormPage() {
     formState: { errors, isSubmitting },
   } = useForm<PostFormValues>({
     resolver: zodResolver(getPostFormSchema(t)),
-    defaultValues: { title: '', content: '', blog_category_id: '', status: 'draft', featured_media_id: null, author: '' },
+    defaultValues: {
+      title: '',
+      content: '',
+      blog_category_id: '',
+      status: 'draft',
+      featured_media_id: null,
+      author: '',
+      type: 'article',
+      comparison_intro: '',
+      disclosure_shown: true,
+      comparison_items: [],
+    },
   });
+
+  const selectedType = useWatch({ control, name: 'type' });
 
   const editor = useEditor({
     extensions: [StarterKit],
@@ -87,6 +129,23 @@ export function PostFormPage() {
         status: existingPost.status,
         featured_media_id: existingPost.featured_media_id,
         author: existingPost.author ?? '',
+        type: existingPost.type ?? 'article',
+        comparison_intro: existingPost.comparison?.intro ?? '',
+        disclosure_shown: existingPost.comparison?.disclosure_shown ?? true,
+        comparison_items: (existingPost.comparison?.items ?? []).map((item) => ({
+          product_name: item.product_name,
+          image_url: item.image_url,
+          retailer: item.retailer ?? '',
+          highlight: item.highlight ?? '',
+          in_stock: item.in_stock,
+          price_display: item.price_display ?? '',
+          price_cents: item.price_cents ?? undefined,
+          rating: item.rating ?? undefined,
+          affiliate_url: item.affiliate_url,
+          pros: item.pros ?? [],
+          cons: item.cons ?? [],
+          in_house_match_url: item.in_house_match_url ?? '',
+        })),
       });
       editor.commands.setContent(existingPost.content);
     }
@@ -95,7 +154,7 @@ export function PostFormPage() {
   const mutation = useMutation({
     mutationFn: (values: PostFormValues) => {
       const method = isEdit ? 'PUT' : 'POST';
-      const url = isEdit ? `/admin/posts/${id}` : '/admin/posts';
+      const url = isEdit ? `/admin/posts/${'${id}'}` : '/admin/posts';
       return fetchJson(url, { method, body: values });
     },
     onSuccess: () => {
@@ -164,6 +223,15 @@ export function PostFormPage() {
             </div>
 
             <div className="mb-4">
+              <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_type')}</label>
+              <select {...register('type')} className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
+                <option value="article">{t('posts.type.article')}</option>
+                <option value="guide">{t('posts.type.guide')}</option>
+                <option value="comparison">{t('posts.type.comparison')}</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
               <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_author')}</label>
               <Input {...register('author')} />
             </div>
@@ -190,6 +258,10 @@ export function PostFormPage() {
           </Card>
         </div>
       </div>
+
+      {selectedType === 'comparison' && (
+        <ComparisonDetailsSection control={control} register={register} affiliateNetworks={affiliateNetworks} />
+      )}
     </form>
   );
 }
