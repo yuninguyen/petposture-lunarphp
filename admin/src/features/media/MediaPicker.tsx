@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ export function MediaPicker({
   value: { id: string; url: string } | null;
   onChange: (media: { id: string; url: string } | null) => void;
 }) {
+  const { t } = useTranslation();
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const queryClient = useQueryClient();
@@ -48,19 +50,19 @@ export function MediaPicker({
         <div className="mb-3">
           <img src={value.url} alt="" className="w-full max-h-48 object-cover rounded-lg border border-gray-200" />
           <button type="button" onClick={() => onChange(null)} className="text-xs text-red-600 mt-1">
-            Bỏ chọn
+            {t('media.button_remove')}
           </button>
         </div>
       ) : (
         <div className="border-2 border-dashed border-gray-300 rounded-lg h-32 flex items-center justify-center text-sm text-gray-400 mb-3">
-          Chưa có ảnh
+          {t('media.empty_state')}
         </div>
       )}
 
       <input ref={fileInput} type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="media-upload" />
       <label htmlFor="media-upload">
         <Button type="button" variant="primary" disabled={uploading} onClick={() => fileInput.current?.click()}>
-          {uploading ? 'Đang tải lên...' : 'Tải ảnh lên'}
+          {uploading ? t('media.button_uploading') : t('media.button_upload')}
         </Button>
       </label>
 

@@ -1,35 +1,38 @@
 import { useReactTable, getCoreRowModel, createColumnHelper, flexRender } from '@tanstack/react-table';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { usePosts, Post } from './postsApi';
 import { Button } from '@/components/ui/button';
 
 const columnHelper = createColumnHelper<Post>();
 
-const columns = [
-  columnHelper.accessor('title', {
-    header: 'Tiêu đề',
-    cell: (info) => (
-      <Link to={`/posts/${info.row.original.id}`} className="text-primary font-semibold hover:underline">
-        {info.getValue()}
-      </Link>
-    ),
-  }),
-  columnHelper.accessor((row) => row.blog_category?.name ?? '—', { id: 'category', header: 'Chuyên mục' }),
-  columnHelper.accessor('status', {
-    header: 'Trạng thái',
-    cell: (info) => (
-      <span
-        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-          info.getValue() === 'published' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
-        }`}
-      >
-        {info.getValue() === 'published' ? 'Đã đăng' : 'Nháp'}
-      </span>
-    ),
-  }),
-];
-
 export function PostsListPage() {
+  const { t } = useTranslation();
+
+  const columns = [
+    columnHelper.accessor('title', {
+      header: t('posts.header_title'),
+      cell: (info) => (
+        <Link to={`/posts/${info.row.original.id}`} className="text-primary font-semibold hover:underline">
+          {info.getValue()}
+        </Link>
+      ),
+    }),
+    columnHelper.accessor((row) => row.blog_category?.name ?? '—', { id: 'category', header: t('posts.header_category') }),
+    columnHelper.accessor('status', {
+      header: t('posts.header_status'),
+      cell: (info) => (
+        <span
+          className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+            info.getValue() === 'published' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+          }`}
+        >
+          {info.getValue() === 'published' ? t('posts.status_published') : t('posts.status_draft')}
+        </span>
+      ),
+    }),
+  ];
+
   const { data: posts, isLoading } = usePosts();
 
   const table = useReactTable({
@@ -41,13 +44,13 @@ export function PostsListPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg font-bold text-ink">Bài viết</h1>
+        <h1 className="text-lg font-bold text-ink">{t('posts.list_title')}</h1>
         <Link to="/posts/new">
-          <Button variant="secondary">Bài viết mới</Button>
+          <Button variant="secondary">{t('posts.new_post')}</Button>
         </Link>
       </div>
       {isLoading ? (
-        <p className="text-sm text-gray-500">Đang tải...</p>
+        <p className="text-sm text-gray-500">{t('posts.loading')}</p>
       ) : (
         <table className="w-full bg-white border border-gray-200 rounded-xl overflow-hidden">
           <thead className="bg-gray-50">

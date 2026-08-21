@@ -1,8 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { postFormSchema } from './postSchema';
+import { getPostFormSchema } from './postSchema';
+
+// Mock translation function for testing
+const mockT = (key: string) => key;
 
 describe('postFormSchema', () => {
   it('accepts a valid draft post', () => {
+    const postFormSchema = getPostFormSchema(mockT);
     const result = postFormSchema.safeParse({
       title: 'A valid title',
       content: '<p>Body</p>',
@@ -14,6 +18,7 @@ describe('postFormSchema', () => {
   });
 
   it('rejects an empty title', () => {
+    const postFormSchema = getPostFormSchema(mockT);
     const result = postFormSchema.safeParse({
       title: '',
       content: '<p>Body</p>',
@@ -25,6 +30,7 @@ describe('postFormSchema', () => {
   });
 
   it('rejects a missing category', () => {
+    const postFormSchema = getPostFormSchema(mockT);
     const result = postFormSchema.safeParse({
       title: 'Title',
       content: '<p>Body</p>',

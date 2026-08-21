@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -10,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MediaPicker } from '@/features/media/MediaPicker';
-import { postFormSchema, PostFormValues } from './postSchema';
+import { getPostFormSchema, PostFormValues } from './postSchema';
 
 interface BlogCategory {
   id: number;
@@ -28,6 +29,7 @@ interface PostDetail {
 }
 
 export function PostFormPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
@@ -52,7 +54,7 @@ export function PostFormPage() {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<PostFormValues>({
-    resolver: zodResolver(postFormSchema),
+    resolver: zodResolver(getPostFormSchema(t)),
     defaultValues: { title: '', content: '', blog_category_id: '', status: 'draft', featured_media_id: null },
   });
 
@@ -96,22 +98,22 @@ export function PostFormPage() {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg font-bold text-ink">{isEdit ? 'Sửa bài viết' : 'Bài viết mới'}</h1>
+        <h1 className="text-lg font-bold text-ink">{isEdit ? t('posts.form_title_edit') : t('posts.form_title_new')}</h1>
         <Button type="submit" variant="secondary" disabled={isSubmitting}>
-          {isSubmitting ? 'Đang lưu...' : 'Lưu bài viết'}
+          {isSubmitting ? t('posts.form_button_saving') : t('posts.form_button_save')}
         </Button>
       </div>
 
       <div className="flex gap-5">
         <div className="flex-[2] space-y-4">
           <Card>
-            <label className="block text-xs font-semibold text-primary-light mb-1">Tiêu đề</label>
+            <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_title')}</label>
             <Input {...register('title')} />
             {errors.title && <p className="text-xs text-red-600 mt-1">{errors.title.message}</p>}
           </Card>
 
           <Card>
-            <label className="block text-xs font-semibold text-primary-light mb-1">Nội dung</label>
+            <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_content')}</label>
             <div className="border border-gray-300 rounded-lg p-3 min-h-[200px]">
               <EditorContent editor={editor} />
             </div>
@@ -121,9 +123,9 @@ export function PostFormPage() {
 
         <div className="flex-1 space-y-4">
           <Card>
-            <label className="block text-xs font-semibold text-primary-light mb-1">Chuyên mục</label>
+            <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_category')}</label>
             <select {...register('blog_category_id')} className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
-              <option value="">Chọn chuyên mục</option>
+              <option value="">{t('posts.form_label_category_placeholder')}</option>
               {categories?.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -134,15 +136,15 @@ export function PostFormPage() {
           </Card>
 
           <Card>
-            <label className="block text-xs font-semibold text-primary-light mb-1">Trạng thái</label>
+            <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_status')}</label>
             <select {...register('status')} className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
-              <option value="draft">Nháp</option>
-              <option value="published">Đã đăng</option>
+              <option value="draft">{t('posts.status_draft')}</option>
+              <option value="published">{t('posts.status_published')}</option>
             </select>
           </Card>
 
           <Card>
-            <label className="block text-xs font-semibold text-primary-light mb-2">Ảnh đại diện</label>
+            <label className="block text-xs font-semibold text-primary-light mb-2">{t('posts.form_label_featured_image')}</label>
             <Controller
               name="featured_media_id"
               control={control}
