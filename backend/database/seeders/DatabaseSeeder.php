@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             BreedSeeder::class,
             SolutionSeeder::class,
             AdminUserSeeder::class,
+            BlogCategorySeeder::class,
+            BlogPostSeeder::class,
         ]);
 
         // 1. Create Categories

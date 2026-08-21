@@ -37,7 +37,18 @@ export function PostFormPage() {
 
   const { data: categories } = useQuery({
     queryKey: ['blog-categories'],
-    queryFn: () => fetchJson<BlogCategory[]>('/admin/blog/categories'),
+    queryFn: async () => {
+      const res = await fetchJson<BlogCategory[]>('/admin/blog/categories');
+      return Array.isArray(res) ? res : [];
+    },
+  });
+
+  const { data: mediaLibrary } = useQuery({
+    queryKey: ['media'],
+    queryFn: async () => {
+      const res = await fetchJson<{ data: any[] }>('/admin/media');
+      return Array.isArray(res.data) ? res.data : [];
+    },
   });
 
   const { data: existingPost } = useQuery({
@@ -148,12 +159,18 @@ export function PostFormPage() {
             <Controller
               name="featured_media_id"
               control={control}
-              render={({ field }) => (
-                <MediaPicker
-                  value={field.value ? { id: field.value, url: existingPost?.featured_image ?? '' } : null}
-                  onChange={(media) => field.onChange(media?.id ?? null)}
-                />
-              )}
+              render={({ field }) => {
+                const mediaUrl = field.value && mediaLibrary
+                  ? mediaLibrary.find(m => m.id === field.value)?.url ?? existingPost?.featured_image
+                  : existingPost?.featured_image;
+
+                return (
+                  <MediaPicker
+                    value={field.value ? { id: field.value, url: mediaUrl ?? '' } : null}
+                    onChange={(media) => field.onChange(media?.id ?? null)}
+                  />
+                );
+              }}
             />
           </Card>
         </div>

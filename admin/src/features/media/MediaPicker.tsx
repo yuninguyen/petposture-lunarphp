@@ -25,7 +25,10 @@ export function MediaPicker({
 
   const { data: library } = useQuery({
     queryKey: ['media'],
-    queryFn: () => fetchJson<{ data: MediaItem[] }>('/admin/media').then((res) => res.data),
+    queryFn: async () => {
+      const res = await fetchJson<{ data: MediaItem[] }>('/admin/media');
+      return Array.isArray(res.data) ? res.data : [];
+    },
   });
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
