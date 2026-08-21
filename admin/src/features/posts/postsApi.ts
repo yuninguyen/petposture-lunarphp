@@ -59,3 +59,18 @@ export function useDeletePost() {
     },
   });
 }
+export interface AffiliateNetwork {
+  name: string;
+  slug: string;
+}
+
+export function extractAffiliateNetworks(input: AffiliateNetwork[] | undefined | null): AffiliateNetwork[] {
+  return input ?? [];
+}
+
+export function useAffiliateNetworks() {
+  return useQuery({
+    queryKey: ['affiliate-networks'],
+    queryFn: async () => extractAffiliateNetworks(await fetchJson<AffiliateNetwork[]>('/admin/affiliate-networks')),
+  });
+}

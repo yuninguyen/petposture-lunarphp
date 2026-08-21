@@ -16,3 +16,15 @@ describe('buildPostsQuery', () => {
     expect(buildPostsQuery({ search: '' })).toBe('/admin/posts');
   });
 });
+import { extractAffiliateNetworks } from './postsApi';
+
+describe('extractAffiliateNetworks', () => {
+  it('returns the array as-is when given a bare array', () => {
+    const input = [{ name: 'Chewy', slug: 'chewy' }];
+    expect(extractAffiliateNetworks(input)).toEqual(input);
+  });
+
+  it('returns an empty array for null/undefined input', () => {
+    expect(extractAffiliateNetworks(undefined)).toEqual([]);
+  });
+});
