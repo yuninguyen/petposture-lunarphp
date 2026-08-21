@@ -30,6 +30,7 @@ class PostResource extends JsonResource
             'read_time' => $this->read_time,
             'status' => $this->status,
             'created_at' => optional($this->created_at)?->toISOString(),
+            'updated_at' => optional($this->updated_at)?->toISOString(),
             'published_at' => optional($this->published_at)?->toISOString(),
             'category' => [
                 'name' => $blogCategory?->name,

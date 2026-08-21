@@ -35,7 +35,11 @@ class PostController extends Controller
             $query->where('status', $request->status);
         }
 
-        return PostResource::collection($query->get());
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%'.$request->search.'%');
+        }
+
+        return PostResource::collection($query->paginate(20));
     }
 
     public function categories()
