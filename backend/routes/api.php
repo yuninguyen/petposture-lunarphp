@@ -124,6 +124,7 @@ Route::prefix('/admin')
         Route::get('/posts', [PostController::class, 'index']);
         Route::post('/posts', [PostController::class, 'store']);
         Route::get('/posts/{post}', [PostController::class, 'show']);
+        Route::get('/posts/{post}/preview-url', [PostController::class, 'previewUrl']);
         Route::put('/posts/{post}', [PostController::class, 'update']);
         Route::patch('/posts/{post}', [PostController::class, 'update']);
         Route::delete('/posts/{post}', [PostController::class, 'destroy']);

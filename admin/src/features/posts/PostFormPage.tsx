@@ -163,6 +163,13 @@ export function PostFormPage() {
     },
   });
 
+  const previewMutation = useMutation({
+    mutationFn: () => fetchJson<{ url: string }>(`/admin/posts/${id}/preview-url`),
+    onSuccess: (data) => {
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+    },
+  });
+
   function onSubmit(values: PostFormValues) {
     mutation.mutate({ ...values, content: editor?.getHTML() ?? values.content });
   }
@@ -171,13 +178,28 @@ export function PostFormPage() {
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-bold text-ink">{isEdit ? t('posts.form_title_edit') : t('posts.form_title_new')}</h1>
-        <Button type="submit" variant="secondary" disabled={isSubmitting}>
-          {isSubmitting ? t('posts.form_button_saving') : t('posts.form_button_save')}
-        </Button>
+        <div className="flex items-center gap-2">
+          {isEdit && (
+            <Button
+              type="button"
+              variant="primary"
+              disabled={previewMutation.isPending}
+              onClick={() => previewMutation.mutate()}
+            >
+              {previewMutation.isPending ? t('posts.form_button_preview_loading') : t('posts.form_button_preview')}
+            </Button>
+          )}
+          <Button type="submit" variant="secondary" disabled={isSubmitting}>
+            {isSubmitting ? t('posts.form_button_saving') : t('posts.form_button_save')}
+          </Button>
+        </div>
       </div>
 
       {mutation.isError && (
         <p className="text-xs text-red-600 mb-4">{(mutation.error as Error).message}</p>
+      )}
+      {previewMutation.isError && (
+        <p className="text-xs text-red-600 mb-4">{t('posts.preview_error')}</p>
       )}
 
       <div className="flex gap-5">

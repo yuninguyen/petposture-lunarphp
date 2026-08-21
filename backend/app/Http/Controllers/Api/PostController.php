@@ -113,6 +113,17 @@ class PostController extends Controller
         return response()->json(null, 204);
     }
 
+    public function previewUrl(Post $post): JsonResponse
+    {
+        $this->authorizeAdmin();
+
+        $expires = now()->addDay()->timestamp;
+        $token = hash_hmac('sha256', $post->slug.'|'.$expires, config('app.key'));
+        $url = rtrim(config('app.frontend_url'), '/')."/blog/{$post->slug}?expires={$expires}&preview_token={$token}";
+
+        return response()->json(['url' => $url]);
+    }
+
     protected function validationRules(bool $forUpdate): array
     {
         $slugRule = 'sometimes|required|string|max:255';
