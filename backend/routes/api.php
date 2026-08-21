@@ -135,6 +135,8 @@ Route::prefix('/admin')
         Route::post('/return-requests/{id}/approve', [ReturnRequestController::class, 'approve']);
         Route::post('/return-requests/{id}/reject', [ReturnRequestController::class, 'reject']);
         Route::post('/return-requests/{id}/complete', [ReturnRequestController::class, 'complete']);
+        Route::get('/media', [\App\Http\Controllers\Api\Admin\MediaController::class, 'index']);
+        Route::post('/media', [\App\Http\Controllers\Api\Admin\MediaController::class, 'store'])->middleware('throttle:api-write');
     });
 
 // Protected Routes
