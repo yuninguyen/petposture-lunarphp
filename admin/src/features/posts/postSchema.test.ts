@@ -54,3 +54,153 @@ describe('postFormSchema', () => {
     expect(result.success).toBe(true);
   });
 });
+const t = (key: string) => key;
+
+describe('getPostFormSchema — comparison fields', () => {
+  const baseValues = {
+    blog_category_id: '1',
+    title: 'Best Beds',
+    slug: 'best-beds',
+    content: '<p>x</p>',
+    status: 'draft' as const,
+    type: 'comparison' as const,
+  };
+
+  const validItem = {
+    product_name: 'Orthopedic Bed',
+    image_url: null,
+    retailer: 'chewy',
+    highlight: '',
+    in_stock: true,
+    price_display: '$64.99',
+    price_cents: 6499,
+    rating: 4.7,
+    affiliate_url: 'https://chewy.com/p/1',
+    pros: ['comfy'],
+    cons: ['pricey'],
+    in_house_match_url: '',
+  };
+
+  it('accepts a valid comparison payload', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_intro: 'Top picks',
+      disclosure_shown: true,
+      comparison_items: [validItem],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a comparison item missing product_name', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{ ...validItem, product_name: '' }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a comparison item with an invalid affiliate_url', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{ ...validItem, affiliate_url: 'not-a-url' }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a rating above 5', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{ ...validItem, rating: 6 }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a rating below 0', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{ ...validItem, rating: -1 }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('treats an empty-string rating as undefined (not zero)', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{ ...validItem, rating: '' }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('treats an empty-string highlight as undefined', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{ ...validItem, highlight: '' }],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.comparison_items?.[0].highlight).toBeUndefined();
+    }
+  });
+
+  it('allows article type posts without any comparison fields', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      type: 'article',
+      comparison_items: undefined,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects comparison_items with an empty pros/cons array item', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{ ...validItem, pros: [''] }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts comparison_items with empty pros/cons arrays', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{ ...validItem, pros: [], cons: [] }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects price_cents as a negative number', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{ ...validItem, price_cents: -100 }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('allows in_house_match_url to be an empty string', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{ ...validItem, in_house_match_url: '' }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects an invalid in_house_match_url', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{ ...validItem, in_house_match_url: 'not-a-url' }],
+    });
+    expect(result.success).toBe(false);
+  });
+});
