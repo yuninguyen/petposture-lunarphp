@@ -36,5 +36,16 @@ services:
       NODE_ENV: production
       PORT: "3001"
 
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: https://api.petposture.com
+    image: petposture-admin:prod
+    container_name: petposture-admin
+    restart: unless-stopped
+    network_mode: host
+
 volumes:
   redis_data:
