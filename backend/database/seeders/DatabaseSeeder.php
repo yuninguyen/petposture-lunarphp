@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             BreedSeeder::class,
             SolutionSeeder::class,
+            AdminUserSeeder::class,
         ]);
 
         // 1. Create Categories
