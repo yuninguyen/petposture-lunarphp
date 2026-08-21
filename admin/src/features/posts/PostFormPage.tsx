@@ -80,7 +80,7 @@ export function PostFormPage() {
 
   const { data: existingPost } = useQuery({
     queryKey: ['posts', id],
-    queryFn: () => fetchJson<{ data: PostDetail }>(`/admin/posts/${'${id}'}`).then((res) => res.data),
+    queryFn: () => fetchJson<{ data: PostDetail }>(`/admin/posts/${id}`).then((res) => res.data),
     enabled: isEdit,
   });
 
@@ -154,7 +154,7 @@ export function PostFormPage() {
   const mutation = useMutation({
     mutationFn: (values: PostFormValues) => {
       const method = isEdit ? 'PUT' : 'POST';
-      const url = isEdit ? `/admin/posts/${'${id}'}` : '/admin/posts';
+      const url = isEdit ? `/admin/posts/${id}` : '/admin/posts';
       return fetchJson(url, { method, body: values });
     },
     onSuccess: () => {
@@ -175,6 +175,10 @@ export function PostFormPage() {
           {isSubmitting ? t('posts.form_button_saving') : t('posts.form_button_save')}
         </Button>
       </div>
+
+      {mutation.isError && (
+        <p className="text-xs text-red-600 mb-4">{(mutation.error as Error).message}</p>
+      )}
 
       <div className="flex gap-5">
         <div className="flex-[2]">

@@ -41,7 +41,7 @@ class MediaController extends Controller
             'height' => $height,
             'size' => $file->getSize(),
             'type' => 'image',
-            'ext' => $file->getClientOriginalExtension(),
+            'ext' => pathinfo($path, PATHINFO_EXTENSION),
         ]);
 
         return (new CuratorMediaResource($media))
