@@ -63,11 +63,9 @@ export function MediaPicker({
       )}
 
       <input ref={fileInput} type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="media-upload" />
-      <label htmlFor="media-upload">
-        <Button type="button" variant="primary" disabled={uploading} onClick={() => fileInput.current?.click()}>
-          {uploading ? t('media.button_uploading') : t('media.button_upload')}
-        </Button>
-      </label>
+      <Button type="button" variant="primary" disabled={uploading} onClick={() => fileInput.current?.click()}>
+        {uploading ? t('media.button_uploading') : t('media.button_upload')}
+      </Button>
 
       {library && library.length > 0 && (
         <div className="grid grid-cols-4 gap-2 mt-3">
