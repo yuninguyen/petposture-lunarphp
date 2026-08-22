@@ -1712,3 +1712,29 @@ discussed above (PATCH tracking number there only wrote `meta.shipments[]`, neve
 - **Support helpdesk tooling** (Zendesk/Freshdesk/shared inbox) for `support@petposture.com` â€” only worth it once there's more than one person handling customer replies.
 
 (Shop by Solution/Breed re-think â€” done, see the 2026-08-02/03 entry at the top of this file.)
+
+
+## Handoff & Memory (2026-08-22)
+
+### Tóm t?t ti?n d? hôm nay
+- **Ki?n trúc UI chung:** Ðã chuy?n d?i Admin layout sang d?ng "Full-height Sidebar (Slate 800) + White Topbar". Sidebar du?c fix chi?u cao 100vh, topbar cu?n d?c l?p.
+- **Form UI (PostFormPage, SeoSettings, ComparisonDetails, ComparisonItemRepeater):** 
+  - Áp d?ng tri?t d? phong cách "UI/UX Pro Max": R?ng rãi, thanh l?ch, chuyên nghi?p.
+  - Chu?n hoá toàn b? Card b?ng `className="space-y-4 p-5"`.
+  - Chu?n hoá toàn b? Heading b?ng `<h3 className="text-lg font-semibold text-slate-800">`.
+  - Chu?n hoá toàn b? Label b?ng `<label className="block text-sm font-medium text-slate-700 mb-1">`.
+- **Dropdowns:** Ðã thay th? giao di?n m?c d?nh x?u xí c?a <select> b?ng giao di?n custom (xoá mui tên m?c d?nh, thay b?ng icon Chevron, thêm padding).
+- **Comparison Items:** Ðã chia l?i b? c?c thành d?ng Bento Grid (c?t trái 6 - c?t ph?i 6). Các th? nh?p li?u bên trong du?c chia dòng h?p lý (Highlight + Rating 1 dòng, Price 1 dòng).
+- **Badges:** G?p toàn b? các Type, Status Badge l?i dùng chung 1 component v?i style ounded-md (bo góc nh?, thay vì bo tròn xoe) d? trông c?ng cáp và hi?n d?i hon.
+
+### Các quy t?c chu?n Design (R?t quan tr?ng, KHÔNG ÐU?C QUÊN)
+- **TH? CARD:** Luôn dùng <Card className="space-y-4 p-5">. Không t? ý nhét thêm p-4 hay các l?p padding ch?ng chéo.
+- **TIÊU Ð? TRONG CARD:** Luôn dùng <h3 className="text-lg font-semibold text-slate-800">. Không dùng 	ext-sm font-bold.
+- **NHÃN (LABEL):** Luôn dùng <label className="block text-sm font-medium text-slate-700 mb-1">. Không dùng 	ext-xs font-semibold text-primary-light (b? chê là x?u và l?ch tông).
+- **RESPONSIVE:** M?i lu?i n?i b? trong form ph?i dùng grid-cols-1 sm:grid-cols-2 d? trên mobile t? d?ng r?t xu?ng 1 c?t.
+- **NÚT DROPDOWN:** B?t bu?c dùng class ppearance-none và t? custom icon mui tên, tuy?t d?i không d? UI m?c d?nh c?a trình duy?t.
+
+### Các task c?n làm ti?p theo
+- Ki?m tra l?i lu?ng tính nang Create/Edit/Update Post sau khi dã làm m?n giao di?n xem API ho?t d?ng mu?t mà không.
+- Ð?ng b? ti?p phong cách UI này sang các trang khác nhu Settings, Category, v.v. n?u c?n thi?t.
+

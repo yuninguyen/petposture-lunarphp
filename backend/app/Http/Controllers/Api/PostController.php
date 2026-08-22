@@ -54,6 +54,23 @@ class PostController extends Controller
         return response()->json(BlogCategory::all());
     }
 
+    public function storeCategory(Request $request): JsonResponse
+    {
+        $this->authorizeAdmin();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255|unique:blog_categories,slug',
+        ]);
+
+        $category = BlogCategory::create([
+            'name' => $validated['name'],
+            'slug' => $validated['slug'] ?? Str::slug($validated['name']).'-'.rand(1000, 9999),
+        ]);
+
+        return response()->json($category, 201);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $this->authorizeAdmin();
@@ -198,7 +215,9 @@ class PostController extends Controller
 
     protected function validationRules(bool $forUpdate): array
     {
-        $slugRule = 'sometimes|required|string|max:255';
+        $slugRule = $forUpdate
+            ? 'sometimes|required|string|max:255|unique:posts,slug,'.(request()->route('post')?->id ?? 0)
+            : 'sometimes|required|string|max:255|unique:posts,slug';
 
         return [
             'blog_category_id' => $forUpdate ? 'sometimes|required|exists:blog_categories,id' : 'required|exists:blog_categories,id',

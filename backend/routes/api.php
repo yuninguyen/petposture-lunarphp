@@ -132,7 +132,10 @@ Route::prefix('/admin')
         Route::post('/posts/{post}/duplicate', [PostController::class, 'duplicate']);
         Route::post('/posts/generate-seo', [\App\Http\Controllers\Api\Admin\AiSeoController::class, 'generate']);
         Route::get('/blog/categories', [PostController::class, 'categories']);
+        Route::post('/blog/categories', [PostController::class, 'storeCategory']);
         Route::get('/blog/tags', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'index']);
+        Route::post('/blog/tags', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'store']);
+        Route::get('/users', [\App\Http\Controllers\Api\Admin\UserController::class, 'index']);
         Route::post('/orders/{id}/refund', [OrderController::class, 'refund']);
         Route::post('/orders/{id}/return', [OrderController::class, 'return']);
         Route::get('/return-requests', [ReturnRequestController::class, 'index']);

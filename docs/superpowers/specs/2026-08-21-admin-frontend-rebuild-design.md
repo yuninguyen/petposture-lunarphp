@@ -66,13 +66,15 @@ admin/
 
 ## Auth
 
-Reuse the existing Sanctum SPA cookie-auth already used by `frontend/` — no new auth system.
+Reuse the existing Sanctum auth already used by `frontend/` — no new auth system. Verified by reading `AuthController` and `frontend/lib/fetchApi.ts`: despite `sanctum.php` having a `stateful` domains list, the frontend does **not** use CSRF-cookie SPA auth (no `/sanctum/csrf-cookie` call anywhere). The real mechanism is a **Sanctum personal access token**, returned in the login JSON body and stored client-side:
 
-- Login: existing `POST /login` (`AuthController::login`, throttled)
-- Session check: existing `GET /me`
-- Logout: existing `POST /logout`
-- Backend config changes needed: add `admin.petposture.com` to `SANCTUM_STATEFUL_DOMAINS` (`backend/config/sanctum.php`) and to `FRONTEND_URL` (used by `backend/config/cors.php`, which already supports comma-separated origins).
-- Authorization: existing `role:super_admin|admin|staff` middleware on the `/api/admin/*` route group covers admin-only access — same middleware to reuse for every new admin endpoint.
+- Login: `POST /login` (`AuthController::login`, throttled) returns `{ user: UserResource, token: string }` and also sets an httpOnly `petposture_token` cookie (not readable by JS — a secondary mechanism, not what the frontend relies on).
+- The frontend stores the plain token itself (`localStorage`, key `petposture_token`) and sends it as `Authorization: Bearer <token>` on every request, alongside `credentials: 'include'`.
+- Session check: `GET /me` (requires the Bearer header)
+- Logout: `POST /logout` (revokes the current token server-side via `currentAccessToken()->delete()`)
+- `UserResource` includes `roles: string[]` (Spatie roles) — the admin frontend uses this to gate access: after `/me`, require the response to include `super_admin`, `admin`, or `staff`; otherwise treat as unauthenticated for admin purposes and show an access-denied state.
+- Authorization on the backend: existing `role:super_admin|admin|staff` middleware on the `/api/admin/*` route group — reuse unchanged for every new admin endpoint.
+- CORS: `admin.petposture.com` must be added to `FRONTEND_URL` in the backend `.env` (comma-separated, read by `backend/config/cors.php`) so cross-origin requests from the new admin domain are allowed. No `SANCTUM_STATEFUL_DOMAINS` change needed since the admin app won't use cookie-session auth.
 
 ## Backend API pattern for resource migration
 
@@ -91,7 +93,11 @@ Route::prefix('/admin')
 
 Build API + frontend together, one resource at a time — not all-API-first, not frontend-only. This keeps risk small and lets each resource ship independently while Filament continues serving everything not yet migrated.
 
-**Pilot resource: Product.** Chosen because it is the most structurally complex (images, variants, price, category relationships) — if the shared architecture (AppShell, auth guard, table pattern, form pattern, image upload pattern) works for Product, it will work for every simpler resource that follows. Product currently has **no REST API** (Filament/Eloquent-only), so the pilot also covers writing the first `Admin\ProductController`.
+**Pilot resource: Post** (changed from Product — see below).
+
+Product was the original pilot candidate, but inspecting the codebase revealed it's not a simple CRUD resource: the backend uses **Lunar**, a full e-commerce framework, and Filament's `ProductResource` extends Lunar Admin's base resource with **10 sub-pages** (details, media, pricing, inventory, shipping, variants, identifiers, associations, availability, collections, URLs). Rebuilding all of that as a first pilot would be a large multi-plan effort, not a small architecture-validation pilot. Product migration is deferred to its own future spec, scoped deliberately (likely starting with core fields only — name/description/price/status/main image/category — before tackling variants/inventory/shipping/associations).
+
+Post was chosen instead: it already has a full REST API (`PostController` under `/api/admin`), is a single-entity resource (no sub-pages), and still exercises the core architecture patterns needed — list/table, form with rich text (TipTap), image upload, category assignment — without the Lunar complexity.
 
 ## Out of scope for this spec
 

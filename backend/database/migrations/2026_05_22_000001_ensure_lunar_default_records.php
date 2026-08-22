@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\Artisan;
 use Lunar\Models\Channel;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
@@ -16,18 +15,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // 1. Run lunar:install dynamically if we have no currencies to seed basic schema values
-        if (Currency::count() === 0) {
-            try {
-                Artisan::call('lunar:install', [
-                    '--no-interaction' => true,
-                ]);
-            } catch (Exception $e) {
-                // Fail silently and let the manual checks below set up fallback records
-            }
-        }
-
-        // 1.5. Ensure default Languages exist (en and vi)
+        // 1. Ensure default Languages exist (en and vi)
         if (Language::count() === 0) {
             Language::create([
                 'code' => 'en',

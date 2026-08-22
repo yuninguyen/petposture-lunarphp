@@ -28,7 +28,7 @@ PetPosture is a **breed-focused product recommendation brand**: *better products
 |-------|------------|
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
 | Backend | Laravel 11, PHP 8.3, Lunar PHP (e-commerce engine) |
-| Backend server | FrankenPHP + Caddy (single binary, no separate PHP-FPM/Nginx) |
+| Backend server | FrankenPHP + Caddy (single binary, no separate PHP-FPM/Nginx; Worker Mode enabled for persistent PHP processes) |
 | Admin Panel | Filament 3 + Filament Shield (RBAC) |
 | Auth | Laravel Sanctum |
 | Roles & Permissions | Spatie Laravel Permission |

@@ -5,3 +5,9 @@
 body {
   @apply bg-gray-100 text-ink font-sans;
 }
+
+/* TipTap/ProseMirror: kill the browser's default black focus outline on the
+   contenteditable area — the admin shows no ring there by design. */
+.ProseMirror {
+  outline: none !important;
+}

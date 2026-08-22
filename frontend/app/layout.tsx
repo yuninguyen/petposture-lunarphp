@@ -45,7 +45,7 @@ async function getShopSettings() {
 export async function generateMetadata(): Promise<Metadata> {
   const { shopName, shopLogo, shopFavicon, description } = await getShopSettings();
 
-  const faviconUrl = shopFavicon || '/favicon.ico';
+  const faviconUrl = shopFavicon || '/favicon.png';
   const metaDescription = description || DEFAULT_DESCRIPTION;
 
   return {
@@ -64,13 +64,7 @@ export async function generateMetadata(): Promise<Metadata> {
       images: shopLogo ? [shopLogo] : undefined,
     },
     icons: {
-      icon: [
-        { url: faviconUrl, sizes: '16x16', type: 'image/png' },
-        { url: faviconUrl, sizes: '32x32', type: 'image/png' },
-        { url: faviconUrl, sizes: '96x96', type: 'image/png' },
-        { url: faviconUrl, sizes: '192x192', type: 'image/png' },
-        { url: faviconUrl, sizes: '512x512', type: 'image/png' },
-      ],
+      icon: [{ url: faviconUrl, sizes: '100x100', type: 'image/png' }],
       apple: faviconUrl,
       shortcut: faviconUrl,
     },

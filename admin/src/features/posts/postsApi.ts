@@ -152,3 +152,66 @@ export function useGenerateSeo() {
       }>('/admin/posts/generate-seo', { method: 'POST', body: payload }),
   });
 }
+
+export interface UserOption {
+  id: string;
+  name: string;
+}
+
+export function useUsers() {
+  return useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const res = await fetchJson<UserOption[]>('/admin/users');
+      return Array.isArray(res) ? res : [];
+    },
+  });
+}
+
+export interface CreatedCategory {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export function useCreateCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) =>
+      fetchJson<CreatedCategory>('/admin/blog/categories', { method: 'POST', body: { name } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blog-categories'] });
+    },
+  });
+}
+
+export interface CreatedTag {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export function useCreateTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) =>
+      fetchJson<CreatedTag>('/admin/blog/tags', { method: 'POST', body: { name } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blog-tags'] });
+    },
+  });
+}
+
+// The storefront base URL comes from the backend (config('app.frontend_url'),
+// exposed via GET /api/settings) — the SAME value the preview endpoint uses —
+// so admin View links always target the right frontend for the environment.
+export function useFrontendUrl() {
+  return useQuery({
+    queryKey: ['settings'],
+    queryFn: async () => {
+      const res = await fetchJson<{ data: { frontend_url?: string } }>('/settings');
+      return res.data?.frontend_url ?? null;
+    },
+    staleTime: Infinity,
+  });
+}

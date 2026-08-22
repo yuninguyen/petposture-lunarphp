@@ -143,3 +143,10 @@ The "Request a Return" feature (Phase 1) is the current reference implementation
 ---
 *Superseded content removed: this file previously described a generic Vercel-hosted Next.js + "database TBD" architecture that never reflected this project. See `backend/README.md` / `frontend/README.md` for narrower per-app notes.*
 
+
+
+## UI Architecture Updates (Admin Panel)
+- Migrated to a 'Full-height Sidebar (Slate 800) + White Topbar' architecture.
+- Comparison Item Layout refactored to a responsive 50/50 'Bento Grid' (6:6 columns). Internal metrics are split into rows: (1) Highlight + Rating, (2) Price (display) + Price (cents).
+- Unified all Badges into a single <Badge /> component using rounded-md for a modern, professional look.
+

@@ -100,3 +100,13 @@ Read this before touching code. See `ARCHITECTURE.md` for the why; this file is 
 - Manual order `status` writes outside `OrderOperationsService` — breaks the state machine, the customer emails, and the outbound webhook dispatch that are all wired to go through it.
 - `--no-verify` / `--no-gpg-sign` on git operations, and destructive git commands (`reset --hard`, `push --force`) without explicit user instruction.
 - One-off debug/audit scripts (`scratch_*.php`, `tools/debug_*.php`, `out_*.txt` command-output dumps, etc.) committed into the repo — 51 of these had accumulated in `backend/` before a 2026-08-04 cleanup removed them. Keep throwaway scripts in the scratchpad/temp directory, never `git add` them; `backend/.gitignore` now has patterns (`scratch_*.php`, `out_*.txt`, `/tmp/`, `/tools/`) to catch the common cases.
+
+
+## UI/UX Pro Max Design Standards (Admin Panel)
+1. **Cards**: All standard content blocks/cards MUST use <Card className="space-y-4 p-5"> to provide a spacious, premium feel. Do not over-nest padding.
+2. **Section Headings**: Use <h3 className="text-lg font-semibold text-slate-800"> for major section titles within a card.
+3. **Labels**: Use <label className="block text-sm font-medium text-slate-700 mb-1"> for all form inputs to ensure uniform typography and spacing.
+4. **Bento Grid**: Use responsive grid layouts (grid-cols-1 sm:grid-cols-2) for forms to ensure proper mobile stacking.
+5. **Dropdowns**: Use custom styled dropdowns (e.g., appearance-none with a custom chevron SVG) instead of native <select> arrows for a polished look.
+6. **Badges**: Unified rounded-md styling over rounded-full.
+

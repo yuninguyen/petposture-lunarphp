@@ -50,4 +50,30 @@ class BlogTagControllerTest extends TestCase
         $this->assertArrayHasKey('id', $response->json('0'));
         $this->assertArrayHasKey('slug', $response->json('0'));
     }
+
+    public function test_admin_can_create_a_tag_with_auto_slug(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/admin/blog/tags', ['name' => 'New Tag'])->assertCreated();
+
+        $this->assertSame('New Tag', $response->json('name'));
+        $this->assertStringStartsWith('new-tag', $response->json('slug'));
+        $this->assertDatabaseHas('blog_tags', ['name' => 'New Tag']);
+    }
+
+    public function test_store_rejects_duplicate_slug(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+        Sanctum::actingAs($user);
+
+        BlogTag::create(['name' => 'Existing', 'slug' => 'new-tag']);
+
+        $this->postJson('/api/admin/blog/tags', ['name' => 'New', 'slug' => 'new-tag'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['slug']);
+    }
 }

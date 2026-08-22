@@ -14,17 +14,35 @@ interface ComparisonItemRepeaterProps {
   affiliateNetworks: AffiliateNetwork[];
 }
 
-function RowSummary({ control, index }: { control: Control<PostFormValues>; index: number }) {
+function formatPriceDisplay(value: string | undefined): string {
+  const trimmed = value?.trim();
+  if (!trimmed) return '';
+  return trimmed.startsWith('$') ? trimmed : `$${trimmed}`;
+}
+
+function RowSummary({
+  control,
+  index,
+  affiliateNetworks,
+}: {
+  control: Control<PostFormValues>;
+  index: number;
+  affiliateNetworks: AffiliateNetwork[];
+}) {
   const { t } = useTranslation();
   const productName = useWatch({ control, name: `comparison_items.${index}.product_name` });
   const priceDisplay = useWatch({ control, name: `comparison_items.${index}.price_display` });
   const retailer = useWatch({ control, name: `comparison_items.${index}.retailer` });
 
+  const network = affiliateNetworks.find((n) => n.slug === retailer);
+  const retailerLabel = network?.name ?? (retailer ? retailer.charAt(0).toUpperCase() + retailer.slice(1) : '');
+  const price = formatPriceDisplay(priceDisplay);
+
   return (
     <span className="text-sm text-gray-400">
       {productName || t('posts.comparison.untitled_item')}
-      {retailer ? ` — ${retailer}` : ''}
-      {priceDisplay ? ` — ${priceDisplay}` : ''}
+      {retailerLabel ? ` — ${retailerLabel}` : ''}
+      {price ? ` — ${price}` : ''}
     </span>
   );
 }
@@ -47,7 +65,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                 className="flex flex-1 items-center gap-2 text-left"
               >
                 <span className="font-medium">{t('posts.comparison.item_label', { defaultValue: 'Item' })} {index + 1}</span>
-                <RowSummary control={control} index={index} />
+                <RowSummary control={control} index={index} affiliateNetworks={affiliateNetworks} />
               </button>
               <Button type="button" variant="secondary" onClick={() => remove(index)}>
                 {t('posts.comparison.remove_item')}
@@ -56,90 +74,125 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
 
             {isExpanded && (
               <div className="space-y-3 border-t border-gray-300 p-3">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium">{t('posts.comparison.product_name')}</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.product_name')}</label>
                     <Input {...register(`comparison_items.${index}.product_name`)} />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">{t('posts.comparison.retailer')}</label>
-                    <select
-                      {...register(`comparison_items.${index}.retailer`)}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-ink"
-                    >
-                      <option value="">{t('posts.comparison.select_retailer')}</option>
-                      {affiliateNetworks.map((network) => (
-                        <option key={network.slug} value={network.slug}>
-                          {network.name}
-                        </option>
-                      ))}
-                    </select>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.retailer')}</label>
+                    <div className="relative">
+                      <select
+                        {...register(`comparison_items.${index}.retailer`)}
+                        className="appearance-none w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-8 text-sm text-slate-700 hover:bg-slate-50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors cursor-pointer shadow-sm"
+                      >
+                        <option value="">{t('posts.comparison.select_retailer')}</option>
+                        {affiliateNetworks.map((network) => (
+                          <option key={network.slug} value={network.slug}>
+                            {network.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium">{t('posts.comparison.image')}</label>
-                  <Controller
-                    control={control}
-                    name={`comparison_items.${index}.image_url`}
-                    render={({ field: imageField }) => (
-                      <MediaPicker
-                        value={imageField.value ? { id: '', url: imageField.value } : null}
-                        onChange={(media) => imageField.onChange(media?.url ?? null)}
+                {/* Media & Metrics Split (Bento Grid Style) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Left Col: Image (6/12) */}
+                  <div className="flex flex-col">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.image')}</label>
+                    <div className="flex-1 flex flex-col min-h-[142px]">
+                      <Controller
+                        control={control}
+                        name={`comparison_items.${index}.image_url`}
+                        render={({ field: imageField }) => (
+                          <div className="flex-1 flex flex-col [&>div]:flex-1 [&>div>button]:h-full">
+                            <MediaPicker
+                              value={imageField.value ? { id: '', url: imageField.value } : null}
+                              onChange={(media) => imageField.onChange(media?.url ?? null)}
+                            />
+                          </div>
+                        )}
                       />
-                    )}
-                  />
+                    </div>
+                  </div>
+
+                  {/* Right Col: Metrics (6/12) */}
+                  <div className="space-y-4 flex flex-col justify-end">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.highlight')}</label>
+                        <div className="relative">
+                          <select
+                            {...register(`comparison_items.${index}.highlight`)}
+                            className="appearance-none w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-8 text-sm text-slate-700 hover:bg-slate-50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors cursor-pointer shadow-sm"
+                          >
+                            <option value="">{t('posts.comparison.highlight.none')}</option>
+                            <option value="best_overall">{t('posts.comparison.highlight.best_overall')}</option>
+                            <option value="best_value">{t('posts.comparison.highlight.best_value')}</option>
+                            <option value="budget_pick">{t('posts.comparison.highlight.budget_pick')}</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.rating')}</label>
+                        <Input type="number" step="0.1" min="0" max="5" {...register(`comparison_items.${index}.rating`)} className="shadow-sm" />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.price_display')}</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="64.99"
+                          {...register(`comparison_items.${index}.price_display`)}
+                          className="shadow-sm"
+                        />
+                        <p className="mt-1 text-xs text-gray-400">{t('posts.comparison.price_hint')}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.price_cents')}</label>
+                        <Input type="number" {...register(`comparison_items.${index}.price_cents`)} className="shadow-sm" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium">{t('posts.comparison.highlight')}</label>
-                    <select
-                      {...register(`comparison_items.${index}.highlight`)}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-ink"
-                    >
-                      <option value="">{t('posts.comparison.highlight.none')}</option>
-                      <option value="best_overall">{t('posts.comparison.highlight.best_overall')}</option>
-                      <option value="best_value">{t('posts.comparison.highlight.best_value')}</option>
-                      <option value="budget_pick">{t('posts.comparison.highlight.budget_pick')}</option>
-                    </select>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.affiliate_url')}</label>
+                    <Input {...register(`comparison_items.${index}.affiliate_url`)} placeholder="https://..." />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">{t('posts.comparison.price_display')}</label>
-                    <Input {...register(`comparison_items.${index}.price_display`)} placeholder="$64.99" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">{t('posts.comparison.price_cents')}</label>
-                    <Input type="number" {...register(`comparison_items.${index}.price_cents`)} />
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.in_house_match_url')}</label>
+                    <Input {...register(`comparison_items.${index}.in_house_match_url`)} placeholder="https://..." />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" {...register(`comparison_items.${index}.in_stock`)} id={`in_stock_${index}`} />
+                  <label htmlFor={`in_stock_${index}`} className="text-sm font-medium text-ink">
+                    {t('posts.comparison.in_stock')}
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium">{t('posts.comparison.rating')}</label>
-                    <Input type="number" step="0.1" min="0" max="5" {...register(`comparison_items.${index}.rating`)} />
-                  </div>
-                  <div className="flex items-center gap-2 pt-6">
-                    <input type="checkbox" {...register(`comparison_items.${index}.in_stock`)} id={`in_stock_${index}`} />
-                    <label htmlFor={`in_stock_${index}`} className="text-sm font-medium">
-                      {t('posts.comparison.in_stock')}
-                    </label>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">{t('posts.comparison.affiliate_url')}</label>
-                  <Input {...register(`comparison_items.${index}.affiliate_url`)} placeholder="https://..." />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">{t('posts.comparison.in_house_match_url')}</label>
-                  <Input {...register(`comparison_items.${index}.in_house_match_url`)} placeholder="https://..." />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">{t('posts.comparison.pros')}</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.pros')}</label>
                     <Controller
                       control={control}
                       name={`comparison_items.${index}.pros`}
@@ -149,7 +202,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">{t('posts.comparison.cons')}</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.cons')}</label>
                     <Controller
                       control={control}
                       name={`comparison_items.${index}.cons`}

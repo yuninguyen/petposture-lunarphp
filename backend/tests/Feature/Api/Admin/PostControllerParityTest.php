@@ -295,4 +295,28 @@ class PostControllerParityTest extends TestCase
 
         $this->assertSame(Post::estimateReadTime($content), $post->fresh()->read_time);
     }
+
+    // --- Slug uniqueness (added with the admin Slug field) ---
+
+    public function test_store_rejects_duplicate_slug(): void
+    {
+        Post::create([
+            'blog_category_id' => $this->category->id,
+            'title' => 'Existing', 'slug' => 'my-post', 'content' => '<p>x</p>', 'status' => 'draft',
+        ]);
+
+        $this->postJson('/api/admin/posts', $this->basePayload(['slug' => 'my-post']))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['slug']);
+    }
+
+    public function test_update_allows_keeping_the_same_slug(): void
+    {
+        $post = Post::create([
+            'blog_category_id' => $this->category->id,
+            'title' => 'Existing', 'slug' => 'my-post', 'content' => '<p>x</p>', 'status' => 'draft',
+        ]);
+
+        $this->putJson("/api/admin/posts/{$post->id}", ['slug' => 'my-post'])->assertOk();
+    }
 }

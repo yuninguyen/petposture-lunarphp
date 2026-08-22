@@ -16,23 +16,23 @@ export function ComparisonDetailsSection({ control, register, affiliateNetworks 
   const { t } = useTranslation();
 
   return (
-    <Card className="space-y-4 p-4">
-      <h3 className="text-lg font-semibold">{t('posts.comparison.section_title')}</h3>
+    <Card className="space-y-4 p-5">
+      <h3 className="text-lg font-semibold text-slate-800">{t('posts.comparison.section_title')}</h3>
 
       <div>
-        <label className="text-sm font-medium">{t('posts.comparison.intro')}</label>
+        <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.intro')}</label>
         <Textarea {...register('comparison_intro')} rows={3} />
       </div>
 
-      <div className="flex items-center gap-2">
-        <input type="checkbox" {...register('disclosure_shown')} id="disclosure_shown" defaultChecked />
-        <label htmlFor="disclosure_shown" className="text-sm font-medium">
-          {t('posts.comparison.disclosure_shown')}
-        </label>
-      </div>
+        <div className="flex items-center gap-2">
+          <input type="checkbox" {...register('disclosure_shown')} id="disclosure_shown" defaultChecked />
+          <label htmlFor="disclosure_shown" className="text-sm font-medium text-slate-700">
+            {t('posts.comparison.disclosure_shown')}
+          </label>
+        </div>
 
       <div>
-        <h4 className="text-sm font-semibold">{t('posts.comparison.items_title')}</h4>
+        <h4 className="block text-sm font-medium text-slate-700 mb-3">{t('posts.comparison.items_title')}</h4>
         <ComparisonItemRepeater control={control} register={register} affiliateNetworks={affiliateNetworks} />
       </div>
     </Card>

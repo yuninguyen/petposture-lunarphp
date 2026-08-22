@@ -1,15 +1,7 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchJson } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-
-interface MediaItem {
-  id: string;
-  url: string;
-  thumbnail_url: string;
-  name: string;
-}
+import { ImageIcon } from '@/components/ui/icons';
+import { MediaLibraryModal } from '@/components/ui/media-library-modal';
 
 export function MediaPicker({
   value,
@@ -19,68 +11,41 @@ export function MediaPicker({
   onChange: (media: { id: string; url: string } | null) => void;
 }) {
   const { t } = useTranslation();
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const queryClient = useQueryClient();
-
-  const { data: library } = useQuery({
-    queryKey: ['media'],
-    queryFn: async () => {
-      const res = await fetchJson<{ data: MediaItem[] }>('/admin/media');
-      return Array.isArray(res.data) ? res.data : [];
-    },
-  });
-
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetchJson<{ data: MediaItem }>('/admin/media', { method: 'POST', body: formData });
-      onChange({ id: res.data.id, url: res.data.url });
-      queryClient.invalidateQueries({ queryKey: ['media'] });
-    } finally {
-      setUploading(false);
-      if (fileInput.current) fileInput.current.value = '';
-    }
-  }
+  const [open, setOpen] = useState(false);
 
   return (
     <div>
       {value ? (
         <div className="mb-3">
           <img src={value.url} alt="" className="w-full max-h-48 object-cover rounded-lg border border-gray-200" />
-          <button type="button" onClick={() => onChange(null)} className="text-xs text-red-600 mt-1">
-            {t('media.button_remove')}
-          </button>
+          <div className="mt-1.5 flex gap-4">
+            <button type="button" onClick={() => setOpen(true)} className="text-xs text-primary hover:underline">
+              {t('media.button_browse')}
+            </button>
+            <button type="button" onClick={() => onChange(null)} className="text-xs text-red-600 hover:underline">
+              {t('media.button_remove')}
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="border-2 border-dashed border-gray-300 rounded-lg h-32 flex items-center justify-center text-sm text-gray-400 mb-3">
-          {t('media.empty_state')}
-        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex h-28 w-full flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 text-sm text-gray-400 hover:border-secondary hover:text-primary"
+        >
+          <ImageIcon className="h-6 w-6" />
+          {t('media.button_browse')}
+        </button>
       )}
 
-      <input ref={fileInput} type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="media-upload" />
-      <Button type="button" variant="primary" disabled={uploading} onClick={() => fileInput.current?.click()}>
-        {uploading ? t('media.button_uploading') : t('media.button_upload')}
-      </Button>
-
-      {library && library.length > 0 && (
-        <div className="grid grid-cols-4 gap-2 mt-3">
-          {library.map((item) => (
-            <button
-              type="button"
-              key={item.id}
-              onClick={() => onChange({ id: item.id, url: item.url })}
-              className="border border-gray-200 rounded overflow-hidden hover:border-secondary"
-            >
-              <img src={item.thumbnail_url} alt={item.name} className="w-full h-16 object-cover" />
-            </button>
-          ))}
-        </div>
-      )}
+      <MediaLibraryModal
+        open={open}
+        onClose={() => setOpen(false)}
+        onSelect={(media) => {
+          onChange(media);
+          setOpen(false);
+        }}
+      />
     </div>
   );
 }

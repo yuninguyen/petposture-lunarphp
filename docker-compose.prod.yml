@@ -42,6 +42,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: https://api.petposture.com
+        VITE_FRONTEND_URL: https://petposture.com
     image: petposture-admin:prod
     container_name: petposture-admin
     restart: unless-stopped

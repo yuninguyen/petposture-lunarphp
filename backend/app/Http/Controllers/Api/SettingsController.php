@@ -20,6 +20,10 @@ class SettingsController extends Controller
             'shop_logo' => $this->resolveAssetUrl($shopLogo),
             'shop_favicon' => $this->resolveAssetUrl($shopFavicon),
             'description' => setting('shop_description'),
+            // Single source of truth for the storefront URL — the admin uses
+            // this for its View/preview links so they always match the
+            // environment the backend was configured for.
+            'frontend_url' => rtrim((string) config('app.frontend_url', ''), '/'),
             'localization' => [
                 'currency' => setting('default_currency', 'USD'),
                 'symbol' => setting('currency_symbol', '$'),

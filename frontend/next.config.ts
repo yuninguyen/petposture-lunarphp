@@ -30,6 +30,11 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    // Next 16's image optimizer blocks fetches to local/loopback IPs by
+    // default (SSRF guard) — local dev media lives on 127.0.0.1:8000 /
+    // petposture.test, so allow local IPs in dev only. Production keeps the
+    // guard on (all prod images come from public https hosts).
+    dangerouslyAllowLocalIP: process.env.NODE_ENV === 'development',
     remotePatterns: [
       {
         protocol: 'https',

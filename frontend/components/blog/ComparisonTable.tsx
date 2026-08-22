@@ -31,6 +31,14 @@ const HIGHLIGHT_LABEL: Record<NonNullable<ComparisonItem['highlight']>, string> 
     budget_pick: 'Budget Pick',
 };
 
+// The admin stores the price without a currency symbol ("64.99"); display it
+// with "$" unless the stored value already carries one (legacy data).
+function formatPrice(value: string | null | undefined): string {
+    const trimmed = value?.trim();
+    if (!trimmed) return '';
+    return trimmed.startsWith('$') ? trimmed : `$${trimmed}`;
+}
+
 function Stars({ rating }: { rating: number }) {
     const rounded = Math.round(rating);
     return (
@@ -85,7 +93,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
                 </div>
             ) : null}
 
-            <div className="mb-3 text-[20px] font-bold text-primary">{item.price_display}</div>
+            <div className="mb-3 text-[20px] font-bold text-primary">{formatPrice(item.price_display)}</div>
 
             {(item.pros?.length || item.cons?.length) ? (
                 <ul className="mb-4 space-y-1 text-[12.5px] text-zinc-500">
