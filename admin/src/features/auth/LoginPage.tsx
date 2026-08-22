@@ -111,7 +111,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="py-2.5 sm:text-sm sm:leading-6"
+                  className="sm:text-sm sm:leading-6"
                   required
                   autoComplete="email"
                   autoFocus
@@ -129,7 +129,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="py-2.5 pr-10 sm:text-sm sm:leading-6"
+                    className="pr-10 sm:text-sm sm:leading-6"
                     required
                     autoComplete="current-password"
                   />
