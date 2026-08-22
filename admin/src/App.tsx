@@ -11,10 +11,10 @@ import { AdminUser, fetchCurrentUser, getToken, isAdminRole } from '@/lib/auth';
 export default function App() {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [authFailed, setAuthFailed] = useState(false);
-  const hasToken = Boolean(getToken());
+  const [loggedIn, setLoggedIn] = useState(Boolean(getToken()));
 
   useEffect(() => {
-    if (!hasToken) return;
+    if (!loggedIn || user) return;
     fetchCurrentUser()
       .then((u) => {
         if (isAdminRole(u.roles)) {
@@ -24,10 +24,18 @@ export default function App() {
         }
       })
       .catch(() => setAuthFailed(true));
-  }, [hasToken]);
+  }, [loggedIn, user]);
 
-  if (!hasToken || authFailed) {
-    return <LoginPage onLoggedIn={() => window.location.reload()} />;
+  if (!loggedIn || authFailed) {
+    return (
+      <LoginPage
+        onLoggedIn={(loggedInUser) => {
+          setUser(loggedInUser);
+          setAuthFailed(false);
+          setLoggedIn(true);
+        }}
+      />
+    );
   }
 
   return (

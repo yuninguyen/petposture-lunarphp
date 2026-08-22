@@ -2,9 +2,9 @@ import { FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { login, setToken, isAdminRole } from '@/lib/auth';
+import { login, setToken, isAdminRole, AdminUser } from '@/lib/auth';
 
-export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
+export function LoginPage({ onLoggedIn }: { onLoggedIn: (user: AdminUser) => void }) {
   const { t, i18n } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +23,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
         return;
       }
       setToken(token);
-      onLoggedIn();
+      onLoggedIn(user);
     } catch {
       setError(t('auth.error_invalid_credentials'));
     } finally {
