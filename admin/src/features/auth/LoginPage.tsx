@@ -111,7 +111,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                  className="py-2.5 sm:text-sm sm:leading-6"
                   required
                   autoComplete="email"
                   autoFocus
@@ -129,7 +129,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full rounded-lg border-0 py-2.5 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                    className="py-2.5 pr-10 sm:text-sm sm:leading-6"
                     required
                     autoComplete="current-password"
                   />
