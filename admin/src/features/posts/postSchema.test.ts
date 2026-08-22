@@ -204,3 +204,111 @@ describe('getPostFormSchema — comparison fields', () => {
     expect(result.success).toBe(false);
   });
 });
+
+const validHighlightItem = {
+  product_name: 'Orthopedic Bed',
+  image_url: null,
+  retailer: 'chewy',
+  in_stock: true,
+  price_display: '$64.99',
+  price_cents: 6499,
+  rating: 4.7,
+  affiliate_url: 'https://chewy.com/p/1',
+  pros: ['comfy'],
+  cons: [],
+  in_house_match_url: '',
+};
+
+describe('getPostFormSchema — taxonomy, seo, published_at, highlight enum', () => {
+  const baseValues = {
+    blog_category_id: '1',
+    title: 'A Post',
+    content: '<p>x</p>',
+    status: 'draft' as const,
+    type: 'article' as const,
+  };
+
+  it('defaults breeds/solutions/tags to empty arrays', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse(baseValues);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.breeds).toEqual([]);
+      expect(result.data.solutions).toEqual([]);
+      expect(result.data.tags).toEqual([]);
+    }
+  });
+
+  it('accepts string-id arrays for breeds/solutions/tags', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      breeds: ['1', '2'],
+      solutions: ['3'],
+      tags: ['4'],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts an empty-string published_at', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({ ...baseValues, published_at: '' });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a full seo object', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      seo: {
+        title: 'SEO Title',
+        keyphrase: 'dog ramps',
+        description: 'Meta description',
+        og_title: 'Social Title',
+        og_description: 'Social description',
+        og_image: null,
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a seo title over 60 characters', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      seo: { title: 'a'.repeat(61) },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a seo description over 160 characters', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      seo: { description: 'a'.repeat(161) },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts all three enum highlight values and empty string', () => {
+    const schema = getPostFormSchema(t);
+    for (const highlight of ['best_overall', 'best_value', 'budget_pick', '']) {
+      const result = schema.safeParse({
+        ...baseValues,
+        type: 'comparison',
+        comparison_items: [{ ...validHighlightItem, highlight }],
+      });
+      expect(result.success).toBe(true);
+    }
+  });
+
+  it('rejects an out-of-enum highlight value', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      type: 'comparison',
+      comparison_items: [{ ...validHighlightItem, highlight: 'Best Value' }],
+    });
+    expect(result.success).toBe(false);
+  });
+});

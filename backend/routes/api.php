@@ -128,7 +128,11 @@ Route::prefix('/admin')
         Route::put('/posts/{post}', [PostController::class, 'update']);
         Route::patch('/posts/{post}', [PostController::class, 'update']);
         Route::delete('/posts/{post}', [PostController::class, 'destroy']);
+        Route::post('/posts/bulk-delete', [PostController::class, 'bulkDestroy']);
+        Route::post('/posts/{post}/duplicate', [PostController::class, 'duplicate']);
+        Route::post('/posts/generate-seo', [\App\Http\Controllers\Api\Admin\AiSeoController::class, 'generate']);
         Route::get('/blog/categories', [PostController::class, 'categories']);
+        Route::get('/blog/tags', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'index']);
         Route::post('/orders/{id}/refund', [OrderController::class, 'refund']);
         Route::post('/orders/{id}/return', [OrderController::class, 'return']);
         Route::get('/return-requests', [ReturnRequestController::class, 'index']);

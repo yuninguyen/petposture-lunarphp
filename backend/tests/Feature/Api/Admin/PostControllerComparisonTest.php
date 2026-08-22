@@ -7,6 +7,7 @@ use App\Models\BlogCategory;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -53,7 +54,7 @@ class PostControllerComparisonTest extends TestCase
             'product_name' => 'Orthopedic Bed',
             'image_url' => 'https://cdn.test/bed.webp',
             'retailer' => 'chewy',
-            'highlight' => 'Best Value',
+            'highlight' => 'best_value',
             'in_stock' => true,
             'price_display' => '$64.99',
             'price_cents' => 6499,
@@ -191,5 +192,28 @@ class PostControllerComparisonTest extends TestCase
         $this->postJson('/api/admin/posts', $payload)
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['comparison_items.0.affiliate_url']);
+    }
+
+    public function test_store_rejects_out_of_enum_highlight_value(): void
+    {
+        $payload = $this->basePayload([
+            'type' => Post::TYPE_COMPARISON,
+            'comparison_items' => [$this->comparisonItem(['highlight' => 'Best Value'])],
+        ]);
+
+        $this->postJson('/api/admin/posts', $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['comparison_items.0.highlight']);
+    }
+
+    public function test_store_accepts_all_enum_highlight_values_and_empty(): void
+    {
+        foreach (['best_overall', 'best_value', 'budget_pick', null, ''] as $index => $highlight) {
+            $this->postJson('/api/admin/posts', $this->basePayload([
+                'slug' => 'highlight-'.$index.'-'.Str::random(4),
+                'type' => Post::TYPE_COMPARISON,
+                'comparison_items' => [$this->comparisonItem(['highlight' => $highlight])],
+            ]))->assertCreated();
+        }
     }
 }

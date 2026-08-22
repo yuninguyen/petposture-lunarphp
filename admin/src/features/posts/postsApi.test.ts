@@ -12,6 +12,10 @@ describe('buildPostsQuery', () => {
     );
   });
 
+  it('includes the type param when set', () => {
+    expect(buildPostsQuery({ type: 'comparison' })).toBe('/admin/posts?type=comparison');
+  });
+
   it('omits an empty search string', () => {
     expect(buildPostsQuery({ search: '' })).toBe('/admin/posts');
   });

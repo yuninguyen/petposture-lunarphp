@@ -12,8 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MediaPicker } from '@/features/media/MediaPicker';
 import { getPostFormSchema, PostFormValues } from './postSchema';
-import { useAffiliateNetworks } from './postsApi';
+import { useAffiliateNetworks, useBreeds, useBlogTags, useSolutions } from './postsApi';
 import { ComparisonDetailsSection } from './ComparisonDetailsSection';
+import { SeoSettingsSection } from './SeoSettingsSection';
 
 interface BlogCategory {
   id: number;
@@ -46,8 +47,21 @@ interface PostDetail {
   blog_category: { id: string; name: string } | null;
   featured_image: string | null;
   featured_media_id: string | null;
+  featured_image_alt: string | null;
   author: string | null;
   type: 'article' | 'guide' | 'comparison';
+  published_at: string | null;
+  breeds: { id: string; name: string }[];
+  solutions: { id: string; name: string }[];
+  tags: { id: string; name: string }[];
+  seo: {
+    title: string | null;
+    keyphrase: string | null;
+    description: string | null;
+    og_title: string | null;
+    og_description: string | null;
+    og_image: string | null;
+  } | null;
   comparison: {
     intro: string | null;
     disclosure_shown: boolean;
@@ -87,12 +101,22 @@ export function PostFormPage() {
   const { data: affiliateNetworksData } = useAffiliateNetworks();
   const affiliateNetworks = affiliateNetworksData ?? [];
 
+  const { data: breedsData } = useBreeds();
+  const breeds = breedsData ?? [];
+
+  const { data: solutionsData } = useSolutions();
+  const solutions = solutionsData ?? [];
+
+  const { data: tagsData } = useBlogTags();
+  const tags = tagsData ?? [];
+
   const {
     register,
     handleSubmit,
     control,
     reset,
     setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<PostFormValues>({
     resolver: zodResolver(getPostFormSchema(t)),
@@ -102,8 +126,21 @@ export function PostFormPage() {
       blog_category_id: '',
       status: 'draft',
       featured_media_id: null,
+      featured_image_alt: '',
       author: '',
       type: 'article',
+      published_at: '',
+      breeds: [],
+      solutions: [],
+      tags: [],
+      seo: {
+        title: '',
+        keyphrase: '',
+        description: '',
+        og_title: '',
+        og_description: '',
+        og_image: null,
+      },
       comparison_intro: '',
       disclosure_shown: true,
       comparison_items: [],
@@ -128,15 +165,32 @@ export function PostFormPage() {
         blog_category_id: existingPost.blog_category?.id ?? '',
         status: existingPost.status,
         featured_media_id: existingPost.featured_media_id,
+        featured_image_alt: existingPost.featured_image_alt ?? '',
         author: existingPost.author ?? '',
         type: existingPost.type ?? 'article',
+        published_at: existingPost.published_at ? existingPost.published_at.slice(0, 16) : '',
+        breeds: existingPost.breeds?.map((b) => b.id) ?? [],
+        solutions: existingPost.solutions?.map((s) => s.id) ?? [],
+        tags: existingPost.tags?.map((t) => t.id) ?? [],
+        seo: {
+          title: existingPost.seo?.title ?? '',
+          keyphrase: existingPost.seo?.keyphrase ?? '',
+          description: existingPost.seo?.description ?? '',
+          og_title: existingPost.seo?.og_title ?? '',
+          og_description: existingPost.seo?.og_description ?? '',
+          og_image: existingPost.seo?.og_image ?? null,
+        },
         comparison_intro: existingPost.comparison?.intro ?? '',
         disclosure_shown: existingPost.comparison?.disclosure_shown ?? true,
         comparison_items: (existingPost.comparison?.items ?? []).map((item) => ({
           product_name: item.product_name,
           image_url: item.image_url,
           retailer: item.retailer ?? '',
-          highlight: item.highlight ?? '',
+          // Legacy free-text values outside the enum are dropped (select shows
+          // "None") rather than being sent back and failing validation.
+          highlight: item.highlight && ['best_overall', 'best_value', 'budget_pick'].includes(item.highlight)
+            ? (item.highlight as 'best_overall' | 'best_value' | 'budget_pick')
+            : undefined,
           in_stock: item.in_stock,
           price_display: item.price_display ?? '',
           price_cents: item.price_cents ?? undefined,
@@ -171,7 +225,13 @@ export function PostFormPage() {
   });
 
   function onSubmit(values: PostFormValues) {
-    mutation.mutate({ ...values, content: editor?.getHTML() ?? values.content });
+    mutation.mutate({
+      ...values,
+      content: editor?.getHTML() ?? values.content,
+      // datetime-local sends an empty string when untouched; the backend's
+      // `nullable|date` rule rejects "" — send null instead.
+      published_at: values.published_at || null,
+    });
   }
 
   return (
@@ -258,6 +318,84 @@ export function PostFormPage() {
             </div>
 
             <div className="mb-4">
+              <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_breeds')}</label>
+              <Controller
+                name="breeds"
+                control={control}
+                render={({ field }) => (
+                  <select
+                    multiple
+                    value={field.value}
+                    onChange={(e) => field.onChange(Array.from(e.target.selectedOptions).map((o) => o.value))}
+                    size={Math.min(breeds.length + 1, 6)}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm"
+                  >
+                    {breeds.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_solutions')}</label>
+              <Controller
+                name="solutions"
+                control={control}
+                render={({ field }) => (
+                  <select
+                    multiple
+                    value={field.value}
+                    onChange={(e) => field.onChange(Array.from(e.target.selectedOptions).map((o) => o.value))}
+                    size={Math.min(solutions.length + 1, 6)}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm"
+                  >
+                    {solutions.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_tags')}</label>
+              <Controller
+                name="tags"
+                control={control}
+                render={({ field }) => (
+                  <select
+                    multiple
+                    value={field.value}
+                    onChange={(e) => field.onChange(Array.from(e.target.selectedOptions).map((o) => o.value))}
+                    size={Math.min(tags.length + 1, 6)}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm"
+                  >
+                    {tags.map((tag) => (
+                      <option key={tag.id} value={tag.id}>
+                        {tag.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_published_at')}</label>
+              <input
+                type="datetime-local"
+                {...register('published_at')}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm"
+              />
+            </div>
+
+            <div className="mb-4">
               <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_author')}</label>
               <Input {...register('author')} />
             </div>
@@ -280,6 +418,10 @@ export function PostFormPage() {
                   );
                 }}
               />
+              <div className="mt-3">
+                <label className="block text-xs font-semibold text-primary-light mb-1">{t('posts.form_label_featured_image_alt')}</label>
+                <Input {...register('featured_image_alt')} maxLength={255} />
+              </div>
             </div>
           </Card>
         </div>
@@ -288,6 +430,8 @@ export function PostFormPage() {
       {selectedType === 'comparison' && (
         <ComparisonDetailsSection control={control} register={register} affiliateNetworks={affiliateNetworks} />
       )}
+
+      <SeoSettingsSection control={control} register={register} setValue={setValue} getValues={getValues} />
     </form>
   );
 }

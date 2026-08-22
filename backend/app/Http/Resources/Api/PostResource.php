@@ -29,6 +29,7 @@ class PostResource extends JsonResource
             'author' => $this->author,
             'read_time' => $this->read_time,
             'status' => $this->status,
+            'has_out_of_stock_comparison_items' => $this->hasOutOfStockComparisonItems(),
             'created_at' => optional($this->created_at)?->toISOString(),
             'updated_at' => optional($this->updated_at)?->toISOString(),
             'published_at' => optional($this->published_at)?->toISOString(),
@@ -43,7 +44,16 @@ class PostResource extends JsonResource
             ] : null,
             'comparison' => $this->type === Post::TYPE_COMPARISON ? $this->resolveComparison() : null,
             'seo' => $this->resolveSeo(),
+            'breeds' => $this->breeds->map(fn ($breed) => [
+                'id' => (string) $breed->id,
+                'name' => $breed->name,
+            ])->values(),
+            'solutions' => $this->solutions->map(fn ($solution) => [
+                'id' => (string) $solution->id,
+                'name' => $solution->name,
+            ])->values(),
             'tags' => $this->tags->map(fn ($tag) => [
+                'id' => (string) $tag->id,
                 'name' => $tag->name,
                 'slug' => $tag->slug,
             ])->values(),

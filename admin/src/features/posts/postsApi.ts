@@ -6,7 +6,9 @@ export interface Post {
   title: string;
   slug: string;
   status: 'draft' | 'published';
+  type: 'article' | 'guide' | 'comparison';
   blog_category: { id: string; name: string } | null;
+  has_out_of_stock_comparison_items: boolean;
   created_at: string;
   updated_at: string;
   published_at: string | null;
@@ -25,6 +27,7 @@ export interface PostsFilters {
   search?: string;
   status?: 'draft' | 'published';
   category?: string;
+  type?: 'article' | 'guide' | 'comparison';
   page?: number;
 }
 
@@ -33,6 +36,7 @@ export function buildPostsQuery(filters: PostsFilters): string {
   if (filters.search) params.set('search', filters.search);
   if (filters.status) params.set('status', filters.status);
   if (filters.category) params.set('category', filters.category);
+  if (filters.type) params.set('type', filters.type);
   if (filters.page) params.set('page', String(filters.page));
   const qs = params.toString();
   return qs ? `/admin/posts?${qs}` : '/admin/posts';
@@ -72,5 +76,79 @@ export function useAffiliateNetworks() {
   return useQuery({
     queryKey: ['affiliate-networks'],
     queryFn: async () => extractAffiliateNetworks(await fetchJson<AffiliateNetwork[]>('/admin/affiliate-networks')),
+  });
+}
+
+export interface TaxonomyOption {
+  id: string;
+  name: string;
+}
+
+export function useBreeds() {
+  return useQuery({
+    queryKey: ['breeds'],
+    queryFn: async () => {
+      const res = await fetchJson<{ data: TaxonomyOption[] }>('/breeds');
+      return Array.isArray(res.data) ? res.data : [];
+    },
+  });
+}
+
+export function useSolutions() {
+  return useQuery({
+    queryKey: ['solutions'],
+    queryFn: async () => {
+      const res = await fetchJson<{ data: TaxonomyOption[] }>('/solutions');
+      return Array.isArray(res.data) ? res.data : [];
+    },
+  });
+}
+
+export function useBlogTags() {
+  return useQuery({
+    queryKey: ['blog-tags'],
+    queryFn: async () => {
+      const res = await fetchJson<TaxonomyOption[]>('/admin/blog/tags');
+      return Array.isArray(res) ? res : [];
+    },
+  });
+}
+
+export function useBulkDeletePosts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const res = await fetchApi('/admin/posts/bulk-delete', { method: 'POST', body: { ids } });
+      if (!res.ok) {
+        throw new Error('Failed to delete posts');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+  });
+}
+
+export function useDuplicatePost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchJson<{ data: Post }>(`/admin/posts/${id}/duplicate`, { method: 'POST' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+  });
+}
+
+export function useGenerateSeo() {
+  return useMutation({
+    mutationFn: (payload: { title: string; content: string }) =>
+      fetchJson<{
+        seo_title: string;
+        focus_keyphrase: string;
+        meta_description: string;
+        social_title: string;
+        social_description: string;
+      }>('/admin/posts/generate-seo', { method: 'POST', body: payload }),
   });
 }

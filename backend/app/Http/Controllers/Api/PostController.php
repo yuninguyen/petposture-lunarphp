@@ -24,7 +24,7 @@ class PostController extends Controller
     {
         $this->authorizeAdmin();
 
-        $query = Post::with(['blogCategory', 'metadata', 'tags', 'seo', 'featuredMedia'])->latest();
+        $query = Post::with(['blogCategory', 'metadata', 'tags', 'seo', 'featuredMedia', 'breeds', 'solutions'])->latest();
 
         if ($request->has('category')) {
             $query->whereHas('blogCategory', function ($q) use ($request) {
@@ -34,6 +34,10 @@ class PostController extends Controller
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
         }
 
         if ($request->filled('search')) {
@@ -58,13 +62,19 @@ class PostController extends Controller
         $validated['type'] = $validated['type'] ?? Post::TYPE_ARTICLE;
         $validated['status'] = $validated['status'] ?? 'draft';
         $comparison = $this->extractComparisonData($validated);
+        $taxonomy = $this->extractTaxonomyData($validated);
+        $seoData = $this->extractSeoData($validated);
+
+        // read_time is always server-computed from content (legacy Filament
+        // behavior) — never user-editable, never taken from the client.
+        $validated['read_time'] = Post::estimateReadTime($validated['content']);
 
         // Slug stays optional from the client — generate it when absent (as the
         // original store() did) so older API clients and the admin form keep
         // working without a slug field.
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['title']).'-'.rand(1000, 9999);
 
-        if ($validated['status'] === 'published') {
+        if ($validated['status'] === 'published' && empty($validated['published_at'])) {
             $validated['published_at'] = now();
         }
 
@@ -72,6 +82,12 @@ class PostController extends Controller
 
         if ($post->type === Post::TYPE_COMPARISON) {
             $this->syncComparisonMeta($post, $comparison);
+        }
+
+        $this->syncTaxonomy($post, $taxonomy);
+
+        if ($seoData !== null) {
+            $post->seo()->updateOrCreate([], $seoData);
         }
 
         return (new PostResource($post->fresh()))->response()->setStatusCode(201);
@@ -90,6 +106,12 @@ class PostController extends Controller
 
         $validated = $request->validate($this->validationRules(forUpdate: true));
         $comparison = $this->extractComparisonData($validated);
+        $taxonomy = $this->extractTaxonomyData($validated);
+        $seoData = $this->extractSeoData($validated);
+
+        if (isset($validated['content'])) {
+            $validated['read_time'] = Post::estimateReadTime($validated['content']);
+        }
 
         if (isset($validated['status']) && $validated['status'] === 'published' && ! $post->published_at) {
             $validated['published_at'] = now();
@@ -101,7 +123,57 @@ class PostController extends Controller
             $this->syncComparisonMeta($post, $comparison);
         }
 
+        $this->syncTaxonomy($post, $taxonomy);
+
+        if ($seoData !== null) {
+            $post->seo()->updateOrCreate([], $seoData);
+        }
+
         return new PostResource($post->fresh());
+    }
+
+    public function duplicate(Post $post): JsonResponse
+    {
+        $this->authorizeAdmin();
+
+        $replica = $post->replicate();
+        $replica->title = $post->title.' '.__('(Copy)');
+        $replica->slug = Str::slug($replica->title).'-'.Str::random(6);
+        $replica->status = 'draft';
+        $replica->published_at = null;
+        $replica->save();
+
+        // Copy metadata preserving each row's stored type (json/bool/string),
+        // matching how setMeta() originally wrote them.
+        foreach ($post->metadata as $meta) {
+            $replica->setMeta($meta->key, $meta->cast_value, $meta->type);
+        }
+
+        $replica->breeds()->sync($post->breeds->pluck('id'));
+        $replica->solutions()->sync($post->solutions->pluck('id'));
+        $replica->tags()->sync($post->tags->pluck('id'));
+
+        if ($post->seo) {
+            $replica->seo()->create($post->seo->only([
+                'title', 'keyphrase', 'description', 'og_title', 'og_description', 'og_image',
+            ]));
+        }
+
+        return (new PostResource($replica->fresh()))->response()->setStatusCode(201);
+    }
+
+    public function bulkDestroy(Request $request): JsonResponse
+    {
+        $this->authorizeAdmin();
+
+        $validated = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer|exists:posts,id',
+        ]);
+
+        Post::whereIn('id', $validated['ids'])->delete();
+
+        return response()->json(null, 204);
     }
 
     public function destroy(Post $post)
@@ -139,15 +211,28 @@ class PostController extends Controller
             'featured_image_alt' => 'nullable|string|max:255',
             'featured_media_id' => 'nullable|exists:curator_media,id',
             'author' => 'nullable|string|max:255',
-            'read_time' => 'nullable|integer|min:0',
+            'read_time' => 'nullable|string|max:64',
             'published_at' => 'nullable|date',
+            'breeds' => 'nullable|array',
+            'breeds.*' => 'integer|exists:breeds,id',
+            'solutions' => 'nullable|array',
+            'solutions.*' => 'integer|exists:solutions,id',
+            'tags' => 'nullable|array',
+            'tags.*' => 'integer|exists:blog_tags,id',
+            'seo' => 'nullable|array',
+            'seo.title' => 'nullable|string|max:60',
+            'seo.keyphrase' => 'nullable|string|max:255',
+            'seo.description' => 'nullable|string|max:160',
+            'seo.og_title' => 'nullable|string|max:255',
+            'seo.og_description' => 'nullable|string|max:500',
+            'seo.og_image' => 'nullable|string|max:2048',
             'comparison_intro' => 'nullable|string',
             'disclosure_shown' => 'nullable|boolean',
             'comparison_items' => 'nullable|array',
             'comparison_items.*.product_name' => 'required_with:comparison_items|string|max:255',
             'comparison_items.*.image_url' => 'nullable|string|max:2048',
             'comparison_items.*.retailer' => 'required_with:comparison_items|string|exists:affiliate_networks,slug',
-            'comparison_items.*.highlight' => 'nullable|string|max:255',
+            'comparison_items.*.highlight' => 'nullable|in:best_overall,best_value,budget_pick',
             'comparison_items.*.in_stock' => 'nullable|boolean',
             'comparison_items.*.price_display' => 'nullable|string|max:64',
             'comparison_items.*.price_cents' => 'nullable|integer|min:0',
@@ -184,5 +269,45 @@ class PostController extends Controller
         $post->setMeta('comparison_intro', $data['comparison_intro']);
         $post->setMeta('disclosure_shown', $data['disclosure_shown'] ? '1' : '0', 'bool');
         $post->setMeta('comparison_items', $data['comparison_items'], 'json');
+    }
+
+    /**
+     * Pull the taxonomy-only fields out of the validated payload so they
+     * aren't passed to Post::create()/update() (they aren't Post columns —
+     * they're persisted via the belongsToMany pivot tables).
+     */
+    protected function extractTaxonomyData(array &$validated): array
+    {
+        $taxonomy = [
+            'breeds' => $validated['breeds'] ?? [],
+            'solutions' => $validated['solutions'] ?? [],
+            'tags' => $validated['tags'] ?? [],
+        ];
+
+        unset($validated['breeds'], $validated['solutions'], $validated['tags']);
+
+        return $taxonomy;
+    }
+
+    protected function syncTaxonomy(Post $post, array $taxonomy): void
+    {
+        $post->breeds()->sync($taxonomy['breeds']);
+        $post->solutions()->sync($taxonomy['solutions']);
+        $post->tags()->sync($taxonomy['tags']);
+    }
+
+    /**
+     * Pull the seo sub-object out of the validated payload (it isn't a Post
+     * column — it's persisted via the polymorphic SeoMetadata row). Returns
+     * null when the client didn't send the field at all, so an absent `seo`
+     * never clobbers an existing row.
+     */
+    protected function extractSeoData(array &$validated): ?array
+    {
+        $seo = $validated['seo'] ?? null;
+
+        unset($validated['seo']);
+
+        return is_array($seo) ? $seo : null;
     }
 }

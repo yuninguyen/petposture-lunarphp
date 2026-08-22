@@ -9,7 +9,7 @@ const comparisonItemSchema = (t: TranslationFunction) =>
     retailer: z.string().min(1, t('posts.comparison.errors.retailer_required')),
     highlight: z.preprocess(
       (val) => (val === '' ? undefined : val),
-      z.string().max(255).optional()
+      z.enum(['best_overall', 'best_value', 'budget_pick']).optional()
     ),
     in_stock: z.boolean().optional(),
     price_display: z.string().max(64).optional(),
@@ -50,6 +50,19 @@ export const getPostFormSchema = (t: TranslationFunction) =>
       z.number().int().min(0).optional()
     ),
     published_at: z.string().nullable().optional(),
+    breeds: z.array(z.string()).default([]),
+    solutions: z.array(z.string()).default([]),
+    tags: z.array(z.string()).default([]),
+    seo: z
+      .object({
+        title: z.string().max(60).optional(),
+        keyphrase: z.string().optional(),
+        description: z.string().max(160).optional(),
+        og_title: z.string().optional(),
+        og_description: z.string().max(500).optional(),
+        og_image: z.string().nullable().optional(),
+      })
+      .optional(),
     comparison_intro: z.string().optional(),
     disclosure_shown: z.boolean().optional(),
     comparison_items: z.array(comparisonItemSchema(t)).optional(),

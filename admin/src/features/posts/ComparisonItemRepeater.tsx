@@ -94,7 +94,15 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="text-sm font-medium">{t('posts.comparison.highlight')}</label>
-                    <Input {...register(`comparison_items.${index}.highlight`)} />
+                    <select
+                      {...register(`comparison_items.${index}.highlight`)}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-ink"
+                    >
+                      <option value="">{t('posts.comparison.highlight.none')}</option>
+                      <option value="best_overall">{t('posts.comparison.highlight.best_overall')}</option>
+                      <option value="best_value">{t('posts.comparison.highlight.best_value')}</option>
+                      <option value="budget_pick">{t('posts.comparison.highlight.budget_pick')}</option>
+                    </select>
                   </div>
                   <div>
                     <label className="text-sm font-medium">{t('posts.comparison.price_display')}</label>
@@ -165,7 +173,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
             product_name: '',
             image_url: null,
             retailer: '',
-            highlight: '',
+            highlight: undefined,
             in_stock: true,
             price_display: '',
             price_cents: undefined,
