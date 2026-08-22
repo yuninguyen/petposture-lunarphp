@@ -6,6 +6,7 @@ import { AppShell } from '@/layouts/AppShell';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { PostsListPage } from '@/features/posts/PostsListPage';
 import { PostFormPage } from '@/features/posts/PostFormPage';
+import { ToastContainer } from '@/components/ui/toast';
 import { AdminUser, fetchCurrentUser, getToken, isAdminRole } from '@/lib/auth';
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/posts/:id" element={<PostFormPage />} />
           </Routes>
         </AppShell>
+        <ToastContainer />
       </BrowserRouter>
     </QueryClientProvider>
   );

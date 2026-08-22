@@ -29,6 +29,8 @@
   "posts.validation_title_required": "Title is required",
   "posts.validation_content_required": "Content is required",
   "posts.validation_category_required": "Please select a category",
+  "posts.save_success": "Post saved successfully",
+  "posts.save_error": "Failed to save post",
   "media.label_featured_image": "Featured Image",
   "media.empty_state": "No image selected",
   "media.button_upload": "Upload Image",

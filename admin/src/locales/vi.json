@@ -29,6 +29,8 @@
   "posts.validation_title_required": "Tiêu đề không được để trống",
   "posts.validation_content_required": "Nội dung không được để trống",
   "posts.validation_category_required": "Vui lòng chọn chuyên mục",
+  "posts.save_success": "Lưu bài viết thành công",
+  "posts.save_error": "Lỗi khi lưu bài viết",
   "media.label_featured_image": "Ảnh đại diện",
   "media.empty_state": "Chưa có ảnh",
   "media.button_upload": "Tải ảnh lên",

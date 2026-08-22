@@ -11,7 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MediaPicker } from '@/features/media/MediaPicker';
+import { useToast } from '@/components/ui/toast';
 import { getPostFormSchema, PostFormValues } from './postSchema';
+import { translateCategoryName } from '@/locales/categories';
 
 interface BlogCategory {
   id: number;
@@ -29,11 +31,12 @@ interface PostDetail {
 }
 
 export function PostFormPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: categories } = useQuery({
     queryKey: ['blog-categories'],
@@ -52,11 +55,14 @@ export function PostFormPage() {
     control,
     reset,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<PostFormValues>({
     resolver: zodResolver(getPostFormSchema(t)),
-    defaultValues: { title: '', content: '', blog_category_id: '', status: 'draft', featured_media_id: null },
+    defaultValues: { title: '', content: '', blog_category_id: '', status: 'draft', featured_media_id: null, featured_image_url: null },
   });
+
+  const featuredImageUrl = watch('featured_image_url');
 
   const editor = useEditor({
     extensions: [StarterKit],
@@ -74,6 +80,7 @@ export function PostFormPage() {
         blog_category_id: existingPost.blog_category?.id ?? '',
         status: existingPost.status,
         featured_media_id: existingPost.featured_media_id,
+        featured_image_url: existingPost.featured_image,
       });
       editor.commands.setContent(existingPost.content);
     }
@@ -83,11 +90,18 @@ export function PostFormPage() {
     mutationFn: (values: PostFormValues) => {
       const method = isEdit ? 'PUT' : 'POST';
       const url = isEdit ? `/admin/posts/${id}` : '/admin/posts';
-      return fetchJson(url, { method, body: values });
+      // Only send featured_media_id to backend, not featured_image_url
+      const { featured_image_url, ...payload } = values;
+      return fetchJson(url, { method, body: payload });
     },
     onSuccess: () => {
+      showToast(t('posts.save_success'), 'success');
       queryClient.invalidateQueries({ queryKey: ['posts'] });
-      navigate('/posts');
+      setTimeout(() => navigate('/posts'), 500);
+    },
+    onError: (error: any) => {
+      showToast(t('posts.save_error'), 'error');
+      console.error('Failed to save post:', error);
     },
   });
 
@@ -128,7 +142,7 @@ export function PostFormPage() {
               <option value="">{t('posts.form_label_category_placeholder')}</option>
               {categories?.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {translateCategoryName(c.name, i18n.language)}
                 </option>
               ))}
             </select>
@@ -150,8 +164,15 @@ export function PostFormPage() {
               control={control}
               render={({ field }) => (
                 <MediaPicker
-                  value={field.value ? { id: field.value, url: existingPost?.featured_image ?? '' } : null}
-                  onChange={(media) => field.onChange(media?.id ?? null)}
+                  value={
+                    featuredImageUrl
+                      ? { id: field.value || '', url: featuredImageUrl }
+                      : null
+                  }
+                  onChange={(media) => {
+                    field.onChange(media?.id ?? null);
+                    setValue('featured_image_url', media?.url ?? null);
+                  }}
                 />
               )}
             />
