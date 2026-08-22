@@ -21,6 +21,7 @@
         "laravel/tinker": "^3.0",
         "lunarphp/lunar": "^1.0",
         "predis/predis": "^2.3|^3.0",
+        "resend/resend-php": "^1.10",
         "spatie/laravel-permission": "^6.4"
     },
     "require-dev": {
