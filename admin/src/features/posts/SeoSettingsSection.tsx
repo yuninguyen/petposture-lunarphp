@@ -12,10 +12,12 @@ import { MediaPicker } from '../media/MediaPicker';
 import clsx from 'clsx';
 
 interface SeoSettingsSectionProps {
-  control: Control<PostFormValues>;
-  register: UseFormRegister<PostFormValues>;
-  setValue: UseFormSetValue<PostFormValues>;
-  getValues: UseFormGetValues<PostFormValues>;
+  control: Control<any>;
+  register: UseFormRegister<any>;
+  setValue: UseFormSetValue<any>;
+  getValues: UseFormGetValues<any>;
+  titleKey?: string;
+  contentKey?: string;
 }
 
 type SeoTab = 'google' | 'social';
@@ -30,7 +32,7 @@ function CharCounter({ count, max }: { count: number; max: number }) {
   );
 }
 
-export function SeoSettingsSection({ control, register, setValue, getValues }: SeoSettingsSectionProps) {
+export function SeoSettingsSection({ control, register, setValue, getValues, titleKey = 'title', contentKey = 'content' }: SeoSettingsSectionProps) {
   const { t } = useTranslation();
   const generateSeo = useGenerateSeo();
   const [tab, setTab] = useState<SeoTab>('google');
@@ -44,7 +46,8 @@ export function SeoSettingsSection({ control, register, setValue, getValues }: S
   const ogDescription = useWatch({ control, name: 'seo.og_description' }) ?? '';
 
   function handleGenerate() {
-    const { title, content } = getValues();
+    const title = getValues(titleKey);
+    const content = getValues(contentKey);
     if (!title?.trim()) {
       setNeedTitle(true);
       return;
@@ -74,12 +77,12 @@ export function SeoSettingsSection({ control, register, setValue, getValues }: S
 
   return (
     <Card className="space-y-4 p-5">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between gap-4 mb-3">
         <div>
           <h3 className="text-lg font-semibold text-slate-800">{t('posts.section_seo')}</h3>
           <p className="text-sm text-gray-500">{t('posts.seo.section_hint')}</p>
         </div>
-        <Button type="button" variant="secondary" disabled={generateSeo.isPending} onClick={handleGenerate}>
+        <Button type="button" variant="secondary" className="whitespace-nowrap shrink-0" disabled={generateSeo.isPending} onClick={handleGenerate}>
           <SparklesIcon className="h-4 w-4" />
           {generateSeo.isPending ? t('posts.seo.generating_ai') : t('posts.seo.generate_ai')}
         </Button>

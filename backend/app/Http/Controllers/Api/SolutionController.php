@@ -12,6 +12,7 @@ class SolutionController extends Controller
     public function index()
     {
         $solutions = Solution::withCount(['products', 'posts'])
+            ->with('featuredMedia')
             ->orderBy('name')
             ->get()
             ->map(fn (Solution $solution) => [
@@ -19,6 +20,9 @@ class SolutionController extends Controller
                 'name' => $solution->name,
                 'slug' => $solution->slug,
                 'description' => $solution->description,
+                'featured_image' => $solution->featured_image,
+                'featured_image_alt' => $solution->featured_image_alt,
+                'featured_media' => $solution->featuredMedia,
                 'products_count' => $solution->products_count,
                 'posts_count' => $solution->posts_count,
             ]);
@@ -28,7 +32,7 @@ class SolutionController extends Controller
 
     public function show(string $slug)
     {
-        $solution = Solution::where('slug', $slug)->firstOrFail();
+        $solution = Solution::with(['featuredMedia', 'seo'])->where('slug', $slug)->firstOrFail();
 
         $products = $solution->products()
             ->where('status', 'published')
@@ -59,6 +63,10 @@ class SolutionController extends Controller
                 'name' => $solution->name,
                 'slug' => $solution->slug,
                 'description' => $solution->description,
+                'featured_image' => $solution->featured_image,
+                'featured_image_alt' => $solution->featured_image_alt,
+                'featured_media' => $solution->featuredMedia,
+                'seo' => $solution->seo,
                 'products' => ProductResource::collection($products),
                 'posts' => PostResource::collection($posts),
             ],

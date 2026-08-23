@@ -16,6 +16,10 @@ const TagsList        = lazy(() => import('@/features/tags/TagsList').then(m => 
 const SeoSocialPage   = lazy(() => import('@/features/settings/seo-social/SeoSocialPage').then(m => ({ default: m.SeoSocialPage })));
 const PagesListPage   = lazy(() => import('@/features/pages/PagesListPage').then(m => ({ default: m.PagesListPage })));
 const PageFormPage    = lazy(() => import('@/features/pages/PageFormPage').then(m => ({ default: m.PageFormPage })));
+const BreedsListPage  = lazy(() => import('@/features/breeds/BreedsListPage').then(m => ({ default: m.BreedsListPage })));
+const BreedFormPage   = lazy(() => import('@/features/breeds/BreedFormPage').then(m => ({ default: m.BreedFormPage })));
+const SolutionsListPage = lazy(() => import('@/features/solutions/SolutionsListPage').then(m => ({ default: m.SolutionsListPage })));
+const SolutionFormPage = lazy(() => import('@/features/solutions/SolutionFormPage').then(m => ({ default: m.SolutionFormPage })));
 
 function PageLoader() {
   return (
@@ -108,6 +112,15 @@ function AppRoutes() {
       <Route path="/legal-policies" element={<PagesListPage />} />
       <Route path="/legal-policies/create" element={<PageFormPage key={location.pathname} />} />
       <Route path="/legal-policies/:id" element={<PageFormPage key={location.pathname} />} />
+      {/* Breeds module */}
+      <Route path="/breeds" element={<BreedsListPage />} />
+      <Route path="/breeds/new" element={<BreedFormPage key={location.pathname} />} />
+      <Route path="/breeds/:id" element={<BreedFormPage key={location.pathname} />} />
+
+      {/* Solutions module */}
+      <Route path="/solutions" element={<SolutionsListPage />} />
+      <Route path="/solutions/new" element={<SolutionFormPage key={location.pathname} />} />
+      <Route path="/solutions/:id" element={<SolutionFormPage key={location.pathname} />} />
     </Routes>
   );
 }

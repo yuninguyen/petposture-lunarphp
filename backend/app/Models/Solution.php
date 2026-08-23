@@ -12,7 +12,14 @@ class Solution extends Model
 {
     use HasFactory, HasSeo;
 
-    protected $fillable = ['name', 'slug', 'description'];
+    protected $fillable = [
+        'name', 
+        'slug', 
+        'description',
+        'featured_image',
+        'featured_image_alt',
+        'featured_media_id'
+    ];
 
     public function products(): BelongsToMany
     {
@@ -24,5 +31,10 @@ class Solution extends Model
     public function posts(): BelongsToMany
     {
         return $this->belongsToMany(Post::class, 'post_solution');
+    }
+
+    public function featuredMedia()
+    {
+        return $this->belongsTo(CuratorMedia::class, 'featured_media_id');
     }
 }

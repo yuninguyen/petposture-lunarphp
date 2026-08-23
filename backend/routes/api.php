@@ -139,6 +139,22 @@ Route::prefix('/admin')
         Route::patch('/blog/categories/{blogCategory}', [\App\Http\Controllers\Api\Admin\BlogCategoryController::class, 'update']);
         Route::delete('/blog/categories/{blogCategory}', [\App\Http\Controllers\Api\Admin\BlogCategoryController::class, 'destroy']);
 
+        Route::post('/breeds/bulk-delete', [\App\Http\Controllers\Api\Admin\BreedController::class, 'bulkDestroy']);
+        Route::get('/breeds', [\App\Http\Controllers\Api\Admin\BreedController::class, 'index']);
+        Route::post('/breeds', [\App\Http\Controllers\Api\Admin\BreedController::class, 'store']);
+        Route::get('/breeds/{breed}', [\App\Http\Controllers\Api\Admin\BreedController::class, 'show']);
+        Route::put('/breeds/{breed}', [\App\Http\Controllers\Api\Admin\BreedController::class, 'update']);
+        Route::patch('/breeds/{breed}', [\App\Http\Controllers\Api\Admin\BreedController::class, 'update']);
+        Route::delete('/breeds/{breed}', [\App\Http\Controllers\Api\Admin\BreedController::class, 'destroy']);
+
+        Route::post('/solutions/bulk-delete', [\App\Http\Controllers\Api\Admin\SolutionController::class, 'bulkDestroy']);
+        Route::get('/solutions', [\App\Http\Controllers\Api\Admin\SolutionController::class, 'index']);
+        Route::post('/solutions', [\App\Http\Controllers\Api\Admin\SolutionController::class, 'store']);
+        Route::get('/solutions/{solution}', [\App\Http\Controllers\Api\Admin\SolutionController::class, 'show']);
+        Route::put('/solutions/{solution}', [\App\Http\Controllers\Api\Admin\SolutionController::class, 'update']);
+        Route::patch('/solutions/{solution}', [\App\Http\Controllers\Api\Admin\SolutionController::class, 'update']);
+        Route::delete('/solutions/{solution}', [\App\Http\Controllers\Api\Admin\SolutionController::class, 'destroy']);
+
         Route::post('/comments/bulk-delete', [\App\Http\Controllers\Api\Admin\CommentController::class, 'bulkDestroy']);
         Route::post('/comments/{comment}/approve', [\App\Http\Controllers\Api\Admin\CommentController::class, 'approve']);
         Route::get('/comments', [\App\Http\Controllers\Api\Admin\CommentController::class, 'index']);

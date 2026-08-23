@@ -16,6 +16,10 @@ export async function fetchApi(endpoint: string, options: FetchApiOptions = {}):
     headers.set('Content-Type', 'application/json');
   }
 
+  if (!headers.has('Accept')) {
+    headers.set('Accept', 'application/json');
+  }
+
   const token = getToken();
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
