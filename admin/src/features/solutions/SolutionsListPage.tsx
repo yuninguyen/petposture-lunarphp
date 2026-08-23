@@ -115,14 +115,14 @@ export function SolutionsListPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('solutions.title', 'Solutions')}</h1>
-        <Button asChild>
-          <Link to="/solutions/new" className="flex items-center gap-2">
+        <Link to="/solutions/new">
+          <Button variant="primary" className="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
             {t('solutions.new_solution', 'New Solution')}
-          </Link>
-        </Button>
+          </Button>
+        </Link>
       </div>
 
       {/* Filters & Actions */}
@@ -146,8 +146,7 @@ export function SolutionsListPage() {
               {selectedCount} selected
             </span>
             <Button
-              variant="destructive"
-              size="sm"
+              variant="danger"
               onClick={handleBulkDelete}
             >
               {t('solutions.bulk_delete_selected', 'Delete selected ({{count}})', { count: selectedCount })}
@@ -214,16 +213,14 @@ export function SolutionsListPage() {
             </span>
             <div className="flex gap-2">
               <Button
-                variant="outline"
-                size="sm"
+                variant="secondary"
                 disabled={page === 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
               >
                 {t('common.previous', 'Previous')}
               </Button>
               <Button
-                variant="outline"
-                size="sm"
+                variant="secondary"
                 disabled={page >= meta.last_page}
                 onClick={() => setPage(p => p + 1)}
               >
@@ -236,7 +233,7 @@ export function SolutionsListPage() {
 
       {/* Delete Confirmation */}
       <DeleteConfirmModal
-        isOpen={!!deletingSolution}
+        open={!!deletingSolution}
         onClose={() => setDeletingSolution(null)}
         onConfirm={() => {
           if (!deletingSolution) return;
@@ -251,14 +248,14 @@ export function SolutionsListPage() {
             }
           });
         }}
-        title={t('solutions.delete_confirm', 'Are you sure you want to delete this solution?')}
-        description={deletingSolution?.name || ''}
-        isDeleting={deleteMutation.isLoading}
+        title={t('common.delete', 'Delete')}
+        message={t('solutions.delete_confirm', 'Are you sure you want to delete this solution?')}
+        isLoading={deleteMutation.isPending}
       />
 
       {/* Bulk Delete Confirmation */}
       <DeleteConfirmModal
-        isOpen={bulkDeleting}
+        open={bulkDeleting}
         onClose={() => setBulkDeleting(false)}
         onConfirm={() => {
           const ids = Object.keys(rowSelection).map(Number);
@@ -274,8 +271,9 @@ export function SolutionsListPage() {
             }
           });
         }}
-        title={t('solutions.bulk_confirm_delete', 'Are you sure you want to delete {{count}} selected solutions?', { count: selectedCount })}
-        isDeleting={bulkDeleteMutation.isLoading}
+        title={t('common.delete', 'Delete')}
+        message={t('solutions.bulk_confirm_delete', 'Are you sure you want to delete {{count}} selected solutions?', { count: selectedCount })}
+        isLoading={bulkDeleteMutation.isPending}
       />
 
       <SolutionDetailModal 

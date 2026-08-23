@@ -531,7 +531,7 @@ export function PostFormPage() {
             <ComparisonDetailsSection control={control} register={register} affiliateNetworks={affiliateNetworks} />
           )}
 
-          <SeoSettingsSection control={control} register={register} setValue={setValue} getValues={getValues} />
+          <SeoSettingsSection control={control as any} register={register as any} setValue={setValue as any} getValues={getValues as any} />
         </div>
 
         <div className="w-full lg:w-1/3 space-y-6">

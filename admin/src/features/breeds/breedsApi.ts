@@ -49,7 +49,6 @@ export function useBreeds(params: { search?: string; page?: number }) {
       if (params.page) q.set('page', params.page.toString());
       return fetchJson<BreedsResponse>(`/admin/breeds?${q.toString()}`);
     },
-    keepPreviousData: true,
   });
 }
 

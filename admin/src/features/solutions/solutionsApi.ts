@@ -48,7 +48,6 @@ export function useSolutions(params: { search?: string; page?: number }) {
       if (params.page) q.set('page', params.page.toString());
       return fetchJson<SolutionsResponse>(`/admin/solutions?${q.toString()}`);
     },
-    keepPreviousData: true,
   });
 }
 

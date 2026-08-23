@@ -129,14 +129,14 @@ export function BreedDetailModal({ breedId, onClose }: BreedDetailModalProps) {
         </div>
         
         <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             {t('common.close', 'Close')}
           </Button>
-          <Button asChild>
-            <Link to={`/breeds/${breedId}`}>
+          <Link to={`/breeds/${breedId}`}>
+            <Button variant="primary">
               {t('common.edit', 'Edit')}
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

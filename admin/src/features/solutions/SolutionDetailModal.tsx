@@ -43,8 +43,8 @@ export function SolutionDetailModal({ solutionId, onClose }: SolutionDetailModal
               <div className="flex flex-col sm:flex-row gap-6">
                 {(solution.featured_media || solution.featured_image) && (
                   <div className="w-full sm:w-1/3 shrink-0 flex justify-center sm:justify-start">
-                    <img 
-                      src={solution.featured_media?.url || solution.featured_image} 
+                    <img
+                      src={solution.featured_media?.url || solution.featured_image || undefined}
                       alt={solution.featured_media?.alt || solution.featured_image_alt || solution.name}
                       className="rounded-lg shadow-sm w-full object-contain border border-slate-200 bg-slate-50"
                     />
@@ -122,14 +122,14 @@ export function SolutionDetailModal({ solutionId, onClose }: SolutionDetailModal
         </div>
         
         <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             {t('common.close', 'Close')}
           </Button>
-          <Button asChild>
-            <Link to={`/solutions/${solutionId}/edit`}>
+          <Link to={`/solutions/${solutionId}/edit`}>
+            <Button variant="primary">
               {t('common.edit', 'Edit')}
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

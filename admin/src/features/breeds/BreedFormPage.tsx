@@ -106,13 +106,13 @@ export function BreedFormPage() {
         featured_image: breed.featured_image || null,
         featured_image_alt: breed.featured_image_alt || '',
         featured_media_id: breed.featured_media_id || null,
-        seo: breed.seo || {
-          title: '',
-          keyphrase: '',
-          description: '',
-          og_title: '',
-          og_description: '',
-          og_image: null,
+        seo: {
+          title: breed.seo?.title ?? '',
+          keyphrase: breed.seo?.keyphrase ?? '',
+          description: breed.seo?.description ?? '',
+          og_title: breed.seo?.og_title ?? '',
+          og_description: breed.seo?.og_description ?? '',
+          og_image: breed.seo?.og_image ?? null,
         },
         product_ids: breed.products?.map((p: any) => p.id) || [],
         post_ids: breed.posts?.map((p: any) => p.id) || [],
@@ -161,7 +161,7 @@ export function BreedFormPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/breeds')} className="text-slate-500 hover:text-slate-900">
+          <Button variant="secondary" onClick={() => navigate('/breeds')} className="text-slate-500 hover:text-slate-900">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
             </svg>
@@ -172,14 +172,15 @@ export function BreedFormPage() {
           </h1>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={() => navigate('/breeds')}>
+          <Button variant="secondary" onClick={() => navigate('/breeds')}>
             {t('common.cancel', 'Cancel')}
           </Button>
-          <Button 
-            onClick={handleSubmit(onSubmit)} 
-            disabled={isSubmitting || createMutation.isLoading || updateMutation.isLoading}
+          <Button
+            variant="primary"
+            onClick={handleSubmit(onSubmit)}
+            disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
           >
-            {(isSubmitting || createMutation.isLoading || updateMutation.isLoading) && (
+            {(isSubmitting || createMutation.isPending || updateMutation.isPending) && (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
             )}
             {t('common.save', 'Save')}

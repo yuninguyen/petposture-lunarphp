@@ -129,14 +129,14 @@ export function BreedsListPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('breeds.title', 'Breeds')}</h1>
-        <Button asChild>
-          <Link to="/breeds/new" className="flex items-center gap-2">
+        <Link to="/breeds/new">
+          <Button variant="primary" className="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
             {t('breeds.new_breed', 'New Breed')}
-          </Link>
-        </Button>
+          </Button>
+        </Link>
       </div>
 
       {/* Filters & Actions */}
@@ -160,8 +160,7 @@ export function BreedsListPage() {
               {selectedCount} selected
             </span>
             <Button
-              variant="destructive"
-              size="sm"
+              variant="danger"
               onClick={handleBulkDelete}
             >
               {t('breeds.bulk_delete_selected', 'Delete selected ({{count}})', { count: selectedCount })}
@@ -228,16 +227,14 @@ export function BreedsListPage() {
             </span>
             <div className="flex gap-2">
               <Button
-                variant="outline"
-                size="sm"
+                variant="secondary"
                 disabled={page === 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
               >
                 {t('common.previous', 'Previous')}
               </Button>
               <Button
-                variant="outline"
-                size="sm"
+                variant="secondary"
                 disabled={page >= meta.last_page}
                 onClick={() => setPage(p => p + 1)}
               >
@@ -250,7 +247,7 @@ export function BreedsListPage() {
 
       {/* Delete Confirmation */}
       <DeleteConfirmModal
-        isOpen={!!deletingBreed}
+        open={!!deletingBreed}
         onClose={() => setDeletingBreed(null)}
         onConfirm={() => {
           if (!deletingBreed) return;
@@ -265,14 +262,14 @@ export function BreedsListPage() {
             }
           });
         }}
-        title={t('breeds.delete_confirm', 'Are you sure you want to delete this breed?')}
-        description={deletingBreed?.name || ''}
-        isDeleting={deleteMutation.isLoading}
+        title={t('common.delete', 'Delete')}
+        message={t('breeds.delete_confirm', 'Are you sure you want to delete this breed?')}
+        isLoading={deleteMutation.isPending}
       />
 
       {/* Bulk Delete Confirmation */}
       <DeleteConfirmModal
-        isOpen={bulkDeleting}
+        open={bulkDeleting}
         onClose={() => setBulkDeleting(false)}
         onConfirm={() => {
           const ids = Object.keys(rowSelection).map(Number);
@@ -288,8 +285,9 @@ export function BreedsListPage() {
             }
           });
         }}
-        title={t('breeds.bulk_confirm_delete', 'Are you sure you want to delete {{count}} selected breeds?', { count: selectedCount })}
-        isDeleting={bulkDeleteMutation.isLoading}
+        title={t('common.delete', 'Delete')}
+        message={t('breeds.bulk_confirm_delete', 'Are you sure you want to delete {{count}} selected breeds?', { count: selectedCount })}
+        isLoading={bulkDeleteMutation.isPending}
       />
 
       <BreedDetailModal 
