@@ -10,6 +10,7 @@ enum ErrorCode: string
     // Inventory / catalog
     case OUT_OF_STOCK = 'OUT_OF_STOCK';
     case PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND';
+    case CUSTOM_FIELD_IN_USE = 'CUSTOM_FIELD_IN_USE';
 
     // Checkout / order
     case CHECKOUT_FAILED = 'CHECKOUT_FAILED';

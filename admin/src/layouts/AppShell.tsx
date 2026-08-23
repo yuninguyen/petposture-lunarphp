@@ -88,6 +88,15 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
           )
         },
         {
+          to: '/custom-fields',
+          label: t('custom_fields.title', 'Custom Fields'),
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h10M4 18h7m6-8v8m-4-4h8" />
+            </svg>
+          )
+        },
+        {
           to: '/solutions',
           label: t('solutions.title', 'Solutions'),
           icon: (

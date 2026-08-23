@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\Admin\CustomFieldController;
 use App\Http\Controllers\Api\Admin\ProductTypeController;
 use App\Http\Controllers\Api\ReturnRequestController;
 use App\Http\Controllers\Api\SettingsController;
@@ -124,6 +125,12 @@ Route::prefix('/admin')
     ->group(function () {
         Route::get('/product-types', [ProductTypeController::class, 'index']);
         Route::post('/product-types', [ProductTypeController::class, 'store']);
+
+        Route::get('/custom-fields', [CustomFieldController::class, 'index']);
+        Route::post('/custom-fields', [CustomFieldController::class, 'store']);
+        Route::get('/custom-fields/{attribute}', [CustomFieldController::class, 'show']);
+        Route::put('/custom-fields/{attribute}', [CustomFieldController::class, 'update']);
+        Route::delete('/custom-fields/{attribute}', [CustomFieldController::class, 'destroy']);
 
         Route::get('/posts', [PostController::class, 'index']);
         Route::post('/posts', [PostController::class, 'store']);

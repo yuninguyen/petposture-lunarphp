@@ -21,6 +21,7 @@ const BreedFormPage   = lazy(() => import('@/features/breeds/BreedFormPage').the
 const SolutionsListPage = lazy(() => import('@/features/solutions/SolutionsListPage').then(m => ({ default: m.SolutionsListPage })));
 const SolutionFormPage = lazy(() => import('@/features/solutions/SolutionFormPage').then(m => ({ default: m.SolutionFormPage })));
 const ProductTypesPage = lazy(() => import('@/features/product-types/ProductTypesPage').then(m => ({ default: m.ProductTypesPage })));
+const CustomFieldsPage = lazy(() => import('@/features/custom-fields/CustomFieldsPage').then(m => ({ default: m.CustomFieldsPage })));
 
 function PageLoader() {
   return (
@@ -119,6 +120,7 @@ function AppRoutes() {
       <Route path="/breeds/:id" element={<BreedFormPage key={location.pathname} />} />
 
       <Route path="/product-types" element={<ProductTypesPage />} />
+      <Route path="/custom-fields" element={<CustomFieldsPage />} />
 
       {/* Solutions module */}
       <Route path="/solutions" element={<SolutionsListPage />} />
