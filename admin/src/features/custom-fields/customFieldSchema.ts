@@ -1,10 +1,7 @@
 import { z } from 'zod';
 
 export const customFieldFormSchema = z.object({
-  name: z.object({
-    en: z.string().trim().min(1, 'custom_fields.validation.name_en_required'),
-    vi: z.string().trim().optional(),
-  }),
+  name: z.string().trim().min(1, 'custom_fields.validation.name_required'),
   handle: z.string().trim(),
   target: z.enum(['product', 'variant']),
   field_type: z.literal('text'),
@@ -26,10 +23,7 @@ export function generateHandle(value: string): string {
 
 export function buildCreatePayload(values: CustomFieldFormValues) {
   return {
-    name: {
-      en: values.name.en.trim(),
-      ...(values.name.vi?.trim() ? { vi: values.name.vi.trim() } : {}),
-    },
+    name: values.name.trim(),
     ...(values.handle.trim() ? { handle: values.handle.trim() } : {}),
     target: values.target,
     field_type: 'text' as const,
@@ -40,10 +34,7 @@ export function buildCreatePayload(values: CustomFieldFormValues) {
 
 export function buildUpdatePayload(values: CustomFieldFormValues) {
   return {
-    name: {
-      en: values.name.en.trim(),
-      ...(values.name.vi?.trim() ? { vi: values.name.vi.trim() } : {}),
-    },
+    name: values.name.trim(),
     required: values.required,
     product_type_ids: values.product_type_ids,
   };

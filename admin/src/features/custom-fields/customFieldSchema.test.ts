@@ -7,7 +7,7 @@ import {
 } from './customFieldSchema';
 
 const validValues = {
-  name: { en: 'Care Instructions', vi: 'Hướng dẫn chăm sóc' },
+  name: 'Care Instructions',
   handle: 'care_instructions',
   target: 'product' as const,
   field_type: 'text' as const,
@@ -29,14 +29,14 @@ describe('customFieldFormSchema', () => {
   it('requires an English name and at least one Product Type', () => {
     const result = customFieldFormSchema.safeParse({
       ...validValues,
-      name: { en: '', vi: '' },
+      name: '',
       product_type_ids: [],
     });
 
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues.map((issue) => issue.path.join('.'))).toEqual(
-        expect.arrayContaining(['name.en', 'product_type_ids']),
+        expect.arrayContaining(['name', 'product_type_ids']),
       );
     }
   });

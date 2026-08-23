@@ -23,7 +23,7 @@ interface CustomFieldModalProps {
 }
 
 const emptyValues: CustomFieldFormValues = {
-  name: { en: '', vi: '' },
+  name: '',
   handle: '',
   target: 'product',
   field_type: 'text',
@@ -42,7 +42,7 @@ export function CustomFieldModal({ open, field, productTypes, onClose }: CustomF
   useEffect(() => {
     if (!open) return;
     setValues(field ? {
-      name: { en: field.name.en ?? '', vi: field.name.vi ?? '' },
+      name: field.name,
       handle: field.handle,
       target: field.target,
       field_type: 'text',
@@ -67,11 +67,11 @@ export function CustomFieldModal({ open, field, productTypes, onClose }: CustomF
     },
   });
 
-  function setName(locale: 'en' | 'vi', name: string) {
+  function setName(name: string) {
     setValues((current) => ({
       ...current,
-      name: { ...current.name, [locale]: name },
-      ...(!isEditing && locale === 'en' && !handleEdited ? { handle: generateHandle(name) } : {}),
+      name,
+      ...(!isEditing && !handleEdited ? { handle: generateHandle(name) } : {}),
     }));
   }
 
@@ -104,16 +104,10 @@ export function CustomFieldModal({ open, field, productTypes, onClose }: CustomF
 
         <form onSubmit={handleSubmit}>
           <div className="max-h-[75vh] space-y-4 overflow-y-auto p-5">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">{t('custom_fields.name_en')} *</label>
-                <Input value={values.name.en} onChange={(event) => setName('en', event.target.value)} />
-                {errors['name.en'] && <p className="mt-1 text-xs text-red-600">{errors['name.en']}</p>}
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">{t('custom_fields.name_vi')}</label>
-                <Input value={values.name.vi ?? ''} onChange={(event) => setName('vi', event.target.value)} />
-              </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">{t('custom_fields.name')} *</label>
+              <Input value={values.name} onChange={(event) => setName(event.target.value)} />
+              {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

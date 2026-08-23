@@ -12,13 +12,13 @@ class CustomFieldResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $name = $this->name?->all() ?? [];
+        $name = $this->name?->get('en');
         $productTypes = $this->getRelation('productTypes');
 
         return [
             'id' => $this->id,
             'name' => $name,
-            'display_name' => $this->resource->translate('name'),
+            'display_name' => $name,
             'handle' => $this->handle,
             'target' => $this->attribute_type === 'product_variant' ? 'variant' : 'product',
             'field_type' => 'text',

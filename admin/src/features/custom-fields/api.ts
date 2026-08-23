@@ -5,7 +5,7 @@ export type CustomFieldTarget = 'product' | 'variant';
 
 export interface CustomField {
   id: number;
-  name: Record<string, string>;
+  name: string;
   display_name: string;
   handle: string;
   target: CustomFieldTarget;
@@ -19,7 +19,7 @@ export interface CustomField {
 }
 
 export interface CreateCustomFieldPayload {
-  name: { en: string; vi?: string };
+  name: string;
   handle?: string;
   target: CustomFieldTarget;
   field_type: 'text';
@@ -28,7 +28,7 @@ export interface CreateCustomFieldPayload {
 }
 
 export interface UpdateCustomFieldPayload {
-  name: { en?: string; vi?: string };
+  name: string;
   required: boolean;
   product_type_ids: number[];
 }

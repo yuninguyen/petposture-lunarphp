@@ -38,7 +38,7 @@ class CustomFieldService
                 'attribute_type' => $attributeType,
                 'attribute_group_id' => $group->id,
                 'position' => (int) Attribute::query()->where('attribute_type', $attributeType)->max('position') + 1,
-                'name' => array_filter($data['name'], fn ($value) => $value !== null),
+                'name' => ['en' => $data['name']],
                 'description' => null,
                 'handle' => $data['handle'],
                 'section' => 'custom',
@@ -69,7 +69,7 @@ class CustomFieldService
             $this->assertCanUnmap($attribute, $removedIds);
 
             $attribute->update([
-                'name' => array_merge($attribute->name?->all() ?? [], $data['name']),
+                'name' => ['en' => $data['name']],
                 'required' => $data['required'],
             ]);
 

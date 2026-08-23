@@ -356,8 +356,6 @@
   "custom_fields.title": "Trường tùy chỉnh",
   "custom_fields.subtitle": "Định nghĩa trường văn bản cho các loại sản phẩm đã chọn.",
   "custom_fields.name": "Tên",
-  "custom_fields.name_en": "Tên (Tiếng Anh)",
-  "custom_fields.name_vi": "Tên (Tiếng Việt)",
   "custom_fields.handle": "Định danh",
   "custom_fields.target": "Đối tượng",
   "custom_fields.target_product": "Sản phẩm",
@@ -385,6 +383,6 @@
   "custom_fields.delete_success": "Đã xóa trường tùy chỉnh",
   "custom_fields.delete_title": "Xóa trường tùy chỉnh",
   "custom_fields.delete_message": "Xóa “{{name}}”? Thao tác này không thể hoàn tác.",
-  "custom_fields.validation.name_en_required": "Tên tiếng Anh là bắt buộc",
+  "custom_fields.validation.name_required": "Tên là bắt buộc",
   "custom_fields.validation.product_type_required": "Chọn ít nhất một loại sản phẩm"
 }

@@ -3,7 +3,7 @@ import { CustomField, normalizeCustomFieldResponse, normalizeCustomFieldsRespons
 
 const field: CustomField = {
   id: 4,
-  name: { en: 'Care Instructions', vi: 'Hướng dẫn chăm sóc' },
+  name: 'Care Instructions',
   display_name: 'Care Instructions',
   handle: 'care_instructions',
   target: 'product',

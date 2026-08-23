@@ -52,7 +52,7 @@ class CustomFieldControllerTest extends TestCase
 
         $this->assertCount(1, $response->json('data'));
         $response->assertJsonPath('data.0.id', $manageable->id)
-            ->assertJsonPath('data.0.name.en', 'Sizing Notes')
+            ->assertJsonPath('data.0.name', 'Sizing Notes')
             ->assertJsonPath('data.0.display_name', 'Sizing Notes')
             ->assertJsonPath('data.0.target', 'product')
             ->assertJsonPath('data.0.field_type', 'text')
@@ -66,13 +66,13 @@ class CustomFieldControllerTest extends TestCase
         $type = ProductType::factory()->create();
 
         $product = $this->postJson('/api/admin/custom-fields', $this->payload($type, [
-            'name' => ['en' => 'Care Instructions'],
+            'name' => 'Care Instructions',
             'handle' => 'care_text',
             'target' => 'product',
         ]))->assertCreated();
 
         $variant = $this->postJson('/api/admin/custom-fields', $this->payload($type, [
-            'name' => ['en' => 'Variant Label', 'vi' => 'Nhãn biến thể'],
+            'name' => 'Variant Label',
             'target' => 'variant',
         ]))->assertCreated();
 
@@ -80,7 +80,7 @@ class CustomFieldControllerTest extends TestCase
             ->assertJsonPath('data.target', 'product');
         $variant->assertJsonPath('data.handle', 'variant_label')
             ->assertJsonPath('data.target', 'variant')
-            ->assertJsonPath('data.name.vi', 'Nhãn biến thể');
+            ->assertJsonPath('data.name', 'Variant Label');
 
         $this->assertDatabaseHas('lunar_attribute_groups', [
             'handle' => 'custom_fields_product',
@@ -114,6 +114,10 @@ class CustomFieldControllerTest extends TestCase
         ]))->assertUnprocessable()->assertJsonValidationErrors(['product_type_ids.1', 'product_type_ids.2']);
 
         $this->postJson('/api/admin/custom-fields', $this->payload($type, [
+            'name' => ['en' => 'Label', 'vi' => 'Nhãn'],
+        ]))->assertUnprocessable()->assertJsonValidationErrors(['name']);
+
+        $this->postJson('/api/admin/custom-fields', $this->payload($type, [
             'handle' => 'Invalid Handle',
         ]))->assertUnprocessable()->assertJsonValidationErrors(['handle']);
 
@@ -125,25 +129,26 @@ class CustomFieldControllerTest extends TestCase
             ->assertCreated();
     }
 
-    public function test_update_merges_locales_and_rejects_immutable_fields(): void
+    public function test_update_uses_only_english_name_and_rejects_immutable_fields(): void
     {
         $this->actingAsAdmin();
         $type = ProductType::factory()->create();
-        $attributeId = $this->createField($type, [
+        $attributeId = $this->createField($type);
+        Attribute::query()->findOrFail($attributeId)->update([
             'name' => ['en' => 'Label', 'vi' => 'Nhãn'],
         ]);
 
         $this->putJson("/api/admin/custom-fields/{$attributeId}", [
-            'name' => ['en' => 'New Label'],
+            'name' => 'New Label',
             'required' => true,
             'product_type_ids' => [$type->id],
         ])->assertOk()
-            ->assertJsonPath('data.name.en', 'New Label')
-            ->assertJsonPath('data.name.vi', 'Nhãn')
+            ->assertJsonPath('data.name', 'New Label')
+            ->assertJsonPath('data.display_name', 'New Label')
             ->assertJsonPath('data.required', true);
 
         $this->putJson("/api/admin/custom-fields/{$attributeId}", [
-            'name' => ['en' => 'Ignored'],
+            'name' => 'Ignored',
             'handle' => 'changed',
             'target' => 'variant',
             'field_type' => 'other',
@@ -152,6 +157,7 @@ class CustomFieldControllerTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors(['handle', 'target', 'field_type']);
 
         $attribute = Attribute::query()->findOrFail($attributeId);
+        $this->assertSame(['en' => 'New Label'], $attribute->name->all());
         $this->assertSame('label', $attribute->handle);
         $this->assertSame('product', $attribute->attribute_type);
         $this->assertSame(Text::class, $attribute->type);
@@ -169,7 +175,7 @@ class CustomFieldControllerTest extends TestCase
         $second->mappedAttributes()->attach($other->id);
 
         $this->putJson("/api/admin/custom-fields/{$attributeId}", [
-            'name' => ['en' => 'Updated'],
+            'name' => 'Updated',
             'required' => false,
             'product_type_ids' => [$second->id, $third->id],
         ])->assertOk();
@@ -195,7 +201,7 @@ class CustomFieldControllerTest extends TestCase
             $this->setRawAttributeData('lunar_products', $product->id, 'label', $value);
 
             $this->putJson("/api/admin/custom-fields/{$attributeId}", [
-                'name' => ['en' => 'Attempted Change'],
+                'name' => 'Attempted Change',
                 'required' => true,
                 'product_type_ids' => [$keep->id, $added->id],
             ])->assertStatus(409)
@@ -223,7 +229,7 @@ class CustomFieldControllerTest extends TestCase
         $before = DB::table('lunar_products')->where('id', $product->id)->value('attribute_data');
 
         $this->putJson("/api/admin/custom-fields/{$attributeId}", [
-            'name' => ['en' => 'Updated'],
+            'name' => 'Updated',
             'required' => false,
             'product_type_ids' => [$keep->id],
         ])->assertOk();
@@ -245,7 +251,7 @@ class CustomFieldControllerTest extends TestCase
         $before = DB::table('lunar_product_variants')->where('id', $variant->id)->value('attribute_data');
 
         $this->putJson("/api/admin/custom-fields/{$attributeId}", [
-            'name' => ['en' => 'Updated'],
+            'name' => 'Updated',
             'required' => false,
             'product_type_ids' => [$keep->id],
         ])->assertStatus(409)->assertJsonPath('details.target', 'variant');
@@ -269,7 +275,7 @@ class CustomFieldControllerTest extends TestCase
         $this->assertTrue($blockedType->mappedAttributes()->whereKey($blockedId)->exists());
 
         $orphanType = ProductType::factory()->create();
-        $orphanId = $this->createField($orphanType, ['name' => ['en' => 'Orphaned']]);
+        $orphanId = $this->createField($orphanType, ['name' => 'Orphaned']);
         $orphanType->mappedAttributes()->detach($orphanId);
         $orphanProduct = Product::factory()->create(['product_type_id' => $orphanType->id]);
         $this->setRawAttributeData('lunar_products', $orphanProduct->id, 'orphaned', 'still stored');
@@ -280,7 +286,7 @@ class CustomFieldControllerTest extends TestCase
         $this->assertDatabaseHas('lunar_attributes', ['id' => $orphanId]);
 
         $allowedType = ProductType::factory()->create();
-        $allowedId = $this->createField($allowedType, ['name' => ['en' => 'Nullable']]);
+        $allowedId = $this->createField($allowedType, ['name' => 'Nullable']);
         $allowedProduct = Product::factory()->create(['product_type_id' => $allowedType->id]);
         $this->setRawAttributeData('lunar_products', $allowedProduct->id, 'nullable', null);
         $before = DB::table('lunar_products')->where('id', $allowedProduct->id)->value('attribute_data');
@@ -299,7 +305,7 @@ class CustomFieldControllerTest extends TestCase
 
         $this->getJson("/api/admin/custom-fields/{$core->id}")->assertNotFound();
         $this->putJson("/api/admin/custom-fields/{$core->id}", [
-            'name' => ['en' => 'Changed'],
+            'name' => 'Changed',
             'required' => false,
             'product_type_ids' => [$type->id],
         ])->assertNotFound();
@@ -319,7 +325,7 @@ class CustomFieldControllerTest extends TestCase
     private function payload(ProductType $type, array $overrides = []): array
     {
         return array_replace_recursive([
-            'name' => ['en' => 'Label'],
+            'name' => 'Label',
             'target' => 'product',
             'field_type' => 'text',
             'required' => false,

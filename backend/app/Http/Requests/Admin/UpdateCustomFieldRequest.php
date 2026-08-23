@@ -20,9 +20,7 @@ class UpdateCustomFieldRequest extends FormRequest
         $productTypesTable = config('lunar.database.table_prefix').'product_types';
 
         return [
-            'name' => ['required', 'array:en,vi'],
-            'name.en' => ['required', 'string', 'max:255'],
-            'name.vi' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'handle' => ['prohibited'],
             'target' => ['prohibited'],
             'field_type' => ['prohibited'],

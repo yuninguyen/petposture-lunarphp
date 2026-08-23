@@ -10,7 +10,7 @@ import { CustomField, deleteCustomField, fetchCustomFields } from './api';
 import { CustomFieldModal } from './CustomFieldModal';
 
 export function CustomFieldsPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingField, setEditingField] = useState<CustomField | null>(null);
@@ -74,9 +74,7 @@ export function CustomFieldsPage() {
               <tr><td colSpan={6} className="px-5 py-12 text-center text-slate-500">{t('custom_fields.empty')}</td></tr>
             ) : fields.map((field) => (
               <tr key={field.id} className="hover:bg-slate-50">
-                <td className="px-5 py-4 font-semibold text-slate-900">
-                  {field.name[i18n.language] ?? field.name[i18n.language.split('-')[0]] ?? field.display_name}
-                </td>
+                <td className="px-5 py-4 font-semibold text-slate-900">{field.name}</td>
                 <td className="px-5 py-4 font-mono text-xs text-slate-700">{field.handle}</td>
                 <td className="px-5 py-4">{t(`custom_fields.target_${field.target}`)}</td>
                 <td className="px-5 py-4">
