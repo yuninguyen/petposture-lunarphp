@@ -11,6 +11,7 @@ enum ErrorCode: string
     case OUT_OF_STOCK = 'OUT_OF_STOCK';
     case PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND';
     case CUSTOM_FIELD_IN_USE = 'CUSTOM_FIELD_IN_USE';
+    case BRAND_IN_USE = 'BRAND_IN_USE';
 
     // Checkout / order
     case CHECKOUT_FAILED = 'CHECKOUT_FAILED';

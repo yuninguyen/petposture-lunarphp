@@ -22,6 +22,7 @@ const SolutionsListPage = lazy(() => import('@/features/solutions/SolutionsListP
 const SolutionFormPage = lazy(() => import('@/features/solutions/SolutionFormPage').then(m => ({ default: m.SolutionFormPage })));
 const ProductTypesPage = lazy(() => import('@/features/product-types/ProductTypesPage').then(m => ({ default: m.ProductTypesPage })));
 const CustomFieldsPage = lazy(() => import('@/features/custom-fields/CustomFieldsPage').then(m => ({ default: m.CustomFieldsPage })));
+const BrandsPage = lazy(() => import('@/features/brands/BrandsPage').then(m => ({ default: m.BrandsPage })));
 
 function PageLoader() {
   return (
@@ -121,6 +122,7 @@ function AppRoutes() {
 
       <Route path="/product-types" element={<ProductTypesPage />} />
       <Route path="/custom-fields" element={<CustomFieldsPage />} />
+      <Route path="/brands" element={<BrandsPage />} />
 
       {/* Solutions module */}
       <Route path="/solutions" element={<SolutionsListPage />} />

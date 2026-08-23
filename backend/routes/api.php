@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\Admin\BrandController as AdminBrandController;
 use App\Http\Controllers\Api\Admin\CustomFieldController;
 use App\Http\Controllers\Api\Admin\ProductTypeController;
 use App\Http\Controllers\Api\ReturnRequestController;
@@ -123,6 +124,12 @@ Route::delete('/cart', [CartController::class, 'clear'])->middleware('throttle:a
 Route::prefix('/admin')
     ->middleware(['auth:sanctum', 'role:super_admin|admin|staff'])
     ->group(function () {
+        Route::get('/brands', [AdminBrandController::class, 'index']);
+        Route::post('/brands', [AdminBrandController::class, 'store']);
+        Route::get('/brands/{brand}', [AdminBrandController::class, 'show']);
+        Route::put('/brands/{brand}', [AdminBrandController::class, 'update']);
+        Route::delete('/brands/{brand}', [AdminBrandController::class, 'destroy']);
+
         Route::get('/product-types', [ProductTypeController::class, 'index']);
         Route::post('/product-types', [ProductTypeController::class, 'store']);
 
