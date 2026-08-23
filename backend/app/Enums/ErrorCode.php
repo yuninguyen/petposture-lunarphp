@@ -12,6 +12,7 @@ enum ErrorCode: string
     case PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND';
     case CUSTOM_FIELD_IN_USE = 'CUSTOM_FIELD_IN_USE';
     case BRAND_IN_USE = 'BRAND_IN_USE';
+    case COLLECTION_GROUP_IN_USE = 'COLLECTION_GROUP_IN_USE';
 
     // Checkout / order
     case CHECKOUT_FAILED = 'CHECKOUT_FAILED';

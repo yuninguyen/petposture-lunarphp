@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\Admin\BrandController as AdminBrandController;
+use App\Http\Controllers\Api\Admin\CollectionGroupController;
 use App\Http\Controllers\Api\Admin\CustomFieldController;
 use App\Http\Controllers\Api\Admin\ProductTypeController;
 use App\Http\Controllers\Api\ReturnRequestController;
@@ -129,6 +130,12 @@ Route::prefix('/admin')
         Route::get('/brands/{brand}', [AdminBrandController::class, 'show']);
         Route::put('/brands/{brand}', [AdminBrandController::class, 'update']);
         Route::delete('/brands/{brand}', [AdminBrandController::class, 'destroy']);
+
+        Route::get('/collection-groups', [CollectionGroupController::class, 'index']);
+        Route::post('/collection-groups', [CollectionGroupController::class, 'store']);
+        Route::get('/collection-groups/{collectionGroup}', [CollectionGroupController::class, 'show']);
+        Route::put('/collection-groups/{collectionGroup}', [CollectionGroupController::class, 'update']);
+        Route::delete('/collection-groups/{collectionGroup}', [CollectionGroupController::class, 'destroy']);
 
         Route::get('/product-types', [ProductTypeController::class, 'index']);
         Route::post('/product-types', [ProductTypeController::class, 'store']);
