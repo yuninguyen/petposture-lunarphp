@@ -20,6 +20,7 @@ const BreedsListPage  = lazy(() => import('@/features/breeds/BreedsListPage').th
 const BreedFormPage   = lazy(() => import('@/features/breeds/BreedFormPage').then(m => ({ default: m.BreedFormPage })));
 const SolutionsListPage = lazy(() => import('@/features/solutions/SolutionsListPage').then(m => ({ default: m.SolutionsListPage })));
 const SolutionFormPage = lazy(() => import('@/features/solutions/SolutionFormPage').then(m => ({ default: m.SolutionFormPage })));
+const ProductTypesPage = lazy(() => import('@/features/product-types/ProductTypesPage').then(m => ({ default: m.ProductTypesPage })));
 
 function PageLoader() {
   return (
@@ -116,6 +117,8 @@ function AppRoutes() {
       <Route path="/breeds" element={<BreedsListPage />} />
       <Route path="/breeds/new" element={<BreedFormPage key={location.pathname} />} />
       <Route path="/breeds/:id" element={<BreedFormPage key={location.pathname} />} />
+
+      <Route path="/product-types" element={<ProductTypesPage />} />
 
       {/* Solutions module */}
       <Route path="/solutions" element={<SolutionsListPage />} />

@@ -79,6 +79,15 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
           )
         },
         {
+          to: '/product-types',
+          label: t('product_types.title', 'Product Types'),
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0-8 5-8-5m16 0-8 5m-8-5 8 5m0 0v3" />
+            </svg>
+          )
+        },
+        {
           to: '/solutions',
           label: t('solutions.title', 'Solutions'),
           icon: (
