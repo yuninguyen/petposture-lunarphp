@@ -132,18 +132,29 @@ Route::prefix('/admin')
         Route::post('/posts/{post}/duplicate', [PostController::class, 'duplicate']);
         Route::post('/posts/generate-seo', [\App\Http\Controllers\Api\Admin\AiSeoController::class, 'generate']);
         Route::post('/blog/categories/bulk-delete', [\App\Http\Controllers\Api\Admin\BlogCategoryController::class, 'bulkDestroy']);
-        Route::apiResource('/blog/categories', \App\Http\Controllers\Api\Admin\BlogCategoryController::class)->parameters([
-            'categories' => 'blogCategory',
-        ]);
-        
+        Route::get('/blog/categories', [\App\Http\Controllers\Api\Admin\BlogCategoryController::class, 'index']);
+        Route::post('/blog/categories', [\App\Http\Controllers\Api\Admin\BlogCategoryController::class, 'store']);
+        Route::get('/blog/categories/{blogCategory}', [\App\Http\Controllers\Api\Admin\BlogCategoryController::class, 'show']);
+        Route::put('/blog/categories/{blogCategory}', [\App\Http\Controllers\Api\Admin\BlogCategoryController::class, 'update']);
+        Route::patch('/blog/categories/{blogCategory}', [\App\Http\Controllers\Api\Admin\BlogCategoryController::class, 'update']);
+        Route::delete('/blog/categories/{blogCategory}', [\App\Http\Controllers\Api\Admin\BlogCategoryController::class, 'destroy']);
+
         Route::post('/comments/bulk-delete', [\App\Http\Controllers\Api\Admin\CommentController::class, 'bulkDestroy']);
         Route::post('/comments/{comment}/approve', [\App\Http\Controllers\Api\Admin\CommentController::class, 'approve']);
-        Route::apiResource('/comments', \App\Http\Controllers\Api\Admin\CommentController::class);
-        
+        Route::get('/comments', [\App\Http\Controllers\Api\Admin\CommentController::class, 'index']);
+        Route::post('/comments', [\App\Http\Controllers\Api\Admin\CommentController::class, 'store']);
+        Route::get('/comments/{comment}', [\App\Http\Controllers\Api\Admin\CommentController::class, 'show']);
+        Route::put('/comments/{comment}', [\App\Http\Controllers\Api\Admin\CommentController::class, 'update']);
+        Route::patch('/comments/{comment}', [\App\Http\Controllers\Api\Admin\CommentController::class, 'update']);
+        Route::delete('/comments/{comment}', [\App\Http\Controllers\Api\Admin\CommentController::class, 'destroy']);
+
         Route::post('/blog/tags/bulk-delete', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'bulkDestroy']);
-        Route::apiResource('/blog/tags', \App\Http\Controllers\Api\Admin\BlogTagController::class)->parameters([
-            'tags' => 'blogTag',
-        ]);
+        Route::get('/blog/tags', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'index']);
+        Route::post('/blog/tags', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'store']);
+        Route::get('/blog/tags/{blogTag}', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'show']);
+        Route::put('/blog/tags/{blogTag}', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'update']);
+        Route::patch('/blog/tags/{blogTag}', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'update']);
+        Route::delete('/blog/tags/{blogTag}', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'destroy']);
         Route::get('/users', [\App\Http\Controllers\Api\Admin\UserController::class, 'index']);
         Route::post('/orders/{id}/refund', [OrderController::class, 'refund']);
         Route::post('/orders/{id}/return', [OrderController::class, 'return']);
@@ -160,7 +171,12 @@ Route::prefix('/admin')
         Route::post('/seo-social', [\App\Http\Controllers\Api\Admin\SeoSocialController::class, 'store']);
 
         Route::post('/pages/bulk-delete', [\App\Http\Controllers\Api\Admin\PageController::class, 'bulkDestroy']);
-        Route::apiResource('/pages', \App\Http\Controllers\Api\Admin\PageController::class);
+        Route::get('/pages', [\App\Http\Controllers\Api\Admin\PageController::class, 'index']);
+        Route::post('/pages', [\App\Http\Controllers\Api\Admin\PageController::class, 'store']);
+        Route::get('/pages/{page}', [\App\Http\Controllers\Api\Admin\PageController::class, 'show']);
+        Route::put('/pages/{page}', [\App\Http\Controllers\Api\Admin\PageController::class, 'update']);
+        Route::patch('/pages/{page}', [\App\Http\Controllers\Api\Admin\PageController::class, 'update']);
+        Route::delete('/pages/{page}', [\App\Http\Controllers\Api\Admin\PageController::class, 'destroy']);
     });
 
 // Protected Routes

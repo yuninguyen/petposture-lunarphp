@@ -34,7 +34,7 @@ class BlogTagControllerTest extends TestCase
         $this->getJson('/api/admin/blog/tags')->assertForbidden();
     }
 
-    public function test_admin_gets_all_tags_as_bare_array(): void
+    public function test_admin_gets_all_tags(): void
     {
         $user = User::factory()->create();
         $user->assignRole('admin');
@@ -45,10 +45,10 @@ class BlogTagControllerTest extends TestCase
 
         $response = $this->getJson('/api/admin/blog/tags')->assertOk();
 
-        $this->assertCount(2, $response->json());
-        $this->assertSame('Alpha', $response->json('0.name'));
-        $this->assertArrayHasKey('id', $response->json('0'));
-        $this->assertArrayHasKey('slug', $response->json('0'));
+        $this->assertCount(2, $response->json('data'));
+        $this->assertSame('Alpha', $response->json('data.0.name'));
+        $this->assertArrayHasKey('id', $response->json('data.0'));
+        $this->assertArrayHasKey('slug', $response->json('data.0'));
     }
 
     public function test_admin_can_create_a_tag_with_auto_slug(): void
