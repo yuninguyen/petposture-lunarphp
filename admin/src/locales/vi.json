@@ -330,6 +330,7 @@
   "pages.bulk_delete_selected": "Xóa các mục đã chọn ({{count}})",
   "pages.bulk_confirm_delete": "Bạn có chắc muốn xóa {{count}} trang đã chọn? Thao tác này không thể hoàn tác.",
   "pages.form_title_edit": "Chỉnh sửa trang",
+  "pages.form_title_new": "Trang mới",
   "pages.form_button_save": "Lưu",
   "pages.form_button_saving": "Đang lưu...",
   "pages.section_content": "Mô tả",

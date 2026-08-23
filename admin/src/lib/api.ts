@@ -40,7 +40,8 @@ export async function fetchApi(endpoint: string, options: FetchApiOptions = {}):
 
 export async function fetchJson<T = unknown>(endpoint: string, options: FetchApiOptions = {}): Promise<T> {
   const res = await fetchApi(endpoint, options);
-  const data = await res.json();
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
   if (!res.ok) {
     throw Object.assign(new Error(data?.message ?? 'Request failed'), { status: res.status, data });
   }

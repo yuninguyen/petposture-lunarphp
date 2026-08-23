@@ -330,6 +330,7 @@
   "pages.bulk_delete_selected": "Delete selected ({{count}})",
   "pages.bulk_confirm_delete": "Are you sure you want to delete {{count}} selected pages? This cannot be undone.",
   "pages.form_title_edit": "Edit Page",
+  "pages.form_title_new": "New Page",
   "pages.form_button_save": "Save",
   "pages.form_button_saving": "Saving...",
   "pages.section_content": "Description",
