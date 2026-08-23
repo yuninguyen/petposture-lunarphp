@@ -3,12 +3,6 @@ import { initReactI18next } from 'react-i18next';
 import viTranslations from './locales/vi.json';
 import enTranslations from './locales/en.json';
 
-const resources = {
-  vi: { translation: viTranslations },
-  en: { translation: enTranslations },
-};
-
-// Get saved language preference from localStorage, default to 'vi'
 const getSavedLanguage = () => {
   return localStorage.getItem('language') || 'vi';
 };
@@ -16,17 +10,22 @@ const getSavedLanguage = () => {
 i18next
   .use(initReactI18next)
   .init({
-    resources,
+    resources: {
+      vi: { translation: viTranslations },
+      en: { translation: enTranslations },
+    },
     lng: getSavedLanguage(),
     fallbackLng: 'vi',
     interpolation: {
-      escapeValue: false, // React already escapes content
+      escapeValue: false,
     },
     ns: ['translation'],
     defaultNS: 'translation',
+    react: {
+      useSuspense: true,
+    },
   });
 
-// Save language preference to localStorage whenever it changes
 i18next.on('languageChanged', (lng) => {
   localStorage.setItem('language', lng);
 });

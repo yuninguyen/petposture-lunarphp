@@ -219,7 +219,7 @@ const validHighlightItem = {
   in_house_match_url: '',
 };
 
-describe('getPostFormSchema — taxonomy, seo, published_at, highlight enum', () => {
+describe('getPostFormSchema — taxonomy, seo, published_at, highlight free-text', () => {
   const baseValues = {
     blog_category_id: '1',
     title: 'A Post',
@@ -290,9 +290,9 @@ describe('getPostFormSchema — taxonomy, seo, published_at, highlight enum', ()
     expect(result.success).toBe(false);
   });
 
-  it('accepts all three enum highlight values and empty string', () => {
+  it('accepts free-text highlight values and empty string', () => {
     const schema = getPostFormSchema(t);
-    for (const highlight of ['best_overall', 'best_value', 'budget_pick', '']) {
+    for (const highlight of ['Best Value', "Editor's Pick", '']) {
       const result = schema.safeParse({
         ...baseValues,
         type: 'comparison',
@@ -302,12 +302,12 @@ describe('getPostFormSchema — taxonomy, seo, published_at, highlight enum', ()
     }
   });
 
-  it('rejects an out-of-enum highlight value', () => {
+  it('rejects a highlight value over 40 characters', () => {
     const schema = getPostFormSchema(t);
     const result = schema.safeParse({
       ...baseValues,
       type: 'comparison',
-      comparison_items: [{ ...validHighlightItem, highlight: 'Best Value' }],
+      comparison_items: [{ ...validHighlightItem, highlight: 'a'.repeat(41) }],
     });
     expect(result.success).toBe(false);
   });

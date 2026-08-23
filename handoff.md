@@ -1738,3 +1738,91 @@ discussed above (PATCH tracking number there only wrote `meta.shipments[]`, neve
 - Ki?m tra l?i lu?ng t�nh nang Create/Edit/Update Post sau khi d� l�m m?n giao di?n xem API ho?t d?ng mu?t m� kh�ng.
 - �?ng b? ti?p phong c�ch UI n�y sang c�c trang kh�c nhu Settings, Category, v.v. n?u c?n thi?t.
 
+
+## Handoff & Memory (2026-08-23)
+
+### Tóm tắt tiến độ hôm nay — Migration mail: Hostinger → Cloudflare Email Routing + Resend
+
+Đóng hẳn 2 việc carry-over lâu ngày trong file này ("Hostinger Mail trial expires 2026-08-15 —
+must upgrade before then" — mục Known gaps/Immediate follow-ups ở entry trước): **Hostinger mail
+hosting đã bị huỷ hẳn hôm nay**, thay bằng kiến trúc mới, verify đầy đủ 2 chiều trên production.
+
+- **Nhận mail**: bật Cloudflare Email Routing (Cloudflare dashboard, không phải DNS record) —
+  `support@`, `no-reply@`, `accounts@`, `hello@`, `finance@`, `admin@`, `social@`, và **catch-all
+  cho toàn domain** — tất cả forward về `petposture@gmail.com`.
+- **Gửi mail transactional (Laravel)**: chuyển `MAIL_MAILER` từ `smtp` (Hostinger) sang
+  `resend`. Cài `composer require resend/resend-php` (v1.10.0, trước đó chỉ nằm trong
+  `composer.lock` như dependency của `laravel/framework`, chưa thực sự là app dependency thật).
+  Verify domain trên Resend dashboard: DKIM (`resend._domainkey` TXT), SPF + MX trên subdomain
+  `send.petposture.com` (chạy trên hạ tầng Amazon SES). Cập nhật cả local `backend/.env` lẫn
+  production `.env` (VPS, qua SSH) — rebuild + redeploy container `backend`.
+- **Gmail "Send mail as" cho `support@petposture.com`**: đổi từ SMTP Hostinger (đã chết) sang
+  relay qua `smtp.resend.com:587` (user `resend`, password = Resend API key).
+- **Fix bug hiển thị sender name**: `PasswordResetEmail`/`WelcomeEmail` trước đó set
+  `from` bằng string thuần (`'accounts@petposture.com'`) nên mất display name, mail client fallback
+  hiện local-part (`accounts`/`hello`) thay vì "PetPosture". Sửa cả 2 dùng
+  `new Address('...@petposture.com', config('app.name'))`. Đã verify lại email test hiện đúng
+  "PetPosture" sau fix.
+- **Dọn SPF record gốc**: sau khi Hostinger huỷ, user tự sửa TXT record `petposture.com` từ
+  `v=spf1 include:_spf.mx.cloudflare.net include:_spf.mail.hostinger.com ~all` thành
+  `v=spf1 include:_spf.mx.cloudflare.net ~all` — verify qua `nslookup`, đã sạch.
+- **Docs**: cập nhật `README.md` (section "Email deliverability & branding (DNS)" viết lại toàn
+  bộ theo kiến trúc mới) và `RULES.md` (thêm rule về `Address` object cho Mailable `from`/`replyTo`).
+
+### Verify 2 chiều trên production (2026-08-23)
+- Gửi: test email production qua Resend nhận được ở Gmail, sender hiện đúng "PetPosture".
+- Nhận: email test gửi tới `support@petposture.com` forward về Gmail đúng qua Cloudflare Email Routing.
+- Gmail "Send mail as" `support@petposture.com` gửi thành công qua Resend SMTP, hiện đúng tên
+  "PetPosture <support@petposture.com>".
+
+### Known gaps / not done
+- Email hiển thị "Petposture Support" trên Yahoo hoá ra là **Yahoo cache theo Contact của người
+  nhận cụ thể đó** (Gmail Send-As settings đã đúng "PetPosture" từ trước) — không phải lỗi cấu
+  hình, user đã xác nhận bỏ qua, không cần sửa gì thêm.
+- Resend API key hiện tại (`re_PDZ8UL...`) **không rotate** — user chủ động quyết định giữ
+  nguyên key cũ, chỉ yêu cầu đảm bảo key không bị lưu ở bất kỳ đâu ngoài `backend/.env`
+  (local + production VPS). Đã xác nhận đúng vậy — đừng tự ý đề xuất rotate lại trừ khi user
+  yêu cầu.
+- mail-tester.com DKIM/spam-score check — vẫn chưa chạy, optional, không gấp.
+
+### Task cần làm tiếp theo
+- Không có việc bắt buộc nào còn treo cho migration mail — coi như đã đóng hoàn toàn.
+- (Optional, không ưu tiên) chạy thử mail-tester.com nếu muốn đo điểm spam/DKIM chính xác hơn.
+
+## Handoff & Memory (2026-08-23, phần 2) — Admin content chuyển hẳn sang localhost:5173
+
+Toàn bộ mục Content (Posts/Pages/Blog Categories/Tags/Comments) đã chuyển hẳn từ Filament
+(`localhost:8000/admin`) sang admin app mới (Vite/React, `localhost:5173`). Đã kiểm tra không có
+gì cần sửa: `backend/config/cors.php` (`ADMIN_URL`) đã có sẵn `http://localhost:5173`,
+`admin/vite.config.ts` serve đúng port 5173, `admin/src/lib/api.ts` vẫn trỏ đúng backend
+`localhost:8000`. Build admin (`npm run build`) sạch, `tsc --noEmit` sạch, backend PHPUnit chỉ có
+2 test fail — cả 2 đều pre-existing từ trước (không liên quan việc hôm nay), đã xác nhận bằng
+`git stash` rồi chạy lại: `Tests\Feature\ExampleTest` (route `/` redirect 302 thay vì 200 — test
+mẫu mặc định của Laravel chưa update theo app) và `ProductCatalogApiTest::product index only
+returns published synced products` (field `oldPrice` null thay vì 129.99 — gap ánh xạ field có
+từ trước).
+
+### Việc đã làm trong phiên (ngoài phần mail hôm nay, xem entry phía trên)
+- **Highlight ở Comparison Items**: đổi từ `<select>` dropdown enum cứng (`best_overall`,
+  `best_value`, `budget_pick`) sang free-text badge input giống hệt UX Pros/Cons (gõ, Enter ra
+  badge, có nút `×` xoá) — không giới hạn 3 giá trị nữa, màu badge style vẫn giữ nguyên trên site
+  public. Sửa xuyên suốt: `admin/src/features/posts/ComparisonItemRepeater.tsx`,
+  `admin/src/features/posts/postSchema.ts` (zod: enum → `string().max(40)`),
+  `backend/app/Http/Controllers/Api/PostController.php` (validation rule tương tự), site public
+  `frontend/components/blog/ComparisonTable.tsx` (bỏ `HIGHLIGHT_LABEL` dictionary cứng, render
+  thẳng text). Cập nhật test cả 2 phía (`postSchema.test.ts`, `PostControllerComparisonTest.php`)
+  theo behavior free-text mới. Locale keys mới: `posts.comparison.add_highlight`,
+  `posts.comparison.errors.highlight_too_long` (en+vi).
+- **Route mới trong `backend/routes/api.php`**: đổi `blog/categories`, `blog/tags` từ route rời
+  rạc trong `PostController`/`BlogTagController` sang `Route::apiResource(...)` đầy đủ CRUD +
+  `bulk-delete`; thêm mới `comments` (CRUD + `approve` + `bulk-delete`), `pages` (CRUD +
+  `bulk-delete`), `seo-social` (index/store) — đều là admin-only route, controller tương ứng nằm ở
+  `backend/app/Http/Controllers/Api/Admin/{BlogCategoryController,CommentController,
+  PageController,SeoSocialController}.php` (file mới, chưa commit).
+
+### Task cần làm tiếp theo
+- Chưa commit các file mới liên quan Content admin rebuild (`admin/src/features/{blog-categories,
+  comments,pages,settings,tags}/`, các Controller/Resource mới ở backend, migration
+  `2026_08_23_001959_add_status_to_pages_table.php`). Sẽ commit cùng đợt hôm nay theo yêu cầu.
+- 2 test fail nói trên (`ExampleTest`, `ProductCatalogApiTest`) vẫn còn tồn đọng — không phải việc
+  hôm nay, nhưng nên dọn ở phiên sau nếu rảnh (không gấp, đã pre-existing từ trước phiên này).

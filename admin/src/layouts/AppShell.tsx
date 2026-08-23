@@ -6,16 +6,66 @@ import { logout } from '@/lib/auth';
 export function AppShell({ children, userName }: { children: ReactNode; userName: string }) {
   const { t, i18n } = useTranslation();
 
-  const NAV_ITEMS = [
-    { 
-      to: '/posts', 
-      label: t('nav.posts'),
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l6 6v10a2 2 0 01-2 2z" />
-        </svg>
-      )
-    },
+  const NAV_GROUPS = [
+    {
+      title: t('sidebar.content', 'CONTENT'),
+      items: [
+        { 
+          to: '/blog-categories', 
+          label: t('blog_categories.title', 'Blog Categories'),
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+          )
+        },
+        { 
+          to: '/posts', 
+          label: t('nav.posts'),
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l6 6v10a2 2 0 01-2 2z" />
+            </svg>
+          )
+        },
+        { 
+          to: '/comments', 
+          label: t('comments.title', 'Comments'),
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+          )
+        },
+        { 
+          to: '/tags', 
+          label: t('tags.title', 'Tags'),
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+            </svg>
+          )
+        },
+        {
+          to: '/seo-social',
+          label: t('seo_social.title', 'SEO & Social'),
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )
+        },
+        {
+          to: '/legal-policies',
+          label: t('pages.title', 'Legal & Policies'),
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          )
+        }
+      ]
+    }
   ];
 
   return (
@@ -30,27 +80,31 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
         </div>
         
         {/* Navigation */}
-        <nav className="flex-1 py-6 flex flex-col gap-1.5 overflow-y-auto px-3">
-          <div className="px-3 mb-2">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              {t('nav.main_menu', 'Main Menu')}
-            </p>
-          </div>
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all rounded-lg ${
-                  isActive
-                    ? 'text-white bg-white/10 shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
-                }`
-              }
-            >
-              {item.icon}
-              {item.label}
-            </NavLink>
+        <nav className="flex-1 py-6 flex flex-col gap-6 overflow-y-auto px-3">
+          {NAV_GROUPS.map((group, groupIdx) => (
+            <div key={groupIdx} className="flex flex-col gap-1.5">
+              <div className="px-3 mb-1">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  {group.title}
+                </p>
+              </div>
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all rounded-lg ${
+                      isActive
+                        ? 'text-white bg-white/10 shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`
+                  }
+                >
+                  {item.icon}
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 

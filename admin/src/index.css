@@ -11,3 +11,66 @@ body {
 .ProseMirror {
   outline: none !important;
 }
+
+/* Tailwind's preflight strips default heading/list/table/quote styling, so
+   without these rules the editor shows no visual difference when a user
+   applies Heading/List/Table/etc. from the toolbar — you'd only see the
+   formatting after saving and previewing the post on the live site. */
+.ProseMirror h2 {
+  @apply mt-6 mb-3 text-2xl font-bold text-ink;
+}
+.ProseMirror h3 {
+  @apply mt-5 mb-2 text-xl font-bold text-ink;
+}
+.ProseMirror h4 {
+  @apply mt-4 mb-2 text-lg font-bold text-ink;
+}
+.ProseMirror p {
+  @apply mb-3;
+}
+.ProseMirror ul {
+  @apply mb-3 list-disc pl-6;
+}
+.ProseMirror ol {
+  @apply mb-3 list-decimal pl-6;
+}
+.ProseMirror li {
+  @apply mb-1;
+}
+.ProseMirror ul[data-type='taskList'] {
+  @apply list-none pl-0;
+}
+.ProseMirror blockquote {
+  @apply mb-3 border-l-4 border-gray-300 pl-4 italic text-gray-600;
+}
+.ProseMirror hr {
+  @apply my-4 border-t border-gray-300;
+}
+.ProseMirror a {
+  @apply text-secondary underline;
+}
+.ProseMirror code {
+  @apply rounded bg-gray-100 px-1 py-0.5 font-mono text-xs;
+}
+.ProseMirror pre {
+  @apply mb-3 rounded bg-gray-900 p-3 font-mono text-xs text-gray-100;
+}
+.ProseMirror pre code {
+  @apply bg-transparent p-0 text-inherit;
+}
+.ProseMirror table {
+  @apply mb-3 w-full border-collapse;
+}
+.ProseMirror td,
+.ProseMirror th {
+  @apply border border-gray-300 px-2 py-1 text-left;
+}
+.ProseMirror th {
+  @apply bg-gray-50 font-semibold;
+}
+
+/* Hide Edge's native password reveal icon to avoid duplicate eye icons */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}

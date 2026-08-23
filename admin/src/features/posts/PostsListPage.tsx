@@ -8,6 +8,7 @@ import { PostRowActions } from './PostRowActions';
 import { fetchJson } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
 
 import { ReactNode } from 'react';
 
@@ -49,6 +50,8 @@ export function PostsListPage() {
   const [category, setCategory] = useState('');
   const [type, setType] = useState<'' | 'article' | 'guide' | 'comparison'>('');
   const [page, setPage] = useState(1);
+  const [deletingPost, setDeletingPost] = useState<Post | null>(null);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   useEffect(() => {
@@ -81,20 +84,39 @@ export function PostsListPage() {
   const duplicatePost = useDuplicatePost();
 
   function handleDelete(post: Post) {
-    if (window.confirm(t('posts.confirm_delete', { title: post.title }))) {
-      deletePost.mutate(post.id);
-    }
+    setDeletingPost(post);
   }
 
   function handleBulkDelete() {
     const ids = Object.keys(rowSelection);
     if (ids.length === 0) return;
-    if (window.confirm(t('posts.bulk_confirm_delete', { count: ids.length }))) {
-      bulkDeletePosts.mutate(ids, {
-        onSuccess: () => setRowSelection({}),
+    setBulkDeleting(true);
+  }
+
+  const handleDeleteConfirm = () => {
+    if (deletingPost) {
+      deletePost.mutate(deletingPost.id, {
+        onSuccess: () => setDeletingPost(null),
+        onError: (err: any) => {
+          alert(err.message || t('common.error_occurred'));
+          setDeletingPost(null);
+        }
       });
     }
-  }
+  };
+
+  const handleBulkDeleteConfirm = () => {
+    bulkDeletePosts.mutate(Object.keys(rowSelection), {
+      onSuccess: () => {
+        setRowSelection({});
+        setBulkDeleting(false);
+      },
+      onError: (err: any) => {
+        alert(err.message || t('common.error_occurred'));
+        setBulkDeleting(false);
+      }
+    });
+  };
 
   const columns = [
     columnHelper.display({
@@ -303,8 +325,8 @@ export function PostsListPage() {
           )}
         </div>
       ) : (
-        <div className="bg-white shadow-sm ring-1 ring-slate-200 rounded-xl overflow-hidden flex flex-col">
-          <div className="overflow-x-auto">
+        <div className="bg-white shadow-sm ring-1 ring-slate-200 rounded-xl flex flex-col">
+          <div className="w-full">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 {table.getHeaderGroups().map((hg) => (
@@ -373,6 +395,24 @@ export function PostsListPage() {
           )}
         </div>
       )}
+
+      <DeleteConfirmModal
+        open={!!deletingPost}
+        onClose={() => setDeletingPost(null)}
+        onConfirm={handleDeleteConfirm}
+        title={t('posts.action_delete', { defaultValue: 'Delete' })}
+        message={t('posts.confirm_delete', { title: deletingPost?.title })}
+        isLoading={deletePost.isPending}
+      />
+
+      <DeleteConfirmModal
+        open={bulkDeleting}
+        onClose={() => setBulkDeleting(false)}
+        onConfirm={handleBulkDeleteConfirm}
+        title={t('posts.action_delete', { defaultValue: 'Delete' })}
+        message={t('posts.bulk_confirm_delete', { count: selectedCount })}
+        isLoading={bulkDeletePosts.isPending}
+      />
     </div>
   );
 }

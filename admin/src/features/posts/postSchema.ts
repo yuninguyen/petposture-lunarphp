@@ -6,10 +6,11 @@ const comparisonItemSchema = (t: TranslationFunction) =>
   z.object({
     product_name: z.string().min(1, t('posts.comparison.errors.product_name_required')),
     image_url: z.string().nullable().optional(),
+    image_alt: z.string().max(255).optional(),
     retailer: z.string().min(1, t('posts.comparison.errors.retailer_required')),
     highlight: z.preprocess(
       (val) => (val === '' ? undefined : val),
-      z.enum(['best_overall', 'best_value', 'budget_pick']).optional()
+      z.string().max(40, t('posts.comparison.errors.highlight_too_long')).optional()
     ),
     in_stock: z.boolean().optional(),
     price_display: z.string().max(64).optional(),

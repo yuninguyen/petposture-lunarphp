@@ -288,19 +288,31 @@ domains were healthy).
 
 ## Email deliverability & branding (DNS)
 
-**DNS is authoritative on Cloudflare, not Hostinger's own panel.** `petposture.com`'s
-nameservers point at Cloudflare (`nelly.ns.cloudflare.com` / `sam.ns.cloudflare.com`), so all
-mail DNS records (MX, DKIM, SPF, DMARC, BIMI) must live in the **Cloudflare zone**
-(Zone ID `7c77d5e7f534eb3da62f474ec3c88e0a`). Hostinger's own DNS panel shows what Hostinger
-*expects* for its mail product, but records entered there are not live on the internet unless
-also present in Cloudflare — this exact gap caused a same-day production incident where the
-domain had **no MX record at all** (found 2026-07-24; see `handoff.md` for the full writeup).
-**Never add a Hostinger Email Routing setup to this zone** — it locks the zone's MX/DKIM/SPF to
-Cloudflare's own routing service and is incompatible with routing mail to Hostinger mailboxes.
+**Migrated off Hostinger mail entirely (2026-08-23) — Hostinger mail hosting has been
+cancelled.** Mail now runs on two separate services, both DNS-configured in the **Cloudflare
+zone** (Zone ID `7c77d5e7f534eb3da62f474ec3c88e0a`; `petposture.com`'s nameservers point at
+Cloudflare, so all mail DNS records — MX, DKIM, SPF, DMARC, BIMI — live there, not in any
+mail-provider's own panel):
 
-- **Live records in the Cloudflare zone**: MX (`mx1`/`mx2.hostinger.com`, priority 5/10), 3 DKIM
-  CNAMEs (`hostingermail-a/b/c._domainkey`), `autodiscover`/`autoconfig` CNAMEs, SPF
-  (`v=spf1 include:_spf.mail.hostinger.com ~all`), and BIMI/DMARC below.
+- **Receiving mail**: **Cloudflare Email Routing** (free). MX records are Cloudflare's own
+  (`route1/2/3.mx.cloudflare.net`). Forwarding rules (Cloudflare dashboard → Email → Email
+  Routing, not DNS records) forward every configured address — `support@`, `no-reply@`,
+  `accounts@`, `hello@`, plus informal `finance@`/`admin@`/`social@` — **and a catch-all for the
+  entire domain** — to `petposture@gmail.com`. All incoming mail lands in that one Gmail inbox.
+- **Sending transactional mail (Laravel)**: **Resend**. `MAIL_MAILER=resend` +
+  `RESEND_API_KEY` in `backend/.env` (local and production), via Laravel's built-in `resend`
+  mail transport (`config/mail.php`) and the `resend/resend-php` Composer package. Domain
+  verified with DKIM (`resend._domainkey.petposture.com` TXT) and a dedicated `send` subdomain
+  carrying its own SPF + MX for Resend's outbound infrastructure (`send.petposture.com` →
+  `v=spf1 include:amazonses.com ~all` TXT, MX `feedback-smtp.us-east-1.amazonses.com` —
+  Resend runs on Amazon SES under the hood). The root domain's SPF TXT record is
+  `v=spf1 include:_spf.mx.cloudflare.net ~all` (the old `include:_spf.mail.hostinger.com` was
+  removed once Hostinger was cancelled).
+- **Sending as `support@petposture.com` from Gmail** ("Send mail as"): configured to relay
+  through Resend's SMTP (`smtp.resend.com:587`, TLS, username `resend`, password = the Resend
+  API key) instead of the now-defunct Hostinger SMTP credential. The Gmail-side "Name" field for
+  this alias must be set to `PetPosture` (not `Petposture Support`) — this is a Gmail account
+  setting, unrelated to any Mailable/DNS config, and doesn't affect the backend at all.
 - **BIMI**: `default._bimi.petposture.com` TXT record points at
   `https://petposture.com/assets/bimi-logo.svg` (a hand-built SVG Tiny PS reproduction of the
   paw icon mark — square viewBox, no scripts/external refs, per BIMI's spec). This is what lets
@@ -309,7 +321,13 @@ Cloudflare's own routing service and is incompatible with routing mail to Hostin
   `pct=25` staggers enforcement to a quarter of mail rather than jumping straight to 100%,
   specifically to limit blast radius while monitoring aggregate reports
   (`rua=mailto:no-reply@petposture.com`) for a few weeks before considering `pct=100`. If
-  deliverability problems show up, roll back to `p=none` first and investigate.
+  deliverability problems show up, roll back to `p=none` first and investigate. (Predates, and
+  is unaffected by, the Hostinger→Resend switch.)
+- A sender name occasionally showing a stale value (e.g. a recipient's webmail client showing
+  "Petposture Support" instead of "PetPosture") can be the **recipient's own address-book
+  cache** (confirmed on Yahoo Mail, 2026-08-23) rather than a real header/config problem — check
+  the actual `From:` header (or send to a recipient with no prior contact entry) before assuming
+  a code/DNS regression.
 - Both DNS changes propagate on their own schedule (TTL 3600s) and Gmail may take additional
   days beyond that to crawl and start showing the BIMI logo — absence right after the DNS
   change lands is expected, not a sign of misconfiguration.
@@ -318,29 +336,31 @@ Cloudflare's own routing service and is incompatible with routing mail to Hostin
   `curl -s "https://cloudflare-dns.com/dns-query?name=petposture.com&type=MX" -H "accept: application/dns-json"`
   — this bypasses any panel/caching confusion and hits the real authoritative answer.
 
-### Sender identity (4 mailboxes, one Hostinger account, free aliases)
+### Sender identity (4 mailboxes, forwarded via Cloudflare Email Routing to one Gmail inbox)
 
-Adopted 2026-07-24 to match how larger ecommerce sites separate sender identities. All 4 share
-one Hostinger mailbox/inbox via free email aliases (hPanel → Email → Bí danh email) — no extra
-paid mailbox needed.
+Adopted 2026-07-24 to match how larger ecommerce sites separate sender identities; re-platformed
+2026-08-23 off Hostinger onto Cloudflare Email Routing (receiving) + Resend (sending) — the
+identity/role split itself didn't change, only the infrastructure behind it. There's no shared
+mailbox login anymore: Resend authenticates the whole domain with one API key (not a per-address
+SMTP credential), and receiving is just a forwarding rule per address, not a real mailbox.
 
 | Address | Role | Used by |
 |---|---|---|
-| `support@petposture.com` | **Primary** mailbox (SMTP login credential). The address customers see and can reply to. | `Reply-To` on `WelcomeEmail`, `ContactAutoReply` |
-| `no-reply@petposture.com` | Alias. Send-only default sender (`MAIL_FROM_ADDRESS`); also receives internal admin notifications. | `OrderConfirmation`, `NewOrderAdmin`, `CancelledOrderAdmin`, `ContactFormSubmission`, `NewsletterConfirmation`, DMARC `rua` reports |
-| `accounts@petposture.com` | Alias. Isolates the security-sensitive reset flow from general transactional mail. | `PasswordResetEmail` |
-| `hello@petposture.com` | Alias. Friendlier sender for the first touchpoint. | `WelcomeEmail` |
+| `support@petposture.com` | **Primary**. The address customers see and can reply to; replies land in `petposture@gmail.com` via Cloudflare Email Routing, and Gmail's "Send mail as" sends through Resend SMTP. | `Reply-To` on `WelcomeEmail`, `ContactAutoReply` |
+| `no-reply@petposture.com` | Send-only default sender (`MAIL_FROM_ADDRESS`); also receives internal admin notifications (forwarded to the same Gmail inbox). | `OrderConfirmation`, `NewOrderAdmin`, `CancelledOrderAdmin`, `ContactFormSubmission`, `NewsletterConfirmation`, DMARC `rua` reports |
+| `accounts@petposture.com` | Isolates the security-sensitive reset flow from general transactional mail. | `PasswordResetEmail` |
+| `hello@petposture.com` | Friendlier sender for the first touchpoint. | `WelcomeEmail` |
 
-`backend/.env` `MAIL_USERNAME` is `support@petposture.com` (matches the primary mailbox);
-`MAIL_FROM_ADDRESS` stays `no-reply@petposture.com` (default sender for everything not listed
-above). Changing which Hostinger mailbox is primary requires updating `MAIL_USERNAME` and
-recreating the backend container (`docker compose up -d --force-recreate backend`) — editing
-`.env` alone doesn't reach an already-running container, since Docker injects `env_file` values
-as real process env vars at container start.
+`backend/.env` `MAIL_FROM_ADDRESS` stays `no-reply@petposture.com` (default sender for
+everything not listed above); `RESEND_API_KEY` is the single credential Resend uses regardless
+of which of the 4 addresses a given Mailable's `from`/`replyTo` sets. Both `PasswordResetEmail`
+and `WelcomeEmail` build their `from` as an `Illuminate\Mail\Mailables\Address` object (not a
+bare string) so the display name renders as `PetPosture` rather than falling back to the
+address's local-part (`accounts`/`hello`) — a real bug shipped and fixed 2026-08-23.
 
-Domain sending reputation is brand-new as of the 2026-07-24 DNS fix — if messages from
-`accounts@`/`hello@` start landing in spam, that's the first thing to suspect (reputation not
-yet built up for those specific senders) before assuming a config regression.
+Domain sending reputation is still relatively new (DNS fixed 2026-07-24, mail provider switched
+2026-08-23) — if messages start landing in spam, that's the first thing to suspect (reputation
+not yet built up for the domain/sender) before assuming a config regression.
 
 ---
 
@@ -520,7 +540,20 @@ npm install
 npm run dev
 ```
 
-Frontend runs at `http://localhost:3000`, backend at `http://localhost:8000`.
+### Admin (content management)
+
+```bash
+cd admin
+npm install
+npm run dev
+```
+
+Frontend runs at `http://localhost:3000`, backend at `http://localhost:8000`, admin (Vite/React)
+at `http://localhost:5173`. The admin app talks to the backend via `VITE_API_BASE_URL` (see
+`admin/.env.example`); `ADMIN_URL` in `backend/.env` must include `http://localhost:5173` for CORS.
+All Content (posts/pages/categories/tags/comments) management has moved from Filament
+(`localhost:8000/admin`) to this standalone admin app — Filament is still used for
+non-content admin (orders, products, users, etc.).
 
 **Troubleshooting a local admin panel resource that 404s or is missing from the sidebar**: try
 `php artisan filament:optimize-clear`, which clears a stale `bootstrap/cache/filament` component

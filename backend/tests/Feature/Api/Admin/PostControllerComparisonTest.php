@@ -194,11 +194,11 @@ class PostControllerComparisonTest extends TestCase
             ->assertJsonValidationErrors(['comparison_items.0.affiliate_url']);
     }
 
-    public function test_store_rejects_out_of_enum_highlight_value(): void
+    public function test_store_rejects_highlight_value_over_max_length(): void
     {
         $payload = $this->basePayload([
             'type' => Post::TYPE_COMPARISON,
-            'comparison_items' => [$this->comparisonItem(['highlight' => 'Best Value'])],
+            'comparison_items' => [$this->comparisonItem(['highlight' => str_repeat('a', 41)])],
         ]);
 
         $this->postJson('/api/admin/posts', $payload)
@@ -206,9 +206,9 @@ class PostControllerComparisonTest extends TestCase
             ->assertJsonValidationErrors(['comparison_items.0.highlight']);
     }
 
-    public function test_store_accepts_all_enum_highlight_values_and_empty(): void
+    public function test_store_accepts_free_text_highlight_values_and_empty(): void
     {
-        foreach (['best_overall', 'best_value', 'budget_pick', null, ''] as $index => $highlight) {
+        foreach (['Best Value', 'Editor\'s Pick', null, ''] as $index => $highlight) {
             $this->postJson('/api/admin/posts', $this->basePayload([
                 'slug' => 'highlight-'.$index.'-'.Str::random(4),
                 'type' => Post::TYPE_COMPARISON,

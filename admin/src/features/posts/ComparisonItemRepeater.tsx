@@ -20,6 +20,24 @@ function formatPriceDisplay(value: string | undefined): string {
   return trimmed.startsWith('$') ? trimmed : `$${trimmed}`;
 }
 
+function HighlightBadgeInput({ control, index }: { control: Control<PostFormValues>; index: number }) {
+  const { t } = useTranslation();
+
+  return (
+    <Controller
+      control={control}
+      name={`comparison_items.${index}.highlight`}
+      render={({ field }) => (
+        <TagInput
+          value={field.value ? [field.value] : []}
+          onChange={(tags) => field.onChange(tags.length ? tags[tags.length - 1] : undefined)}
+          placeholder={t('posts.comparison.add_highlight')}
+        />
+      )}
+    />
+  );
+}
+
 function RowSummary({
   control,
   index,
@@ -103,47 +121,31 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                 </div>
 
                 {/* Media & Metrics Split (Bento Grid Style) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {/* Left Col: Image (6/12) */}
-                  <div className="flex flex-col">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                  {/* Left Col: Image (5/12) */}
+                  <div className="flex flex-col md:col-span-5">
                     <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.image')}</label>
                     <div className="flex-1 flex flex-col min-h-[142px]">
                       <Controller
                         control={control}
                         name={`comparison_items.${index}.image_url`}
                         render={({ field: imageField }) => (
-                          <div className="flex-1 flex flex-col [&>div]:flex-1 [&>div>button]:h-full">
-                            <MediaPicker
-                              value={imageField.value ? { id: '', url: imageField.value } : null}
-                              onChange={(media) => imageField.onChange(media?.url ?? null)}
-                            />
-                          </div>
+                          <MediaPicker
+                            fill
+                            value={imageField.value ? { id: '', url: imageField.value } : null}
+                            onChange={(media) => imageField.onChange(media?.url ?? null)}
+                          />
                         )}
                       />
                     </div>
                   </div>
 
-                  {/* Right Col: Metrics (6/12) */}
-                  <div className="space-y-4 flex flex-col justify-end">
+                  {/* Right Col: Metrics (7/12) */}
+                  <div className="space-y-4 flex flex-col md:col-span-7">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.highlight')}</label>
-                        <div className="relative">
-                          <select
-                            {...register(`comparison_items.${index}.highlight`)}
-                            className="appearance-none w-full rounded-lg border border-slate-200 bg-white px-3 py-2 pr-8 text-sm text-slate-700 hover:bg-slate-50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors cursor-pointer shadow-sm"
-                          >
-                            <option value="">{t('posts.comparison.highlight.none')}</option>
-                            <option value="best_overall">{t('posts.comparison.highlight.best_overall')}</option>
-                            <option value="best_value">{t('posts.comparison.highlight.best_value')}</option>
-                            <option value="budget_pick">{t('posts.comparison.highlight.budget_pick')}</option>
-                          </select>
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
-                            </svg>
-                          </div>
-                        </div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.highlight_label')}</label>
+                        <HighlightBadgeInput control={control} index={index} />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.rating')}</label>
@@ -169,6 +171,11 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                         <Input type="number" {...register(`comparison_items.${index}.price_cents`)} className="shadow-sm" />
                       </div>
                     </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.image_alt')}</label>
+                      <Input {...register(`comparison_items.${index}.image_alt`)} className="shadow-sm" />
+                    </div>
                   </div>
                 </div>
 
@@ -178,7 +185,10 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                     <Input {...register(`comparison_items.${index}.affiliate_url`)} placeholder="https://..." />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.in_house_match_url')}</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      {t('posts.comparison.in_house_match_url')}{' '}
+                      <span className="font-normal text-slate-400">({t('posts.comparison.optional_suffix')})</span>
+                    </label>
                     <Input {...register(`comparison_items.${index}.in_house_match_url`)} placeholder="https://..." />
                   </div>
                 </div>
@@ -225,6 +235,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
           append({
             product_name: '',
             image_url: null,
+            image_alt: '',
             retailer: '',
             highlight: undefined,
             in_stock: true,

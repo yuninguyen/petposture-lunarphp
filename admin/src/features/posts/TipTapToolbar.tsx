@@ -19,6 +19,7 @@ import {
   ListOrderedIcon,
   MinusIcon,
   PaletteIcon,
+  PlusIcon,
   QuoteIcon,
   RedoIcon,
   StrikethroughIcon,
@@ -120,6 +121,7 @@ export function TipTapToolbar({ editor, onToggleSource }: TipTapToolbarProps) {
   const [highlightOpen, setHighlightOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const customHighlightInputRef = useRef<HTMLInputElement>(null);
 
   function applyLink() {
     const url = linkUrl.trim();
@@ -305,6 +307,23 @@ export function TipTapToolbar({ editor, onToggleSource }: TipTapToolbarProps) {
                 style={{ backgroundColor: color.value }}
               />
             ))}
+            <button
+              type="button"
+              title={t('posts.toolbar.highlight_custom')}
+              onClick={() => customHighlightInputRef.current?.click()}
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-gray-400 text-gray-400"
+            >
+              <PlusIcon className="h-3.5 w-3.5" />
+            </button>
+            <input
+              ref={customHighlightInputRef}
+              type="color"
+              className="h-0 w-0 opacity-0"
+              onChange={(e) => {
+                editor.chain().focus().toggleHighlight({ color: e.target.value }).run();
+                setHighlightOpen(false);
+              }}
+            />
             <button
               type="button"
               title={t('posts.toolbar.highlight_none')}

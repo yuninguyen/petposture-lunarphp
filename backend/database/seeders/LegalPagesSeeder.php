@@ -17,6 +17,7 @@ class LegalPagesSeeder extends Seeder
                     'content' => $data['content'],
                     'meta_title' => $data['title'],
                     'meta_description' => $data['meta_description'],
+                    'status' => 'published',
                     'is_active' => true,
                     'is_core' => true,
                 ]

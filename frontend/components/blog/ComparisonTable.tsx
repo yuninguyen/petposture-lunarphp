@@ -11,7 +11,7 @@ export type ComparisonItem = {
     price_display: string;
     price_cents?: number;
     rating?: number | null;
-    highlight?: 'best_overall' | 'best_value' | 'budget_pick' | null;
+    highlight?: string | null;
     pros?: string[];
     cons?: string[];
     affiliate_url: string;
@@ -25,12 +25,6 @@ export type ComparisonData = {
     items: ComparisonItem[];
 };
 
-const HIGHLIGHT_LABEL: Record<NonNullable<ComparisonItem['highlight']>, string> = {
-    best_overall: 'Best Overall',
-    best_value: 'Best Value',
-    budget_pick: 'Budget Pick',
-};
-
 // The admin stores the price without a currency symbol ("64.99"); display it
 // with "$" unless the stored value already carries one (legacy data).
 function formatPrice(value: string | null | undefined): string {
@@ -40,14 +34,32 @@ function formatPrice(value: string | null | undefined): string {
 }
 
 function Stars({ rating }: { rating: number }) {
-    const rounded = Math.round(rating);
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating - fullStars >= 0.5;
+    const emptyStars = Math.max(0, 5 - fullStars - (hasHalfStar ? 1 : 0));
+
     return (
         <div className="flex items-center gap-0.5" aria-label={`${rating} out of 5`}>
-            {Array.from({ length: 5 }).map((_, i) => (
+            {Array.from({ length: fullStars }).map((_, i) => (
                 <Star
-                    key={i}
+                    key={`full-${i}`}
                     size={13}
-                    className={i < rounded ? 'fill-secondary text-rust' : 'text-zinc-200'}
+                    className="fill-secondary text-rust"
+                />
+            ))}
+            {hasHalfStar && (
+                <div className="relative" key="half">
+                    <Star size={13} className="text-rust" />
+                    <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
+                        <Star size={13} className="fill-secondary text-rust" />
+                    </div>
+                </div>
+            )}
+            {Array.from({ length: emptyStars }).map((_, i) => (
+                <Star
+                    key={`empty-${i}`}
+                    size={13}
+                    className="text-rust"
                 />
             ))}
         </div>
@@ -61,7 +73,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
         <div className="flex flex-col rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
             {item.highlight ? (
                 <span className="mb-3 inline-block w-fit rounded-full bg-secondary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-rust">
-                    {HIGHLIGHT_LABEL[item.highlight]}
+                    {item.highlight}
                 </span>
             ) : (
                 <span className="mb-3 h-[22px]" aria-hidden="true" />

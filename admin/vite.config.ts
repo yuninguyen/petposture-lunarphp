@@ -11,5 +11,15 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    fs: {
+      strict: false,
+    },
+  },
+  optimizeDeps: {
+    include: [
+      'i18next',
+      'react-i18next',
+      'i18next-browser-languagedetector',
+    ],
   },
 });

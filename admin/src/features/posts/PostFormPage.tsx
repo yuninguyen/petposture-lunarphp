@@ -21,10 +21,31 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { fetchJson } from '@/lib/api';
 import { fetchCurrentUser } from '@/lib/auth';
+import { prettifyHtml } from '@/lib/htmlFormat';
+
+// TipTap's Link extension only preserves href/target/rel/class(config default)
+// by default and drops `style` entirely — so pasted CTA buttons like
+// `<a class="pp-cta-primary" style="...">` collapse into a plain link.
+// Extend it to read `class`/`style` straight off the parsed <a> element.
+const LinkWithStyle = Link.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      class: {
+        default: null,
+        parseHTML: (element: HTMLElement) => element.getAttribute('class'),
+      },
+      style: {
+        default: null,
+        parseHTML: (element: HTMLElement) => element.getAttribute('style'),
+      },
+    };
+  },
+});
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { EyeIcon, TrashIcon, PlusIcon } from '@/components/ui/icons';
+import { EyeIcon, TrashIcon, PlusIcon, MinusIcon } from '@/components/ui/icons';
 import { MediaPicker } from '@/features/media/MediaPicker';
 import { getPostFormSchema, PostFormValues } from './postSchema';
 import {
@@ -40,6 +61,7 @@ import {
 import { ComparisonDetailsSection } from './ComparisonDetailsSection';
 import { SeoSettingsSection } from './SeoSettingsSection';
 import { TipTapToolbar } from './TipTapToolbar';
+import toast from 'react-hot-toast';
 
 interface BlogCategory {
   id: number;
@@ -49,6 +71,7 @@ interface BlogCategory {
 interface ComparisonItemApiItem {
   product_name: string;
   image_url: string | null;
+  image_alt: string | null;
   retailer: string | null;
   retailer_label: string | null;
   retailer_logo: string | null;
@@ -187,6 +210,7 @@ export function PostFormPage() {
 
   const selectedType = useWatch({ control, name: 'type' });
   const selectedStatus = useWatch({ control, name: 'status' });
+  const selectedTags = useWatch({ control, name: 'tags' });
 
   const [slugTouched, setSlugTouched] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
@@ -204,7 +228,7 @@ export function PostFormPage() {
       Color,
       Highlight.configure({ multicolor: true }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Link.configure({ openOnClick: false, autolink: true, defaultProtocol: 'https' }),
+      LinkWithStyle.configure({ openOnClick: false, autolink: true, defaultProtocol: 'https' }),
       Image.configure({ inline: false }),
       Table.configure({ resizable: true }),
       TableRow,
@@ -221,7 +245,7 @@ export function PostFormPage() {
 
   function handleToggleSource() {
     if (sourceMode) return;
-    setSourceHtml(editor?.getHTML() ?? '');
+    setSourceHtml(prettifyHtml(editor?.getHTML() ?? ''));
     setSourceMode(true);
   }
 
@@ -262,12 +286,9 @@ export function PostFormPage() {
         comparison_items: (existingPost.comparison?.items ?? []).map((item) => ({
           product_name: item.product_name,
           image_url: item.image_url,
+          image_alt: item.image_alt ?? '',
           retailer: item.retailer ?? '',
-          // Legacy free-text values outside the enum are dropped (select shows
-          // "None") rather than being sent back and failing validation.
-          highlight: item.highlight && ['best_overall', 'best_value', 'budget_pick'].includes(item.highlight)
-            ? (item.highlight as 'best_overall' | 'best_value' | 'budget_pick')
-            : undefined,
+          highlight: item.highlight ?? undefined,
           in_stock: item.in_stock,
           price_display: (item.price_display ?? '').replace(/[^0-9.]/g, ''),
           price_cents: item.price_cents ?? undefined,
@@ -307,8 +328,12 @@ export function PostFormPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      toast.success(isEdit ? t('posts.update_success', { defaultValue: 'Post updated successfully' }) : t('posts.create_success', { defaultValue: 'Post created successfully' }));
       navigate('/posts');
     },
+    onError: (err: any) => {
+      toast.error(err.message || t('common.error_occurred', { defaultValue: 'An error occurred' }));
+    }
   });
 
   const previewMutation = useMutation({
@@ -339,7 +364,15 @@ export function PostFormPage() {
   function handleDeletePost() {
     if (!id) return;
     if (window.confirm(t('posts.confirm_delete', { title: existingPost?.title ?? '' }))) {
-      deletePost.mutate(id, { onSuccess: () => navigate('/posts') });
+      deletePost.mutate(id, { 
+        onSuccess: () => {
+          toast.success(t('posts.delete_success', { defaultValue: 'Post deleted successfully' }));
+          navigate('/posts');
+        },
+        onError: (err: any) => {
+          toast.error(err.message || t('common.error_occurred', { defaultValue: 'An error occurred' }));
+        }
+      });
     }
   }
 
@@ -360,7 +393,11 @@ export function PostFormPage() {
         setValue('blog_category_id', String(category.id), { shouldValidate: true });
         setNewCategoryName('');
         setShowCreateCategory(false);
+        toast.success(t('posts.category_create_success', { defaultValue: 'Category created successfully' }));
       },
+      onError: (err: any) => {
+        toast.error(err.message || t('common.error_occurred', { defaultValue: 'An error occurred' }));
+      }
     });
   }
 
@@ -373,7 +410,11 @@ export function PostFormPage() {
         setValue('tags', [...current, String(tag.id)], { shouldValidate: true });
         setNewTagName('');
         setShowCreateTag(false);
+        toast.success(t('posts.tag_create_success', { defaultValue: 'Tag created successfully' }));
       },
+      onError: (err: any) => {
+        toast.error(err.message || t('common.error_occurred', { defaultValue: 'An error occurred' }));
+      }
     });
   }
 
@@ -654,6 +695,30 @@ export function PostFormPage() {
                   <PlusIcon />
                 </button>
               </div>
+              {selectedTags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {selectedTags.map((tagId) => {
+                    const tag = tags.find((t) => String(t.id) === String(tagId));
+                    if (!tag) return null;
+                    return (
+                      <span
+                        key={tagId}
+                        className="flex items-center gap-1 rounded bg-gray-100 px-2 py-0.5 text-sm text-ink"
+                      >
+                        {tag.name}
+                        <button
+                          type="button"
+                          onClick={() => setValue('tags', selectedTags.filter((id) => id !== tagId), { shouldValidate: true })}
+                          className="text-gray-400 hover:text-red-600"
+                          aria-label={`Remove ${tag.name}`}
+                        >
+                          <MinusIcon className="h-3 w-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
               {showCreateTag && (
                 <div className="mt-2 flex gap-2">
                   <Input

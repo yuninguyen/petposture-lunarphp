@@ -242,9 +242,9 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                             <button
                                 type="submit"
                                 disabled={isLoading || (TURNSTILE_ENABLED && (mode === 'login' || mode === 'register') && !turnstileToken)}
-                                className="w-full bg-secondary text-ink py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                className="w-full bg-secondary text-ink py-5 rounded-xl font-bold uppercase tracking-[0.08em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                             >
-                                {isLoading ? 'Processing...' : mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : 'Send Reset Link'}
+                                {isLoading ? 'Processing...' : mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : 'Reset Password'}
                                 {!isLoading && <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />}
                             </button>
 
