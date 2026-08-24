@@ -547,6 +547,8 @@
   "products.pricing": "Giá",
   "products.variants": "Biến thể",
   "products.options_variants": "Tùy chọn & biến thể",
+  "products.options_variants_summary": "Tùy chọn: {{options}} · Biến thể: {{variants}}",
+  "products.action_more": "Thao tác sản phẩm",
   "products.options_help": "Lưu các giá trị tùy chọn, sau đó tạo ma trận biến thể. Tổ hợp không đổi sẽ giữ nguyên ID.",
   "products.add_option": "Thêm tùy chọn",
   "products.option_name": "Tên tùy chọn",

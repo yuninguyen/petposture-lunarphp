@@ -40,7 +40,7 @@ function variant(id: number, history = false): ProductVariant {
   };
 }
 
-function renderEditor(variants: ProductVariant[]) {
+function renderEditor(variants: ProductVariant[], expand = true) {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const root = createRoot(host);
@@ -58,6 +58,10 @@ function renderEditor(variants: ProductVariant[]) {
   };
 
   act(() => root.render(createElement(ProductOptionsEditor, props)));
+  if (expand) {
+    const edit = Array.from(host.querySelectorAll('button')).find((button) => button.textContent === 'common.edit')!;
+    act(() => edit.click());
+  }
   return { host, root, onDeleteVariant };
 }
 
@@ -87,6 +91,25 @@ describe('ProductOptionsEditor', () => {
     act(() => button('products.add_option_value')?.click());
     expect(button('products.generate_variants')?.disabled).toBe(true);
     expect(host.textContent).toContain('products.save_options_before_generate');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('uses the same Edit-button disclosure pattern as Pricing', () => {
+    const { host, root } = renderEditor([variant(1), variant(2)], false);
+    const toggle = () => host.querySelector('button[aria-expanded]') as HTMLButtonElement;
+
+    expect(toggle().textContent).toBe('common.edit');
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(host.querySelector('input[aria-label="products.option_name"]')).toBeNull();
+    expect(host.textContent).toContain('products.options_variants_summary');
+    act(() => toggle().click());
+    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+    expect(host.querySelector('input[aria-label="products.option_name"]')).not.toBeNull();
+    act(() => toggle().click());
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(host.querySelector('input[aria-label="products.option_name"]')).toBeNull();
 
     act(() => root.unmount());
     host.remove();
