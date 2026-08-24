@@ -198,7 +198,7 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
                   type="button"
                   onClick={() => setExpandedNavGroups((current) => ({
                     ...current,
-                    [groupKey]: groupKey === activeNavGroupKey ? true : !expanded,
+                    [groupKey]: !expanded,
                   }))}
                   className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-300"
                   aria-expanded={expanded}
