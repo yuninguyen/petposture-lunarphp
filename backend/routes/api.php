@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\Admin\BrandController as AdminBrandController;
+use App\Http\Controllers\Api\Admin\CollectionController;
 use App\Http\Controllers\Api\Admin\CollectionGroupController;
 use App\Http\Controllers\Api\Admin\CustomFieldController;
 use App\Http\Controllers\Api\Admin\ProductTypeController;
@@ -136,6 +137,14 @@ Route::prefix('/admin')
         Route::get('/collection-groups/{collectionGroup}', [CollectionGroupController::class, 'show']);
         Route::put('/collection-groups/{collectionGroup}', [CollectionGroupController::class, 'update']);
         Route::delete('/collection-groups/{collectionGroup}', [CollectionGroupController::class, 'destroy']);
+
+        Route::get('/collections', [CollectionController::class, 'index']);
+        Route::post('/collections', [CollectionController::class, 'store']);
+        Route::get('/collections/{collection}', [CollectionController::class, 'show']);
+        Route::put('/collections/{collection}', [CollectionController::class, 'update']);
+        Route::delete('/collections/{collection}', [CollectionController::class, 'destroy']);
+        Route::post('/collections/{collection}/reorder', [CollectionController::class, 'reorder']);
+        Route::post('/collections/{collection}/move', [CollectionController::class, 'move']);
 
         Route::get('/product-types', [ProductTypeController::class, 'index']);
         Route::post('/product-types', [ProductTypeController::class, 'store']);

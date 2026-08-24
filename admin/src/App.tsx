@@ -24,6 +24,7 @@ const ProductTypesPage = lazy(() => import('@/features/product-types/ProductType
 const CustomFieldsPage = lazy(() => import('@/features/custom-fields/CustomFieldsPage').then(m => ({ default: m.CustomFieldsPage })));
 const BrandsPage = lazy(() => import('@/features/brands/BrandsPage').then(m => ({ default: m.BrandsPage })));
 const CollectionGroupsPage = lazy(() => import('@/features/collection-groups/CollectionGroupsPage').then(m => ({ default: m.CollectionGroupsPage })));
+const CollectionsPage = lazy(() => import('@/features/collections/CollectionsPage').then(m => ({ default: m.CollectionsPage })));
 
 function PageLoader() {
   return (
@@ -125,6 +126,7 @@ function AppRoutes() {
       <Route path="/custom-fields" element={<CustomFieldsPage />} />
       <Route path="/brands" element={<BrandsPage />} />
       <Route path="/collection-groups" element={<CollectionGroupsPage />} />
+      <Route path="/collections" element={<CollectionsPage />} />
 
       {/* Solutions module */}
       <Route path="/solutions" element={<SolutionsListPage />} />

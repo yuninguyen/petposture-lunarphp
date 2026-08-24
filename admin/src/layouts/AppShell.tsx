@@ -1,12 +1,29 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { logout } from '@/lib/auth';
+
+interface NavItem {
+  to: string;
+  label: string;
+  icon: ReactNode;
+  children?: NavItem[];
+}
+
+interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
 
 export function AppShell({ children, userName }: { children: ReactNode; userName: string }) {
   const { t, i18n } = useTranslation();
+  const location = useLocation();
+  const [expandedNavGroups, setExpandedNavGroups] = useState<Record<string, boolean>>({
+    '0': true,
+    '1': true,
+  });
 
-  const NAV_GROUPS = [
+  const NAV_GROUPS: NavGroup[] = [
     {
       title: t('sidebar.content', 'CONTENT'),
       items: [
@@ -70,22 +87,13 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
       title: t('sidebar.catalogue', 'CATALOGUE'),
       items: [
         {
-          to: '/breeds',
-          label: t('breeds.title', 'Breeds'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
-            </svg>
-          )
-        },
-        {
           to: '/product-types',
           label: t('product_types.title', 'Product Types'),
           icon: (
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0-8 5-8-5m16 0-8 5m-8-5 8 5m0 0v3" />
             </svg>
-          )
+          ),
         },
         {
           to: '/custom-fields',
@@ -94,7 +102,7 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h10M4 18h7m6-8v8m-4-4h8" />
             </svg>
-          )
+          ),
         },
         {
           to: '/brands',
@@ -103,7 +111,7 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h10v10H7zM4 4h16v16H4z" />
             </svg>
-          )
+          ),
         },
         {
           to: '/collection-groups',
@@ -112,7 +120,27 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h10" />
             </svg>
-          )
+          ),
+          children: [
+            {
+              to: '/collections',
+              label: t('collections.title', 'Collections'),
+              icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v4m0 0H6a2 2 0 00-2 2v2m8-4h6a2 2 0 012 2v2m-8-4v4M2 15h4v4H2v-4zm8 0h4v4h-4v-4zm8 0h4v4h-4v-4z" />
+                </svg>
+              ),
+            },
+          ],
+        },
+        {
+          to: '/breeds',
+          label: t('breeds.title', 'Breeds'),
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+            </svg>
+          ),
         },
         {
           to: '/solutions',
@@ -121,11 +149,31 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
             </svg>
-          )
-        }
-      ]
+          ),
+        },
+      ],
     }
   ];
+
+  const activeNavGroupKey = String(NAV_GROUPS.findIndex((group) => (
+    group.items.some((item) => (
+      location.pathname === item.to
+      || location.pathname.startsWith(`${item.to}/`)
+      || item.children?.some((child) => (
+        location.pathname === child.to || location.pathname.startsWith(`${child.to}/`)
+      ))
+    ))
+  )));
+
+  useEffect(() => {
+    if (activeNavGroupKey === '-1') return;
+
+    setExpandedNavGroups((current) => (
+      current[activeNavGroupKey]
+        ? current
+        : { ...current, [activeNavGroupKey]: true }
+    ));
+  }, [activeNavGroupKey]);
 
   return (
     <div className="min-h-screen flex bg-slate-50 overflow-hidden">
@@ -140,31 +188,65 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
         
         {/* Navigation */}
         <nav className="flex-1 py-6 flex flex-col gap-6 overflow-y-auto px-3">
-          {NAV_GROUPS.map((group, groupIdx) => (
-            <div key={groupIdx} className="flex flex-col gap-1.5">
-              <div className="px-3 mb-1">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  {group.title}
-                </p>
-              </div>
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all rounded-lg ${
-                      isActive
-                        ? 'text-white bg-white/10 shadow-sm'
-                        : 'text-slate-400 hover:text-white hover:bg-white/5'
-                    }`
-                  }
+          {NAV_GROUPS.map((group, groupIdx) => {
+            const groupKey = String(groupIdx);
+            const expanded = expandedNavGroups[groupKey] ?? true;
+
+            return (
+              <div key={groupKey} className="flex flex-col gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setExpandedNavGroups((current) => ({
+                    ...current,
+                    [groupKey]: groupKey === activeNavGroupKey ? true : !expanded,
+                  }))}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-300"
+                  aria-expanded={expanded}
+                  aria-label={t(expanded ? 'sidebar.collapse_group' : 'sidebar.expand_group', { group: group.title })}
                 >
-                  {item.icon}
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
-          ))}
+                  <span className="text-xs font-semibold uppercase tracking-wider">{group.title}</span>
+                  <span className={`text-sm transition-transform ${expanded ? 'rotate-90' : ''}`}>›</span>
+                </button>
+                {expanded && group.items.map((item) => (
+                  <div key={item.to}>
+                    <NavLink
+                      to={item.to}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                          isActive
+                            ? 'bg-white/10 text-white shadow-sm'
+                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                        }`
+                      }
+                    >
+                      {item.icon}
+                      {item.label}
+                    </NavLink>
+                    {item.children && (
+                      <div className="ml-4 mt-1 border-l border-white/10 pl-2">
+                        {item.children.map((child) => (
+                          <NavLink
+                            key={child.to}
+                            to={child.to}
+                            className={({ isActive }) =>
+                              `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+                                isActive
+                                  ? 'bg-white/10 text-white shadow-sm'
+                                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                              }`
+                            }
+                          >
+                            {child.icon}
+                            {child.label}
+                          </NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
         </nav>
 
         {/* Bottom Sidebar Footer */}
