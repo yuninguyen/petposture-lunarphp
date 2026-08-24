@@ -200,6 +200,7 @@ export function SolutionFormPage() {
                   render={({ field: { value, onChange } }) => (
                     <div className="space-y-4">
                       <MediaPicker
+                        context="solution"
                         value={value ? { id: String(control._formValues.featured_media_id), url: value } : null}
                         onChange={(media) => {
                           onChange(media ? media.url : null);

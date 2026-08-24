@@ -517,7 +517,7 @@ export function PostFormPage() {
                 </div>
               ) : (
                 <div className="border border-gray-300 rounded-lg overflow-hidden">
-                  {editor && <TipTapToolbar editor={editor} onToggleSource={handleToggleSource} />}
+                  {editor && <TipTapToolbar editor={editor} onToggleSource={handleToggleSource} mediaContext="blog" />}
                   <div className="p-3 min-h-[220px]">
                     <EditorContent editor={editor} />
                   </div>
@@ -746,6 +746,7 @@ export function PostFormPage() {
 
                   return (
                     <MediaPicker
+                      context="blog"
                       value={field.value ? { id: field.value, url: mediaUrl ?? '' } : null}
                       onChange={(media) => field.onChange(media?.id ?? null)}
                     />

@@ -14,6 +14,7 @@ class CuratorMediaResource extends JsonResource
             'url' => $this->url,
             'thumbnail_url' => $this->thumbnail_url,
             'name' => $this->name,
+            'folder' => $this->folder,
             'alt' => $this->alt,
             'width' => $this->width,
             'height' => $this->height,

@@ -14,8 +14,18 @@ class UpdateProductRequest extends FormRequest
 
     public function rules(): array
     {
+        $product = $this->route('product');
+        $defaultUrlId = $product?->defaultUrl()->value('id');
+
         return [
             'product_type_id' => ['prohibited'],
+            'slug' => [
+                'sometimes',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                Rule::unique('lunar_urls', 'slug')->ignore($defaultUrlId),
+            ],
             'status' => ['required', Rule::in(['draft', 'published'])],
             'brand_id' => ['nullable', 'integer', Rule::exists('lunar_brands', 'id')],
             'attributes' => ['required', 'array'],
@@ -24,6 +34,7 @@ class UpdateProductRequest extends FormRequest
             'media' => ['sometimes', 'array', 'max:100'],
             'media.*.id' => ['required', 'integer'],
             'media.*.source' => ['required', Rule::in(['spatie', 'curator'])],
+            'media.*.alt' => ['nullable', 'string', 'max:255'],
         ];
     }
 

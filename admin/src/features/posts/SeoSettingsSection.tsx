@@ -144,6 +144,7 @@ export function SeoSettingsSection({ control, register, setValue, getValues, tit
                   name="seo.og_image"
                   render={({ field }) => (
                     <MediaPicker
+                      context="blog"
                       value={field.value ? { id: '', url: field.value } : null}
                       onChange={(media) => field.onChange(media?.url ?? null)}
                     />

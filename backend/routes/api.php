@@ -224,6 +224,7 @@ Route::prefix('/admin')
         Route::post('/return-requests/{id}/complete', [ReturnRequestController::class, 'complete']);
         Route::get('/media', [\App\Http\Controllers\Api\Admin\MediaController::class, 'index']);
         Route::post('/media', [\App\Http\Controllers\Api\Admin\MediaController::class, 'store'])->middleware('throttle:api-write');
+        Route::patch('/media/{media}', [\App\Http\Controllers\Api\Admin\MediaController::class, 'update'])->middleware('throttle:api-write');
         Route::get('/affiliate-networks', [\App\Http\Controllers\Api\Admin\AffiliateNetworkController::class, 'index']);
         
         Route::get('/seo-social', [\App\Http\Controllers\Api\Admin\SeoSocialController::class, 'index']);

@@ -259,7 +259,7 @@ export function PageFormPage() {
                   </div>
                 ) : (
                   <div className="border border-gray-300 rounded-lg overflow-hidden">
-                    {editor && <TipTapToolbar editor={editor} onToggleSource={handleToggleSource} />}
+                    {editor && <TipTapToolbar editor={editor} onToggleSource={handleToggleSource} mediaContext="blog" />}
                     <div className="p-3 min-h-[220px]">
                       <EditorContent editor={editor} />
                     </div>

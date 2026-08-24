@@ -131,6 +131,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                         name={`comparison_items.${index}.image_url`}
                         render={({ field: imageField }) => (
                           <MediaPicker
+                            context="blog"
                             fill
                             value={imageField.value ? { id: '', url: imageField.value } : null}
                             onChange={(media) => imageField.onChange(media?.url ?? null)}

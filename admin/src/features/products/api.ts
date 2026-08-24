@@ -19,7 +19,7 @@ export interface AttributeDefinition {
   required: boolean;
   value: AttributeValue;
 }
-export interface ProductMedia { id: string; url: string; source: 'spatie' | 'curator' }
+export interface ProductMedia { id: string; url: string; source: 'spatie' | 'curator'; alt: string }
 export interface Currency { id: number; code: string; decimal_places: number; factor: number }
 export interface TaxClass { id: number; name: string }
 export interface OptionValue { option_id: number; option_name: string; value_id: number; value_name: string }
@@ -33,7 +33,7 @@ export interface ProductVariant {
   base_price: string; formatted_price: string | null; option_values: OptionValue[]; attributes: AttributeDefinition[];
 }
 export interface ProductDetail {
-  id: number; status: ProductStatus; brand_id: number | null; product_type_id: number;
+  id: number; slug: string | null; status: ProductStatus; brand_id: number | null; product_type_id: number;
   product_type: { id: number; name: string }; brand: { id: number; name: string } | null;
   has_variants: boolean; product_attributes: AttributeDefinition[]; variants: ProductVariant[];
   collection_ids: number[]; media: ProductMedia[]; default_currency: Currency; tax_classes: TaxClass[]; updated_at: string | null;
@@ -47,7 +47,7 @@ export interface ProductSummary {
 export interface ProductsPage { data: ProductSummary[]; meta: { current_page: number; last_page: number; per_page: number; total: number } }
 export interface ProductFilters { search?: string; status?: ProductStatus | ''; brand_id?: number | ''; product_type_id?: number | ''; page?: number; per_page?: number }
 export interface CreateProductPayload { name: string; product_type_id: number; sku: string; base_price: string }
-export interface UpdateProductPayload { status: ProductStatus; brand_id: number | null; attributes: AttributeValues; collections: number[]; media: Array<{ id: number; source: ProductMedia['source'] }> }
+export interface UpdateProductPayload { slug: string; status: ProductStatus; brand_id: number | null; attributes: AttributeValues; collections: number[]; media: Array<{ id: number; source: ProductMedia['source']; alt: string }> }
 export interface UpdateVariantPayload {
   sku: string; gtin: string | null; mpn: string | null; ean: string | null; stock: number; backorder: number;
   purchasable: ProductVariant['purchasable']; unit_quantity: number; quantity_increment: number; min_quantity: number;

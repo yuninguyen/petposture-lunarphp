@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Lunar\Models\Attribute;
 use Lunar\Models\Currency;
+use Lunar\Models\Language;
 use Lunar\Models\Product;
 use Lunar\Models\ProductType;
 use Lunar\Models\ProductVariant;
@@ -167,6 +168,28 @@ class ProductController extends Controller
             $locked->brand_id = $validated['brand_id'] ?? null;
             $locked->save();
 
+            if (array_key_exists('slug', $validated)) {
+                $defaultUrl = $locked->defaultUrl()->lockForUpdate()->first();
+
+                if ($defaultUrl && $defaultUrl->slug !== $validated['slug']) {
+                    $defaultUrl->update(['slug' => $validated['slug']]);
+                } elseif (! $defaultUrl) {
+                    $language = Language::getDefault();
+
+                    if (! $language) {
+                        throw ValidationException::withMessages([
+                            'slug' => 'A default language is required to create the product URL.',
+                        ]);
+                    }
+
+                    $locked->urls()->create([
+                        'language_id' => $language->id,
+                        'slug' => $validated['slug'],
+                        'default' => true,
+                    ]);
+                }
+            }
+
             if (array_key_exists('collections', $validated)) {
                 $sync = collect($validated['collections'])->mapWithKeys(
                     fn ($id, $index): array => [(int) $id => ['position' => $index + 1]]
@@ -193,6 +216,7 @@ class ProductController extends Controller
     {
         return $product->load([
             'productType',
+            'defaultUrl',
             'brand',
             'collections',
             'images' => fn ($query) => $query->orderBy('order_column')->orderBy('id'),
@@ -233,6 +257,7 @@ class ProductController extends Controller
 
             $media->order_column = $index + 1;
             $media->setCustomProperty('primary', $index === 0);
+            $media->setCustomProperty('alt', $item['alt'] ?? null);
             $media->save();
             $keptIds[] = $media->id;
         }

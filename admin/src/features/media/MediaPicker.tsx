@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ImageIcon } from '@/components/ui/icons';
-import { MediaLibraryModal } from '@/components/ui/media-library-modal';
+import { MediaLibraryModal, type MediaContext } from '@/components/ui/media-library-modal';
 
 export function MediaPicker({
   value,
   onChange,
   fill,
+  context,
 }: {
   value: { id: string; url: string } | null;
   onChange: (media: { id: string; url: string } | null) => void;
   fill?: boolean;
+  context: MediaContext;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -54,6 +56,7 @@ export function MediaPicker({
 
       <MediaLibraryModal
         open={open}
+        context={context}
         onClose={() => setOpen(false)}
         onSelect={(media) => {
           onChange(media);

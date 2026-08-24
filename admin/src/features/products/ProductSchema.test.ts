@@ -10,7 +10,7 @@ describe('Product schemas', () => {
     expect(validateRequiredAttributes(definitions, { name: { en: 'English', vi: '' } })).toEqual({ 'name.vi': 'products.validation.required' });
   });
   it('serializes ordered media with numeric ids', () => {
-    expect(productPayload({ status: 'draft', brand_id: null, attributes: { name: 'A' }, collections: [4, 2], media: [{ id: '9', url: '/a.jpg', source: 'curator' }] }).media).toEqual([{ id: 9, source: 'curator' }]);
+    expect(productPayload({ slug: ' Harness-One ', status: 'draft', brand_id: null, attributes: { name: 'A' }, collections: [4, 2], media: [{ id: '9', url: '/a.jpg', source: 'curator', alt: 'A cat' }] })).toMatchObject({ slug: 'harness-one', media: [{ id: 9, source: 'curator', alt: 'A cat' }] });
   });
   it('normalizes optional variant strings and numeric fields', () => {
     const parsed = variantFormSchema.parse({ sku: 'A', gtin: '', mpn: '', ean: '', stock: '0', backorder: '0', purchasable: 'always', unit_quantity: '1', quantity_increment: '1', min_quantity: '1', tax_class_id: '2', tax_ref: '', shippable: true, length_value: '', length_unit: null, width_value: '', width_unit: null, height_value: '', height_unit: null, weight_value: '', weight_unit: null, base_price: '0', attributes: {} });

@@ -17,6 +17,7 @@ class ProductResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'slug' => $this->defaultUrl?->slug,
             'status' => $this->status,
             'brand_id' => $this->brand_id,
             'product_type_id' => $this->product_type_id,
@@ -37,6 +38,7 @@ class ProductResource extends JsonResource
                     'id' => (string) ($curatorMediaId ?: $media->id),
                     'url' => $media->getUrl('small') ?: $media->getUrl(),
                     'source' => $curatorMediaId ? 'curator' : 'spatie',
+                    'alt' => $media->getCustomProperty('alt') ?: '',
                 ];
             })->values()->all(),
             'default_currency' => $currency ? [

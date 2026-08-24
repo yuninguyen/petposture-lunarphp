@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Editor } from '@tiptap/react';
 import clsx from 'clsx';
-import { MediaLibraryModal } from '../../components/ui/media-library-modal';
+import { MediaLibraryModal, type MediaContext } from '../../components/ui/media-library-modal';
 import {
   AlignCenterIcon,
   AlignLeftIcon,
@@ -31,6 +31,7 @@ import {
 interface TipTapToolbarProps {
   editor: Editor;
   onToggleSource: () => void;
+  mediaContext?: MediaContext;
 }
 
 const TEXT_COLORS = [
@@ -114,7 +115,7 @@ function Popover({
   );
 }
 
-export function TipTapToolbar({ editor, onToggleSource }: TipTapToolbarProps) {
+export function TipTapToolbar({ editor, onToggleSource, mediaContext = 'blog' }: TipTapToolbarProps) {
   const { t } = useTranslation();
   const [imageOpen, setImageOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
@@ -350,6 +351,7 @@ export function TipTapToolbar({ editor, onToggleSource }: TipTapToolbarProps) {
 
       <MediaLibraryModal
         open={imageOpen}
+        context={mediaContext}
         onClose={() => setImageOpen(false)}
         onSelect={(media) => {
           editor.chain().focus().setImage({ src: media.url }).run();

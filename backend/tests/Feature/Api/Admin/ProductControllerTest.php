@@ -18,6 +18,7 @@ use Lunar\Models\Collection;
 use Lunar\Models\CollectionGroup;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
+use Lunar\Models\Language;
 use Lunar\Models\Price;
 use Lunar\Models\Product;
 use Lunar\Models\ProductOption;
@@ -271,6 +272,73 @@ class ProductControllerTest extends TestCase
         $this->assertCount(1, $remaining);
         $this->assertSame($media[1]->id, $remaining->first()->id);
         $this->assertTrue((bool) $remaining->first()->getCustomProperty('primary'));
+    }
+
+    public function test_product_slug_is_returned_validated_unique_and_updates_the_existing_default_url(): void
+    {
+        $this->actingAsAdmin();
+        $language = Language::getDefault();
+        $product = $this->product('Slug product');
+        $product->urls()->delete();
+        $url = $product->urls()->create([
+            'language_id' => $language->id,
+            'slug' => 'old-product-slug',
+            'default' => true,
+        ]);
+        $other = $this->product('Other product');
+        $other->urls()->delete();
+        $other->urls()->create([
+            'language_id' => $language->id,
+            'slug' => 'already-used',
+            'default' => true,
+        ]);
+
+        $this->getJson("/api/admin/products/{$product->id}")
+            ->assertOk()
+            ->assertJsonPath('data.slug', 'old-product-slug');
+
+        $payload = [
+            'status' => 'published',
+            'brand_id' => null,
+            'attributes' => ['name' => 'Slug product'],
+        ];
+        $this->putJson("/api/admin/products/{$product->id}", $payload + ['slug' => 'Uppercase-Slug'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('slug');
+        $this->putJson("/api/admin/products/{$product->id}", $payload + ['slug' => 'already-used'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('slug');
+
+        $this->putJson("/api/admin/products/{$product->id}", $payload + ['slug' => 'new-product-slug'])
+            ->assertOk()
+            ->assertJsonPath('data.slug', 'new-product-slug');
+
+        $url->refresh();
+        $this->assertSame('new-product-slug', $url->slug);
+        $this->assertSame($language->id, $url->language_id);
+        $this->assertTrue($url->default);
+        $this->assertSame(1, $product->urls()->count());
+    }
+
+    public function test_product_update_creates_a_default_url_when_one_is_missing(): void
+    {
+        $this->actingAsAdmin();
+        $language = Language::getDefault();
+        $product = $this->product('Missing URL');
+        $product->urls()->delete();
+
+        $this->putJson("/api/admin/products/{$product->id}", [
+            'slug' => 'created-product-url',
+            'status' => 'draft',
+            'brand_id' => null,
+            'attributes' => ['name' => 'Missing URL'],
+        ])->assertOk()
+            ->assertJsonPath('data.slug', 'created-product-url');
+
+        $url = $product->urls()->sole();
+        $this->assertSame($language->id, $url->language_id);
+        $this->assertSame('created-product-url', $url->slug);
+        $this->assertTrue($url->default);
     }
 
     public function test_direct_variant_update_isolated_from_siblings_options_pivots_and_non_base_prices(): void
