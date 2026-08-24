@@ -87,7 +87,7 @@ export function CollectionFormModal({
               defaultValue: isEditing ? 'Edit collection' : parentId ? 'Add child collection' : 'Add root collection',
             })}
           </h2>
-          <button type="button" disabled={saveMutation.isPending} onClick={onClose} className="text-2xl text-slate-400 hover:text-slate-600" aria-label={t('common.close', { defaultValue: 'Close' })}>×</button>
+          <button type="button" disabled={saveMutation.isPending} onClick={onClose} className="text-2xl text-slate-400 hover:text-slate-600" aria-label={t('common.close')}>×</button>
         </div>
         <form onSubmit={submit}>
           <div className="p-5">
@@ -96,8 +96,8 @@ export function CollectionFormModal({
             {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
           </div>
           <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4">
-            <Button type="button" variant="primary" disabled={saveMutation.isPending} onClick={onClose}>{t('common.cancel', { defaultValue: 'Cancel' })}</Button>
-            <Button type="submit" variant="secondary" disabled={saveMutation.isPending}>{saveMutation.isPending ? t('common.saving', { defaultValue: 'Saving…' }) : t('common.save', { defaultValue: 'Save' })}</Button>
+            <Button type="button" variant="secondary" disabled={saveMutation.isPending} onClick={onClose}>{t('common.cancel')}</Button>
+            <Button type="submit" variant="primary" disabled={saveMutation.isPending}>{saveMutation.isPending ? t('common.saving') : t('common.save', { defaultValue: 'Save' })}</Button>
           </div>
         </form>
       </div>

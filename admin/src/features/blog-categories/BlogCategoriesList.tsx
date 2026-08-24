@@ -144,7 +144,7 @@ export function BlogCategoriesList() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('blog_categories.title')}</h1>
         <Button 
-          variant="secondary" 
+          variant="primary"
           className="flex items-center gap-2 shadow-sm"
           onClick={() => {
             setEditingCategory(null);
@@ -178,8 +178,8 @@ export function BlogCategoriesList() {
         {selectedCount > 0 && (
           <Button 
             type="button" 
-            variant="primary" 
-            className="bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 whitespace-nowrap transition-colors shadow-sm h-[38px]"
+            variant="danger"
+            className="whitespace-nowrap shadow-sm h-[38px]"
             onClick={handleBulkDelete}
           >
             {t('blog_categories.bulk_delete_selected', { count: selectedCount })}

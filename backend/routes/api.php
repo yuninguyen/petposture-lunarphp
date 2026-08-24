@@ -19,7 +19,9 @@ use App\Http\Controllers\Api\Admin\BrandController as AdminBrandController;
 use App\Http\Controllers\Api\Admin\CollectionController;
 use App\Http\Controllers\Api\Admin\CollectionGroupController;
 use App\Http\Controllers\Api\Admin\CustomFieldController;
+use App\Http\Controllers\Api\Admin\ProductAssociationController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Api\Admin\ProductOptionController;
 use App\Http\Controllers\Api\Admin\ProductTypeController;
 use App\Http\Controllers\Api\Admin\ProductVariantController as AdminProductVariantController;
 use App\Http\Controllers\Api\ReturnRequestController;
@@ -150,10 +152,19 @@ Route::prefix('/admin')
 
         Route::get('/products', [AdminProductController::class, 'index']);
         Route::post('/products', [AdminProductController::class, 'store']);
+        Route::post('/products/bulk-delete', [AdminProductController::class, 'bulkDestroy']);
+        Route::post('/products/bulk-status', [AdminProductController::class, 'bulkStatus']);
         Route::get('/products/{product}', [AdminProductController::class, 'show']);
+        Route::get('/products/{product}/preview-url', [AdminProductController::class, 'previewUrl']);
         Route::put('/products/{product}', [AdminProductController::class, 'update']);
         Route::delete('/products/{product}', [AdminProductController::class, 'destroy']);
+        Route::get('/products/{product}/associations', [ProductAssociationController::class, 'index']);
+        Route::post('/products/{product}/associations', [ProductAssociationController::class, 'store']);
+        Route::delete('/products/{product}/associations/{association}', [ProductAssociationController::class, 'destroy']);
+        Route::post('/products/{product}/options', [ProductOptionController::class, 'store']);
+        Route::post('/products/{product}/variants/generate', [AdminProductVariantController::class, 'generate']);
         Route::put('/products/{product}/variants/{variant}', [AdminProductVariantController::class, 'update']);
+        Route::delete('/products/{product}/variants/{variant}', [AdminProductVariantController::class, 'destroy']);
 
         Route::get('/product-types', [ProductTypeController::class, 'index']);
         Route::post('/product-types', [ProductTypeController::class, 'store']);

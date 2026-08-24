@@ -20,7 +20,7 @@ export function BreedDetailModal({ breedId, onClose }: BreedDetailModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-900">{t('common.view_details', 'View Details')}</h2>
+          <h2 className="text-lg font-bold text-slate-900">{t('common.view_details')}</h2>
           <button 
             onClick={onClose}
             className="text-slate-400 hover:text-slate-500 transition-colors"
@@ -130,7 +130,7 @@ export function BreedDetailModal({ breedId, onClose }: BreedDetailModalProps) {
         
         <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
           <Button variant="secondary" onClick={onClose}>
-            {t('common.close', 'Close')}
+            {t('common.close')}
           </Button>
           <Link to={`/breeds/${breedId}`}>
             <Button variant="primary">

@@ -7,27 +7,50 @@ import { ScientificBreakdown } from '@/components/product/ScientificBreakdown';
 import { TrustBadgeBar } from '@/components/product/TrustBadgeBar';
 import { RelatedProducts } from '@/components/product/RelatedProducts';
 import { ProductReviews } from '@/components/product/ProductReviews';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import { API_BASE_URL } from '@/lib/api';
 import { stripHtml } from '@/lib/text';
 
-async function fetchProduct(slug: string): Promise<Product | null> {
+type ProductLookup = {
+    product: Product | null;
+    redirectPath: string | null;
+};
+
+async function fetchProduct(slug: string, previewQuery?: string): Promise<ProductLookup> {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/products/${slug}`, {
-            next: { revalidate: 60 },
+        const url = previewQuery
+            ? `${API_BASE_URL}/api/products/${slug}?${previewQuery}`
+            : `${API_BASE_URL}/api/products/${slug}`;
+        const response = await fetch(url, {
+            cache: previewQuery ? 'no-store' : undefined,
+            next: previewQuery ? undefined : { revalidate: 60 },
         });
 
         if (!response.ok) {
-            return null;
+            return { product: null, redirectPath: null };
         }
 
         const payload = await response.json();
-        return payload?.data ?? null;
+        return {
+            product: payload?.data ?? null,
+            redirectPath: typeof payload?.redirect?.path === 'string' ? payload.redirect.path : null,
+        };
     } catch (error) {
         console.error('Failed to fetch product detail:', error);
-        return null;
+        return { product: null, redirectPath: null };
     }
+}
+
+function buildPreviewQuery(searchParams: Record<string, string | string[] | undefined>): string | undefined {
+    const expires = searchParams.expires;
+    const token = searchParams.preview_token;
+
+    if (typeof expires !== 'string' || typeof token !== 'string') {
+        return undefined;
+    }
+
+    return `expires=${encodeURIComponent(expires)}&preview_token=${encodeURIComponent(token)}`;
 }
 
 async function fetchProducts(): Promise<Product[]> {
@@ -48,10 +71,17 @@ async function fetchProducts(): Promise<Product[]> {
     }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ category: string; slug: string }> }): Promise<Metadata> {
-    const { category, slug } = await params;
-    const product = await fetchProduct(slug);
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ category: string; slug: string }>; searchParams: SearchParams }): Promise<Metadata> {
+    const { category, slug } = await params;
+    const lookup = await fetchProduct(slug, buildPreviewQuery(await searchParams));
+
+    if (lookup.redirectPath) {
+        redirect(lookup.redirectPath);
+    }
+
+    const product = lookup.product;
     if (!product) {
         return { title: 'Product' };
     }
@@ -79,14 +109,20 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
     };
 }
 
-export default async function Page({ params }: { params: Promise<{ category: string; slug: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ category: string; slug: string }>; searchParams: SearchParams }) {
     const { slug } = await params;
+    const previewQuery = buildPreviewQuery(await searchParams);
 
-    const [product, allProducts] = await Promise.all([
-        fetchProduct(slug),
+    const [lookup, allProducts] = await Promise.all([
+        fetchProduct(slug, previewQuery),
         fetchProducts(),
     ]);
 
+    if (lookup.redirectPath) {
+        redirect(lookup.redirectPath);
+    }
+
+    const product = lookup.product;
     if (!product) {
         notFound();
     }

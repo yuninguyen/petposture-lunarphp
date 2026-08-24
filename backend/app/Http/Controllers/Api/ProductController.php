@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\OrderResource;
 use App\Http\Resources\Api\ProductResource;
+use App\Models\ProductRedirect;
 use App\Models\Review;
 use App\Models\User;
 use App\Notifications\NewReviewNotification;
+use App\Services\ProductRouteService;
 use App\Traits\HttpResponses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -150,10 +152,38 @@ class ProductController extends Controller
         return ProductResource::collection($products);
     }
 
-    public function show($slug)
+    public function show(Request $request, $slug)
     {
-        $product = $this->resolvePublishedProduct($slug);
+        if ($this->hasValidPreviewToken($request, $slug)) {
+            $previewProduct = $this->resolvePreviewProduct($slug);
 
+            if (! $previewProduct) {
+                abort(404, 'Product not found');
+            }
+
+            return new ProductResource($previewProduct);
+        }
+
+        $product = $this->resolveCurrentPublishedProduct($slug);
+
+        if ($product) {
+            return new ProductResource($product);
+        }
+
+        $redirectProduct = $this->resolveRedirectProduct($slug);
+        if ($redirectProduct) {
+            $routes = app(ProductRouteService::class);
+
+            return response()->json([
+                'redirect' => [
+                    'path' => $routes->path($redirectProduct),
+                    'slug' => $routes->slug($redirectProduct),
+                    'categorySlug' => $routes->categorySlug($redirectProduct),
+                ],
+            ]);
+        }
+
+        $product = is_numeric($slug) ? $this->resolvePublishedProduct($slug) : null;
         if (! $product) {
             abort(404, 'Product not found');
         }
@@ -328,7 +358,72 @@ class ProductController extends Controller
 
     private function resolvePublishedProduct(string $slug): ?Product
     {
-        $with = [
+        $product = $this->resolveCurrentPublishedProduct($slug);
+
+        if (! $product && is_numeric($slug)) {
+            $product = Product::with($this->productRelations())
+                ->where('status', 'published')
+                ->whereHas('variants')
+                ->find($slug);
+        }
+
+        return $product;
+    }
+
+    private function resolvePreviewProduct(string $slug): ?Product
+    {
+        return Product::with($this->productRelations())
+            ->whereHas('variants')
+            ->whereHas('urls', fn ($query) => $query->where('slug', $slug))
+            ->first();
+    }
+
+    private function hasValidPreviewToken(Request $request, string $slug): bool
+    {
+        $expires = $request->query('expires');
+        $token = $request->query('preview_token');
+
+        if (! $expires || ! $token || now()->timestamp > (int) $expires) {
+            return false;
+        }
+
+        $expected = hash_hmac('sha256', $slug.'|'.$expires, config('app.key'));
+
+        return hash_equals($expected, (string) $token);
+    }
+
+    private function resolveCurrentPublishedProduct(string $slug): ?Product
+    {
+        return Product::with($this->productRelations())
+            ->where('status', 'published')
+            ->whereHas('variants')
+            ->whereHas('urls', fn ($query) => $query->where('slug', $slug))
+            ->first();
+    }
+
+    private function resolveRedirectProduct(string $slug): ?Product
+    {
+        $redirect = ProductRedirect::query()
+            ->where('old_slug', $slug)
+            ->whereHas('product', fn ($query) => $query
+                ->where('status', 'published')
+                ->whereHas('variants'))
+            ->latest('id')
+            ->first();
+
+        if (! $redirect) {
+            return null;
+        }
+
+        return Product::with($this->productRelations())
+            ->where('status', 'published')
+            ->whereHas('variants')
+            ->find($redirect->product_id);
+    }
+
+    private function productRelations(): array
+    {
+        return [
             'variants.prices',
             'variants.values.option',
             'variants.images',
@@ -340,20 +435,5 @@ class ProductController extends Controller
             'productOptions.values',
             'brand',
         ];
-
-        $product = Product::with($with)
-            ->where('status', 'published')
-            ->whereHas('variants')
-            ->whereHas('urls', fn ($q) => $q->where('slug', $slug))
-            ->first();
-
-        if (! $product && is_numeric($slug)) {
-            $product = Product::with($with)
-                ->where('status', 'published')
-                ->whereHas('variants')
-                ->find($slug);
-        }
-
-        return $product;
     }
 }

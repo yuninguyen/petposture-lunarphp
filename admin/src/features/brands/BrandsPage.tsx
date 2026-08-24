@@ -106,7 +106,7 @@ export function BrandsPage() {
                     <div className="flex justify-center mb-2">
                       <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     </div>
-                    {t('common.loading', 'Loading...')}
+                    {t('common.loading')}
                   </td>
                 </tr>
               ) : brandsQuery.isError ? (

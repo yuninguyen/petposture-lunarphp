@@ -104,7 +104,7 @@ export function CollectionGroupsPage() {
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
                     <div className="mb-2 flex justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
-                    {t('common.loading', 'Loading...')}
+                    {t('common.loading')}
                   </td>
                 </tr>
               ) : collectionGroupsQuery.isError ? (

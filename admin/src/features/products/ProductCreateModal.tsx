@@ -19,7 +19,7 @@ export function ProductCreateModal({ open, productTypes, isSaving, onClose, onSu
       <Field label={t('products.product_type')} error={errors.product_type_id?.message && t(String(errors.product_type_id.message))}><select {...register('product_type_id')} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"><option value="">{t('products.select_product_type')}</option>{productTypes.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select></Field>
       <div className="grid grid-cols-2 gap-4"><Field label={t('products.sku')} error={errors.sku?.message && t(String(errors.sku.message))}><Input {...register('sku')} /></Field><Field label={t('products.base_price')} error={errors.base_price?.message && t(String(errors.base_price.message))}><Input inputMode="decimal" {...register('base_price')} /></Field></div>
     </div>
-    <div className="mt-7 flex justify-end gap-3"><Button type="button" variant="secondary" onClick={onClose}>{t('common.cancel')}</Button><Button type="submit" variant="primary" disabled={isSaving}>{isSaving ? t('common.saving', 'Saving...') : t('products.create')}</Button></div>
+    <div className="mt-7 flex justify-end gap-3"><Button type="button" variant="secondary" onClick={onClose}>{t('common.cancel')}</Button><Button type="submit" variant="primary" disabled={isSaving}>{isSaving ? t('common.saving') : t('products.create')}</Button></div>
   </form></div>;
 }
 function Field({ label, error, children }: { label: string; error?: string | false; children: React.ReactNode }) { return <label className="block"><span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>{children}{error && <span className="mt-1 block text-xs text-red-600">{error}</span>}</label>; }

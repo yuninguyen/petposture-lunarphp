@@ -85,7 +85,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                 <span className="font-medium">{t('posts.comparison.item_label', { defaultValue: 'Item' })} {index + 1}</span>
                 <RowSummary control={control} index={index} affiliateNetworks={affiliateNetworks} />
               </button>
-              <Button type="button" variant="secondary" onClick={() => remove(index)}>
+              <Button type="button" variant="danger" onClick={() => remove(index)}>
                 {t('posts.comparison.remove_item')}
               </Button>
             </div>

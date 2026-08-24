@@ -42,7 +42,7 @@ export function DeleteConfirmModal({
             disabled={isLoading}
             className="w-full sm:w-full px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors disabled:opacity-50"
           >
-            {t('common.cancel', { defaultValue: 'Cancel' })}
+            {t('common.cancel')}
           </button>
           <button 
             type="button" 

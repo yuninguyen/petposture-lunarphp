@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api;
 
 use App\Services\InventoryService;
+use App\Services\ProductRouteService;
 use App\Services\ProductSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -17,11 +18,8 @@ class ProductResource extends JsonResource
         $price = $defaultVariant?->prices->sortBy('min_quantity')->first();
         $productId = (int) $this->id;
 
-        $productSlug = $this->defaultUrl?->slug
-            ?? $this->urls->firstWhere('default', true)?->slug
-            ?? $this->urls->first()?->slug
-            ?? $this->translateAttribute('legacy_product_slug')
-            ?? (string) $productId;
+        $routeService = app(ProductRouteService::class);
+        $productSlug = $routeService->slug($this->resource);
 
         $firstCollection = $this->collections->first();
 
@@ -45,8 +43,7 @@ class ProductResource extends JsonResource
 
             // Category
             'category' => $firstCollection?->translateAttribute('name') ?? 'Shop',
-            'categorySlug' => $firstCollection?->defaultUrl?->slug
-                ?? ($firstCollection ? Str::slug($firstCollection->translateAttribute('name')) : 'categories'),
+            'categorySlug' => $routeService->categorySlug($this->resource),
 
             // Breed-type tags (e.g. "flat-faced", "long-backed") — comma-separated attribute
             'breedTags' => $this->resolveBreedTags(),

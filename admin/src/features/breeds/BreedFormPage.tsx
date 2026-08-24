@@ -165,7 +165,7 @@ export function BreedFormPage() {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
             </svg>
-            {t('common.back', 'Back')}
+            {t('common.back')}
           </Button>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             {isEditing ? t('common.edit', 'Edit') : t('breeds.new_breed', 'New Breed')}
@@ -173,7 +173,7 @@ export function BreedFormPage() {
         </div>
         <div className="flex gap-3">
           <Button variant="secondary" onClick={() => navigate('/breeds')}>
-            {t('common.cancel', 'Cancel')}
+            {t('common.cancel')}
           </Button>
           <Button
             variant="primary"

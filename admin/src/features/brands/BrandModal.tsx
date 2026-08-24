@@ -60,7 +60,7 @@ export function BrandModal({ open, brand, onClose }: BrandModalProps) {
       <div className="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-semibold text-slate-900">{t(isEditing ? 'brands.edit_title' : 'brands.create_title')}</h2>
-          <button type="button" onClick={onClose} disabled={saveMutation.isPending} className="text-2xl leading-none text-slate-400 hover:text-slate-600" aria-label={t('common.close', 'Close')}>&times;</button>
+          <button type="button" onClick={onClose} disabled={saveMutation.isPending} className="text-2xl leading-none text-slate-400 hover:text-slate-600" aria-label={t('common.close')}>&times;</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="space-y-5 p-5">
@@ -71,8 +71,8 @@ export function BrandModal({ open, brand, onClose }: BrandModalProps) {
             </div>
           </div>
           <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4">
-            <Button type="button" variant="primary" onClick={onClose} disabled={saveMutation.isPending}>{t('brands.cancel')}</Button>
-            <Button type="submit" variant="secondary" disabled={saveMutation.isPending}>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={saveMutation.isPending}>{t('brands.cancel')}</Button>
+            <Button type="submit" variant="primary" disabled={saveMutation.isPending}>
               {saveMutation.isPending ? t('brands.saving') : t(isEditing ? 'brands.save' : 'brands.create')}
             </Button>
           </div>

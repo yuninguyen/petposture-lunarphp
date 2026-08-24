@@ -99,7 +99,7 @@ export function CustomFieldModal({ open, field, productTypes, onClose }: CustomF
           <h2 className="text-lg font-semibold text-slate-900">
             {t(isEditing ? 'custom_fields.edit_title' : 'custom_fields.create_title')}
           </h2>
-          <button type="button" onClick={onClose} disabled={saveMutation.isPending} className="text-2xl leading-none text-slate-400 hover:text-slate-600" aria-label={t('common.close', 'Close')}>&times;</button>
+          <button type="button" onClick={onClose} disabled={saveMutation.isPending} className="text-2xl leading-none text-slate-400 hover:text-slate-600" aria-label={t('common.close')}>&times;</button>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -161,8 +161,8 @@ export function CustomFieldModal({ open, field, productTypes, onClose }: CustomF
           </div>
 
           <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4">
-            <Button type="button" variant="primary" onClick={onClose} disabled={saveMutation.isPending}>{t('custom_fields.cancel')}</Button>
-            <Button type="submit" variant="secondary" disabled={saveMutation.isPending}>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={saveMutation.isPending}>{t('custom_fields.cancel')}</Button>
+            <Button type="submit" variant="primary" disabled={saveMutation.isPending}>
               {saveMutation.isPending ? t('custom_fields.saving') : t(isEditing ? 'custom_fields.save' : 'custom_fields.create')}
             </Button>
           </div>

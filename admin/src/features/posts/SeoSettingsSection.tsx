@@ -9,6 +9,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { Button } from '../../components/ui/button';
 import { SparklesIcon } from '../../components/ui/icons';
 import { MediaPicker } from '../media/MediaPicker';
+import type { MediaContext } from '../../components/ui/media-library-modal';
 import clsx from 'clsx';
 
 interface SeoSettingsSectionProps {
@@ -18,6 +19,8 @@ interface SeoSettingsSectionProps {
   getValues: UseFormGetValues<any>;
   titleKey?: string;
   contentKey?: string;
+  mediaContext?: MediaContext;
+  contentType?: 'blog' | 'product';
 }
 
 type SeoTab = 'google' | 'social';
@@ -32,7 +35,7 @@ function CharCounter({ count, max }: { count: number; max: number }) {
   );
 }
 
-export function SeoSettingsSection({ control, register, setValue, getValues, titleKey = 'title', contentKey = 'content' }: SeoSettingsSectionProps) {
+export function SeoSettingsSection({ control, register, setValue, getValues, titleKey = 'title', contentKey = 'content', mediaContext = 'blog', contentType = 'blog' }: SeoSettingsSectionProps) {
   const { t } = useTranslation();
   const generateSeo = useGenerateSeo();
   const [tab, setTab] = useState<SeoTab>('google');
@@ -55,7 +58,7 @@ export function SeoSettingsSection({ control, register, setValue, getValues, tit
     setNeedTitle(false);
     setGenerated(false);
     generateSeo.mutate(
-      { title, content: content ?? '' },
+      { title, content: content ?? '', content_type: contentType },
       {
         onSuccess: (data) => {
           setValue('seo.title', data.seo_title, { shouldValidate: true });
@@ -144,7 +147,7 @@ export function SeoSettingsSection({ control, register, setValue, getValues, tit
                   name="seo.og_image"
                   render={({ field }) => (
                     <MediaPicker
-                      context="blog"
+                      context={mediaContext}
                       value={field.value ? { id: '', url: field.value } : null}
                       onChange={(media) => field.onChange(media?.url ?? null)}
                     />

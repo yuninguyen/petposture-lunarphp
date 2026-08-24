@@ -156,7 +156,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: (user: AdminUser) => voi
 
             <Button
               type="submit"
-              variant="secondary"
+              variant="primary"
               className="mt-2 w-full rounded-lg py-2.5 shadow-sm transition-all duration-200"
               disabled={submitting}
             >

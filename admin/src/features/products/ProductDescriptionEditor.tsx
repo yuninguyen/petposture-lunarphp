@@ -63,7 +63,7 @@ export function ProductDescriptionEditor({ value, onChange, disabled = false }: 
     setSourceMode(false);
   }
 
-  if (sourceMode) return <div className="overflow-hidden rounded-lg border border-gray-300"><div className="flex items-center justify-between bg-gray-50 px-3 py-2"><span className="text-xs font-semibold text-gray-500">{t('posts.source_title')}</span><div className="flex gap-2"><Button type="button" variant="secondary" onClick={applySource}>{t('posts.source_apply')}</Button><Button type="button" variant="primary" onClick={() => setSourceMode(false)}>{t('posts.source_cancel')}</Button></div></div><textarea value={sourceHtml} onChange={(event) => setSourceHtml(event.target.value)} disabled={disabled} className="h-64 w-full p-3 font-mono text-xs text-ink" spellCheck={false}/></div>;
+  if (sourceMode) return <div className="overflow-hidden rounded-lg border border-gray-300"><div className="flex items-center justify-between bg-gray-50 px-3 py-2"><span className="text-xs font-semibold text-gray-500">{t('posts.source_title')}</span><div className="flex gap-2"><Button type="button" variant="primary" onClick={applySource}>{t('posts.source_apply')}</Button><Button type="button" variant="secondary" onClick={() => setSourceMode(false)}>{t('posts.source_cancel')}</Button></div></div><textarea value={sourceHtml} onChange={(event) => setSourceHtml(event.target.value)} disabled={disabled} className="h-64 w-full p-3 font-mono text-xs text-ink" spellCheck={false}/></div>;
 
   return <div className="overflow-hidden rounded-lg border border-gray-300">{editor && <TipTapToolbar editor={editor} onToggleSource={toggleSource} mediaContext="product"/>}<div className="min-h-[220px] p-3"><EditorContent editor={editor}/></div></div>;
 }

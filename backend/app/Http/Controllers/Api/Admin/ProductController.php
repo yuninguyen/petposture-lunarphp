@@ -7,7 +7,10 @@ use App\Http\Requests\Admin\StoreProductRequest;
 use App\Http\Requests\Admin\UpdateProductRequest;
 use App\Http\Resources\Admin\ProductResource;
 use App\Models\CuratorMedia;
+use App\Models\ProductRedirect;
+use App\Models\SeoMetadata;
 use App\Services\Admin\ProductAttributeService;
+use App\Services\ProductRouteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -151,6 +154,22 @@ class ProductController extends Controller
         return new ProductResource($this->loadProduct($product));
     }
 
+    public function previewUrl(Product $product, ProductRouteService $routes): JsonResponse
+    {
+        $product->loadMissing(['defaultUrl', 'collections.defaultUrl']);
+        $slug = $routes->slug($product);
+        $expires = now()->addDay()->timestamp;
+        $token = hash_hmac('sha256', $slug.'|'.$expires, config('app.key'));
+        $url = rtrim((string) config('app.frontend_url'), '/')
+            .$routes->path($product)
+            .'?'.http_build_query([
+                'expires' => $expires,
+                'preview_token' => $token,
+            ]);
+
+        return response()->json(['url' => $url]);
+    }
+
     public function update(UpdateProductRequest $request, Product $product): ProductResource
     {
         $validated = $request->validated();
@@ -172,6 +191,10 @@ class ProductController extends Controller
                 $defaultUrl = $locked->defaultUrl()->lockForUpdate()->first();
 
                 if ($defaultUrl && $defaultUrl->slug !== $validated['slug']) {
+                    ProductRedirect::query()->create([
+                        'product_id' => $locked->id,
+                        'old_slug' => $defaultUrl->slug,
+                    ]);
                     $defaultUrl->update(['slug' => $validated['slug']]);
                 } elseif (! $defaultUrl) {
                     $language = Language::getDefault();
@@ -200,9 +223,43 @@ class ProductController extends Controller
             if (array_key_exists('media', $validated)) {
                 $this->syncMedia($locked, $validated['media']);
             }
+
+            if (array_key_exists('seo', $validated)) {
+                SeoMetadata::query()->updateOrCreate([
+                    'seoable_type' => Product::class,
+                    'seoable_id' => $locked->id,
+                ], $validated['seo']);
+            }
         });
 
         return new ProductResource($this->loadProduct($product->fresh()));
+    }
+
+    public function bulkDestroy(Request $request): Response
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'exists:lunar_products,id'],
+        ]);
+
+        Product::query()->whereIn('id', $validated['ids'])->delete();
+
+        return response()->noContent();
+    }
+
+    public function bulkStatus(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'exists:lunar_products,id'],
+            'status' => ['required', 'in:draft,published'],
+        ]);
+
+        $updated = Product::query()->whereIn('id', $validated['ids'])->update([
+            'status' => $validated['status'],
+        ]);
+
+        return response()->json(['updated' => $updated]);
     }
 
     public function destroy(Product $product): Response
@@ -219,6 +276,7 @@ class ProductController extends Controller
             'defaultUrl',
             'brand',
             'collections',
+            'productOptions.values',
             'images' => fn ($query) => $query->orderBy('order_column')->orderBy('id'),
             'variants' => fn ($query) => $query->orderBy('id'),
             'variants.product.productType',

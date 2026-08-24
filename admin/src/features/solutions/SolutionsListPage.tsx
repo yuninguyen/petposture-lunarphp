@@ -177,7 +177,7 @@ export function SolutionsListPage() {
                     <div className="flex justify-center mb-2">
                       <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     </div>
-                    {t('common.loading', 'Loading...')}
+                    {t('common.loading')}
                   </td>
                 </tr>
               ) : solutions.length === 0 ? (
@@ -187,7 +187,7 @@ export function SolutionsListPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
                     </svg>
                     <p className="text-base font-medium text-slate-900 mb-1">{t('solutions.no_results', 'No solutions found.')}</p>
-                    <p className="text-sm">{t('common.try_different_search', 'Try adjusting your search')}</p>
+                    <p className="text-sm">{t('common.try_different_search')}</p>
                   </td>
                 </tr>
               ) : (
@@ -209,7 +209,7 @@ export function SolutionsListPage() {
         {meta && meta.last_page > 1 && (
           <div className="px-4 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
             <span className="text-sm text-slate-500">
-              {t('common.pagination_page_of', 'Page {{current}} of {{last}}', { current: meta.current_page, last: meta.last_page })}
+              {t('common.pagination_page_of', { current: meta.current_page, last: meta.last_page })}
             </span>
             <div className="flex gap-2">
               <Button
@@ -217,14 +217,14 @@ export function SolutionsListPage() {
                 disabled={page === 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
               >
-                {t('common.previous', 'Previous')}
+                {t('common.previous')}
               </Button>
               <Button
                 variant="secondary"
                 disabled={page >= meta.last_page}
                 onClick={() => setPage(p => p + 1)}
               >
-                {t('common.next', 'Next')}
+                {t('common.next')}
               </Button>
             </div>
           </div>

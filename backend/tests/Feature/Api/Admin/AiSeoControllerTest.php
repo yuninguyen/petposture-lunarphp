@@ -51,7 +51,7 @@ class AiSeoControllerTest extends TestCase
         $this->mock(AiSeoGeneratorService::class, function ($mock) use ($output) {
             $mock->shouldReceive('generate')
                 ->once()
-                ->with('My Title', '<p>Body</p>')
+                ->with('My Title', '<p>Body</p>', 'blog')
                 ->andReturn($output);
         });
 
@@ -72,7 +72,7 @@ class AiSeoControllerTest extends TestCase
         $this->mock(AiSeoGeneratorService::class, function ($mock) {
             $mock->shouldReceive('generate')
                 ->once()
-                ->with('My Title', null)
+                ->with('My Title', null, 'blog')
                 ->andReturn([
                     'seo_title' => 'T', 'focus_keyphrase' => 'k', 'meta_description' => 'd',
                     'social_title' => 'st', 'social_description' => 'sd',
@@ -80,6 +80,41 @@ class AiSeoControllerTest extends TestCase
         });
 
         $this->postJson('/api/admin/posts/generate-seo', ['title' => 'My Title'])->assertOk();
+    }
+
+    public function test_product_content_type_is_forwarded_to_the_generator(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+        Sanctum::actingAs($user);
+
+        $this->mock(AiSeoGeneratorService::class, function ($mock) {
+            $mock->shouldReceive('generate')
+                ->once()
+                ->with('Posture Bowl', '<p>Raised ceramic bowl.</p>', 'product')
+                ->andReturn([
+                    'seo_title' => 'T', 'focus_keyphrase' => 'k', 'meta_description' => 'd',
+                    'social_title' => 'st', 'social_description' => 'sd',
+                ]);
+        });
+
+        $this->postJson('/api/admin/posts/generate-seo', [
+            'title' => 'Posture Bowl',
+            'content' => '<p>Raised ceramic bowl.</p>',
+            'content_type' => 'product',
+        ])->assertOk();
+    }
+
+    public function test_content_type_is_validated(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/admin/posts/generate-seo', [
+            'title' => 'Title',
+            'content_type' => 'landing-page',
+        ])->assertUnprocessable()->assertJsonValidationErrors('content_type');
     }
 
     public function test_title_is_required(): void

@@ -73,8 +73,8 @@ export function MoveCollectionModal({ open, node, groups, isLoading = false, onC
             </div>
           </div>
           <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4">
-            <Button type="button" variant="primary" disabled={isLoading} onClick={onClose}>{t('common.cancel', { defaultValue: 'Cancel' })}</Button>
-            <Button type="submit" variant="secondary" disabled={isLoading || groupId === 0 || unchanged}>{isLoading ? t('common.saving', { defaultValue: 'Saving…' }) : t('collections.move', { defaultValue: 'Move' })}</Button>
+            <Button type="button" variant="secondary" disabled={isLoading} onClick={onClose}>{t('common.cancel')}</Button>
+            <Button type="submit" variant="primary" disabled={isLoading || groupId === 0 || unchanged}>{isLoading ? t('common.saving') : t('collections.move', { defaultValue: 'Move' })}</Button>
           </div>
         </form>
       </div>

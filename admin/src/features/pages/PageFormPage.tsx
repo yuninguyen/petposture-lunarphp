@@ -24,8 +24,9 @@ import { prettifyHtml } from '@/lib/htmlFormat';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { TrashIcon } from '@/components/ui/icons';
+import { SparklesIcon, TrashIcon } from '@/components/ui/icons';
 import { TipTapToolbar } from '@/features/posts/TipTapToolbar';
+import { useGenerateSeo } from '@/features/posts/postsApi';
 import { getPageFormSchema, PageFormValues } from './pageSchema';
 import { usePage, useCreatePage, useUpdatePage, useDeletePage } from './api';
 import { useQueryClient } from '@tanstack/react-query';
@@ -65,6 +66,7 @@ export function PageFormPage() {
   const createMutation = useCreatePage();
   const updateMutation = useUpdatePage();
   const deleteMutation = useDeletePage();
+  const generateSeo = useGenerateSeo();
 
   const {
     register,
@@ -86,6 +88,14 @@ export function PageFormPage() {
     },
   });
 
+  const pageTitle = useWatch({ control, name: 'title' }) ?? '';
+  const pageSlug = useWatch({ control, name: 'slug' }) ?? '';
+  const metaTitle = useWatch({ control, name: 'meta_title' }) ?? '';
+  const metaDescription = useWatch({ control, name: 'meta_description' }) ?? '';
+  const previewTitle = metaTitle.trim() || pageTitle.trim();
+  const previewUrl = `petposture.com/${pageSlug.trim() || 'page-slug'}`;
+  const displayedPreviewTitle = previewTitle.length > 60 ? `${previewTitle.slice(0, 60)}…` : previewTitle;
+  const displayedPreviewDescription = metaDescription.length > 160 ? `${metaDescription.slice(0, 160)}…` : metaDescription;
 
   const [slugTouched, setSlugTouched] = useState(false);
   const [sourceMode, setSourceMode] = useState(false);
@@ -170,6 +180,25 @@ export function PageFormPage() {
     }
   }
 
+  function handleGenerateSeo() {
+    const title = getValues('title')?.trim();
+    if (!title) {
+      toast.error(t('posts.seo.add_title_first'));
+      return;
+    }
+
+    generateSeo.mutate(
+      { title, content: getValues('content') ?? '', content_type: 'blog' },
+      {
+        onSuccess: (data) => {
+          setValue('meta_title', data.seo_title, { shouldDirty: true, shouldValidate: true });
+          setValue('meta_description', data.meta_description, { shouldDirty: true, shouldValidate: true });
+        },
+        onError: (error) => toast.error(error.message),
+      }
+    );
+  }
+
   function onSubmit(values: PageFormValues) {
     const finalValues = {
       ...values,
@@ -203,7 +232,7 @@ export function PageFormPage() {
                 {t('pages.action_delete')}
               </Button>
             )}
-            <Button type="submit" variant="secondary" disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}>
+            <Button type="submit" variant="primary" disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}>
               {(isSubmitting || createMutation.isPending || updateMutation.isPending)
                 ? t('pages.form_button_saving')
                 : t('pages.form_button_save')}
@@ -242,10 +271,10 @@ export function PageFormPage() {
                     <div className="flex items-center justify-between bg-gray-50 px-3 py-2">
                       <span className="text-xs font-semibold text-gray-500">{t('posts.source_title')}</span>
                       <div className="flex gap-2">
-                        <Button type="button" variant="secondary" onClick={handleApplySource}>
+                        <Button type="button" variant="primary" onClick={handleApplySource}>
                           {t('posts.source_apply')}
                         </Button>
-                        <Button type="button" variant="primary" onClick={() => setSourceMode(false)}>
+                        <Button type="button" variant="secondary" onClick={() => setSourceMode(false)}>
                           {t('posts.source_cancel')}
                         </Button>
                       </div>
@@ -272,7 +301,13 @@ export function PageFormPage() {
 
           <div className="w-full lg:w-1/3 space-y-6">
             <Card className="space-y-4 p-5">
-              <h3 className="text-lg font-semibold text-slate-800">{t('pages.section_seo')}</h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold text-slate-800">{t('pages.section_seo')}</h3>
+                <Button type="button" variant="secondary" className="shrink-0 px-3 py-1.5" disabled={generateSeo.isPending} onClick={handleGenerateSeo}>
+                  <SparklesIcon className="h-4 w-4" />
+                  {generateSeo.isPending ? t('posts.seo.generating_ai') : t('posts.seo.generate_ai')}
+                </Button>
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">{t('pages.form_label_meta_title')}</label>
@@ -285,6 +320,25 @@ export function PageFormPage() {
                   {...register('meta_description')}
                   className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm h-24"
                 />
+              </div>
+
+              <div className="rounded-lg border border-slate-200 bg-white p-4" data-testid="page-google-preview">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('pages.seo_preview')}</p>
+                <p className="truncate text-sm text-emerald-700" data-testid="page-preview-url">{previewUrl}</p>
+                <p className="mt-1 text-lg leading-snug text-blue-700" data-testid="page-preview-title">
+                  {displayedPreviewTitle || t('pages.seo_preview_untitled')}
+                </p>
+                <p className={`mt-1 text-xs ${previewTitle.length > 60 ? 'text-red-600' : 'text-slate-400'}`} data-testid="page-preview-title-count">
+                  {t('pages.seo_character_count', { count: previewTitle.length, max: 60 })}
+                  {previewTitle.length > 60 && ` · ${t('pages.seo_limit_exceeded', { count: previewTitle.length - 60 })}`}
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600" data-testid="page-preview-description">
+                  {displayedPreviewDescription || t('pages.seo_preview_description_empty')}
+                </p>
+                <p className={`mt-1 text-xs ${metaDescription.length > 160 ? 'text-red-600' : 'text-slate-400'}`} data-testid="page-preview-description-count">
+                  {t('pages.seo_character_count', { count: metaDescription.length, max: 160 })}
+                  {metaDescription.length > 160 && ` · ${t('pages.seo_limit_exceeded', { count: metaDescription.length - 160 })}`}
+                </p>
               </div>
 
               <div className="pt-2 border-t border-slate-100">

@@ -96,12 +96,12 @@ export function TagModal({
           </div>
 
           <div className="mt-8 flex justify-end gap-3">
-            <Button type="button" variant="primary" onClick={onClose}>
-              {t('common.cancel', { defaultValue: 'Cancel' })}
+            <Button type="button" variant="secondary" onClick={onClose}>
+              {t('common.cancel')}
             </Button>
             <Button 
               type="submit" 
-              variant="secondary" 
+              variant="primary"
               disabled={mutation.isPending}
               className="min-w-[100px]"
             >

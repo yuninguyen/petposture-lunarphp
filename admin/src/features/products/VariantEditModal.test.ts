@@ -34,6 +34,7 @@ const variant: ProductVariant = {
   weight_unit: null,
   base_price: '10000',
   formatted_price: '10,000 VND',
+  has_order_history: false,
   option_values: [],
   attributes: [],
 };

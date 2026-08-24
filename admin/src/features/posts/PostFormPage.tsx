@@ -441,7 +441,7 @@ export function PostFormPage() {
           {isEdit && (
             <Button
               type="button"
-              variant="primary"
+              variant="secondary"
               disabled={previewMutation.isPending}
               onClick={handlePreview}
             >
@@ -450,12 +450,12 @@ export function PostFormPage() {
             </Button>
           )}
           {isEdit && (
-            <Button type="button" variant="primary" onClick={handleDeletePost}>
+            <Button type="button" variant="danger" onClick={handleDeletePost}>
               <TrashIcon className="h-4 w-4" />
               {t('posts.action_delete')}
             </Button>
           )}
-          <Button type="submit" variant="secondary" disabled={isSubmitting}>
+          <Button type="submit" variant="primary" disabled={isSubmitting}>
             {isSubmitting
               ? t('posts.form_button_saving')
               : selectedStatus === 'published'
@@ -500,10 +500,10 @@ export function PostFormPage() {
                   <div className="flex items-center justify-between bg-gray-50 px-3 py-2">
                     <span className="text-xs font-semibold text-gray-500">{t('posts.source_title')}</span>
                     <div className="flex gap-2">
-                      <Button type="button" variant="secondary" onClick={handleApplySource}>
+                      <Button type="button" variant="primary" onClick={handleApplySource}>
                         {t('posts.source_apply')}
                       </Button>
-                      <Button type="button" variant="primary" onClick={() => setSourceMode(false)}>
+                      <Button type="button" variant="secondary" onClick={() => setSourceMode(false)}>
                         {t('posts.source_cancel')}
                       </Button>
                     </div>
@@ -531,7 +531,7 @@ export function PostFormPage() {
             <ComparisonDetailsSection control={control} register={register} affiliateNetworks={affiliateNetworks} />
           )}
 
-          <SeoSettingsSection control={control as any} register={register as any} setValue={setValue as any} getValues={getValues as any} />
+          <SeoSettingsSection control={control as any} register={register as any} setValue={setValue as any} getValues={getValues as any} mediaContext="blog" contentType="blog" />
         </div>
 
         <div className="w-full lg:w-1/3 space-y-6">

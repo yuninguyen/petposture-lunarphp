@@ -140,12 +140,12 @@ export function BlogCategoryModal({ open, onClose, category }: BlogCategoryModal
           <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
             <Button
               type="button"
-              variant="primary"
+              variant="secondary"
               onClick={onClose}
             >
               Cancel
             </Button>
-            <Button type="submit" variant="secondary" disabled={saveMutation.isPending}>
+            <Button type="submit" variant="primary" disabled={saveMutation.isPending}>
               {saveMutation.isPending ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create Category')}
             </Button>
           </div>

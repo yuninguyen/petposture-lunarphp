@@ -159,7 +159,7 @@ export function CommentsList() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('comments.list_title', 'Comments')}</h1>
-        <Button onClick={() => setIsCreateModalOpen(true)} variant="secondary" className="flex items-center gap-2 shadow-sm">
+        <Button onClick={() => setIsCreateModalOpen(true)} variant="primary" className="flex items-center gap-2 shadow-sm">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
           </svg>
@@ -209,8 +209,8 @@ export function CommentsList() {
           {selectedCount > 0 && (
             <Button 
               type="button" 
-              variant="primary" 
-              className="bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 whitespace-nowrap transition-colors shadow-sm h-[38px]"
+              variant="danger"
+              className="whitespace-nowrap shadow-sm h-[38px]"
               onClick={handleBulkDelete}
             >
               {t('comments.bulk_delete_selected', { count: selectedCount })}

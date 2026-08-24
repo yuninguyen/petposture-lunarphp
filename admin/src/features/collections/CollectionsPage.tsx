@@ -153,7 +153,7 @@ export function CollectionsPage() {
       {treeQuery.isLoading ? (
         <div className="rounded-xl border border-slate-200 bg-white py-16 text-center text-sm text-slate-500">
           <div className="mx-auto mb-3 h-6 w-6 animate-spin rounded-full border-2 border-secondary border-t-transparent" />
-          {t('common.loading', { defaultValue: 'Loading…' })}
+          {t('common.loading')}
         </div>
       ) : treeQuery.isError ? (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-8 text-center text-sm text-red-700">{treeQuery.error instanceof Error ? treeQuery.error.message : t('common.error_occurred', { defaultValue: 'Something went wrong.' })}</div>

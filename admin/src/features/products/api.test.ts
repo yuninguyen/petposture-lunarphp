@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { attributeValues, buildProductsQuery, flattenCollectionTrees } from './api';
+import { describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({ fetchJson: vi.fn() }));
+vi.mock('@/lib/api', () => ({ fetchJson: mocks.fetchJson }));
+
+import { attributeValues, buildProductsQuery, fetchProductPreviewUrl, flattenCollectionTrees } from './api';
 
 describe('product api helpers', () => {
   it('builds server filter query without empty values', () => {
@@ -10,5 +14,10 @@ describe('product api helpers', () => {
   });
   it('extracts attribute values by handle', () => {
     expect(attributeValues([{ handle: 'name', label: 'Name', type: 'translated_text', section: null, system: true, required: true, value: { en: 'A', vi: 'B' } }])).toEqual({ name: { en: 'A', vi: 'B' } });
+  });
+  it('requests a signed preview URL for the current product', async () => {
+    mocks.fetchJson.mockResolvedValueOnce({ url: 'https://storefront.test/preview' });
+    await expect(fetchProductPreviewUrl(42)).resolves.toEqual({ url: 'https://storefront.test/preview' });
+    expect(mocks.fetchJson).toHaveBeenCalledWith('/admin/products/42/preview-url');
   });
 });

@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateProductVariantRequest;
 use App\Http\Resources\Admin\ProductVariantResource;
 use App\Services\Admin\ProductAttributeService;
+use App\Services\Admin\ProductVariantMatrixService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Lunar\Models\Currency;
@@ -14,8 +17,10 @@ use Lunar\Models\ProductVariant;
 
 class ProductVariantController extends Controller
 {
-    public function __construct(private readonly ProductAttributeService $attributeService)
-    {
+    public function __construct(
+        private readonly ProductAttributeService $attributeService,
+        private readonly ProductVariantMatrixService $matrixService
+    ) {
     }
 
     public function update(
@@ -67,5 +72,42 @@ class ProductVariantController extends Controller
             'values' => fn ($query) => $query->orderBy('product_option_id')->orderBy('position')->orderBy('id'),
             'values.option',
         ]));
+    }
+
+    public function generate(Product $product): JsonResponse
+    {
+        $variants = $this->matrixService->generate($product);
+        $variants->load([
+            'product.productType',
+            'prices.currency',
+            'values' => fn ($query) => $query->orderBy('product_option_id')->orderBy('position')->orderBy('id'),
+            'values.option',
+        ]);
+
+        return response()->json([
+            'data' => ProductVariantResource::collection($variants)->resolve(),
+        ]);
+    }
+
+    public function destroy(Product $product, ProductVariant $variant): Response
+    {
+        DB::transaction(function () use ($product, $variant): void {
+            $variants = $product->variants()->lockForUpdate()->orderBy('id')->get();
+            $target = $variants->firstWhere('id', $variant->id);
+
+            if (! $target) {
+                abort(Response::HTTP_NOT_FOUND);
+            }
+
+            if ($variants->count() <= 1) {
+                throw ValidationException::withMessages([
+                    'variant' => 'A product must keep at least one variant.',
+                ]);
+            }
+
+            $target->delete();
+        });
+
+        return response()->noContent();
     }
 }

@@ -5,7 +5,9 @@ namespace App\Http\Resources\Admin;
 use App\Services\Admin\ProductAttributeService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 use Lunar\Models\Currency;
+use Lunar\Models\ProductVariant;
 
 class ProductVariantResource extends JsonResource
 {
@@ -48,6 +50,12 @@ class ProductVariantResource extends JsonResource
                 ? '0'
                 : bcdiv((string) $rawPrice, (string) $currency->factor, $currency->decimal_places),
             'formatted_price' => $price?->price?->formatted(),
+            'has_order_history' => $this->has_order_history !== null
+                ? (bool) $this->has_order_history
+                : DB::table(config('lunar.database.table_prefix').'order_lines')
+                    ->where('purchasable_type', ProductVariant::morphName())
+                    ->where('purchasable_id', $this->id)
+                    ->exists(),
             'option_values' => $this->values->map(fn ($value): array => [
                 'option_id' => $value->product_option_id,
                 'option_name' => $value->option?->translate('name') ?? '',

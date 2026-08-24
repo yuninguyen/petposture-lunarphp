@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\Admin;
 
 use App\Models\CuratorMedia;
+use App\Models\SeoMetadata;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -19,8 +20,10 @@ use Lunar\Models\CollectionGroup;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Language;
+use Lunar\Models\OrderLine;
 use Lunar\Models\Price;
 use Lunar\Models\Product;
+use Lunar\Models\ProductAssociation;
 use Lunar\Models\ProductOption;
 use Lunar\Models\ProductOptionValue;
 use Lunar\Models\ProductType;
@@ -100,14 +103,29 @@ class ProductControllerTest extends TestCase
     {
         $product = $this->product('Protected product');
         $variant = $this->variant($product, 'PROTECTED-1', 1000);
+        $target = $this->product('Protected target');
+        $association = ProductAssociation::query()->create([
+            'product_parent_id' => $product->id,
+            'product_target_id' => $target->id,
+            'type' => 'cross-sell',
+        ]);
 
         $requests = [
             ['getJson', '/api/admin/products', []],
             ['postJson', '/api/admin/products', []],
+            ['postJson', '/api/admin/products/bulk-delete', []],
+            ['postJson', '/api/admin/products/bulk-status', []],
             ['getJson', "/api/admin/products/{$product->id}", []],
+            ['getJson', "/api/admin/products/{$product->id}/preview-url", []],
             ['putJson', "/api/admin/products/{$product->id}", []],
             ['deleteJson', "/api/admin/products/{$product->id}", []],
+            ['getJson', "/api/admin/products/{$product->id}/associations", []],
+            ['postJson', "/api/admin/products/{$product->id}/associations", []],
+            ['deleteJson', "/api/admin/products/{$product->id}/associations/{$association->id}", []],
+            ['postJson', "/api/admin/products/{$product->id}/options", []],
+            ['postJson', "/api/admin/products/{$product->id}/variants/generate", []],
             ['putJson', "/api/admin/products/{$product->id}/variants/{$variant->id}", []],
+            ['deleteJson', "/api/admin/products/{$product->id}/variants/{$variant->id}", []],
         ];
 
         foreach ($requests as [$method, $uri, $payload]) {
@@ -274,11 +292,78 @@ class ProductControllerTest extends TestCase
         $this->assertTrue((bool) $remaining->first()->getCustomProperty('primary'));
     }
 
-    public function test_product_slug_is_returned_validated_unique_and_updates_the_existing_default_url(): void
+    public function test_product_seo_metadata_round_trips_through_the_existing_polymorphic_table(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->product('SEO product');
+        $this->variant($product, 'SEO-001', 1000);
+        SeoMetadata::query()->create([
+            'seoable_type' => 'App\\Models\\Post',
+            'seoable_id' => $product->id,
+            'title' => 'Unrelated SEO row',
+            'is_indexable' => true,
+            'is_followable' => true,
+        ]);
+
+        $this->getJson("/api/admin/products/{$product->id}")
+            ->assertOk()
+            ->assertJsonPath('data.seo.title', '')
+            ->assertJsonPath('data.seo.is_indexable', true)
+            ->assertJsonPath('data.seo.is_followable', true);
+
+        $seo = [
+            'title' => 'Ergonomic dog bowl',
+            'description' => 'Support comfortable feeding posture with an ergonomic dog bowl.',
+            'keyphrase' => 'ergonomic dog bowl',
+            'og_title' => 'A better bowl for comfortable meals',
+            'og_description' => 'Explore a posture-friendly feeding setup for dogs.',
+            'og_image' => 'https://cdn.example.com/products/bowl.jpg',
+            'canonical_url' => 'https://petposture.com/shop/dogs/ergonomic-bowl',
+            'is_indexable' => false,
+            'is_followable' => false,
+        ];
+
+        $this->putJson("/api/admin/products/{$product->id}", [
+            'status' => 'published',
+            'brand_id' => null,
+            'attributes' => ['name' => 'SEO product'],
+            'seo' => $seo,
+        ])->assertOk()
+            ->assertJsonPath('data.seo', $seo);
+
+        $this->assertDatabaseHas('seo_metadata', [
+            'seoable_type' => Product::class,
+            'seoable_id' => $product->id,
+            'title' => $seo['title'],
+            'is_indexable' => false,
+            'is_followable' => false,
+        ]);
+        $this->assertDatabaseHas('seo_metadata', [
+            'seoable_type' => 'App\\Models\\Post',
+            'seoable_id' => $product->id,
+            'title' => 'Unrelated SEO row',
+        ]);
+
+        $this->putJson("/api/admin/products/{$product->id}", [
+            'status' => 'draft',
+            'brand_id' => null,
+            'attributes' => ['name' => 'SEO product'],
+        ])->assertOk()->assertJsonPath('data.seo.title', $seo['title']);
+
+        $this->putJson("/api/admin/products/{$product->id}", [
+            'status' => 'published',
+            'brand_id' => null,
+            'attributes' => ['name' => 'SEO product'],
+            'seo' => array_merge($seo, ['canonical_url' => 'not-a-url']),
+        ])->assertUnprocessable()->assertJsonValidationErrors('seo.canonical_url');
+    }
+
+    public function test_product_slug_changes_preserve_redirect_history_and_public_api_signals_the_canonical_route(): void
     {
         $this->actingAsAdmin();
         $language = Language::getDefault();
         $product = $this->product('Slug product');
+        $this->variant($product, 'SLUG-001', 1000, 5);
         $product->urls()->delete();
         $url = $product->urls()->create([
             'language_id' => $language->id,
@@ -318,6 +403,41 @@ class ProductControllerTest extends TestCase
         $this->assertSame($language->id, $url->language_id);
         $this->assertTrue($url->default);
         $this->assertSame(1, $product->urls()->count());
+        $this->assertDatabaseHas('product_redirects', [
+            'product_id' => $product->id,
+            'old_slug' => 'old-product-slug',
+        ]);
+
+        $this->putJson("/api/admin/products/{$product->id}", $payload + ['slug' => 'new-product-slug'])
+            ->assertOk();
+        $this->assertDatabaseCount('product_redirects', 1);
+
+        $this->putJson("/api/admin/products/{$product->id}", $payload + ['slug' => 'final-product-slug'])
+            ->assertOk()
+            ->assertJsonPath('data.slug', 'final-product-slug');
+        $this->assertDatabaseHas('product_redirects', [
+            'product_id' => $product->id,
+            'old_slug' => 'new-product-slug',
+        ]);
+        $this->assertDatabaseCount('product_redirects', 2);
+
+        foreach (['old-product-slug', 'new-product-slug'] as $oldSlug) {
+            $this->getJson("/api/products/{$oldSlug}")
+                ->assertOk()
+                ->assertJsonMissingPath('data')
+                ->assertJsonPath('redirect.path', '/shop/categories/final-product-slug')
+                ->assertJsonPath('redirect.slug', 'final-product-slug')
+                ->assertJsonPath('redirect.categorySlug', 'categories');
+        }
+        $this->getJson('/api/products/final-product-slug')
+            ->assertOk()
+            ->assertJsonPath('data.slug', 'final-product-slug');
+
+        $this->putJson("/api/admin/products/{$product->id}", array_merge($payload, [
+            'slug' => 'final-product-slug',
+            'status' => 'draft',
+        ]))->assertOk();
+        $this->getJson('/api/products/old-product-slug')->assertNotFound();
     }
 
     public function test_product_update_creates_a_default_url_when_one_is_missing(): void
@@ -339,6 +459,116 @@ class ProductControllerTest extends TestCase
         $this->assertSame($language->id, $url->language_id);
         $this->assertSame('created-product-url', $url->slug);
         $this->assertTrue($url->default);
+    }
+
+    public function test_admin_can_generate_a_signed_preview_for_a_draft_product(): void
+    {
+        $this->actingAsAdmin();
+        config()->set('app.frontend_url', 'https://storefront.example.test');
+        $product = $this->product('Draft preview product', 'draft');
+        $this->variant($product, 'PREVIEW-001', 1000, 3);
+        $product->urls()->create([
+            'language_id' => Language::getDefault()->id,
+            'slug' => 'draft-preview-product',
+            'default' => true,
+        ]);
+
+        $this->getJson('/api/products/draft-preview-product')->assertNotFound();
+
+        $response = $this->getJson("/api/admin/products/{$product->id}/preview-url")
+            ->assertOk();
+        $url = $response->json('url');
+        $parts = parse_url($url);
+        parse_str($parts['query'] ?? '', $query);
+
+        $this->assertSame('https', $parts['scheme'] ?? null);
+        $this->assertSame('storefront.example.test', $parts['host'] ?? null);
+        $this->assertSame('/shop/categories/draft-preview-product', $parts['path'] ?? null);
+        $this->assertGreaterThan(now()->addHours(23)->timestamp, (int) ($query['expires'] ?? 0));
+        $this->assertNotEmpty($query['preview_token'] ?? null);
+
+        $previewQuery = http_build_query($query);
+        $this->getJson('/api/products/draft-preview-product?'.$previewQuery)
+            ->assertOk()
+            ->assertJsonPath('data.slug', 'draft-preview-product')
+            ->assertJsonPath('data.name', 'Draft preview product');
+
+        $this->getJson('/api/products/draft-preview-product?'.http_build_query([
+            'expires' => $query['expires'],
+            'preview_token' => str_repeat('0', 64),
+        ]))->assertNotFound();
+
+        $expired = now()->subMinute()->timestamp;
+        $expiredToken = hash_hmac('sha256', 'draft-preview-product|'.$expired, config('app.key'));
+        $this->getJson('/api/products/draft-preview-product?'.http_build_query([
+            'expires' => $expired,
+            'preview_token' => $expiredToken,
+        ]))->assertNotFound();
+    }
+
+    public function test_product_associations_are_written_and_removed_synchronously_for_all_supported_types(): void
+    {
+        $this->actingAsAdmin();
+        config()->set('queue.default', 'database');
+        $product = $this->product('Association parent');
+        $target = $this->product('Association target');
+        $other = $this->product('Association other');
+
+        $associationIds = [];
+        foreach (['cross-sell', 'up-sell', 'alternate'] as $type) {
+            $response = $this->postJson("/api/admin/products/{$product->id}/associations", [
+                'target_product_id' => $target->id,
+                'type' => $type,
+            ])->assertCreated()
+                ->assertJsonPath('data.type', $type)
+                ->assertJsonPath('data.target.id', $target->id)
+                ->assertJsonPath('data.target.name', 'Association target');
+            $associationIds[$type] = $response->json('data.id');
+
+            $this->assertDatabaseHas('lunar_product_associations', [
+                'id' => $associationIds[$type],
+                'product_parent_id' => $product->id,
+                'product_target_id' => $target->id,
+                'type' => $type,
+            ]);
+        }
+
+        $this->getJson("/api/admin/products/{$product->id}/associations")
+            ->assertOk()
+            ->assertJsonCount(3, 'data');
+
+        $this->postJson("/api/admin/products/{$product->id}/associations", [
+            'target_product_id' => $target->id,
+            'type' => 'cross-sell',
+        ])->assertUnprocessable()->assertJsonValidationErrors('target_product_id');
+        $this->postJson("/api/admin/products/{$product->id}/associations", [
+            'target_product_id' => $product->id,
+            'type' => 'alternate',
+        ])->assertUnprocessable()->assertJsonValidationErrors('target_product_id');
+        $this->postJson("/api/admin/products/{$product->id}/associations", [
+            'target_product_id' => $other->id,
+            'type' => 'invalid',
+        ])->assertUnprocessable()->assertJsonValidationErrors('type');
+
+        $this->deleteJson("/api/admin/products/{$other->id}/associations/{$associationIds['cross-sell']}")
+            ->assertNotFound();
+        $this->assertDatabaseHas('lunar_product_associations', ['id' => $associationIds['cross-sell']]);
+
+        $this->deleteJson("/api/admin/products/{$product->id}/associations/{$associationIds['cross-sell']}")
+            ->assertNoContent();
+        $this->assertDatabaseMissing('lunar_product_associations', ['id' => $associationIds['cross-sell']]);
+        $this->assertDatabaseHas('lunar_product_associations', ['id' => $associationIds['up-sell']]);
+        $this->assertDatabaseHas('lunar_product_associations', ['id' => $associationIds['alternate']]);
+
+        $target->delete();
+        $this->getJson("/api/admin/products/{$product->id}/associations")
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.target.id', $target->id);
+        $this->deleteJson("/api/admin/products/{$product->id}/associations/{$associationIds['up-sell']}")
+            ->assertNoContent();
+        $this->assertDatabaseMissing('lunar_product_associations', ['id' => $associationIds['up-sell']]);
+        $this->assertDatabaseHas('lunar_product_associations', ['id' => $associationIds['alternate']]);
     }
 
     public function test_direct_variant_update_isolated_from_siblings_options_pivots_and_non_base_prices(): void
@@ -477,6 +707,179 @@ class ProductControllerTest extends TestCase
         $this->assertSame('OTHER-001', $variant->fresh()->sku);
     }
 
+    public function test_admin_can_manage_options_and_regenerate_matrix_without_changing_unchanged_variant_ids(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->product('Matrix product');
+        $baseVariant = $this->variant($product, 'MATRIX', 10000, 5);
+
+        $options = $this->postJson("/api/admin/products/{$product->id}/options", [
+            'options' => [
+                ['name' => 'Color', 'values' => [['name' => 'Red'], ['name' => 'Blue']]],
+                ['name' => 'Size', 'values' => [['name' => 'Small'], ['name' => 'Medium']]],
+            ],
+        ])->assertOk()->json('data');
+
+        $this->postJson("/api/admin/products/{$product->id}/variants/generate")
+            ->assertOk()
+            ->assertJsonCount(4, 'data');
+
+        $firstMatrix = $this->variantIdsByValues($product);
+        $this->assertCount(4, $firstMatrix);
+        $this->assertContains($baseVariant->id, array_values($firstMatrix));
+
+        $color = $options[0];
+        $size = $options[1];
+        $red = $color['values'][0];
+        $blue = $color['values'][1];
+        $small = $size['values'][0];
+        $medium = $size['values'][1];
+
+        $this->postJson("/api/admin/products/{$product->id}/options", [
+            'options' => [
+                ['id' => $color['id'], 'name' => 'Colour', 'values' => [
+                    ['id' => $blue['id'], 'name' => 'Blue'],
+                    ['id' => $red['id'], 'name' => 'Crimson'],
+                ]],
+                ['id' => $size['id'], 'name' => 'Size', 'values' => [
+                    ['id' => $medium['id'], 'name' => 'Medium'],
+                    ['id' => $small['id'], 'name' => 'Small'],
+                ]],
+            ],
+        ])->assertOk();
+
+        $this->postJson("/api/admin/products/{$product->id}/variants/generate")->assertOk();
+        $this->assertSame($firstMatrix, $this->variantIdsByValues($product));
+
+        $expandedOptions = $this->postJson("/api/admin/products/{$product->id}/options", [
+            'options' => [
+                ['id' => $color['id'], 'name' => 'Colour', 'values' => [
+                    ['id' => $blue['id'], 'name' => 'Blue'],
+                    ['id' => $red['id'], 'name' => 'Crimson'],
+                    ['name' => 'Green'],
+                ]],
+                ['id' => $size['id'], 'name' => 'Size', 'values' => [
+                    ['id' => $medium['id'], 'name' => 'Medium'],
+                    ['id' => $small['id'], 'name' => 'Small'],
+                ]],
+            ],
+        ])->assertOk()->json('data');
+        $green = $expandedOptions[0]['values'][2];
+
+        $this->postJson("/api/admin/products/{$product->id}/variants/generate")
+            ->assertOk()
+            ->assertJsonCount(6, 'data');
+        $expandedMatrix = $this->variantIdsByValues($product);
+        foreach ($firstMatrix as $key => $variantId) {
+            $this->assertSame($variantId, $expandedMatrix[$key]);
+        }
+
+        $blueVariantIds = collect($expandedMatrix)
+            ->filter(fn ($variantId, $key) => in_array((string) $blue['id'], explode('-', $key), true))
+            ->values();
+
+        $this->postJson("/api/admin/products/{$product->id}/options", [
+            'options' => [
+                ['id' => $color['id'], 'name' => 'Colour', 'values' => [
+                    ['id' => $red['id'], 'name' => 'Crimson'],
+                    ['id' => $green['id'], 'name' => 'Green'],
+                ]],
+                ['id' => $size['id'], 'name' => 'Size', 'values' => [
+                    ['id' => $small['id'], 'name' => 'Small'],
+                    ['id' => $medium['id'], 'name' => 'Medium'],
+                ]],
+            ],
+        ])->assertOk();
+        $this->postJson("/api/admin/products/{$product->id}/variants/generate")
+            ->assertOk()
+            ->assertJsonCount(4, 'data');
+
+        $reducedMatrix = $this->variantIdsByValues($product);
+        foreach ($reducedMatrix as $key => $variantId) {
+            $this->assertSame($expandedMatrix[$key], $variantId);
+        }
+        foreach ($blueVariantIds as $variantId) {
+            $this->assertTrue(ProductVariant::withTrashed()->findOrFail($variantId)->trashed());
+            $this->assertDatabaseHas('lunar_product_option_value_product_variant', [
+                'variant_id' => $variantId,
+                'value_id' => $blue['id'],
+            ]);
+        }
+        $this->assertFalse((bool) ProductOptionValue::query()->findOrFail($blue['id'])->meta['admin_active']);
+
+        $activeBeforeCollapse = $product->variants()->pluck('id');
+        $this->postJson("/api/admin/products/{$product->id}/options", ['options' => []])
+            ->assertOk()
+            ->assertJsonPath('data', []);
+        $collapsed = $this->postJson("/api/admin/products/{$product->id}/variants/generate")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->json('data.0.id');
+        $this->assertNotContains($collapsed, $activeBeforeCollapse->all());
+        foreach ($activeBeforeCollapse as $variantId) {
+            $this->assertTrue(ProductVariant::withTrashed()->findOrFail($variantId)->trashed());
+        }
+    }
+
+    public function test_removing_a_shared_option_only_detaches_it_from_the_current_product(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->product('Shared option first');
+        $other = $this->product('Shared option second');
+        $option = ProductOption::query()->create([
+            'name' => ['en' => 'Shared color'],
+            'label' => ['en' => 'Shared color'],
+            'handle' => 'shared-color-test',
+            'shared' => true,
+        ]);
+        $value = $option->values()->create(['name' => ['en' => 'Red'], 'position' => 1]);
+        $product->productOptions()->attach($option->id, ['position' => 1]);
+        $other->productOptions()->attach($option->id, ['position' => 1]);
+
+        $this->postJson("/api/admin/products/{$product->id}/options", ['options' => []])
+            ->assertOk()
+            ->assertJsonPath('data', []);
+
+        $this->assertFalse($product->productOptions()->whereKey($option->id)->exists());
+        $this->assertTrue($other->productOptions()->whereKey($option->id)->exists());
+        $this->assertDatabaseHas('lunar_product_options', ['id' => $option->id]);
+        $this->assertDatabaseHas('lunar_product_option_values', ['id' => $value->id]);
+    }
+
+    public function test_variant_delete_is_product_scoped_soft_only_and_warns_when_order_history_exists(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->product('Delete variant product');
+        $target = $this->variant($product, 'DELETE-HISTORY', 1000);
+        $keeper = $this->variant($product, 'KEEP-VARIANT', 1000);
+        $otherProduct = $this->product('Other product');
+        $otherVariant = $this->variant($otherProduct, 'OTHER-VARIANT', 1000);
+        $orderLine = OrderLine::factory()->create([
+            'purchasable_type' => ProductVariant::morphName(),
+            'purchasable_id' => $target->id,
+        ]);
+
+        $this->getJson("/api/admin/products/{$product->id}")
+            ->assertOk()
+            ->assertJsonPath('data.variants.0.has_order_history', true)
+            ->assertJsonPath('data.variants.1.has_order_history', false);
+
+        $this->deleteJson("/api/admin/products/{$product->id}/variants/{$otherVariant->id}")
+            ->assertNotFound();
+        $this->assertFalse($otherVariant->fresh()->trashed());
+
+        $this->deleteJson("/api/admin/products/{$product->id}/variants/{$target->id}")
+            ->assertNoContent();
+        $this->assertSoftDeleted('lunar_product_variants', ['id' => $target->id]);
+        $this->assertDatabaseHas('lunar_order_lines', ['id' => $orderLine->id, 'purchasable_id' => $target->id]);
+        $this->assertNotNull(ProductVariant::withTrashed()->find($target->id));
+
+        $this->deleteJson("/api/admin/products/{$product->id}/variants/{$keeper->id}")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('variant');
+        $this->assertFalse($keeper->fresh()->trashed());
+    }
+
     public function test_dynamic_attribute_money_and_duplicate_media_validation_is_safe(): void
     {
         $this->actingAsAdmin();
@@ -520,6 +923,45 @@ class ProductControllerTest extends TestCase
             'brand_id' => null,
             'attributes' => ['description' => 'Valid description'],
         ])->assertUnprocessable()->assertJsonValidationErrors('attributes.name');
+    }
+
+    public function test_admin_can_bulk_update_status_and_soft_delete_products(): void
+    {
+        $this->actingAsAdmin();
+        $first = $this->product('Bulk first', 'draft');
+        $second = $this->product('Bulk second', 'draft');
+        $untouched = $this->product('Bulk untouched', 'draft');
+
+        $this->postJson('/api/admin/products/bulk-status', [
+            'ids' => [$first->id, $second->id],
+            'status' => 'published',
+        ])->assertOk()->assertJsonPath('updated', 2);
+
+        $this->assertSame('published', $first->fresh()->status);
+        $this->assertSame('published', $second->fresh()->status);
+        $this->assertSame('draft', $untouched->fresh()->status);
+
+        $this->postJson('/api/admin/products/bulk-delete', [
+            'ids' => [$first->id, $second->id],
+        ])->assertNoContent();
+
+        $this->assertSoftDeleted('lunar_products', ['id' => $first->id]);
+        $this->assertSoftDeleted('lunar_products', ['id' => $second->id]);
+        $this->assertDatabaseHas('lunar_products', ['id' => $untouched->id, 'deleted_at' => null]);
+    }
+
+    public function test_product_bulk_actions_validate_ids_and_status(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/admin/products/bulk-delete', ['ids' => []])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('ids');
+        $this->postJson('/api/admin/products/bulk-status', [
+            'ids' => [999999],
+            'status' => 'archived',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['ids.0', 'status']);
     }
 
     public function test_admin_can_soft_delete_product(): void
@@ -614,6 +1056,16 @@ class ProductControllerTest extends TestCase
         ]);
 
         return $variant;
+    }
+
+    private function variantIdsByValues(Product $product): array
+    {
+        return $product->variants()->with('values')->orderBy('id')->get()
+            ->mapWithKeys(function (ProductVariant $variant): array {
+                $key = $variant->values->pluck('id')->map(fn ($id) => (int) $id)->sort()->implode('-');
+
+                return [$key => $variant->id];
+            })->sortKeys()->all();
     }
 
     private function collections(): array

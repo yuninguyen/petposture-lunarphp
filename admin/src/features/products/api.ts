@@ -5,6 +5,7 @@ import { fetchProductTypes, type ProductType } from '@/features/product-types/ap
 import { fetchCollectionTrees, type CollectionGroupTree, type CollectionNode } from '@/features/collections/api';
 
 export type ProductStatus = 'draft' | 'published';
+export type ProductAssociationType = 'cross-sell' | 'up-sell' | 'alternate';
 export type AttributeType = 'text' | 'translated_text';
 export type LocalizedText = { en: string; vi: string };
 export type AttributeValue = string | LocalizedText;
@@ -20,9 +21,12 @@ export interface AttributeDefinition {
   value: AttributeValue;
 }
 export interface ProductMedia { id: string; url: string; source: 'spatie' | 'curator'; alt: string }
+export interface ProductSeo { title: string; description: string; keyphrase: string; og_title: string; og_description: string; og_image: string | null; canonical_url: string; is_indexable: boolean; is_followable: boolean }
 export interface Currency { id: number; code: string; decimal_places: number; factor: number }
 export interface TaxClass { id: number; name: string }
 export interface OptionValue { option_id: number; option_name: string; value_id: number; value_name: string }
+export interface ProductOptionValue { id: number; name: string }
+export interface ProductOption { id: number; name: string; shared: boolean; values: ProductOptionValue[] }
 export interface ProductVariant {
   id: number; product_id: number; sku: string; gtin: string | null; mpn: string | null; ean: string | null;
   stock: number; backorder: number; purchasable: 'always' | 'in_stock' | 'in_stock_or_on_backorder';
@@ -30,14 +34,15 @@ export interface ProductVariant {
   tax_ref: string | null; shippable: boolean; length_value: string | number | null; length_unit: string | null;
   width_value: string | number | null; width_unit: string | null; height_value: string | number | null;
   height_unit: string | null; weight_value: string | number | null; weight_unit: string | null;
-  base_price: string; formatted_price: string | null; option_values: OptionValue[]; attributes: AttributeDefinition[];
+  base_price: string; formatted_price: string | null; has_order_history: boolean; option_values: OptionValue[]; attributes: AttributeDefinition[];
 }
 export interface ProductDetail {
   id: number; slug: string | null; status: ProductStatus; brand_id: number | null; product_type_id: number;
   product_type: { id: number; name: string }; brand: { id: number; name: string } | null;
-  has_variants: boolean; product_attributes: AttributeDefinition[]; variants: ProductVariant[];
-  collection_ids: number[]; media: ProductMedia[]; default_currency: Currency; tax_classes: TaxClass[]; updated_at: string | null;
+  has_variants: boolean; product_attributes: AttributeDefinition[]; product_options: ProductOption[]; variants: ProductVariant[];
+  collection_ids: number[]; media: ProductMedia[]; seo: ProductSeo; default_currency: Currency; tax_classes: TaxClass[]; updated_at: string | null;
 }
+export interface ProductAssociation { id: number; type: ProductAssociationType; target: { id: number; name: string; status: ProductStatus; slug: string | null; thumbnail: string | null } }
 export interface ProductSummary {
   id: number; thumbnail: string | null; name: string; description: string; product_type: { id: number; name: string };
   brand: { id: number; name: string } | null; first_collection: { id: number; name: string } | null;
@@ -47,7 +52,7 @@ export interface ProductSummary {
 export interface ProductsPage { data: ProductSummary[]; meta: { current_page: number; last_page: number; per_page: number; total: number } }
 export interface ProductFilters { search?: string; status?: ProductStatus | ''; brand_id?: number | ''; product_type_id?: number | ''; page?: number; per_page?: number }
 export interface CreateProductPayload { name: string; product_type_id: number; sku: string; base_price: string }
-export interface UpdateProductPayload { slug: string; status: ProductStatus; brand_id: number | null; attributes: AttributeValues; collections: number[]; media: Array<{ id: number; source: ProductMedia['source']; alt: string }> }
+export interface UpdateProductPayload { slug: string; status: ProductStatus; brand_id: number | null; attributes: AttributeValues; collections: number[]; media: Array<{ id: number; source: ProductMedia['source']; alt: string }>; seo: ProductSeo }
 export interface UpdateVariantPayload {
   sku: string; gtin: string | null; mpn: string | null; ean: string | null; stock: number; backorder: number;
   purchasable: ProductVariant['purchasable']; unit_quantity: number; quantity_increment: number; min_quantity: number;
@@ -55,6 +60,7 @@ export interface UpdateVariantPayload {
   width_value: string | null; width_unit: string | null; height_value: string | null; height_unit: string | null;
   weight_value: string | null; weight_unit: string | null; base_price: string; attributes: AttributeValues;
 }
+export interface SaveProductOptionsPayload { options: Array<{ id?: number; name: string; values: Array<{ id?: number; name: string }> }> }
 export interface CollectionOption { id: number; label: string }
 
 export function buildProductsQuery(filters: ProductFilters): string {
@@ -71,9 +77,18 @@ export function buildProductsQuery(filters: ProductFilters): string {
 function unwrap<T>(response: T | { data: T }): T { return 'data' in (response as object) ? (response as { data: T }).data : response as T }
 export async function fetchProducts(filters: ProductFilters): Promise<ProductsPage> { return fetchJson(buildProductsQuery(filters)); }
 export async function fetchProduct(id: number): Promise<ProductDetail> { return unwrap(await fetchJson<ProductDetail | { data: ProductDetail }>(`/admin/products/${id}`)); }
+export async function fetchProductPreviewUrl(id: number): Promise<{ url: string }> { return fetchJson(`/admin/products/${id}/preview-url`); }
 export async function createProduct(payload: CreateProductPayload): Promise<ProductDetail> { return unwrap(await fetchJson<ProductDetail | { data: ProductDetail }>('/admin/products', { method: 'POST', body: { ...payload } })); }
 export async function updateProduct(id: number, payload: UpdateProductPayload): Promise<ProductDetail> { return unwrap(await fetchJson<ProductDetail | { data: ProductDetail }>(`/admin/products/${id}`, { method: 'PUT', body: { ...payload } })); }
 export async function updateProductVariant(productId: number, variantId: number, payload: UpdateVariantPayload): Promise<ProductVariant> { return unwrap(await fetchJson<ProductVariant | { data: ProductVariant }>(`/admin/products/${productId}/variants/${variantId}`, { method: 'PUT', body: { ...payload } })); }
+export async function saveProductOptions(productId: number, payload: SaveProductOptionsPayload): Promise<ProductOption[]> { return unwrap(await fetchJson<ProductOption[] | { data: ProductOption[] }>(`/admin/products/${productId}/options`, { method: 'POST', body: { ...payload } })); }
+export async function generateProductVariants(productId: number): Promise<ProductVariant[]> { return unwrap(await fetchJson<ProductVariant[] | { data: ProductVariant[] }>(`/admin/products/${productId}/variants/generate`, { method: 'POST' })); }
+export async function deleteProductVariant(productId: number, variantId: number): Promise<void> { await fetchJson(`/admin/products/${productId}/variants/${variantId}`, { method: 'DELETE' }); }
+export async function fetchProductAssociations(productId: number): Promise<ProductAssociation[]> { return unwrap(await fetchJson<ProductAssociation[] | { data: ProductAssociation[] }>(`/admin/products/${productId}/associations`)); }
+export async function createProductAssociation(productId: number, targetProductId: number, type: ProductAssociationType): Promise<ProductAssociation> { return unwrap(await fetchJson<ProductAssociation | { data: ProductAssociation }>(`/admin/products/${productId}/associations`, { method: 'POST', body: { target_product_id: targetProductId, type } })); }
+export async function deleteProductAssociation(productId: number, associationId: number): Promise<void> { await fetchJson(`/admin/products/${productId}/associations/${associationId}`, { method: 'DELETE' }); }
+export async function bulkDeleteProducts(ids: number[]): Promise<void> { await fetchJson('/admin/products/bulk-delete', { method: 'POST', body: { ids } }); }
+export async function bulkUpdateProductStatus(ids: number[], status: ProductStatus): Promise<{ updated: number }> { return fetchJson('/admin/products/bulk-status', { method: 'POST', body: { ids, status } }); }
 export async function deleteProduct(id: number): Promise<void> { await fetchJson(`/admin/products/${id}`, { method: 'DELETE' }); }
 
 function flattenNodes(nodes: CollectionNode[], parents: string[] = []): CollectionOption[] {
@@ -92,6 +107,7 @@ export function attributeValues(definitions: AttributeDefinition[]): AttributeVa
 
 export function useProducts(filters: ProductFilters) { return useQuery({ queryKey: ['products', filters], queryFn: () => fetchProducts(filters) }); }
 export function useProduct(id?: number) { return useQuery({ queryKey: ['products', id], queryFn: () => fetchProduct(id!), enabled: Boolean(id) }); }
+export function useProductPreviewUrl() { return useMutation({ mutationFn: fetchProductPreviewUrl }); }
 export function useProductLookups() {
   const productTypes = useQuery({ queryKey: ['product-types'], queryFn: fetchProductTypes });
   const brands = useQuery({ queryKey: ['brands'], queryFn: fetchBrands });
@@ -100,5 +116,13 @@ export function useProductLookups() {
 }
 export function useCreateProduct() { const qc = useQueryClient(); return useMutation({ mutationFn: createProduct, onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }) }); }
 export function useUpdateProduct() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ id, payload }: { id: number; payload: UpdateProductPayload }) => updateProduct(id, payload), onSuccess: (data) => { qc.setQueryData(['products', data.id], data); qc.invalidateQueries({ queryKey: ['products'] }); } }); }
-export function useUpdateProductVariant() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ productId, variantId, payload }: { productId: number; variantId: number; payload: UpdateVariantPayload }) => updateProductVariant(productId, variantId, payload), onSuccess: (_data, variables) => { qc.invalidateQueries({ queryKey: ['products', variables.productId] }); qc.invalidateQueries({ queryKey: ['products'] }); } }); }
+export function useUpdateProductVariant() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ productId, variantId, payload }: { productId: number; variantId: number; payload: UpdateVariantPayload }) => updateProductVariant(productId, variantId, payload), onSuccess: (variant, variables) => { qc.setQueryData<ProductDetail>(['products', variables.productId], (current) => current ? { ...current, variants: current.variants.map((item) => item.id === variant.id ? variant : item) } : current); qc.invalidateQueries({ queryKey: ['products'], exact: true }); } }); }
+export function useSaveProductOptions() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ productId, payload }: { productId: number; payload: SaveProductOptionsPayload }) => saveProductOptions(productId, payload), onSuccess: (productOptions, variables) => { qc.setQueryData<ProductDetail>(['products', variables.productId], (current) => current ? { ...current, product_options: productOptions } : current); } }); }
+export function useGenerateProductVariants() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ productId }: { productId: number }) => generateProductVariants(productId), onSuccess: (variants, variables) => { qc.setQueryData<ProductDetail>(['products', variables.productId], (current) => current ? { ...current, variants, has_variants: variants.length > 1 } : current); qc.invalidateQueries({ queryKey: ['products'], exact: true }); } }); }
+export function useDeleteProductVariant() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ productId, variantId }: { productId: number; variantId: number }) => deleteProductVariant(productId, variantId), onSuccess: (_data, variables) => { qc.setQueryData<ProductDetail>(['products', variables.productId], (current) => current ? { ...current, variants: current.variants.filter((variant) => variant.id !== variables.variantId), has_variants: current.variants.length - 1 > 1 } : current); qc.invalidateQueries({ queryKey: ['products'], exact: true }); } }); }
+export function useProductAssociations(productId: number) { return useQuery({ queryKey: ['products', productId, 'associations'], queryFn: () => fetchProductAssociations(productId) }); }
+export function useCreateProductAssociation() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ productId, targetProductId, type }: { productId: number; targetProductId: number; type: ProductAssociationType }) => createProductAssociation(productId, targetProductId, type), onSuccess: (_data, variables) => qc.invalidateQueries({ queryKey: ['products', variables.productId, 'associations'] }) }); }
+export function useDeleteProductAssociation() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ productId, associationId }: { productId: number; associationId: number }) => deleteProductAssociation(productId, associationId), onSuccess: (_data, variables) => qc.invalidateQueries({ queryKey: ['products', variables.productId, 'associations'] }) }); }
+export function useBulkDeleteProducts() { const qc = useQueryClient(); return useMutation({ mutationFn: bulkDeleteProducts, onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }) }); }
+export function useBulkUpdateProductStatus() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ ids, status }: { ids: number[]; status: ProductStatus }) => bulkUpdateProductStatus(ids, status), onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }) }); }
 export function useDeleteProduct() { const qc = useQueryClient(); return useMutation({ mutationFn: deleteProduct, onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }) }); }

@@ -211,7 +211,7 @@ export function PagesListPage() {
           </form>
 
           {selectedCount > 0 && (
-            <Button variant="primary" onClick={handleBulkDelete} disabled={bulkDeleteMutation.isPending} className="bg-red-50 text-red-700 hover:bg-red-100 border-red-200 whitespace-nowrap">
+            <Button variant="danger" onClick={handleBulkDelete} disabled={bulkDeleteMutation.isPending} className="whitespace-nowrap">
               <TrashIcon className="h-4 w-4 mr-1.5" />
               {t('pages.bulk_delete_selected', { count: selectedCount })}
             </Button>

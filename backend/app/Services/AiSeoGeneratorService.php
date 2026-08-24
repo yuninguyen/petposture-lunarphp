@@ -24,7 +24,7 @@ class AiSeoGeneratorService
     /**
      * @return array{seo_title: string, focus_keyphrase: string, meta_description: string, social_title: string, social_description: string}
      */
-    public function generate(string $title, ?string $content): array
+    public function generate(string $title, ?string $content, string $contentType = 'blog'): array
     {
         if (! $this->isConfigured()) {
             throw new RuntimeException('Anthropic API key is not configured. Add it in Settings, or ANTHROPIC_API_KEY in .env.');
@@ -32,6 +32,10 @@ class AiSeoGeneratorService
 
         $plainContent = trim(strip_tags((string) $content));
         $excerpt = Str::limit($plainContent, 3000, '');
+        $prompt = match ($contentType) {
+            'product' => "You are an SEO copywriter for the PetPosture pet-ergonomics e-commerce store. Given the product name and description below, write SEO metadata for a product detail page. Keep claims grounded in the supplied description, use purchase-intent keywords naturally, and never use clickbait or exaggerated benefits.\n\nProduct name: {$title}\n\nProduct description:\n{$excerpt}",
+            default => "You are an SEO copywriter for the PetPosture pet-ergonomics editorial blog. Given the article title and content below, write SEO metadata that is accurate to the content, keyword-relevant, and never clickbait or exaggerated.\n\nArticle title: {$title}\n\nArticle content:\n{$excerpt}",
+        };
 
         $client = new Client(apiKey: $this->apiKey());
 
@@ -41,7 +45,7 @@ class AiSeoGeneratorService
             messages: [
                 [
                     'role' => 'user',
-                    'content' => "You are an SEO copywriter for a pet-ergonomics e-commerce blog (PetPosture). Given the article title and content below, write SEO metadata that is accurate to the content, keyword-relevant, and never clickbait or exaggerated.\n\nTitle: {$title}\n\nContent:\n{$excerpt}",
+                    'content' => $prompt,
                 ],
             ],
             outputConfig: [
@@ -56,7 +60,7 @@ class AiSeoGeneratorService
                             ],
                             'focus_keyphrase' => [
                                 'type' => 'string',
-                                'description' => 'The single primary keyword or short phrase this article should rank for.',
+                                'description' => 'The single primary keyword or short phrase this page should rank for.',
                             ],
                             'meta_description' => [
                                 'type' => 'string',

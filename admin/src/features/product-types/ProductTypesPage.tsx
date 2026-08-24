@@ -59,7 +59,7 @@ export function ProductTypesPage() {
               required
             />
           </div>
-          <Button type="submit" variant="secondary" disabled={createMutation.isPending || !name.trim()}>
+          <Button type="submit" variant="primary" disabled={createMutation.isPending || !name.trim()}>
             {createMutation.isPending ? t('product_types.creating') : t('product_types.create')}
           </Button>
         </form>

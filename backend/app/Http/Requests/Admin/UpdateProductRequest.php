@@ -35,6 +35,16 @@ class UpdateProductRequest extends FormRequest
             'media.*.id' => ['required', 'integer'],
             'media.*.source' => ['required', Rule::in(['spatie', 'curator'])],
             'media.*.alt' => ['nullable', 'string', 'max:255'],
+            'seo' => ['sometimes', 'array'],
+            'seo.title' => ['nullable', 'string', 'max:60'],
+            'seo.description' => ['nullable', 'string', 'max:160'],
+            'seo.keyphrase' => ['nullable', 'string', 'max:255'],
+            'seo.og_title' => ['nullable', 'string', 'max:255'],
+            'seo.og_description' => ['nullable', 'string', 'max:500'],
+            'seo.og_image' => ['nullable', 'string', 'max:2048'],
+            'seo.canonical_url' => ['nullable', 'url', 'max:2048'],
+            'seo.is_indexable' => ['required_with:seo', 'boolean'],
+            'seo.is_followable' => ['required_with:seo', 'boolean'],
         ];
     }
 
