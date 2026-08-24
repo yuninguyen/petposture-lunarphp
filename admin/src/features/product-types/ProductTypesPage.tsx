@@ -69,7 +69,7 @@ export function ProductTypesPage() {
         <table className="w-full text-left text-sm text-slate-600">
           <thead className="border-b border-slate-200 bg-slate-50 text-slate-700">
             <tr>
-              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                 {t('product_types.name')}
               </th>
               <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">

@@ -57,10 +57,10 @@ export function SolutionsListPage() {
         />
       ),
       cell: ({ row }) => (
-        <input 
-          type="checkbox" 
-          checked={row.getIsSelected()} 
-          onChange={row.getToggleSelectedHandler()} 
+        <input
+          type="checkbox"
+          checked={row.getIsSelected()}
+          onChange={row.getToggleSelectedHandler()}
           className="rounded border-slate-300 text-primary focus:ring-primary"
         />
       ),
@@ -85,7 +85,7 @@ export function SolutionsListPage() {
     }),
     columnHelper.display({
       id: 'actions',
-      header: '',
+      header: () => <div className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t('common.actions', 'Actions')}</div>,
       cell: (info) => (
         <SolutionRowActions
           solution={info.row.original}
@@ -163,7 +163,7 @@ export function SolutionsListPage() {
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="border-b border-slate-200 bg-slate-50">
                   {headerGroup.headers.map((header) => (
-                    <th key={header.id} className="px-4 py-3 text-sm font-semibold text-slate-700 whitespace-nowrap first:w-12">
+                    <th key={header.id} className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </th>
                   ))}
@@ -276,9 +276,9 @@ export function SolutionsListPage() {
         isLoading={bulkDeleteMutation.isPending}
       />
 
-      <SolutionDetailModal 
-        solutionId={viewingSolutionId} 
-        onClose={() => setViewingSolutionId(null)} 
+      <SolutionDetailModal
+        solutionId={viewingSolutionId}
+        onClose={() => setViewingSolutionId(null)}
       />
     </div>
   );

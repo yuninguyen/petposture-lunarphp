@@ -14,6 +14,15 @@ export function BreedRowActions({ breed, onDelete, onView }: BreedRowActionsProp
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+
+  const toggleMenu = (e: React.MouseEvent) => {
+    if (!open) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setPosition({ top: rect.bottom, left: rect.right });
+    }
+    setOpen((value) => !value);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -22,8 +31,16 @@ export function BreedRowActions({ breed, onDelete, onView }: BreedRowActionsProp
         setOpen(false);
       }
     }
+    function handleScroll(e: Event) {
+      if (menuRef.current && menuRef.current.contains(e.target as Node)) return;
+      setOpen(false);
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [open]);
 
   return (
@@ -40,17 +57,20 @@ export function BreedRowActions({ breed, onDelete, onView }: BreedRowActionsProp
         </svg>
       </button>
 
-      <div className="relative" ref={menuRef}>
+      <div className="" ref={menuRef}>
         <button
           type="button"
-          onClick={() => setOpen((value) => !value)}
+          onClick={toggleMenu}
           className="inline-flex items-center justify-center rounded p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
         >
           <DotsVerticalIcon />
         </button>
 
         {open && (
-          <div className="absolute right-0 z-10 mt-1 min-w-[160px] rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+          <div 
+            className="fixed z-50 mt-1 min-w-[160px] rounded-lg border border-slate-200 bg-white py-1 shadow-lg -translate-x-full"
+            style={{ top: position.top, left: position.left }}
+          >
             <Link
               to={`/breeds/${breed.id}`}
               onClick={() => setOpen(false)}

@@ -8,6 +8,7 @@ import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
 import { fetchProductTypes } from '@/features/product-types/api';
 import { CustomField, deleteCustomField, fetchCustomFields } from './api';
 import { CustomFieldModal } from './CustomFieldModal';
+import { CustomFieldRowActions } from './CustomFieldRowActions';
 
 export function CustomFieldsPage() {
   const { t } = useTranslation();
@@ -57,12 +58,12 @@ export function CustomFieldsPage() {
         <table className="w-full min-w-[900px] text-left text-sm text-slate-600">
           <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
             <tr>
-              <th className="px-5 py-4">{t('custom_fields.name')}</th>
-              <th className="px-5 py-4">{t('custom_fields.handle')}</th>
-              <th className="px-5 py-4">{t('custom_fields.target')}</th>
-              <th className="px-5 py-4">{t('custom_fields.product_types')}</th>
-              <th className="px-5 py-4">{t('custom_fields.required')}</th>
-              <th className="px-5 py-4 text-right">{t('custom_fields.actions')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t('custom_fields.name')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t('custom_fields.handle')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t('custom_fields.target')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t('custom_fields.product_types')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t('custom_fields.required')}</th>
+              <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{t('common.actions', 'Actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 bg-white">
@@ -86,10 +87,11 @@ export function CustomFieldsPage() {
                 </td>
                 <td className="px-5 py-4">{field.required ? t('custom_fields.yes') : t('custom_fields.no')}</td>
                 <td className="px-5 py-4">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="primary" className="px-3 py-1.5" onClick={() => openEdit(field)}>{t('custom_fields.edit')}</Button>
-                    <Button variant="danger" className="px-3 py-1.5" onClick={() => setDeletingField(field)}>{t('custom_fields.delete')}</Button>
-                  </div>
+                  <CustomFieldRowActions 
+                    field={field}
+                    onEdit={openEdit}
+                    onDelete={setDeletingField}
+                  />
                 </td>
               </tr>
             ))}

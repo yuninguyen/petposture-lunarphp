@@ -19,7 +19,9 @@ use App\Http\Controllers\Api\Admin\BrandController as AdminBrandController;
 use App\Http\Controllers\Api\Admin\CollectionController;
 use App\Http\Controllers\Api\Admin\CollectionGroupController;
 use App\Http\Controllers\Api\Admin\CustomFieldController;
+use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\ProductTypeController;
+use App\Http\Controllers\Api\Admin\ProductVariantController as AdminProductVariantController;
 use App\Http\Controllers\Api\ReturnRequestController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SiteMediaController;
@@ -145,6 +147,13 @@ Route::prefix('/admin')
         Route::delete('/collections/{collection}', [CollectionController::class, 'destroy']);
         Route::post('/collections/{collection}/reorder', [CollectionController::class, 'reorder']);
         Route::post('/collections/{collection}/move', [CollectionController::class, 'move']);
+
+        Route::get('/products', [AdminProductController::class, 'index']);
+        Route::post('/products', [AdminProductController::class, 'store']);
+        Route::get('/products/{product}', [AdminProductController::class, 'show']);
+        Route::put('/products/{product}', [AdminProductController::class, 'update']);
+        Route::delete('/products/{product}', [AdminProductController::class, 'destroy']);
+        Route::put('/products/{product}/variants/{variant}', [AdminProductVariantController::class, 'update']);
 
         Route::get('/product-types', [ProductTypeController::class, 'index']);
         Route::post('/product-types', [ProductTypeController::class, 'store']);
