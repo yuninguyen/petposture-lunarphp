@@ -29,6 +29,7 @@ use Illuminate\Validation\ValidationException;
 use Lunar\Models\Discount;
 use Lunar\Models\Order;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class CheckoutController extends Controller
 {
@@ -286,16 +287,17 @@ class CheckoutController extends Controller
     {
         $session = $this->checkoutSessionService->getByToken($token);
         $this->authorizeSessionOwner($request, $session);
+        $idempotencyKey = $this->idempotencyKey($request);
 
         try {
-            $intent = $this->checkoutSessionService->preparePaymentIntent($session);
+            $intent = $this->checkoutSessionService->preparePaymentIntent($session, $idempotencyKey);
 
             return response()->json([
                 'success' => true,
                 'payment_intent' => $intent,
                 'session' => new CheckoutSessionResource($session->fresh()),
             ]);
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException|HttpExceptionInterface $e) {
             throw $e;
         } catch (\Throwable $e) {
             Log::error("Session Payment Intent Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
@@ -310,20 +312,19 @@ class CheckoutController extends Controller
 
     public function confirmSession(Request $request, string $token)
     {
-        $session = $this->checkoutSessionService->getByToken($token);
-        $this->authorizeSessionOwner($request, $session);
+        $session = $this->checkoutSessionService->getForConfirmation($token);
+        $this->authorizeSessionOwner($request, $session, $token);
+        $idempotencyKey = $this->idempotencyKey($request);
 
         try {
-            $order = $this->checkoutSessionService->confirm($session);
+            $order = $this->checkoutSessionService->confirm($session, $idempotencyKey);
 
             return response()->json([
                 'success' => true,
                 'order' => new OrderResource($order),
                 'session' => new CheckoutSessionResource($session->fresh()),
             ], 201);
-        } catch (ValidationException $e) {
-            throw $e;
-        } catch (ModelNotFoundException $e) {
+        } catch (ValidationException|ModelNotFoundException|HttpExceptionInterface $e) {
             throw $e;
         } catch (\Throwable $e) {
             Log::error("Checkout Session Confirmation Failed: {$e->getMessage()} at {$e->getFile()}:{$e->getLine()}");
@@ -545,9 +546,20 @@ class CheckoutController extends Controller
         });
     }
 
-    private function authorizeSessionOwner(Request $request, CheckoutSession $session): void
+    private function idempotencyKey(Request $request): string
     {
-        $cookieName = $this->checkoutSessionService->proofCookieName($session->token);
+        $validated = Validator::make([
+            'idempotency_key' => $request->header('Idempotency-Key'),
+        ], [
+            'idempotency_key' => ['required', 'string', 'max:255', 'regex:/^[\x20-\x7E]+$/'],
+        ])->validate();
+
+        return $validated['idempotency_key'];
+    }
+
+    private function authorizeSessionOwner(Request $request, CheckoutSession $session, ?string $contextToken = null): void
+    {
+        $cookieName = $this->checkoutSessionService->proofCookieName($contextToken ?? $session->token);
 
         abort_unless(
             $this->checkoutSessionService->isOwnedByContext(

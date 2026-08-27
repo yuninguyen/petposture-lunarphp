@@ -43,6 +43,7 @@ class StripePaymentIntentService
         $email = trim((string) ($payload['email'] ?? ''));
         $secret = $this->stripeSecret();
         $publishableKey = $this->stripeKey();
+        $idempotencyKey = trim((string) ($payload['idempotency_key'] ?? ''));
 
         if ($amount <= 0) {
             throw new RuntimeException('Stripe payment intent requires a positive amount.');
@@ -61,16 +62,20 @@ class StripePaymentIntentService
             ];
         }
 
-        $response = Http::withBasicAuth($secret, '')
-            ->asForm()
-            ->post('https://api.stripe.com/v1/payment_intents', array_filter([
-                'amount' => $amount,
-                'currency' => $currency,
-                'receipt_email' => $email ?: null,
-                'automatic_payment_methods[enabled]' => 'true',
-                'metadata[source]' => 'petposture-checkout',
-                'metadata[email]' => $email ?: null,
-            ], static fn ($value) => $value !== null && $value !== ''));
+        $request = Http::withBasicAuth($secret, '')->asForm();
+
+        if ($idempotencyKey !== '') {
+            $request = $request->withHeaders(['Idempotency-Key' => $idempotencyKey]);
+        }
+
+        $response = $request->post('https://api.stripe.com/v1/payment_intents', array_filter([
+            'amount' => $amount,
+            'currency' => $currency,
+            'receipt_email' => $email ?: null,
+            'automatic_payment_methods[enabled]' => 'true',
+            'metadata[source]' => 'petposture-checkout',
+            'metadata[email]' => $email ?: null,
+        ], static fn ($value) => $value !== null && $value !== ''));
 
         if (! $response->successful()) {
             throw new RuntimeException(
@@ -88,6 +93,36 @@ class StripePaymentIntentService
             'mode' => 'configured',
             'gateway' => 'stripe',
             'publishable_key' => $publishableKey,
+        ];
+    }
+
+    public function retrieve(string $paymentIntentId): array
+    {
+        $secret = $this->stripeSecret();
+
+        if (! $secret) {
+            return [
+                'intent_id' => $paymentIntentId,
+                'status' => 'unavailable',
+                'mode' => 'placeholder',
+            ];
+        }
+
+        $response = Http::withBasicAuth($secret, '')
+            ->get("https://api.stripe.com/v1/payment_intents/{$paymentIntentId}");
+
+        if (! $response->successful()) {
+            throw new RuntimeException(
+                $response->json('error.message') ?? 'Stripe payment intent retrieval failed.'
+            );
+        }
+
+        return [
+            'intent_id' => (string) $response->json('id'),
+            'status' => (string) $response->json('status'),
+            'amount' => (int) $response->json('amount'),
+            'currency' => strtoupper((string) $response->json('currency')),
+            'mode' => 'configured',
         ];
     }
 
