@@ -6,6 +6,7 @@ use App\Enums\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\CheckoutSessionResource;
 use App\Http\Resources\Api\OrderResource;
+use App\Models\CheckoutSession;
 use App\Models\UserAddress;
 use App\Services\AirwallexService;
 use App\Services\ApplyCouponService;
@@ -221,32 +222,72 @@ class CheckoutController extends Controller
             'currency' => 'nullable|string|max:10',
         ])->validate();
 
+        if (! empty($validated['token'])) {
+            $existingSession = $this->checkoutSessionService->getByToken($validated['token']);
+            $this->authorizeSessionOwner($request, $existingSession);
+        }
+
         $session = $this->checkoutSessionService->upsert(
             $validated['token'] ?? null,
             $validated,
             auth('sanctum')->id(),
         );
 
-        return response()->json([
+        $response = response()->json([
             'success' => true,
             'session' => new CheckoutSessionResource($session),
         ]);
+
+        if ($session->guestProof) {
+            $cookieName = $this->checkoutSessionService->proofCookieName($session->token);
+            $response->cookie(
+                $cookieName,
+                $this->checkoutSessionService->signGuestProof($session->guestProof),
+                24 * 60,
+                '/api',
+                null,
+                $request->isSecure() || app()->environment('production'),
+                true,
+                false,
+                'lax',
+            );
+        }
+
+        return $response;
     }
 
-    public function showSession(string $token)
+    public function showSession(Request $request, string $token)
     {
+        $session = $this->checkoutSessionService->getByToken($token);
+        $cookieName = $this->checkoutSessionService->proofCookieName($token);
+        $isOwner = $this->checkoutSessionService->isOwnedByContext(
+            $session,
+            auth('sanctum')->id(),
+            $request->cookie($cookieName),
+        );
+
+        if ($session->user_id && ! $isOwner) {
+            abort(Response::HTTP_FORBIDDEN);
+        }
+
         return response()->json([
             'success' => true,
-            'session' => new CheckoutSessionResource(
-                $this->checkoutSessionService->getByToken($token)
-            ),
+            'session' => $isOwner
+                ? new CheckoutSessionResource($session)
+                : [
+                    'token' => $session->token,
+                    'status' => $session->status,
+                    'expires_at' => optional($session->expires_at)?->toIso8601String(),
+                ],
         ]);
     }
 
-    public function prepareSessionPaymentIntent(string $token)
+    public function prepareSessionPaymentIntent(Request $request, string $token)
     {
+        $session = $this->checkoutSessionService->getByToken($token);
+        $this->authorizeSessionOwner($request, $session);
+
         try {
-            $session = $this->checkoutSessionService->getByToken($token);
             $intent = $this->checkoutSessionService->preparePaymentIntent($session);
 
             return response()->json([
@@ -267,10 +308,12 @@ class CheckoutController extends Controller
         }
     }
 
-    public function confirmSession(string $token)
+    public function confirmSession(Request $request, string $token)
     {
+        $session = $this->checkoutSessionService->getByToken($token);
+        $this->authorizeSessionOwner($request, $session);
+
         try {
-            $session = $this->checkoutSessionService->getByToken($token);
             $order = $this->checkoutSessionService->confirm($session);
 
             return response()->json([
@@ -500,6 +543,20 @@ class CheckoutController extends Controller
         return $this->prepareRedirectSession($request, 'pingpong', function (int $amount, string $currency, string $reference, string $returnUrl) use ($request) {
             return $this->pingPongService->createCheckoutSession($amount, $currency, $reference, $returnUrl, (string) $request->ip());
         });
+    }
+
+    private function authorizeSessionOwner(Request $request, CheckoutSession $session): void
+    {
+        $cookieName = $this->checkoutSessionService->proofCookieName($session->token);
+
+        abort_unless(
+            $this->checkoutSessionService->isOwnedByContext(
+                $session,
+                auth('sanctum')->id(),
+                $request->cookie($cookieName),
+            ),
+            Response::HTTP_FORBIDDEN,
+        );
     }
 
     /**

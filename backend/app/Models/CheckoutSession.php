@@ -10,9 +10,12 @@ class CheckoutSession extends Model
 {
     use HasFactory;
 
+    public ?string $guestProof = null;
+
     protected $fillable = [
         'token',
         'user_id',
+        'guest_proof_hash',
         'status',
         'payload',
         'totals',

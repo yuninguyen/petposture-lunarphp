@@ -19,6 +19,13 @@ class CheckoutSessionService
     public function upsert(?string $token, array $payload, ?int $userId = null): CheckoutSession
     {
         $session = $this->resolve($token, $userId);
+        $guestProof = null;
+
+        if (! $session->exists && ! $userId) {
+            $guestProof = Str::random(64);
+            $session->guest_proof_hash = hash('sha256', $guestProof);
+        }
+
         $mergedPayload = array_replace_recursive($session->payload ?? [], $payload);
 
         $session->fill([
@@ -32,12 +39,59 @@ class CheckoutSessionService
 
         $session->save();
 
-        return $session->fresh();
+        $freshSession = $session->fresh();
+        $freshSession->guestProof = $guestProof;
+
+        return $freshSession;
     }
 
     public function getByToken(string $token): CheckoutSession
     {
-        return CheckoutSession::query()->where('token', $token)->firstOrFail();
+        $session = CheckoutSession::query()->where('token', $token)->firstOrFail();
+
+        if ($session->expires_at?->isPast()) {
+            if ($session->status !== 'expired') {
+                $session->update(['status' => 'expired']);
+            }
+
+            abort(410, 'Checkout session has expired.');
+        }
+
+        return $session;
+    }
+
+    public function proofCookieName(string $token): string
+    {
+        return 'checkout_session_proof_'.substr(hash('sha256', $token), 0, 16);
+    }
+
+    public function signGuestProof(string $guestProof): string
+    {
+        $signature = hash_hmac('sha256', $guestProof, app('encrypter')->getKey());
+
+        return $guestProof.'.'.$signature;
+    }
+
+    public function isOwnedByContext(CheckoutSession $session, ?int $userId, ?string $signedGuestProof): bool
+    {
+        if ($session->user_id) {
+            return $userId !== null && $session->user_id === $userId;
+        }
+
+        if (! $session->guest_proof_hash || ! $signedGuestProof) {
+            return false;
+        }
+
+        [$guestProof, $signature] = array_pad(explode('.', $signedGuestProof, 2), 2, null);
+
+        if (! $signature) {
+            return false;
+        }
+
+        $expectedSignature = hash_hmac('sha256', $guestProof, app('encrypter')->getKey());
+
+        return hash_equals($expectedSignature, $signature)
+            && hash_equals($session->guest_proof_hash, hash('sha256', $guestProof));
     }
 
     public function preparePaymentIntent(CheckoutSession $session): array
