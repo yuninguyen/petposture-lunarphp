@@ -61,6 +61,23 @@ class CheckoutSessionSecurityTest extends TestCase
         $this->assertMinimalSessionStatus($response);
     }
 
+    public function test_owner_reads_and_api_aliases_do_not_serialize_checkout_secrets_or_pii(): void
+    {
+        $createResponse = $this->createGuestSession('private@example.com');
+        $token = (string) $createResponse->json('session.token');
+        $cookieName = $this->proofCookieName($token);
+        $proof = (string) $createResponse->getCookie($cookieName, false)->getValue();
+
+        foreach (['/api', '/api/v1'] as $prefix) {
+            $response = $this->withCredentials()
+                ->withUnencryptedCookie($cookieName, $proof)
+                ->getJson("{$prefix}/checkout/session/{$token}");
+
+            $response->assertOk();
+            $this->assertSessionHasNoSensitiveFields($response);
+        }
+    }
+
     public function test_payment_mutations_require_an_idempotency_key(): void
     {
         $createResponse = $this->createGuestSession('idempotency@example.com');
@@ -122,7 +139,9 @@ class CheckoutSessionSecurityTest extends TestCase
 
         $first->assertOk()
             ->assertJsonPath('payment_intent.intent_id', 'pi_idempotent_123')
+            ->assertJsonPath('payment_intent.client_secret', 'pi_idempotent_123_secret')
             ->assertJsonPath('session.status', 'payment_pending');
+        $this->assertSessionHasNoSensitiveFields($first);
 
         $second = $this->withCredentials()
             ->withHeader('Idempotency-Key', 'payment-key-123')
@@ -131,7 +150,9 @@ class CheckoutSessionSecurityTest extends TestCase
 
         $second->assertOk()
             ->assertJsonPath('payment_intent.intent_id', 'pi_idempotent_123')
+            ->assertJsonPath('payment_intent.client_secret', 'pi_idempotent_123_secret')
             ->assertJsonPath('session.status', 'payment_pending');
+        $this->assertSessionHasNoSensitiveFields($second);
 
         $this->withCredentials()
             ->withHeader('Idempotency-Key', 'different-payment-key')
@@ -292,6 +313,7 @@ class CheckoutSessionSecurityTest extends TestCase
         $first->assertCreated()
             ->assertJsonPath('order.reference', 'PP-IDEMPOTENT-001')
             ->assertJsonPath('session.status', 'consumed');
+        $this->assertSessionHasNoSensitiveFields($first);
 
         $rotatedSession = $session->fresh();
         $this->assertNotSame($oldToken, $rotatedSession->token);
@@ -306,6 +328,7 @@ class CheckoutSessionSecurityTest extends TestCase
         $second->assertCreated()
             ->assertJsonPath('order.reference', 'PP-IDEMPOTENT-001')
             ->assertJsonPath('session.status', 'consumed');
+        $this->assertSessionHasNoSensitiveFields($second);
 
         $this->withCredentials()
             ->withHeader('Idempotency-Key', 'different-confirm-key')
@@ -324,18 +347,24 @@ class CheckoutSessionSecurityTest extends TestCase
         $cookieName = $this->proofCookieName($token);
         $proof = (string) $createResponse->getCookie($cookieName, false)->getValue();
 
-        $this->withCredentials()->withUnencryptedCookie($cookieName, $proof)
+        $getResponse = $this->withCredentials()->withUnencryptedCookie($cookieName, $proof)
             ->getJson("/api/checkout/session/{$token}")
             ->assertOk()
-            ->assertJsonPath('session.payload.shipping.email', 'owner@example.com');
+            ->assertJsonPath('session.status', 'open');
+        $this->assertSessionHasNoSensitiveFields($getResponse);
 
-        $this->withCredentials()->withUnencryptedCookie($cookieName, $proof)
+        $updateResponse = $this->withCredentials()->withUnencryptedCookie($cookieName, $proof)
             ->postJson('/api/checkout/session', [
                 'token' => $token,
                 'customer_note' => 'Updated by the owner',
             ])
             ->assertOk()
-            ->assertJsonPath('session.payload.customer_note', 'Updated by the owner');
+            ->assertJsonPath('session.status', 'open');
+        $this->assertSessionHasNoSensitiveFields($updateResponse);
+        $this->assertSame(
+            'Updated by the owner',
+            CheckoutSession::query()->where('token', $token)->firstOrFail()->payload['customer_note'],
+        );
     }
 
     public function test_session_b_proof_cannot_read_session_a_sensitive_data(): void
@@ -462,6 +491,14 @@ class CheckoutSessionSecurityTest extends TestCase
     private function proofCookieName(string $token): string
     {
         return 'checkout_session_proof_'.substr(hash('sha256', $token), 0, 16);
+    }
+
+    private function assertSessionHasNoSensitiveFields($response): void
+    {
+        $response->assertJsonMissingPath('session.payload')
+            ->assertJsonMissingPath('session.payment_intent_id')
+            ->assertJsonMissingPath('session.payment_client_secret')
+            ->assertJsonMissingPath('session.order_reference');
     }
 
     private function assertMinimalSessionStatus($response): void
