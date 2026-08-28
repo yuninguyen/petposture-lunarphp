@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CheckoutSession;
 use App\Models\ShippingMethod;
 use App\Models\StripeWebhookEvent;
 use App\Models\User;
@@ -65,6 +66,65 @@ class CheckoutApiTest extends TestCase
             ->assertJsonPath('order.tax_total', 7.38)
             ->assertJsonPath('order.shipping_address.city', 'Austin')
             ->assertJsonPath('order.billing_address.postcode', '78701');
+    }
+
+    public function test_checkout_session_ignores_client_financial_state_and_returns_server_totals(): void
+    {
+        $variant = $this->createPurchasableVariant();
+
+        $response = $this->postJson('/api/checkout/session', [
+            'items' => [[
+                'variantId' => $variant->id,
+                'quantity' => 1,
+                'unit_price_minor' => 1,
+            ]],
+            'shipping' => [
+                'email' => 'totals@petposture.com',
+                'state' => 'TX',
+                'country' => 'US',
+                'tax_minor' => 1,
+            ],
+            'shipping_method' => 'standard',
+            'payment_method' => 'card',
+            'payment_context' => [
+                'intent_id' => 'pi_attacker_controlled',
+                'status' => 'succeeded',
+            ],
+            'currency' => 'EUR',
+            'status' => 'paid',
+            'subtotal_minor' => 1,
+            'discount_minor' => 8998,
+            'tax_minor' => 1,
+            'shipping_minor' => 1,
+            'total_minor' => 1,
+            'totals' => ['total_minor' => 1],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('session.status', 'open')
+            ->assertJsonPath('session.currency', 'USD')
+            ->assertJsonPath('session.totals.currency', 'USD')
+            ->assertJsonPath('session.totals.subtotal_minor', 8999)
+            ->assertJsonPath('session.totals.discount_minor', 0)
+            ->assertJsonPath('session.totals.shipping_minor', 0);
+        $this->assertNotSame(1, $response->json('session.totals.tax_minor'));
+
+        $totals = $response->json('session.totals');
+        foreach (['subtotal_minor', 'discount_minor', 'tax_minor', 'shipping_minor', 'total_minor'] as $key) {
+            $this->assertIsInt($totals[$key]);
+        }
+        $this->assertSame(
+            $totals['subtotal_minor'] - $totals['discount_minor'] + $totals['shipping_minor'] + $totals['tax_minor'],
+            $totals['total_minor'],
+        );
+
+        $session = CheckoutSession::query()->where('token', $response->json('session.token'))->firstOrFail();
+        $this->assertArrayNotHasKey('payment_context', $session->payload);
+        $this->assertArrayNotHasKey('unit_price_minor', $session->payload['items'][0]);
+        $this->assertArrayNotHasKey('tax_minor', $session->payload['shipping']);
+        $this->assertArrayNotHasKey('totals', $session->payload);
+        $this->assertArrayNotHasKey('status', $session->payload);
+        $this->assertSame('USD', $session->currency);
     }
 
     public function test_track_order_returns_the_created_order(): void

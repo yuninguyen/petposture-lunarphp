@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\ErrorCode;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\UpsertCheckoutSessionRequest;
 use App\Http\Resources\Api\CheckoutSessionResource;
 use App\Http\Resources\Api\OrderResource;
 use App\Models\CheckoutSession;
@@ -205,31 +206,19 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function upsertSession(Request $request)
+    public function upsertSession(UpsertCheckoutSessionRequest $request)
     {
-        $validated = Validator::make($request->all(), [
-            'token' => 'nullable|uuid',
-            'items' => 'nullable|array',
-            'items.*.variantId' => 'required_with:items|exists:lunar_product_variants,id',
-            'items.*.quantity' => 'required_with:items|integer|min:1',
-            'shipping' => 'nullable|array',
-            'billing_same_as_shipping' => 'nullable|boolean',
-            'billing' => 'nullable|array',
-            'shipping_method' => 'nullable|string',
-            'payment_method' => 'nullable|string',
-            'payment_context' => 'nullable|array',
-            'coupon_code' => 'nullable|string',
-            'customer_note' => 'nullable|string|max:2000',
-            'currency' => 'nullable|string|max:10',
-        ])->validate();
+        $validated = $request->checkoutPayload();
+        $token = $validated['token'] ?? null;
+        unset($validated['token']);
 
-        if (! empty($validated['token'])) {
-            $existingSession = $this->checkoutSessionService->getByToken($validated['token']);
+        if ($token) {
+            $existingSession = $this->checkoutSessionService->getByToken($token);
             $this->authorizeSessionOwner($request, $existingSession);
         }
 
         $session = $this->checkoutSessionService->upsert(
-            $validated['token'] ?? null,
+            $token,
             $validated,
             auth('sanctum')->id(),
         );

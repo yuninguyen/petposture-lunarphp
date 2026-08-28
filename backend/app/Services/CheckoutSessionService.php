@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
+use App\Data\CheckoutSessionPayload;
 use App\Models\CheckoutSession;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Lunar\Models\Contracts\Order;
-use Lunar\Models\Discount;
 use Lunar\Models\Order as LunarOrder;
 
 class CheckoutSessionService
@@ -15,7 +15,6 @@ class CheckoutSessionService
     public function __construct(
         private readonly CheckoutService $checkoutService,
         private readonly StripePaymentIntentService $stripePaymentIntentService,
-        private readonly ShippingService $shippingService,
     ) {}
 
     public function upsert(?string $token, array $payload, ?int $userId = null): CheckoutSession
@@ -36,14 +35,17 @@ class CheckoutSessionService
             $session->guest_proof_hash = hash('sha256', $guestProof);
         }
 
-        $mergedPayload = array_replace_recursive($session->payload ?? [], $payload);
+        $mergedPayload = CheckoutSessionPayload::sanitize(
+            array_replace_recursive($session->payload ?? [], $payload),
+        );
+        $totals = $this->buildTotals($mergedPayload);
 
         $session->fill([
             'user_id' => $userId ?: $session->user_id,
             'payload' => $mergedPayload,
-            'currency' => strtoupper((string) ($mergedPayload['currency'] ?? $session->currency ?? 'USD')),
+            'currency' => (string) ($totals['currency'] ?? 'USD'),
             'status' => $session->status ?: 'open',
-            'totals' => $this->buildTotals($mergedPayload),
+            'totals' => $totals,
             'expires_at' => now()->addHours(24),
         ]);
 
@@ -266,47 +268,11 @@ class CheckoutSessionService
 
     private function buildTotals(array $payload): array
     {
-        $items = (array) ($payload['items'] ?? []);
-
-        if ($items === []) {
-            return [
-                'subtotal_minor' => 0,
-                'discount_minor' => 0,
-                'tax_minor' => 0,
-                'shipping_minor' => 0,
-                'total_minor' => 0,
-            ];
-        }
-
-        $couponCode = $payload['coupon_code'] ?? null;
-
-        $totalMinor = $this->checkoutService->calculateTotal(
-            $items,
-            $couponCode,
+        return $this->checkoutService->calculateTotals(
+            (array) ($payload['items'] ?? []),
+            $payload['coupon_code'] ?? null,
             $payload['shipping'] ?? null,
             $payload['shipping_method'] ?? null,
         );
-
-        $subtotalMinor = $this->checkoutService->subtotalFor($items);
-
-        $isFreeShipping = false;
-        if ($couponCode) {
-            $discount = Discount::active()->where('coupon', $couponCode)->first();
-            $isFreeShipping = (bool) ($discount?->data['free_shipping'] ?? false);
-        }
-
-        $shippingMinor = $this->shippingService->rateFor(
-            $payload['shipping_method'] ?? 'standard',
-            $subtotalMinor,
-            $isFreeShipping,
-        );
-
-        return [
-            'subtotal_minor' => null,
-            'discount_minor' => null,
-            'tax_minor' => null,
-            'shipping_minor' => $shippingMinor,
-            'total_minor' => $totalMinor,
-        ];
     }
 }

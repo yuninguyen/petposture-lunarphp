@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\CheckoutSession;
 use App\Models\User;
 use App\Services\CheckoutService;
-use App\Services\ShippingService;
 use App\Services\StripePaymentIntentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -99,11 +98,14 @@ class CheckoutSessionSecurityTest extends TestCase
     public function test_payment_intent_retry_with_same_key_reuses_the_original_intent(): void
     {
         $this->mock(CheckoutService::class, function ($mock): void {
-            $mock->shouldReceive('calculateTotal')->once()->andReturn(1000);
-            $mock->shouldReceive('subtotalFor')->once()->andReturn(1000);
-        });
-        $this->mock(ShippingService::class, function ($mock): void {
-            $mock->shouldReceive('rateFor')->once()->andReturn(0);
+            $mock->shouldReceive('calculateTotals')->once()->andReturn([
+                'subtotal_minor' => 1000,
+                'discount_minor' => 0,
+                'tax_minor' => 0,
+                'shipping_minor' => 0,
+                'total_minor' => 1000,
+                'currency' => 'USD',
+            ]);
         });
         $this->mock(StripePaymentIntentService::class, function ($mock): void {
             $mock->shouldReceive('create')
@@ -346,6 +348,15 @@ class CheckoutSessionSecurityTest extends TestCase
         $token = (string) $createResponse->json('session.token');
         $cookieName = $this->proofCookieName($token);
         $proof = (string) $createResponse->getCookie($cookieName, false)->getValue();
+        $legacySession = CheckoutSession::query()->where('token', $token)->firstOrFail();
+        $legacySession->update([
+            'currency' => 'EUR',
+            'payload' => array_merge($legacySession->payload, [
+                'currency' => 'EUR',
+                'status' => 'paid',
+                'totals' => ['total_minor' => 1],
+            ]),
+        ]);
 
         $getResponse = $this->withCredentials()->withUnencryptedCookie($cookieName, $proof)
             ->getJson("/api/checkout/session/{$token}")
@@ -359,12 +370,16 @@ class CheckoutSessionSecurityTest extends TestCase
                 'customer_note' => 'Updated by the owner',
             ])
             ->assertOk()
-            ->assertJsonPath('session.status', 'open');
+            ->assertJsonPath('session.status', 'open')
+            ->assertJsonPath('session.currency', 'USD');
         $this->assertSessionHasNoSensitiveFields($updateResponse);
-        $this->assertSame(
-            'Updated by the owner',
-            CheckoutSession::query()->where('token', $token)->firstOrFail()->payload['customer_note'],
-        );
+        $storedSession = CheckoutSession::query()->where('token', $token)->firstOrFail();
+        $this->assertSame('Updated by the owner', $storedSession->payload['customer_note']);
+        $this->assertArrayNotHasKey('token', $storedSession->payload);
+        $this->assertArrayNotHasKey('currency', $storedSession->payload);
+        $this->assertArrayNotHasKey('status', $storedSession->payload);
+        $this->assertArrayNotHasKey('totals', $storedSession->payload);
+        $this->assertSame('USD', $storedSession->currency);
     }
 
     public function test_session_b_proof_cannot_read_session_a_sensitive_data(): void
