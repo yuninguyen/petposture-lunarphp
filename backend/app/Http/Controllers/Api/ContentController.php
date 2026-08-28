@@ -37,7 +37,8 @@ class ContentController extends Controller
         $query = Post::where('slug', $slug);
 
         if (! $this->hasValidPreviewToken($request, $slug)) {
-            $query->where('status', 'published');
+            $query->where('status', 'published')
+                ->where('published_at', '<=', now());
         }
 
         $post = $query->with(['blogCategory', 'metadata', 'tags', 'seo', 'featuredMedia'])->firstOrFail();
