@@ -27,6 +27,7 @@ use App\Payments\Gateways\PingPongGateway;
 use App\Payments\Gateways\StripeCardGateway;
 use App\Payments\PaymentGatewayManager;
 use App\Support\MailConfigSync;
+use App\Support\ProductionMailConfiguration;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -69,6 +70,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        ProductionMailConfiguration::assertSafe($this->app);
+
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
