@@ -49,8 +49,10 @@ COPY . .
 # Bring in the Vite-built admin assets (Filament theme, source-code editor JS)
 COPY --from=assets /app/public/build ./public/build
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+# Install dependencies. Clear copied local framework caches first so dev-only
+# package manifests (for example Laravel Pail) cannot survive a --no-dev build.
+RUN rm -f bootstrap/cache/*.php \
+    && composer install --no-dev --optimize-autoloader --no-scripts
 
 # Set permissions for Laravel
 RUN chown -R www-data:www-data storage bootstrap/cache
