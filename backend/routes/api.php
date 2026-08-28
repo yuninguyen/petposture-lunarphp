@@ -66,7 +66,7 @@ Route::post('/register', [AuthController::class, 'register'])->middleware('throt
 
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/facets', [ProductController::class, 'facets']);
-Route::get('/products/{slug}', [ProductController::class, 'show']);
+Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/products/{slug}/reviews', [ProductController::class, 'reviews']);
 Route::get('/products/{slug}/related', [ProductController::class, 'related']);
 Route::get('/brands', [BrandController::class, 'index']);
@@ -111,7 +111,7 @@ Route::post('/webhooks/pingpong', [CheckoutController::class, 'pingpongWebhook']
 Route::post('/webhooks/aftership', [AfterShipWebhookController::class, 'handle']);
 
 Route::get('/posts', [ContentController::class, 'posts']);
-Route::get('/posts/{slug}', [ContentController::class, 'post']);
+Route::get('/posts/{slug}', [ContentController::class, 'post'])->name('posts.show');
 Route::get('/posts/{slug}/comments', [CommentController::class, 'index']);
 Route::post('/posts/{slug}/comments', [CommentController::class, 'store'])->middleware('throttle:api-write');
 Route::get('/categories', [ContentController::class, 'categories']);

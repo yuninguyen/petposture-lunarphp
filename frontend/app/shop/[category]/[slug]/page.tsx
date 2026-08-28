@@ -10,6 +10,7 @@ import { ProductReviews } from '@/components/product/ProductReviews';
 import { notFound, redirect } from 'next/navigation';
 
 import { API_BASE_URL } from '@/lib/api';
+import { buildPreviewQuery } from '@/lib/preview-query';
 import { stripHtml } from '@/lib/text';
 
 type ProductLookup = {
@@ -40,17 +41,6 @@ async function fetchProduct(slug: string, previewQuery?: string): Promise<Produc
         console.error('Failed to fetch product detail:', error);
         return { product: null, redirectPath: null };
     }
-}
-
-function buildPreviewQuery(searchParams: Record<string, string | string[] | undefined>): string | undefined {
-    const expires = searchParams.expires;
-    const token = searchParams.preview_token;
-
-    if (typeof expires !== 'string' || typeof token !== 'string') {
-        return undefined;
-    }
-
-    return `expires=${encodeURIComponent(expires)}&preview_token=${encodeURIComponent(token)}`;
 }
 
 async function fetchProducts(): Promise<Product[]> {

@@ -399,16 +399,7 @@ class ProductController extends Controller
 
     private function hasValidPreviewToken(Request $request, string $slug): bool
     {
-        $expires = $request->query('expires');
-        $token = $request->query('preview_token');
-
-        if (! $expires || ! $token || now()->timestamp > (int) $expires) {
-            return false;
-        }
-
-        $expected = hash_hmac('sha256', $slug.'|'.$expires, config('app.key'));
-
-        return hash_equals($expected, (string) $token);
+        return $request->hasValidSignature();
     }
 
     private function resolveCurrentPublishedProduct(string $slug): ?Product

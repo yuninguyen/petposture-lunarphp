@@ -9,6 +9,7 @@ use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class PostController extends Controller
@@ -210,9 +211,12 @@ class PostController extends Controller
     {
         $this->authorizeAdmin();
 
-        $expires = now()->addDay()->timestamp;
-        $token = hash_hmac('sha256', $post->slug.'|'.$expires, config('app.key'));
-        $url = rtrim(config('app.frontend_url'), '/')."/blog/{$post->slug}?expires={$expires}&preview_token={$token}";
+        $signedUrl = URL::temporarySignedRoute('posts.show', now()->addDay(), [
+            'slug' => $post->slug,
+        ]);
+        $url = rtrim(config('app.frontend_url'), '/')
+            ."/blog/{$post->slug}?"
+            .parse_url($signedUrl, PHP_URL_QUERY);
 
         return response()->json(['url' => $url]);
     }

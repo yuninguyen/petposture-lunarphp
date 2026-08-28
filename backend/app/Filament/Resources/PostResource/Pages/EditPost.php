@@ -7,6 +7,7 @@ use App\Models\Post;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\URL;
 
 class EditPost extends EditRecord
 {
@@ -97,10 +98,13 @@ class EditPost extends EditRecord
     protected function getPreviewUrl(): string
     {
         $slug = $this->record->slug;
-        $expires = now()->addDay()->timestamp;
-        $token = hash_hmac('sha256', $slug.'|'.$expires, config('app.key'));
+        $signedUrl = URL::temporarySignedRoute('posts.show', now()->addDay(), [
+            'slug' => $slug,
+        ]);
 
-        return rtrim(config('app.frontend_url'), '/')."/blog/{$slug}?expires={$expires}&preview_token={$token}";
+        return rtrim(config('app.frontend_url'), '/')
+            ."/blog/{$slug}?"
+            .parse_url($signedUrl, PHP_URL_QUERY);
     }
 
     protected function getSaveFormAction(): Actions\Action

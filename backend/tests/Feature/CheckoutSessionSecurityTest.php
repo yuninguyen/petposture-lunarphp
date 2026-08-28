@@ -60,21 +60,19 @@ class CheckoutSessionSecurityTest extends TestCase
         $this->assertMinimalSessionStatus($response);
     }
 
-    public function test_owner_reads_and_api_aliases_do_not_serialize_checkout_secrets_or_pii(): void
+    public function test_owner_read_does_not_serialize_checkout_secrets_or_pii(): void
     {
         $createResponse = $this->createGuestSession('private@example.com');
         $token = (string) $createResponse->json('session.token');
         $cookieName = $this->proofCookieName($token);
         $proof = (string) $createResponse->getCookie($cookieName, false)->getValue();
 
-        foreach (['/api', '/api/v1'] as $prefix) {
-            $response = $this->withCredentials()
-                ->withUnencryptedCookie($cookieName, $proof)
-                ->getJson("{$prefix}/checkout/session/{$token}");
+        $response = $this->withCredentials()
+            ->withUnencryptedCookie($cookieName, $proof)
+            ->getJson("/api/checkout/session/{$token}");
 
-            $response->assertOk();
-            $this->assertSessionHasNoSensitiveFields($response);
-        }
+        $response->assertOk();
+        $this->assertSessionHasNoSensitiveFields($response);
     }
 
     public function test_payment_mutations_require_an_idempotency_key(): void

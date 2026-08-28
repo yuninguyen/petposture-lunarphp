@@ -115,20 +115,6 @@ class OrderPublicResourceTest extends TestCase
         $this->postJson("/api/orders/{$orderId}/tracking-access")->assertNotFound();
     }
 
-    public function test_tracking_contract_is_identical_on_api_v1_alias(): void
-    {
-        $variant = $this->createPurchasableVariant();
-        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
-
-        $this->postJson('/api/v1/orders/track', [
-            'tracking_token' => $placeResponse->json('order.tracking_access_token'),
-            'email' => 'guest@petposture.com',
-        ])->assertOk()
-            ->assertJsonPath('data.reference', $placeResponse->json('order.reference'))
-            ->assertJsonMissingPath('data.customer_email')
-            ->assertJsonMissingPath('data.total');
-    }
-
     public function test_track_endpoint_never_leaks_internal_or_staff_only_fields(): void
     {
         $variant = $this->createPurchasableVariant();

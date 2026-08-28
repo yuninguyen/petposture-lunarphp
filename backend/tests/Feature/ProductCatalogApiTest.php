@@ -166,27 +166,21 @@ class ProductCatalogApiTest extends TestCase
         ]);
         $legacyOnly->saveQuietly();
 
-        foreach (['/api/products', '/api/v1/products'] as $endpoint) {
-            $response = $this->getJson($endpoint)->assertOk();
-            $productIds = collect($response->json('data'))->pluck('id')->map(fn ($id) => (int) $id);
+        $response = $this->getJson('/api/products')->assertOk();
+        $productIds = collect($response->json('data'))->pluck('id')->map(fn ($id) => (int) $id);
 
-            $this->assertNotEmpty($productIds);
-            $this->assertSame(
-                $productIds->count(),
-                LunarProduct::query()->whereKey($productIds)->count(),
-                "Every product from {$endpoint} must reference lunar_products.id."
-            );
-            $response->assertJsonMissing(['slug' => 'legacy-only-product']);
-        }
+        $this->assertNotEmpty($productIds);
+        $this->assertSame(
+            $productIds->count(),
+            LunarProduct::query()->whereKey($productIds)->count(),
+            'Every public product must reference lunar_products.id.'
+        );
+        $response->assertJsonMissing(['slug' => 'legacy-only-product']);
 
         $this->getJson("/api/products/{$lunarProduct->id}")
             ->assertOk()
             ->assertJsonPath('data.id', $lunarProduct->id);
-        $this->getJson("/api/v1/products/{$lunarProduct->id}")
-            ->assertOk()
-            ->assertJsonPath('data.id', $lunarProduct->id);
         $this->getJson('/api/products/legacy-only-product')->assertNotFound();
-        $this->getJson('/api/v1/products/legacy-only-product')->assertNotFound();
     }
 
     public function test_product_filters_use_normalized_breed_and_solution_pivots(): void

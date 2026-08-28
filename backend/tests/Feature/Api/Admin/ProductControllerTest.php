@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\Sanctum;
 use Lunar\FieldTypes\Text;
 use Lunar\FieldTypes\TranslatedText;
@@ -507,7 +508,8 @@ class ProductControllerTest extends TestCase
         $this->assertSame('storefront.example.test', $parts['host'] ?? null);
         $this->assertSame('/shop/categories/draft-preview-product', $parts['path'] ?? null);
         $this->assertGreaterThan(now()->addHours(23)->timestamp, (int) ($query['expires'] ?? 0));
-        $this->assertNotEmpty($query['preview_token'] ?? null);
+        $this->assertNotEmpty($query['signature'] ?? null);
+        $this->assertArrayNotHasKey('preview_token', $query);
 
         $previewQuery = http_build_query($query);
         $this->getJson('/api/products/draft-preview-product?'.$previewQuery)
@@ -517,15 +519,13 @@ class ProductControllerTest extends TestCase
 
         $this->getJson('/api/products/draft-preview-product?'.http_build_query([
             'expires' => $query['expires'],
-            'preview_token' => str_repeat('0', 64),
+            'signature' => str_repeat('0', 64),
         ]))->assertNotFound();
 
-        $expired = now()->subMinute()->timestamp;
-        $expiredToken = hash_hmac('sha256', 'draft-preview-product|'.$expired, config('app.key'));
-        $this->getJson('/api/products/draft-preview-product?'.http_build_query([
-            'expires' => $expired,
-            'preview_token' => $expiredToken,
-        ]))->assertNotFound();
+        $expiredUrl = URL::temporarySignedRoute('products.show', now()->subMinute(), [
+            'slug' => 'draft-preview-product',
+        ]);
+        $this->getJson($expiredUrl)->assertNotFound();
     }
 
     public function test_product_associations_are_written_and_removed_synchronously_for_all_supported_types(): void

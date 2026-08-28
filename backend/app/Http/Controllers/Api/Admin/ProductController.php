@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use Lunar\Models\Attribute;
 use Lunar\Models\Currency;
@@ -158,14 +159,12 @@ class ProductController extends Controller
     {
         $product->loadMissing(['defaultUrl', 'collections.defaultUrl']);
         $slug = $routes->slug($product);
-        $expires = now()->addDay()->timestamp;
-        $token = hash_hmac('sha256', $slug.'|'.$expires, config('app.key'));
+        $signedUrl = URL::temporarySignedRoute('products.show', now()->addDay(), [
+            'slug' => $slug,
+        ]);
         $url = rtrim((string) config('app.frontend_url'), '/')
             .$routes->path($product)
-            .'?'.http_build_query([
-                'expires' => $expires,
-                'preview_token' => $token,
-            ]);
+            .'?'.parse_url($signedUrl, PHP_URL_QUERY);
 
         return response()->json(['url' => $url]);
     }

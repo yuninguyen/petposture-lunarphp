@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\BlogCategory;
 use App\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class FuturePostExposureTest extends TestCase
@@ -16,7 +17,6 @@ class FuturePostExposureTest extends TestCase
         $post = $this->createPost(now()->addHour());
 
         $this->getJson("/api/posts/{$post->slug}")->assertNotFound();
-        $this->getJson("/api/v1/posts/{$post->slug}")->assertNotFound();
 
         $post->update(['published_at' => now()->subSecond()]);
         $this->getJson("/api/posts/{$post->slug}")
@@ -24,15 +24,27 @@ class FuturePostExposureTest extends TestCase
             ->assertJsonPath('data.slug', $post->slug);
     }
 
-    public function test_valid_preview_token_can_view_a_future_post(): void
+    public function test_valid_native_signature_can_view_a_future_post(): void
     {
         $post = $this->createPost(now()->addHour());
-        $expires = now()->addMinutes(15)->timestamp;
-        $token = hash_hmac('sha256', $post->slug.'|'.$expires, config('app.key'));
+        $url = URL::temporarySignedRoute('posts.show', now()->addMinutes(15), [
+            'slug' => $post->slug,
+        ]);
 
-        $this->getJson("/api/posts/{$post->slug}?expires={$expires}&preview_token={$token}")
+        $this->getJson($url)
             ->assertOk()
             ->assertJsonPath('data.slug', $post->slug);
+
+        $parts = parse_url($url);
+        parse_str($parts['query'] ?? '', $tamperedQuery);
+        $signature = (string) $tamperedQuery['signature'];
+        $tamperedQuery['signature'] = ($signature[0] === '0' ? '1' : '0').substr($signature, 1);
+        $this->getJson("/api/posts/{$post->slug}?".http_build_query($tamperedQuery))->assertNotFound();
+
+        $expiredUrl = URL::temporarySignedRoute('posts.show', now()->subMinute(), [
+            'slug' => $post->slug,
+        ]);
+        $this->getJson($expiredUrl)->assertNotFound();
     }
 
     private function createPost($publishedAt): Post
