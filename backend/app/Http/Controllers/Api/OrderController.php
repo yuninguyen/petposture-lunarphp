@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Api\OrderPublicResource;
 use App\Http\Resources\Api\OrderResource;
+use App\Http\Resources\Api\OrderTrackingResource;
 use App\Models\OrderReturnRequest;
 use App\Services\OrderOperationsService;
+use App\Services\OrderTrackingAccessService;
 use App\Services\StripePaymentIntentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -20,36 +21,29 @@ class OrderController extends Controller
     public function __construct(
         private readonly OrderOperationsService $orderOperationsService,
         private readonly StripePaymentIntentService $stripePaymentIntentService,
+        private readonly OrderTrackingAccessService $orderTrackingAccessService,
     ) {}
 
-    /**
-     * Track an order via Number and Email (Public).
-     */
     public function track(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'tracking_number' => 'required|string',
+        $validated = Validator::make($request->all(), [
+            'tracking_token' => 'required|string|max:255',
             'email' => 'required|email',
-        ]);
+        ])->validate();
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $order = $this->findPublicOrderByCredentials(
-            trim((string) $request->tracking_number),
-            trim((string) $request->email),
+        $order = $this->orderTrackingAccessService->find(
+            trim((string) $validated['tracking_token']),
+            trim((string) $validated['email']),
         );
 
         if (! $order) {
             Log::warning('Public order tracking lookup failed.', [
-                'tracking_number' => trim((string) $request->tracking_number),
-                'email' => trim((string) $request->email),
+                'credential_hash' => hash('sha256', strtolower(trim((string) $validated['email'])).'|'.trim((string) $validated['tracking_token'])),
                 'ip' => $request->ip(),
-                'user_agent' => $request->userAgent(),
+                'user_agent_hash' => hash('sha256', (string) $request->userAgent()),
             ]);
 
-            return response()->json(['message' => 'No order found with these credentials.'], 404);
+            return response()->json(['message' => 'Unable to access this order.'], 404);
         }
 
         $hasActiveReturnRequest = OrderReturnRequest::query()
@@ -57,7 +51,7 @@ class OrderController extends Controller
             ->whereIn('status', [OrderReturnRequest::STATUS_REQUESTED, OrderReturnRequest::STATUS_APPROVED])
             ->exists();
 
-        return (new OrderPublicResource($order))->additional([
+        return (new OrderTrackingResource($order))->additional([
             'has_active_return_request' => $hasActiveReturnRequest,
         ]);
     }
@@ -65,8 +59,8 @@ class OrderController extends Controller
     /**
      * Resolve an order by its redirect-checkout gateway session (Public) — used by the
      * checkout success page when a shopper is bounced back from a hosted payment page
-     * (Airwallex/Payoneer/PingPong), before the order's own reference/tracking-number
-     * flow can be used (the browser only knows the session id at that point).
+     * (Airwallex/Payoneer/PingPong). A successful lookup rotates and returns a
+     * fresh tracking access token because the browser only knows the session id.
      */
     public function byPaymentSession(Request $request)
     {
@@ -82,18 +76,22 @@ class OrderController extends Controller
         $gateway = (string) $request->query('gateway');
         $sessionId = (string) $request->query('session_id');
 
-        $order = Order::query()->where("meta->{$gateway}_session_id", $sessionId)->first();
+        $order = Order::query()
+            ->where("meta->{$gateway}_session_id", $sessionId)
+            ->where('created_at', '>', now()->subHours(24))
+            ->first();
 
         if (! $order) {
-            return response()->json(['message' => 'No order found for this payment session.'], 404);
+            return response()->json(['message' => 'Unable to access this order.'], 404);
         }
 
+        $this->orderTrackingAccessService->issue($order);
         $hasActiveReturnRequest = OrderReturnRequest::query()
             ->where('order_id', $order->id)
             ->whereIn('status', [OrderReturnRequest::STATUS_REQUESTED, OrderReturnRequest::STATUS_APPROVED])
             ->exists();
 
-        return (new OrderPublicResource($order))->additional([
+        return (new OrderTrackingResource($order))->additional([
             'has_active_return_request' => $hasActiveReturnRequest,
         ]);
     }
@@ -101,28 +99,29 @@ class OrderController extends Controller
     public function retryPayment(Request $request)
     {
         $validated = Validator::make($request->all(), [
-            'tracking_number' => 'required|string',
+            'tracking_token' => 'required|string|max:255',
             'email' => 'required|email',
         ])->validate();
 
-        $order = $this->findPublicOrderByCredentials(
-            trim((string) $validated['tracking_number']),
+        $order = $this->orderTrackingAccessService->find(
+            trim((string) $validated['tracking_token']),
             trim((string) $validated['email']),
         );
 
         if (! $order) {
-            return response()->json(['message' => 'No order found with these credentials.'], 404);
+            return response()->json(['message' => 'Unable to access this order.'], 404);
         }
 
         $paymentMethod = (string) (($order->meta['payment_method'] ?? '') ?: '');
         $paymentStatus = (string) (($order->meta['payment_status'] ?? '') ?: 'awaiting-payment');
 
-        if ($paymentMethod !== 'card') {
-            return response()->json(['message' => 'This order cannot be retried with card payment.'], 422);
-        }
+        $retryEligible = $paymentMethod === 'card'
+            && ! in_array($paymentStatus, ['paid', 'cancelled'], true)
+            && in_array($order->status, ['awaiting-payment', 'payment-offline'], true)
+            && $order->created_at?->greaterThan(now()->subHours(24));
 
-        if (in_array($paymentStatus, ['paid', 'cancelled'], true) || $order->status === 'cancelled') {
-            return response()->json(['message' => 'This order is not eligible for payment retry.'], 422);
+        if (! $retryEligible) {
+            return response()->json(['message' => 'Payment retry is unavailable.'], 422);
         }
 
         $paymentIntent = $this->stripePaymentIntentService->prepareRetryIntent($order);
@@ -130,7 +129,23 @@ class OrderController extends Controller
         return response()->json([
             'success' => true,
             'payment_intent' => $paymentIntent,
-            'order' => new OrderPublicResource($order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])),
+            'order' => new OrderTrackingResource($order->refresh()->loadMissing('shippingAddress')),
+        ]);
+    }
+
+    public function trackingAccess(Request $request, $id)
+    {
+        $order = $this->baseOrderQuery($request)->find($id);
+
+        if (! $order) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+
+        $token = $this->orderTrackingAccessService->issue($order);
+
+        return response()->json([
+            'tracking_access_token' => $token,
+            'tracking_access_expires_at' => $order->tracking_access_token_expires_at?->toIso8601String(),
         ]);
     }
 
@@ -165,7 +180,7 @@ class OrderController extends Controller
 
     public function update(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
+        if (! $request->user()?->can('update_order')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -188,7 +203,7 @@ class OrderController extends Controller
 
     public function performAction(Request $request, $id, string $action)
     {
-        if (! $this->canManageOrders($request)) {
+        if (! $request->user()?->can('update_order')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -210,7 +225,7 @@ class OrderController extends Controller
 
     public function createShipment(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
+        if (! $request->user()?->can('update_order')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -231,7 +246,7 @@ class OrderController extends Controller
 
     public function refund(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
+        if (! $request->user()?->can('refund_order')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -252,7 +267,7 @@ class OrderController extends Controller
 
     public function return(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
+        if (! $request->user()?->can('update_order')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -278,23 +293,6 @@ class OrderController extends Controller
 
     private function canManageOrders(Request $request): bool
     {
-        return (bool) $request->user()?->hasAnyRole([
-            'super_admin',
-            'admin',
-            'staff',
-            'Order Manager',
-            'Support',
-        ]);
-    }
-
-    private function findPublicOrderByCredentials(string $trackingNumber, string $email): ?Order
-    {
-        return Order::with(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])
-            ->where(function ($query) use ($trackingNumber) {
-                $query->where('reference', $trackingNumber)
-                    ->orWhere('meta->tracking_number', $trackingNumber);
-            })
-            ->where('customer_reference', $email)
-            ->first();
+        return (bool) $request->user()?->can('view_any_order');
     }
 }

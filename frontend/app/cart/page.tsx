@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { Minus, Plus, X, ChevronRight, ArrowLeft, Tag } from 'lucide-react';
 import Link from 'next/link';
 import { getApiBaseUrl } from '@/lib/api';
+import { fetchApi } from '@/lib/fetchApi';
 import { getShippingAmount } from '@/lib/pricing';
 
 export default function CartPage() {
@@ -73,19 +74,15 @@ export default function CartPage() {
         });
 
         try {
-            const apiBase = getApiBaseUrl();
-            const response = await fetch(`${apiBase}/api/apply-coupon`, {
+            const response = await fetchApi('/api/apply-coupon', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
+                body: {
                     coupon_code: couponCode.trim(),
                     items: items.map(item => ({
                         variantId: item.variantId,
                         quantity: item.quantity
                     }))
-                })
+                },
             });
 
             const data = await response.json();

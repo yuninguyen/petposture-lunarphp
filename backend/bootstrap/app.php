@@ -1,7 +1,9 @@
 <?php
 
 use App\Enums\ErrorCode;
+use App\Http\Middleware\EnforceAdminApiPermission;
 use App\Http\Middleware\RefreshMailConfig;
+use App\Http\Middleware\RejectBearerAuthentication;
 use App\Http\Middleware\ResetPermissionCache;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\SetRequestId;
@@ -10,7 +12,6 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
@@ -23,24 +24,18 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        then: function () {
-            Route::middleware('api')
-                ->prefix('api/v1')
-                ->group(base_path('routes/api.php'));
-        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
         $middleware->redirectTo('/admin/login');
         $middleware->statefulApi();
-        $middleware->validateCsrfTokens(except: [
-            'api/*',
-        ]);
         $middleware->alias([
+            'admin.permission' => EnforceAdminApiPermission::class,
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
+        $middleware->appendToGroup('api', RejectBearerAuthentication::class);
         $middleware->appendToGroup('api', SetRequestId::class);
         // SetLocale's global side effects (Carbon::setLocale, PHP setlocale(), the
         // MySQL session's lc_time_names) are process-wide, not request-scoped — API

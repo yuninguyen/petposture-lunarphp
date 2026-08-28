@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { getApiBaseUrl } from '@/lib/api';
+import { fetchApi, fetchJson } from '@/lib/fetchApi';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Package, MapPin, User as UserIcon, LogOut, Trash2, Plus, X, ChevronDown } from 'lucide-react';
@@ -126,7 +125,7 @@ const emptyAddressForm = {
 };
 
 export default function AccountPage() {
-    const { user, token, logout } = useAuth();
+    const { user, isLoading: authLoading, logout } = useAuth();
     const router = useRouter();
     const [tab, setTab] = useState<Tab>('orders');
     const [orders, setOrders] = useState<Order[]>([]);
@@ -137,22 +136,19 @@ export default function AccountPage() {
     const [addressForm, setAddressForm] = useState(emptyAddressForm);
     const [savingAddress, setSavingAddress] = useState(false);
     const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
-
-    const authHeaders = token ? { Authorization: `Bearer ${token}`, Accept: 'application/json' } : null;
+    const [returnAccessOrderId, setReturnAccessOrderId] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!token) {
+        if (authLoading) return;
+        if (!user) {
             router.push('/sign-in');
             return;
         }
 
-        const base = getApiBaseUrl();
-        const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
-
         setLoading(true);
         Promise.all([
-            fetch(`${base}/api/orders`, { headers }).then((r) => (r.ok ? r.json() : Promise.reject(r))),
-            fetch(`${base}/api/me/addresses`, { headers }).then((r) => (r.ok ? r.json() : Promise.reject(r))),
+            fetchJson<{ data: Order[] }>('/api/orders'),
+            fetchJson<{ data: Address[] }>('/api/me/addresses'),
         ])
             .then(([ordersRes, addressesRes]) => {
                 setOrders(ordersRes.data ?? []);
@@ -160,18 +156,17 @@ export default function AccountPage() {
             })
             .catch(() => setError('Could not load your account data. Please try again.'))
             .finally(() => setLoading(false));
-    }, [token, router]);
+    }, [authLoading, user, router]);
 
     const handleAddAddress = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!authHeaders) return;
+        if (!user) return;
         setSavingAddress(true);
 
         try {
-            const res = await fetch(`${getApiBaseUrl()}/api/me/addresses`, {
+            const res = await fetchApi('/api/me/addresses', {
                 method: 'POST',
-                headers: { ...authHeaders, 'Content-Type': 'application/json' },
-                body: JSON.stringify(addressForm),
+                body: addressForm,
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Failed to save address.');
@@ -186,11 +181,10 @@ export default function AccountPage() {
     };
 
     const handleDeleteAddress = async (id: number) => {
-        if (!authHeaders) return;
+        if (!user) return;
         try {
-            const res = await fetch(`${getApiBaseUrl()}/api/me/addresses/${id}`, {
+            const res = await fetchApi(`/api/me/addresses/${id}`, {
                 method: 'DELETE',
-                headers: authHeaders,
             });
             if (!res.ok && res.status !== 204) throw new Error('Failed to delete address.');
             setAddresses((prev) => prev.filter((a) => a.id !== id));
@@ -199,9 +193,33 @@ export default function AccountPage() {
         }
     };
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         router.push('/');
+    };
+
+    const handleRequestReturn = async (order: Order) => {
+        if (!user) return;
+
+        setReturnAccessOrderId(order.id);
+        setError(null);
+
+        try {
+            const response = await fetchApi(`/api/orders/${order.id}/tracking-access`, {
+                method: 'POST',
+            });
+            const payload = await response.json();
+
+            if (!response.ok || !payload?.tracking_access_token) {
+                throw new Error(payload?.message || 'Unable to prepare secure return access.');
+            }
+
+            router.push(`/returns?token=${encodeURIComponent(payload.tracking_access_token)}&email=${encodeURIComponent(order.customer_email)}`);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unable to prepare secure return access.');
+        } finally {
+            setReturnAccessOrderId(null);
+        }
     };
 
     if (!user) {
@@ -370,12 +388,14 @@ export default function AccountPage() {
 
                                                             {returnEligibility(order) === 'open' && (
                                                                 <div className="pt-3 border-t border-zinc-100">
-                                                                    <Link
-                                                                        href={`/returns?ref=${encodeURIComponent(order.reference)}&email=${encodeURIComponent(order.customer_email)}`}
-                                                                        className="text-sm font-bold text-rust hover:text-rust transition-colors"
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => void handleRequestReturn(order)}
+                                                                        disabled={returnAccessOrderId === order.id}
+                                                                        className="text-sm font-bold text-rust hover:text-rust transition-colors disabled:cursor-wait disabled:opacity-60"
                                                                     >
-                                                                        Request a Return
-                                                                    </Link>
+                                                                        {returnAccessOrderId === order.id ? 'Preparing secure access…' : 'Request a Return'}
+                                                                    </button>
                                                                 </div>
                                                             )}
                                                             {returnEligibility(order) === 'closed' && (

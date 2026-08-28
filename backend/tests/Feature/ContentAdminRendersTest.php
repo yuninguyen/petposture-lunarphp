@@ -80,6 +80,28 @@ class ContentAdminRendersTest extends TestCase
             ->assertSuccessful();
     }
 
+    public function test_filament_post_preview_uses_native_route_signature(): void
+    {
+        config()->set('app.frontend_url', 'https://storefront.example.test');
+        $category = BlogCategory::create(['name' => 'Preview Category', 'slug' => 'preview-category']);
+        $post = Post::create([
+            'blog_category_id' => $category->id,
+            'type' => Post::TYPE_ARTICLE,
+            'title' => 'Filament Preview',
+            'slug' => 'filament-preview',
+            'content' => '<p>content</p>',
+            'status' => 'draft',
+        ]);
+        $component = Livewire::test(EditPost::class, ['record' => $post->getRouteKey()])->instance();
+        $url = (fn (): string => $this->getPreviewUrl())->call($component);
+        $parts = parse_url($url);
+        parse_str($parts['query'] ?? '', $query);
+
+        $this->assertSame('/blog/filament-preview', $parts['path'] ?? null);
+        $this->assertNotEmpty($query['signature'] ?? null);
+        $this->assertArrayNotHasKey('preview_token', $query);
+    }
+
     public function test_blog_tag_pages_render(): void
     {
         $tag = BlogTag::create(['name' => 'Ergonomics', 'slug' => 'ergonomics']);

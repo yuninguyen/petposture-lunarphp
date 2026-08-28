@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { sanitizeRichHtml } from '@/lib/sanitize-rich-html';
 
 const fadeUp = {
     initial: { opacity: 0, y: 20 },
@@ -53,8 +54,9 @@ function annotateHeadingsWithIds(html: string): string {
 }
 
 export default function LegalPageLayout({ page }: { page: LegalPage }) {
-    const sections = useTableOfContents(page.content);
-    const contentWithIds = useMemo(() => annotateHeadingsWithIds(page.content), [page.content]);
+    const sanitizedContent = useMemo(() => sanitizeRichHtml(page.content), [page.content]);
+    const sections = useTableOfContents(sanitizedContent);
+    const contentWithIds = useMemo(() => annotateHeadingsWithIds(sanitizedContent), [sanitizedContent]);
     const [activeSection, setActiveSection] = useState('');
     const [mobileTocOpen, setMobileTocOpen] = useState(false);
 

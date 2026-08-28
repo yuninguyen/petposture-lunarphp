@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { CreditCard, Loader2 } from "lucide-react";
-import { getApiBaseUrl } from "@/lib/api";
+import { fetchApi } from "@/lib/fetchApi";
 
 declare global {
     interface Window {
@@ -42,23 +42,17 @@ type PreparedPaymentIntent = {
 const stripeJsScriptId = "petposture-stripe-js";
 
 export default function RetryPaymentPanel({
-    reference,
+    trackingToken,
     email,
-    customerName,
-    paymentMethod,
-    paymentStatus,
     orderStatus,
     onCompleted,
 }: {
-    reference: string;
+    trackingToken: string;
     email: string;
-    customerName: string;
-    paymentMethod: string | null;
-    paymentStatus: string;
     orderStatus: string;
     onCompleted?: () => void;
 }) {
-    const eligible = paymentMethod === "card" && !["paid", "cancelled"].includes(paymentStatus) && orderStatus !== "cancelled";
+    const eligible = ["awaiting-payment", "payment-offline"].includes(orderStatus);
     const [intent, setIntent] = useState<PreparedPaymentIntent | null>(null);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -147,16 +141,12 @@ export default function RetryPaymentPanel({
         setMessage(null);
 
         try {
-            const apiBase = getApiBaseUrl();
-            const response = await fetch(`${apiBase}/api/orders/retry-payment`, {
+            const response = await fetchApi('/api/orders/retry-payment', {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    tracking_number: reference,
+                body: {
+                    tracking_token: trackingToken,
                     email,
-                }),
+                },
             });
 
             const data = await response.json();
@@ -192,7 +182,6 @@ export default function RetryPaymentPanel({
                 payment_method: {
                     card: stripeCardElementRef.current,
                     billing_details: {
-                        name: customerName || undefined,
                         email,
                     },
                 },

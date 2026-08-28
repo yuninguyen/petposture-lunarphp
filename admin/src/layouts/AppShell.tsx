@@ -15,7 +15,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
-export function AppShell({ children, userName }: { children: ReactNode; userName: string }) {
+export function AppShell({ children, userName, userRoles }: { children: ReactNode; userName: string; userRoles: string[] }) {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const [expandedNavGroups, setExpandedNavGroups] = useState<Record<string, boolean>>({
@@ -164,7 +164,15 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
     }
   ];
 
-  const activeNavGroupKey = String(NAV_GROUPS.findIndex((group) => (
+  const hasRole = (role: string) => userRoles.includes(role);
+  const isCoreAdmin = ['super_admin', 'admin', 'staff'].some(hasRole);
+  const visibleNavGroups = isCoreAdmin
+    ? NAV_GROUPS
+    : hasRole('Product Manager')
+      ? NAV_GROUPS.filter((_, index) => index === 1)
+      : [];
+
+  const activeNavGroupKey = String(visibleNavGroups.findIndex((group) => (
     group.items.some((item) => (
       location.pathname === item.to
       || location.pathname.startsWith(`${item.to}/`)
@@ -197,7 +205,7 @@ export function AppShell({ children, userName }: { children: ReactNode; userName
         
         {/* Navigation */}
         <nav className="flex-1 py-6 flex flex-col gap-6 overflow-y-auto px-3">
-          {NAV_GROUPS.map((group, groupIdx) => {
+          {visibleNavGroups.map((group, groupIdx) => {
             const groupKey = String(groupIdx);
             const expanded = expandedNavGroups[groupKey] ?? true;
 

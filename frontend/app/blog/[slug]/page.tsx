@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import BlogPostPage from '@/components/BlogPostPage';
 import { API_BASE_URL } from '@/lib/api';
 import { formatDate } from '@/lib/date';
+import { buildPreviewQuery } from '@/lib/preview-query';
 import type { ComparisonData } from '@/components/blog/ComparisonTable';
 
 type ApiPost = {
@@ -80,7 +81,7 @@ async function fetchPost(slug: string, previewQuery?: string): Promise<ApiPost |
             : `${API_BASE_URL}/api/posts/${slug}`;
 
         const response = await fetch(url, {
-            // Preview links carry a one-time signature; never cache them.
+            // Preview links carry a temporary signature; never cache them.
             cache: previewQuery ? 'no-store' : undefined,
             next: previewQuery ? undefined : { revalidate: 60 },
         });
@@ -95,17 +96,6 @@ async function fetchPost(slug: string, previewQuery?: string): Promise<ApiPost |
         console.error('Failed to fetch blog post:', error);
         return null;
     }
-}
-
-function buildPreviewQuery(searchParams: Record<string, string | string[] | undefined>): string | undefined {
-    const expires = searchParams.expires;
-    const token = searchParams.preview_token;
-
-    if (typeof expires !== 'string' || typeof token !== 'string') {
-        return undefined;
-    }
-
-    return `expires=${encodeURIComponent(expires)}&preview_token=${encodeURIComponent(token)}`;
 }
 
 async function fetchRecentPosts(currentSlug: string): Promise<ApiPost[]> {

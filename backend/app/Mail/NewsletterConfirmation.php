@@ -8,13 +8,17 @@ use Illuminate\Mail\Mailables\Envelope;
 
 class NewsletterConfirmation extends Mailable
 {
-    public function __construct(public readonly string $email) {}
+    public function __construct(
+        public readonly string $email,
+        public readonly string $confirmationUrl,
+        public readonly string $unsubscribeUrl,
+    ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
             to: $this->email,
-            subject: 'You\'re subscribed to '.config('app.name').'!',
+            subject: 'Confirm your '.config('app.name').' subscription',
         );
     }
 

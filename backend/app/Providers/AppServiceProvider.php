@@ -6,16 +6,19 @@ use App\Lunar\DiscountTypes\FixedAmountOffPerUnit;
 use App\Lunar\ShippingModifiers\DefaultShippingModifier;
 use App\Models\Breed;
 use App\Models\OrderEvent;
-use App\Models\Solution;
 use App\Models\OrderShipment;
+use App\Models\Page;
 use App\Models\Post;
 use App\Models\Setting;
+use App\Models\Solution;
 use App\Observers\BrandCacheObserver;
 use App\Observers\LegacyProductObserver;
 use App\Observers\OrderObserver;
 use App\Observers\PostCacheObserver;
+use App\Observers\ProductBadgeIndexObserver;
 use App\Observers\ProductCacheObserver;
 use App\Observers\ProductVariantObserver;
+use App\Observers\SanitizeRichTextObserver;
 use App\Observers\SettingCacheObserver;
 use App\Payments\Gateways\AirwallexGateway;
 use App\Payments\Gateways\CashOnDeliveryGateway;
@@ -25,6 +28,7 @@ use App\Payments\Gateways\PingPongGateway;
 use App\Payments\Gateways\StripeCardGateway;
 use App\Payments\PaymentGatewayManager;
 use App\Support\MailConfigSync;
+use App\Support\ProductionMailConfiguration;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -67,6 +71,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        ProductionMailConfiguration::assertSafe($this->app);
+
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
@@ -76,15 +82,16 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Gate::before(function ($user, $ability) {
-            return $user->hasRole('super_admin') ? true : null;
+            return $user->hasAnyRole(['super_admin', 'admin', 'staff']) ? true : null;
         });
 
         Order::observe(OrderObserver::class);
         ProductVariant::observe(ProductVariantObserver::class);
         \App\Models\Legacy\Product::observe(LegacyProductObserver::class);
-        Product::observe(ProductCacheObserver::class);
+        Product::observe([ProductBadgeIndexObserver::class, ProductCacheObserver::class]);
         Brand::observe(BrandCacheObserver::class);
-        Post::observe(PostCacheObserver::class);
+        Post::observe([SanitizeRichTextObserver::class, PostCacheObserver::class]);
+        Page::observe(SanitizeRichTextObserver::class);
         Setting::observe(SettingCacheObserver::class);
         $this->app->make(ShippingModifiers::class)->add(DefaultShippingModifier::class);
         Order::resolveRelationUsing('orderEvents', function (Order $order) {
@@ -127,6 +134,30 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('auth', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('review-submit', function (Request $request) {
+            $identity = $request->user()?->id
+                ? 'user:'.$request->user()->id
+                : 'email:'.hash('sha256', strtolower(trim((string) $request->input('customer_email', ''))));
+
+            return [
+                Limit::perMinute(10)->by('review:ip:'.$request->ip()),
+                Limit::perMinute(5)->by('review:identity:'.$identity),
+            ];
+        });
+
+        RateLimiter::for('order-public', function (Request $request) {
+            $signal = implode('|', [
+                strtolower(trim((string) $request->input('email', ''))),
+                trim((string) $request->input('tracking_token', $request->query('session_id', ''))),
+                strtolower((string) $request->userAgent()),
+            ]);
+
+            return [
+                Limit::perMinute(10)->by('order-public:ip:'.$request->ip()),
+                Limit::perMinute(5)->by('order-public:signal:'.hash('sha256', $signal)),
+            ];
         });
 
         MailConfigSync::run();

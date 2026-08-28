@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from "lucide-react";
-import { getApiBaseUrl } from '@/lib/api';
+import { fetchApi } from '@/lib/fetchApi';
 import { useSettings } from '@/context/SettingsContext';
 
 
@@ -86,17 +86,16 @@ export default function ContactPage() {
         setErrorMessage('');
 
         try {
-            const res = await fetch(`${getApiBaseUrl()}/api/contact`, {
+            const res = await fetchApi('/api/contact', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                body: {
                     name: formData.name,
                     email: formData.email,
                     subject: formData.subject,
                     message: formData.message,
                     order_number: formData.orderNumber || undefined,
                     website: formData.website,
-                }),
+                },
             });
 
             const data = await res.json();

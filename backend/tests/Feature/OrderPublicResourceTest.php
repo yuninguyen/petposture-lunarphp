@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Lunar\FieldTypes\Text;
 use Lunar\Models\Channel;
 use Lunar\Models\Country;
@@ -23,11 +25,9 @@ use Lunar\Models\TaxZone;
 use Tests\TestCase;
 
 /**
- * /api/orders/track and /api/orders/retry-payment are public — gated only by
- * tracking_number + email, no auth. They must never leak staff-only or internal
- * gateway/refund bookkeeping data (regression coverage for the OrderResource ->
- * OrderPublicResource split — see commit history around bdf9bf9, which switched
- * /orders/track to the full admin-facing OrderResource).
+ * Public order access is gated by a random tracking token plus email. These
+ * endpoints must only return purpose-built minimal DTOs and never serialize the
+ * full staff-facing OrderResource.
  */
 class OrderPublicResourceTest extends TestCase
 {
@@ -39,6 +39,80 @@ class OrderPublicResourceTest extends TestCase
         Queue::fake();
         config()->set('services.stripe.secret', null);
         config()->set('services.stripe.webhook_secret', null);
+    }
+
+    public function test_tracking_requires_a_random_access_token_and_returns_only_the_tracking_dto(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $placeResponse->assertCreated();
+
+        $reference = (string) $placeResponse->json('order.reference');
+        $trackingToken = (string) $placeResponse->json('order.tracking_access_token');
+        $this->assertSame(64, strlen($trackingToken));
+        $this->assertDatabaseHas('lunar_orders', [
+            'reference' => $reference,
+            'tracking_access_token_hash' => hash('sha256', $trackingToken),
+        ]);
+        $this->assertDatabaseMissing('lunar_orders', [
+            'reference' => $reference,
+            'tracking_access_token_hash' => $trackingToken,
+        ]);
+
+        $this->postJson('/api/orders/track', [
+            'tracking_token' => $reference,
+            'email' => 'guest@petposture.com',
+        ])->assertNotFound()
+            ->assertJsonPath('message', 'Unable to access this order.');
+
+        $response = $this->postJson('/api/orders/track', [
+            'tracking_token' => $trackingToken,
+            'email' => 'guest@petposture.com',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'data' => [
+                    'reference',
+                    'status',
+                    'fulfillment_status',
+                    'carrier',
+                    'eta',
+                    'shipping_address' => ['city', 'state', 'postcode', 'country'],
+                ],
+            ])
+            ->assertJsonMissingPath('data.id')
+            ->assertJsonMissingPath('data.customer_email')
+            ->assertJsonMissingPath('data.lines')
+            ->assertJsonMissingPath('data.total')
+            ->assertJsonMissingPath('data.payment_status')
+            ->assertJsonMissingPath('data.payment_method')
+            ->assertJsonMissingPath('data.payment_intent_id')
+            ->assertJsonMissingPath('data.billing_address')
+            ->assertJsonMissingPath('data.shipping_address.line_one')
+            ->assertJsonMissingPath('data.shipping_address.phone');
+    }
+
+    public function test_authenticated_owner_can_rotate_tracking_access_for_an_account_order(): void
+    {
+        $user = User::factory()->create(['email' => 'owner@petposture.com']);
+        Sanctum::actingAs($user);
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'shipping' => ['email' => $user->email],
+        ]));
+        $orderId = $placeResponse->json('order.id');
+        $oldToken = $placeResponse->json('order.tracking_access_token');
+
+        $response = $this->postJson("/api/orders/{$orderId}/tracking-access");
+
+        $response->assertOk();
+        $newToken = (string) $response->json('tracking_access_token');
+        $this->assertSame(64, strlen($newToken));
+        $this->assertNotSame($oldToken, $newToken);
+
+        Sanctum::actingAs(User::factory()->create());
+        $this->postJson("/api/orders/{$orderId}/tracking-access")->assertNotFound();
     }
 
     public function test_track_endpoint_never_leaks_internal_or_staff_only_fields(): void
@@ -58,7 +132,7 @@ class OrderPublicResourceTest extends TestCase
         $order->update(['meta' => $meta]);
 
         $response = $this->postJson('/api/orders/track', [
-            'tracking_number' => $placeResponse->json('order.reference'),
+            'tracking_token' => $placeResponse->json('order.tracking_access_token'),
             'email' => 'guest@petposture.com',
         ]);
 
@@ -78,14 +152,16 @@ class OrderPublicResourceTest extends TestCase
         $response->assertJsonMissingPath('data.available_actions');
         $response->assertJsonMissingPath('data.tax_provider');
 
-        // Fields the frontend (checkout/success + track-order pages) actually renders
-        // must still be present — this must not regress into the old crash bug.
         $response->assertJsonPath('data.reference', $placeResponse->json('order.reference'))
-            ->assertJsonPath('data.payment_status', 'pending')
-            ->assertJsonPath('data.payment_method', 'cod')
             ->assertJsonStructure([
-                'data' => ['shipping_address', 'billing_address', 'lines', 'total', 'shipments'],
-            ]);
+                'data' => ['status', 'fulfillment_status', 'carrier', 'eta', 'shipping_address'],
+            ])
+            ->assertJsonMissingPath('data.customer_email')
+            ->assertJsonMissingPath('data.payment_status')
+            ->assertJsonMissingPath('data.payment_method')
+            ->assertJsonMissingPath('data.lines')
+            ->assertJsonMissingPath('data.total')
+            ->assertJsonMissingPath('data.billing_address');
     }
 
     public function test_retry_payment_endpoint_never_leaks_internal_or_staff_only_fields(): void
@@ -107,7 +183,7 @@ class OrderPublicResourceTest extends TestCase
         $order->update(['meta' => $meta]);
 
         $response = $this->postJson('/api/orders/retry-payment', [
-            'tracking_number' => $placeResponse->json('order.reference'),
+            'tracking_token' => $placeResponse->json('order.tracking_access_token'),
             'email' => 'guest@petposture.com',
         ]);
 
@@ -115,6 +191,106 @@ class OrderPublicResourceTest extends TestCase
         $response->assertJsonMissingPath('order.internal_note');
         $response->assertJsonMissingPath('order.order_events');
         $response->assertJsonMissingPath('order.available_actions');
+    }
+
+    public function test_payment_session_lookup_rotates_and_returns_a_new_tracking_token(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $oldToken = (string) $placeResponse->json('order.tracking_access_token');
+        $order = Order::query()->findOrFail($placeResponse->json('order.id'));
+        $meta = (array) $order->meta;
+        $meta['airwallex_session_id'] = 'awx_rotation_123';
+        $order->update(['meta' => $meta]);
+
+        $response = $this->getJson('/api/orders/by-payment-session?gateway=airwallex&session_id=awx_rotation_123');
+
+        $response->assertOk();
+        $newToken = (string) $response->json('data.tracking_access_token');
+        $this->assertSame(64, strlen($newToken));
+        $this->assertNotSame($oldToken, $newToken);
+        $this->assertSame(hash('sha256', $newToken), $order->fresh()->tracking_access_token_hash);
+
+        $this->postJson('/api/orders/track', [
+            'tracking_token' => $oldToken,
+            'email' => 'guest@petposture.com',
+        ])->assertNotFound();
+        $this->postJson('/api/orders/track', [
+            'tracking_token' => $newToken,
+            'email' => 'guest@petposture.com',
+        ])->assertOk();
+    }
+
+    public function test_expired_payment_session_cannot_rotate_tracking_access(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $order = Order::query()->findOrFail($placeResponse->json('order.id'));
+        $meta = (array) $order->meta;
+        $meta['airwallex_session_id'] = 'awx_expired_123';
+        $order->update([
+            'meta' => $meta,
+            'created_at' => now()->subHours(25),
+        ]);
+
+        $this->getJson('/api/orders/by-payment-session?gateway=airwallex&session_id=awx_expired_123')
+            ->assertNotFound()
+            ->assertJsonPath('message', 'Unable to access this order.');
+    }
+
+    public function test_retry_payment_rejects_expired_or_paid_orders_without_leaking_status(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'card',
+            'payment_context' => [
+                'intent_id' => 'pi_retry_eligibility_123',
+                'client_secret' => 'pi_retry_eligibility_123_secret',
+                'status' => 'requires_payment_method',
+            ],
+        ]));
+        $token = (string) $placeResponse->json('order.tracking_access_token');
+        $order = Order::query()->findOrFail($placeResponse->json('order.id'));
+
+        $order->forceFill(['tracking_access_token_expires_at' => now()->subMinute()])->save();
+        $this->postJson('/api/orders/retry-payment', [
+            'tracking_token' => $token,
+            'email' => 'guest@petposture.com',
+        ])->assertNotFound()
+            ->assertJsonPath('message', 'Unable to access this order.');
+
+        $meta = (array) $order->meta;
+        $meta['payment_status'] = 'paid';
+        $order->forceFill([
+            'tracking_access_token_expires_at' => now()->addDay(),
+            'meta' => $meta,
+        ])->save();
+
+        $this->postJson('/api/orders/retry-payment', [
+            'tracking_token' => $token,
+            'email' => 'guest@petposture.com',
+        ])->assertUnprocessable()
+            ->assertJsonPath('message', 'Payment retry is unavailable.');
+    }
+
+    public function test_public_order_rate_limit_uses_hashed_credentials_across_ips(): void
+    {
+        $payload = [
+            'tracking_token' => Str::random(64),
+            'email' => 'rate-limit@petposture.com',
+        ];
+
+        $subnet = hexdec(substr(hash('sha256', $payload['tracking_token']), 0, 2));
+
+        for ($attempt = 1; $attempt <= 5; $attempt++) {
+            $this->withServerVariables(['REMOTE_ADDR' => "10.{$subnet}.0.{$attempt}"])
+                ->postJson('/api/orders/track', $payload)
+                ->assertNotFound();
+        }
+
+        $this->withServerVariables(['REMOTE_ADDR' => "10.{$subnet}.0.99"])
+            ->postJson('/api/orders/track', $payload)
+            ->assertTooManyRequests();
     }
 
     private function createPurchasableVariant(): ProductVariant

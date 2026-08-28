@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Star, MessageSquare, ShieldCheck, User, Send } from 'lucide-react';
 import { Product } from '@/types/shop';
 import { getApiBaseUrl } from '@/lib/api';
+import { fetchApi } from '@/lib/fetchApi';
 
 interface Review {
     id: number;
@@ -26,8 +27,10 @@ export function ProductReviews({ product }: ProductReviewsProps) {
     // Form state
     const [formData, setFormData] = useState({
         customer_name: '',
+        customer_email: '',
         rating: 5,
-        comment: ''
+        comment: '',
+        website: '',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -52,14 +55,12 @@ export function ProductReviews({ product }: ProductReviewsProps) {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const backendHost = getApiBaseUrl();
-            const res = await fetch(`${backendHost}/api/products/${product.slug}/reviews`, {
+            const res = await fetchApi(`/api/products/${product.slug}/reviews`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: formData,
             });
             if (res.ok) {
-                setFormData({ customer_name: '', rating: 5, comment: '' });
+                setFormData({ customer_name: '', customer_email: '', rating: 5, comment: '', website: '' });
                 setIsFormOpen(false);
                 fetchReviews();
             }
@@ -93,7 +94,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                     ))}
                                 </div>
                                 <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest">
-                                    {reviews.length > 0 ? `Based on ${reviews.length} Verified Owners` : 'No reviews yet'}
+                                    {reviews.length > 0 ? `Based on ${reviews.length} approved reviews` : 'No reviews yet'}
                                 </p>
                             </div>
 
@@ -156,9 +157,32 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                         </div>
                                     </div>
                                     <div>
+                                        <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Email</label>
+                                        <input
+                                            required
+                                            type="email"
+                                            value={formData.customer_email}
+                                            onChange={e => setFormData({ ...formData, customer_email: e.target.value })}
+                                            className="w-full bg-zinc-50 border-none rounded-lg p-4 text-primary font-bold text-[14px] focus:ring-2 focus:ring-secondary/20 outline-none"
+                                            placeholder="you@example.com"
+                                        />
+                                    </div>
+                                    <div className="hidden" aria-hidden="true">
+                                        <label htmlFor="review-website">Website</label>
+                                        <input
+                                            id="review-website"
+                                            type="text"
+                                            tabIndex={-1}
+                                            autoComplete="off"
+                                            value={formData.website}
+                                            onChange={e => setFormData({ ...formData, website: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
                                         <label className="block text-xs font-black uppercase tracking-widest text-zinc-400 mb-2">Professional Feedback</label>
                                         <textarea
                                             required
+                                            maxLength={2000}
                                             rows={4}
                                             value={formData.comment}
                                             onChange={e => setFormData({ ...formData, comment: e.target.value })}
@@ -203,9 +227,11 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                                 </div>
                                                 <div>
                                                     <h5 className="text-[14px] font-black uppercase tracking-wide text-primary">{review.customer_name}</h5>
-                                                    <div className="flex items-center gap-2 text-xs font-bold text-green-500 uppercase tracking-widest mt-1">
-                                                        <ShieldCheck size={12} /> Verified Owner
-                                                    </div>
+                                                    {review.is_verified ? (
+                                                        <div className="flex items-center gap-2 text-xs font-bold text-green-500 uppercase tracking-widest mt-1">
+                                                            <ShieldCheck size={12} /> Verified Owner
+                                                        </div>
+                                                    ) : null}
                                                 </div>
                                             </div>
                                             <div className="flex gap-1">

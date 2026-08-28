@@ -49,6 +49,28 @@ class PostControllerParityTest extends TestCase
         ], $overrides);
     }
 
+    public function test_preview_url_uses_native_route_signature_for_draft_post(): void
+    {
+        config()->set('app.frontend_url', 'https://storefront.example.test');
+        $post = Post::query()->create($this->basePayload([
+            'slug' => 'native-preview-post',
+        ]));
+
+        $url = $this->getJson("/api/admin/posts/{$post->id}/preview-url")
+            ->assertOk()
+            ->json('url');
+        $parts = parse_url($url);
+        parse_str($parts['query'] ?? '', $query);
+
+        $this->assertSame('storefront.example.test', $parts['host'] ?? null);
+        $this->assertSame('/blog/native-preview-post', $parts['path'] ?? null);
+        $this->assertNotEmpty($query['signature'] ?? null);
+        $this->assertArrayNotHasKey('preview_token', $query);
+        $this->getJson('/api/posts/native-preview-post?'.http_build_query($query))
+            ->assertOk()
+            ->assertJsonPath('data.slug', 'native-preview-post');
+    }
+
     // --- Section C: published_at ---
 
     public function test_store_respects_explicit_published_at_when_publishing(): void

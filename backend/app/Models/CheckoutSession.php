@@ -10,14 +10,21 @@ class CheckoutSession extends Model
 {
     use HasFactory;
 
+    public ?string $guestProof = null;
+
     protected $fillable = [
         'token',
         'user_id',
+        'guest_proof_hash',
         'status',
         'payload',
         'totals',
         'payment_intent_id',
         'payment_client_secret',
+        'payment_intent_idempotency_key_hash',
+        'payment_intent_response',
+        'confirm_idempotency_key_hash',
+        'previous_token_hash',
         'currency',
         'order_reference',
         'expires_at',
@@ -26,6 +33,7 @@ class CheckoutSession extends Model
     protected $casts = [
         'payload' => 'array',
         'totals' => 'array',
+        'payment_intent_response' => 'array',
         'expires_at' => 'datetime',
     ];
 

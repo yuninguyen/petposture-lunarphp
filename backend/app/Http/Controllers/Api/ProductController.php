@@ -10,6 +10,7 @@ use App\Models\Review;
 use App\Models\User;
 use App\Notifications\NewReviewNotification;
 use App\Services\ProductRouteService;
+use App\Services\ReviewPurchaseEvidenceService;
 use App\Traits\HttpResponses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -51,18 +52,26 @@ class ProductController extends Controller
             );
         }
 
-        // Filter by breed-type tag (e.g. "flat-faced", "long-backed") — stored as a
-        // comma-separated attribute, so match the slug as a standalone LIKE token
         if ($request->filled('breed')) {
-            $breed = '%'.strtolower($request->input('breed')).'%';
-            $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$breed]);
+            $breed = Str::slug((string) $request->input('breed'));
+            $query->whereExists(function ($subquery) use ($breed) {
+                $subquery->selectRaw('1')
+                    ->from('breed_product')
+                    ->join('breeds', 'breeds.id', '=', 'breed_product.breed_id')
+                    ->whereColumn('breed_product.lunar_product_id', 'lunar_products.id')
+                    ->where('breeds.slug', $breed);
+            });
         }
 
-        // Filter by solution tag (e.g. "eating-digestion", "mobility-support") — same
-        // comma-separated attribute pattern as breed
         if ($request->filled('solution')) {
-            $solution = '%'.strtolower($request->input('solution')).'%';
-            $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$solution]);
+            $solution = Str::slug((string) $request->input('solution'));
+            $query->whereExists(function ($subquery) use ($solution) {
+                $subquery->selectRaw('1')
+                    ->from('solution_product')
+                    ->join('solutions', 'solutions.id', '=', 'solution_product.solution_id')
+                    ->whereColumn('solution_product.lunar_product_id', 'lunar_products.id')
+                    ->where('solutions.slug', $solution);
+            });
         }
 
         // Filter by brand slug
@@ -71,10 +80,8 @@ class ProductController extends Controller
             );
         }
 
-        // Filter by badge attribute (e.g. "Best Seller")
         if ($request->filled('badge')) {
-            $badge = '%'.strtolower($request->input('badge')).'%';
-            $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$badge]);
+            $query->where('badge_slug', Str::slug((string) $request->input('badge')));
         }
 
         // Search: Lunar product names/descriptions are stored in attribute_data JSON
@@ -201,7 +208,9 @@ class ProductController extends Controller
 
         return response()->json([
             'data' => Review::query()
+                ->select(['id', 'lunar_product_id', 'customer_name', 'rating', 'comment', 'is_verified', 'created_at'])
                 ->where('lunar_product_id', $product->id)
+                ->where('status', 'approved')
                 ->latest()
                 ->get(),
         ]);
@@ -216,17 +225,27 @@ class ProductController extends Controller
         }
 
         $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string',
+            'customer_name' => ['required', 'string', 'max:255'],
+            'customer_email' => [$request->user() ? 'nullable' : 'required', 'email', 'max:255'],
+            'rating' => ['required', 'integer', 'min:1', 'max:5'],
+            'comment' => ['required', 'string', 'max:2000'],
+            'website' => ['nullable', 'max:0'],
         ]);
+
+        $user = $request->user();
+        $email = strtolower((string) ($user?->email ?? $validated['customer_email']));
+        $orderLine = app(ReviewPurchaseEvidenceService::class)->find($product, $user, $email);
 
         $review = Review::query()->create([
             'lunar_product_id' => $product->id,
+            'user_id' => $user?->id,
             'customer_name' => $validated['customer_name'],
+            'customer_email' => $email,
+            'lunar_order_id' => $orderLine?->order_id,
+            'lunar_order_line_id' => $orderLine?->id,
             'rating' => $validated['rating'],
             'comment' => $validated['comment'],
-            'is_verified' => false,
+            'status' => 'pending',
         ]);
 
         Notification::send(
@@ -283,16 +302,16 @@ class ProductController extends Controller
             $query->where('brand_id', $brandId);
         }
 
-        $related = $query->inRandomOrder()->limit(8)->get();
+        $related = $query->orderBy('id')->limit(8)->get();
 
-        // Pad with random products if fewer than 4
+        // Pad deterministically if fewer than four related products are available.
         if ($related->count() < 4) {
             $existing = $related->pluck('id')->push($product->id);
             $filler = Product::where('status', 'published')
                 ->whereNotIn('id', $existing)
                 ->whereHas('variants')
                 ->with(['variants.prices', 'thumbnail', 'defaultUrl', 'urls', 'collections.defaultUrl'])
-                ->inRandomOrder()
+                ->orderBy('id')
                 ->limit(4 - $related->count())
                 ->get();
             $related = $related->concat($filler);
@@ -380,16 +399,7 @@ class ProductController extends Controller
 
     private function hasValidPreviewToken(Request $request, string $slug): bool
     {
-        $expires = $request->query('expires');
-        $token = $request->query('preview_token');
-
-        if (! $expires || ! $token || now()->timestamp > (int) $expires) {
-            return false;
-        }
-
-        $expected = hash_hmac('sha256', $slug.'|'.$expires, config('app.key'));
-
-        return hash_equals($expected, (string) $token);
+        return $request->hasValidSignature();
     }
 
     private function resolveCurrentPublishedProduct(string $slug): ?Product

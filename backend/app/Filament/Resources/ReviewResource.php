@@ -77,7 +77,15 @@ class ReviewResource extends Resource
                             ->required(),
                         Forms\Components\Toggle::make('is_verified')
                             ->label(__('Verified Purchase'))
-                            ->default(true),
+                            ->disabled(),
+                        Forms\Components\Select::make('status')
+                            ->label(__('Moderation Status'))
+                            ->options([
+                                'pending' => __('Pending'),
+                                'approved' => __('Approved'),
+                                'rejected' => __('Rejected'),
+                            ])
+                            ->required(),
                         Forms\Components\Textarea::make('comment')
                             ->label(__('Comment'))
                             ->required()
@@ -104,6 +112,14 @@ class ReviewResource extends Resource
                 Tables\Columns\IconColumn::make('is_verified')
                     ->boolean()
                     ->label(__('Verified')),
+                Tables\Columns\TextColumn::make('status')
+                    ->label(__('Status'))
+                    ->badge()
+                    ->color(fn (string $state) => match ($state) {
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        default => 'warning',
+                    }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('Created At'))
                     ->dateTime()

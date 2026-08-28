@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Search, ChevronRight, ArrowLeft, CheckCircle2 } from "lucide-react";
 import Header from "./Header";
 import Footer from "./Footer";
-import { getApiBaseUrl } from "@/lib/api";
+import { fetchApi } from "@/lib/fetchApi";
 
 type OrderLine = {
     id: number;
@@ -56,10 +56,10 @@ const fadeUp = {
 
 function RequestReturnContent() {
     const searchParams = useSearchParams();
-    const prefillRef = searchParams.get("ref") ?? "";
+    const prefillToken = searchParams.get("token") ?? "";
     const prefillEmail = searchParams.get("email") ?? "";
 
-    const [orderReference, setOrderReference] = useState(prefillRef);
+    const [trackingToken, setTrackingToken] = useState(prefillToken);
     const [email, setEmail] = useState(prefillEmail);
     const [order, setOrder] = useState<LookedUpOrder | null>(null);
     const [lookupError, setLookupError] = useState<string | null>(null);
@@ -75,25 +75,23 @@ function RequestReturnContent() {
     const [estimate, setEstimate] = useState<{ restocking_fee: number; estimated_refund: number } | null>(null);
     const [isEstimating, setIsEstimating] = useState(false);
 
-    const lookupOrder = async (reference: string, orderEmail: string) => {
+    const lookupOrder = async (accessToken: string, orderEmail: string) => {
         setIsLookingUp(true);
         setLookupError(null);
         setOrder(null);
 
         try {
-            const apiBase = getApiBaseUrl();
-            const res = await fetch(`${apiBase}/api/orders/track`, {
+            const res = await fetchApi('/api/orders/return-requests/options', {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    tracking_number: reference.trim(),
+                body: {
+                    tracking_token: accessToken.trim(),
                     email: orderEmail.trim(),
-                }),
+                },
             });
 
             if (!res.ok) {
                 const errorData = await res.json();
-                throw new Error(errorData.message || "Order not found. Please verify your order number and email.");
+                throw new Error(errorData.message || "Unable to access this order. Please verify your tracking token and email.");
             }
 
             const data = await res.json();
@@ -116,15 +114,15 @@ function RequestReturnContent() {
     };
 
     useEffect(() => {
-        if (prefillRef && prefillEmail) {
-            void lookupOrder(prefillRef, prefillEmail);
+        if (prefillToken && prefillEmail) {
+            void lookupOrder(prefillToken, prefillEmail);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleLookup = async (e: React.FormEvent) => {
         e.preventDefault();
-        await lookupOrder(orderReference, email);
+        await lookupOrder(trackingToken, email);
     };
 
     const productLines = order?.lines.filter((line) => line.type !== "shipping") ?? [];
@@ -140,20 +138,18 @@ function RequestReturnContent() {
         const timeout = setTimeout(async () => {
             setIsEstimating(true);
             try {
-                const apiBase = getApiBaseUrl();
                 const items = Object.entries(selectedQuantities).map(([lineId, quantity]) => ({
                     order_line_id: Number(lineId),
                     quantity,
                 }));
 
-                const res = await fetch(`${apiBase}/api/orders/return-requests/preview`, {
+                const res = await fetchApi('/api/orders/return-requests/preview', {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        order_reference: orderReference.trim(),
+                    body: {
+                        tracking_token: trackingToken.trim(),
                         email: email.trim(),
                         items,
-                    }),
+                    },
                 });
 
                 setEstimate(res.ok ? await res.json() : null);
@@ -201,17 +197,15 @@ function RequestReturnContent() {
         setIsSubmitting(true);
 
         try {
-            const apiBase = getApiBaseUrl();
-            const res = await fetch(`${apiBase}/api/orders/return-requests`, {
+            const res = await fetchApi('/api/orders/return-requests', {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    order_reference: orderReference.trim(),
+                body: {
+                    tracking_token: trackingToken.trim(),
                     email: email.trim(),
                     reason,
                     note: note.trim() || undefined,
                     items,
-                }),
+                },
             });
 
             if (!res.ok) {
@@ -255,7 +249,7 @@ function RequestReturnContent() {
                             transition={{ delay: 0.1 }}
                             className="text-[18px] md:text-[22px] text-zinc-500 max-w-2xl mx-auto leading-relaxed italic font-medium"
                         >
-                            Enter your order number and email to start a return.
+                            Enter your private tracking access token and email to start a return.
                         </motion.p>
                     </div>
                 </section>
@@ -295,12 +289,12 @@ function RequestReturnContent() {
                                     <form onSubmit={handleLookup} className="space-y-8">
                                         <div className="grid md:grid-cols-2 gap-6">
                                             <div className="space-y-3">
-                                                <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Order Number</label>
+                                                <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Tracking Access Token</label>
                                                 <input
                                                     type="text"
                                                     required
-                                                    value={orderReference}
-                                                    onChange={(e) => setOrderReference(e.target.value)}
+                                                    value={trackingToken}
+                                                    onChange={(e) => setTrackingToken(e.target.value)}
                                                     placeholder="e.g. 00000014"
                                                     className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium"
                                                 />

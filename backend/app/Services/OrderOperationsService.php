@@ -394,7 +394,7 @@ class OrderOperationsService
         $this->orderEventService->record($order, 'payment.refunded', $label, $detail);
 
         if ($order->customer_reference) {
-            SendOrderLifecycleEmailJob::dispatch($order->id, 'refunded');
+            SendOrderLifecycleEmailJob::dispatch($order->id, 'refunded', null, (string) $refund['refund_id']);
         }
 
         return $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);

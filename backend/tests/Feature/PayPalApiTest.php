@@ -95,12 +95,14 @@ class PayPalApiTest extends TestCase
         $response = $this->postJson('/api/checkout/place-order', $payload);
 
         $response->assertCreated()
-            ->assertJsonPath('order.payment_method', 'paypal')
-            ->assertJsonPath('order.payment_gateway', 'paypal')
-            ->assertJsonPath('order.payment_collection', 'popup')
-            ->assertJsonPath('order.payment_status', 'pending');
+            ->assertJsonMissingPath('order.payment_method')
+            ->assertJsonMissingPath('order.payment_gateway')
+            ->assertJsonMissingPath('order.payment_collection');
 
         $order = Order::find($response->json('order.id'));
+        $this->assertSame('paypal', $order->meta['payment_method'] ?? null);
+        $this->assertSame('paypal', $order->meta['payment_gateway'] ?? null);
+        $this->assertSame('popup', $order->meta['payment_collection'] ?? null);
         $this->assertSame('PAYPAL-TEST-ORDER-123', $order->meta['paypal_order_id'] ?? null);
     }
 

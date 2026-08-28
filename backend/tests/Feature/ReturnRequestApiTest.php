@@ -37,6 +37,8 @@ class ReturnRequestApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    private array $trackingTokensByReference = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -81,14 +83,14 @@ class ReturnRequestApiTest extends TestCase
         $response = $this->postJson('/api/orders/return-requests', $this->returnRequestPayload('MISSING-REF', 1));
 
         $response->assertNotFound()
-            ->assertJsonPath('message', 'No order found with these credentials.');
+            ->assertJsonPath('message', 'Unable to access this order.');
     }
 
     public function test_return_request_validates_required_fields(): void
     {
         $this->postJson('/api/orders/return-requests', [])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['order_reference', 'email', 'reason', 'items']);
+            ->assertJsonValidationErrors(['tracking_token', 'email', 'reason', 'items']);
     }
 
     public function test_return_request_rejects_order_not_delivered_or_shipped(): void
@@ -96,6 +98,7 @@ class ReturnRequestApiTest extends TestCase
         $variant = $this->createPurchasableVariant();
         $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
         $reference = $placeResponse->json('order.reference');
+        $this->trackingTokensByReference[$reference] = $placeResponse->json('order.tracking_access_token');
         $orderId = $placeResponse->json('order.id');
         $lineId = OrderLine::where('order_id', $orderId)->value('id');
 
@@ -187,6 +190,24 @@ class ReturnRequestApiTest extends TestCase
             ->assertJsonValidationErrors(['order']);
     }
 
+    public function test_return_request_requires_tracking_token_instead_of_order_reference(): void
+    {
+        ['reference' => $reference, 'tracking_token' => $trackingToken, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
+
+        $legacyPayload = $this->returnRequestPayload($reference, $lineId);
+        unset($legacyPayload['tracking_token']);
+        $legacyPayload['order_reference'] = $reference;
+
+        $this->postJson('/api/orders/return-requests', $legacyPayload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('tracking_token');
+
+        $this->postJson('/api/orders/return-requests', [
+            ...$this->returnRequestPayload($trackingToken, $lineId),
+            'tracking_token' => $trackingToken,
+        ])->assertCreated();
+    }
+
     public function test_return_request_allows_within_30_day_window(): void
     {
         ['order_id' => $orderId, 'reference' => $reference, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
@@ -201,35 +222,53 @@ class ReturnRequestApiTest extends TestCase
 
     public function test_track_flags_order_with_an_active_return_request(): void
     {
-        ['reference' => $reference, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
+        ['reference' => $reference, 'tracking_token' => $trackingToken, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
 
         $this->postJson('/api/orders/return-requests', $this->returnRequestPayload($reference, $lineId))
             ->assertCreated();
 
         $this->postJson('/api/orders/track', [
-            'tracking_number' => $reference,
+            'tracking_token' => $trackingToken,
             'email' => 'guest@petposture.com',
         ])->assertOk()->assertJsonPath('has_active_return_request', true);
     }
 
     public function test_track_does_not_flag_order_without_a_return_request(): void
     {
-        ['reference' => $reference] = $this->placeDeliveredOrder();
+        ['tracking_token' => $trackingToken] = $this->placeDeliveredOrder();
 
         $this->postJson('/api/orders/track', [
-            'tracking_number' => $reference,
+            'tracking_token' => $trackingToken,
             'email' => 'guest@petposture.com',
         ])->assertOk()->assertJsonPath('has_active_return_request', false);
+    }
+
+    public function test_return_options_are_token_gated_and_only_expose_returnable_lines(): void
+    {
+        ['tracking_token' => $trackingToken, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
+
+        $response = $this->postJson('/api/orders/return-requests/options', [
+            'tracking_token' => $trackingToken,
+            'email' => 'guest@petposture.com',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.status', 'delivered')
+            ->assertJsonPath('data.lines.0.id', (string) $lineId)
+            ->assertJsonMissingPath('data.customer_email')
+            ->assertJsonMissingPath('data.shipping_address')
+            ->assertJsonMissingPath('data.payment_status')
+            ->assertJsonMissingPath('data.total');
     }
 
     // ─── POST /api/orders/return-requests/preview ───────────────────────────
 
     public function test_preview_computes_refund_estimate_without_creating_a_request(): void
     {
-        ['reference' => $reference, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
+        ['tracking_token' => $trackingToken, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
 
         $response = $this->postJson('/api/orders/return-requests/preview', [
-            'order_reference' => $reference,
+            'tracking_token' => $trackingToken,
             'email' => 'guest@petposture.com',
             'items' => [
                 ['order_line_id' => $lineId, 'quantity' => 1],
@@ -247,7 +286,7 @@ class ReturnRequestApiTest extends TestCase
     public function test_preview_returns_not_found_for_unknown_credentials(): void
     {
         $this->postJson('/api/orders/return-requests/preview', [
-            'order_reference' => 'MISSING-REF',
+            'tracking_token' => 'MISSING-REF',
             'email' => 'guest@petposture.com',
             'items' => [
                 ['order_line_id' => 1, 'quantity' => 1],
@@ -474,7 +513,7 @@ class ReturnRequestApiTest extends TestCase
     private function returnRequestPayload(string $reference, int $orderLineId): array
     {
         return [
-            'order_reference' => $reference,
+            'tracking_token' => $this->trackingTokensByReference[$reference] ?? $reference,
             'email' => 'guest@petposture.com',
             'reason' => 'Wrong size',
             'note' => 'Please process quickly.',
@@ -522,6 +561,8 @@ class ReturnRequestApiTest extends TestCase
 
         $orderId = $placeResponse->json('order.id');
         $reference = $placeResponse->json('order.reference');
+        $trackingToken = $placeResponse->json('order.tracking_access_token');
+        $this->trackingTokensByReference[$reference] = $trackingToken;
 
         $order = Order::find($orderId);
         $meta = (array) ($order->meta ?? []);
@@ -537,7 +578,12 @@ class ReturnRequestApiTest extends TestCase
 
         $lineId = OrderLine::where('order_id', $orderId)->value('id');
 
-        return ['order_id' => $orderId, 'reference' => $reference, 'order_line_id' => $lineId];
+        return [
+            'order_id' => $orderId,
+            'reference' => $reference,
+            'tracking_token' => $trackingToken,
+            'order_line_id' => $lineId,
+        ];
     }
 
     private function makeAdmin(): User

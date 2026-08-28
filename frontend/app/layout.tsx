@@ -1,6 +1,7 @@
 import './globals.css';
 
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { Hanken_Grotesk, Lato, Dancing_Script } from 'next/font/google';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
@@ -72,6 +73,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   const { shopName, shopLogo, description, social, contact, googleAnalyticsId } = await getShopSettings();
 
   const sameAs = [social.facebook, social.instagram, social.twitter, social.tiktok, social.pinterest, social.youtube].filter(
@@ -115,6 +117,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {googleAnalyticsId ? <GoogleAnalytics measurementId={googleAnalyticsId} /> : null}
         <script
+          nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />

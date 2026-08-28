@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MailOpen, Lock, Ban, Tag } from "lucide-react";
-import { getApiBaseUrl } from "@/lib/api";
+import { fetchApi } from "@/lib/fetchApi";
 
 export default function Newsletter() {
   const [email, setEmail] = useState("");
@@ -18,10 +18,9 @@ export default function Newsletter() {
     setIsSubmitting(true);
     setError("");
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/newsletter/subscribe`, {
+      const res = await fetchApi('/api/newsletter/subscribe', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: { email },
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -95,8 +94,8 @@ export default function Newsletter() {
             </>
           ) : (
             <div className="rounded-[4px] border border-[#38c68b40] bg-white px-6 py-[18px]">
-              <p className="mb-1 text-[15px] font-bold text-primary">🎉 You&apos;re in! Check your inbox.</p>
-              <p className="text-[13px] text-primary/60">Your 10% discount code is on its way.</p>
+              <p className="mb-1 text-[15px] font-bold text-primary">Confirm your email to join.</p>
+              <p className="text-[13px] text-primary/60">Your 10% first-order offer becomes available after confirmation.</p>
             </div>
           )}
         </div>

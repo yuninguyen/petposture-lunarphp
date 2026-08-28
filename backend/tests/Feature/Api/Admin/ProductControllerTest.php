@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Laravel\Sanctum\Sanctum;
 use Lunar\FieldTypes\Text;
 use Lunar\FieldTypes\TranslatedText;
@@ -21,7 +22,6 @@ use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Language;
 use Lunar\Models\OrderLine;
-use Lunar\Models\Price;
 use Lunar\Models\Product;
 use Lunar\Models\ProductAssociation;
 use Lunar\Models\ProductOption;
@@ -292,6 +292,29 @@ class ProductControllerTest extends TestCase
         $this->assertTrue((bool) $remaining->first()->getCustomProperty('primary'));
     }
 
+    public function test_product_description_is_sanitized_before_persistence(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->product('Sanitized product', 'draft', null, [
+            'description' => new Text('Old description'),
+        ]);
+
+        $this->putJson("/api/admin/products/{$product->id}", [
+            'status' => 'draft',
+            'attributes' => [
+                'name' => 'Sanitized product',
+                'description' => '<p>Safe <strong>content</strong><img src="/pet.jpg" onerror="alert(1)"><a href="javascript:alert(2)">click</a></p><script>alert(3)</script><iframe src="https://evil.example/embed"></iframe>',
+            ],
+        ])->assertOk();
+
+        $description = (string) $product->fresh()->attribute_data->get('description')->getValue();
+        $this->assertStringContainsString('<strong>content</strong>', $description);
+        $this->assertStringNotContainsString('<script', $description);
+        $this->assertStringNotContainsString('onerror', $description);
+        $this->assertStringNotContainsString('javascript:', $description);
+        $this->assertStringNotContainsString('<iframe', $description);
+    }
+
     public function test_product_seo_metadata_round_trips_through_the_existing_polymorphic_table(): void
     {
         $this->actingAsAdmin();
@@ -485,7 +508,8 @@ class ProductControllerTest extends TestCase
         $this->assertSame('storefront.example.test', $parts['host'] ?? null);
         $this->assertSame('/shop/categories/draft-preview-product', $parts['path'] ?? null);
         $this->assertGreaterThan(now()->addHours(23)->timestamp, (int) ($query['expires'] ?? 0));
-        $this->assertNotEmpty($query['preview_token'] ?? null);
+        $this->assertNotEmpty($query['signature'] ?? null);
+        $this->assertArrayNotHasKey('preview_token', $query);
 
         $previewQuery = http_build_query($query);
         $this->getJson('/api/products/draft-preview-product?'.$previewQuery)
@@ -495,15 +519,13 @@ class ProductControllerTest extends TestCase
 
         $this->getJson('/api/products/draft-preview-product?'.http_build_query([
             'expires' => $query['expires'],
-            'preview_token' => str_repeat('0', 64),
+            'signature' => str_repeat('0', 64),
         ]))->assertNotFound();
 
-        $expired = now()->subMinute()->timestamp;
-        $expiredToken = hash_hmac('sha256', 'draft-preview-product|'.$expired, config('app.key'));
-        $this->getJson('/api/products/draft-preview-product?'.http_build_query([
-            'expires' => $expired,
-            'preview_token' => $expiredToken,
-        ]))->assertNotFound();
+        $expiredUrl = URL::temporarySignedRoute('products.show', now()->subMinute(), [
+            'slug' => 'draft-preview-product',
+        ]);
+        $this->getJson($expiredUrl)->assertNotFound();
     }
 
     public function test_product_associations_are_written_and_removed_synchronously_for_all_supported_types(): void

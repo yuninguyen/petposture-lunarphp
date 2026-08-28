@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { AppShell } from '@/layouts/AppShell';
 import { LoginPage } from '@/features/auth/LoginPage';
-import { AdminUser, fetchCurrentUser, getToken, isAdminRole } from '@/lib/auth';
+import { AdminUser, fetchCurrentUser, isAdminRole } from '@/lib/auth';
 import { Toaster } from 'react-hot-toast';
 
 // Lazy-load all page components → Vite creates separate chunks per route
@@ -40,20 +40,26 @@ function PageLoader() {
 export default function App() {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [authFailed, setAuthFailed] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(Boolean(getToken()));
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    if (!loggedIn || user) return;
     fetchCurrentUser()
       .then((u) => {
         if (isAdminRole(u.roles)) {
           setUser(u);
+          setLoggedIn(true);
         } else {
           setAuthFailed(true);
         }
       })
-      .catch(() => setAuthFailed(true));
-  }, [loggedIn, user]);
+      .catch(() => setAuthFailed(true))
+      .finally(() => setCheckingAuth(false));
+  }, []);
+
+  if (checkingAuth) {
+    return <PageLoader />;
+  }
 
   if (!loggedIn || authFailed) {
     return (
@@ -93,9 +99,9 @@ export default function App() {
         }}
       />
       <BrowserRouter>
-        <AppShell userName={user?.name ?? ''}>
+        <AppShell userName={user?.name ?? ''} userRoles={user?.roles ?? []}>
           <Suspense fallback={<PageLoader />}>
-            <AppRoutes />
+            <AppRoutes userRoles={user?.roles ?? []} />
           </Suspense>
         </AppShell>
       </BrowserRouter>
@@ -103,39 +109,47 @@ export default function App() {
   );
 }
 
-function AppRoutes() {
+function AppRoutes({ userRoles }: { userRoles: string[] }) {
   const location = useLocation();
+  const isCoreAdmin = userRoles.some((role) => ['super_admin', 'admin', 'staff'].includes(role));
+  const canManageProducts = isCoreAdmin || userRoles.includes('Product Manager');
+  const home = canManageProducts && !isCoreAdmin ? '/products' : '/posts';
+
+  if (!isCoreAdmin && !canManageProducts) {
+    return <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">Use the Filament admin panel for order and support workflows.</div>;
+  }
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/posts" replace />} />
-      <Route path="/posts" element={<PostsListPage />} />
-      <Route path="/posts/new" element={<PostFormPage key={location.pathname} />} />
-      <Route path="/posts/:id" element={<PostFormPage key={location.pathname} />} />
-      <Route path="/blog-categories" element={<BlogCategoriesList />} />
-      <Route path="/comments" element={<CommentsList />} />
-      <Route path="/tags" element={<TagsList />} />
-      <Route path="/seo-social" element={<SeoSocialPage />} />
-      <Route path="/legal-policies" element={<PagesListPage />} />
-      <Route path="/legal-policies/create" element={<PageFormPage key={location.pathname} />} />
-      <Route path="/legal-policies/:id" element={<PageFormPage key={location.pathname} />} />
-      {/* Breeds module */}
-      <Route path="/breeds" element={<BreedsListPage />} />
-      <Route path="/breeds/new" element={<BreedFormPage key={location.pathname} />} />
-      <Route path="/breeds/:id" element={<BreedFormPage key={location.pathname} />} />
-
-      <Route path="/product-types" element={<ProductTypesPage />} />
-      <Route path="/custom-fields" element={<CustomFieldsPage />} />
-      <Route path="/brands" element={<BrandsPage />} />
-      <Route path="/collection-groups" element={<CollectionGroupsPage />} />
-      <Route path="/collections" element={<CollectionsPage />} />
-      <Route path="/products" element={<ProductsListPage />} />
-      <Route path="/products/:id" element={<ProductFormPage key={location.pathname} />} />
-
-      {/* Solutions module */}
-      <Route path="/solutions" element={<SolutionsListPage />} />
-      <Route path="/solutions/new" element={<SolutionFormPage key={location.pathname} />} />
-      <Route path="/solutions/:id" element={<SolutionFormPage key={location.pathname} />} />
+      <Route path="/" element={<Navigate to={home} replace />} />
+      {isCoreAdmin && <>
+        <Route path="/posts" element={<PostsListPage />} />
+        <Route path="/posts/new" element={<PostFormPage key={location.pathname} />} />
+        <Route path="/posts/:id" element={<PostFormPage key={location.pathname} />} />
+        <Route path="/blog-categories" element={<BlogCategoriesList />} />
+        <Route path="/comments" element={<CommentsList />} />
+        <Route path="/tags" element={<TagsList />} />
+        <Route path="/seo-social" element={<SeoSocialPage />} />
+        <Route path="/legal-policies" element={<PagesListPage />} />
+        <Route path="/legal-policies/create" element={<PageFormPage key={location.pathname} />} />
+        <Route path="/legal-policies/:id" element={<PageFormPage key={location.pathname} />} />
+      </>}
+      {canManageProducts && <>
+        <Route path="/breeds" element={<BreedsListPage />} />
+        <Route path="/breeds/new" element={<BreedFormPage key={location.pathname} />} />
+        <Route path="/breeds/:id" element={<BreedFormPage key={location.pathname} />} />
+        <Route path="/product-types" element={<ProductTypesPage />} />
+        <Route path="/custom-fields" element={<CustomFieldsPage />} />
+        <Route path="/brands" element={<BrandsPage />} />
+        <Route path="/collection-groups" element={<CollectionGroupsPage />} />
+        <Route path="/collections" element={<CollectionsPage />} />
+        <Route path="/products" element={<ProductsListPage />} />
+        <Route path="/products/:id" element={<ProductFormPage key={location.pathname} />} />
+        <Route path="/solutions" element={<SolutionsListPage />} />
+        <Route path="/solutions/new" element={<SolutionFormPage key={location.pathname} />} />
+        <Route path="/solutions/:id" element={<SolutionFormPage key={location.pathname} />} />
+      </>}
+      <Route path="*" element={<Navigate to={home} replace />} />
     </Routes>
   );
 }

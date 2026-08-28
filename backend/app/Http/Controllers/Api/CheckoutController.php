@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\ErrorCode;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\UpsertCheckoutSessionRequest;
 use App\Http\Resources\Api\CheckoutSessionResource;
+use App\Http\Resources\Api\OrderCreatedResource;
 use App\Http\Resources\Api\OrderResource;
+use App\Models\CheckoutSession;
 use App\Models\UserAddress;
 use App\Services\AirwallexService;
 use App\Services\ApplyCouponService;
@@ -28,6 +31,7 @@ use Illuminate\Validation\ValidationException;
 use Lunar\Models\Discount;
 use Lunar\Models\Order;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class CheckoutController extends Controller
 {
@@ -137,7 +141,7 @@ class CheckoutController extends Controller
 
         try {
             $order = $this->checkoutService->placeOrder($validated, $userId, $request->ip());
-            $result = new OrderResource($order);
+            $result = new OrderCreatedResource($order);
 
             if ($idempotencyKey) {
                 Cache::put($cacheKey, $result, now()->addHours(24));
@@ -203,58 +207,87 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function upsertSession(Request $request)
+    public function upsertSession(UpsertCheckoutSessionRequest $request)
     {
-        $validated = Validator::make($request->all(), [
-            'token' => 'nullable|uuid',
-            'items' => 'nullable|array',
-            'items.*.variantId' => 'required_with:items|exists:lunar_product_variants,id',
-            'items.*.quantity' => 'required_with:items|integer|min:1',
-            'shipping' => 'nullable|array',
-            'billing_same_as_shipping' => 'nullable|boolean',
-            'billing' => 'nullable|array',
-            'shipping_method' => 'nullable|string',
-            'payment_method' => 'nullable|string',
-            'payment_context' => 'nullable|array',
-            'coupon_code' => 'nullable|string',
-            'customer_note' => 'nullable|string|max:2000',
-            'currency' => 'nullable|string|max:10',
-        ])->validate();
+        $validated = $request->checkoutPayload();
+        $token = $validated['token'] ?? null;
+        unset($validated['token']);
+
+        if ($token) {
+            $existingSession = $this->checkoutSessionService->getByToken($token);
+            $this->authorizeSessionOwner($request, $existingSession);
+        }
 
         $session = $this->checkoutSessionService->upsert(
-            $validated['token'] ?? null,
+            $token,
             $validated,
             auth('sanctum')->id(),
         );
 
-        return response()->json([
+        $response = response()->json([
             'success' => true,
             'session' => new CheckoutSessionResource($session),
         ]);
+
+        if ($session->guestProof) {
+            $cookieName = $this->checkoutSessionService->proofCookieName($session->token);
+            $response->cookie(
+                $cookieName,
+                $this->checkoutSessionService->signGuestProof($session->guestProof),
+                24 * 60,
+                '/api',
+                null,
+                $request->isSecure() || app()->environment('production'),
+                true,
+                false,
+                'lax',
+            );
+        }
+
+        return $response;
     }
 
-    public function showSession(string $token)
+    public function showSession(Request $request, string $token)
     {
+        $session = $this->checkoutSessionService->getByToken($token);
+        $cookieName = $this->checkoutSessionService->proofCookieName($token);
+        $isOwner = $this->checkoutSessionService->isOwnedByContext(
+            $session,
+            auth('sanctum')->id(),
+            $request->cookie($cookieName),
+        );
+
+        if ($session->user_id && ! $isOwner) {
+            abort(Response::HTTP_FORBIDDEN);
+        }
+
         return response()->json([
             'success' => true,
-            'session' => new CheckoutSessionResource(
-                $this->checkoutSessionService->getByToken($token)
-            ),
+            'session' => $isOwner
+                ? new CheckoutSessionResource($session)
+                : [
+                    'token' => $session->token,
+                    'status' => $session->status,
+                    'expires_at' => optional($session->expires_at)?->toIso8601String(),
+                ],
         ]);
     }
 
-    public function prepareSessionPaymentIntent(string $token)
+    public function prepareSessionPaymentIntent(Request $request, string $token)
     {
+        $session = $this->checkoutSessionService->getByToken($token);
+        $this->authorizeSessionOwner($request, $session);
+        $idempotencyKey = $this->idempotencyKey($request);
+
         try {
-            $session = $this->checkoutSessionService->getByToken($token);
-            $intent = $this->checkoutSessionService->preparePaymentIntent($session);
+            $intent = $this->checkoutSessionService->preparePaymentIntent($session, $idempotencyKey);
 
             return response()->json([
                 'success' => true,
                 'payment_intent' => $intent,
                 'session' => new CheckoutSessionResource($session->fresh()),
             ]);
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException|HttpExceptionInterface $e) {
             throw $e;
         } catch (\Throwable $e) {
             Log::error("Session Payment Intent Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
@@ -267,20 +300,21 @@ class CheckoutController extends Controller
         }
     }
 
-    public function confirmSession(string $token)
+    public function confirmSession(Request $request, string $token)
     {
+        $session = $this->checkoutSessionService->getForConfirmation($token);
+        $this->authorizeSessionOwner($request, $session, $token);
+        $idempotencyKey = $this->idempotencyKey($request);
+
         try {
-            $session = $this->checkoutSessionService->getByToken($token);
-            $order = $this->checkoutSessionService->confirm($session);
+            $order = $this->checkoutSessionService->confirm($session, $idempotencyKey);
 
             return response()->json([
                 'success' => true,
-                'order' => new OrderResource($order),
+                'order' => new OrderCreatedResource($order),
                 'session' => new CheckoutSessionResource($session->fresh()),
             ], 201);
-        } catch (ValidationException $e) {
-            throw $e;
-        } catch (ModelNotFoundException $e) {
+        } catch (ValidationException|ModelNotFoundException|HttpExceptionInterface $e) {
             throw $e;
         } catch (\Throwable $e) {
             Log::error("Checkout Session Confirmation Failed: {$e->getMessage()} at {$e->getFile()}:{$e->getLine()}");
@@ -500,6 +534,31 @@ class CheckoutController extends Controller
         return $this->prepareRedirectSession($request, 'pingpong', function (int $amount, string $currency, string $reference, string $returnUrl) use ($request) {
             return $this->pingPongService->createCheckoutSession($amount, $currency, $reference, $returnUrl, (string) $request->ip());
         });
+    }
+
+    private function idempotencyKey(Request $request): string
+    {
+        $validated = Validator::make([
+            'idempotency_key' => $request->header('Idempotency-Key'),
+        ], [
+            'idempotency_key' => ['required', 'string', 'max:255', 'regex:/^[\x20-\x7E]+$/'],
+        ])->validate();
+
+        return $validated['idempotency_key'];
+    }
+
+    private function authorizeSessionOwner(Request $request, CheckoutSession $session, ?string $contextToken = null): void
+    {
+        $cookieName = $this->checkoutSessionService->proofCookieName($contextToken ?? $session->token);
+
+        abort_unless(
+            $this->checkoutSessionService->isOwnedByContext(
+                $session,
+                auth('sanctum')->id(),
+                $request->cookie($cookieName),
+            ),
+            Response::HTTP_FORBIDDEN,
+        );
     }
 
     /**

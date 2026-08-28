@@ -2,11 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Models\Breed;
 use App\Models\Category;
 use App\Models\Legacy\Product as LegacyProduct;
 use App\Models\ProductSyncMapping;
+use App\Models\Solution;
 use App\Services\ProductSyncService;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Lunar\Models\Channel;
 use Lunar\Models\Country;
 use Lunar\Models\Currency;
@@ -133,6 +137,131 @@ class ProductCatalogApiTest extends TestCase
         $this->assertCount(1, $response->json('data'));
     }
 
+    public function test_every_public_product_payload_traces_to_lunar_and_ignores_legacy_only_rows(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $category = Category::query()->create([
+            'name' => 'Invariant products',
+            'slug' => 'invariant-products',
+            'type' => 'product',
+        ]);
+        $source = LegacyProduct::query()->create([
+            'category_id' => $category->id,
+            'name' => 'Lunar-backed product',
+            'slug' => 'lunar-backed-product',
+            'price' => 49.99,
+            'stock_quantity' => 5,
+            'is_active' => true,
+        ]);
+        $lunarProduct = app(ProductSyncService::class)->syncFromLegacy($source);
+        $this->assertNotNull($lunarProduct);
+
+        $legacyOnly = new LegacyProduct([
+            'category_id' => $category->id,
+            'name' => 'Legacy-only product',
+            'slug' => 'legacy-only-product',
+            'price' => 19.99,
+            'stock_quantity' => 5,
+            'is_active' => true,
+        ]);
+        $legacyOnly->saveQuietly();
+
+        $response = $this->getJson('/api/products')->assertOk();
+        $productIds = collect($response->json('data'))->pluck('id')->map(fn ($id) => (int) $id);
+
+        $this->assertNotEmpty($productIds);
+        $this->assertSame(
+            $productIds->count(),
+            LunarProduct::query()->whereKey($productIds)->count(),
+            'Every public product must reference lunar_products.id.'
+        );
+        $response->assertJsonMissing(['slug' => 'legacy-only-product']);
+
+        $this->getJson("/api/products/{$lunarProduct->id}")
+            ->assertOk()
+            ->assertJsonPath('data.id', $lunarProduct->id);
+        $this->getJson('/api/products/legacy-only-product')->assertNotFound();
+    }
+
+    public function test_product_filters_use_normalized_breed_and_solution_pivots(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $category = Category::query()->create([
+            'name' => 'Filter products',
+            'slug' => 'filter-products',
+            'type' => 'product',
+        ]);
+        $breedProduct = $this->syncLegacyProduct($category, 'Breed match', 'breed-match');
+        $solutionProduct = $this->syncLegacyProduct($category, 'Solution match', 'solution-match');
+        $unrelatedProduct = $this->syncLegacyProduct($category, 'Unrelated', 'unrelated');
+        $breed = Breed::query()->create([
+            'name' => 'Flat faced',
+            'slug' => 'flat-faced',
+            'body_type' => 'brachycephalic',
+        ]);
+        $solution = Solution::query()->create([
+            'name' => 'Mobility support',
+            'slug' => 'mobility-support',
+        ]);
+        $breed->products()->attach($breedProduct->id);
+        $solution->products()->attach($solutionProduct->id);
+
+        $breedIds = collect($this->getJson('/api/products?breed=flat-faced')->assertOk()->json('data'))->pluck('id');
+        $solutionIds = collect($this->getJson('/api/products?solution=mobility-support')->assertOk()->json('data'))->pluck('id');
+
+        $this->assertSame([$breedProduct->id], $breedIds->all());
+        $this->assertSame([$solutionProduct->id], $solutionIds->all());
+        $this->assertNotContains($unrelatedProduct->id, $breedIds);
+        $this->assertNotContains($unrelatedProduct->id, $solutionIds);
+    }
+
+    public function test_badge_filter_uses_an_exact_normalized_index_value(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $category = Category::query()->create([
+            'name' => 'Badge products',
+            'slug' => 'badge-products',
+            'type' => 'product',
+        ]);
+        $bestSeller = $this->syncLegacyProduct($category, 'Best seller', 'best-seller', 'Best Seller');
+        $notBestSeller = $this->syncLegacyProduct($category, 'Not best seller', 'not-best-seller', 'Not Best Seller');
+
+        $this->assertSame('best-seller', $bestSeller->fresh()?->badge_slug);
+        $this->assertSame('not-best-seller', $notBestSeller->fresh()?->badge_slug);
+
+        $ids = collect($this->getJson('/api/products?badge=Best%20Seller')->assertOk()->json('data'))->pluck('id');
+
+        $this->assertSame([$bestSeller->id], $ids->all());
+    }
+
+    public function test_related_products_use_stable_ordering_without_database_randomization(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $category = Category::query()->create([
+            'name' => 'Related products',
+            'slug' => 'related-products',
+            'type' => 'product',
+        ]);
+        $products = collect(range(1, 6))->map(fn (int $number) => $this->syncLegacyProduct(
+            $category,
+            "Related {$number}",
+            "related-{$number}"
+        ));
+        $queries = [];
+        DB::listen(function (QueryExecuted $query) use (&$queries): void {
+            $queries[] = strtolower($query->sql);
+        });
+
+        $first = collect($this->getJson('/api/products/'.$products->first()->id.'/related')->assertOk()->json('data'))
+            ->pluck('id')->all();
+        $second = collect($this->getJson('/api/products/'.$products->first()->id.'/related')->assertOk()->json('data'))
+            ->pluck('id')->all();
+
+        $this->assertSame($first, $second);
+        $this->assertSame(collect($first)->sort()->values()->all(), $first);
+        $this->assertFalse(collect($queries)->contains(fn (string $sql) => str_contains($sql, 'random(')));
+    }
+
     public function test_deleting_legacy_product_archives_the_synced_lunar_product(): void
     {
         $this->setUpLunarPrerequisites();
@@ -163,6 +292,28 @@ class ProductCatalogApiTest extends TestCase
             'legacy_product_id' => $legacyProduct->id,
         ]);
         $this->assertSame('draft', LunarProduct::query()->find($lunarProduct->id)?->status);
+    }
+
+    private function syncLegacyProduct(
+        Category $category,
+        string $name,
+        string $slug,
+        ?string $badge = null
+    ): LunarProduct {
+        $legacyProduct = LegacyProduct::query()->create([
+            'category_id' => $category->id,
+            'name' => $name,
+            'slug' => $slug,
+            'price' => 25,
+            'stock_quantity' => 5,
+            'badge' => $badge,
+            'is_active' => true,
+        ]);
+        $lunarProduct = app(ProductSyncService::class)->syncFromLegacy($legacyProduct);
+
+        $this->assertNotNull($lunarProduct);
+
+        return $lunarProduct;
     }
 
     private function setUpLunarPrerequisites(): void

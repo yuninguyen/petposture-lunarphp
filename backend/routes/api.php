@@ -66,7 +66,7 @@ Route::post('/register', [AuthController::class, 'register'])->middleware('throt
 
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/facets', [ProductController::class, 'facets']);
-Route::get('/products/{slug}', [ProductController::class, 'show']);
+Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/products/{slug}/reviews', [ProductController::class, 'reviews']);
 Route::get('/products/{slug}/related', [ProductController::class, 'related']);
 Route::get('/brands', [BrandController::class, 'index']);
@@ -75,12 +75,13 @@ Route::get('/breeds', [BreedController::class, 'index']);
 Route::get('/breeds/{slug}', [BreedController::class, 'show']);
 Route::get('/solutions', [SolutionController::class, 'index']);
 Route::get('/solutions/{slug}', [SolutionController::class, 'show']);
-Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('throttle:api-write');
-Route::post('/orders/track', [OrderController::class, 'track'])->middleware('throttle:10,1');
-Route::get('/orders/by-payment-session', [OrderController::class, 'byPaymentSession'])->middleware('throttle:10,1');
-Route::post('/orders/retry-payment', [OrderController::class, 'retryPayment'])->middleware('throttle:10,1');
-Route::post('/orders/return-requests', [ReturnRequestController::class, 'store'])->middleware('throttle:10,1');
-Route::post('/orders/return-requests/preview', [ReturnRequestController::class, 'preview'])->middleware('throttle:api-write');
+Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('throttle:review-submit');
+Route::post('/orders/track', [OrderController::class, 'track'])->middleware('throttle:order-public');
+Route::get('/orders/by-payment-session', [OrderController::class, 'byPaymentSession'])->middleware('throttle:order-public');
+Route::post('/orders/retry-payment', [OrderController::class, 'retryPayment'])->middleware('throttle:order-public');
+Route::post('/orders/return-requests/options', [ReturnRequestController::class, 'options'])->middleware('throttle:order-public');
+Route::post('/orders/return-requests', [ReturnRequestController::class, 'store'])->middleware('throttle:order-public');
+Route::post('/orders/return-requests/preview', [ReturnRequestController::class, 'preview'])->middleware('throttle:order-public');
 Route::get('/api-test', function () {
     return ['status' => 'ok', 'v' => 3];
 });
@@ -110,7 +111,7 @@ Route::post('/webhooks/pingpong', [CheckoutController::class, 'pingpongWebhook']
 Route::post('/webhooks/aftership', [AfterShipWebhookController::class, 'handle']);
 
 Route::get('/posts', [ContentController::class, 'posts']);
-Route::get('/posts/{slug}', [ContentController::class, 'post']);
+Route::get('/posts/{slug}', [ContentController::class, 'post'])->name('posts.show');
 Route::get('/posts/{slug}/comments', [CommentController::class, 'index']);
 Route::post('/posts/{slug}/comments', [CommentController::class, 'store'])->middleware('throttle:api-write');
 Route::get('/categories', [ContentController::class, 'categories']);
@@ -128,7 +129,7 @@ Route::delete('/cart/lines/{lineId}', [CartController::class, 'removeLine'])->mi
 Route::delete('/cart', [CartController::class, 'clear'])->middleware('throttle:api-write');
 
 Route::prefix('/admin')
-    ->middleware(['auth:sanctum', 'role:super_admin|admin|staff'])
+    ->middleware(['auth:sanctum', 'role:super_admin|admin|staff|Product Manager|Order Manager|Support', 'admin.permission'])
     ->group(function () {
         Route::get('/brands', [AdminBrandController::class, 'index']);
         Route::post('/brands', [AdminBrandController::class, 'store']);
@@ -269,6 +270,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Checkout & Orders
     Route::get('/orders', [OrderController::class, 'index']);
+    Route::post('/orders/{id}/tracking-access', [OrderController::class, 'trackingAccess']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::patch('/orders/{id}', [OrderController::class, 'update']);
     Route::post('/orders/{id}/actions/{action}', [OrderController::class, 'performAction']);

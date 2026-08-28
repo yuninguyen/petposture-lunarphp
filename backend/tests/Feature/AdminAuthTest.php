@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -64,25 +65,69 @@ class AdminAuthTest extends TestCase
         ])->assertUnprocessable();
     }
 
-    public function test_register_creates_user_and_returns_token(): void
+    public function test_login_creates_a_session_without_issuing_a_bearer_token(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'session@example.com',
+            'password' => bcrypt('correct-password'),
+        ]);
+
+        $this->withHeader('Origin', 'http://localhost:3000')
+            ->postJson('/api/login', [
+                'email' => 'session@example.com',
+                'password' => 'correct-password',
+            ])->assertOk()
+            ->assertJsonPath('data.user.email', 'session@example.com')
+            ->assertJsonMissingPath('data.token');
+
+        $this->assertAuthenticatedAs($user, 'web');
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_register_creates_an_authenticated_session_without_a_bearer_token(): void
     {
         Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
 
-        $this->postJson('/api/register', [
-            'name' => 'Jane Doe',
-            'email' => 'jane@example.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-        ])->assertOk()
+        $this->withHeader('Origin', 'http://localhost:3000')
+            ->postJson('/api/register', [
+                'name' => 'Jane Doe',
+                'email' => 'jane@example.com',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+            ])->assertOk()
             ->assertJsonPath('data.user.email', 'jane@example.com')
-            ->assertJsonStructure(['data' => ['token']]);
+            ->assertJsonMissingPath('data.token');
+
+        $this->assertAuthenticated('web');
+        $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
-    public function test_logout_revokes_token(): void
+    public function test_legacy_bearer_tokens_cannot_authenticate_first_party_api_requests(): void
     {
         $user = User::factory()->create();
-        Sanctum::actingAs($user);
+        $plainToken = 'legacy-token-secret';
+        $token = PersonalAccessToken::query()->forceCreate([
+            'tokenable_type' => User::class,
+            'tokenable_id' => $user->id,
+            'name' => 'Legacy token',
+            'token' => hash('sha256', $plainToken),
+            'abilities' => ['*'],
+        ]);
 
-        $this->postJson('/api/logout')->assertOk();
+        $this->withToken($token->getKey().'|'.$plainToken)
+            ->getJson('/api/me')
+            ->assertUnauthorized();
+    }
+
+    public function test_logout_invalidates_the_authenticated_session(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user, 'web');
+
+        $this->withHeader('Origin', 'http://localhost:3000')
+            ->postJson('/api/logout')
+            ->assertOk();
+
+        $this->assertGuest('web');
     }
 }

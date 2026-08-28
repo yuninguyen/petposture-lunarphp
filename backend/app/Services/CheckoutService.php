@@ -33,6 +33,7 @@ class CheckoutService
         private readonly InventoryService $inventoryService,
         private readonly ShippingService $shippingService,
         private readonly CustomerLinkService $customerLinkService,
+        private readonly OrderTrackingAccessService $orderTrackingAccessService,
     ) {}
 
     public function placeOrder(array $payload, ?int $userId = null, ?string $customerIp = null): Order
@@ -243,6 +244,7 @@ class CheckoutService
             );
 
             $placed = $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
+            $this->orderTrackingAccessService->issue($placed);
 
             // Queue confirmation email — non-blocking, fails silently if mail not configured
             if ($placed->customer_reference) {
@@ -267,32 +269,21 @@ class CheckoutService
         return $this->paymentGatewayManager->supportedMethods();
     }
 
-    /**
-     * Calculate the order total server-side from cart contents.
-     * Used by preparePaymentIntent so the Stripe amount is never client-supplied.
-     * Returns total in minor currency units (cents).
-     */
-    public function subtotalFor(array $items): int
-    {
-        $currency = Currency::getDefault();
-        $subTotal = 0;
-
-        foreach ($items as $item) {
-            $variant = ProductVariant::with(['prices' => fn ($q) => $q->where('currency_id', $currency->id)])
-                ->findOrFail($item['variantId']);
-            $price = $variant->prices->sortBy('min_quantity')->first();
-            $subTotal += $this->normalizeAmount($price?->price) * max(1, (int) $item['quantity']);
-        }
-
-        return $subTotal;
-    }
-
     public function calculateTotal(
         array $items,
         ?string $couponCode,
         ?array $shipping,
         ?string $shippingMethod
     ): int {
+        return max(1, $this->calculateTotals($items, $couponCode, $shipping, $shippingMethod)['total_minor']);
+    }
+
+    public function calculateTotals(
+        array $items,
+        ?string $couponCode,
+        ?array $shipping,
+        ?string $shippingMethod
+    ): array {
         $currency = Currency::getDefault();
         $subTotal = 0;
 
@@ -310,7 +301,6 @@ class CheckoutService
 
         $discountValue = $this->resolveDiscountValue($couponCode, $currency);
 
-        // resolveDiscountValue only covers fixed discounts; handle percentage here
         if ($discount && $discountValue === 0 && $discount->type === AmountOff::class) {
             $percentage = (float) ($discount->data['percentage'] ?? 0);
             if ($percentage > 0) {
@@ -318,9 +308,9 @@ class CheckoutService
             }
         }
 
+        $discountValue = min($subTotal, max(0, $discountValue));
         $isFreeShipping = (bool) ($discount?->data['free_shipping'] ?? false);
         $shippingValue = $this->shippingService->rateFor($shippingMethod ?? 'standard', $subTotal, $isFreeShipping);
-
         $taxableAmount = max(0, $subTotal - $discountValue);
         $taxAmount = 0;
 
@@ -329,7 +319,14 @@ class CheckoutService
             $taxAmount = (int) max(0, $taxContext['tax_amount'] ?? 0);
         }
 
-        return max(1, $subTotal + $shippingValue - $discountValue + $taxAmount);
+        return [
+            'subtotal_minor' => $subTotal,
+            'discount_minor' => $discountValue,
+            'tax_minor' => $taxAmount,
+            'shipping_minor' => $shippingValue,
+            'total_minor' => max(0, $subTotal - $discountValue + $shippingValue + $taxAmount),
+            'currency' => strtoupper((string) $currency->code),
+        ];
     }
 
     private function resolveCountry(array $address): ?Country

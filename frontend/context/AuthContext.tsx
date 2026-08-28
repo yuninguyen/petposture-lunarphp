@@ -1,7 +1,9 @@
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-interface User {
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { fetchApi, fetchJson } from '@/lib/fetchApi';
+
+export interface User {
     id: number;
     name: string;
     email: string;
@@ -11,91 +13,48 @@ interface User {
 
 interface AuthContextType {
     user: User | null;
-    token: string | null;
-    login: (token: string, user: User) => void;
-    logout: () => void;
+    isLoading: boolean;
+    login: (user: User) => void;
+    logout: () => Promise<void>;
+    refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function setCookie(name: string, value: string, days: number) {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
-}
-
-function getCookie(name: string) {
-    const nameEQ = name + "=";
-    const ca = typeof document !== 'undefined' ? document.cookie.split(';') : [];
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
-}
-
-function eraseCookie(name: string) {
-    document.cookie = name + '=; Max-Age=-99999999; path=/;';
-}
-
-function readStoredAuth(): Pick<AuthContextType, 'user' | 'token'> {
-    if (typeof window === 'undefined') {
-        return { user: null, token: null };
-    }
-
-    const storedToken = localStorage.getItem('petposture_token') || getCookie('petposture_token');
-    const storedUser = localStorage.getItem('petposture_user') || getCookie('petposture_user');
-
-    if (!storedToken || !storedUser) {
-        return { user: null, token: null };
-    }
-
-    try {
-        const user = JSON.parse(storedUser) as User;
-        return {
-            token: storedToken,
-            user,
-        };
-    } catch {
-        localStorage.removeItem('petposture_token');
-        localStorage.removeItem('petposture_user');
-        eraseCookie('petposture_token');
-        eraseCookie('petposture_user');
-
-        return { user: null, token: null };
-    }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const initialAuth = readStoredAuth();
-    const [user, setUser] = useState<User | null>(initialAuth.user);
-    const [token, setToken] = useState<string | null>(initialAuth.token);
+    const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const login = (newToken: string, newUser: User) => {
-        setToken(newToken);
-        setUser(newUser);
-        localStorage.setItem('petposture_token', newToken);
-        localStorage.setItem('petposture_user', JSON.stringify(newUser));
-
-        // Also set cookies for middleware
-        setCookie('petposture_token', newToken, 7);
-        setCookie('petposture_user', JSON.stringify(newUser), 7);
+    const refresh = async () => {
+        try {
+            const response = await fetchJson<{ data: User }>('/api/me');
+            setUser(response.data);
+        } catch {
+            setUser(null);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const logout = () => {
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem('petposture_token');
-        localStorage.removeItem('petposture_user');
+    useEffect(() => {
+        void refresh();
+    }, []);
 
-        // Also erase cookies
-        eraseCookie('petposture_token');
-        eraseCookie('petposture_user');
+    const login = (authenticatedUser: User) => {
+        setUser(authenticatedUser);
+        setIsLoading(false);
+    };
+
+    const logout = async () => {
+        try {
+            await fetchApi('/api/logout', { method: 'POST' });
+        } finally {
+            setUser(null);
+        }
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout }}>
+        <AuthContext.Provider value={{ user, isLoading, login, logout, refresh }}>
             {children}
         </AuthContext.Provider>
     );

@@ -1,11 +1,7 @@
 /**
- * Centralized API fetch helper.
- *
- * Handles:
- * - Base URL resolution
- * - Authorization header (token from localStorage for dev/cross-origin)
- * - credentials: 'include' (sends httpOnly cookies when same-domain in production)
- * - Consistent JSON body serialization
+ * Centralized API fetch helper for Sanctum's stateful SPA authentication.
+ * Session credentials stay in HttpOnly cookies; unsafe requests bootstrap and
+ * echo Laravel's non-secret XSRF cookie instead of reading a bearer token.
  */
 import { getApiBaseUrl } from '@/lib/api';
 
@@ -13,9 +9,37 @@ export type FetchApiOptions = Omit<RequestInit, 'body'> & {
     body?: Record<string, unknown> | FormData | string | null;
 };
 
-function getStoredToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('petposture_token');
+let csrfBootstrap: Promise<void> | null = null;
+
+function isUnsafeMethod(method?: string): boolean {
+    return !['GET', 'HEAD', 'OPTIONS'].includes((method ?? 'GET').toUpperCase());
+}
+
+function readXsrfToken(): string | null {
+    if (typeof document === 'undefined') return null;
+
+    const token = document.cookie
+        .split('; ')
+        .find((cookie) => cookie.startsWith('XSRF-TOKEN='))
+        ?.slice('XSRF-TOKEN='.length);
+
+    return token ? decodeURIComponent(token) : null;
+}
+
+async function ensureCsrfCookie(): Promise<void> {
+    if (typeof document === 'undefined') return;
+
+    csrfBootstrap ??= fetch(`${getApiBaseUrl()}/sanctum/csrf-cookie`, {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+    }).then((response) => {
+        if (!response.ok) {
+            csrfBootstrap = null;
+            throw new Error('Unable to initialize CSRF protection.');
+        }
+    });
+
+    await csrfBootstrap;
 }
 
 export async function fetchApi(
@@ -23,16 +47,21 @@ export async function fetchApi(
     options: FetchApiOptions = {}
 ): Promise<Response> {
     const { body, headers: customHeaders, ...rest } = options;
-
     const headers = new Headers(customHeaders as HeadersInit | undefined);
 
     if (!(body instanceof FormData) && !headers.has('Content-Type')) {
         headers.set('Content-Type', 'application/json');
     }
+    if (!headers.has('Accept')) {
+        headers.set('Accept', 'application/json');
+    }
 
-    const token = getStoredToken();
-    if (token && !headers.has('Authorization')) {
-        headers.set('Authorization', `Bearer ${token}`);
+    if (isUnsafeMethod(options.method)) {
+        await ensureCsrfCookie();
+        const xsrfToken = readXsrfToken();
+        if (xsrfToken) {
+            headers.set('X-XSRF-TOKEN', xsrfToken);
+        }
     }
 
     const serializedBody =
