@@ -75,7 +75,7 @@ Route::get('/breeds', [BreedController::class, 'index']);
 Route::get('/breeds/{slug}', [BreedController::class, 'show']);
 Route::get('/solutions', [SolutionController::class, 'index']);
 Route::get('/solutions/{slug}', [SolutionController::class, 'show']);
-Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('throttle:api-write');
+Route::post('/products/{slug}/reviews', [ProductController::class, 'storeReview'])->middleware('throttle:review-submit');
 Route::post('/orders/track', [OrderController::class, 'track'])->middleware('throttle:order-public');
 Route::get('/orders/by-payment-session', [OrderController::class, 'byPaymentSession'])->middleware('throttle:order-public');
 Route::post('/orders/retry-payment', [OrderController::class, 'retryPayment'])->middleware('throttle:order-public');

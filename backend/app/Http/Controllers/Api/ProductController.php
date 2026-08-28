@@ -10,6 +10,7 @@ use App\Models\Review;
 use App\Models\User;
 use App\Notifications\NewReviewNotification;
 use App\Services\ProductRouteService;
+use App\Services\ReviewPurchaseEvidenceService;
 use App\Traits\HttpResponses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -201,7 +202,9 @@ class ProductController extends Controller
 
         return response()->json([
             'data' => Review::query()
+                ->select(['id', 'lunar_product_id', 'customer_name', 'rating', 'comment', 'is_verified', 'created_at'])
                 ->where('lunar_product_id', $product->id)
+                ->where('status', 'approved')
                 ->latest()
                 ->get(),
         ]);
@@ -216,17 +219,27 @@ class ProductController extends Controller
         }
 
         $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'required|string',
+            'customer_name' => ['required', 'string', 'max:255'],
+            'customer_email' => [$request->user() ? 'nullable' : 'required', 'email', 'max:255'],
+            'rating' => ['required', 'integer', 'min:1', 'max:5'],
+            'comment' => ['required', 'string', 'max:2000'],
+            'website' => ['nullable', 'max:0'],
         ]);
+
+        $user = $request->user();
+        $email = strtolower((string) ($user?->email ?? $validated['customer_email']));
+        $orderLine = app(ReviewPurchaseEvidenceService::class)->find($product, $user, $email);
 
         $review = Review::query()->create([
             'lunar_product_id' => $product->id,
+            'user_id' => $user?->id,
             'customer_name' => $validated['customer_name'],
+            'customer_email' => $email,
+            'lunar_order_id' => $orderLine?->order_id,
+            'lunar_order_line_id' => $orderLine?->id,
             'rating' => $validated['rating'],
             'comment' => $validated['comment'],
-            'is_verified' => false,
+            'status' => 'pending',
         ]);
 
         Notification::send(
