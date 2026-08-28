@@ -33,6 +33,7 @@ class CheckoutService
         private readonly InventoryService $inventoryService,
         private readonly ShippingService $shippingService,
         private readonly CustomerLinkService $customerLinkService,
+        private readonly OrderTrackingAccessService $orderTrackingAccessService,
     ) {}
 
     public function placeOrder(array $payload, ?int $userId = null, ?string $customerIp = null): Order
@@ -243,6 +244,7 @@ class CheckoutService
             );
 
             $placed = $order->refresh()->loadMissing(['lines', 'shippingAddress', 'billingAddress', 'orderEvents']);
+            $this->orderTrackingAccessService->issue($placed);
 
             // Queue confirmation email — non-blocking, fails silently if mail not configured
             if ($placed->customer_reference) {

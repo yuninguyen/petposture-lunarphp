@@ -129,6 +129,19 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->ip());
         });
 
+        RateLimiter::for('order-public', function (Request $request) {
+            $signal = implode('|', [
+                strtolower(trim((string) $request->input('email', ''))),
+                trim((string) $request->input('tracking_token', $request->query('session_id', ''))),
+                strtolower((string) $request->userAgent()),
+            ]);
+
+            return [
+                Limit::perMinute(10)->by('order-public:ip:'.$request->ip()),
+                Limit::perMinute(5)->by('order-public:signal:'.hash('sha256', $signal)),
+            ];
+        });
+
         MailConfigSync::run();
 
         Event::listen(function (Login $event) {

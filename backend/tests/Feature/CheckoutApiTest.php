@@ -50,22 +50,20 @@ class CheckoutApiTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('success', true)
             ->assertJsonPath('order.status', 'awaiting-payment')
-            ->assertJsonPath('order.customer_email', 'guest@petposture.com')
-            ->assertJsonPath('order.tracking_number', $response->json('order.reference'))
-            ->assertJsonPath('order.tax_state', 'TX')
-            ->assertJsonPath('order.tax_rate_percentage', 8.2)
-            ->assertJsonPath('order.tax_state_rate_percentage', 6.25)
-            ->assertJsonPath('order.tax_avg_local_rate_percentage', 1.95)
-            ->assertJsonPath('order.shipping_method', 'standard')
-            ->assertJsonPath('order.payment_method', 'cod')
-            ->assertJsonPath('order.payment_label', 'Cash on delivery')
-            ->assertJsonPath('order.payment_gateway', 'manual-offline')
-            ->assertJsonPath('order.payment_collection', 'offline')
-            ->assertJsonPath('order.customer_note', null)
-            ->assertJsonPath('order.order_events.0.type', 'order.created')
-            ->assertJsonPath('order.tax_total', 7.38)
-            ->assertJsonPath('order.shipping_address.city', 'Austin')
-            ->assertJsonPath('order.billing_address.postcode', '78701');
+            ->assertJsonStructure([
+                'order' => ['id', 'reference', 'tracking_access_token', 'tracking_access_expires_at'],
+            ])
+            ->assertJsonMissingPath('order.customer_email')
+            ->assertJsonMissingPath('order.payment_method')
+            ->assertJsonMissingPath('order.shipping_address')
+            ->assertJsonMissingPath('order.billing_address')
+            ->assertJsonMissingPath('order.payment_intent_id');
+
+        $order = Order::query()->findOrFail($response->json('order.id'));
+        $this->assertSame('guest@petposture.com', $order->customer_reference);
+        $this->assertSame('TX', $order->meta['tax_state']);
+        $this->assertSame('cod', $order->meta['payment_method']);
+        $this->assertSame(64, strlen((string) $response->json('order.tracking_access_token')));
     }
 
     public function test_checkout_session_ignores_client_financial_state_and_returns_server_totals(): void
@@ -133,32 +131,34 @@ class CheckoutApiTest extends TestCase
 
         $placeOrderResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
         $reference = $placeOrderResponse->json('order.reference');
+        $trackingToken = $placeOrderResponse->json('order.tracking_access_token');
 
         $response = $this->postJson('/api/orders/track', [
-            'tracking_number' => $reference,
+            'tracking_token' => $trackingToken,
             'email' => 'guest@petposture.com',
         ]);
 
         $response->assertOk()
             ->assertJsonPath('data.reference', $reference)
-            ->assertJsonPath('data.tracking_number', $reference)
+            ->assertJsonPath('data.tracking_number', null)
             ->assertJsonPath('data.status', 'awaiting-payment')
             ->assertJsonPath('data.fulfillment_status', 'unfulfilled')
-            ->assertJsonPath('data.shipments', [])
-            ->assertJsonPath('data.customer_email', 'guest@petposture.com')
+            ->assertJsonPath('data.carrier', null)
             ->assertJsonPath('data.shipping_address.city', 'Austin')
-            ->assertJsonPath('data.billing_address.postcode', '78701');
+            ->assertJsonPath('data.shipping_address.postcode', '787***')
+            ->assertJsonMissingPath('data.customer_email')
+            ->assertJsonMissingPath('data.billing_address');
     }
 
     public function test_track_order_returns_not_found_for_invalid_credentials(): void
     {
         $response = $this->postJson('/api/orders/track', [
-            'tracking_number' => 'MISSING-ORDER',
+            'tracking_token' => Str::random(64),
             'email' => 'missing@petposture.com',
         ]);
 
         $response->assertNotFound()
-            ->assertJsonPath('message', 'No order found with these credentials.');
+            ->assertJsonPath('message', 'Unable to access this order.');
     }
 
     public function test_retry_payment_prepares_a_new_card_intent_for_eligible_order(): void
@@ -177,10 +177,10 @@ class CheckoutApiTest extends TestCase
         ]);
 
         $placeOrderResponse = $this->postJson('/api/checkout/place-order', $payload);
-        $reference = $placeOrderResponse->json('order.reference');
+        $trackingToken = $placeOrderResponse->json('order.tracking_access_token');
 
         $response = $this->postJson('/api/orders/retry-payment', [
-            'tracking_number' => $reference,
+            'tracking_token' => $trackingToken,
             'email' => 'guest@petposture.com',
         ]);
 
@@ -188,7 +188,8 @@ class CheckoutApiTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('payment_intent.gateway', 'stripe')
             ->assertJsonPath('payment_intent.mode', 'placeholder')
-            ->assertJsonPath('order.payment_status', 'pending');
+            ->assertJsonPath('order.status', 'awaiting-payment')
+            ->assertJsonMissingPath('order.payment_status');
 
         $this->assertStringStartsWith('pi_placeholder_', $response->json('payment_intent.intent_id'));
     }
@@ -400,17 +401,15 @@ class CheckoutApiTest extends TestCase
 
         $response->assertCreated()
             ->assertJsonPath('order.status', 'awaiting-payment')
-            ->assertJsonPath('order.shipping_method', 'express')
-            ->assertJsonPath('order.payment_method', 'cod')
-            ->assertJsonPath('order.payment_collection', 'offline')
-            ->assertJsonPath('order.tracking_number', $response->json('order.reference'))
-            ->assertJsonPath('order.customer_note', 'Leave at front door.')
-            ->assertJsonPath('order.shipping_total', 25)
-            ->assertJsonPath('order.sub_total', 89.99)
-            ->assertJsonPath('order.discount_total', 5)
-            ->assertJsonPath('order.tax_total', 6.97)
-            ->assertJsonPath('order.total.decimal', 116.96);
-        $this->assertSame('Leave at front door.', $response->json('order.notes'));
+            ->assertJsonMissingPath('order.payment_method')
+            ->assertJsonMissingPath('order.shipping_address');
+
+        $order = Order::query()->findOrFail($response->json('order.id'));
+        $this->assertSame('express', $order->meta['shipping_method']);
+        $this->assertSame('cod', $order->meta['payment_method']);
+        $this->assertSame('offline', $order->meta['payment_collection']);
+        $this->assertSame('Leave at front door.', $order->meta['customer_note']);
+        $this->assertSame('Leave at front door.', $order->notes);
     }
 
     public function test_admin_can_update_order_operations(): void
@@ -598,9 +597,8 @@ class CheckoutApiTest extends TestCase
         ]);
 
         $placeOrderResponse = $this->postJson('/api/checkout/place-order', $payload);
-        $placeOrderResponse->assertCreated()
-            ->assertJsonPath('order.payment_intent_id', 'pi_test_paid_123')
-            ->assertJsonPath('order.payment_status', 'pending');
+        $placeOrderResponse->assertCreated();
+        $this->assertSame(64, strlen((string) $placeOrderResponse->json('order.tracking_access_token')));
 
         $webhookResponse = $this->postJson('/api/webhooks/stripe', [
             'id' => 'evt_test_paid_123',
@@ -618,18 +616,16 @@ class CheckoutApiTest extends TestCase
             ->assertJsonPath('result.processed', true)
             ->assertJsonPath('result.payment_status', 'paid');
 
-        $reference = $placeOrderResponse->json('order.reference');
-
         $trackedOrderResponse = $this->postJson('/api/orders/track', [
-            'tracking_number' => $reference,
+            'tracking_token' => $placeOrderResponse->json('order.tracking_access_token'),
             'email' => 'guest@petposture.com',
         ]);
 
         $trackedOrderResponse->assertOk()
             ->assertJsonPath('data.status', 'payment-received')
-            ->assertJsonPath('data.tracking_number', $reference)
+            ->assertJsonPath('data.tracking_number', null)
             ->assertJsonPath('data.fulfillment_status', 'unfulfilled')
-            ->assertJsonPath('data.payment_status', 'paid');
+            ->assertJsonMissingPath('data.payment_status');
 
         // Public tracking endpoint: staff-only/internal fields must never leak here.
         $trackedOrderResponse->assertJsonMissingPath('data.internal_note');

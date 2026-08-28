@@ -5,25 +5,26 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\OrderReturnRequestResource;
 use App\Models\OrderReturnRequest;
+use App\Services\OrderTrackingAccessService;
 use App\Services\ReturnRequestService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use Lunar\Models\Order;
 
 class ReturnRequestController extends Controller
 {
     public function __construct(
         private readonly ReturnRequestService $returnRequestService,
+        private readonly OrderTrackingAccessService $orderTrackingAccessService,
     ) {}
 
     /**
-     * Submit a new return request (guest lookup via order reference + email).
+     * Submit a new return request using the private tracking token and email.
      */
     public function store(Request $request)
     {
         $validated = Validator::make($request->all(), [
-            'order_reference' => 'required|string',
+            'tracking_token' => 'required|string|max:255',
             'email' => 'required|email',
             'reason' => 'required|string|max:160',
             'note' => 'nullable|string|max:2000',
@@ -32,13 +33,13 @@ class ReturnRequestController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
         ])->validate();
 
-        $order = $this->findPublicOrderByCredentials(
-            trim((string) $validated['order_reference']),
+        $order = $this->orderTrackingAccessService->find(
+            trim((string) $validated['tracking_token']),
             trim((string) $validated['email']),
-        );
+        )?->loadMissing(['lines', 'billingAddress']);
 
         if (! $order) {
-            return response()->json(['message' => 'No order found with these credentials.'], 404);
+            return response()->json(['message' => 'Unable to access this order.'], 404);
         }
 
         try {
@@ -55,26 +56,60 @@ class ReturnRequestController extends Controller
         return new OrderReturnRequestResource($returnRequest);
     }
 
+    public function options(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'tracking_token' => 'required|string|max:255',
+            'email' => 'required|email',
+        ])->validate();
+
+        $order = $this->orderTrackingAccessService->find(
+            trim((string) $validated['tracking_token']),
+            trim((string) $validated['email']),
+        )?->loadMissing('lines');
+
+        if (! $order) {
+            return response()->json(['message' => 'Unable to access this order.'], 404);
+        }
+
+        return response()->json([
+            'data' => [
+                'reference' => $order->reference,
+                'status' => $order->status,
+                'delivered_at' => $order->meta['delivered_at'] ?? null,
+                'lines' => $order->lines
+                    ->where('type', '!=', 'shipping')
+                    ->map(fn ($line): array => [
+                        'id' => (string) $line->id,
+                        'type' => $line->type,
+                        'description' => $line->description,
+                        'quantity' => (int) $line->quantity,
+                        'image' => null,
+                    ])->values(),
+            ],
+        ]);
+    }
+
     /**
      * Preview the refund estimate for selected items before submitting (guest, no side effects).
      */
     public function preview(Request $request)
     {
         $validated = Validator::make($request->all(), [
-            'order_reference' => 'required|string',
+            'tracking_token' => 'required|string|max:255',
             'email' => 'required|email',
             'items' => 'required|array|min:1',
             'items.*.order_line_id' => 'required|integer',
             'items.*.quantity' => 'required|integer|min:1',
         ])->validate();
 
-        $order = $this->findPublicOrderByCredentials(
-            trim((string) $validated['order_reference']),
+        $order = $this->orderTrackingAccessService->find(
+            trim((string) $validated['tracking_token']),
             trim((string) $validated['email']),
-        );
+        )?->loadMissing(['lines', 'billingAddress']);
 
         if (! $order) {
-            return response()->json(['message' => 'No order found with these credentials.'], 404);
+            return response()->json(['message' => 'Unable to access this order.'], 404);
         }
 
         $estimate = $this->returnRequestService->previewRefundEstimate($order, $validated['items']);
@@ -215,16 +250,5 @@ class ReturnRequestController extends Controller
             'Order Manager',
             'Support',
         ]);
-    }
-
-    private function findPublicOrderByCredentials(string $reference, string $email): ?Order
-    {
-        return Order::with(['lines', 'shippingAddress', 'billingAddress'])
-            ->where(function ($query) use ($reference) {
-                $query->where('reference', $reference)
-                    ->orWhere('meta->tracking_number', $reference);
-            })
-            ->where('customer_reference', $email)
-            ->first();
     }
 }

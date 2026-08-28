@@ -1220,7 +1220,7 @@ export default function CheckoutPage() {
         return { shippingAddress, billingAddress };
     };
 
-    const placeOrder = async (paymentContext: Record<string, unknown> | null): Promise<string> => {
+    const placeOrder = async (paymentContext: Record<string, unknown> | null): Promise<{ reference: string; trackingToken: string }> => {
         const apiBase = getApiBaseUrl();
         const { shippingAddress, billingAddress } = buildOrderAddresses();
 
@@ -1248,7 +1248,7 @@ export default function CheckoutPage() {
         });
 
         const raw = await res.text();
-        let data: { message?: string; order?: { reference?: string } } | null = null;
+        let data: { message?: string; order?: { reference?: string; tracking_access_token?: string } } | null = null;
 
         if (raw) {
             try {
@@ -1258,11 +1258,14 @@ export default function CheckoutPage() {
             }
         }
 
-        if (res.status !== 201 || !data?.order?.reference) {
+        if (res.status !== 201 || !data?.order?.reference || !data.order.tracking_access_token) {
             throw new Error(data?.message || 'Checkout failed. Please try again.');
         }
 
-        return data.order.reference;
+        return {
+            reference: data.order.reference,
+            trackingToken: data.order.tracking_access_token,
+        };
     };
 
     const prepareRedirectSession = async (method: 'airwallex' | 'payoneer' | 'pingpong'): Promise<{ checkout_url: string; session_id: string }> => {
@@ -1298,7 +1301,7 @@ export default function CheckoutPage() {
         return data.session;
     };
 
-    const finishSuccessSideEffectsAndRedirect = (reference: string, externalRedirectUrl?: string) => {
+    const finishSuccessSideEffectsAndRedirect = (orderAccess: { reference: string; trackingToken: string }) => {
         const apiBase = getApiBaseUrl();
 
         if (form.saveInfo && form.email) {
@@ -1351,7 +1354,7 @@ export default function CheckoutPage() {
         localStorage.removeItem('petposture_cart_coupon');
         clearCoupon();
 
-        router.push(`/checkout/success?ref=${reference}&email=${encodeURIComponent(form.email)}`);
+        router.push(`/checkout/success?token=${encodeURIComponent(orderAccess.trackingToken)}&email=${encodeURIComponent(form.email)}`);
     };
 
     const finishPayPalOrder = async (paypalOrderId: string) => {
@@ -1359,7 +1362,7 @@ export default function CheckoutPage() {
         setPaypalError(null);
 
         try {
-            const reference = await placeOrder({ paypal_order_id: paypalOrderId });
+            const orderAccess = await placeOrder({ paypal_order_id: paypalOrderId });
 
             const apiBase = getApiBaseUrl();
             const captureRes = await fetch(`${apiBase}/api/checkout/paypal-capture`, {
@@ -1377,7 +1380,7 @@ export default function CheckoutPage() {
                 throw new Error(captureData?.message || 'PayPal payment could not be captured.');
             }
 
-            finishSuccessSideEffectsAndRedirect(reference);
+            finishSuccessSideEffectsAndRedirect(orderAccess);
         } catch (err) {
             console.error(err);
             setPaypalError(err instanceof Error ? err.message : 'PayPal checkout failed. Please try again.');
@@ -1402,7 +1405,11 @@ export default function CheckoutPage() {
             if (redirectPaymentMethods.has(form.paymentMethod)) {
                 const session = await prepareRedirectSession(form.paymentMethod as 'airwallex' | 'payoneer' | 'pingpong');
 
-                await placeOrder({ session_id: session.session_id });
+                const orderAccess = await placeOrder({ session_id: session.session_id });
+                sessionStorage.setItem(`petposture_payment_access:${session.session_id}`, JSON.stringify({
+                    email: form.email,
+                    trackingToken: orderAccess.trackingToken,
+                }));
 
                 // Order is recorded (payment still pending) — clear the local cart before
                 // leaving the site, same as the card/PayPal paths do once placeOrder succeeds.
@@ -1418,7 +1425,7 @@ export default function CheckoutPage() {
                 ? await prepareCardPaymentIntent()
                 : null;
 
-            const reference = await placeOrder(paymentContext);
+            const orderAccess = await placeOrder(paymentContext);
 
             if (form.paymentMethod === 'card' && paymentContext?.mode === 'configured') {
                 if (!stripeInstanceRef.current || !stripeCardElementRef.current) {
@@ -1453,7 +1460,7 @@ export default function CheckoutPage() {
                 }
             }
 
-            finishSuccessSideEffectsAndRedirect(reference);
+            finishSuccessSideEffectsAndRedirect(orderAccess);
         } catch (err) {
             console.error(err);
             alert(err instanceof Error ? err.message : "Network error processing your checkout.");

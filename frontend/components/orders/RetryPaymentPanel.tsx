@@ -42,23 +42,17 @@ type PreparedPaymentIntent = {
 const stripeJsScriptId = "petposture-stripe-js";
 
 export default function RetryPaymentPanel({
-    reference,
+    trackingToken,
     email,
-    customerName,
-    paymentMethod,
-    paymentStatus,
     orderStatus,
     onCompleted,
 }: {
-    reference: string;
+    trackingToken: string;
     email: string;
-    customerName: string;
-    paymentMethod: string | null;
-    paymentStatus: string;
     orderStatus: string;
     onCompleted?: () => void;
 }) {
-    const eligible = paymentMethod === "card" && !["paid", "cancelled"].includes(paymentStatus) && orderStatus !== "cancelled";
+    const eligible = ["awaiting-payment", "payment-offline"].includes(orderStatus);
     const [intent, setIntent] = useState<PreparedPaymentIntent | null>(null);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -154,7 +148,7 @@ export default function RetryPaymentPanel({
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    tracking_number: reference,
+                    tracking_token: trackingToken,
                     email,
                 }),
             });
@@ -192,7 +186,6 @@ export default function RetryPaymentPanel({
                 payment_method: {
                     card: stripeCardElementRef.current,
                     billing_details: {
-                        name: customerName || undefined,
                         email,
                     },
                 },

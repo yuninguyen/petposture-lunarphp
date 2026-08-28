@@ -6,6 +6,7 @@ use App\Enums\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UpsertCheckoutSessionRequest;
 use App\Http\Resources\Api\CheckoutSessionResource;
+use App\Http\Resources\Api\OrderCreatedResource;
 use App\Http\Resources\Api\OrderResource;
 use App\Models\CheckoutSession;
 use App\Models\UserAddress;
@@ -140,7 +141,7 @@ class CheckoutController extends Controller
 
         try {
             $order = $this->checkoutService->placeOrder($validated, $userId, $request->ip());
-            $result = new OrderResource($order);
+            $result = new OrderCreatedResource($order);
 
             if ($idempotencyKey) {
                 Cache::put($cacheKey, $result, now()->addHours(24));
@@ -310,7 +311,7 @@ class CheckoutController extends Controller
 
             return response()->json([
                 'success' => true,
-                'order' => new OrderResource($order),
+                'order' => new OrderCreatedResource($order),
                 'session' => new CheckoutSessionResource($session->fresh()),
             ], 201);
         } catch (ValidationException|ModelNotFoundException|HttpExceptionInterface $e) {

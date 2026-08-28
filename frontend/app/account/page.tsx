@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { getApiBaseUrl } from '@/lib/api';
 import Header from '@/components/Header';
@@ -137,6 +136,7 @@ export default function AccountPage() {
     const [addressForm, setAddressForm] = useState(emptyAddressForm);
     const [savingAddress, setSavingAddress] = useState(false);
     const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+    const [returnAccessOrderId, setReturnAccessOrderId] = useState<string | null>(null);
 
     const authHeaders = token ? { Authorization: `Bearer ${token}`, Accept: 'application/json' } : null;
 
@@ -202,6 +202,31 @@ export default function AccountPage() {
     const handleLogout = () => {
         logout();
         router.push('/');
+    };
+
+    const handleRequestReturn = async (order: Order) => {
+        if (!token) return;
+
+        setReturnAccessOrderId(order.id);
+        setError(null);
+
+        try {
+            const response = await fetch(`${getApiBaseUrl()}/api/orders/${order.id}/tracking-access`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+            });
+            const payload = await response.json();
+
+            if (!response.ok || !payload?.tracking_access_token) {
+                throw new Error(payload?.message || 'Unable to prepare secure return access.');
+            }
+
+            router.push(`/returns?token=${encodeURIComponent(payload.tracking_access_token)}&email=${encodeURIComponent(order.customer_email)}`);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unable to prepare secure return access.');
+        } finally {
+            setReturnAccessOrderId(null);
+        }
     };
 
     if (!user) {
@@ -370,12 +395,14 @@ export default function AccountPage() {
 
                                                             {returnEligibility(order) === 'open' && (
                                                                 <div className="pt-3 border-t border-zinc-100">
-                                                                    <Link
-                                                                        href={`/returns?ref=${encodeURIComponent(order.reference)}&email=${encodeURIComponent(order.customer_email)}`}
-                                                                        className="text-sm font-bold text-rust hover:text-rust transition-colors"
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => void handleRequestReturn(order)}
+                                                                        disabled={returnAccessOrderId === order.id}
+                                                                        className="text-sm font-bold text-rust hover:text-rust transition-colors disabled:cursor-wait disabled:opacity-60"
                                                                     >
-                                                                        Request a Return
-                                                                    </Link>
+                                                                        {returnAccessOrderId === order.id ? 'Preparing secure access…' : 'Request a Return'}
+                                                                    </button>
                                                                 </div>
                                                             )}
                                                             {returnEligibility(order) === 'closed' && (
