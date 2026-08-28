@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Comment;
 use App\Http\Resources\Admin\CommentResource;
+use App\Models\Comment;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class CommentController extends Controller
 {
@@ -21,14 +22,14 @@ class CommentController extends Controller
             $search = $request->input('search');
             $query->where('customer_name', 'like', "%{$search}%");
         }
-        
+
         if ($request->has('status')) {
             $status = $request->input('status');
             $query->where('status', $status);
         }
 
         $perPage = $request->input('per_page', 10);
-        
+
         $comments = $query->latest()->paginate($perPage);
 
         return CommentResource::collection($comments);
@@ -39,6 +40,8 @@ class CommentController extends Controller
      */
     public function store(Request $request)
     {
+        Gate::authorize('create', Comment::class);
+
         $validated = $request->validate([
             'post_id' => 'required|exists:posts,id',
             'customer_name' => 'required|string|max:255',
@@ -57,7 +60,7 @@ class CommentController extends Controller
     public function show(Comment $comment)
     {
         $comment->load('post');
-        
+
         return new CommentResource($comment);
     }
 
@@ -66,6 +69,8 @@ class CommentController extends Controller
      */
     public function update(Request $request, Comment $comment)
     {
+        Gate::authorize('update', $comment);
+
         $validated = $request->validate([
             'post_id' => 'required|exists:posts,id',
             'customer_name' => 'required|string|max:255',
@@ -83,6 +88,8 @@ class CommentController extends Controller
      */
     public function destroy(Comment $comment)
     {
+        Gate::authorize('delete', $comment);
+
         $comment->delete();
 
         return response()->json(null, Response::HTTP_NO_CONTENT);
@@ -93,6 +100,8 @@ class CommentController extends Controller
      */
     public function bulkDestroy(Request $request)
     {
+        Gate::authorize('deleteAny', Comment::class);
+
         $validated = $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'integer|exists:comments,id',
@@ -108,6 +117,8 @@ class CommentController extends Controller
      */
     public function approve(Comment $comment)
     {
+        Gate::authorize('update', $comment);
+
         $comment->update(['status' => 'approved']);
 
         return new CommentResource($comment);

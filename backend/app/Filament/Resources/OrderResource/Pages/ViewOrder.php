@@ -11,6 +11,7 @@ use Filament\Forms;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\Gate;
 use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
 
@@ -34,8 +35,10 @@ class ViewOrder extends ViewRecord
     protected function getHeaderActions(): array
     {
         $operations = app(OrderOperationsService::class);
+        $canUpdateOrder = auth()->user()?->can('update_order') ?? false;
+        $canRefundOrder = auth()->user()?->can('refund_order') ?? false;
 
-        $actions = collect($operations->availableActions($this->record))
+        $actions = collect($canUpdateOrder ? $operations->availableActions($this->record) : [])
             ->reject(fn (array $action) => $action['action'] === 'markShipped')
             ->map(function (array $action) {
                 $isCancel = $action['action'] === 'cancelOrder';
@@ -45,6 +48,7 @@ class ViewOrder extends ViewRecord
                     ->color($isCancel ? 'danger' : 'primary')
                     ->requiresConfirmation()
                     ->action(function () use ($action) {
+                        Gate::authorize('update_order');
                         app(OrderOperationsService::class)->performAction($this->record, $action['action']);
 
                         $this->redirect(static::getUrl(['record' => $this->record]));
@@ -56,7 +60,8 @@ class ViewOrder extends ViewRecord
         $shippableLines = $this->order()->lines->where('type', '!=', 'shipping')
             ->filter(fn ($line) => ($remainingQuantities[$line->id] ?? 0) > 0);
         $isFirstShipment = (string) $this->order()->status === 'processing';
-        $canShip = $shippableLines->isNotEmpty()
+        $canShip = $canUpdateOrder
+            && $shippableLines->isNotEmpty()
             && in_array((string) $this->order()->status, ['processing', 'shipped'], true);
 
         if ($canShip) {
@@ -107,6 +112,7 @@ class ViewOrder extends ViewRecord
                         ->addActionLabel(__('Add another item')),
                 ])
                 ->action(function (array $data) use ($operations) {
+                    Gate::authorize('update_order');
                     if ((string) $this->order()->status === 'processing') {
                         $operations->performAction($this->record, 'markShipped', []);
                     }
@@ -121,7 +127,8 @@ class ViewOrder extends ViewRecord
 
         $meta = (array) ($this->record->meta ?? []);
 
-        $isReturnable = in_array((string) $this->order()->status, ['delivered', 'shipped'], true)
+        $isReturnable = $canUpdateOrder
+            && in_array((string) $this->order()->status, ['delivered', 'shipped'], true)
             && ($meta['fulfillment_status'] ?? null) !== 'returned';
 
         if ($isReturnable) {
@@ -131,13 +138,15 @@ class ViewOrder extends ViewRecord
                 ->requiresConfirmation()
                 ->modalDescription(__('This notifies the customer that their return has been received. It does not issue a refund — use the Refund action separately once you\'ve inspected the returned item(s).'))
                 ->action(function () {
+                    Gate::authorize('update_order');
                     app(OrderOperationsService::class)->returnOrder($this->record);
 
                     $this->redirect(static::getUrl(['record' => $this->record]));
                 });
         }
 
-        $isRefundable = filled($meta['payment_intent_id'] ?? null)
+        $isRefundable = $canRefundOrder
+            && filled($meta['payment_intent_id'] ?? null)
             && ($meta['payment_status'] ?? null) === 'paid'
             && ($meta['refund_status'] ?? null) !== 'refunded';
 
@@ -158,6 +167,7 @@ class ViewOrder extends ViewRecord
                 ])
                 ->requiresConfirmation()
                 ->action(function (array $data) {
+                    Gate::authorize('refund_order');
                     $amountMinor = filled($data['amount'] ?? null)
                         ? (int) round(((float) $data['amount']) * 100)
                         : null;

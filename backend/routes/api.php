@@ -129,7 +129,7 @@ Route::delete('/cart/lines/{lineId}', [CartController::class, 'removeLine'])->mi
 Route::delete('/cart', [CartController::class, 'clear'])->middleware('throttle:api-write');
 
 Route::prefix('/admin')
-    ->middleware(['auth:sanctum', 'role:super_admin|admin|staff'])
+    ->middleware(['auth:sanctum', 'role:super_admin|admin|staff|Product Manager|Order Manager|Support', 'admin.permission'])
     ->group(function () {
         Route::get('/brands', [AdminBrandController::class, 'index']);
         Route::post('/brands', [AdminBrandController::class, 'store']);

@@ -52,7 +52,7 @@ export async function proxy(request: NextRequest) {
             return secure(NextResponse.redirect(new URL('/sign-in', request.url)));
         }
 
-        const allowedRoles = ['super_admin', 'admin', 'staff'];
+        const allowedRoles = ['super_admin', 'admin', 'staff', 'Product Manager', 'Order Manager', 'Support'];
         const hasAccess = user.roles?.some((role) => allowedRoles.includes(role)) ?? false;
         if (!hasAccess) {
             return secure(NextResponse.redirect(new URL('/', request.url)));

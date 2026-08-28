@@ -78,7 +78,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Gate::before(function ($user, $ability) {
-            return $user->hasRole('super_admin') ? true : null;
+            return $user->hasAnyRole(['super_admin', 'admin', 'staff']) ? true : null;
         });
 
         Order::observe(OrderObserver::class);

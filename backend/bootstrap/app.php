@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ErrorCode;
+use App\Http\Middleware\EnforceAdminApiPermission;
 use App\Http\Middleware\RefreshMailConfig;
 use App\Http\Middleware\RejectBearerAuthentication;
 use App\Http\Middleware\ResetPermissionCache;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectTo('/admin/login');
         $middleware->statefulApi();
         $middleware->alias([
+            'admin.permission' => EnforceAdminApiPermission::class,
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,

@@ -8,16 +8,14 @@ use App\Models\BlogCategory;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
-    private function authorizeAdmin(): void
+    private function authorizeAdmin(string $ability = 'view_any_post'): void
     {
-        $user = request()->user();
-        if (! $user || ! $user->hasAnyRole(['super_admin', 'admin', 'staff'])) {
-            abort(403, 'Forbidden');
-        }
+        Gate::authorize($ability);
     }
 
     public function index(Request $request)
@@ -56,7 +54,7 @@ class PostController extends Controller
 
     public function storeCategory(Request $request): JsonResponse
     {
-        $this->authorizeAdmin();
+        $this->authorizeAdmin('create_post');
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -73,9 +71,12 @@ class PostController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $this->authorizeAdmin();
+        $this->authorizeAdmin('create_post');
 
         $validated = $request->validate($this->validationRules(forUpdate: false));
+        if (($validated['status'] ?? 'draft') === 'published') {
+            $this->authorizeAdmin('publish_post');
+        }
         $validated['type'] = $validated['type'] ?? Post::TYPE_ARTICLE;
         $validated['status'] = $validated['status'] ?? 'draft';
         $comparison = $this->extractComparisonData($validated);
@@ -119,9 +120,12 @@ class PostController extends Controller
 
     public function update(Request $request, Post $post)
     {
-        $this->authorizeAdmin();
+        $this->authorizeAdmin('update_post');
 
         $validated = $request->validate($this->validationRules(forUpdate: true));
+        if (($validated['status'] ?? null) === 'published' && $post->status !== 'published') {
+            $this->authorizeAdmin('publish_post');
+        }
         $comparison = $this->extractComparisonData($validated);
         $taxonomy = $this->extractTaxonomyData($validated);
         $seoData = $this->extractSeoData($validated);
@@ -151,7 +155,7 @@ class PostController extends Controller
 
     public function duplicate(Post $post): JsonResponse
     {
-        $this->authorizeAdmin();
+        $this->authorizeAdmin('create_post');
 
         $replica = $post->replicate();
         $replica->title = $post->title.' '.__('(Copy)');
@@ -181,7 +185,7 @@ class PostController extends Controller
 
     public function bulkDestroy(Request $request): JsonResponse
     {
-        $this->authorizeAdmin();
+        $this->authorizeAdmin('delete_any_post');
 
         $validated = $request->validate([
             'ids' => 'required|array',
@@ -195,7 +199,7 @@ class PostController extends Controller
 
     public function destroy(Post $post)
     {
-        $this->authorizeAdmin();
+        $this->authorizeAdmin('delete_post');
 
         $post->delete();
 

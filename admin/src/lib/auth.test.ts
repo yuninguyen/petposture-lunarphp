@@ -11,10 +11,22 @@ describe('session authentication', () => {
     expect(source).not.toContain('Authorization');
   });
 
-  it('recognizes admin, super_admin, and staff as admin roles', () => {
+  it('scopes navigation for business roles', () => {
+    const appSource = readFileSync('src/App.tsx', 'utf8');
+    const shellSource = readFileSync('src/layouts/AppShell.tsx', 'utf8');
+
+    expect(appSource).toContain('userRoles={user?.roles ?? []}');
+    expect(shellSource).toContain("hasRole('Product Manager')");
+    expect(shellSource).toContain('visibleNavGroups');
+  });
+
+  it('recognizes every backend admin-panel role', () => {
     expect(isAdminRole(['customer'])).toBe(false);
     expect(isAdminRole(['staff'])).toBe(true);
     expect(isAdminRole(['admin'])).toBe(true);
     expect(isAdminRole(['super_admin'])).toBe(true);
+    expect(isAdminRole(['Product Manager'])).toBe(true);
+    expect(isAdminRole(['Order Manager'])).toBe(true);
+    expect(isAdminRole(['Support'])).toBe(true);
   });
 });

@@ -180,7 +180,7 @@ class OrderController extends Controller
 
     public function update(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
+        if (! $request->user()?->can('update_order')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -203,7 +203,7 @@ class OrderController extends Controller
 
     public function performAction(Request $request, $id, string $action)
     {
-        if (! $this->canManageOrders($request)) {
+        if (! $request->user()?->can('update_order')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -225,7 +225,7 @@ class OrderController extends Controller
 
     public function createShipment(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
+        if (! $request->user()?->can('update_order')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -246,7 +246,7 @@ class OrderController extends Controller
 
     public function refund(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
+        if (! $request->user()?->can('refund_order')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -267,7 +267,7 @@ class OrderController extends Controller
 
     public function return(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
+        if (! $request->user()?->can('update_order')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -293,12 +293,6 @@ class OrderController extends Controller
 
     private function canManageOrders(Request $request): bool
     {
-        return (bool) $request->user()?->hasAnyRole([
-            'super_admin',
-            'admin',
-            'staff',
-            'Order Manager',
-            'Support',
-        ]);
+        return (bool) $request->user()?->can('view_any_order');
     }
 }

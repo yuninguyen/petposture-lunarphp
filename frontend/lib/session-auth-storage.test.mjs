@@ -20,3 +20,11 @@ test("storefront and admin auth runtime expose no bearer token storage", () => {
     assert.doesNotMatch(source, /Authorization\s*[:=]/);
     assert.doesNotMatch(source, /localStorage[^\n]*(?:token|user)/i);
 });
+
+test("storefront proxy recognizes every backend admin-panel role", () => {
+    const source = readFileSync(new URL("../proxy.ts", import.meta.url), "utf8");
+
+    for (const role of ["super_admin", "admin", "staff", "Product Manager", "Order Manager", "Support"]) {
+        assert.match(source, new RegExp(`['\"]${role}['\"]`));
+    }
+});

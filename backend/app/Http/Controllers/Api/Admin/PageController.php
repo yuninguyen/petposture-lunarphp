@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Page;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class PageController extends Controller
@@ -21,11 +21,11 @@ class PageController extends Controller
         if ($request->has('search')) {
             $search = $request->input('search');
             $query->where('title', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%");
+                ->orWhere('slug', 'like', "%{$search}%");
         }
 
         $perPage = $request->input('per_page', 10);
-        
+
         $pages = $query->latest('updated_at')->paginate($perPage);
 
         return response()->json($pages);
@@ -36,6 +36,8 @@ class PageController extends Controller
      */
     public function store(Request $request)
     {
+        Gate::authorize('create', Page::class);
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:pages,slug',
@@ -47,7 +49,7 @@ class PageController extends Controller
         ]);
 
         $validated['is_active'] = $validated['is_active'] ?? true;
-        
+
         $page = Page::create($validated);
 
         return response()->json($page);
@@ -66,6 +68,8 @@ class PageController extends Controller
      */
     public function update(Request $request, Page $page)
     {
+        Gate::authorize('update', $page);
+
         $rules = [
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -102,9 +106,11 @@ class PageController extends Controller
      */
     public function destroy(Page $page)
     {
+        Gate::authorize('delete', $page);
+
         if ($page->is_core) {
             return response()->json([
-                'message' => __('This is a required legal page and cannot be deleted.')
+                'message' => __('This is a required legal page and cannot be deleted.'),
             ], Response::HTTP_FORBIDDEN);
         }
 
@@ -118,6 +124,8 @@ class PageController extends Controller
      */
     public function bulkDestroy(Request $request)
     {
+        Gate::authorize('deleteAny', Page::class);
+
         $validated = $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'integer|exists:pages,id',
