@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -107,6 +109,37 @@ class PayPalApiTest extends TestCase
     }
 
     // ─── Capture ─────────────────────────────────────────────────────────────
+
+    public function test_capture_paypal_order_sends_empty_json_body(): void
+    {
+        config()->set('services.paypal.client_id', 'test-client-id');
+        config()->set('services.paypal.client_secret', 'test-client-secret');
+        config()->set('services.paypal.mode', 'sandbox-test-'.Str::lower(Str::random(8)));
+        Cache::forget('paypal_client_id');
+        Cache::forget('paypal_client_secret');
+        Cache::forget('paypal_mode');
+        Cache::put('paypal_access_token_'.config('services.paypal.mode'), 'test-access-token');
+
+        $captureResponse = new \Illuminate\Http\Client\Response(new \GuzzleHttp\Psr7\Response(
+            200,
+            ['Content-Type' => 'application/json'],
+            json_encode([
+                'status' => 'COMPLETED',
+                'purchase_units' => [[
+                    'payments' => ['captures' => [['id' => 'CAPTURE-123', 'status' => 'COMPLETED']]],
+                ]],
+            ], JSON_THROW_ON_ERROR),
+        ));
+
+        Http::shouldReceive('withToken')->once()->with('test-access-token')->andReturnSelf();
+        Http::shouldReceive('post')->once()
+            ->with('https://api-m.sandbox.paypal.com/v2/checkout/orders/APPROVED-ORDER-123/capture', [])
+            ->andReturn($captureResponse);
+
+        $capture = app(\App\Services\PayPalService::class)->captureOrder('APPROVED-ORDER-123');
+
+        $this->assertSame('COMPLETED', $capture['status']);
+    }
 
     public function test_capture_paypal_order_marks_order_as_paid(): void
     {
