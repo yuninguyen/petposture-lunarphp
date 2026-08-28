@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Mail\ContactAutoReply;
-use App\Mail\ContactFormSubmission;
+use App\Jobs\SendContactMessageJob;
+use App\Models\ContactMessage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class ContactController extends Controller
@@ -21,46 +20,60 @@ class ContactController extends Controller
             'subject' => 'required|string|max:255',
             'message' => 'required|string|max:5000',
             'order_number' => 'nullable|string|max:100',
-            'website' => 'nullable|string|max:255', // honeypot: real users never see/fill this field
+            'website' => 'nullable|string|max:255',
         ])->validate();
 
         if (! empty($validated['website'])) {
             Log::info('Contact form spam blocked (honeypot)', ['ip' => $request->ip(), 'email' => $validated['email']]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Your message has been sent. We\'ll get back to you within 24 hours.',
-            ]);
+            return $this->acceptedResponse();
         }
 
-        Log::info('Contact form submission', ['ip' => $request->ip(), 'email_domain' => substr(strrchr($validated['email'], '@'), 1)]);
+        $email = strtolower(trim($validated['email']));
+        $fingerprint = implode("\0", [
+            $email,
+            trim($validated['subject']),
+            trim($validated['message']),
+            trim((string) ($validated['order_number'] ?? '')),
+        ]);
+        $bucket = intdiv(now()->timestamp, 300);
+        $idempotencyKeys = [
+            hash('sha256', $fingerprint."\0".$bucket),
+            hash('sha256', $fingerprint."\0".($bucket - 1)),
+        ];
 
-        $adminEmail = 'support@petposture.com';
+        $contact = ContactMessage::query()
+            ->whereIn('idempotency_key', $idempotencyKeys)
+            ->where('created_at', '>=', now()->subMinutes(5))
+            ->first();
 
-        try {
-            // Notify admin
-            Mail::to($adminEmail)->send(new ContactFormSubmission(
-                senderName: $validated['name'],
-                senderEmail: $validated['email'],
-                messageSubject: $validated['subject'],
-                messageBody: $validated['message'],
-                orderNumber: $validated['order_number'] ?? null,
-            ));
+        $contact ??= ContactMessage::query()->createOrFirst(
+            ['idempotency_key' => $idempotencyKeys[0]],
+            [
+                'name' => trim($validated['name']),
+                'email' => $email,
+                'subject' => trim($validated['subject']),
+                'message' => trim($validated['message']),
+                'order_number' => isset($validated['order_number']) ? trim($validated['order_number']) : null,
+                'status' => ContactMessage::STATUS_RECEIVED,
+            ],
+        );
 
-            // Auto-reply to customer
-            Mail::to($validated['email'])->send(new ContactAutoReply(
-                senderName: $validated['name'],
-                originalSubject: $validated['subject'],
-            ));
-        } catch (\Throwable $e) {
-            Log::error('Contact form mail failed: '.$e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to send your message. Please try again later.',
-            ], 500);
+        if ($contact->wasRecentlyCreated) {
+            SendContactMessageJob::dispatch($contact->id)->afterCommit();
         }
 
+        Log::info('Contact form accepted', [
+            'contact_message_id' => $contact->id,
+            'duplicate' => ! $contact->wasRecentlyCreated,
+            'ip' => $request->ip(),
+        ]);
+
+        return $this->acceptedResponse();
+    }
+
+    private function acceptedResponse(): JsonResponse
+    {
         return response()->json([
             'success' => true,
             'message' => 'Your message has been sent. We\'ll get back to you within 24 hours.',
