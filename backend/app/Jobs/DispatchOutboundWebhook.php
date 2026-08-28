@@ -46,9 +46,16 @@ class DispatchOutboundWebhook implements ShouldQueue
                 'event' => $this->event,
                 'url' => $url,
                 'status' => $response->status(),
+                'retryable' => $response->serverError(),
             ]);
 
-            $this->fail(new \RuntimeException("Webhook POST to {$url} returned {$response->status()}"));
+            $exception = new \RuntimeException("Webhook POST to {$url} returned {$response->status()}");
+
+            if ($response->serverError()) {
+                throw $exception;
+            }
+
+            $this->fail($exception);
         }
     }
 }

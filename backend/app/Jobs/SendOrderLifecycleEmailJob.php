@@ -9,6 +9,7 @@ use App\Mail\OrderDelivered;
 use App\Mail\OrderReturned;
 use App\Mail\OrderShipped;
 use App\Models\OrderShipment;
+use App\Services\OrderEmailDeliveryService;
 use App\Support\MailConfigSync;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -25,15 +26,23 @@ class SendOrderLifecycleEmailJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
+    public int $tries = 3;
+
     public function __construct(
         public readonly int $orderId,
         public readonly string $event,
         public readonly ?int $shipmentId = null,
+        public readonly ?string $occurrenceKey = null,
     ) {
         $this->afterCommit = true;
     }
 
-    public function handle(): void
+    public function backoff(): array
+    {
+        return [60, 300];
+    }
+
+    public function handle(OrderEmailDeliveryService $deliveries): void
     {
         // The queue worker is a long-lived process (supervisord) — it never runs
         // RefreshMailConfig (HTTP middleware only), so admin SMTP-setting changes
@@ -51,34 +60,53 @@ class SendOrderLifecycleEmailJob implements ShouldQueue
             : null;
 
         match ($this->event) {
-            'shipped' => $this->sendCustomer($order, new OrderShipped($order, $shipment)),
-            'delivered' => $this->sendCustomer($order, new OrderDelivered($order)),
-            'cancelled' => $this->sendCancelled($order),
-            'returned' => $this->sendCustomer($order, new OrderReturned($order)),
-            'refunded' => $this->sendCustomer($order, new OrderCreditProcessed($order)),
+            'shipped' => $this->sendCustomer($deliveries, $order, new OrderShipped($order, $shipment)),
+            'delivered' => $this->sendCustomer($deliveries, $order, new OrderDelivered($order)),
+            'cancelled' => $this->sendCancelled($deliveries, $order),
+            'returned' => $this->sendCustomer($deliveries, $order, new OrderReturned($order)),
+            'refunded' => $this->sendCustomer($deliveries, $order, new OrderCreditProcessed($order)),
             default => null,
         };
     }
 
-    private function sendCustomer(Order $order, mixed $mailable): void
+    private function sendCustomer(OrderEmailDeliveryService $deliveries, Order $order, mixed $mailable): void
     {
         if (! $order->customer_reference) {
             return;
         }
 
-        Mail::send($mailable);
+        $deliveries->deliver(
+            deliveryKey: $this->deliveryKey($order, 'customer'),
+            jobType: "order_lifecycle.{$this->event}.customer",
+            orderId: $order->id,
+            recipient: (string) $order->customer_reference,
+            send: fn () => Mail::send($mailable),
+        );
     }
 
-    private function sendCancelled(Order $order): void
+    private function sendCancelled(OrderEmailDeliveryService $deliveries, Order $order): void
     {
         if ($order->customer_reference) {
-            Mail::send(new OrderCancelled($order));
+            $this->sendCustomer($deliveries, $order, new OrderCancelled($order));
         }
 
         $adminRecipient = config('mail.from.address');
 
         if ($adminRecipient) {
-            Mail::to($adminRecipient)->send(new CancelledOrderAdmin($order));
+            $deliveries->deliver(
+                deliveryKey: $this->deliveryKey($order, 'admin'),
+                jobType: 'order_lifecycle.cancelled.admin',
+                orderId: $order->id,
+                recipient: $adminRecipient,
+                send: fn () => Mail::to($adminRecipient)->send(new CancelledOrderAdmin($order)),
+            );
         }
+    }
+
+    private function deliveryKey(Order $order, string $recipient): string
+    {
+        $occurrence = $this->occurrenceKey ?? ($this->shipmentId ? "shipment-{$this->shipmentId}" : 'default');
+
+        return "order:{$order->id}:lifecycle:{$this->event}:occurrence:{$occurrence}:{$recipient}";
     }
 }
