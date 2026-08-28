@@ -133,6 +133,58 @@ class ProductCatalogApiTest extends TestCase
         $this->assertCount(1, $response->json('data'));
     }
 
+    public function test_every_public_product_payload_traces_to_lunar_and_ignores_legacy_only_rows(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $category = Category::query()->create([
+            'name' => 'Invariant products',
+            'slug' => 'invariant-products',
+            'type' => 'product',
+        ]);
+        $source = LegacyProduct::query()->create([
+            'category_id' => $category->id,
+            'name' => 'Lunar-backed product',
+            'slug' => 'lunar-backed-product',
+            'price' => 49.99,
+            'stock_quantity' => 5,
+            'is_active' => true,
+        ]);
+        $lunarProduct = app(ProductSyncService::class)->syncFromLegacy($source);
+        $this->assertNotNull($lunarProduct);
+
+        $legacyOnly = new LegacyProduct([
+            'category_id' => $category->id,
+            'name' => 'Legacy-only product',
+            'slug' => 'legacy-only-product',
+            'price' => 19.99,
+            'stock_quantity' => 5,
+            'is_active' => true,
+        ]);
+        $legacyOnly->saveQuietly();
+
+        foreach (['/api/products', '/api/v1/products'] as $endpoint) {
+            $response = $this->getJson($endpoint)->assertOk();
+            $productIds = collect($response->json('data'))->pluck('id')->map(fn ($id) => (int) $id);
+
+            $this->assertNotEmpty($productIds);
+            $this->assertSame(
+                $productIds->count(),
+                LunarProduct::query()->whereKey($productIds)->count(),
+                "Every product from {$endpoint} must reference lunar_products.id."
+            );
+            $response->assertJsonMissing(['slug' => 'legacy-only-product']);
+        }
+
+        $this->getJson("/api/products/{$lunarProduct->id}")
+            ->assertOk()
+            ->assertJsonPath('data.id', $lunarProduct->id);
+        $this->getJson("/api/v1/products/{$lunarProduct->id}")
+            ->assertOk()
+            ->assertJsonPath('data.id', $lunarProduct->id);
+        $this->getJson('/api/products/legacy-only-product')->assertNotFound();
+        $this->getJson('/api/v1/products/legacy-only-product')->assertNotFound();
+    }
+
     public function test_deleting_legacy_product_archives_the_synced_lunar_product(): void
     {
         $this->setUpLunarPrerequisites();
