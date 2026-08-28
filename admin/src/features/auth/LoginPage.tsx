@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { login, setToken, isAdminRole, AdminUser } from '@/lib/auth';
+import { login, isAdminRole, AdminUser } from '@/lib/auth';
 
 export function LoginPage({ onLoggedIn }: { onLoggedIn: (user: AdminUser) => void }) {
   const { t, i18n } = useTranslation();
@@ -17,12 +17,11 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: (user: AdminUser) => voi
     setError(null);
     setSubmitting(true);
     try {
-      const { user, token } = await login(email, password);
+      const { user } = await login(email, password);
       if (!isAdminRole(user.roles)) {
         setError(t('auth.error_no_permission'));
         return;
       }
-      setToken(token);
       onLoggedIn(user);
     } catch {
       setError(t('auth.error_invalid_credentials'));

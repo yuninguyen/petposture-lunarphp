@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { AppShell } from '@/layouts/AppShell';
 import { LoginPage } from '@/features/auth/LoginPage';
-import { AdminUser, fetchCurrentUser, getToken, isAdminRole } from '@/lib/auth';
+import { AdminUser, fetchCurrentUser, isAdminRole } from '@/lib/auth';
 import { Toaster } from 'react-hot-toast';
 
 // Lazy-load all page components → Vite creates separate chunks per route
@@ -40,20 +40,26 @@ function PageLoader() {
 export default function App() {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [authFailed, setAuthFailed] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(Boolean(getToken()));
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    if (!loggedIn || user) return;
     fetchCurrentUser()
       .then((u) => {
         if (isAdminRole(u.roles)) {
           setUser(u);
+          setLoggedIn(true);
         } else {
           setAuthFailed(true);
         }
       })
-      .catch(() => setAuthFailed(true));
-  }, [loggedIn, user]);
+      .catch(() => setAuthFailed(true))
+      .finally(() => setCheckingAuth(false));
+  }, []);
+
+  if (checkingAuth) {
+    return <PageLoader />;
+  }
 
   if (!loggedIn || authFailed) {
     return (

@@ -12,13 +12,13 @@ use App\Notifications\NewCustomerRegisteredNotification;
 use App\Services\CartService;
 use App\Services\CustomerLinkService;
 use App\Traits\HttpResponses;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
-use Symfony\Component\HttpFoundation\Cookie;
 
 class AuthController extends Controller
 {
@@ -27,6 +27,7 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         $request->authenticate();
+        $request->session()->regenerate();
 
         $user = Auth::user();
 
@@ -35,12 +36,9 @@ class AuthController extends Controller
             app(CartService::class)->mergeGuestCart((string) $cartToken, $user->id);
         }
 
-        $plainToken = $user->createToken("Api Token of {$user->name}")->plainTextToken;
-
         return $this->success([
             'user' => new UserResource($user),
-            'token' => $plainToken,
-        ], 'Đăng nhập thành công')->withCookie($this->authCookie($plainToken));
+        ], 'Đăng nhập thành công');
     }
 
     public function register(RegisterRequest $request)
@@ -70,43 +68,25 @@ class AuthController extends Controller
 
         Notification::send(User::staffRecipients(), new NewCustomerRegisteredNotification($user));
 
-        $plainToken = $user->createToken("Api Token of {$user->name}")->plainTextToken;
+        Auth::login($user);
+        $request->session()->regenerate();
 
         return $this->success([
             'user' => new UserResource($user),
-            'token' => $plainToken,
-        ], 'Đăng ký thành công')->withCookie($this->authCookie($plainToken));
+        ], 'Đăng ký thành công');
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        Auth::user()->currentAccessToken()->delete();
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        return $this->success(null, 'Đã đăng xuất')
-            ->withCookie(cookie()->forget('petposture_token'));
+        return $this->success(null, 'Đã đăng xuất');
     }
 
     public function me()
     {
         return $this->success(new UserResource(Auth::user()));
-    }
-
-    private function authCookie(string $token): Cookie
-    {
-        $isProd = app()->environment('production');
-        $sameSite = $isProd ? 'none' : 'lax';
-        $domain = config('session.domain');
-
-        return cookie(
-            'petposture_token',
-            $token,
-            60 * 24 * 7,  // 7 days
-            '/',
-            $domain,
-            $isProd,  // Secure flag — only in production (requires HTTPS)
-            true,     // httpOnly — JS cannot read this cookie
-            false,
-            $sameSite
-        );
     }
 }

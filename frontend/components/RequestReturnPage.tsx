@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Search, ChevronRight, ArrowLeft, CheckCircle2 } from "lucide-react";
 import Header from "./Header";
 import Footer from "./Footer";
-import { getApiBaseUrl } from "@/lib/api";
+import { fetchApi } from "@/lib/fetchApi";
 
 type OrderLine = {
     id: number;
@@ -81,14 +81,12 @@ function RequestReturnContent() {
         setOrder(null);
 
         try {
-            const apiBase = getApiBaseUrl();
-            const res = await fetch(`${apiBase}/api/orders/return-requests/options`, {
+            const res = await fetchApi('/api/orders/return-requests/options', {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
+                body: {
                     tracking_token: accessToken.trim(),
                     email: orderEmail.trim(),
-                }),
+                },
             });
 
             if (!res.ok) {
@@ -140,20 +138,18 @@ function RequestReturnContent() {
         const timeout = setTimeout(async () => {
             setIsEstimating(true);
             try {
-                const apiBase = getApiBaseUrl();
                 const items = Object.entries(selectedQuantities).map(([lineId, quantity]) => ({
                     order_line_id: Number(lineId),
                     quantity,
                 }));
 
-                const res = await fetch(`${apiBase}/api/orders/return-requests/preview`, {
+                const res = await fetchApi('/api/orders/return-requests/preview', {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
+                    body: {
                         tracking_token: trackingToken.trim(),
                         email: email.trim(),
                         items,
-                    }),
+                    },
                 });
 
                 setEstimate(res.ok ? await res.json() : null);
@@ -201,17 +197,15 @@ function RequestReturnContent() {
         setIsSubmitting(true);
 
         try {
-            const apiBase = getApiBaseUrl();
-            const res = await fetch(`${apiBase}/api/orders/return-requests`, {
+            const res = await fetchApi('/api/orders/return-requests', {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
+                body: {
                     tracking_token: trackingToken.trim(),
                     email: email.trim(),
                     reason,
                     note: note.trim() || undefined,
                     items,
-                }),
+                },
             });
 
             if (!res.ok) {

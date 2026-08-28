@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle, Loader2, Package, Truck } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api";
+import { fetchApi } from "@/lib/fetchApi";
 import RetryPaymentPanel from "@/components/orders/RetryPaymentPanel";
 
 type TrackingOrder = {
@@ -71,13 +72,12 @@ function OrderSuccessContent() {
                         throw new Error("This confirmation link is incomplete.");
                     }
 
-                    response = await fetch(`${apiBase}/api/orders/track`, {
+                    response = await fetchApi('/api/orders/track', {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
+                        body: {
                             tracking_token: initialToken,
                             email: accessEmail,
-                        }),
+                        },
                     });
                 }
 

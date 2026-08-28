@@ -25,6 +25,7 @@ import ComparisonTable, { ComparisonData } from '@/components/blog/ComparisonTab
 import { useSettings } from '@/context/SettingsContext';
 import { withTableOfContents } from '@/lib/text';
 import { getApiBaseUrl } from '@/lib/api';
+import { fetchApi } from '@/lib/fetchApi';
 import { formatDate } from '@/lib/date';
 import { SITE_URL } from '@/lib/site';
 import { TikTokIcon, PinterestIcon } from '@/lib/socialIcons';
@@ -117,10 +118,9 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
         setSubmitError(null);
 
         try {
-            const res = await fetch(`${getApiBaseUrl()}/api/posts/${post.slug}/comments`, {
+            const res = await fetchApi(`/api/posts/${post.slug}/comments`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify({ customer_name: commentName, comment: commentText }),
+                body: { customer_name: commentName, comment: commentText },
             });
 
             if (!res.ok) {

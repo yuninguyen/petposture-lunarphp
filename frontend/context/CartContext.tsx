@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useSyncExternalStore } from 'react';
 import { Product } from '@/types/shop';
-import { getApiBaseUrl } from '@/lib/api';
+import { fetchApi } from '@/lib/fetchApi';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -116,22 +116,16 @@ function getOrCreateCartToken(): string {
 interface ServerLine { id: number; variantId: number; quantity: number }
 interface ServerCart { token: string; lines: ServerLine[] }
 
-function authHeaders(cartToken: string): Record<string, string> {
-    const h: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'X-Cart-Token': cartToken,
-    };
-    const apiToken = typeof window !== 'undefined' ? localStorage.getItem('petposture_token') : null;
-    if (apiToken) h['Authorization'] = `Bearer ${apiToken}`;
-    return h;
+function cartHeaders(cartToken: string): Record<string, string> {
+    return { 'X-Cart-Token': cartToken };
 }
 
 async function serverAddLine(cartToken: string, variantId: number, quantity: number): Promise<ServerCart | null> {
     try {
-        const res = await fetch(`${getApiBaseUrl()}/api/cart/lines`, {
+        const res = await fetchApi('/api/cart/lines', {
             method: 'POST',
-            headers: authHeaders(cartToken),
-            body: JSON.stringify({ variantId, quantity }),
+            headers: cartHeaders(cartToken),
+            body: { variantId, quantity },
         });
         return res.ok ? res.json() : null;
     } catch { return null; }
@@ -139,10 +133,10 @@ async function serverAddLine(cartToken: string, variantId: number, quantity: num
 
 async function serverUpdateLine(cartToken: string, lineId: number, quantity: number): Promise<ServerCart | null> {
     try {
-        const res = await fetch(`${getApiBaseUrl()}/api/cart/lines/${lineId}`, {
+        const res = await fetchApi(`/api/cart/lines/${lineId}`, {
             method: 'PUT',
-            headers: authHeaders(cartToken),
-            body: JSON.stringify({ quantity }),
+            headers: cartHeaders(cartToken),
+            body: { quantity },
         });
         return res.ok ? res.json() : null;
     } catch { return null; }
@@ -150,9 +144,9 @@ async function serverUpdateLine(cartToken: string, lineId: number, quantity: num
 
 async function serverRemoveLine(cartToken: string, lineId: number): Promise<ServerCart | null> {
     try {
-        const res = await fetch(`${getApiBaseUrl()}/api/cart/lines/${lineId}`, {
+        const res = await fetchApi(`/api/cart/lines/${lineId}`, {
             method: 'DELETE',
-            headers: authHeaders(cartToken),
+            headers: cartHeaders(cartToken),
         });
         return res.ok ? res.json() : null;
     } catch { return null; }
@@ -160,8 +154,8 @@ async function serverRemoveLine(cartToken: string, lineId: number): Promise<Serv
 
 async function serverFetchCart(cartToken: string): Promise<ServerCart | null> {
     try {
-        const res = await fetch(`${getApiBaseUrl()}/api/cart`, {
-            headers: authHeaders(cartToken),
+        const res = await fetchApi('/api/cart', {
+            headers: cartHeaders(cartToken),
         });
         return res.ok ? res.json() : null;
     } catch { return null; }

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useSyncExternalStore } from 'react';
 import { Product } from '@/types/shop';
-import { getApiBaseUrl } from '@/lib/api';
+import { fetchApi } from '@/lib/fetchApi';
 import { useAuth } from '@/context/AuthContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -53,17 +53,15 @@ function writeGuestWishlist(items: Product[]) {
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
 export function WishlistProvider({ children }: { children: ReactNode }) {
-    const { token } = useAuth();
+    const { user } = useAuth();
     const guestItems = useSyncExternalStore(subscribeToGuestWishlist, readGuestWishlist, () => emptyWishlist);
     const [serverItems, setServerItems] = useState<Product[]>([]);
     const [loading, setLoading] = useState(false);
 
-    const fetchServerWishlist = useCallback(async (authToken: string) => {
+    const fetchServerWishlist = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${getApiBaseUrl()}/api/me/wishlist`, {
-                headers: { Authorization: `Bearer ${authToken}` },
-            });
+            const res = await fetchApi('/api/me/wishlist');
             if (res.ok) {
                 const payload = await res.json();
                 setServerItems(Array.isArray(payload?.data) ? payload.data : []);
@@ -73,33 +71,29 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     }, []);
 
     useEffect(() => {
-        if (!token) return;
-        // Deferred to a microtask so no setState runs synchronously within the effect body.
-        // serverItems is only read while `token` is set, so it's safe to leave stale on logout.
-        Promise.resolve().then(() => fetchServerWishlist(token));
-    }, [token, fetchServerWishlist]);
+        if (!user) return;
+        Promise.resolve().then(() => fetchServerWishlist());
+    }, [user, fetchServerWishlist]);
 
-    const items = token ? serverItems : guestItems;
+    const items = user ? serverItems : guestItems;
 
     const isWishlisted = (productId: number) => items.some(i => i.id === productId);
 
     const toggle = (product: Product) => {
-        if (token) {
+        if (user) {
             const already = serverItems.some(i => i.id === product.id);
             setServerItems(already
                 ? serverItems.filter(i => i.id !== product.id)
                 : [product, ...serverItems]);
 
             if (already) {
-                fetch(`${getApiBaseUrl()}/api/me/wishlist/${product.id}`, {
+                fetchApi(`/api/me/wishlist/${product.id}`, {
                     method: 'DELETE',
-                    headers: { Authorization: `Bearer ${token}` },
                 }).catch(() => {});
             } else {
-                fetch(`${getApiBaseUrl()}/api/me/wishlist`, {
+                fetchApi('/api/me/wishlist', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                    body: JSON.stringify({ product_id: product.id }),
+                    body: { product_id: product.id },
                 }).catch(() => {});
             }
         } else {

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { CreditCard, Loader2 } from "lucide-react";
-import { getApiBaseUrl } from "@/lib/api";
+import { fetchApi } from "@/lib/fetchApi";
 
 declare global {
     interface Window {
@@ -141,16 +141,12 @@ export default function RetryPaymentPanel({
         setMessage(null);
 
         try {
-            const apiBase = getApiBaseUrl();
-            const response = await fetch(`${apiBase}/api/orders/retry-payment`, {
+            const response = await fetchApi('/api/orders/retry-payment', {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
+                body: {
                     tracking_token: trackingToken,
                     email,
-                }),
+                },
             });
 
             const data = await response.json();

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MailOpen, Lock, Ban, Tag } from "lucide-react";
-import { getApiBaseUrl } from "@/lib/api";
+import { fetchApi } from "@/lib/fetchApi";
 
 export default function Newsletter() {
   const [email, setEmail] = useState("");
@@ -18,10 +18,9 @@ export default function Newsletter() {
     setIsSubmitting(true);
     setError("");
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/newsletter/subscribe`, {
+      const res = await fetchApi('/api/newsletter/subscribe', {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: { email },
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

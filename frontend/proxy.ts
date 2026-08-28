@@ -2,7 +2,31 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { buildContentSecurityPolicy } from '@/lib/content-security-policy';
 
-export function proxy(request: NextRequest) {
+type NavigationUser = { roles?: string[] };
+
+async function fetchNavigationUser(request: NextRequest): Promise<NavigationUser | null> {
+    const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+
+    try {
+        const response = await fetch(`${apiBase}/api/me`, {
+            cache: 'no-store',
+            headers: {
+                Accept: 'application/json',
+                Cookie: request.headers.get('cookie') || '',
+                Origin: request.nextUrl.origin,
+                Referer: request.url,
+            },
+        });
+
+        if (!response.ok) return null;
+        const payload = await response.json();
+        return payload?.data ?? null;
+    } catch {
+        return null;
+    }
+}
+
+export async function proxy(request: NextRequest) {
     const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
     const contentSecurityPolicy = buildContentSecurityPolicy(nonce);
     const requestHeaders = new Headers(request.headers);
@@ -19,31 +43,23 @@ export function proxy(request: NextRequest) {
         },
     }));
 
-    const token = request.cookies.get('petposture_token')?.value;
-    const userJson = request.cookies.get('petposture_user')?.value;
     const { pathname } = request.nextUrl;
+    const needsUser = pathname.startsWith('/admin') || pathname.startsWith('/account');
+    const user = needsUser ? await fetchNavigationUser(request) : null;
 
-    // Admin routes protection
     if (pathname.startsWith('/admin')) {
-        if (!token || !userJson) {
+        if (!user) {
             return secure(NextResponse.redirect(new URL('/sign-in', request.url)));
         }
 
-        try {
-            const user = JSON.parse(userJson);
-            const allowedRoles = ['super_admin', 'admin', 'staff', 'Product Manager', 'Order Manager', 'Support'];
-            const hasAccess = user.roles && user.roles.some((role: string) => allowedRoles.includes(role));
-
-            if (!hasAccess) {
-                return secure(NextResponse.redirect(new URL('/', request.url)));
-            }
-        } catch {
-            return secure(NextResponse.redirect(new URL('/sign-in', request.url)));
+        const allowedRoles = ['super_admin', 'admin', 'staff'];
+        const hasAccess = user.roles?.some((role) => allowedRoles.includes(role)) ?? false;
+        if (!hasAccess) {
+            return secure(NextResponse.redirect(new URL('/', request.url)));
         }
     }
 
-    // Customer account dashboard protection
-    if (pathname.startsWith('/account') && (!token || !userJson)) {
+    if (pathname.startsWith('/account') && !user) {
         return secure(NextResponse.redirect(new URL('/sign-in', request.url)));
     }
 

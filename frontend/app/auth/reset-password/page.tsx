@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getApiBaseUrl } from '@/lib/api';
+import { fetchApi } from '@/lib/fetchApi';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Lock, ChevronRight, CheckCircle2 } from 'lucide-react';
@@ -29,10 +29,9 @@ function ResetPasswordForm() {
         setError(null);
 
         try {
-            const res = await fetch(`${getApiBaseUrl()}/api/auth/reset-password`, {
+            const res = await fetchApi('/api/auth/reset-password', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, email, password, password_confirmation: confirmation }),
+                body: { token, email, password, password_confirmation: confirmation },
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Reset failed.');

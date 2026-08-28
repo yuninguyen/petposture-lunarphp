@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Star, MessageSquare, ShieldCheck, User, Send } from 'lucide-react';
 import { Product } from '@/types/shop';
 import { getApiBaseUrl } from '@/lib/api';
+import { fetchApi } from '@/lib/fetchApi';
 
 interface Review {
     id: number;
@@ -52,11 +53,9 @@ export function ProductReviews({ product }: ProductReviewsProps) {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const backendHost = getApiBaseUrl();
-            const res = await fetch(`${backendHost}/api/products/${product.slug}/reviews`, {
+            const res = await fetchApi(`/api/products/${product.slug}/reviews`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: formData,
             });
             if (res.ok) {
                 setFormData({ customer_name: '', rating: 5, comment: '' });

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Search, Package, CheckCircle2, Truck, HelpCircle, ChevronRight, Mail, ArrowLeft } from "lucide-react";
 import Header from "./Header";
 import Footer from "./Footer";
-import { getApiBaseUrl } from "@/lib/api";
+import { fetchApi } from "@/lib/fetchApi";
 import RetryPaymentPanel from "./orders/RetryPaymentPanel";
 import { useSettings } from "@/context/SettingsContext";
 
@@ -57,16 +57,12 @@ export default function TrackOrderPage() {
     };
 
     const fetchTrackedOrder = async (accessToken: string, trackingEmail: string) => {
-        const apiBase = getApiBaseUrl();
-        const res = await fetch(`${apiBase}/api/orders/track`, {
+        const res = await fetchApi('/api/orders/track', {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
+            body: {
                 tracking_token: accessToken.trim(),
                 email: trackingEmail.trim(),
-            }),
+            },
         });
 
         if (!res.ok) {

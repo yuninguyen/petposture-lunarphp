@@ -2,6 +2,7 @@
 
 use App\Enums\ErrorCode;
 use App\Http\Middleware\RefreshMailConfig;
+use App\Http\Middleware\RejectBearerAuthentication;
 use App\Http\Middleware\ResetPermissionCache;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\SetRequestId;
@@ -33,14 +34,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->redirectTo('/admin/login');
         $middleware->statefulApi();
-        $middleware->validateCsrfTokens(except: [
-            'api/*',
-        ]);
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
+        $middleware->appendToGroup('api', RejectBearerAuthentication::class);
         $middleware->appendToGroup('api', SetRequestId::class);
         // SetLocale's global side effects (Carbon::setLocale, PHP setlocale(), the
         // MySQL session's lc_time_names) are process-wide, not request-scoped — API

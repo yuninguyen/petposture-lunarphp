@@ -18,6 +18,7 @@ import {
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { getApiBaseUrl } from '@/lib/api';
+import { fetchApi } from '@/lib/fetchApi';
 import { OrderSummary } from '@/components/checkout/OrderSummary';
 import { ShippingMethodSelector } from '@/components/checkout/ShippingMethodSelector';
 import { getShippingAmount } from '@/lib/pricing';
@@ -259,7 +260,7 @@ function parsePlaceAddress(place: Record<string, unknown>) {
 export default function CheckoutPage() {
     const router = useRouter();
     const { items, totalAmount, coupon, setCoupon, clearCoupon } = useCart();
-    const { user, token } = useAuth();
+    const { user } = useAuth();
     const [couponCode, setCouponCode] = useState(coupon.code);
     const [isLoading, setIsLoading] = useState(false);
     const [successRef] = useState<string | null>(null);
@@ -405,12 +406,9 @@ export default function CheckoutPage() {
         let cancelled = false;
 
         const prefillSavedAddress = async () => {
-            if (token) {
+            if (user) {
                 try {
-                    const apiBase = getApiBaseUrl();
-                    const response = await fetch(`${apiBase}/api/me/addresses`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
+                    const response = await fetchApi('/api/me/addresses');
                     const data = await response.json();
                     const address = Array.isArray(data?.data) ? data.data[0] : null;
 
@@ -449,7 +447,7 @@ export default function CheckoutPage() {
         return () => {
             cancelled = true;
         };
-    }, [token]);
+    }, [user]);
 
     useEffect(() => {
         if (!googleMapsApiKey || typeof window === 'undefined') {
@@ -735,20 +733,16 @@ export default function CheckoutPage() {
 
         const loadTaxQuote = async () => {
             try {
-                const apiBase = getApiBaseUrl();
-                const response = await fetch(`${apiBase}/api/checkout/tax-quote`, {
+                const response = await fetchApi('/api/checkout/tax-quote', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
+                    body: {
                         shipping: {
                             state: form.province,
                             country: form.country,
                         },
                         subtotal_amount: totalAmount,
                         discount_amount: coupon.discountAmount,
-                    }),
+                    },
                 });
 
                 const data = await response.json();
@@ -1062,14 +1056,9 @@ export default function CheckoutPage() {
         `flex cursor-pointer items-center justify-between px-4 py-[15px] text-[14px] transition ${form.paymentMethod === method ? 'bg-[#f7faff] ring-1 ring-inset ring-[#cfe2f3]' : 'bg-white hover:bg-[#fbfbfc]'} ${index < availablePaymentMethods.length - 1 || form.paymentMethod === method ? 'border-b border-[#d9d9d9]' : ''}`;
 
     const prepareCardPaymentIntent = async () => {
-        const apiBase = getApiBaseUrl();
-        const response = await fetch(`${apiBase}/api/checkout/payment-intent`, {
+        const response = await fetchApi('/api/checkout/payment-intent', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-            },
-            body: JSON.stringify({
+            body: {
                 payment_method: 'card',
                 items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
                 coupon_code: coupon.code || null,
@@ -1082,7 +1071,7 @@ export default function CheckoutPage() {
                 },
                 currency: 'usd',
                 email: form.email,
-            }),
+            },
         });
 
         const data = await response.json();
@@ -1103,14 +1092,9 @@ export default function CheckoutPage() {
     };
 
     const preparePayPalOrder = async (): Promise<string> => {
-        const apiBase = getApiBaseUrl();
-        const response = await fetch(`${apiBase}/api/checkout/paypal-order`, {
+        const response = await fetchApi('/api/checkout/paypal-order', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-            },
-            body: JSON.stringify({
+            body: {
                 payment_method: 'paypal',
                 items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
                 coupon_code: coupon.code || null,
@@ -1122,7 +1106,7 @@ export default function CheckoutPage() {
                     postcode: form.postalCode,
                 },
                 currency: 'usd',
-            }),
+            },
         });
 
         const data = await response.json();
@@ -1138,20 +1122,15 @@ export default function CheckoutPage() {
         if (!couponCode.trim()) return;
 
         try {
-            const apiBase = getApiBaseUrl();
-            const res = await fetch(`${apiBase}/api/apply-coupon`, {
+            const res = await fetchApi('/api/apply-coupon', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({
+                body: {
                     coupon_code: couponCode.trim(),
                     items: items.map((item) => ({
                         variantId: item.variantId,
                         quantity: item.quantity,
                     })),
-                })
+                },
             });
 
             const data = await res.json();
@@ -1221,16 +1200,11 @@ export default function CheckoutPage() {
     };
 
     const placeOrder = async (paymentContext: Record<string, unknown> | null): Promise<{ reference: string; trackingToken: string }> => {
-        const apiBase = getApiBaseUrl();
         const { shippingAddress, billingAddress } = buildOrderAddresses();
 
-        const res = await fetch(`${apiBase}/api/checkout/place-order`, {
+        const res = await fetchApi('/api/checkout/place-order', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-            },
-            body: JSON.stringify({
+            body: {
                 items: items.map(i => ({ variantId: i.variantId, quantity: i.quantity })),
                 shipping: {
                     email: form.email,
@@ -1244,7 +1218,7 @@ export default function CheckoutPage() {
                 totalAmount: finalTotal,
                 coupon_code: coupon.discountAmount > 0 ? coupon.code : null,
                 attribution: getAttributionData(),
-            })
+            },
         });
 
         const raw = await res.text();
@@ -1269,15 +1243,12 @@ export default function CheckoutPage() {
     };
 
     const prepareRedirectSession = async (method: 'airwallex' | 'payoneer' | 'pingpong'): Promise<{ checkout_url: string; session_id: string }> => {
-        const apiBase = getApiBaseUrl();
-
         // The backend generates the correlation token and bakes it into the gateway's
         // return_url before calling the vendor API, so the success page can always
         // resolve the order via GET /api/orders/by-payment-session?gateway=&session_id=.
-        const res = await fetch(`${apiBase}/api/checkout/${method}-session`, {
+        const res = await fetchApi(`/api/checkout/${method}-session`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+            body: {
                 payment_method: method,
                 items: items.map(i => ({ variantId: i.variantId, quantity: i.quantity })),
                 coupon_code: coupon.discountAmount > 0 ? coupon.code : null,
@@ -1289,7 +1260,7 @@ export default function CheckoutPage() {
                     postcode: form.postalCode,
                 },
                 currency: 'usd',
-            }),
+            },
         });
 
         const data = await res.json();
@@ -1302,25 +1273,18 @@ export default function CheckoutPage() {
     };
 
     const finishSuccessSideEffectsAndRedirect = (orderAccess: { reference: string; trackingToken: string }) => {
-        const apiBase = getApiBaseUrl();
-
         if (form.saveInfo && form.email) {
-            fetch(`${apiBase}/api/newsletter/subscribe`, {
+            fetchApi('/api/newsletter/subscribe', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: form.email }),
+                body: { email: form.email },
             }).catch(() => undefined);
         }
 
         if (form.saveDelivery) {
-            if (token) {
-                fetch(`${apiBase}/api/me/addresses`, {
+            if (user) {
+                fetchApi('/api/me/addresses', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
+                    body: {
                         first_name: form.firstName,
                         last_name: form.lastName,
                         line_one: form.address1,
@@ -1330,7 +1294,7 @@ export default function CheckoutPage() {
                         postcode: form.postalCode,
                         phone: form.phone || null,
                         is_default: true,
-                    }),
+                    },
                 }).catch(() => undefined);
             } else {
                 try {
@@ -1364,14 +1328,9 @@ export default function CheckoutPage() {
         try {
             const orderAccess = await placeOrder({ paypal_order_id: paypalOrderId });
 
-            const apiBase = getApiBaseUrl();
-            const captureRes = await fetch(`${apiBase}/api/checkout/paypal-capture`, {
+            const captureRes = await fetchApi('/api/checkout/paypal-capture', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-                },
-                body: JSON.stringify({ paypal_order_id: paypalOrderId }),
+                body: { paypal_order_id: paypalOrderId },
             });
 
             const captureData = await captureRes.json();

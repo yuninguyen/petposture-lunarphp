@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getApiBaseUrl } from '@/lib/api';
+import { fetchApi } from '@/lib/fetchApi';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { TurnstileWidget } from '@/components/auth/TurnstileWidget';
@@ -41,13 +41,10 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
         setError(null);
 
         try {
-            const base = getApiBaseUrl();
-
             if (mode === 'forgot') {
-                const res = await fetch(`${base}/api/auth/forgot-password`, {
+                const res = await fetchApi('/api/auth/forgot-password', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                    body: JSON.stringify({ email }),
+                    body: { email },
                 });
                 if (!res.ok) throw new Error('Request failed.');
                 setMode('forgot-sent');
@@ -60,16 +57,15 @@ export function AuthForm({ initialMode }: { initialMode: 'login' | 'register' })
                 ? { email, password, cf_turnstile_token: turnstileToken, ...(cartToken ? { cart_token: cartToken } : {}) }
                 : { name, email, password, password_confirmation: password, cf_turnstile_token: turnstileToken };
 
-            const res = await fetch(`${base}${endpoint}`, {
+            const res = await fetchApi(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify(body),
+                body,
             });
 
             const data = await res.json();
 
-            if (res.ok && data.data?.token) {
-                login(data.data.token, data.data.user);
+            if (res.ok && data.data?.user) {
+                login(data.data.user);
                 router.push('/account');
             } else {
                 setError(data.message || (mode === 'login' ? 'Invalid credentials' : 'Registration failed'));
