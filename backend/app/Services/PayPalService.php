@@ -137,7 +137,7 @@ class PayPalService
         }
 
         $response = Http::withToken($this->accessToken())
-            ->post($this->baseUrl()."/v2/checkout/orders/{$paypalOrderId}/capture", []);
+            ->post($this->baseUrl()."/v2/checkout/orders/{$paypalOrderId}/capture", new \stdClass);
 
         if (! $response->successful()) {
             throw new RuntimeException(

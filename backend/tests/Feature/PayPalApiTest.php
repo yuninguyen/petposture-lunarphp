@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Lunar\FieldTypes\Text;
+use Mockery;
 use Lunar\Models\Channel;
 use Lunar\Models\Country;
 use Lunar\Models\Currency;
@@ -133,7 +134,9 @@ class PayPalApiTest extends TestCase
 
         Http::shouldReceive('withToken')->once()->with('test-access-token')->andReturnSelf();
         Http::shouldReceive('post')->once()
-            ->with('https://api-m.sandbox.paypal.com/v2/checkout/orders/APPROVED-ORDER-123/capture', [])
+            ->with('https://api-m.sandbox.paypal.com/v2/checkout/orders/APPROVED-ORDER-123/capture', Mockery::on(
+                fn ($body): bool => $body instanceof \stdClass && get_object_vars($body) === [],
+            ))
             ->andReturn($captureResponse);
 
         $capture = app(\App\Services\PayPalService::class)->captureOrder('APPROVED-ORDER-123');
