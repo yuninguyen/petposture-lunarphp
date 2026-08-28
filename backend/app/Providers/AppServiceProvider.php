@@ -15,6 +15,7 @@ use App\Observers\BrandCacheObserver;
 use App\Observers\LegacyProductObserver;
 use App\Observers\OrderObserver;
 use App\Observers\PostCacheObserver;
+use App\Observers\ProductBadgeIndexObserver;
 use App\Observers\ProductCacheObserver;
 use App\Observers\ProductVariantObserver;
 use App\Observers\SanitizeRichTextObserver;
@@ -87,7 +88,7 @@ class AppServiceProvider extends ServiceProvider
         Order::observe(OrderObserver::class);
         ProductVariant::observe(ProductVariantObserver::class);
         \App\Models\Legacy\Product::observe(LegacyProductObserver::class);
-        Product::observe(ProductCacheObserver::class);
+        Product::observe([ProductBadgeIndexObserver::class, ProductCacheObserver::class]);
         Brand::observe(BrandCacheObserver::class);
         Post::observe([SanitizeRichTextObserver::class, PostCacheObserver::class]);
         Page::observe(SanitizeRichTextObserver::class);

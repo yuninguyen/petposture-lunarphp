@@ -52,18 +52,26 @@ class ProductController extends Controller
             );
         }
 
-        // Filter by breed-type tag (e.g. "flat-faced", "long-backed") — stored as a
-        // comma-separated attribute, so match the slug as a standalone LIKE token
         if ($request->filled('breed')) {
-            $breed = '%'.strtolower($request->input('breed')).'%';
-            $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$breed]);
+            $breed = Str::slug((string) $request->input('breed'));
+            $query->whereExists(function ($subquery) use ($breed) {
+                $subquery->selectRaw('1')
+                    ->from('breed_product')
+                    ->join('breeds', 'breeds.id', '=', 'breed_product.breed_id')
+                    ->whereColumn('breed_product.lunar_product_id', 'lunar_products.id')
+                    ->where('breeds.slug', $breed);
+            });
         }
 
-        // Filter by solution tag (e.g. "eating-digestion", "mobility-support") — same
-        // comma-separated attribute pattern as breed
         if ($request->filled('solution')) {
-            $solution = '%'.strtolower($request->input('solution')).'%';
-            $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$solution]);
+            $solution = Str::slug((string) $request->input('solution'));
+            $query->whereExists(function ($subquery) use ($solution) {
+                $subquery->selectRaw('1')
+                    ->from('solution_product')
+                    ->join('solutions', 'solutions.id', '=', 'solution_product.solution_id')
+                    ->whereColumn('solution_product.lunar_product_id', 'lunar_products.id')
+                    ->where('solutions.slug', $solution);
+            });
         }
 
         // Filter by brand slug
@@ -72,10 +80,8 @@ class ProductController extends Controller
             );
         }
 
-        // Filter by badge attribute (e.g. "Best Seller")
         if ($request->filled('badge')) {
-            $badge = '%'.strtolower($request->input('badge')).'%';
-            $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$badge]);
+            $query->where('badge_slug', Str::slug((string) $request->input('badge')));
         }
 
         // Search: Lunar product names/descriptions are stored in attribute_data JSON
@@ -296,16 +302,16 @@ class ProductController extends Controller
             $query->where('brand_id', $brandId);
         }
 
-        $related = $query->inRandomOrder()->limit(8)->get();
+        $related = $query->orderBy('id')->limit(8)->get();
 
-        // Pad with random products if fewer than 4
+        // Pad deterministically if fewer than four related products are available.
         if ($related->count() < 4) {
             $existing = $related->pluck('id')->push($product->id);
             $filler = Product::where('status', 'published')
                 ->whereNotIn('id', $existing)
                 ->whereHas('variants')
                 ->with(['variants.prices', 'thumbnail', 'defaultUrl', 'urls', 'collections.defaultUrl'])
-                ->inRandomOrder()
+                ->orderBy('id')
                 ->limit(4 - $related->count())
                 ->get();
             $related = $related->concat($filler);
