@@ -2,6 +2,7 @@
 
 namespace App\Services\Admin;
 
+use App\Security\RichTextSanitizer;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Lunar\FieldTypes\Text;
@@ -11,6 +12,8 @@ use Lunar\Models\ProductType;
 
 class ProductAttributeService
 {
+    public function __construct(private readonly RichTextSanitizer $richTextSanitizer) {}
+
     public function definitions(ProductType $productType, string $target, ?Collection $attributeData = null): array
     {
         return $this->attributes($productType, $target)
@@ -43,7 +46,7 @@ class ProductAttributeService
                 continue;
             }
 
-            $value = $values[$attribute->handle];
+            $value = $this->sanitizeValue($attribute, $values[$attribute->handle]);
             $this->validateValue($attribute, $value);
             $current->put($attribute->handle, $this->makeFieldValue($attribute->type, $value));
         }
@@ -94,6 +97,27 @@ class ProductAttributeService
         }
 
         return $value instanceof Text ? (string) $value->getValue() : '';
+    }
+
+    private function sanitizeValue(Attribute $attribute, mixed $value): mixed
+    {
+        if ($attribute->handle !== 'description') {
+            return $value;
+        }
+
+        if ($attribute->type === TranslatedText::class && is_array($value)) {
+            foreach ($value as $locale => $localizedValue) {
+                if (is_scalar($localizedValue) || $localizedValue === null) {
+                    $value[$locale] = $this->richTextSanitizer->sanitize((string) $localizedValue);
+                }
+            }
+
+            return $value;
+        }
+
+        return is_scalar($value) || $value === null
+            ? $this->richTextSanitizer->sanitize((string) $value)
+            : $value;
     }
 
     private function validateValue(Attribute $attribute, mixed $value): void

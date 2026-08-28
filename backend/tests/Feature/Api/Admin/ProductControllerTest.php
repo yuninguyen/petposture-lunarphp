@@ -21,7 +21,6 @@ use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Language;
 use Lunar\Models\OrderLine;
-use Lunar\Models\Price;
 use Lunar\Models\Product;
 use Lunar\Models\ProductAssociation;
 use Lunar\Models\ProductOption;
@@ -290,6 +289,29 @@ class ProductControllerTest extends TestCase
         $this->assertCount(1, $remaining);
         $this->assertSame($media[1]->id, $remaining->first()->id);
         $this->assertTrue((bool) $remaining->first()->getCustomProperty('primary'));
+    }
+
+    public function test_product_description_is_sanitized_before_persistence(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->product('Sanitized product', 'draft', null, [
+            'description' => new Text('Old description'),
+        ]);
+
+        $this->putJson("/api/admin/products/{$product->id}", [
+            'status' => 'draft',
+            'attributes' => [
+                'name' => 'Sanitized product',
+                'description' => '<p>Safe <strong>content</strong><img src="/pet.jpg" onerror="alert(1)"><a href="javascript:alert(2)">click</a></p><script>alert(3)</script><iframe src="https://evil.example/embed"></iframe>',
+            ],
+        ])->assertOk();
+
+        $description = (string) $product->fresh()->attribute_data->get('description')->getValue();
+        $this->assertStringContainsString('<strong>content</strong>', $description);
+        $this->assertStringNotContainsString('<script', $description);
+        $this->assertStringNotContainsString('onerror', $description);
+        $this->assertStringNotContainsString('javascript:', $description);
+        $this->assertStringNotContainsString('<iframe', $description);
     }
 
     public function test_product_seo_metadata_round_trips_through_the_existing_polymorphic_table(): void

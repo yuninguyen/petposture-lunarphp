@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Star, ShieldCheck, Truck, RotateCcw, Plus, Minus } from 'lucide-react';
 import { Product } from '@/types/shop';
 import { useCart } from '@/context/CartContext';
+import { sanitizeRichHtml } from '@/lib/sanitize-rich-html';
 import { Breadcrumbs } from './Breadcrumbs';
 
 interface ProductDetailsProps {
@@ -14,11 +15,11 @@ interface ProductDetailsProps {
 
 export function ProductDetails({ product }: ProductDetailsProps) {
     const rawDescription = product.description?.trim();
-    const descriptionMarkup = rawDescription
+    const descriptionMarkup = sanitizeRichHtml(rawDescription
         ? ((rawDescription.includes('<') && rawDescription.includes('>'))
             ? rawDescription
             : rawDescription.replace(/\n/g, '<br/>'))
-        : '';
+        : '');
 
     const displaySpecs = product.specs || [];
 

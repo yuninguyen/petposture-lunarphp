@@ -28,6 +28,7 @@ import { getApiBaseUrl } from '@/lib/api';
 import { formatDate } from '@/lib/date';
 import { SITE_URL } from '@/lib/site';
 import { TikTokIcon, PinterestIcon } from '@/lib/socialIcons';
+import { sanitizeRichHtml } from '@/lib/sanitize-rich-html';
 
 const fadeUp = {
     initial: { opacity: 0, y: 20 },
@@ -67,9 +68,13 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
     const { social } = useSettings();
     const [isCommenting, setIsCommenting] = React.useState(false);
     const shareUrl = `${SITE_URL}/blog/${post.slug}`;
-    const { html: contentHtml, items: tocItems } = React.useMemo(
-        () => withTableOfContents(post.content || `<p>${post.excerpt}</p>`),
+    const sanitizedContent = React.useMemo(
+        () => sanitizeRichHtml(post.content || `<p>${post.excerpt}</p>`),
         [post.content, post.excerpt]
+    );
+    const { html: contentHtml, items: tocItems } = React.useMemo(
+        () => withTableOfContents(sanitizedContent),
+        [sanitizedContent]
     );
 
     const [comments, setComments] = React.useState<Comment[]>([]);

@@ -8,6 +8,7 @@ use App\Models\Breed;
 use App\Models\OrderEvent;
 use App\Models\Solution;
 use App\Models\OrderShipment;
+use App\Models\Page;
 use App\Models\Post;
 use App\Models\Setting;
 use App\Observers\BrandCacheObserver;
@@ -16,6 +17,7 @@ use App\Observers\OrderObserver;
 use App\Observers\PostCacheObserver;
 use App\Observers\ProductCacheObserver;
 use App\Observers\ProductVariantObserver;
+use App\Observers\SanitizeRichTextObserver;
 use App\Observers\SettingCacheObserver;
 use App\Payments\Gateways\AirwallexGateway;
 use App\Payments\Gateways\CashOnDeliveryGateway;
@@ -84,7 +86,8 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\Legacy\Product::observe(LegacyProductObserver::class);
         Product::observe(ProductCacheObserver::class);
         Brand::observe(BrandCacheObserver::class);
-        Post::observe(PostCacheObserver::class);
+        Post::observe([SanitizeRichTextObserver::class, PostCacheObserver::class]);
+        Page::observe(SanitizeRichTextObserver::class);
         Setting::observe(SettingCacheObserver::class);
         $this->app->make(ShippingModifiers::class)->add(DefaultShippingModifier::class);
         Order::resolveRelationUsing('orderEvents', function (Order $order) {
