@@ -128,6 +128,7 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
         openGraph: {
             title: ogTitle,
             description: ogDescription,
+            url: `${SITE_URL}/shop/${product.categorySlug}/${product.slug}`,
             type: 'website',
             images: ogImage ? [{ url: ogImage }] : undefined,
         },
