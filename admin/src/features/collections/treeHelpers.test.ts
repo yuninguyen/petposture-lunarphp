@@ -19,6 +19,7 @@ function node(id: number, groupId: number, parentId: number | null, children: Co
     collection_group_id: groupId,
     parent_id: parentId,
     name: { en: `Node ${id}`, vi: `Nút ${id}` },
+    slug: `node-${id}`,
     children_count: children.length,
     children,
   };

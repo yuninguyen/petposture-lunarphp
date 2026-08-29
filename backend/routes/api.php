@@ -150,6 +150,8 @@ Route::prefix('/admin')
         Route::delete('/collections/{collection}', [CollectionController::class, 'destroy']);
         Route::post('/collections/{collection}/reorder', [CollectionController::class, 'reorder']);
         Route::post('/collections/{collection}/move', [CollectionController::class, 'move']);
+        Route::get('/collections/{collection}/products', [CollectionController::class, 'products']);
+        Route::put('/collections/{collection}/products', [CollectionController::class, 'syncProducts']);
 
         Route::get('/products', [AdminProductController::class, 'index']);
         Route::post('/products', [AdminProductController::class, 'store']);
@@ -169,6 +171,9 @@ Route::prefix('/admin')
 
         Route::get('/product-types', [ProductTypeController::class, 'index']);
         Route::post('/product-types', [ProductTypeController::class, 'store']);
+        Route::get('/product-types/{product_type}', [ProductTypeController::class, 'show']);
+        Route::put('/product-types/{product_type}', [ProductTypeController::class, 'update']);
+        Route::delete('/product-types/{product_type}', [ProductTypeController::class, 'destroy']);
 
         Route::get('/custom-fields', [CustomFieldController::class, 'index']);
         Route::post('/custom-fields', [CustomFieldController::class, 'store']);

@@ -11,12 +11,14 @@ use App\Http\Requests\Admin\UpdateCollectionRequest;
 use App\Http\Resources\Admin\CollectionResource;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Lunar\FieldTypes\TranslatedText;
 use Lunar\Models\Collection;
 use Lunar\Models\CollectionGroup;
+use Lunar\Models\Product;
 
 class CollectionController extends Controller
 {
@@ -27,6 +29,7 @@ class CollectionController extends Controller
             ->get()
             ->map(function (CollectionGroup $group): array {
                 $nodes = Collection::query()
+                    ->with('defaultUrl')
                     ->where('collection_group_id', $group->id)
                     ->whereNull('deleted_at')
                     ->defaultOrder()
@@ -93,6 +96,40 @@ class CollectionController extends Controller
             ->findOrFail($collection->id);
 
         return new CollectionResource($this->loadNode($activeCollection));
+    }
+
+    public function products(Collection $collection): JsonResponse
+    {
+        $products = $collection->products()
+            ->orderByPivot('position')
+            ->orderBy('lunar_products.id')
+            ->get()
+            ->values()
+            ->map(fn (Product $product, int $index): array => [
+                'id' => $product->id,
+                'name' => (string) $product->translateAttribute('name'),
+                'slug' => $product->defaultUrl?->slug,
+                'position' => $index,
+            ]);
+
+        return response()->json(['data' => $products]);
+    }
+
+    public function syncProducts(Request $request, Collection $collection): JsonResponse
+    {
+        $validated = $request->validate([
+            'product_ids' => ['required', 'array'],
+            'product_ids.*' => ['integer', 'distinct', 'exists:lunar_products,id'],
+        ]);
+
+        $sync = collect($validated['product_ids'])
+            ->values()
+            ->mapWithKeys(fn (int $productId, int $position): array => [$productId => ['position' => $position]])
+            ->all();
+
+        DB::transaction(fn () => $collection->products()->sync($sync));
+
+        return $this->products($collection);
     }
 
     public function update(UpdateCollectionRequest $request, Collection $collection): CollectionResource
@@ -285,9 +322,11 @@ class CollectionController extends Controller
 
     private function loadNode(Collection $collection): Collection
     {
+        $collection->loadMissing('defaultUrl');
         $collection->setRelation(
             'children',
             $collection->children()
+                ->with('defaultUrl')
                 ->whereNull('deleted_at')
                 ->defaultOrder()
                 ->get()

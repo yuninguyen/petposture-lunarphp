@@ -74,6 +74,59 @@ class ProductTypeControllerTest extends TestCase
         $this->assertSame($general->id, $product->fresh()->product_type_id);
     }
 
+    public function test_admin_can_show_and_update_product_type_without_changing_product_count(): void
+    {
+        $this->actingAsAdmin();
+        $productType = ProductType::query()->create(['name' => 'Harnesses']);
+
+        $this->getJson('/api/admin/product-types/'.$productType->id)
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Harnesses')
+            ->assertJsonPath('data.products_count', 0);
+
+        $this->putJson('/api/admin/product-types/'.$productType->id, ['name' => 'Orthopedic Beds'])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Orthopedic Beds')
+            ->assertJsonPath('data.products_count', 0);
+
+        $this->assertDatabaseHas('lunar_product_types', ['id' => $productType->id, 'name' => 'Orthopedic Beds']);
+    }
+
+    public function test_duplicate_name_is_rejected_when_updating_product_type(): void
+    {
+        $this->actingAsAdmin();
+        $existing = ProductType::query()->create(['name' => 'Harnesses']);
+        $productType = ProductType::query()->create(['name' => 'Beds']);
+
+        $this->putJson('/api/admin/product-types/'.$productType->id, ['name' => $existing->name])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['name']);
+    }
+
+    public function test_admin_can_delete_unused_product_type(): void
+    {
+        $this->actingAsAdmin();
+        $productType = ProductType::query()->create(['name' => 'Harnesses']);
+
+        $this->deleteJson('/api/admin/product-types/'.$productType->id)->assertNoContent();
+
+        $this->assertDatabaseMissing('lunar_product_types', ['id' => $productType->id]);
+    }
+
+    public function test_product_type_in_use_cannot_be_deleted(): void
+    {
+        $this->actingAsAdmin();
+        $productType = ProductType::query()->create(['name' => 'Harnesses']);
+        Product::factory()->create(['product_type_id' => $productType->id]);
+
+        $this->deleteJson('/api/admin/product-types/'.$productType->id)
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'PRODUCT_TYPE_IN_USE')
+            ->assertJsonPath('details.products_count', 1);
+
+        $this->assertDatabaseHas('lunar_product_types', ['id' => $productType->id]);
+    }
+
     public function test_duplicate_name_is_rejected(): void
     {
         $this->actingAsAdmin();

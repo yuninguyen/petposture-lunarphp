@@ -138,6 +138,55 @@ class CollectionControllerTest extends TestCase
         $migration->up();
     }
 
+    public function test_admin_can_list_and_sync_collection_products_in_position_order(): void
+    {
+        $this->actingAsAdmin();
+        $group = CollectionGroup::factory()->create();
+        $collection = $this->root($group, 'Dogs', 'Chó');
+        $first = Product::factory()->create();
+        $second = Product::factory()->create();
+        $third = Product::factory()->create();
+        $collection->products()->attach($first->id, ['position' => 4]);
+        $collection->products()->attach($second->id, ['position' => 1]);
+
+        $this->getJson('/api/admin/collections/'.$collection->id.'/products')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $second->id)
+            ->assertJsonPath('data.0.position', 0)
+            ->assertJsonPath('data.1.id', $first->id)
+            ->assertJsonPath('data.1.position', 1);
+
+        $this->putJson('/api/admin/collections/'.$collection->id.'/products', [
+            'product_ids' => [$third->id, $first->id],
+        ])->assertOk()
+            ->assertJsonPath('data.0.id', $third->id)
+            ->assertJsonPath('data.0.position', 0)
+            ->assertJsonPath('data.1.id', $first->id)
+            ->assertJsonPath('data.1.position', 1);
+
+        $this->assertDatabaseHas('lunar_collection_product', [
+            'collection_id' => $collection->id,
+            'product_id' => $third->id,
+            'position' => 0,
+        ]);
+        $this->assertDatabaseMissing('lunar_collection_product', [
+            'collection_id' => $collection->id,
+            'product_id' => $second->id,
+        ]);
+    }
+
+    public function test_collection_product_sync_validates_distinct_existing_ids(): void
+    {
+        $this->actingAsAdmin();
+        $group = CollectionGroup::factory()->create();
+        $collection = $this->root($group, 'Dogs', 'Chó');
+
+        $this->putJson('/api/admin/collections/'.$collection->id.'/products', [
+            'product_ids' => [999999, 999999],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['product_ids.0', 'product_ids.1']);
+    }
+
     public function test_index_returns_groups_sorted_with_nested_active_bilingual_tree(): void
     {
         $this->actingAsAdmin();
@@ -159,6 +208,7 @@ class CollectionControllerTest extends TestCase
         $response->assertJsonPath('data.0.name', 'Alpha')
             ->assertJsonPath('data.0.collections.0.name.en', 'Dogs')
             ->assertJsonPath('data.0.collections.0.name.vi', 'Chó')
+            ->assertJsonPath('data.0.collections.0.slug', 'dogs')
             ->assertJsonPath('data.0.collections.0.children_count', 1)
             ->assertJsonPath('data.0.collections.0.children.0.id', $child->id)
             ->assertJsonPath('data.0.collections.0.children.0.name.vi', 'Chó nhỏ')

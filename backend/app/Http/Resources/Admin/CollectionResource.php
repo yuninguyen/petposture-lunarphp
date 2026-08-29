@@ -4,6 +4,7 @@ namespace App\Http\Resources\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Str;
 use Lunar\Base\FieldType;
 
 class CollectionResource extends JsonResource
@@ -20,6 +21,8 @@ class CollectionResource extends JsonResource
                 'en' => $this->translatedName('en'),
                 'vi' => $this->translatedName('vi'),
             ],
+            'slug' => $this->defaultUrl?->slug
+                ?? Str::slug($this->translatedName('en') ?: $this->translatedName('vi')),
             'children_count' => $children->count(),
             'children' => static::collection($children),
         ];

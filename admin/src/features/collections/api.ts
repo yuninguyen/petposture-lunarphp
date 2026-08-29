@@ -10,6 +10,7 @@ export interface CollectionNode {
   collection_group_id: number;
   parent_id: number | null;
   name: LocalizedName;
+  slug: string;
   children_count: number;
   children: CollectionNode[];
 }
@@ -29,6 +30,17 @@ export interface MoveCollectionPayload {
 export interface ReorderCollectionPayload {
   sibling_id: number;
   position: 'before' | 'after';
+}
+
+export interface CollectionProduct {
+  id: number;
+  name: string;
+  slug: string | null;
+  position: number;
+}
+
+export interface CollectionProductsPayload {
+  product_ids: number[];
 }
 
 type CollectionTreesResponse = CollectionGroupTree[] | { data: CollectionGroupTree[] };
@@ -81,4 +93,17 @@ export async function reorderCollection(id: number, payload: ReorderCollectionPa
       body: { ...payload },
     }),
   );
+}
+
+export async function fetchCollectionProducts(id: number): Promise<CollectionProduct[]> {
+  const response = await fetchJson<CollectionProduct[] | { data: CollectionProduct[] }>(`/admin/collections/${id}/products`);
+  return Array.isArray(response) ? response : response.data;
+}
+
+export async function syncCollectionProducts(id: number, payload: CollectionProductsPayload): Promise<CollectionProduct[]> {
+  const response = await fetchJson<CollectionProduct[] | { data: CollectionProduct[] }>(`/admin/collections/${id}/products`, {
+    method: 'PUT',
+    body: { ...payload },
+  });
+  return Array.isArray(response) ? response : response.data;
 }

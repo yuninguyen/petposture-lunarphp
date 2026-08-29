@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { CollectionGroupTree, CollectionNode, ReorderCollectionPayload } from './api';
 import { canDropSameLevel } from './treeHelpers';
 import { CollectionNodeActions } from './CollectionNodeActions';
+import { CollectionProductsPanel } from './CollectionProductsPanel';
 
 interface CollectionNodeRowProps {
   node: CollectionNode;
@@ -41,6 +42,7 @@ export function CollectionNodeRow({
 }: CollectionNodeRowProps) {
   const { t } = useTranslation();
   const [dropPosition, setDropPosition] = useState<'before' | 'after' | null>(null);
+  const [manageProducts, setManageProducts] = useState(false);
   const expanded = expandedIds.has(node.id);
   const hasChildren = node.children_count > 0 || node.children.length > 0;
   const disabled = affectedIds.has(node.id);
@@ -94,10 +96,12 @@ export function CollectionNodeRow({
           {hasChildren ? <span className={`transition-transform ${expanded ? 'rotate-90' : ''}`}>›</span> : <span>·</span>}
         </button>
         <p className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">{node.name.en}</p>
+        <button type="button" onClick={() => setManageProducts(true)} disabled={disabled} className="hidden rounded-md px-2 py-1 text-xs font-medium text-secondary hover:bg-slate-100 sm:inline-flex">{t('collections.products')}</button>
         {hasChildren && <span className="hidden rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 sm:inline">{node.children_count}</span>}
         {disabled && <span className="h-4 w-4 animate-spin rounded-full border-2 border-secondary border-t-transparent" />}
         <CollectionNodeActions node={node} disabled={disabled} onAddChild={onAddChild} onEdit={onEdit} onMove={onMove} onMakeRoot={onMakeRoot} onDelete={onDelete} />
       </div>
+      {manageProducts && <CollectionProductsPanel collectionId={node.id} collectionName={node.name.en} onClose={() => setManageProducts(false)} />}
       {expanded && node.children.map((child) => (
         <CollectionNodeRow
           key={child.id}

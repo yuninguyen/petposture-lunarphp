@@ -20,3 +20,15 @@ export async function createProductType(payload: { name: string }): Promise<Prod
   });
   return 'data' in response ? response.data : response;
 }
+
+export async function updateProductType(id: number, payload: { name: string }): Promise<ProductType> {
+  const response = await fetchJson<ProductType | { data: ProductType }>(`/admin/product-types/${id}`, {
+    method: 'PUT',
+    body: payload,
+  });
+  return 'data' in response ? response.data : response;
+}
+
+export async function deleteProductType(id: number): Promise<void> {
+  await fetchJson<void>(`/admin/product-types/${id}`, { method: 'DELETE' });
+}
