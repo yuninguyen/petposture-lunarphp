@@ -2,18 +2,39 @@ import type { MetadataRoute } from 'next';
 import { API_BASE_URL } from '@/lib/api';
 import { SITE_URL } from '@/lib/site';
 
-type ApiProduct = { slug?: string; categorySlug?: string };
-type ApiPost = { slug?: string };
+type ApiProduct = { slug?: string; categorySlug?: string; updated_at?: string };
+type ApiPost = { slug?: string; updated_at?: string };
+
+function validLastModified(value?: string): Date | undefined {
+    if (!value) return undefined;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? undefined : date;
+}
 
 async function fetchProducts(): Promise<ApiProduct[]> {
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/products`, { next: { revalidate: 3600 } });
-        if (!res.ok) return [];
-        const payload = await res.json();
-        return Array.isArray(payload?.data) ? payload.data : [];
-    } catch {
-        return [];
+    const products: ApiProduct[] = [];
+    let page = 1;
+    let lastPage = 1;
+
+    while (page <= lastPage) {
+        try {
+            const params = new URLSearchParams({ page: String(page), per_page: '100' });
+            const res = await fetch(`${API_BASE_URL}/api/products?${params}`, { next: { revalidate: 3600 } });
+            if (!res.ok) break;
+            const payload = await res.json();
+            if (!Array.isArray(payload?.data)) break;
+            products.push(...payload.data);
+            const reportedLastPage = payload?.meta?.last_page;
+            lastPage = Number.isInteger(reportedLastPage) && reportedLastPage >= page
+                ? reportedLastPage
+                : page;
+            page += 1;
+        } catch {
+            break;
+        }
     }
+
+    return products;
 }
 
 async function fetchPosts(): Promise<ApiPost[]> {
@@ -71,6 +92,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .filter((p): p is Required<ApiProduct> => Boolean(p.slug && p.categorySlug))
         .map((p) => ({
             url: `${SITE_URL}/shop/${p.categorySlug}/${p.slug}`,
+            lastModified: validLastModified(p.updated_at),
             changeFrequency: 'weekly',
             priority: 0.8,
         }));
@@ -79,6 +101,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .filter((p): p is Required<ApiPost> => Boolean(p.slug))
         .map((p) => ({
             url: `${SITE_URL}/blog/${p.slug}`,
+            lastModified: validLastModified(p.updated_at),
             changeFrequency: 'monthly',
             priority: 0.6,
         }));

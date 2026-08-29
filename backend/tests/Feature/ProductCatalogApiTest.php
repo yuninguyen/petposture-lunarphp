@@ -381,6 +381,23 @@ class ProductCatalogApiTest extends TestCase
         $this->assertSame('draft', LunarProduct::query()->find($lunarProduct->id)?->status);
     }
 
+    public function test_product_resource_exposes_updated_at_as_iso_timestamp(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $category = Category::query()->create([
+            'name' => 'Timestamp products',
+            'slug' => 'timestamp-products',
+            'type' => 'product',
+        ]);
+        $product = $this->syncLegacyProduct($category, 'Timestamp product', 'timestamp-product');
+        $updatedAt = now()->subMinute()->setMicrosecond(0);
+        $product->forceFill(['updated_at' => $updatedAt])->saveQuietly();
+
+        $this->getJson('/api/products/'.$product->id)
+            ->assertOk()
+            ->assertJsonPath('data.updated_at', $updatedAt->toISOString());
+    }
+
     private function syncLegacyProduct(
         Category $category,
         string $name,

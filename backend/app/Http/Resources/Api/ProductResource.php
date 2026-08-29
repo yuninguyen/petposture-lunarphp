@@ -27,6 +27,7 @@ class ProductResource extends JsonResource
 
         return [
             'id' => $productId,
+            'updated_at' => optional($this->updated_at)?->toISOString(),
             'variantId' => (int) ($defaultVariant?->id ?? $productId),
             'slug' => $productSlug,
             'name' => $this->translateAttribute('name'),
