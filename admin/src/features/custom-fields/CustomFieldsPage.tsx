@@ -24,6 +24,7 @@ export function CustomFieldsPage() {
     mutationFn: deleteCustomField,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custom-fields'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success(t('custom_fields.delete_success'));
       setDeletingField(null);
     },

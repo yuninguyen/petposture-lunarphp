@@ -139,6 +139,8 @@ export function BreedFormPage() {
   };
 
   const nameValue = watch('name');
+  const previewSlug = watch('slug') ?? '';
+  const previewImage = watch('featured_image');
   useEffect(() => {
     if (!isEditing && nameValue) {
       const slug = nameValue
@@ -294,6 +296,8 @@ export function BreedFormPage() {
               getValues={getValues as any} 
               titleKey="name"
               contentKey="description"
+              googlePreviewImage={previewImage}
+              googlePreviewPath={`shop/breeds/${previewSlug.trim() || 'breed'}`}
             />
           </div>
         </div>

@@ -43,6 +43,7 @@ function renderEditor(inline: boolean) {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const root = createRoot(host);
+  const onSave = vi.fn().mockResolvedValue(undefined);
 
   act(() => {
     root.render(createElement(VariantEditModal, {
@@ -50,12 +51,12 @@ function renderEditor(inline: boolean) {
       taxClasses: [{ id: 2, name: 'Default' }],
       isSaving: false,
       onClose: vi.fn(),
-      onSave: vi.fn().mockResolvedValue(undefined),
+      onSave,
       inline,
     }));
   });
 
-  return { host, root };
+  return { host, root, onSave };
 }
 
 describe('VariantEditModal display modes', () => {
@@ -66,6 +67,17 @@ describe('VariantEditModal display modes', () => {
     expect(host.querySelector('form')).toBeNull();
     expect(host.textContent).toContain('products.pricing_inventory');
 
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('submits valid pricing values from the inline editor', async () => {
+    const { host, root, onSave } = renderEditor(true);
+    const save = Array.from(host.querySelectorAll('button')).find((button) => button.textContent === 'common.save')!;
+
+    await act(async () => save.click());
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ sku: 'SINGLE-001', base_price: '10000', stock: 5 }));
     act(() => root.unmount());
     host.remove();
   });

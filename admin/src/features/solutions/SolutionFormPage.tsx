@@ -136,6 +136,8 @@ export function SolutionFormPage() {
   };
 
   const nameValue = watch('name');
+  const previewSlug = watch('slug') ?? '';
+  const previewImage = watch('featured_image');
   useEffect(() => {
     if (!isEditing && nameValue) {
       const slug = nameValue
@@ -270,6 +272,8 @@ export function SolutionFormPage() {
               getValues={getValues as any} 
               titleKey="name"
               contentKey="description"
+              googlePreviewImage={previewImage}
+              googlePreviewPath={`shop/solutions/${previewSlug.trim() || 'solution'}`}
             />
           </div>
         </div>

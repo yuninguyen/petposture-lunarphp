@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createProductSchema, productPayload, validateRequiredAttributes, variantFormSchema } from './ProductSchema';
+import { createProductSchema, productDefaults, productPayload, validateRequiredAttributes, variantFormSchema } from './ProductSchema';
 
 describe('Product schemas', () => {
   it('validates and coerces create values', () => {
@@ -12,6 +12,23 @@ describe('Product schemas', () => {
   it('serializes ordered media with numeric ids', () => {
     expect(productPayload({ slug: ' Harness-One ', status: 'draft', brand_id: null, attributes: { name: 'A' }, collections: [4, 2], media: [{ id: '9', url: '/a.jpg', source: 'curator', alt: 'A cat' }], seo: { title: 'Harness SEO', description: '', keyphrase: '', og_title: '', og_description: '', og_image: null, canonical_url: '', is_indexable: true, is_followable: true } })).toMatchObject({ slug: 'harness-one', media: [{ id: 9, source: 'curator', alt: 'A cat' }], seo: { title: 'Harness SEO', is_indexable: true } });
   });
+  it('hydrates the selected brand and newly mapped product fields', () => {
+    const defaults = productDefaults({
+      slug: 'harness', status: 'draft', brand_id: 7,
+      product_attributes: [
+        { handle: 'name', value: 'Harness' },
+        { handle: 'description', value: '<p>Saved description</p>' },
+        { handle: 'material', value: 'Polyester' },
+      ],
+      collection_ids: [], media: [],
+      seo: { title: 'Harness SEO title', description: 'Saved meta description', keyphrase: 'dog harness', og_title: '', og_description: '', og_image: null, canonical_url: '', is_indexable: true, is_followable: true },
+    } as any);
+
+    expect(defaults.brand_id).toBe(7);
+    expect(defaults.attributes).toMatchObject({ description: '<p>Saved description</p>', material: 'Polyester' });
+    expect(defaults.seo).toMatchObject({ title: 'Harness SEO title', description: 'Saved meta description', keyphrase: 'dog harness' });
+  });
+
   it('normalizes optional variant strings and numeric fields', () => {
     const parsed = variantFormSchema.parse({ sku: 'A', gtin: '', mpn: '', ean: '', stock: '0', backorder: '0', purchasable: 'always', unit_quantity: '1', quantity_increment: '1', min_quantity: '1', tax_class_id: '2', tax_ref: '', shippable: true, length_value: '', length_unit: null, width_value: '', width_unit: null, height_value: '', height_unit: null, weight_value: '', weight_unit: null, base_price: '0', attributes: {} });
     expect(parsed).toMatchObject({ gtin: null, stock: 0, tax_class_id: 2, base_price: '0' });

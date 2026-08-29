@@ -46,6 +46,7 @@ export const variantFormSchema = z.object({
   attributes: z.record(z.union([z.string(), z.object({ en: z.string(), vi: z.string() })])),
 });
 export type VariantFormValues = z.input<typeof variantFormSchema>;
+export type VariantFormOutput = z.output<typeof variantFormSchema>;
 
 export function validateRequiredAttributes(definitions: AttributeDefinition[], values: AttributeValues): Record<string, string> {
   const errors: Record<string, string> = {};

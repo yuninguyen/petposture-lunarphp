@@ -211,6 +211,11 @@ export function PostFormPage() {
   const selectedType = useWatch({ control, name: 'type' });
   const selectedStatus = useWatch({ control, name: 'status' });
   const selectedTags = useWatch({ control, name: 'tags' });
+  const previewSlug = useWatch({ control, name: 'slug' }) ?? '';
+  const featuredMediaId = useWatch({ control, name: 'featured_media_id' });
+  const featuredImageUrl = featuredMediaId
+    ? mediaLibrary?.find((media) => media.id === featuredMediaId)?.url ?? existingPost?.featured_image ?? null
+    : existingPost?.featured_image ?? null;
 
   const [slugTouched, setSlugTouched] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
@@ -531,7 +536,7 @@ export function PostFormPage() {
             <ComparisonDetailsSection control={control} register={register} affiliateNetworks={affiliateNetworks} />
           )}
 
-          <SeoSettingsSection control={control as any} register={register as any} setValue={setValue as any} getValues={getValues as any} mediaContext="blog" contentType="blog" />
+          <SeoSettingsSection control={control as any} register={register as any} setValue={setValue as any} getValues={getValues as any} mediaContext="blog" contentType="blog" googlePreviewImage={featuredImageUrl} googlePreviewPath={`blog/${previewSlug.trim() || 'post'}`} />
         </div>
 
         <div className="w-full lg:w-1/3 space-y-6">

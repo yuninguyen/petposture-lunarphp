@@ -18,7 +18,7 @@ vi.mock('./api', () => ({
     isError: false,
     data: {
       data: [
-        { id: 1, thumbnail: null, name: 'First', description: '', product_type: { id: 1, name: 'General' }, brand: null, first_collection: null, total_stock: 1, price: null, status: 'draft', created_at: null, updated_at: null },
+        { id: 1, thumbnail: 'https://cdn.example.com/first.jpg', name: 'First', description: 'Hidden product description', product_type: { id: 1, name: 'General' }, brand: null, first_collection: null, total_stock: 1, price: null, status: 'draft', created_at: null, updated_at: null },
         { id: 2, thumbnail: null, name: 'Second', description: '', product_type: { id: 1, name: 'General' }, brand: null, first_collection: null, total_stock: 2, price: null, status: 'published', created_at: null, updated_at: null },
       ],
       meta: { current_page: 1, last_page: 1, per_page: 15, total: 2 },
@@ -48,6 +48,17 @@ function rowCheckboxes(host: HTMLElement): HTMLInputElement[] {
 }
 
 describe('ProductsListPage bulk actions', () => {
+  it('does not render product thumbnails in the list', () => {
+    const { host, root } = renderPage();
+
+    expect(host.querySelector('tbody img')).toBeNull();
+    expect(host.textContent).not.toContain('Hidden product description');
+    expect(Array.from(host.querySelectorAll('button')).find((button) => button.textContent === 'First')?.className).toContain('text-left');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
   it('selects rows and applies one status to all selected products', async () => {
     mocks.bulkStatus.mockClear();
     const { host, root } = renderPage();

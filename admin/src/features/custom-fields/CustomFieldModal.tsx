@@ -59,6 +59,7 @@ export function CustomFieldModal({ open, field, productTypes, onClose }: CustomF
       : createCustomField(buildCreatePayload(formValues)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custom-fields'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success(t(isEditing ? 'custom_fields.update_success' : 'custom_fields.create_success'));
       onClose();
     },

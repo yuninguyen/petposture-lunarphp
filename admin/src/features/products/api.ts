@@ -61,7 +61,7 @@ export interface UpdateVariantPayload {
   weight_value: string | null; weight_unit: string | null; base_price: string; attributes: AttributeValues;
 }
 export interface SaveProductOptionsPayload { options: Array<{ id?: number; name: string; values: Array<{ id?: number; name: string }> }> }
-export interface CollectionOption { id: number; label: string }
+export interface CollectionOption { id: number; label: string; slug: string }
 
 export function buildProductsQuery(filters: ProductFilters): string {
   const params = new URLSearchParams();
@@ -95,7 +95,7 @@ function flattenNodes(nodes: CollectionNode[], parents: string[] = []): Collecti
   return nodes.flatMap((node) => {
     const name = node.name.en || node.name.vi || `#${node.id}`;
     const path = [...parents, name];
-    return [{ id: node.id, label: path.join(' / ') }, ...flattenNodes(node.children ?? [], path)];
+    return [{ id: node.id, label: path.join(' / '), slug: node.slug }, ...flattenNodes(node.children ?? [], path)];
   });
 }
 export function flattenCollectionTrees(groups: CollectionGroupTree[]): CollectionOption[] {
