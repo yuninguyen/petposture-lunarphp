@@ -31,6 +31,28 @@ export interface ProductSeoMeta {
     is_followable?: boolean | null;
 }
 
+export interface ProductJsonLd {
+    '@context': 'https://schema.org';
+    '@type': 'Product';
+    name: string;
+    url: string;
+    description?: string;
+    image?: string;
+    sku?: string;
+    offers?: {
+        '@type': 'Offer';
+        price: number;
+        priceCurrency: string;
+        availability: string;
+        url: string;
+    };
+    aggregateRating?: {
+        '@type': 'AggregateRating';
+        ratingValue: number;
+        reviewCount: number;
+    };
+}
+
 export interface ProductVariant {
     id: number;
     sku: string | null;
@@ -73,4 +95,5 @@ export interface Product {
     options?: ProductOption[];
     variants?: ProductVariant[];
     seoMeta?: ProductSeoMeta | null;
+    seo?: ProductJsonLd | null;
 }

@@ -8,8 +8,10 @@ import { TrustBadgeBar } from '@/components/product/TrustBadgeBar';
 import { RelatedProducts } from '@/components/product/RelatedProducts';
 import { ProductReviews } from '@/components/product/ProductReviews';
 import { notFound, permanentRedirect } from 'next/navigation';
+import { headers } from 'next/headers';
 
 import { API_BASE_URL } from '@/lib/api';
+import { SITE_URL } from '@/lib/site';
 import { buildPreviewQuery } from '@/lib/preview-query';
 import { stripHtml } from '@/lib/text';
 
@@ -17,6 +19,24 @@ type ProductLookup = {
     product: Product | null;
     redirectPath: string | null;
 };
+
+export function serializeProductJsonLd(jsonLd: Product['seo']): string | null {
+    return jsonLd ? JSON.stringify(jsonLd) : null;
+}
+
+export function buildProductBreadcrumbJsonLd(siteUrl: string, product: Pick<Product, 'category' | 'categorySlug' | 'slug' | 'name'>) {
+    const productUrl = `${siteUrl}/shop/${product.categorySlug}/${product.slug}`;
+    const genericCategory = ['shop', 'categories'].includes(product.category.toLowerCase());
+    const items = [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+        { '@type': 'ListItem', position: 2, name: 'Shop', item: `${siteUrl}/shop` },
+    ];
+    if (!genericCategory) {
+        items.push({ '@type': 'ListItem', position: 3, name: product.category, item: `${siteUrl}/shop/${product.categorySlug}` });
+    }
+    items.push({ '@type': 'ListItem', position: items.length + 1, name: product.name, item: productUrl });
+    return { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items };
+}
 
 function serializeSearchParams(searchParams: Record<string, string | string[] | undefined>): string {
     const query = new URLSearchParams();
@@ -121,6 +141,7 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
 }
 
 export default async function Page({ params, searchParams }: { params: Promise<{ category: string; slug: string }>; searchParams: SearchParams }) {
+    const nonce = (await headers()).get('x-nonce') ?? undefined;
     const { category, slug } = await params;
     const originalQuery = serializeSearchParams(await searchParams);
     const previewQuery = buildPreviewQuery(await searchParams);
@@ -142,9 +163,15 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     const relatedProducts = allProducts
         .filter((candidate) => candidate.productId !== product.productId)
         .slice(0, 4);
+    const breadcrumbJsonLd = buildProductBreadcrumbJsonLd(SITE_URL, product);
+    const productJsonLd = serializeProductJsonLd(product.seo);
 
     return (
         <main className="min-h-screen bg-white font-hanken">
+            {productJsonLd && (
+                <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd }} />
+            )}
+            <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
             <Header />
 
             <ProductDetails product={product} />
