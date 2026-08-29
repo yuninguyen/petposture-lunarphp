@@ -170,65 +170,100 @@ export default function CartPage() {
                 ) : (
                     <div className="flex flex-col lg:flex-row gap-16">
                         {/* Cart Table Area */}
-                        <div className="flex-1 overflow-x-auto">
-                            <table className="w-full text-left border-collapse min-w-[600px]">
-                                <thead>
-                                    <tr className="border-b border-zinc-200 text-sm font-black text-primary uppercase tracking-[0.05em]">
-                                        <th className="pb-6 w-12"></th>
-                                        <th className="pb-6">Product</th>
-                                        <th className="pb-6 text-center">Price</th>
-                                        <th className="pb-6 text-center">Quantity</th>
-                                        <th className="pb-6 text-right">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-zinc-100">
+                        <div className="flex-1">
+                            <div className="w-full">
+                                {/* Desktop Header */}
+                                <div className="hidden md:flex items-center border-b border-zinc-200 pb-4 text-xs font-black text-primary uppercase tracking-[0.1em]">
+                                    <div className="w-10"></div>
+                                    <div className="flex-1 text-left">Product</div>
+                                    <div className="w-[15%] text-center">Price</div>
+                                    <div className="w-[20%] text-center">Quantity</div>
+                                    <div className="w-[15%] text-right pr-6">Total</div>
+                                </div>
+                                
+                                <div className="divide-y divide-zinc-100">
                                     {items.map(item => (
-                                        <tr key={item.variantId} className="group">
-                                            <td className="py-8">
+                                        <div key={item.variantId} className="py-6 flex flex-col md:flex-row md:items-center relative group">
+                                            {/* Remove Button */}
+                                            <div className="absolute top-6 right-0 md:relative md:top-0 md:w-10 md:flex-shrink-0 z-10 flex md:items-center md:justify-start">
                                                 <button
                                                     onClick={() => removeItem(item.variantId)}
-                                                    className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-100"
+                                                    className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-100 bg-white md:bg-transparent"
                                                 >
                                                     <X size={16} strokeWidth={2.5} />
                                                 </button>
-                                            </td>
-                                            <td className="py-8">
-                                                <div className="flex items-center gap-6">
-                                                    <div className="relative w-[100px] h-[120px] bg-white rounded-[4px] overflow-hidden flex-shrink-0 border border-zinc-100">
-                                                        <Image src={item.image} alt={item.name} fill sizes="100px" className="object-cover" />
-                                                    </div>
-                                                    <h3 className="text-[14px] font-bold text-primary hover:text-rust transition-colors">
+                                            </div>
+                                            
+                                            {/* Product Info (Image + Name) */}
+                                            <div className="flex items-start md:items-center gap-4 flex-1 pr-10 md:pr-4">
+                                                <div className="relative w-[80px] h-[80px] md:w-[56px] md:h-[56px] bg-zinc-50 rounded-[6px] overflow-hidden flex-shrink-0 border border-zinc-100">
+                                                    <Image src={item.image} alt={item.name} fill sizes="(max-width: 768px) 80px, 56px" className="object-cover mix-blend-multiply" />
+                                                </div>
+                                                <div className="flex-1 flex flex-col justify-center min-h-[80px] md:min-h-0">
+                                                    <h3 className="text-[14px] font-semibold text-primary hover:text-rust transition-colors leading-snug">
                                                         {item.name}
                                                     </h3>
+                                                    {/* Mobile Price */}
+                                                    <div className="md:hidden text-[14px] font-medium text-zinc-500 mt-1">
+                                                        ${item.price.toFixed(2)}
+                                                    </div>
+                                                    
+                                                    {/* Mobile Quantity & Total */}
+                                                    <div className="md:hidden flex items-center justify-between mt-3">
+                                                        <div className="inline-flex items-center bg-white border border-zinc-200 rounded-[4px] overflow-hidden shadow-sm">
+                                                            <button
+                                                                onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                                                                className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-primary transition-colors"
+                                                            >
+                                                                <Minus size={12} strokeWidth={2.5} />
+                                                            </button>
+                                                            <span className="w-6 text-center text-[13px] font-bold text-primary">{item.quantity}</span>
+                                                            <button
+                                                                onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                                                                className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-primary transition-colors"
+                                                            >
+                                                                <Plus size={12} strokeWidth={2.5} />
+                                                            </button>
+                                                        </div>
+                                                        <div className="text-[15px] font-black text-rust">
+                                                            ${(item.price * item.quantity).toFixed(2)}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </td>
-                                            <td className="py-8 text-center text-[15px] font-medium text-zinc-500">
+                                            </div>
+                                            
+                                            {/* Desktop Price */}
+                                            <div className="hidden md:block w-[15%] text-center text-[15px] font-medium text-zinc-500">
                                                 ${item.price.toFixed(2)}
-                                            </td>
-                                            <td className="py-8 text-center">
-                                                <div className="inline-flex items-center bg-zinc-50 border border-zinc-200 rounded-[4px] overflow-hidden">
+                                            </div>
+                                            
+                                            {/* Desktop Quantity */}
+                                            <div className="hidden md:flex items-center justify-center w-[20%]">
+                                                <div className="inline-flex items-center bg-white border border-zinc-200 rounded-[4px] overflow-hidden shadow-sm">
                                                     <button
                                                         onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                                                        className="px-4 py-2.5 text-zinc-500 hover:bg-zinc-200 transition-colors"
+                                                        className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-primary transition-colors"
                                                     >
-                                                        <Minus size={14} strokeWidth={2.5} />
+                                                        <Minus size={12} strokeWidth={2.5} />
                                                     </button>
-                                                    <span className="px-6 text-[14px] font-bold text-primary min-w-[50px]">{item.quantity}</span>
+                                                    <span className="w-6 text-center text-[13px] font-bold text-primary">{item.quantity}</span>
                                                     <button
                                                         onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                                                        className="px-4 py-2.5 text-zinc-500 hover:bg-zinc-200 transition-colors"
+                                                        className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-primary transition-colors"
                                                     >
-                                                        <Plus size={14} strokeWidth={2.5} />
+                                                        <Plus size={12} strokeWidth={2.5} />
                                                     </button>
                                                 </div>
-                                            </td>
-                                            <td className="py-8 text-right text-[15px] font-black text-rust">
+                                            </div>
+                                            
+                                            {/* Desktop Total */}
+                                            <div className="hidden md:block w-[15%] text-right pr-6 text-[16px] font-black text-rust">
                                                 ${(item.price * item.quantity).toFixed(2)}
-                                            </td>
-                                        </tr>
+                                            </div>
+                                        </div>
                                     ))}
-                                </tbody>
-                            </table>
+                                </div>
+                            </div>
 
                             <div className="mt-12 flex justify-between items-center">
                                 <Link href="/shop" className="inline-flex items-center gap-2 group text-sm font-black uppercase tracking-wider text-primary border-2 border-zinc-100 px-8 py-4 rounded-[4px] hover:bg-zinc-50 transition-all">
