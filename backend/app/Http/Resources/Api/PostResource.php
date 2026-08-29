@@ -75,6 +75,8 @@ class PostResource extends JsonResource
             'og_title' => $seo->og_title,
             'og_description' => $seo->og_description,
             'og_image' => $this->resolveAssetUrl($seo->og_image),
+            'is_indexable' => $seo->is_indexable ?? true,
+            'is_followable' => $seo->is_followable ?? true,
         ], static fn ($value) => $value !== null);
     }
 

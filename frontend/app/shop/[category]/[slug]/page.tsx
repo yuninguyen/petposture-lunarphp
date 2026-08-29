@@ -88,25 +88,34 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
         return { title: 'Product' };
     }
 
-    const description = product.description
-        ? stripHtml(product.description).slice(0, 160)
-        : `${product.name} — carefully selected for fit, materials, dimensions and everyday usability.`;
+    const seoMeta = product.seoMeta;
+    const title = seoMeta?.title || product.name;
+    const description = seoMeta?.description
+        || (product.description ? stripHtml(product.description).slice(0, 160) : null)
+        || `${product.name} — carefully selected for fit, materials, dimensions and everyday usability.`;
+    const ogTitle = seoMeta?.og_title || title;
+    const ogDescription = seoMeta?.og_description || description;
+    const ogImage = seoMeta?.og_image || product.image || undefined;
 
     return {
-        title: product.name,
+        title,
         description,
         alternates: { canonical: `/shop/${product.categorySlug}/${product.slug}` },
+        robots: {
+            index: seoMeta?.is_indexable !== false,
+            follow: seoMeta?.is_followable !== false,
+        },
         openGraph: {
-            title: product.name,
-            description,
+            title: ogTitle,
+            description: ogDescription,
             type: 'website',
-            images: product.image ? [{ url: product.image }] : undefined,
+            images: ogImage ? [{ url: ogImage }] : undefined,
         },
         twitter: {
-            card: product.image ? 'summary_large_image' : 'summary',
-            title: product.name,
-            description,
-            images: product.image ? [product.image] : undefined,
+            card: ogImage ? 'summary_large_image' : 'summary',
+            title: ogTitle,
+            description: ogDescription,
+            images: ogImage ? [ogImage] : undefined,
         },
     };
 }

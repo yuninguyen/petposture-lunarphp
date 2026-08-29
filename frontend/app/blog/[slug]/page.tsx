@@ -33,6 +33,8 @@ type ApiPost = {
         og_title?: string;
         og_description?: string;
         og_image?: string;
+        is_indexable?: boolean | null;
+        is_followable?: boolean | null;
     } | null;
 };
 
@@ -139,6 +141,10 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
         title,
         description,
         alternates: { canonical: `/blog/${slug}` },
+        robots: {
+            index: seo?.is_indexable !== false,
+            follow: seo?.is_followable !== false,
+        },
         openGraph: {
             title: ogTitle,
             description: ogDescription,

@@ -28,6 +28,15 @@ class ProductResource extends JsonResource
         return [
             'id' => $productId,
             'updated_at' => optional($this->updated_at)?->toISOString(),
+            'seoMeta' => [
+                'title' => $this->seo_meta_title,
+                'description' => $this->seo_meta_description,
+                'og_title' => $this->seo_meta_og_title,
+                'og_description' => $this->seo_meta_og_description,
+                'og_image' => $this->resolveSeoImageUrl($this->seo_meta_og_image),
+                'is_indexable' => $this->seoFlag($this->seo_meta_is_indexable),
+                'is_followable' => $this->seoFlag($this->seo_meta_is_followable),
+            ],
             'variantId' => (int) ($defaultVariant?->id ?? $productId),
             'slug' => $productSlug,
             'name' => $this->translateAttribute('name'),
@@ -95,6 +104,28 @@ class ProductResource extends JsonResource
         return $media->hasGeneratedConversion('webp')
             ? $media->getUrl('webp')
             : $media->getUrl();
+    }
+
+    private function seoFlag(mixed $value): bool
+    {
+        if ($value === null) {
+            return true;
+        }
+
+        return $value === 1 || $value === '1';
+    }
+
+    private function resolveSeoImageUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return $path;
+        }
+
+        return asset('storage/'.ltrim($path, '/'));
     }
 
     private function resolvePrimaryImageUrl(): ?string

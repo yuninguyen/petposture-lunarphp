@@ -21,6 +21,16 @@ export interface ProductVariantOption {
     value: string;
 }
 
+export interface ProductSeoMeta {
+    title?: string | null;
+    description?: string | null;
+    og_title?: string | null;
+    og_description?: string | null;
+    og_image?: string | null;
+    is_indexable?: boolean | null;
+    is_followable?: boolean | null;
+}
+
 export interface ProductVariant {
     id: number;
     sku: string | null;
@@ -62,4 +72,5 @@ export interface Product {
     specs?: ProductSpec[];
     options?: ProductOption[];
     variants?: ProductVariant[];
+    seoMeta?: ProductSeoMeta | null;
 }

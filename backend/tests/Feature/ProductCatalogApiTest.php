@@ -8,6 +8,7 @@ use App\Models\Legacy\Product as LegacyProduct;
 use App\Models\ProductSyncMapping;
 use App\Models\Review;
 use App\Models\Solution;
+use App\Models\SeoMetadata;
 use App\Services\ProductSyncService;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -139,6 +140,57 @@ class ProductCatalogApiTest extends TestCase
         $this->assertCount(1, $response->json('data'));
     }
 
+    public function test_public_product_exposes_seo_meta_without_canonical_url(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $product = $this->syncLegacyProduct(
+            Category::query()->create(['name' => 'SEO products', 'slug' => 'seo-products', 'type' => 'product']),
+            'SEO bed',
+            'seo-bed'
+        );
+        SeoMetadata::query()->create([
+            'seoable_type' => \Lunar\Models\Product::class,
+            'seoable_id' => $product->id,
+            'title' => 'SEO title',
+            'description' => 'SEO description',
+            'og_title' => 'OG title',
+            'og_description' => 'OG description',
+            'og_image' => 'seo/social.webp',
+            'canonical_url' => 'https://example.test/should-not-leak',
+            'is_indexable' => false,
+            'is_followable' => false,
+        ]);
+
+        $response = $this->getJson('/api/products/'.$product->id)->assertOk();
+
+        $response->assertJsonPath('data.seoMeta.title', 'SEO title')
+            ->assertJsonPath('data.seoMeta.description', 'SEO description')
+            ->assertJsonPath('data.seoMeta.og_title', 'OG title')
+            ->assertJsonPath('data.seoMeta.og_description', 'OG description')
+            ->assertJsonPath('data.seoMeta.is_indexable', false)
+            ->assertJsonPath('data.seoMeta.is_followable', false)
+            ->assertJsonMissingPath('data.seoMeta.canonical_url')
+            ->assertJsonMissingPath('data.canonical_url')
+            ->assertJsonMissingPath('data.seo.canonical_url');
+        $this->assertStringEndsWith('/storage/seo/social.webp', (string) $response->json('data.seoMeta.og_image'));
+    }
+
+    public function test_public_product_seo_meta_defaults_follow_and_index_true_without_metadata(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $product = $this->syncLegacyProduct(
+            Category::query()->create(['name' => 'SEO defaults', 'slug' => 'seo-defaults', 'type' => 'product']),
+            'Default SEO bed',
+            'default-seo-bed'
+        );
+
+        $this->getJson('/api/products/'.$product->id)
+            ->assertOk()
+            ->assertJsonPath('data.seoMeta.is_indexable', true)
+            ->assertJsonPath('data.seoMeta.is_followable', true)
+            ->assertJsonMissingPath('data.seoMeta.canonical_url');
+    }
+
     public function test_product_rating_aggregate_uses_only_approved_reviews(): void
     {
         $this->setUpLunarPrerequisites();
@@ -187,6 +239,65 @@ class ProductCatalogApiTest extends TestCase
         $this->assertEquals(2.0, $data->get('second-aggregate-bed')['rating']);
         $this->assertSame(1, $data->get('second-aggregate-bed')['reviewCount']);
         $this->assertCount(1, collect($queries)->filter(fn (string $sql): bool => str_contains($sql, 'reviews')));
+    }
+
+    public function test_product_index_uses_one_set_based_seo_metadata_query_for_multiple_products(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $category = Category::query()->create(['name' => 'SEO products', 'slug' => 'seo-products', 'type' => 'product']);
+
+        foreach (range(1, 5) as $index) {
+            $product = $this->syncLegacyProduct($category, "SEO bed {$index}", "seo-bed-{$index}");
+            SeoMetadata::query()->create([
+                'seoable_id' => $product->id,
+                'seoable_type' => LunarProduct::class,
+                'title' => "SEO title {$index}",
+                'is_indexable' => $index === 1 ? false : true,
+                'is_followable' => $index === 1 ? false : true,
+            ]);
+        }
+
+        $queries = [];
+        DB::listen(function (QueryExecuted $query) use (&$queries): void {
+            $queries[] = strtolower($query->sql);
+        });
+
+        $data = collect($this->getJson('/api/products?per_page=100')->assertOk()->json('data'))->keyBy('slug');
+
+        $this->assertFalse($data->get('seo-bed-1')['seoMeta']['is_indexable']);
+        $this->assertFalse($data->get('seo-bed-1')['seoMeta']['is_followable']);
+        $this->assertTrue($data->get('seo-bed-2')['seoMeta']['is_indexable']);
+        $this->assertTrue($data->get('seo-bed-2')['seoMeta']['is_followable']);
+        $seoDataSelects = collect($queries)->filter(
+            fn (string $sql): bool => str_contains($sql, 'seo_metadata')
+                && ! str_starts_with(ltrim($sql), 'select count(*) as aggregate')
+        );
+
+        $this->assertCount(1, $seoDataSelects);
+    }
+
+    public function test_product_index_price_sort_preserves_joined_seo_meta(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $product = $this->syncLegacyProduct(
+            Category::query()->create(['name' => 'Sorted products', 'slug' => 'sorted-products', 'type' => 'product']),
+            'Sorted SEO bed',
+            'sorted-seo-bed'
+        );
+        SeoMetadata::query()->create([
+            'seoable_id' => $product->id,
+            'seoable_type' => LunarProduct::class,
+            'title' => 'Sorted SEO title',
+            'is_indexable' => false,
+            'is_followable' => true,
+        ]);
+
+        $this->getJson('/api/products?sort=price_asc&per_page=100')
+            ->assertOk()
+            ->assertJsonPath('data.0.slug', 'sorted-seo-bed')
+            ->assertJsonPath('data.0.seoMeta.title', 'Sorted SEO title')
+            ->assertJsonPath('data.0.seoMeta.is_indexable', false)
+            ->assertJsonPath('data.0.seoMeta.is_followable', true);
     }
 
     public function test_product_without_approved_reviews_has_no_aggregate_rating_in_json_ld(): void

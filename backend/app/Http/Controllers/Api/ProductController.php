@@ -304,7 +304,7 @@ class ProductController extends Controller
 
         $query = $this->productQuery()
             ->where('status', 'published')
-            ->where('id', '!=', $product->id)
+            ->where('lunar_products.id', '!=', $product->id)
             ->whereHas('variants')
             ->with([
                 'variants.prices',
@@ -326,16 +326,16 @@ class ProductController extends Controller
             $query->where('brand_id', $brandId);
         }
 
-        $related = $query->orderBy('id')->limit(8)->get();
+        $related = $query->orderBy('lunar_products.id')->limit(8)->get();
 
         // Pad deterministically if fewer than four related products are available.
         if ($related->count() < 4) {
             $existing = $related->pluck('id')->push($product->id);
             $filler = $this->productQuery()->where('status', 'published')
-                ->whereNotIn('id', $existing)
+                ->whereNotIn('lunar_products.id', $existing)
                 ->whereHas('variants')
                 ->with(['variants.prices', 'thumbnail', 'defaultUrl', 'urls', 'collections.defaultUrl'])
-                ->orderBy('id')
+                ->orderBy('lunar_products.id')
                 ->limit(4 - $related->count())
                 ->get();
             $related = $related->concat($filler);
@@ -459,6 +459,11 @@ class ProductController extends Controller
     {
         return Product::query()
             ->select('lunar_products.*')
+            ->leftJoin('seo_metadata', function ($join): void {
+                $join->on('seo_metadata.seoable_id', '=', 'lunar_products.id')
+                    ->where('seo_metadata.seoable_type', '=', \Lunar\Models\Product::class);
+            })
+            ->selectRaw('seo_metadata.title as seo_meta_title, seo_metadata.description as seo_meta_description, seo_metadata.og_title as seo_meta_og_title, seo_metadata.og_description as seo_meta_og_description, seo_metadata.og_image as seo_meta_og_image, seo_metadata.is_indexable as seo_meta_is_indexable, seo_metadata.is_followable as seo_meta_is_followable')
             ->selectSub(Review::query()->selectRaw('AVG(rating)')->whereColumn('lunar_product_id', 'lunar_products.id')->where('status', 'approved'), 'approved_reviews_avg_rating')
             ->selectSub(Review::query()->selectRaw('COUNT(*)')->whereColumn('lunar_product_id', 'lunar_products.id')->where('status', 'approved'), 'approved_reviews_count');
     }

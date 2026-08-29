@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\BlogCategory;
 use App\Models\Post;
+use App\Models\SeoMetadata;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
@@ -11,6 +12,24 @@ use Tests\TestCase;
 class FuturePostExposureTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_public_post_seo_exposes_index_and_follow_flags_including_false(): void
+    {
+        $post = $this->createPost(now()->subHour());
+        SeoMetadata::query()->create([
+            'seoable_type' => Post::class,
+            'seoable_id' => $post->id,
+            'title' => 'Post SEO title',
+            'is_indexable' => false,
+            'is_followable' => false,
+        ]);
+
+        $this->getJson('/api/posts/'.$post->slug)
+            ->assertOk()
+            ->assertJsonPath('data.seo.is_indexable', false)
+            ->assertJsonPath('data.seo.is_followable', false)
+            ->assertJsonPath('data.seo.title', 'Post SEO title');
+    }
 
     public function test_future_published_post_is_hidden_from_direct_slug_until_publish_time(): void
     {
