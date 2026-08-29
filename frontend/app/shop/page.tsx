@@ -3,6 +3,12 @@ import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { Product } from '@/types/shop';
 import { API_BASE_URL } from '@/lib/api';
+import { SITE_URL } from '@/lib/site';
+import { headers } from 'next/headers';
+
+export function buildShopCollectionJsonLd(data: { name: string; description: string; url: string }) {
+    return { '@context': 'https://schema.org', '@type': 'CollectionPage', ...data };
+}
 
 export const metadata: Metadata = {
     title: 'Shop',
@@ -65,14 +71,23 @@ export default async function Page({
     searchParams: Promise<{ q?: string }>;
 }) {
     const { q } = await searchParams;
+    const nonce = (await headers()).get('x-nonce') ?? undefined;
     const [initialProductResult, allBreeds, allSolutions] = await Promise.all([
         getInitialProducts(q ?? ''),
         getBreedOptions(),
         getSolutionOptions(),
     ]);
 
+    const collectionJsonLd = buildShopCollectionJsonLd({
+        name: 'Shop',
+        description: 'Carefully selected products for everyday access, comfort, and usability. Explore bowls, ramps, beds, and harnesses.',
+        url: `${SITE_URL}/shop`,
+    });
+
     return (
-        <Suspense fallback={<main className="min-h-screen bg-[#f7f3ee]" />}>
+        <>
+            <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+            <Suspense fallback={<main className="min-h-screen bg-[#f7f3ee]" />}>
             <ShopPage
                 initialProducts={initialProductResult.products}
                 initialProductsError={initialProductResult.error}
@@ -80,6 +95,7 @@ export default async function Page({
                 allBreeds={allBreeds}
                 allSolutions={allSolutions}
             />
-        </Suspense>
+            </Suspense>
+        </>
     );
 }

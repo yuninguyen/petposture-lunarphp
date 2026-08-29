@@ -1,11 +1,13 @@
 import React from 'react';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 
 import BlogPostPage from '@/components/BlogPostPage';
 import { API_BASE_URL } from '@/lib/api';
 import { formatDate } from '@/lib/date';
 import { buildPreviewQuery } from '@/lib/preview-query';
+import { SITE_URL } from '@/lib/site';
 import type { ComparisonData } from '@/components/blog/ComparisonTable';
 
 type ApiPost = {
@@ -173,5 +175,30 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         notFound();
     }
 
-    return <BlogPostPage post={toViewModel(post)} recentPosts={recentPosts.map(toViewModel)} />;
+    const nonce = (await headers()).get('x-nonce') ?? undefined;
+    const description = post.seo?.description || post.content?.slice(0, 160) || 'Practical pet care and product research tips';
+    const blogPostingJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: post.title,
+        description,
+        ...(post.featured_image ? { image: post.featured_image } : {}),
+        ...(post.created_at ? { datePublished: post.created_at } : {}),
+        author: {
+            '@type': 'Organization',
+            name: post.author || 'PetPosture',
+        },
+        mainEntityOfPage: `${SITE_URL}/blog/${slug}`,
+    };
+
+    return (
+        <>
+            <script
+                nonce={nonce}
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingJsonLd) }}
+            />
+            <BlogPostPage post={toViewModel(post)} recentPosts={recentPosts.map(toViewModel)} />
+        </>
+    );
 }

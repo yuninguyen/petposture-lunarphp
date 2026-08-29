@@ -4,6 +4,12 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Product } from '@/types/shop';
 import { API_BASE_URL } from '@/lib/api';
+import { SITE_URL } from '@/lib/site';
+import { headers } from 'next/headers';
+
+export function buildSolutionCollectionJsonLd(data: { name: string; description: string; url: string }) {
+    return { '@context': 'https://schema.org', '@type': 'CollectionPage', ...data };
+}
 
 type Params = { slug: string };
 
@@ -109,6 +115,10 @@ export default async function Page({ params }: { params: Promise<Params> }) {
         notFound();
     }
 
+    const nonce = (await headers()).get('x-nonce') ?? undefined;
+    const description = solution.description || `Practical, carefully selected products for ${solution.name.toLowerCase()}.`;
+    const collectionJsonLd = buildSolutionCollectionJsonLd({ name: solution.name, description, url: `${SITE_URL}/shop/solutions/${slug}` });
+
     const [initialProductResult, allBreeds, allSolutions] = await Promise.all([
         getInitialProducts(slug),
         getBreedOptions(),
@@ -116,7 +126,9 @@ export default async function Page({ params }: { params: Promise<Params> }) {
     ]);
 
     return (
-        <Suspense fallback={<main className="min-h-screen bg-[#f7f3ee]" />}>
+        <>
+            <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+            <Suspense fallback={<main className="min-h-screen bg-[#f7f3ee]" />}>
             <ShopPage
                 initialProducts={initialProductResult.products}
                 initialProductsError={initialProductResult.error}
@@ -127,6 +139,7 @@ export default async function Page({ params }: { params: Promise<Params> }) {
                 heroTitle={solution.name}
                 heroDescription={solution.description || `Practical, carefully selected products for ${solution.name.toLowerCase()}.`}
             />
-        </Suspense>
+            </Suspense>
+        </>
     );
 }
