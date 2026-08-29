@@ -130,7 +130,7 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
 
     const seo = post.seo;
     const title = seo?.title || `${post.title} | Blog`;
-    const description = seo?.description || post.content?.slice(0, 160) || 'Pet ergonomics tips';
+    const description = seo?.description || post.content?.slice(0, 160) || 'Practical pet care and product research tips';
     const ogTitle = seo?.og_title || title;
     const ogDescription = seo?.og_description || description;
     const ogImage = seo?.og_image || post.featured_image || undefined;

@@ -51,12 +51,11 @@ class ProductResource extends JsonResource
             // Solution tags (e.g. "eating-digestion", "mobility-support") — comma-separated attribute
             'solutionTags' => $this->resolveTagList('solution_tags'),
 
-            // Reviews (from attributes until real aggregate is built)
-            // `reviews` is kept alongside `reviewCount` — most of the frontend
-            // (ProductCard, ShopPage, ProductDetails) reads `product.reviews`.
-            'rating' => (float) ($this->translateAttribute('rating') ?: 0),
-            'reviews' => (int) ($this->translateAttribute('reviews') ?: 0),
-            'reviewCount' => (int) ($this->translateAttribute('reviews') ?: 0),
+            // Reviews are calculated from approved Review records by the controller.
+            // `reviews` is kept alongside `reviewCount` for existing storefront clients.
+            'rating' => round((float) ($this->approved_reviews_avg_rating ?? 0), 2),
+            'reviews' => (int) ($this->approved_reviews_count ?? 0),
+            'reviewCount' => (int) ($this->approved_reviews_count ?? 0),
 
             // Images — primary image kept as `image` for backwards compat,
             // full gallery added as `images[]`
@@ -283,12 +282,13 @@ class ProductResource extends JsonResource
         $imageUrl = $this->resolvePrimaryImageUrl();
         $priceValue = $this->minorToDecimal($price?->getRawOriginal('price'));
         $sku = $this->variants->first()?->sku;
+        $productUrl = url(app(ProductRouteService::class)->path($this->resource));
 
         $ld = [
             '@context' => 'https://schema.org',
             '@type' => 'Product',
             'name' => $name,
-            'url' => url('/products/'.$slug),
+            'url' => $productUrl,
         ];
 
         if ($description) {
@@ -309,12 +309,12 @@ class ProductResource extends JsonResource
                 'price' => $priceValue,
                 'priceCurrency' => 'USD',
                 'availability' => 'https://schema.org/'.($this->variants->first()?->stock > 0 ? 'InStock' : 'OutOfStock'),
-                'url' => url('/products/'.$slug),
+                'url' => $productUrl,
             ];
         }
 
-        $rating = (float) ($this->translateAttribute('rating') ?: 0);
-        $reviewCount = (int) ($this->translateAttribute('reviews') ?: 0);
+        $rating = round((float) ($this->approved_reviews_avg_rating ?? 0), 2);
+        $reviewCount = (int) ($this->approved_reviews_count ?? 0);
         if ($rating > 0 && $reviewCount > 0) {
             $ld['aggregateRating'] = [
                 '@type' => 'AggregateRating',

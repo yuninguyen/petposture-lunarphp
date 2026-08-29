@@ -21,6 +21,11 @@ class EditPost extends EditRecord
             $data['published_at'] = now();
         }
 
+        $items = $data['metadata']['comparison_items'] ?? [];
+        if (collect($items)->contains(fn (array $item): bool => filled($item['affiliate_url'] ?? null))) {
+            $data['metadata']['disclosure_shown'] = true;
+        }
+
         return $data;
     }
 

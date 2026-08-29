@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
     return {
         title: page?.meta_title || page?.title || 'Shipping Policy',
-        description: page?.meta_description || "Understand PetPosture's shipping times, rates, and zones for ergonomic pet essentials.",
+        description: page?.meta_description || "Understand PetPosture's shipping times, rates, and zones for carefully selected pet products.",
         alternates: { canonical: `/${SLUG}` },
     };
 }

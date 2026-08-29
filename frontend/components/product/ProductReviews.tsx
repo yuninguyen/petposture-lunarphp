@@ -23,6 +23,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
     const [reviews, setReviews] = useState<Review[]>([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [fetchError, setFetchError] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -38,9 +39,13 @@ export function ProductReviews({ product }: ProductReviewsProps) {
         try {
             const backendHost = getApiBaseUrl();
             const res = await fetch(`${backendHost}/api/products/${product.slug}/reviews`);
+            if (!res.ok) throw new Error(`Failed to fetch reviews: ${res.status}`);
             const data = await res.json();
-            setReviews(data.data || []);
+            if (!Array.isArray(data?.data)) throw new Error('Invalid reviews response');
+            setReviews(data.data);
+            setFetchError(false);
         } catch (err) {
+            setFetchError(true);
             console.error('Failed to fetch reviews', err);
         } finally {
             setIsLoading(false);
@@ -208,6 +213,11 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                 <div className="text-center py-20">
                                     <div className="w-8 h-8 border-4 border-secondary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                                     <p className="text-xs font-black text-zinc-300 uppercase tracking-widest">Retrieving Social Proof...</p>
+                                </div>
+                            ) : fetchError ? (
+                                <div role="alert" className="bg-white p-12 rounded-3xl border border-zinc-100 text-center">
+                                    <MessageSquare size={32} className="mx-auto text-zinc-100 mb-6" />
+                                    <p className="text-zinc-400 text-sm">Reviews are temporarily unavailable.</p>
                                 </div>
                             ) : reviews.length === 0 ? (
                                 <div className="bg-white p-12 rounded-3xl border border-zinc-100 text-center">

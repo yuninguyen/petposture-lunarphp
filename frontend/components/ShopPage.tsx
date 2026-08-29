@@ -11,6 +11,7 @@ import { Product } from '@/types/shop';
 
 interface ShopPageProps {
     initialProducts: Product[];
+    initialProductsError?: boolean;
     initialBreed?: string;
     initialSolution?: string;
     initialSearch?: string;
@@ -23,17 +24,18 @@ interface ShopPageProps {
 
 export default function ShopPage({
     initialProducts,
+    initialProductsError = false,
     initialBreed = 'All',
     initialSolution = 'All',
     initialSearch = '',
     allBreeds = [],
     allSolutions = [],
     heroEyebrow = 'PetPosture Shop',
-    heroTitle = 'Ergonomic essentials, organized like a real catalog.',
+    heroTitle = 'Practical products, organized like a real catalog.',
     heroDescription = "Shop bowls, ramps, beds and harnesses chosen to fit your dog's breed, body type and everyday habits.",
 }: ShopPageProps) {
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-    const shopLogic = useShopLogic(initialProducts, initialBreed, initialSolution, initialSearch, allBreeds, allSolutions);
+    const shopLogic = useShopLogic(initialProducts, initialBreed, initialSolution, initialSearch, allBreeds, allSolutions, initialProductsError);
     const activeBreedLabel = shopLogic.breeds.find((b) => b.slug === shopLogic.activeBreed)?.label;
     const activeSolutionLabel = shopLogic.solutions.find((s) => s.slug === shopLogic.activeSolution)?.label;
     const activeCategoryLabel = shopLogic.categories.find((c) => c.slug === shopLogic.activeCategory)?.name;
@@ -136,11 +138,29 @@ export default function ShopPage({
                             )}
                         </div>
 
-                        <ProductGrid
-                            filteredProducts={shopLogic.filteredProducts}
-                            clearFilters={shopLogic.clearFilters}
-                            loading={shopLogic.loading}
-                        />
+                        {shopLogic.loading ? (
+                            <ProductGrid
+                                filteredProducts={shopLogic.filteredProducts}
+                                clearFilters={shopLogic.clearFilters}
+                                loading
+                            />
+                        ) : shopLogic.initialError || shopLogic.filterError ? (
+                            <div role="alert" className="py-20 text-center">
+                                <h3 className="mb-2 text-[22px] font-semibold text-[#2d3a43]">Unable to load products</h3>
+                                <p className="mx-auto max-w-[420px] text-[14px] leading-7 text-[#7a7f83]">Please try again later.</p>
+                            </div>
+                        ) : shopLogic.filteredProducts.length === 0 ? (
+                            <div className="py-20 text-center">
+                                <h3 className="mb-2 text-[22px] font-semibold text-[#2d3a43]">No products available</h3>
+                                <p className="mx-auto max-w-[420px] text-[14px] leading-7 text-[#7a7f83]">There are no products matching your selection.</p>
+                            </div>
+                        ) : (
+                            <ProductGrid
+                                filteredProducts={shopLogic.filteredProducts}
+                                clearFilters={shopLogic.clearFilters}
+                                loading={shopLogic.loading}
+                            />
+                        )}
                     </div>
                 </div>
             </section>

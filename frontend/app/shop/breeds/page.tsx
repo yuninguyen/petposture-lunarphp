@@ -8,7 +8,7 @@ import { API_BASE_URL } from '@/lib/api';
 
 export const metadata: Metadata = {
     title: 'Shop by Breed',
-    description: 'Ergonomic essentials matched to your dog\'s anatomy.',
+    description: 'Breed-focused products selected for fit, everyday comfort and practical use.',
     alternates: { canonical: '/shop/breeds' },
     openGraph: {
         images: ['/assets/breeds/Shop-by-Breed.webp'],
@@ -81,7 +81,7 @@ export default async function Page() {
                         Shop by Breed
                     </p>
                     <h1 className="max-w-[760px] text-[28px] font-bold leading-tight text-[#2d3a43] md:text-[40px]">
-                        Ergonomic essentials matched to your dog&apos;s anatomy.
+                        Breed-focused products selected for fit, everyday comfort and practical use.
                     </h1>
                     <p className="mt-3 max-w-[760px] text-[14px] leading-7 text-[#62666a]">
                         Pick your dog&apos;s breed to shop the gear built specifically for it.

@@ -17,7 +17,7 @@ const hankenGrotesk = Hanken_Grotesk({ subsets: ['latin'], weight: ['400', '700'
 const lato = Lato({ subsets: ['latin'], weight: ['700'], display: 'swap' });
 const dancingScript = Dancing_Script({ subsets: ['latin'], weight: ['400'], display: 'swap' });
 
-const DEFAULT_DESCRIPTION = 'Ergonomic essentials designed for your pet\'s unique posture and health needs.';
+const DEFAULT_DESCRIPTION = 'Breed-focused pet product recommendations based on practical fit, materials, usability and everyday comfort.';
 
 async function getShopSettings() {
   let shopName = 'PetPosture';
@@ -44,15 +44,21 @@ async function getShopSettings() {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { shopName, shopLogo, shopFavicon, description } = await getShopSettings();
+  const { shopName, shopFavicon, description } = await getShopSettings();
 
   const faviconUrl = shopFavicon || '/favicon.png';
   const metaDescription = description || DEFAULT_DESCRIPTION;
+  const socialPreview = {
+    url: '/assets/banner/social-preview.webp',
+    width: 1200,
+    height: 630,
+    alt: `${shopName} pet products`,
+  };
 
   return {
     metadataBase: new URL(SITE_URL),
     title: {
-      default: `${shopName} — Ergonomic Essentials for Your Pet`,
+      default: `${shopName} — Breed-Focused Pet Product Recommendations`,
       template: `%s | ${shopName}`,
     },
     description: metaDescription,
@@ -60,9 +66,15 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: shopName,
       type: 'website',
       url: SITE_URL,
-      title: `${shopName} — Ergonomic Essentials for Your Pet`,
+      title: `${shopName} — Breed-Focused Pet Product Recommendations`,
       description: metaDescription,
-      images: shopLogo ? [shopLogo] : undefined,
+      images: [socialPreview],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${shopName} — Breed-Focused Pet Product Recommendations`,
+      description: metaDescription,
+      images: [socialPreview.url],
     },
     icons: {
       icon: [{ url: faviconUrl, sizes: '100x100', type: 'image/png' }],

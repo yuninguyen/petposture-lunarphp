@@ -7,7 +7,7 @@ import { ScientificBreakdown } from '@/components/product/ScientificBreakdown';
 import { TrustBadgeBar } from '@/components/product/TrustBadgeBar';
 import { RelatedProducts } from '@/components/product/RelatedProducts';
 import { ProductReviews } from '@/components/product/ProductReviews';
-import { notFound, redirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 
 import { API_BASE_URL } from '@/lib/api';
 import { buildPreviewQuery } from '@/lib/preview-query';
@@ -18,11 +18,22 @@ type ProductLookup = {
     redirectPath: string | null;
 };
 
-async function fetchProduct(slug: string, previewQuery?: string): Promise<ProductLookup> {
+function serializeSearchParams(searchParams: Record<string, string | string[] | undefined>): string {
+    const query = new URLSearchParams();
+
+    Object.entries(searchParams).forEach(([key, value]) => {
+        if (Array.isArray(value)) value.forEach((item) => query.append(key, item));
+        else if (value !== undefined) query.set(key, value);
+    });
+
+    return query.toString();
+}
+
+async function fetchProduct(slug: string, category: string, previewQuery?: string): Promise<ProductLookup> {
     try {
-        const url = previewQuery
-            ? `${API_BASE_URL}/api/products/${slug}?${previewQuery}`
-            : `${API_BASE_URL}/api/products/${slug}`;
+        const query = new URLSearchParams(previewQuery ?? '');
+        query.set('category', category);
+        const url = `${API_BASE_URL}/api/products/${slug}?${query.toString()}`;
         const response = await fetch(url, {
             cache: previewQuery ? 'no-store' : undefined,
             next: previewQuery ? undefined : { revalidate: 60 },
@@ -65,10 +76,11 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 export async function generateMetadata({ params, searchParams }: { params: Promise<{ category: string; slug: string }>; searchParams: SearchParams }): Promise<Metadata> {
     const { category, slug } = await params;
-    const lookup = await fetchProduct(slug, buildPreviewQuery(await searchParams));
+    const originalQuery = serializeSearchParams(await searchParams);
+    const lookup = await fetchProduct(slug, category, buildPreviewQuery(await searchParams));
 
     if (lookup.redirectPath) {
-        redirect(lookup.redirectPath);
+        permanentRedirect(originalQuery ? `${lookup.redirectPath}?${originalQuery}` : lookup.redirectPath);
     }
 
     const product = lookup.product;
@@ -78,12 +90,12 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
 
     const description = product.description
         ? stripHtml(product.description).slice(0, 160)
-        : `${product.name} — ergonomic essentials from PetPosture.`;
+        : `${product.name} — carefully selected for fit, materials, dimensions and everyday usability.`;
 
     return {
         title: product.name,
         description,
-        alternates: { canonical: `/shop/${category}/${slug}` },
+        alternates: { canonical: `/shop/${product.categorySlug}/${product.slug}` },
         openGraph: {
             title: product.name,
             description,
@@ -100,16 +112,17 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
 }
 
 export default async function Page({ params, searchParams }: { params: Promise<{ category: string; slug: string }>; searchParams: SearchParams }) {
-    const { slug } = await params;
+    const { category, slug } = await params;
+    const originalQuery = serializeSearchParams(await searchParams);
     const previewQuery = buildPreviewQuery(await searchParams);
 
     const [lookup, allProducts] = await Promise.all([
-        fetchProduct(slug, previewQuery),
+        fetchProduct(slug, category, previewQuery),
         fetchProducts(),
     ]);
 
     if (lookup.redirectPath) {
-        redirect(lookup.redirectPath);
+        permanentRedirect(originalQuery ? `${lookup.redirectPath}?${originalQuery}` : lookup.redirectPath);
     }
 
     const product = lookup.product;

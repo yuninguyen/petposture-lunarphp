@@ -60,6 +60,10 @@ class PostControllerComparisonTest extends TestCase
             'price_cents' => 6499,
             'rating' => 4.7,
             'affiliate_url' => 'https://chewy.com/product/123',
+            'metadata' => [
+                'source_url' => 'https://chewy.com/product/123',
+                'checked_at' => '2025-01-15T12:00:00Z',
+            ],
             'pros' => ['comfy', 'washable'],
             'cons' => ['pricey'],
             'in_house_match_url' => null,
@@ -137,7 +141,7 @@ class PostControllerComparisonTest extends TestCase
 
         $this->assertCount(1, $response->json('data.comparison.items'));
         $this->assertSame('New Item', $response->json('data.comparison.items.0.product_name'));
-        $this->assertFalse($response->json('data.comparison.disclosure_shown'));
+        $this->assertTrue($response->json('data.comparison.disclosure_shown'));
     }
 
     public function test_article_type_post_does_not_require_comparison_fields(): void
@@ -192,6 +196,64 @@ class PostControllerComparisonTest extends TestCase
         $this->postJson('/api/admin/posts', $payload)
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['comparison_items.0.affiliate_url']);
+    }
+
+    public function test_store_rejects_price_without_valid_provenance(): void
+    {
+        foreach ([
+            ['metadata' => []],
+            ['metadata' => ['source_url' => 'not-a-url', 'checked_at' => '2025-01-15T12:00:00Z']],
+            ['metadata' => ['source_url' => 'https://example.com', 'checked_at' => 'not-a-date']],
+        ] as $override) {
+            $this->postJson('/api/admin/posts', $this->basePayload([
+                'slug' => 'provenance-'.Str::random(8),
+                'type' => Post::TYPE_COMPARISON,
+                'comparison_items' => [$this->comparisonItem($override)],
+            ]))->assertUnprocessable();
+        }
+    }
+
+    public function test_store_rejects_date_only_provenance_timestamp(): void
+    {
+        $this->postJson('/api/admin/posts', $this->basePayload([
+            'type' => Post::TYPE_COMPARISON,
+            'comparison_items' => [$this->comparisonItem([
+                'metadata' => ['source_url' => 'https://chewy.com/product/123', 'checked_at' => '2025-01-15'],
+            ])],
+        ]))->assertUnprocessable()
+            ->assertJsonValidationErrors(['comparison_items.0.metadata.checked_at']);
+    }
+
+    public function test_store_preserves_items_without_price_or_rating_and_exposes_provenance(): void
+    {
+        $item = $this->comparisonItem();
+        unset($item['price_display'], $item['price_cents'], $item['rating'], $item['metadata']);
+        $response = $this->postJson('/api/admin/posts', $this->basePayload([
+            'type' => Post::TYPE_COMPARISON,
+            'comparison_items' => [$item],
+        ]))->assertCreated();
+        $this->assertArrayNotHasKey('metadata', $response->json('data.comparison.items.0'));
+    }
+
+    public function test_disclosure_false_cannot_render_false_with_affiliate_link(): void
+    {
+        $response = $this->postJson('/api/admin/posts', $this->basePayload([
+            'type' => Post::TYPE_COMPARISON,
+            'disclosure_shown' => false,
+            'comparison_items' => [$this->comparisonItem()],
+        ]))->assertCreated();
+        $this->assertTrue($response->json('data.comparison.disclosure_shown'));
+    }
+
+    public function test_disclosure_false_remains_allowed_without_affiliate_link(): void
+    {
+        $item = $this->comparisonItem(['affiliate_url' => null]);
+        $response = $this->postJson('/api/admin/posts', $this->basePayload([
+            'type' => Post::TYPE_COMPARISON,
+            'disclosure_shown' => false,
+            'comparison_items' => [$item],
+        ]))->assertCreated();
+        $this->assertFalse($response->json('data.comparison.disclosure_shown'));
     }
 
     public function test_store_rejects_highlight_value_over_max_length(): void

@@ -6,6 +6,7 @@ use App\Models\Breed;
 use App\Models\Category;
 use App\Models\Legacy\Product as LegacyProduct;
 use App\Models\ProductSyncMapping;
+use App\Models\Review;
 use App\Models\Solution;
 use App\Services\ProductSyncService;
 use Illuminate\Database\Events\QueryExecuted;
@@ -131,10 +132,96 @@ class ProductCatalogApiTest extends TestCase
             ->assertJsonPath('data.0.oldPrice', 129.99)
             ->assertJsonPath('data.0.badge', 'SALE')
             ->assertJsonPath('data.0.isNew', true)
-            ->assertJsonPath('data.0.rating', 4.7)
-            ->assertJsonPath('data.0.reviews', 12);
+            ->assertJsonPath('data.0.rating', 0)
+            ->assertJsonPath('data.0.reviews', 0)
+            ->assertJsonPath('data.0.reviewCount', 0);
 
         $this->assertCount(1, $response->json('data'));
+    }
+
+    public function test_product_rating_aggregate_uses_only_approved_reviews(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $product = $this->syncLegacyProduct(
+            Category::query()->create(['name' => 'Review products', 'slug' => 'review-products', 'type' => 'product']),
+            'Reviewed bed',
+            'reviewed-bed'
+        );
+
+        Review::query()->create(['lunar_product_id' => $product->id, 'customer_name' => 'Approved one', 'customer_email' => 'one@example.com', 'rating' => 5, 'comment' => 'Great', 'status' => 'approved']);
+        Review::query()->create(['lunar_product_id' => $product->id, 'customer_name' => 'Approved two', 'customer_email' => 'two@example.com', 'rating' => 4, 'comment' => 'Good', 'status' => 'approved']);
+        Review::query()->create(['lunar_product_id' => $product->id, 'customer_name' => 'Pending', 'customer_email' => 'pending@example.com', 'rating' => 1, 'comment' => 'Pending', 'status' => 'pending']);
+
+        $response = $this->getJson('/api/products')->assertOk();
+
+        $response->assertJsonPath('data.0.rating', 4.5)
+            ->assertJsonPath('data.0.reviews', 2)
+            ->assertJsonPath('data.0.reviewCount', 2)
+            ->assertJsonPath('data.0.seo.aggregateRating.ratingValue', 4.5)
+            ->assertJsonPath('data.0.seo.aggregateRating.reviewCount', 2)
+            ->assertJsonPath('data.0.seo.url', url('/shop/categories/reviewed-bed'))
+            ->assertJsonPath('data.0.seo.offers.url', url('/shop/categories/reviewed-bed'));
+    }
+
+    public function test_product_index_uses_one_set_based_review_aggregate_query_for_multiple_products(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $category = Category::query()->create(['name' => 'Aggregate products', 'slug' => 'aggregate-products', 'type' => 'product']);
+        $first = $this->syncLegacyProduct($category, 'First aggregate bed', 'first-aggregate-bed');
+        $second = $this->syncLegacyProduct($category, 'Second aggregate bed', 'second-aggregate-bed');
+
+        Review::query()->create(['lunar_product_id' => $first->id, 'customer_name' => 'First reviewer', 'customer_email' => 'first@example.com', 'rating' => 5, 'comment' => 'Excellent', 'status' => 'approved']);
+        Review::query()->create(['lunar_product_id' => $first->id, 'customer_name' => 'Second reviewer', 'customer_email' => 'second@example.com', 'rating' => 3, 'comment' => 'Good', 'status' => 'approved']);
+        Review::query()->create(['lunar_product_id' => $second->id, 'customer_name' => 'Third reviewer', 'customer_email' => 'third@example.com', 'rating' => 2, 'comment' => 'Okay', 'status' => 'approved']);
+
+        $queries = [];
+        DB::listen(function (QueryExecuted $query) use (&$queries): void {
+            $queries[] = strtolower($query->sql);
+        });
+
+        $data = collect($this->getJson('/api/products?per_page=100')->assertOk()->json('data'))
+            ->keyBy('slug');
+
+        $this->assertEquals(4.0, $data->get('first-aggregate-bed')['rating']);
+        $this->assertSame(2, $data->get('first-aggregate-bed')['reviewCount']);
+        $this->assertEquals(2.0, $data->get('second-aggregate-bed')['rating']);
+        $this->assertSame(1, $data->get('second-aggregate-bed')['reviewCount']);
+        $this->assertCount(1, collect($queries)->filter(fn (string $sql): bool => str_contains($sql, 'reviews')));
+    }
+
+    public function test_product_without_approved_reviews_has_no_aggregate_rating_in_json_ld(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $product = $this->syncLegacyProduct(
+            Category::query()->create(['name' => 'Unreviewed products', 'slug' => 'unreviewed-products', 'type' => 'product']),
+            'Unreviewed bed',
+            'unreviewed-bed'
+        );
+        Review::query()->create(['lunar_product_id' => $product->id, 'customer_name' => 'Pending', 'customer_email' => 'pending-only@example.com', 'rating' => 5, 'comment' => 'Pending', 'status' => 'pending']);
+
+        $this->getJson('/api/products/'.$product->id)->assertOk()->assertJsonMissingPath('data.seo.aggregateRating');
+    }
+
+    public function test_product_rating_attributes_cannot_fabricate_review_aggregates(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $product = $this->syncLegacyProduct(
+            Category::query()->create(['name' => 'Fabricated products', 'slug' => 'fabricated-products', 'type' => 'product']),
+            'Fabricated bed',
+            'fabricated-bed'
+        );
+        DB::table('lunar_products')->where('id', $product->id)->update([
+            'attribute_data' => json_encode([
+                'rating' => ['field_type' => 'text', 'value' => '5'],
+                'reviews' => ['field_type' => 'text', 'value' => '999'],
+            ]),
+        ]);
+
+        $response = $this->getJson('/api/products/'.$product->id)->assertOk();
+
+        $response->assertJsonPath('data.rating', 0)
+            ->assertJsonPath('data.reviews', 0)
+            ->assertJsonMissingPath('data.seo.aggregateRating');
     }
 
     public function test_every_public_product_payload_traces_to_lunar_and_ignores_legacy_only_rows(): void

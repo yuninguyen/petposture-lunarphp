@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Product } from '@/types/shop';
-import { PRODUCTS as MOCK_PRODUCTS } from '@/lib/shopData';
 import { getApiBaseUrl } from '@/lib/api';
 
 export type ShopCategoryOption = {
@@ -22,22 +21,23 @@ export type ShopSolutionOption = {
 };
 
 export function useShopLogic(
-    initialProducts: Product[] = MOCK_PRODUCTS,
+    initialProducts: Product[] = [],
     initialBreed: string = 'All',
     initialSolution: string = 'All',
     initialSearch: string = '',
     allBreeds: { slug: string; label: string }[] = [],
-    allSolutions: { slug: string; label: string }[] = []
+    allSolutions: { slug: string; label: string }[] = [],
+    initialProductsError = false
 ) {
     const [activeCategory, setActiveCategory] = useState('All');
     const [activeBreed, setActiveBreed] = useState(initialBreed);
     const [activeSolution, setActiveSolution] = useState(initialSolution);
     const [sortBy, setSortBy] = useState('newest');
     const [searchQuery, setSearchQuery] = useState(initialSearch);
-    const [filteredProducts, setFilteredProducts] = useState<Product[]>(
-        initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS
-    );
+    const [filteredProducts, setFilteredProducts] = useState<Product[]>(initialProducts);
     const [loading, setLoading] = useState(false);
+    const [initialError] = useState(initialProductsError);
+    const [filterError, setFilterError] = useState(false);
     const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isFilterMountRef = useRef(true);
     const isSearchMountRef = useRef(true);
@@ -46,7 +46,7 @@ export function useShopLogic(
     // Grouped by slug (what the API filters on), not name, since two
     // categories could theoretically share a display name.
     const categories = useMemo<ShopCategoryOption[]>(() => {
-        const base = initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS;
+        const base = initialProducts;
         const bySlug = base.reduce<Record<string, { name: string; count: number }>>((acc, p) => {
             if (p.category && p.categorySlug) {
                 acc[p.categorySlug] = {
@@ -66,7 +66,7 @@ export function useShopLogic(
 
     // Breeds derived from the full initial (unfiltered) product set
     const breeds = useMemo<ShopBreedOption[]>(() => {
-        const base = initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS;
+        const base = initialProducts;
         const counts = base.reduce<Record<string, number>>((acc, p) => {
             (p.breedTags || []).forEach((tag) => {
                 acc[tag] = (acc[tag] || 0) + 1;
@@ -80,7 +80,7 @@ export function useShopLogic(
 
     // Solutions derived from the full initial (unfiltered) product set
     const solutions = useMemo<ShopSolutionOption[]>(() => {
-        const base = initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS;
+        const base = initialProducts;
         const counts = base.reduce<Record<string, number>>((acc, p) => {
             (p.solutionTags || []).forEach((tag) => {
                 acc[tag] = (acc[tag] || 0) + 1;
@@ -104,7 +104,8 @@ export function useShopLogic(
 
         // No filters: restore initial SSR data without a network call
         if (!params.toString()) {
-            setFilteredProducts(initialProducts.length > 0 ? initialProducts : MOCK_PRODUCTS);
+            setFilteredProducts(initialProducts);
+            setFilterError(false);
             setLoading(false);
             return () => {};
         }
@@ -119,10 +120,12 @@ export function useShopLogic(
             .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
             .then(data => {
                 setFilteredProducts(Array.isArray(data?.data) ? data.data : []);
+                setFilterError(false);
             })
             .catch(err => {
                 if (err !== 'AbortError' && !(err instanceof DOMException)) {
                     setFilteredProducts([]);
+                    setFilterError(true);
                 }
             })
             .finally(() => setLoading(false));
@@ -188,5 +191,7 @@ export function useShopLogic(
         loading,
         clearFilters,
         hasActiveFilters,
+        initialError,
+        filterError,
     };
 }

@@ -3,7 +3,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
     title: "Contact Us",
-    description: "Get in touch with the PetPosture pack for ergonomic pet essentials, order support, and expert posture advice.",
+    description: "Get in touch with the PetPosture team for product questions, order support, and breed-focused guidance.",
     alternates: { canonical: '/contact' },
 };
 

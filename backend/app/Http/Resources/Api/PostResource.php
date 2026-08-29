@@ -109,7 +109,8 @@ class PostResource extends JsonResource
 
         return [
             'intro' => $meta->get('comparison_intro'),
-            'disclosure_shown' => $meta->get('disclosure_shown', true),
+            'disclosure_shown' => (bool) $meta->get('disclosure_shown', true)
+                || $rawItems->contains(fn (array $item): bool => filled($item['affiliate_url'] ?? null)),
             'items' => $items,
         ];
     }

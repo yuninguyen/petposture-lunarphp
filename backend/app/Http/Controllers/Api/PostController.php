@@ -265,7 +265,10 @@ class PostController extends Controller
             'comparison_items.*.price_display' => 'nullable|string|max:64',
             'comparison_items.*.price_cents' => 'nullable|integer|min:0',
             'comparison_items.*.rating' => 'nullable|numeric|min:0|max:5',
-            'comparison_items.*.affiliate_url' => 'required_with:comparison_items|url|max:2048',
+            'comparison_items.*.metadata' => 'nullable|array',
+            'comparison_items.*.metadata.source_url' => 'required_with:comparison_items.*.price_display,comparison_items.*.price_cents,comparison_items.*.rating|url|max:2048',
+            'comparison_items.*.metadata.checked_at' => 'required_with:comparison_items.*.price_display,comparison_items.*.price_cents,comparison_items.*.rating|date_format:Y-m-d\\TH:i:s\\Z',
+            'comparison_items.*.affiliate_url' => 'nullable|url|max:2048',
             'comparison_items.*.pros' => 'nullable|array',
             'comparison_items.*.pros.*' => 'string|max:255',
             'comparison_items.*.cons' => 'nullable|array',
@@ -283,7 +286,8 @@ class PostController extends Controller
     {
         $comparison = [
             'comparison_intro' => $validated['comparison_intro'] ?? null,
-            'disclosure_shown' => $validated['disclosure_shown'] ?? true,
+            'disclosure_shown' => ($validated['disclosure_shown'] ?? true)
+                || collect($validated['comparison_items'] ?? [])->contains(fn (array $item): bool => filled($item['affiliate_url'] ?? null)),
             'comparison_items' => $validated['comparison_items'] ?? [],
         ];
 

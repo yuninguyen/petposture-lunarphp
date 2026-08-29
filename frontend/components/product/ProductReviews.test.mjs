@@ -14,3 +14,12 @@ test('verified owner label only renders for verified purchase evidence', () => {
     assert.match(source, /review\.is_verified\s*\?/);
     assert.doesNotMatch(source, /Based on.*Verified Owners/);
 });
+
+test('review fetch failures are distinct from zero approved reviews', () => {
+    assert.match(source, /const \[fetchError, setFetchError\]/);
+    assert.match(source, /setFetchError\(true\)/);
+    assert.match(source, /fetchError \?/);
+    assert.match(source, /Reviews are temporarily unavailable\./);
+    assert.match(source, /reviews\.length === 0 \?/);
+    assert.match(source, /No journeys shared yet/);
+});

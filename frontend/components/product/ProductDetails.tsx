@@ -130,7 +130,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                     >
                         <div className="mb-8">
                             <p className="mb-4 text-xs font-black capitalize tracking-[0.05em] text-primary">
-                                {product.category} Ergonomics
+                                {product.category} Essentials
                             </p>
                             <h1 className="mb-1 text-[30px] font-bold leading-[1.1] text-primary">
                                 {product.name}

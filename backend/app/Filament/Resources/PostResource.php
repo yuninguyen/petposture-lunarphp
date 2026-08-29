@@ -207,6 +207,12 @@ class PostResource extends Resource
                         Forms\Components\Toggle::make('metadata.disclosure_shown')
                             ->label(__('Show affiliate disclosure banner'))
                             ->default(true)
+                            ->disabled(fn (Get $get): bool => collect($get('metadata.comparison_items') ?? [])
+                                ->contains(fn (array $item): bool => filled($item['affiliate_url'] ?? null)))
+                            ->helperText(fn (Get $get): ?string => collect($get('metadata.comparison_items') ?? [])
+                                ->contains(fn (array $item): bool => filled($item['affiliate_url'] ?? null))
+                                    ? __('Affiliate disclosure is required when comparison items include affiliate links.')
+                                    : null)
                             ->columnSpanFull(),
 
                         Forms\Components\Repeater::make('metadata.comparison_items')
@@ -248,7 +254,7 @@ class PostResource extends Resource
                                 Forms\Components\TextInput::make('price_display')
                                     ->label(__('Price (display)'))
                                     ->placeholder('$64.99')
-                                    ->required(),
+                                    ->nullable(),
 
                                 Forms\Components\TextInput::make('price_cents')
                                     ->label(__('Price (cents, for sorting)'))
@@ -265,8 +271,19 @@ class PostResource extends Resource
                                 Forms\Components\TextInput::make('affiliate_url')
                                     ->label(__('Affiliate URL'))
                                     ->url()
-                                    ->required()
+                                    ->nullable()
+                                    ->live(onBlur: true)
                                     ->columnSpanFull(),
+
+                                Forms\Components\TextInput::make('metadata.source_url')
+                                     ->label(__('Price/rating source URL'))
+                                     ->url()
+                                     ->required(fn (Get $get): bool => filled($get('price_display')) || filled($get('price_cents')) || filled($get('rating')))
+                                     ->columnSpanFull(),
+
+                                Forms\Components\DateTimePicker::make('metadata.checked_at')
+                                     ->label(__('Checked at'))
+                                     ->required(fn (Get $get): bool => filled($get('price_display')) || filled($get('price_cents')) || filled($get('rating'))),
 
                                 Forms\Components\TagsInput::make('pros')
                                     ->label(__('Pros')),

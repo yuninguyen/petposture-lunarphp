@@ -21,7 +21,7 @@ const FAQ_ITEMS = [
     {
         category: "products",
         question: "How do I know which product is right for my pet?",
-        answer: "Every pet has unique needs. We recommend exploring our 'Shop by Breed' or 'Shop by Solution' collections. For example, our 'Mobility & Support' section is perfect for older pets needing extra help with furniture access, while 'Productivity' collection helps pets focus during mealtime."
+        answer: "Every pet has unique needs. We recommend exploring our 'Explore by Breed' or 'Explore Solutions' collections. For example, our 'Mobility' section is perfect for older pets needing extra help with furniture access, while our 'Feeding' collection helps pets focus during mealtime."
     },
     {
         category: "products",
@@ -30,7 +30,7 @@ const FAQ_ITEMS = [
     },
     {
         category: "products",
-        question: "Are the ergonomic bowls dishwasher safe?",
+        question: "Are the bowls dishwasher safe?",
         answer: "Yes! All of our ceramic and stainless steel bowl inserts are 100% dishwasher safe (top rack recommended). For stands made of bamboo or elevated wood, we recommend wiping them down with a damp cloth to preserve the finish."
     },
     {
@@ -113,7 +113,7 @@ export default function FaqsPage() {
                             Frequently Asked Questions
                         </h1>
                         <p className="text-[#666666] text-[16px] max-w-2xl mx-auto leading-relaxed">
-                            Find answers to common questions about our ergonomic pet products, shipping, and return policies.
+                            Find answers to common questions about our products, shipping, and return policies.
                         </p>
                         <div className="w-12 h-1 bg-secondary mx-auto rounded-full mt-8"></div>
                     </motion.div>

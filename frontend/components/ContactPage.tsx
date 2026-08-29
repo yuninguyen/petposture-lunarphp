@@ -140,8 +140,8 @@ export default function ContactPage() {
                     </h1>
                     <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
                     <p className="hidden md:block text-[18px] text-zinc-500 max-w-xl mx-auto leading-relaxed font-medium">
-                        Have a question about ergonomics, order tracking, or breed-specific needs?
-                        Our PetPosture specialists are here to ensure your pet gets the support they deserve.
+                        Have a question about product fit, order tracking, or breed-specific needs?
+                        Our PetPosture specialists are here to help with practical product guidance.
                     </p>
                 </div>
             </section>

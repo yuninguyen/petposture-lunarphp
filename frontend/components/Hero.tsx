@@ -29,7 +29,7 @@ export default function Hero() {
       <div className="absolute inset-0">
         <Image
           src={heroImage}
-          alt="Ergonomic feeding stance"
+          alt="Comfortable feeding setup"
           fill
           className="object-cover object-[center_65%]"
           priority

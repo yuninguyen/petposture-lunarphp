@@ -1,13 +1,12 @@
 import ShopPage from '@/components/ShopPage';
 import { Metadata } from 'next';
 import { Suspense } from 'react';
-import { PRODUCTS as MOCK_PRODUCTS } from '@/lib/shopData';
 import { Product } from '@/types/shop';
 import { API_BASE_URL } from '@/lib/api';
 
 export const metadata: Metadata = {
     title: 'Shop',
-    description: 'Elite ergonomic gear for your pet\'s best life. Shop our collection of bowls, ramps, beds, and harnesses.',
+    description: 'Carefully selected products for everyday access, comfort, and usability. Explore bowls, ramps, beds, and harnesses.',
     alternates: { canonical: '/shop' },
 };
 
@@ -35,7 +34,7 @@ async function getSolutionOptions(): Promise<{ slug: string; label: string }[]> 
     }
 }
 
-async function getInitialProducts(q: string): Promise<Product[]> {
+async function getInitialProducts(q: string): Promise<{ products: Product[]; error: boolean }> {
     try {
         const url = q
             ? `${API_BASE_URL}/api/products?q=${encodeURIComponent(q)}`
@@ -50,14 +49,14 @@ async function getInitialProducts(q: string): Promise<Product[]> {
 
         const payload = await response.json();
 
-        if (Array.isArray(payload?.data) && (q || payload.data.length > 0)) {
-            return payload.data;
+        if (Array.isArray(payload?.data)) {
+            return { products: payload.data, error: false };
         }
+        return { products: [], error: true };
     } catch (error) {
-        console.warn('Falling back to mock shop data on the server.', error);
+        console.warn('Failed to fetch shop products on the server.', error);
+        return { products: [], error: true };
     }
-
-    return q ? [] : MOCK_PRODUCTS;
 }
 
 export default async function Page({
@@ -66,7 +65,7 @@ export default async function Page({
     searchParams: Promise<{ q?: string }>;
 }) {
     const { q } = await searchParams;
-    const [initialProducts, allBreeds, allSolutions] = await Promise.all([
+    const [initialProductResult, allBreeds, allSolutions] = await Promise.all([
         getInitialProducts(q ?? ''),
         getBreedOptions(),
         getSolutionOptions(),
@@ -75,7 +74,8 @@ export default async function Page({
     return (
         <Suspense fallback={<main className="min-h-screen bg-[#f7f3ee]" />}>
             <ShopPage
-                initialProducts={initialProducts}
+                initialProducts={initialProductResult.products}
+                initialProductsError={initialProductResult.error}
                 initialSearch={q ?? ''}
                 allBreeds={allBreeds}
                 allSolutions={allSolutions}

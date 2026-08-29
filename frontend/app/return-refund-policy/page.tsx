@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
     return {
         title: page?.meta_title || page?.title || 'Return & Refund Policy',
-        description: page?.meta_description || "Learn about PetPosture's 30-day return policy and 25% restocking fee for ergonomic pet gear.",
+        description: page?.meta_description || "Learn about PetPosture's 30-day return policy and 25% restocking fee for carefully selected pet products.",
         alternates: { canonical: `/${SLUG}` },
     };
 }

@@ -30,7 +30,8 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
-        $query = Product::where('status', 'published')
+        $query = $this->productQuery()
+            ->where('status', 'published')
             ->whereHas('variants')
             ->with([
                 'variants.prices',
@@ -174,6 +175,17 @@ class ProductController extends Controller
         $product = $this->resolveCurrentPublishedProduct($slug);
 
         if ($product) {
+            $routes = app(ProductRouteService::class);
+            $requestedCategory = (string) $request->query('category', '');
+
+            if ($requestedCategory !== '' && $requestedCategory !== $routes->categorySlug($product)) {
+                return response()->json(['redirect' => [
+                    'path' => $routes->path($product),
+                    'slug' => $routes->slug($product),
+                    'categorySlug' => $routes->categorySlug($product),
+                ]]);
+            }
+
             return new ProductResource($product);
         }
 
@@ -193,6 +205,17 @@ class ProductController extends Controller
         $product = is_numeric($slug) ? $this->resolvePublishedProduct($slug) : null;
         if (! $product) {
             abort(404, 'Product not found');
+        }
+
+        $routes = app(ProductRouteService::class);
+        $requestedCategory = (string) $request->query('category', '');
+
+        if ($requestedCategory !== '' && $requestedCategory !== $routes->categorySlug($product)) {
+            return response()->json(['redirect' => [
+                'path' => $routes->path($product),
+                'slug' => $routes->slug($product),
+                'categorySlug' => $routes->categorySlug($product),
+            ]]);
         }
 
         return new ProductResource($product);
@@ -279,7 +302,8 @@ class ProductController extends Controller
         $collectionIds = $product->collections->pluck('id');
         $brandId = $product->brand_id ?? null;
 
-        $query = Product::where('status', 'published')
+        $query = $this->productQuery()
+            ->where('status', 'published')
             ->where('id', '!=', $product->id)
             ->whereHas('variants')
             ->with([
@@ -307,7 +331,7 @@ class ProductController extends Controller
         // Pad deterministically if fewer than four related products are available.
         if ($related->count() < 4) {
             $existing = $related->pluck('id')->push($product->id);
-            $filler = Product::where('status', 'published')
+            $filler = $this->productQuery()->where('status', 'published')
                 ->whereNotIn('id', $existing)
                 ->whereHas('variants')
                 ->with(['variants.prices', 'thumbnail', 'defaultUrl', 'urls', 'collections.defaultUrl'])
@@ -380,7 +404,7 @@ class ProductController extends Controller
         $product = $this->resolveCurrentPublishedProduct($slug);
 
         if (! $product && is_numeric($slug)) {
-            $product = Product::with($this->productRelations())
+            $product = $this->productQuery()->with($this->productRelations())
                 ->where('status', 'published')
                 ->whereHas('variants')
                 ->find($slug);
@@ -391,7 +415,7 @@ class ProductController extends Controller
 
     private function resolvePreviewProduct(string $slug): ?Product
     {
-        return Product::with($this->productRelations())
+        return $this->productQuery()->with($this->productRelations())
             ->whereHas('variants')
             ->whereHas('urls', fn ($query) => $query->where('slug', $slug))
             ->first();
@@ -404,7 +428,7 @@ class ProductController extends Controller
 
     private function resolveCurrentPublishedProduct(string $slug): ?Product
     {
-        return Product::with($this->productRelations())
+        return $this->productQuery()->with($this->productRelations())
             ->where('status', 'published')
             ->whereHas('variants')
             ->whereHas('urls', fn ($query) => $query->where('slug', $slug))
@@ -425,10 +449,18 @@ class ProductController extends Controller
             return null;
         }
 
-        return Product::with($this->productRelations())
+        return $this->productQuery()->with($this->productRelations())
             ->where('status', 'published')
             ->whereHas('variants')
             ->find($redirect->product_id);
+    }
+
+    private function productQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return Product::query()
+            ->select('lunar_products.*')
+            ->selectSub(Review::query()->selectRaw('AVG(rating)')->whereColumn('lunar_product_id', 'lunar_products.id')->where('status', 'approved'), 'approved_reviews_avg_rating')
+            ->selectSub(Review::query()->selectRaw('COUNT(*)')->whereColumn('lunar_product_id', 'lunar_products.id')->where('status', 'approved'), 'approved_reviews_count');
     }
 
     private function productRelations(): array

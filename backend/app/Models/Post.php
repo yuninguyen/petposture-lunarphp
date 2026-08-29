@@ -91,7 +91,9 @@ class Post extends Model
             $warnings[] = __('Featured image has no alt text');
         }
 
-        if ($this->type === self::TYPE_COMPARISON && ! $this->getMeta('disclosure_shown', true)) {
+        if ($this->type === self::TYPE_COMPARISON
+            && ! $this->getMeta('disclosure_shown', true)
+            && ! collect($this->getMeta('comparison_items', []))->contains(fn (array $item): bool => filled($item['affiliate_url'] ?? null))) {
             $warnings[] = __('Affiliate disclosure banner is turned off');
         }
 

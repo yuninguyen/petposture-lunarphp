@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\Admin;
 
 use App\Models\CuratorMedia;
+use App\Services\ProductRouteService;
 use App\Models\SeoMetadata;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -461,6 +462,52 @@ class ProductControllerTest extends TestCase
             'status' => 'draft',
         ]))->assertOk();
         $this->getJson('/api/products/old-product-slug')->assertNotFound();
+    }
+
+    public function test_public_product_api_redirects_when_requested_category_is_not_canonical(): void
+    {
+        $product = $this->product('Category route product');
+        $this->variant($product, 'CATEGORY-001', 1000, 5);
+        [$collection] = $this->collections();
+        $product->collections()->attach($collection->id, ['position' => 1]);
+        $slug = $product->defaultUrl?->slug;
+        $this->assertNotNull($slug);
+        $canonicalCategory = app(ProductRouteService::class)->categorySlug($product);
+        $this->getJson("/api/products/{$slug}?category=wrong-category")
+            ->assertOk()
+            ->assertJsonMissingPath('data')
+            ->assertJsonPath('redirect.path', "/shop/{$canonicalCategory}/{$slug}")
+            ->assertJsonPath('redirect.slug', $slug)
+            ->assertJsonPath('redirect.categorySlug', $canonicalCategory);
+    }
+
+    public function test_numeric_legacy_product_api_redirects_when_requested_category_is_not_canonical(): void
+    {
+        $product = $this->product('Numeric legacy category product');
+        $this->variant($product, 'NUMERIC-001', 1000, 5);
+        [$collection] = $this->collections();
+        $product->collections()->attach($collection->id, ['position' => 1]);
+        $canonicalCategory = app(ProductRouteService::class)->categorySlug($product);
+
+        $this->getJson("/api/products/{$product->id}?category=wrong-category")
+            ->assertOk()
+            ->assertJsonMissingPath('data')
+            ->assertJsonPath('redirect.path', "/shop/{$canonicalCategory}/{$product->defaultUrl?->slug}")
+            ->assertJsonPath('redirect.categorySlug', $canonicalCategory);
+    }
+
+    public function test_public_product_api_returns_product_when_requested_category_is_canonical(): void
+    {
+        $product = $this->product('Canonical category product');
+        $this->variant($product, 'CANONICAL-001', 1000, 5);
+        [$collection] = $this->collections();
+        $product->collections()->attach($collection->id, ['position' => 1]);
+        $slug = $product->defaultUrl?->slug;
+        $this->assertNotNull($slug);
+        $canonicalCategory = app(ProductRouteService::class)->categorySlug($product);
+        $this->getJson("/api/products/{$slug}?category={$canonicalCategory}")
+            ->assertOk()
+            ->assertJsonPath('data.id', $product->id);
     }
 
     public function test_product_update_creates_a_default_url_when_one_is_missing(): void

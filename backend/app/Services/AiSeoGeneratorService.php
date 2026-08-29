@@ -32,9 +32,11 @@ class AiSeoGeneratorService
 
         $plainContent = trim(strip_tags((string) $content));
         $excerpt = Str::limit($plainContent, 3000, '');
+        $positioning = "PetPosture is a breed-focused product recommendation brand that helps dog owners narrow product choices based on how their dog is built, everyday challenges, practical fit, dimensions, materials, usability, cleaning, and access.\n\n"
+            ."Never make veterinary, clinical, injury-prevention, posture-correction, testing, or unsupported health claims. Never invent ratings, review counts, prices, test evidence, merchant availability, or numerical proof. Only use claims supported by the supplied content.";
         $prompt = match ($contentType) {
-            'product' => "You are an SEO copywriter for the PetPosture pet-ergonomics e-commerce store. Given the product name and description below, write SEO metadata for a product detail page. Keep claims grounded in the supplied description, use purchase-intent keywords naturally, and never use clickbait or exaggerated benefits.\n\nProduct name: {$title}\n\nProduct description:\n{$excerpt}",
-            default => "You are an SEO copywriter for the PetPosture pet-ergonomics editorial blog. Given the article title and content below, write SEO metadata that is accurate to the content, keyword-relevant, and never clickbait or exaggerated.\n\nArticle title: {$title}\n\nArticle content:\n{$excerpt}",
+            'product' => "{$positioning}\n\nYou are writing SEO metadata for a product detail page. Keep claims grounded in the supplied description, use purchase-intent keywords naturally, and never use clickbait or exaggerated benefits.\n\nProduct name: {$title}\n\nProduct description:\n{$excerpt}",
+            default => "{$positioning}\n\nYou are writing SEO metadata for an editorial blog article. Keep claims accurate to the supplied content, keyword-relevant, and never clickbait or exaggerated.\n\nArticle title: {$title}\n\nArticle content:\n{$excerpt}",
         };
 
         $client = new Client(apiKey: $this->apiKey());

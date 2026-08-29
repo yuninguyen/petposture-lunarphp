@@ -398,7 +398,7 @@ function WhyChoose() {
     {
       img: '/assets/icons/Why-Transparent-Reviews.webp',
       title: 'Transparent Reviews',
-      desc: 'We clearly distinguish between products we\'ve researched and products we\'ve physical tested.',
+      desc: 'We clearly label products based on how thoroughly we\'ve researched them.',
       accent: C.secondary,
     },
   ];
@@ -578,7 +578,7 @@ function MealtimeDiff() {
               borderRadius: 4,
               boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
             }}>
-              The Ergonomic Difference
+              The Practical Difference
             </div>
 
             <h2 style={{
