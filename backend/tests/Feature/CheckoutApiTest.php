@@ -928,6 +928,25 @@ class CheckoutApiTest extends TestCase
             ->assertJsonPath('data.id', $awaitingPayment->json('order.id'));
     }
 
+    public function test_order_status_label_is_a_human_readable_translation_not_the_raw_slug(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $order = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        Order::query()->findOrFail($order->json('order.id'))->update(['status' => 'awaiting-payment']);
+
+        $this->makeAdmin();
+
+        $this->getJson('/api/admin/orders/'.$order->json('order.id'))
+            ->assertOk()
+            ->assertJsonPath('data.status', 'awaiting-payment')
+            ->assertJsonPath('data.status_label', 'Awaiting Payment');
+
+        $this->withSession(['locale' => 'vi'])
+            ->getJson('/api/admin/orders/'.$order->json('order.id'))
+            ->assertOk()
+            ->assertJsonPath('data.status_label', 'Chờ thanh toán');
+    }
+
     public function test_admin_order_listing_rejects_unknown_status_filter(): void
     {
         $this->makeAdmin();

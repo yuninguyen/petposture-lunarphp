@@ -7,6 +7,7 @@ use App\Services\ProductSyncService;
 use App\Support\Orders\OrderStateMachine;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Lang;
 
 class OrderResource extends JsonResource
 {
@@ -27,7 +28,7 @@ class OrderResource extends JsonResource
             'id' => (string) $this->id,
             'reference' => $this->reference,
             'status' => $this->status,
-            'status_label' => __($this->status),
+            'status_label' => $this->translatedStatusLabel($this->status),
             'payment_status' => $paymentStatus,
             'payment_status_label' => $this->formatStatusLabel($paymentStatus),
             'fulfillment_status' => $fulfillmentStatus,
@@ -217,6 +218,15 @@ class OrderResource extends JsonResource
         }
 
         return str($status)->replace('-', ' ')->title()->toString();
+    }
+
+    private function translatedStatusLabel(string $status): string
+    {
+        $key = 'admin.orders.statuses.'.$status;
+
+        return Lang::has($key)
+            ? __($key)
+            : (string) $this->formatStatusLabel($status);
     }
 
     private function formatShippingLabel(?string $shippingMethod): string
