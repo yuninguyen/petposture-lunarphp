@@ -62,6 +62,24 @@ describe('ShippingMethodsPage', () => {
     host.remove();
   });
 
+  it('opens the edit modal from the row kebab menu', () => {
+    mocks.useShippingMethods.mockReturnValue({ isLoading: false, isError: false, data: [method] });
+    mocks.useDeleteShippingMethod.mockReturnValue({ mutate: vi.fn(), isPending: false });
+    mocks.useCreateShippingMethod.mockReturnValue({ mutate: vi.fn(), isPending: false });
+    mocks.useUpdateShippingMethod.mockReturnValue({ mutate: vi.fn(), isPending: false });
+    const { host, root } = renderPage();
+
+    const methodRow = Array.from(host.querySelectorAll('tbody tr')).find((row) => row.textContent?.includes('Express Delivery'))!;
+    const actionsButton = Array.from(methodRow.querySelectorAll('button')).find((button) => button.querySelector('svg circle[cx="12"]'));
+    act(() => actionsButton?.click());
+    const editButton = Array.from(host.querySelectorAll('button')).find((button) => button.textContent === 'common.edit')!;
+    act(() => editButton.click());
+
+    expect(host.textContent).toContain('shipping.edit_title');
+    act(() => root.unmount());
+    host.remove();
+  });
+
   it('keeps the localized checkout-impact confirmation open and shows the backend 409 message', () => {
     mocks.useShippingMethods.mockReturnValue({ isLoading: false, isError: false, data: [method] });
     mocks.useDeleteShippingMethod.mockReturnValue({
@@ -77,7 +95,12 @@ describe('ShippingMethodsPage', () => {
     mocks.useUpdateShippingMethod.mockReturnValue({ mutate: vi.fn(), isPending: false });
     const { host, root } = renderPage();
 
-    const deleteButton = Array.from(host.querySelectorAll('button')).find((button) => button.textContent === 'shipping.delete')!;
+    const methodRow = Array.from(host.querySelectorAll('tbody tr')).find((row) => row.textContent?.includes('Express Delivery'))!;
+    const actionsButton = Array.from(methodRow.querySelectorAll('button')).find((button) => button.querySelector('svg circle[cx="12"]'));
+    expect(actionsButton).toBeTruthy();
+    act(() => actionsButton?.click());
+
+    const deleteButton = Array.from(host.querySelectorAll('button')).find((button) => button.textContent === 'common.delete')!;
     act(() => deleteButton.click());
     expect(host.textContent).toContain('Xóa “Express Delivery”? Việc xóa sẽ ảnh hưởng ngay đến trang thanh toán đang hoạt động.');
 

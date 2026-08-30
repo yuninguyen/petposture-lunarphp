@@ -113,6 +113,10 @@ describe('ReviewsPage moderation', () => {
     useUpdateReview.mockReturnValue({ mutate, isPending: false });
     const { host, root } = renderReviews();
 
+    const reviewRow = Array.from(host.querySelectorAll('tbody tr')).find((row) => row.textContent?.includes('Taylor Customer'))!;
+    const actionsButton = Array.from(reviewRow.querySelectorAll('button')).find((button) => button.querySelector('svg circle[cx="12"]'));
+    expect(actionsButton).toBeTruthy();
+    act(() => actionsButton?.click());
     act(() => (host.querySelector('button[data-review-edit="4"]') as HTMLButtonElement).click());
     expect(host.textContent).toContain('Support Bed');
     expect(host.textContent).toContain('reviews.verified');
@@ -140,6 +144,10 @@ describe('ReviewsPage moderation', () => {
     useUpdateReview.mockReturnValue({ mutate, isPending: false });
     const { host, root } = renderReviews();
 
+    const reviewRow = Array.from(host.querySelectorAll('tbody tr')).find((row) => row.textContent?.includes('Taylor Customer'))!;
+    const actionsButton = Array.from(reviewRow.querySelectorAll('button')).find((button) => button.querySelector('svg circle[cx="12"]'));
+    expect(actionsButton).toBeTruthy();
+    act(() => actionsButton?.click());
     act(() => (host.querySelector('button[data-review-edit="4"]') as HTMLButtonElement).click());
     act(() => (host.querySelector('button[type="submit"]') as HTMLButtonElement).click());
 
@@ -150,8 +158,14 @@ describe('ReviewsPage moderation', () => {
     host.remove();
   });
 
-  it('hides delete controls when deletion is not permitted', () => {
+  it('keeps the actions menu but hides its delete item when deletion is not permitted', () => {
     const { host, root } = renderReviews(false);
+    const reviewRow = Array.from(host.querySelectorAll('tbody tr')).find((row) => row.textContent?.includes('Taylor Customer'))!;
+    const actionsButton = Array.from(reviewRow.querySelectorAll('button')).find((button) => button.querySelector('svg circle[cx="12"]'));
+    expect(actionsButton).toBeTruthy();
+    act(() => actionsButton?.click());
+
+    expect(host.querySelector('[data-review-edit="4"]')).not.toBeNull();
     expect(host.querySelector('[data-review-delete="4"]')).toBeNull();
 
     act(() => root.unmount());
@@ -163,6 +177,10 @@ describe('ReviewsPage moderation', () => {
     useDeleteReview.mockReturnValue({ mutate, isPending: false });
     const { host, root } = renderReviews(true);
 
+    const reviewRow = Array.from(host.querySelectorAll('tbody tr')).find((row) => row.textContent?.includes('Taylor Customer'))!;
+    const actionsButton = Array.from(reviewRow.querySelectorAll('button')).find((button) => button.querySelector('svg circle[cx="12"]'));
+    expect(actionsButton).toBeTruthy();
+    act(() => actionsButton?.click());
     act(() => (host.querySelector('[data-review-delete="4"]') as HTMLButtonElement).click());
     expect(host.textContent).toContain('reviews.delete_title');
     act(() => (host.querySelector('[data-review-confirm-delete]') as HTMLButtonElement).click());

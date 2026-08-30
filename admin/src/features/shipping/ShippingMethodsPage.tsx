@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
 import { ShippingMethod, useDeleteShippingMethod, useShippingMethods } from './api';
 import { ShippingMethodModal } from './ShippingMethodModal';
+import { ShippingRowActions } from './ShippingRowActions';
 
 interface ApiError extends Error {
   status?: number;
@@ -85,9 +86,9 @@ export function ShippingMethodsPage() {
                   <td className="px-6 py-3 text-sm text-slate-700">{displayValue(method.eta)}</td>
                   <td className="px-6 py-3 text-sm text-slate-700">{displayValue(method.price)}</td>
                   <td className="px-6 py-3 text-sm text-slate-700">{displayValue(method.free_over)}</td>
-                  <td className="space-x-3 px-6 py-3 text-right text-sm">
-                    <button type="button" className="text-primary hover:underline" onClick={() => openEdit(method)}>{t('shipping.edit')}</button>
-                    <button type="button" className="text-red-600 hover:underline" onClick={() => setDeletingMethod(method)}>{t('shipping.delete')}</button>
+                  <td className="px-6 py-3 text-right text-sm">
+                    <ShippingRowActions method={method} onEdit={openEdit} onDelete={setDeletingMethod} />
+
                   </td>
                 </tr>
               ))}

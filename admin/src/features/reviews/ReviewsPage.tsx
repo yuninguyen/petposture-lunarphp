@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Review, ReviewStatus, useDeleteReview, useReviewProducts, useReviews, useUpdateReview } from './api';
+import { ReviewRowActions } from './ReviewRowActions';
 
 const statuses: ReviewStatus[] = ['pending', 'approved', 'rejected'];
 
@@ -85,7 +86,7 @@ export function ReviewsPage({ canDelete }: { canDelete: boolean }) {
           <td className="px-6 py-4 text-sm text-slate-700">{review.is_verified ? t('reviews.verified') : t('reviews.not_verified')}</td>
           <td className="px-6 py-4 text-sm"><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">{t(`reviews.status_${review.status}`)}</span></td>
           <td className="px-6 py-4 text-sm text-slate-500">{review.created_at ? new Date(review.created_at).toLocaleDateString() : t('reviews.no_date')}</td>
-          <td className="space-x-3 px-6 py-4 text-sm"><button type="button" data-review-edit={review.id} className="text-primary hover:underline" onClick={() => setEditingReview(review)}>{t('reviews.edit')}</button>{canDelete && <button type="button" data-review-delete={review.id} className="text-red-600 hover:underline" onClick={() => setDeletingReview(review)}>{t('reviews.delete')}</button>}</td>
+          <td className="px-6 py-4 text-sm"><ReviewRowActions review={review} canDelete={canDelete} onEdit={setEditingReview} onDelete={setDeletingReview} /></td>
         </tr>)}
       </tbody></table></div>
       {meta && meta.last_page > 1 && <div className="flex items-center justify-between border-t bg-slate-50 px-6 py-4"><span className="text-sm text-slate-500">{t('reviews.page_of', { current: meta.current_page, last: meta.last_page })}</span><div className="flex gap-2"><Button variant="secondary" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>{t('reviews.previous')}</Button><Button variant="secondary" disabled={page >= meta.last_page} onClick={() => setPage((current) => current + 1)}>{t('reviews.next')}</Button></div></div>}
