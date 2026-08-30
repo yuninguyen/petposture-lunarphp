@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\Admin\BrandController as AdminBrandController;
 use App\Http\Controllers\Api\Admin\CollectionController;
 use App\Http\Controllers\Api\Admin\CollectionGroupController;
 use App\Http\Controllers\Api\Admin\CustomFieldController;
+use App\Http\Controllers\Api\Admin\CustomerController;
 use App\Http\Controllers\Api\Admin\ProductAssociationController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\ProductOptionController;
@@ -267,6 +268,12 @@ Route::prefix('/admin')
         Route::delete('/pages/{page}', [\App\Http\Controllers\Api\Admin\PageController::class, 'destroy']);
 
         Route::middleware('role:super_admin|admin|staff')->group(function () {
+            Route::get('/customers', [CustomerController::class, 'index']);
+            Route::get('/customers/{customer}/orders', [CustomerController::class, 'orders']);
+            Route::get('/customers/{customer}/addresses', [CustomerController::class, 'addresses']);
+            Route::get('/customers/{customer}/login-accounts', [CustomerController::class, 'loginAccounts']);
+            Route::get('/customers/{customer}', [CustomerController::class, 'show']);
+
             Route::get('/shipping-methods', [ShippingMethodController::class, 'index']);
             Route::post('/shipping-methods', [ShippingMethodController::class, 'store']);
             Route::get('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'show']);

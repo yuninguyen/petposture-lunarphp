@@ -7,8 +7,10 @@ vi.mock('./features/orders/OrdersListPage', () => ({ OrdersListPage: () => creat
 vi.mock('./features/products/ProductsListPage', () => ({ ProductsListPage: () => createElement('div', null, 'Products route') }));
 vi.mock('./features/shipping/ShippingMethodsPage', () => ({ ShippingMethodsPage: () => createElement('div', null, 'Shipping route') }));
 vi.mock('./features/reviews/ReviewsPage', () => ({ ReviewsPage: ({ canDelete }: { canDelete: boolean }) => createElement('div', null, `Reviews route delete=${canDelete}`) }));
+vi.mock('./features/customers/CustomersListPage', () => ({ CustomersListPage: () => createElement('div', null, 'Customers route') }));
+vi.mock('./features/customers/CustomerDetailPage', () => ({ CustomerDetailPage: () => createElement('div', null, 'Customer detail route') }));
 
-import { AppRoutes, canDeleteReviews, canManageCommerce, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute } from './App';
+import { AppRoutes, canDeleteReviews, canManageCommerce, canManageCustomers, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute } from './App';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -34,6 +36,48 @@ describe('commerce admin role handling', () => {
     expect(canRefundOrders(['Support'])).toBe(false);
     expect(canRefundOrders(['Order Manager'])).toBe(true);
     expect(canRefundOrders(['staff'])).toBe(true);
+  });
+
+  it('allows Customers only for core administrators', async () => {
+    for (const role of ['super_admin', 'admin', 'staff']) expect(canManageCustomers([role])).toBe(true);
+    for (const role of ['Support', 'Order Manager', 'Product Manager']) expect(canManageCustomers([role])).toBe(false);
+
+    const core = renderRoutes(['admin'], '/customers');
+    await act(async () => await Promise.resolve());
+    expect(core.host.textContent).toContain('Customers route');
+    act(() => core.root.unmount());
+    core.host.remove();
+  });
+
+  it.each([
+    ['Support', ['Support'], 'Orders route'],
+    ['Order Manager', ['Order Manager'], 'Orders route'],
+    ['Product Manager', ['Product Manager'], 'Products route'],
+  ])('renders the safe home fallback rather than Customers at /customers for %s', async (_role, userRoles, expectedRoute) => {
+    const { host, root } = renderRoutes(userRoles, '/customers');
+    await act(async () => await Promise.resolve());
+
+    expect(host.textContent).toContain(expectedRoute);
+    expect(host.textContent).not.toContain('Customers route');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it.each([
+    ['core administrator', ['admin'], 'Customer detail route'],
+    ['Support', ['Support'], 'Orders route'],
+    ['Order Manager', ['Order Manager'], 'Orders route'],
+    ['Product Manager', ['Product Manager'], 'Products route'],
+  ])('guards /customers/:id behind the existing Customers predicate for %s', async (_role, userRoles, expectedRoute) => {
+    const { host, root } = renderRoutes(userRoles, '/customers/42');
+    await act(async () => await Promise.resolve());
+
+    expect(host.textContent).toContain(expectedRoute);
+    if (expectedRoute !== 'Customer detail route') expect(host.textContent).not.toContain('Customer detail route');
+
+    act(() => root.unmount());
+    host.remove();
   });
 
   it('allows Shipping routes only for core administrators', () => {
