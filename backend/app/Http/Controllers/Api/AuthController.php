@@ -87,6 +87,8 @@ class AuthController extends Controller
 
     public function me()
     {
-        return $this->success(new UserResource(Auth::user()));
+        $user = Auth::user();
+
+        return $this->success($user ? new UserResource($user) : null);
     }
 }

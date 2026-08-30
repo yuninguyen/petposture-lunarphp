@@ -256,9 +256,13 @@ Route::prefix('/admin')
         Route::delete('/pages/{page}', [\App\Http\Controllers\Api\Admin\PageController::class, 'destroy']);
     });
 
+// Session-status check — intentionally outside auth:sanctum so anonymous
+// visitors get 200 {data: null} instead of a 401 (avoids a benign but
+// PageSpeed-flagged console error on every page load for logged-out users).
+Route::get('/me', [AuthController::class, 'me']);
+
 // Protected Routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
-    Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Address book

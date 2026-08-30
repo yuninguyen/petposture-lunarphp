@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const refresh = async () => {
         try {
-            const response = await fetchJson<{ data: User }>('/api/me');
+            const response = await fetchJson<{ data: User | null }>('/api/me');
             setUser(response.data);
         } catch {
             setUser(null);
