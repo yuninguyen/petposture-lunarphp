@@ -20,24 +20,29 @@ function renderShell(userRoles: string[]) {
 }
 
 describe('AppShell sales navigation', () => {
-  it('shows Shipping only to core administrators while preserving Sales links for commerce roles', () => {
-    const core = renderShell(['admin']);
-    expect(core.host.querySelector('a[href="/shipping"]')).not.toBeNull();
-    expect(core.host.querySelector('a[href="/orders"]')).not.toBeNull();
-    act(() => core.root.unmount());
-    core.host.remove();
+  it.each([
+    ['super_admin', ['super_admin'], true, true, true, true],
+    ['admin', ['admin'], true, true, true, true],
+    ['staff', ['staff'], true, true, true, true],
+    ['Support', ['Support'], false, false, true, true],
+    ['Order Manager', ['Order Manager'], false, false, true, true],
+    ['Product Manager', ['Product Manager'], false, false, false, false],
+  ])('applies core-only Customers and Shipping visibility for %s while retaining Sales policy', (_role, userRoles, customersVisible, shippingVisible, ordersVisible, returnsVisible) => {
+    const shell = renderShell(userRoles);
 
-    const support = renderShell(['Support']);
-    expect(support.host.querySelector('a[href="/shipping"]')).toBeNull();
-    expect(support.host.querySelector('a[href="/orders"]')).not.toBeNull();
-    expect(support.host.querySelector('a[href="/return-requests"]')).not.toBeNull();
-    act(() => support.root.unmount());
-    support.host.remove();
+    expect(shell.host.querySelector('a[href="/customers"]') !== null).toBe(customersVisible);
+    expect(shell.host.querySelector('a[href="/shipping"]') !== null).toBe(shippingVisible);
+    expect(shell.host.querySelector('a[href="/orders"]') !== null).toBe(ordersVisible);
+    expect(shell.host.querySelector('a[href="/return-requests"]') !== null).toBe(returnsVisible);
+
+    act(() => shell.root.unmount());
+    shell.host.remove();
   });
 
   it('shows Order Manager the Orders and Returns links without Shipping', () => {
     const orderManager = renderShell(['Order Manager']);
 
+    expect(orderManager.host.querySelector('a[href="/customers"]')).toBeNull();
     expect(orderManager.host.querySelector('a[href="/orders"]')).not.toBeNull();
     expect(orderManager.host.querySelector('a[href="/return-requests"]')).not.toBeNull();
     expect(orderManager.host.querySelector('a[href="/shipping"]')).toBeNull();

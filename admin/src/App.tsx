@@ -33,6 +33,8 @@ const ReturnRequestsListPage = lazy(() => import('@/features/return-requests/Ret
 const ReturnRequestDetailPage = lazy(() => import('@/features/return-requests/ReturnRequestDetailPage').then(m => ({ default: m.ReturnRequestDetailPage })));
 const ShippingMethodsPage = lazy(() => import('@/features/shipping/ShippingMethodsPage').then(m => ({ default: m.ShippingMethodsPage })));
 const ReviewsPage = lazy(() => import('@/features/reviews/ReviewsPage').then(m => ({ default: m.ReviewsPage })));
+const CustomersListPage = lazy(() => import('@/features/customers/CustomersListPage').then(m => ({ default: m.CustomersListPage })));
+const CustomerDetailPage = lazy(() => import('@/features/customers/CustomerDetailPage').then(m => ({ default: m.CustomerDetailPage })));
 
 function PageLoader() {
   return (
@@ -127,6 +129,10 @@ export function canManageShipping(userRoles: string[]) {
   return isCoreAdministrator(userRoles);
 }
 
+export function canManageCustomers(userRoles: string[]) {
+  return isCoreAdministrator(userRoles);
+}
+
 export function canManageReviews(userRoles: string[]) {
   return isCoreAdministrator(userRoles) || userRoles.includes('Support') || userRoles.includes('Product Manager');
 }
@@ -152,6 +158,7 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
   const canManageProducts = isCoreAdmin || userRoles.includes('Product Manager');
   const canManageSales = canManageCommerce(userRoles);
   const canManageShippingMethods = canManageShipping(userRoles);
+  const canViewCustomers = canManageCustomers(userRoles);
   const canModerateReviews = canManageReviews(userRoles);
   const home = getAdminHomeRoute(userRoles);
 
@@ -179,6 +186,10 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
         <Route path="/orders/:id" element={<OrderDetailPage canRefund={canRefundOrders(userRoles)} />} />
         <Route path="/return-requests" element={<ReturnRequestsListPage />} />
         <Route path="/return-requests/:id" element={<ReturnRequestDetailPage />} />
+      </>}
+      {canViewCustomers && <>
+        <Route path="/customers" element={<CustomersListPage />} />
+        <Route path="/customers/:id" element={<CustomerDetailPage />} />
       </>}
       {canManageShippingMethods && <Route path="/shipping" element={<ShippingMethodsPage />} />}
       {canModerateReviews && <Route path="/reviews" element={<ReviewsPage canDelete={canDeleteReviews(userRoles)} />} />}
