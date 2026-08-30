@@ -50,6 +50,22 @@ class EnforceAdminApiPermission
             return 'update_product';
         }
 
+        if ($request->user()?->hasAnyRole(['Product Manager', 'Support']) && $this->isReviewPath($relativePath)) {
+            if ($request->isMethod('get')) {
+                return 'view_any_review';
+            }
+
+            if ($request->isMethod('put') || $request->isMethod('patch')) {
+                return 'update_review';
+            }
+
+            if ($request->isMethod('delete')) {
+                return 'delete_review';
+            }
+
+            return null;
+        }
+
         if ($request->user()?->hasAnyRole(['Order Manager', 'Support']) && $this->isOrderPath($relativePath)) {
             if ($request->isMethod('get')) {
                 return 'view_any_order';
@@ -74,6 +90,11 @@ class EnforceAdminApiPermission
         }
 
         return false;
+    }
+
+    private function isReviewPath(string $path): bool
+    {
+        return $path === 'reviews' || str_starts_with($path, 'reviews/');
     }
 
     private function isOrderPath(string $path): bool

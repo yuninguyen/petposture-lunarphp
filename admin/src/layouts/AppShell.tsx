@@ -27,16 +27,25 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
     {
       title: t('sidebar.sales'),
       items: [
-        {
+        ...(['super_admin', 'admin', 'staff', 'Order Manager', 'Support'].some((role) => userRoles.includes(role)) ? [{
           to: '/orders',
           label: t('orders.title'),
           icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7h18M6 3h12v4H6V3zm0 4h12v10H6V7zm3 4h6m-6 3h4" /></svg>,
-        },
-        {
+        }, {
           to: '/return-requests',
           label: t('return_requests.title'),
           icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 14l-4-4 4-4m-4 4h10a4 4 0 010 8h-1" /></svg>,
-        },
+        }] : []),
+        ...(['super_admin', 'admin', 'staff', 'Support', 'Product Manager'].some((role) => userRoles.includes(role)) ? [{
+          to: '/reviews',
+          label: t('reviews.title'),
+          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+        }] : []),
+        ...(['super_admin', 'admin', 'staff'].some((role) => userRoles.includes(role)) ? [{
+          to: '/shipping',
+          label: t('shipping.title'),
+          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7h-9m9 5h-9m9 5h-9M7 7h.01M7 12h.01M7 17h.01" /></svg>,
+        }] : []),
       ],
     },
     {
@@ -185,7 +194,7 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
   const visibleNavGroups = isCoreAdmin
     ? NAV_GROUPS
     : hasRole('Product Manager')
-      ? NAV_GROUPS.filter((_, index) => index === 2)
+      ? NAV_GROUPS.filter((_, index) => index === 0 || index === 2)
       : canManageSales
         ? NAV_GROUPS.filter((_, index) => index === 0)
         : [];

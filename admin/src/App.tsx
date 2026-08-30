@@ -31,6 +31,8 @@ const OrdersListPage = lazy(() => import('@/features/orders/OrdersListPage').the
 const OrderDetailPage = lazy(() => import('@/features/orders/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
 const ReturnRequestsListPage = lazy(() => import('@/features/return-requests/ReturnRequestsListPage').then(m => ({ default: m.ReturnRequestsListPage })));
 const ReturnRequestDetailPage = lazy(() => import('@/features/return-requests/ReturnRequestDetailPage').then(m => ({ default: m.ReturnRequestDetailPage })));
+const ShippingMethodsPage = lazy(() => import('@/features/shipping/ShippingMethodsPage').then(m => ({ default: m.ShippingMethodsPage })));
+const ReviewsPage = lazy(() => import('@/features/reviews/ReviewsPage').then(m => ({ default: m.ReviewsPage })));
 
 function PageLoader() {
   return (
@@ -121,6 +123,18 @@ export function canManageCommerce(userRoles: string[]) {
   return isCoreAdministrator(userRoles) || userRoles.includes('Order Manager') || userRoles.includes('Support');
 }
 
+export function canManageShipping(userRoles: string[]) {
+  return isCoreAdministrator(userRoles);
+}
+
+export function canManageReviews(userRoles: string[]) {
+  return isCoreAdministrator(userRoles) || userRoles.includes('Support') || userRoles.includes('Product Manager');
+}
+
+export function canDeleteReviews(userRoles: string[]) {
+  return isCoreAdministrator(userRoles);
+}
+
 export function canRefundOrders(userRoles: string[]) {
   return isCoreAdministrator(userRoles) || userRoles.includes('Order Manager');
 }
@@ -137,6 +151,8 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
   const isCoreAdmin = isCoreAdministrator(userRoles);
   const canManageProducts = isCoreAdmin || userRoles.includes('Product Manager');
   const canManageSales = canManageCommerce(userRoles);
+  const canManageShippingMethods = canManageShipping(userRoles);
+  const canModerateReviews = canManageReviews(userRoles);
   const home = getAdminHomeRoute(userRoles);
 
   if (!isCoreAdmin && !canManageProducts && !canManageSales) {
@@ -164,6 +180,8 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
         <Route path="/return-requests" element={<ReturnRequestsListPage />} />
         <Route path="/return-requests/:id" element={<ReturnRequestDetailPage />} />
       </>}
+      {canManageShippingMethods && <Route path="/shipping" element={<ShippingMethodsPage />} />}
+      {canModerateReviews && <Route path="/reviews" element={<ReviewsPage canDelete={canDeleteReviews(userRoles)} />} />}
       {canManageProducts && <>
         <Route path="/breeds" element={<BreedsListPage />} />
         <Route path="/breeds/new" element={<BreedFormPage key={location.pathname} />} />

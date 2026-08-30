@@ -24,6 +24,8 @@ use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\ProductOptionController;
 use App\Http\Controllers\Api\Admin\ProductTypeController;
 use App\Http\Controllers\Api\Admin\ProductVariantController as AdminProductVariantController;
+use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Api\Admin\ShippingMethodController;
 use App\Http\Controllers\Api\ReturnRequestController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SiteMediaController;
@@ -215,6 +217,13 @@ Route::prefix('/admin')
         Route::patch('/solutions/{solution}', [\App\Http\Controllers\Api\Admin\SolutionController::class, 'update']);
         Route::delete('/solutions/{solution}', [\App\Http\Controllers\Api\Admin\SolutionController::class, 'destroy']);
 
+        Route::get('/reviews/products', [AdminReviewController::class, 'products']);
+        Route::get('/reviews', [AdminReviewController::class, 'index']);
+        Route::get('/reviews/{review}', [AdminReviewController::class, 'show']);
+        Route::put('/reviews/{review}', [AdminReviewController::class, 'update']);
+        Route::patch('/reviews/{review}', [AdminReviewController::class, 'update']);
+        Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy']);
+
         Route::post('/comments/bulk-delete', [\App\Http\Controllers\Api\Admin\CommentController::class, 'bulkDestroy']);
         Route::post('/comments/{comment}/approve', [\App\Http\Controllers\Api\Admin\CommentController::class, 'approve']);
         Route::get('/comments', [\App\Http\Controllers\Api\Admin\CommentController::class, 'index']);
@@ -256,6 +265,15 @@ Route::prefix('/admin')
         Route::put('/pages/{page}', [\App\Http\Controllers\Api\Admin\PageController::class, 'update']);
         Route::patch('/pages/{page}', [\App\Http\Controllers\Api\Admin\PageController::class, 'update']);
         Route::delete('/pages/{page}', [\App\Http\Controllers\Api\Admin\PageController::class, 'destroy']);
+
+        Route::middleware('role:super_admin|admin|staff')->group(function () {
+            Route::get('/shipping-methods', [ShippingMethodController::class, 'index']);
+            Route::post('/shipping-methods', [ShippingMethodController::class, 'store']);
+            Route::get('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'show']);
+            Route::put('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'update']);
+            Route::patch('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'update']);
+            Route::delete('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'destroy']);
+        });
     });
 
 // Session-status check — intentionally outside auth:sanctum so anonymous
