@@ -108,6 +108,18 @@ class AdminPermissionMatrixTest extends TestCase
         $this->postJson('/api/admin/products', [])->assertForbidden();
     }
 
+    public function test_order_list_is_available_to_order_manager_and_support_but_not_product_manager(): void
+    {
+        Sanctum::actingAs($this->userWithRole('Order Manager'));
+        $this->getJson('/api/admin/orders')->assertOk();
+
+        Sanctum::actingAs($this->userWithRole('Support'));
+        $this->getJson('/api/admin/orders')->assertOk();
+
+        Sanctum::actingAs($this->userWithRole('Product Manager'));
+        $this->getJson('/api/admin/orders')->assertForbidden();
+    }
+
     public function test_order_manager_can_refund_but_support_cannot(): void
     {
         Sanctum::actingAs($this->userWithRole('Order Manager'));

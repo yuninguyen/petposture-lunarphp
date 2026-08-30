@@ -908,6 +908,55 @@ class CheckoutApiTest extends TestCase
         $this->postJson("/api/admin/orders/{$orderId}/return")->assertForbidden();
     }
 
+    public function test_admin_order_aliases_filter_by_status_and_return_order_data(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $awaitingPayment = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $processing = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        Order::query()->findOrFail($processing->json('order.id'))->update(['status' => 'processing']);
+
+        $this->makeAdmin();
+
+        $this->getJson('/api/admin/orders?status=awaiting-payment')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $awaitingPayment->json('order.id'))
+            ->assertJsonPath('data.0.status', 'awaiting-payment');
+
+        $this->getJson('/api/admin/orders/'.$awaitingPayment->json('order.id'))
+            ->assertOk()
+            ->assertJsonPath('data.id', $awaitingPayment->json('order.id'));
+    }
+
+    public function test_admin_order_listing_rejects_unknown_status_filter(): void
+    {
+        $this->makeAdmin();
+
+        $this->getJson('/api/admin/orders?status=not-a-status')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    }
+
+    public function test_customer_order_status_filter_keeps_owner_scoping(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $owner = User::factory()->create();
+        Sanctum::actingAs($owner);
+        $ownedOrder = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+
+        $otherCustomer = User::factory()->create();
+        Sanctum::actingAs($otherCustomer);
+        $otherOrder = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+
+        Sanctum::actingAs($owner);
+
+        $this->getJson('/api/orders?status=awaiting-payment')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $ownedOrder->json('order.id'))
+            ->assertJsonMissing(['id' => $otherOrder->json('order.id')]);
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private function makeAdmin(): User

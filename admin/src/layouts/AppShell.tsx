@@ -25,6 +25,21 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
 
   const NAV_GROUPS: NavGroup[] = [
     {
+      title: t('sidebar.sales'),
+      items: [
+        {
+          to: '/orders',
+          label: t('orders.title'),
+          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7h18M6 3h12v4H6V3zm0 4h12v10H6V7zm3 4h6m-6 3h4" /></svg>,
+        },
+        {
+          to: '/return-requests',
+          label: t('return_requests.title'),
+          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 14l-4-4 4-4m-4 4h10a4 4 0 010 8h-1" /></svg>,
+        },
+      ],
+    },
+    {
       title: t('sidebar.content', 'CONTENT'),
       items: [
         { 
@@ -166,11 +181,14 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
 
   const hasRole = (role: string) => userRoles.includes(role);
   const isCoreAdmin = ['super_admin', 'admin', 'staff'].some(hasRole);
+  const canManageSales = isCoreAdmin || hasRole('Order Manager') || hasRole('Support');
   const visibleNavGroups = isCoreAdmin
     ? NAV_GROUPS
     : hasRole('Product Manager')
-      ? NAV_GROUPS.filter((_, index) => index === 1)
-      : [];
+      ? NAV_GROUPS.filter((_, index) => index === 2)
+      : canManageSales
+        ? NAV_GROUPS.filter((_, index) => index === 0)
+        : [];
 
   const activeNavGroupKey = String(visibleNavGroups.findIndex((group) => (
     group.items.some((item) => (

@@ -27,6 +27,10 @@ const CollectionGroupsPage = lazy(() => import('@/features/collection-groups/Col
 const CollectionsPage = lazy(() => import('@/features/collections/CollectionsPage').then(m => ({ default: m.CollectionsPage })));
 const ProductsListPage = lazy(() => import('@/features/products/ProductsListPage').then(m => ({ default: m.ProductsListPage })));
 const ProductFormPage = lazy(() => import('@/features/products/ProductFormPage').then(m => ({ default: m.ProductFormPage })));
+const OrdersListPage = lazy(() => import('@/features/orders/OrdersListPage').then(m => ({ default: m.OrdersListPage })));
+const OrderDetailPage = lazy(() => import('@/features/orders/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
+const ReturnRequestsListPage = lazy(() => import('@/features/return-requests/ReturnRequestsListPage').then(m => ({ default: m.ReturnRequestsListPage })));
+const ReturnRequestDetailPage = lazy(() => import('@/features/return-requests/ReturnRequestDetailPage').then(m => ({ default: m.ReturnRequestDetailPage })));
 
 function PageLoader() {
   return (
@@ -109,13 +113,33 @@ export default function App() {
   );
 }
 
-function AppRoutes({ userRoles }: { userRoles: string[] }) {
-  const location = useLocation();
-  const isCoreAdmin = userRoles.some((role) => ['super_admin', 'admin', 'staff'].includes(role));
-  const canManageProducts = isCoreAdmin || userRoles.includes('Product Manager');
-  const home = canManageProducts && !isCoreAdmin ? '/products' : '/posts';
+function isCoreAdministrator(userRoles: string[]) {
+  return userRoles.some((role) => ['super_admin', 'admin', 'staff'].includes(role));
+}
 
-  if (!isCoreAdmin && !canManageProducts) {
+export function canManageCommerce(userRoles: string[]) {
+  return isCoreAdministrator(userRoles) || userRoles.includes('Order Manager') || userRoles.includes('Support');
+}
+
+export function canRefundOrders(userRoles: string[]) {
+  return isCoreAdministrator(userRoles) || userRoles.includes('Order Manager');
+}
+
+export function getAdminHomeRoute(userRoles: string[]) {
+  const isCoreAdmin = isCoreAdministrator(userRoles);
+  const canManageProducts = isCoreAdmin || userRoles.includes('Product Manager');
+  if (canManageCommerce(userRoles) && !isCoreAdmin && !canManageProducts) return '/orders';
+  return canManageProducts && !isCoreAdmin ? '/products' : '/posts';
+}
+
+export function AppRoutes({ userRoles }: { userRoles: string[] }) {
+  const location = useLocation();
+  const isCoreAdmin = isCoreAdministrator(userRoles);
+  const canManageProducts = isCoreAdmin || userRoles.includes('Product Manager');
+  const canManageSales = canManageCommerce(userRoles);
+  const home = getAdminHomeRoute(userRoles);
+
+  if (!isCoreAdmin && !canManageProducts && !canManageSales) {
     return <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">Use the Filament admin panel for order and support workflows.</div>;
   }
 
@@ -133,6 +157,12 @@ function AppRoutes({ userRoles }: { userRoles: string[] }) {
         <Route path="/legal-policies" element={<PagesListPage />} />
         <Route path="/legal-policies/create" element={<PageFormPage key={location.pathname} />} />
         <Route path="/legal-policies/:id" element={<PageFormPage key={location.pathname} />} />
+      </>}
+      {canManageSales && <>
+        <Route path="/orders" element={<OrdersListPage />} />
+        <Route path="/orders/:id" element={<OrderDetailPage canRefund={canRefundOrders(userRoles)} />} />
+        <Route path="/return-requests" element={<ReturnRequestsListPage />} />
+        <Route path="/return-requests/:id" element={<ReturnRequestDetailPage />} />
       </>}
       {canManageProducts && <>
         <Route path="/breeds" element={<BreedsListPage />} />

@@ -80,6 +80,7 @@ class EnforceAdminApiPermission
     {
         return $path === 'return-requests'
             || str_starts_with($path, 'return-requests/')
+            || $path === 'orders'
             || str_starts_with($path, 'orders/');
     }
 }

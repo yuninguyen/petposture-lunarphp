@@ -154,7 +154,12 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
+        $validated = Validator::make($request->all(), [
+            'status' => 'nullable|string|in:awaiting-payment,payment-offline,payment-received,processing,shipped,delivered,cancelled',
+        ])->validate();
+
         $orders = $this->baseOrderQuery($request)
+            ->when(isset($validated['status']), fn ($query) => $query->where('status', $validated['status']))
             ->with(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])
             ->latest()
             ->paginate(10);

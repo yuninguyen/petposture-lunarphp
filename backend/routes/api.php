@@ -232,6 +232,8 @@ Route::prefix('/admin')
         Route::patch('/blog/tags/{blogTag}', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'update']);
         Route::delete('/blog/tags/{blogTag}', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'destroy']);
         Route::get('/users', [\App\Http\Controllers\Api\Admin\UserController::class, 'index']);
+        Route::get('/orders', [OrderController::class, 'index']);
+        Route::get('/orders/{id}', [OrderController::class, 'show']);
         Route::post('/orders/{id}/refund', [OrderController::class, 'refund']);
         Route::post('/orders/{id}/return', [OrderController::class, 'return']);
         Route::get('/return-requests', [ReturnRequestController::class, 'index']);
