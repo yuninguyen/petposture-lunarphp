@@ -3,10 +3,12 @@
 namespace App\Filament\Pages;
 
 use App\Models\Setting;
+use App\Services\AiSeoGeneratorService;
 use App\Support\ImageUploadResizer;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Textarea;
@@ -20,6 +22,20 @@ use Symfony\Component\Mime\Email;
 
 class ManageSettings extends Page
 {
+    private const AI_SECRET_KEYS = [
+        'anthropic_api_key',
+        'openai_api_key',
+        'xai_api_key',
+        'gemini_api_key',
+    ];
+
+    private const AI_MODEL_KEYS = [
+        'anthropic_model',
+        'openai_model',
+        'xai_model',
+        'gemini_model',
+    ];
+
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
 
     public static function getNavigationGroup(): ?string
@@ -45,6 +61,10 @@ class ManageSettings extends Page
     {
         $data = [];
         foreach (Setting::all() as $setting) {
+            if (in_array($setting->key, self::AI_SECRET_KEYS, true)) {
+                continue;
+            }
+
             $data[$setting->key] = $setting->value;
         }
 
@@ -208,6 +228,58 @@ class ManageSettings extends Page
                                 ]),
                             ]),
 
+                        Tabs\Tab::make(__('AI Settings'))
+                            ->icon('heroicon-o-sparkles')
+                            ->schema([
+                                Select::make('ai_seo_provider')
+                                    ->label(__('Preferred AI SEO Provider'))
+                                    ->options([
+                                        'auto' => 'Automatic (Anthropic → OpenAI → Grok → Gemini)',
+                                        'anthropic' => 'Anthropic Claude',
+                                        'openai' => 'OpenAI',
+                                        'grok' => 'xAI Grok',
+                                        'gemini' => 'Google Gemini',
+                                    ])
+                                    ->default('auto')
+                                    ->helperText(__('Saved Settings override environment values. The selected provider is tried first; other configured providers are fallback candidates.')),
+                                Placeholder::make('ai_seo_provider_status')
+                                    ->label(__('Configured AI SEO Providers'))
+                                    ->content(fn (): string => $this->aiSeoProviderStatus()),
+                                Grid::make(2)->schema([
+                                    TextInput::make('anthropic_api_key')
+                                        ->label(__('Anthropic API Key'))
+                                        ->password()
+                                        ->helperText(__('Leave blank to keep the stored value or use ANTHROPIC_API_KEY.')),
+                                    TextInput::make('anthropic_model')
+                                        ->label(__('Anthropic Model'))
+                                        ->helperText(__('Optional: defaults to claude-sonnet-5 when no Setting or ANTHROPIC_MODEL is supplied.')),
+                                    TextInput::make('openai_api_key')
+                                        ->label(__('OpenAI API Key'))
+                                        ->password()
+                                        ->helperText(__('Leave blank to keep the stored value or use OPENAI_API_KEY.')),
+                                    TextInput::make('openai_model')
+                                        ->label(__('OpenAI Model'))
+                                        ->requiredWith('openai_api_key')
+                                        ->helperText(__('Required with an OpenAI API key.')),
+                                    TextInput::make('xai_api_key')
+                                        ->label(__('xAI API Key'))
+                                        ->password()
+                                        ->helperText(__('Leave blank to keep the stored value or use XAI_API_KEY.')),
+                                    TextInput::make('xai_model')
+                                        ->label(__('xAI Grok Model'))
+                                        ->requiredWith('xai_api_key')
+                                        ->helperText(__('Required with an xAI API key.')),
+                                    TextInput::make('gemini_api_key')
+                                        ->label(__('Gemini API Key'))
+                                        ->password()
+                                        ->helperText(__('Leave blank to keep the stored value or use GEMINI_API_KEY.')),
+                                    TextInput::make('gemini_model')
+                                        ->label(__('Gemini Model'))
+                                        ->requiredWith('gemini_api_key')
+                                        ->helperText(__('Required with a Gemini API key.')),
+                                ]),
+                            ]),
+
                     ])->columnSpanFull(),
             ])
             ->statePath('data');
@@ -219,6 +291,10 @@ class ManageSettings extends Page
 
         foreach ($data as $key => $value) {
             if ($value === null || $value === '') {
+                if (in_array($key, self::AI_MODEL_KEYS, true)) {
+                    Setting::where('key', $key)->first()?->delete();
+                }
+
                 continue;
             }
 
@@ -261,7 +337,28 @@ class ManageSettings extends Page
         if (str_starts_with($key, 'stripe_') || str_starts_with($key, 'paypal_')) {
             return 'payment';
         }
+        if ($key === 'ai_seo_provider' || in_array($key, [
+            ...self::AI_SECRET_KEYS,
+            ...self::AI_MODEL_KEYS,
+        ], true)) {
+            return 'ai';
+        }
 
         return 'general';
+    }
+
+    private function aiSeoProviderStatus(): string
+    {
+        $service = app(AiSeoGeneratorService::class);
+        $providers = $service->configuredProviderNames();
+
+        if ($providers === []) {
+            return __('None configured');
+        }
+
+        return __('Active: :provider. Configured: :providers.', [
+            'provider' => $service->activeProviderName(),
+            'providers' => implode(', ', $providers),
+        ]);
     }
 }

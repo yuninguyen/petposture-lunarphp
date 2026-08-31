@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Exceptions\AiSeoGenerationException;
 use App\Http\Controllers\Controller;
 use App\Services\AiSeoGeneratorService;
 use Illuminate\Http\JsonResponse;
@@ -23,8 +24,12 @@ class AiSeoController extends Controller
                 $validated['content'] ?? null,
                 $validated['content_type'] ?? 'blog'
             );
-        } catch (\Throwable $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (AiSeoGenerationException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
+        } catch (\Throwable) {
+            return response()->json([
+                'message' => 'AI SEO generation is temporarily unavailable. Please try again later.',
+            ], 422);
         }
 
         return response()->json($result);

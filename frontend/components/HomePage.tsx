@@ -262,7 +262,7 @@ function ShopCategories() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 30 }}>
                     <span style={{
                       fontFamily: F.body, fontSize: 11.5, fontWeight: 700, lineHeight: 1.25,
-                      color: hoveredBreed === b.slug ? C.secondary : C.primary,
+                      color: hoveredBreed === b.slug ? C.rust : C.primary,
                       transition: 'color 0.2s ease',
                     }}>
                       {b.name}
@@ -286,7 +286,7 @@ function ShopCategories() {
             </div>
             <Link href="/dogs" style={{
               display: 'block', textAlign: 'center', fontFamily: F.nav,
-              fontSize: 12, fontWeight: 800, color: C.secondary,
+              fontSize: 12, fontWeight: 800, color: C.rust,
               textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
               marginTop: 'auto',
             }}>
@@ -360,7 +360,7 @@ function ShopCategories() {
             </div>
             <Link href="/solutions" style={{
               display: 'block', textAlign: 'center', fontFamily: F.nav,
-              fontSize: 12, fontWeight: 800, color: C.secondary,
+              fontSize: 12, fontWeight: 800, color: C.rust,
               textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
               marginTop: 'auto',
             }}>
@@ -572,7 +572,7 @@ function MealtimeDiff() {
             <div style={{
               display: 'inline-block',
               fontFamily: F.nav, fontSize: 10, fontWeight: 800,
-              color: C.secondary, letterSpacing: '0.14em',
+              color: C.rust, letterSpacing: '0.14em',
               textTransform: 'uppercase', marginBottom: 20,
               background: C.white,
               padding: '6px 16px',
@@ -718,7 +718,7 @@ function BreedBanners() {
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
                   fontFamily: F.nav, fontSize: 12, fontWeight: 800,
-                  color: C.secondary, letterSpacing: '0.08em',
+                  color: C.rust, letterSpacing: '0.08em',
                   textTransform: 'uppercase',
                 }}>
                   Explore →
@@ -788,7 +788,7 @@ function PostCard({ post }: { post: BlogPost }) {
 
       <h3 style={{
         fontFamily: F.heading, fontSize: 16, fontWeight: 700,
-        color: isHovered ? C.secondary : C.primary,
+        color: isHovered ? C.rust : C.primary,
         lineHeight: 1.5, margin: '0 0 10px',
         transition: 'color 0.25s ease',
       }}>
@@ -806,7 +806,7 @@ function PostCard({ post }: { post: BlogPost }) {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
           fontSize: 11, fontWeight: 700,
-          color: isHovered ? C.secondary : C.grayText,
+          color: isHovered ? C.rust : C.grayText,
           letterSpacing: '0.05em', textTransform: 'capitalize',
           transition: 'color 0.25s ease',
         }}>
@@ -817,7 +817,7 @@ function PostCard({ post }: { post: BlogPost }) {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
           fontSize: 13, fontWeight: 700,
-          color: C.secondary,
+          color: C.rust,
         }}>
           Read →
         </div>

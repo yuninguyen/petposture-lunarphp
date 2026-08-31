@@ -80,7 +80,7 @@ export default function FaqsPage() {
                                 <button
                                     key={cat.id}
                                     onClick={() => scrollTo(cat.id)}
-                                    className={`text-left text-[14px] font-bold uppercase tracking-wider transition-all hover:text-secondary ${activeCategory === cat.id ? 'text-rust pl-3 border-l-2 border-secondary' : 'text-primary/60 pl-3 border-l-2 border-transparent'
+                                    className={`text-left text-[14px] font-bold uppercase tracking-wider transition-all hover:text-rust ${activeCategory === cat.id ? 'text-rust pl-3 border-l-2 border-secondary' : 'text-primary/60 pl-3 border-l-2 border-transparent'
                                         }`}
                                 >
                                     {cat.title}

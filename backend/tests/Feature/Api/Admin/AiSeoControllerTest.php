@@ -128,18 +128,18 @@ class AiSeoControllerTest extends TestCase
             ->assertJsonValidationErrors(['title']);
     }
 
-    public function test_service_exception_returns_422_with_message(): void
+    public function test_unexpected_service_exception_returns_a_safe_422_message(): void
     {
         $user = User::factory()->create();
         $user->assignRole('admin');
         Sanctum::actingAs($user);
 
         $this->mock(AiSeoGeneratorService::class, function ($mock) {
-            $mock->shouldReceive('generate')->once()->andThrow(new \RuntimeException('API key not configured'));
+            $mock->shouldReceive('generate')->once()->andThrow(new \RuntimeException('Vendor error included a sensitive detail'));
         });
 
         $this->postJson('/api/admin/posts/generate-seo', ['title' => 'My Title'])
             ->assertStatus(422)
-            ->assertJson(['message' => 'API key not configured']);
+            ->assertJson(['message' => 'AI SEO generation is temporarily unavailable. Please try again later.']);
     }
 }

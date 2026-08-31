@@ -19,7 +19,7 @@ function ContactInfoItem({ icon: Icon, label, value, href, note }: { icon: React
                 <Icon size={20} />
             </div>
             <div className="flex-1">
-                <p className="text-xs font-black uppercase tracking-[0.08em] text-secondary mb-1">{label}</p>
+                <p className="text-xs font-black uppercase tracking-[0.08em] text-rust mb-1">{label}</p>
                 <p className="text-[15px] font-bold text-primary leading-tight">{value}</p>
                 {note && (
                     <p className="text-xs text-zinc-400 mt-1 font-medium italic">

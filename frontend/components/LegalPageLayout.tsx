@@ -147,7 +147,7 @@ export default function LegalPageLayout({ page }: { page: LegalPage }) {
                                     <button
                                         key={s.id}
                                         onClick={() => scrollTo(s.id)}
-                                        className={`text-left text-sm font-bold uppercase tracking-wider transition-all hover:text-secondary ${activeSection === s.id ? 'text-rust pl-2 border-l-2 border-secondary' : 'text-[#666666]'
+                                        className={`text-left text-sm font-bold uppercase tracking-wider transition-all hover:text-rust ${activeSection === s.id ? 'text-rust pl-2 border-l-2 border-secondary' : 'text-[#666666]'
                                             }`}
                                     >
                                         {s.title}

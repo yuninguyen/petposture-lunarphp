@@ -108,7 +108,7 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
 
                 <button
                     onClick={() => addItem(product)}
-                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center whitespace-nowrap rounded-[14px] border-2 border-secondary bg-white px-2 text-xs font-bold tracking-[0.02em] text-secondary transition-colors hover:bg-secondary hover:text-ink sm:px-4 sm:text-sm sm:tracking-[0.05em]"
+                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center whitespace-nowrap rounded-[14px] border-2 border-secondary bg-white px-2 text-xs font-bold tracking-[0.02em] text-rust transition-colors hover:bg-secondary hover:text-ink sm:px-4 sm:text-sm sm:tracking-[0.05em]"
                 >
                     Add to Cart
                 </button>

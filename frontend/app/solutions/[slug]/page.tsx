@@ -315,7 +315,7 @@ export default async function Page({ params }: { params: Promise<Params> }) {
                                                 <h3 className="mb-2 line-clamp-2 text-[16px] font-semibold text-[#2d3a43] transition-colors group-hover:text-rust">
                                                     {post.title}
                                                 </h3>
-                                                <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.05em] text-[#df8448] transition-colors group-hover:text-rust">
+                                                <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.05em] text-rust transition-colors group-hover:text-rust">
                                                     Read Guide <ArrowUpRight size={14} />
                                                 </span>
                                             </div>

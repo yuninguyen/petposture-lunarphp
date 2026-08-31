@@ -2,23 +2,43 @@
 
 namespace App\Services;
 
-use Anthropic\Client;
+use App\Contracts\AiSeoProvider;
+use App\Exceptions\AiSeoGenerationException;
 use App\Models\Setting;
-use Illuminate\Support\Facades\Cache;
+use App\Services\AiSeoProviders\AnthropicSeoProvider;
+use App\Services\AiSeoProviders\GeminiSeoProvider;
+use App\Services\AiSeoProviders\GrokSeoProvider;
+use App\Services\AiSeoProviders\OpenAiSeoProvider;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use RuntimeException;
+use Throwable;
 
 class AiSeoGeneratorService
 {
-    private function apiKey(): string
-    {
-        return Cache::remember('anthropic_api_key', 300, fn () => Setting::get('anthropic_api_key') ?: (string) config('services.anthropic.key')
-        );
-    }
+    public function __construct(
+        private AnthropicSeoProvider $anthropic,
+        private OpenAiSeoProvider $openai,
+        private GrokSeoProvider $grok,
+        private GeminiSeoProvider $gemini,
+    ) {}
 
     public function isConfigured(): bool
     {
-        return filled($this->apiKey());
+        return $this->configuredProviders() !== [];
+    }
+
+    /** @return list<string> */
+    public function configuredProviderNames(): array
+    {
+        return array_map(
+            fn (AiSeoProvider $provider) => $provider->name(),
+            $this->configuredProviders(),
+        );
+    }
+
+    public function activeProviderName(): ?string
+    {
+        return $this->configuredProviderNames()[0] ?? null;
     }
 
     /**
@@ -26,77 +46,72 @@ class AiSeoGeneratorService
      */
     public function generate(string $title, ?string $content, string $contentType = 'blog'): array
     {
-        if (! $this->isConfigured()) {
-            throw new RuntimeException('Anthropic API key is not configured. Add it in Settings, or ANTHROPIC_API_KEY in .env.');
+        $providers = $this->configuredProviders();
+
+        if ($providers === []) {
+            throw new AiSeoGenerationException('AI SEO is not configured. Add an API key and model in Settings.');
         }
 
-        $plainContent = trim(strip_tags((string) $content));
-        $excerpt = Str::limit($plainContent, 3000, '');
-        $positioning = "PetPosture is a breed-focused product recommendation brand that helps dog owners narrow product choices based on how their dog is built, everyday challenges, practical fit, dimensions, materials, usability, cleaning, and access.\n\n"
-            ."Never make veterinary, clinical, injury-prevention, posture-correction, testing, or unsupported health claims. Never invent ratings, review counts, prices, test evidence, merchant availability, or numerical proof. Only use claims supported by the supplied content.";
-        $prompt = match ($contentType) {
-            'product' => "{$positioning}\n\nYou are writing SEO metadata for a product detail page. Keep claims grounded in the supplied description, use purchase-intent keywords naturally, and never use clickbait or exaggerated benefits.\n\nProduct name: {$title}\n\nProduct description:\n{$excerpt}",
-            default => "{$positioning}\n\nYou are writing SEO metadata for an editorial blog article. Keep claims accurate to the supplied content, keyword-relevant, and never clickbait or exaggerated.\n\nArticle title: {$title}\n\nArticle content:\n{$excerpt}",
-        };
+        $prompt = $this->prompt($title, $content, $contentType);
 
-        $client = new Client(apiKey: $this->apiKey());
+        foreach ($providers as $provider) {
+            try {
+                return $provider->generate($prompt);
+            } catch (Throwable $exception) {
+                Log::warning('AI SEO provider failed', [
+                    'provider' => $provider->name(),
+                    'exception' => $exception::class,
+                ]);
+            }
+        }
 
-        $message = $client->messages->create(
-            model: 'claude-opus-5',
-            maxTokens: 1024,
-            messages: [
-                [
-                    'role' => 'user',
-                    'content' => $prompt,
-                ],
-            ],
-            outputConfig: [
-                'format' => [
-                    'type' => 'json_schema',
-                    'schema' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'seo_title' => [
-                                'type' => 'string',
-                                'description' => 'Google search title, under 60 characters, includes the primary keyword near the front.',
-                            ],
-                            'focus_keyphrase' => [
-                                'type' => 'string',
-                                'description' => 'The single primary keyword or short phrase this page should rank for.',
-                            ],
-                            'meta_description' => [
-                                'type' => 'string',
-                                'description' => 'Google search meta description, under 160 characters, includes the focus keyphrase, ends with a reason to click.',
-                            ],
-                            'social_title' => [
-                                'type' => 'string',
-                                'description' => 'Open Graph / social share title — can be slightly more attention-grabbing than the SEO title, still accurate.',
-                            ],
-                            'social_description' => [
-                                'type' => 'string',
-                                'description' => 'Open Graph / social share description, under 200 characters.',
-                            ],
-                        ],
-                        'required' => ['seo_title', 'focus_keyphrase', 'meta_description', 'social_title', 'social_description'],
-                        'additionalProperties' => false,
-                    ],
-                ],
-            ],
-        );
+        throw new AiSeoGenerationException('AI SEO generation is temporarily unavailable. Please try again later.');
+    }
 
-        $text = (string) ($message->content[0]->text ?? '');
-        $decoded = json_decode($text, true);
+    /** @return list<AiSeoProvider> */
+    private function configuredProviders(): array
+    {
+        return array_values(array_filter(
+            $this->orderedProviders(),
+            fn (AiSeoProvider $provider) => $provider->isConfigured(),
+        ));
+    }
 
-        if (! is_array($decoded)) {
-            throw new RuntimeException('Anthropic API returned an unexpected response format.');
+    /** @return list<AiSeoProvider> */
+    private function orderedProviders(): array
+    {
+        $providers = [
+            'anthropic' => $this->anthropic,
+            'openai' => $this->openai,
+            'grok' => $this->grok,
+            'gemini' => $this->gemini,
+        ];
+        $preferred = (string) Setting::get('ai_seo_provider', 'auto');
+
+        if (! array_key_exists($preferred, $providers)) {
+            return array_values($providers);
         }
 
         return [
-            'seo_title' => (string) ($decoded['seo_title'] ?? ''),
-            'focus_keyphrase' => (string) ($decoded['focus_keyphrase'] ?? ''),
-            'meta_description' => (string) ($decoded['meta_description'] ?? ''),
-            'social_title' => (string) ($decoded['social_title'] ?? ''),
-            'social_description' => (string) ($decoded['social_description'] ?? ''),
+            $providers[$preferred],
+            ...array_values(array_filter(
+                $providers,
+                fn (string $name) => $name !== $preferred,
+                ARRAY_FILTER_USE_KEY,
+            )),
         ];
+    }
+
+    private function prompt(string $title, ?string $content, string $contentType): string
+    {
+        $plainContent = trim(strip_tags((string) $content));
+        $excerpt = Str::limit($plainContent, 3000, '');
+        $positioning = "PetPosture is a breed-focused product recommendation brand that helps dog owners narrow product choices based on how their dog is built, everyday challenges, practical fit, dimensions, materials, usability, cleaning, and access.\n\n"
+            .'Never make veterinary, clinical, injury-prevention, posture-correction, testing, or unsupported health claims. Never invent ratings, review counts, prices, test evidence, merchant availability, or numerical proof. Only use claims supported by the supplied content.';
+
+        return match ($contentType) {
+            'product' => "{$positioning}\n\nYou are writing SEO metadata for a product detail page. Keep claims grounded in the supplied description, use purchase-intent keywords naturally, and never use clickbait or exaggerated benefits.\n\nProduct name: {$title}\n\nProduct description:\n{$excerpt}",
+            default => "{$positioning}\n\nYou are writing SEO metadata for an editorial blog article. Keep claims accurate to the supplied content, keyword-relevant, and never clickbait or exaggerated.\n\nArticle title: {$title}\n\nArticle content:\n{$excerpt}",
+        };
     }
 }
