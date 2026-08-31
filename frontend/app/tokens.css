@@ -33,7 +33,7 @@
   --color-gray-100:       #e8eaec;   /* Borders, dividers */
   --color-gray-200:       #d1d5db;   /* Disabled states */
   --color-gray-400:       #9ca3af;   /* Placeholder text */
-  --color-gray-600:       #6b7280;   /* Body secondary text */
+  --color-gray-600:       #4b5563;   /* Body secondary text (WCAG AA, ≥4.5:1 on white/gray-50) */
   --color-gray-800:       #374151;   /* Body primary text */
   --color-black:          #111111;
 

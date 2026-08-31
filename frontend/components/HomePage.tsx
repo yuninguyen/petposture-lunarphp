@@ -523,7 +523,7 @@ function BestSellers() {
         >
           {products.map((p) => (
             <div key={p.variantId} className="w-[72%] shrink-0 snap-start sm:w-auto">
-              <ProductCard product={p} />
+              <ProductCard product={p} sizes="(max-width: 640px) 72vw, (max-width: 1024px) 50vw, 25vw" />
             </div>
           ))}
         </div>

@@ -21,7 +21,7 @@ export const C = {
     ink: '#1a2128',
     grayLight: '#f4f5f6',
     grayMid: '#e8eaec',
-    grayText: '#6b7280',
+    grayText: '#4b5563',
     border: '#e2e5e8',
     borderHover: '#c8cdd2',
 };

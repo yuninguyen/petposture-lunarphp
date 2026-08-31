@@ -8,7 +8,7 @@ import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import type { Product } from '@/types/shop';
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" }: { product: Product; sizes?: string }) {
     const { addItem } = useCart();
     const { isWishlisted, toggle } = useWishlist();
     const wishlisted = isWishlisted(product.id);
@@ -21,7 +21,7 @@ export function ProductCard({ product }: { product: Product }) {
                         src={product.image}
                         alt={product.name}
                         fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
+                        sizes={sizes}
                         className="object-contain p-8 transition duration-500 group-hover:scale-[1.03]"
                     />
 
