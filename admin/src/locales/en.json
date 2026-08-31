@@ -701,6 +701,8 @@
   "return_requests.status_approved": "Approved",
   "return_requests.status_rejected": "Rejected",
   "return_requests.status_completed": "Completed",
+  "return_requests.status_expired": "Expired",
+  "return_requests.status_waived": "Waived",
   "return_requests.column_order_reference": "Order",
   "return_requests.column_reason": "Reason",
   "return_requests.column_status": "Status",

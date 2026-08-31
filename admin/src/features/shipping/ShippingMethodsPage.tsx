@@ -16,6 +16,12 @@ function displayValue(value: string | number | null): string {
   return value == null || value === '' ? '—' : String(value);
 }
 
+function displayMoney(value: string | number | null): string {
+  if (value == null || value === '') return '—';
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? `$${numeric.toFixed(2)}` : String(value);
+}
+
 export function ShippingMethodsPage() {
   const { t } = useTranslation();
   const shippingMethodsQuery = useShippingMethods();
@@ -84,8 +90,8 @@ export function ShippingMethodsPage() {
                   <td className="px-6 py-3 text-sm font-semibold text-slate-900">{method.code}</td>
                   <td className="px-6 py-3 text-sm text-slate-700">{method.name}</td>
                   <td className="px-6 py-3 text-sm text-slate-700">{displayValue(method.eta)}</td>
-                  <td className="px-6 py-3 text-sm text-slate-700">{displayValue(method.price)}</td>
-                  <td className="px-6 py-3 text-sm text-slate-700">{displayValue(method.free_over)}</td>
+                  <td className="px-6 py-3 text-sm text-slate-700">{displayMoney(method.price)}</td>
+                  <td className="px-6 py-3 text-sm text-slate-700">{displayMoney(method.free_over)}</td>
                   <td className="px-6 py-3 text-right text-sm">
                     <ShippingRowActions method={method} onEdit={openEdit} onDelete={setDeletingMethod} />
 

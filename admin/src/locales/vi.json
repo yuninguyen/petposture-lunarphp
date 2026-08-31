@@ -701,6 +701,8 @@
   "return_requests.status_approved": "Đã duyệt",
   "return_requests.status_rejected": "Đã từ chối",
   "return_requests.status_completed": "Đã hoàn tất",
+  "return_requests.status_expired": "Đã hết hạn",
+  "return_requests.status_waived": "Đã miễn phí",
   "return_requests.column_order_reference": "Đơn hàng",
   "return_requests.column_reason": "Lý do",
   "return_requests.column_status": "Trạng thái",
