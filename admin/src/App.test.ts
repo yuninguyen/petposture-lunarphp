@@ -9,8 +9,10 @@ vi.mock('./features/shipping/ShippingMethodsPage', () => ({ ShippingMethodsPage:
 vi.mock('./features/reviews/ReviewsPage', () => ({ ReviewsPage: ({ canDelete }: { canDelete: boolean }) => createElement('div', null, `Reviews route delete=${canDelete}`) }));
 vi.mock('./features/customers/CustomersListPage', () => ({ CustomersListPage: () => createElement('div', null, 'Customers route') }));
 vi.mock('./features/customers/CustomerDetailPage', () => ({ CustomerDetailPage: () => createElement('div', null, 'Customer detail route') }));
+vi.mock('./features/discounts/DiscountsListPage', () => ({ DiscountsListPage: () => createElement('div', null, 'Discounts route') }));
+vi.mock('./features/discounts/DiscountFormPage', () => ({ DiscountFormPage: () => createElement('div', null, 'Discount form route') }));
 
-import { AppRoutes, canDeleteReviews, canManageCommerce, canManageCustomers, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute } from './App';
+import { AppRoutes, canDeleteReviews, canManageCommerce, canManageCustomers, canManageDiscounts, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute } from './App';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -78,6 +80,59 @@ describe('commerce admin role handling', () => {
 
     act(() => root.unmount());
     host.remove();
+  });
+
+  it.each(['super_admin', 'admin', 'staff'])('permits Discounts for core role %s', (role) => {
+    expect(canManageDiscounts([role])).toBe(true);
+  });
+
+  it.each([
+    ['Support', ['Support'], 'Orders route'],
+    ['Order Manager', ['Order Manager'], 'Orders route'],
+    ['Product Manager', ['Product Manager'], 'Products route'],
+  ])('uses the existing safe home fallback rather than Discounts for %s', async (_role, userRoles, expectedRoute) => {
+    expect(canManageDiscounts(userRoles)).toBe(false);
+    const { host, root } = renderRoutes(userRoles, '/discounts');
+    await act(async () => await Promise.resolve());
+
+    expect(host.textContent).toContain(expectedRoute);
+    expect(host.textContent).not.toContain('Discounts route');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('renders the Discounts list route for core administrators', async () => {
+    const { host, root } = renderRoutes(['staff'], '/discounts');
+    await act(async () => await Promise.resolve());
+    expect(host.textContent).toContain('Discounts route');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it.each(['/discounts/new', '/discounts/42'])('guards each Discount form route for core administrators', async (path) => {
+    const { host, root } = renderRoutes(['admin'], path);
+    await act(async () => await Promise.resolve());
+    expect(host.textContent).toContain('Discount form route');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it.each([
+    ['Support', ['Support'], 'Orders route'],
+    ['Order Manager', ['Order Manager'], 'Orders route'],
+    ['Product Manager', ['Product Manager'], 'Products route'],
+  ])('uses the existing safe fallback rather than either Discount form for %s', async (_role, userRoles, expectedRoute) => {
+    for (const path of ['/discounts/new', '/discounts/42']) {
+      const { host, root } = renderRoutes(userRoles, path);
+      await act(async () => await Promise.resolve());
+      expect(host.textContent).toContain(expectedRoute);
+      expect(host.textContent).not.toContain('Discount form route');
+      act(() => root.unmount());
+      host.remove();
+    }
   });
 
   it('allows Shipping routes only for core administrators', () => {

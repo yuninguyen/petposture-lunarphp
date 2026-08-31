@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Admin\CollectionController;
 use App\Http\Controllers\Api\Admin\CollectionGroupController;
 use App\Http\Controllers\Api\Admin\CustomFieldController;
 use App\Http\Controllers\Api\Admin\CustomerController;
+use App\Http\Controllers\Api\Admin\DiscountController;
 use App\Http\Controllers\Api\Admin\ProductAssociationController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\ProductOptionController;
@@ -280,6 +281,13 @@ Route::prefix('/admin')
             Route::put('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'update']);
             Route::patch('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'update']);
             Route::delete('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'destroy']);
+
+            Route::get('/discounts', [DiscountController::class, 'index']);
+            Route::post('/discounts', [DiscountController::class, 'store']);
+            Route::get('/discounts/{discount}', [DiscountController::class, 'show']);
+            Route::put('/discounts/{discount}', [DiscountController::class, 'update']);
+            Route::patch('/discounts/{discount}', [DiscountController::class, 'update']);
+            Route::delete('/discounts/{discount}', [DiscountController::class, 'destroy']);
         });
     });
 

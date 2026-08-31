@@ -21,19 +21,20 @@ function renderShell(userRoles: string[]) {
 
 describe('AppShell sales navigation', () => {
   it.each([
-    ['super_admin', ['super_admin'], true, true, true, true],
-    ['admin', ['admin'], true, true, true, true],
-    ['staff', ['staff'], true, true, true, true],
-    ['Support', ['Support'], false, false, true, true],
-    ['Order Manager', ['Order Manager'], false, false, true, true],
-    ['Product Manager', ['Product Manager'], false, false, false, false],
-  ])('applies core-only Customers and Shipping visibility for %s while retaining Sales policy', (_role, userRoles, customersVisible, shippingVisible, ordersVisible, returnsVisible) => {
+    ['super_admin', ['super_admin'], true, true, true, true, true],
+    ['admin', ['admin'], true, true, true, true, true],
+    ['staff', ['staff'], true, true, true, true, true],
+    ['Support', ['Support'], false, false, true, true, false],
+    ['Order Manager', ['Order Manager'], false, false, true, true, false],
+    ['Product Manager', ['Product Manager'], false, false, false, false, false],
+  ])('applies core-only Customers, Shipping, and Discounts visibility for %s while retaining Sales policy', (_role, userRoles, customersVisible, shippingVisible, ordersVisible, returnsVisible, discountsVisible) => {
     const shell = renderShell(userRoles);
 
     expect(shell.host.querySelector('a[href="/customers"]') !== null).toBe(customersVisible);
     expect(shell.host.querySelector('a[href="/shipping"]') !== null).toBe(shippingVisible);
     expect(shell.host.querySelector('a[href="/orders"]') !== null).toBe(ordersVisible);
     expect(shell.host.querySelector('a[href="/return-requests"]') !== null).toBe(returnsVisible);
+    expect(shell.host.querySelector('a[href="/discounts"]') !== null).toBe(discountsVisible);
 
     act(() => shell.root.unmount());
     shell.host.remove();
