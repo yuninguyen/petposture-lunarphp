@@ -5,7 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image'; // Add this line
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
-import Footer from '@/components/Footer';
+import dynamic from 'next/dynamic';
+const Footer = dynamic(() => import('@/components/Footer'));
 import { ProductCard } from '@/components/shop/ProductCard';
 import type { Product } from '@/types/shop';
 import { API_BASE_URL as apiBaseUrl } from '@/lib/api';
@@ -927,12 +928,12 @@ function Insights() {
 /* ─────────────────────────────────────────────────────────────────
    PAGE ROOT
  ───────────────────────────────────────────────────────────────── */
-export default function HomePage() {
+export default function HomePage({ heroImage }: { heroImage?: string | null }) {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
       <main className="flex-grow">
-        <Hero />
+        <Hero heroImage={heroImage} />
         <SocialProofStrip />
         <ShopCategories />
         <WhyChoose />
