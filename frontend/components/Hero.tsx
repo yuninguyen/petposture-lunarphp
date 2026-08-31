@@ -18,6 +18,7 @@ export default function Hero({ heroImage }: { heroImage?: string | null }) {
           fill
           className="object-cover object-[center_65%]"
           priority
+          fetchPriority="high"
           sizes="100vw"
         />
         {/* Subtle overlay for text readability, gradient on desktop */}
