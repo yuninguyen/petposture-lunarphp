@@ -49,6 +49,10 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
           to: '/shipping',
           label: t('shipping.title'),
           icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7h-9m9 5h-9m9 5h-9M7 7h.01M7 12h.01M7 17h.01" /></svg>,
+        }, {
+          to: '/discounts',
+          label: t('discounts.title'),
+          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v8m-4-4h8M5 4h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" /></svg>,
         }] : []),
       ],
     },
