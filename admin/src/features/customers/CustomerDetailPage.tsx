@@ -47,9 +47,15 @@ export function CustomerDetailPage() {
       <div className="flex items-start justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">{customer.name}</h1><p className="mt-1 text-sm text-slate-500">{customer.email ?? t('customers.guest')}</p></div><Button onClick={() => setDetailsOpen(true)} aria-label={t('customers.edit')}>{t('customers.edit')}</Button></div>
       <div className="mt-6 grid gap-4 sm:grid-cols-3"><Stat label={t('customers.total_orders')} value={String(customer.orders_count)} /><Stat label={t('customers.average_spend')} value={average} /><Stat label={t('customers.total_spend')} value={money(customer.orders_sum_total)} /></div>
     </header>
-    <div className="mt-6 flex gap-2" role="tablist">
+    <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-slate-900">{t('customers.customer_details')}</h2>
+      <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {[[t('customers.full_name'), [customer.first_name, customer.last_name].filter((value) => value?.trim()).join(' ') || '—'], [t('customers.company_name'), customer.company_name?.trim() || '—'], [t('customers.tax_identifier'), customer.tax_identifier?.trim() || '—'], [t('customers.column_email'), customer.email?.trim() || '—'], [t('customers.phone'), customer.phone?.trim() || '—']].map(([label, value]) => <div key={label}><dt className="text-sm font-medium text-slate-500">{label}</dt><dd className="mt-1 text-sm text-slate-900">{value}</dd></div>)}
+      </dl>
+    </section>
+    <div className="mt-6 flex justify-center"><div className="inline-flex gap-1 rounded-full bg-slate-100 p-1" role="tablist">
       <TabButton active={tab === 'orders'} onClick={() => setTab('orders')}>{t('customers.orders')}</TabButton><TabButton active={tab === 'addresses'} onClick={() => setTab('addresses')}>{t('customers.address_book')}</TabButton><TabButton active={tab === 'accounts'} onClick={() => setTab('accounts')}>{t('customers.login_accounts')}</TabButton>
-    </div>
+    </div></div>
     <section className="mt-3 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       {tab === 'orders' && <OrdersTab query={ordersQuery} page={ordersPage} onPageChange={setOrdersPage} />}
       {tab === 'addresses' && <AddressesTab query={addressesQuery} onEdit={setEditingAddress} onDelete={setDeletingAddress} />}
