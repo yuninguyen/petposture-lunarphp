@@ -17,6 +17,7 @@ test("CSP preserves approved checkout and analytics providers", () => {
     for (const origin of [
         "https://js.stripe.com",
         "https://www.paypal.com",
+        "https://www.sandbox.paypal.com",
         "https://maps.googleapis.com",
         "https://www.googletagmanager.com",
         "https://challenges.cloudflare.com",
