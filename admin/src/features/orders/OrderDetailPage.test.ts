@@ -146,7 +146,7 @@ describe('OrderDetailPage', () => {
     const visible = renderPage();
 
     expect(visible.host.textContent).toContain('orders.fraud_risk');
-    expect(visible.host.textContent).toContain('highest');
+    expect(visible.host.textContent).toContain('Highest');
     expect(visible.host.textContent).toContain('91');
     expect(visible.host.textContent).toContain('Review before fulfillment');
     expect(visible.host.querySelector('.bg-red-100')).not.toBeNull();
