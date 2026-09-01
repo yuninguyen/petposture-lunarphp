@@ -77,7 +77,7 @@ class PayPalService
         return number_format($amountMinor / 100, 2, '.', '');
     }
 
-    public function createOrder(int $amountMinor, string $currency): array
+    public function createOrder(int $amountMinor, string $currency, ?string $returnUrl = null, ?string $cancelUrl = null): array
     {
         if ($amountMinor <= 0) {
             throw new RuntimeException('PayPal order requires a positive amount.');
@@ -93,25 +93,40 @@ class PayPalService
                 'currency' => $currency,
                 'mode' => 'placeholder',
                 'client_id' => $this->clientId(),
+                'approve_url' => $returnUrl,
+            ];
+        }
+
+        $payload = [
+            'intent' => 'CAPTURE',
+            'purchase_units' => [[
+                'amount' => [
+                    'currency_code' => $currency,
+                    'value' => $this->minorToDecimal($amountMinor),
+                ],
+            ]],
+        ];
+
+        if ($returnUrl) {
+            $payload['application_context'] = [
+                'return_url' => $returnUrl,
+                'cancel_url' => $cancelUrl ?? $returnUrl,
+                'user_action' => 'PAY_NOW',
+                'shipping_preference' => 'NO_SHIPPING',
             ];
         }
 
         $response = Http::withToken($this->accessToken())
-            ->post($this->baseUrl().'/v2/checkout/orders', [
-                'intent' => 'CAPTURE',
-                'purchase_units' => [[
-                    'amount' => [
-                        'currency_code' => $currency,
-                        'value' => $this->minorToDecimal($amountMinor),
-                    ],
-                ]],
-            ]);
+            ->post($this->baseUrl().'/v2/checkout/orders', $payload);
 
         if (! $response->successful()) {
             throw new RuntimeException(
                 $response->json('message') ?? 'PayPal order creation failed.'
             );
         }
+
+        $links = collect((array) $response->json('links'));
+        $approveUrl = $links->firstWhere('rel', 'approve')['href'] ?? null;
 
         return [
             'paypal_order_id' => (string) $response->json('id'),
@@ -120,6 +135,7 @@ class PayPalService
             'currency' => $currency,
             'mode' => 'configured',
             'client_id' => $this->clientId(),
+            'approve_url' => $approveUrl,
         ];
     }
 

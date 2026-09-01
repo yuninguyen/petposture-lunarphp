@@ -63,6 +63,21 @@ function OrderSuccessContent() {
                     }
                 }
 
+                if (gateway === "paypal" && initialToken) {
+                    // PayPal appends its own order id as `token` (and `PayerID`) when it
+                    // redirects the buyer back — the order was already created before the
+                    // redirect, but the payment still needs an explicit capture call.
+                    const captureRes = await fetchApi('/api/checkout/paypal-capture', {
+                        method: "POST",
+                        body: { paypal_order_id: initialToken },
+                    });
+
+                    if (!captureRes.ok) {
+                        const captureData = await captureRes.json().catch(() => null);
+                        throw new Error(captureData?.message || "PayPal payment could not be captured.");
+                    }
+                }
+
                 if (gateway && sessionId) {
                     response = await fetch(
                         `${apiBase}/api/orders/by-payment-session?gateway=${encodeURIComponent(gateway)}&session_id=${encodeURIComponent(sessionId)}`,

@@ -453,6 +453,14 @@ class CheckoutController extends Controller
                 ->where('meta->paypal_order_id', $validated['paypal_order_id'])
                 ->firstOrFail();
 
+            if (($order->meta['payment_status'] ?? null) === 'paid') {
+                return response()->json([
+                    'success' => true,
+                    'order' => new OrderResource($order),
+                    'capture' => ['status' => 'COMPLETED', 'already_captured' => true],
+                ]);
+            }
+
             $capture = $this->payPalService->captureOrder($validated['paypal_order_id']);
 
             $paymentStatus = match ($capture['status']) {
@@ -533,6 +541,18 @@ class CheckoutController extends Controller
     {
         return $this->prepareRedirectSession($request, 'pingpong', function (int $amount, string $currency, string $reference, string $returnUrl) use ($request) {
             return $this->pingPongService->createCheckoutSession($amount, $currency, $reference, $returnUrl, (string) $request->ip());
+        });
+    }
+
+    public function preparePayPalSession(Request $request)
+    {
+        return $this->prepareRedirectSession($request, 'paypal', function (int $amount, string $currency, string $reference, string $returnUrl) {
+            $order = $this->payPalService->createOrder($amount, $currency, $returnUrl);
+
+            return [
+                'checkout_url' => $order['approve_url'],
+                'paypal_order_id' => $order['paypal_order_id'],
+            ];
         });
     }
 

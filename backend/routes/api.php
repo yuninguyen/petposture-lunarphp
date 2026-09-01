@@ -107,6 +107,7 @@ Route::post('/checkout/tax-quote', [CheckoutController::class, 'taxQuote'])->mid
 Route::post('/checkout/airwallex-session', [CheckoutController::class, 'prepareAirwallexSession'])->middleware('throttle:api-write');
 Route::post('/checkout/payoneer-session', [CheckoutController::class, 'preparePayoneerSession'])->middleware('throttle:api-write');
 Route::post('/checkout/pingpong-session', [CheckoutController::class, 'preparePingPongSession'])->middleware('throttle:api-write');
+Route::post('/checkout/paypal-session', [CheckoutController::class, 'preparePayPalSession'])->middleware('throttle:api-write');
 Route::post('/webhooks/stripe', [CheckoutController::class, 'stripeWebhook']);
 Route::post('/webhooks/paypal', [CheckoutController::class, 'paypalWebhook']);
 Route::post('/webhooks/airwallex', [CheckoutController::class, 'airwallexWebhook']);

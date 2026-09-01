@@ -8,7 +8,6 @@ import {
     CheckCircle,
     ChevronLeft,
     CreditCard,
-    Loader2,
     Lock,
     Mail,
     MapPinHouse,
@@ -45,17 +44,6 @@ declare global {
                 error?: { message?: string };
                 paymentIntent?: { status?: string };
             }>;
-        };
-        paypal?: {
-            Buttons: (options: {
-                style?: Record<string, unknown>;
-                createOrder: () => Promise<string>;
-                onApprove: (data: { orderID: string }) => Promise<void>;
-                onError?: (error: unknown) => void;
-                onCancel?: () => void;
-            }) => {
-                render: (container: string | HTMLElement) => Promise<void>;
-            };
         };
         google?: {
             maps?: {
@@ -117,7 +105,6 @@ const countryOptions = ['United States'];
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const googleMapsScriptId = 'petposture-google-places';
 const stripeJsScriptId = 'petposture-stripe-js';
-const paypalJsScriptId = 'petposture-paypal-js';
 const paymentMethodOrder = { card: 0, paypal: 1, airwallex: 2, payoneer: 3, pingpong: 4, cod: 5 } as const;
 
 type AddressTarget = 'shipping' | 'billing';
@@ -131,7 +118,7 @@ type AddressSuggestion = {
 
 type PaymentMethod = 'cod' | 'card' | 'paypal' | 'airwallex' | 'payoneer' | 'pingpong';
 
-const redirectPaymentMethods: ReadonlySet<PaymentMethod> = new Set(['airwallex', 'payoneer', 'pingpong']);
+const redirectPaymentMethods: ReadonlySet<PaymentMethod> = new Set(['airwallex', 'payoneer', 'pingpong', 'paypal']);
 
 type PaymentMethodOption = {
     method: PaymentMethod;
@@ -274,12 +261,6 @@ export default function CheckoutPage() {
     const stripeInstanceRef = useRef<ReturnType<NonNullable<typeof window.Stripe>> | null>(null);
     const stripeElementsRef = useRef<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>['elements']> | null>(null);
     const stripeCardElementRef = useRef<ReturnType<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>['elements']>['create']> | null>(null);
-    const paypalContainerRef = useRef<HTMLDivElement | null>(null);
-    const formRef = useRef<HTMLFormElement | null>(null);
-    const preparePayPalOrderRef = useRef<() => Promise<string>>(async () => {
-        throw new Error('PayPal is not ready yet.');
-    });
-    const finishPayPalOrderRef = useRef<(paypalOrderId: string) => Promise<void>>(async () => undefined);
     const autocompleteServiceRef = useRef<{
         getPlacePredictions: (
             request: Record<string, unknown>,
@@ -302,8 +283,6 @@ export default function CheckoutPage() {
     const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
     const [stripeReady, setStripeReady] = useState(false);
     const [stripeError, setStripeError] = useState<string | null>(null);
-    const [paypalReady, setPaypalReady] = useState(false);
-    const [paypalButtonRendered, setPaypalButtonRendered] = useState(false);
     const [paypalError, setPaypalError] = useState<string | null>(null);
     const [form, setForm] = useState<CheckoutFormState>({
         email: user?.email || '',
@@ -536,45 +515,6 @@ export default function CheckoutPage() {
     }, [selectedCardMethod?.publishable_key, stripeLiveMode]);
 
     useEffect(() => {
-        if (typeof window === 'undefined' || !paypalLiveMode || !selectedPayPalMethod?.client_id) {
-            setPaypalReady(false);
-            setPaypalError(null);
-            return;
-        }
-
-        const clientId = selectedPayPalMethod.client_id;
-
-        const markReady = () => {
-            if (!window.paypal) {
-                setPaypalError('PayPal.js could not be loaded.');
-                return;
-            }
-
-            setPaypalReady(true);
-            setPaypalError(null);
-        };
-
-        if (window.paypal) {
-            markReady();
-            return;
-        }
-
-        const existingScript = document.getElementById(paypalJsScriptId) as HTMLScriptElement | null;
-
-        if (existingScript) {
-            existingScript.addEventListener('load', markReady, { once: true });
-            return;
-        }
-
-        const script = document.createElement('script');
-        script.id = paypalJsScriptId;
-        script.async = true;
-        script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=USD&intent=capture`;
-        script.addEventListener('load', markReady, { once: true });
-        document.head.appendChild(script);
-    }, [selectedPayPalMethod?.client_id, paypalLiveMode]);
-
-    useEffect(() => {
         if (!stripeLiveMode || !stripeReady || !stripeElementsRef.current || !stripeCardMountRef.current) {
             return;
         }
@@ -605,50 +545,6 @@ export default function CheckoutPage() {
             stripeCardElementRef.current = null;
         };
     }, [stripeLiveMode, stripeReady]);
-
-    useEffect(() => {
-        if (!paypalLiveMode || !paypalReady || !window.paypal || !paypalContainerRef.current) {
-            return;
-        }
-
-        const container = paypalContainerRef.current;
-        container.innerHTML = '';
-        setPaypalButtonRendered(false);
-
-        const buttons = window.paypal.Buttons({
-            style: { layout: 'vertical', label: 'paypal' },
-            createOrder: async () => {
-                if (formRef.current && !formRef.current.reportValidity()) {
-                    const err = new Error('Please fill in all required fields before paying with PayPal.');
-                    setPaypalError(err.message);
-                    throw err;
-                }
-                try {
-                    return await preparePayPalOrderRef.current();
-                } catch (err) {
-                    setPaypalError(err instanceof Error ? err.message : 'Unable to start PayPal checkout.');
-                    throw err;
-                }
-            },
-            onApprove: async (data) => {
-                await finishPayPalOrderRef.current(data.orderID);
-            },
-            onError: (err) => {
-                console.error(err);
-                setPaypalError('PayPal checkout failed. Please try again.');
-            },
-        });
-
-        buttons.render(container)
-            .then(() => setPaypalButtonRendered(true))
-            .catch(() => setPaypalError('PayPal checkout failed. Please try again.'));
-
-        return () => {
-            container.innerHTML = '';
-            setPaypalButtonRendered(false);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [paypalLiveMode, paypalReady]);
 
     useEffect(() => {
         if (!placesReady || !autocompleteServiceRef.current || !activeAddressTarget) {
@@ -1107,34 +1003,6 @@ export default function CheckoutPage() {
         return intent;
     };
 
-    const preparePayPalOrder = async (): Promise<string> => {
-        const response = await fetchApi('/api/checkout/paypal-order', {
-            method: 'POST',
-            body: {
-                payment_method: 'paypal',
-                items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
-                coupon_code: coupon.code || null,
-                shipping_method: form.shippingMethod,
-                shipping: {
-                    state: form.province,
-                    country: form.country,
-                    city: form.city,
-                    postcode: form.postalCode,
-                },
-                currency: 'usd',
-            },
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || !data?.paypal_order?.paypal_order_id) {
-            throw new Error(data?.message || 'Failed to prepare PayPal payment.');
-        }
-
-        return data.paypal_order.paypal_order_id as string;
-    };
-    preparePayPalOrderRef.current = preparePayPalOrder;
-
     const handleApplyCoupon = async () => {
         if (!couponCode.trim()) return;
 
@@ -1259,7 +1127,7 @@ export default function CheckoutPage() {
         };
     };
 
-    const prepareRedirectSession = async (method: 'airwallex' | 'payoneer' | 'pingpong'): Promise<{ checkout_url: string; session_id: string }> => {
+    const prepareRedirectSession = async (method: 'airwallex' | 'payoneer' | 'pingpong' | 'paypal'): Promise<{ checkout_url: string; session_id: string; paypal_order_id?: string }> => {
         // The backend generates the correlation token and bakes it into the gateway's
         // return_url before calling the vendor API, so the success page can always
         // resolve the order via GET /api/orders/by-payment-session?gateway=&session_id=.
@@ -1338,58 +1206,33 @@ export default function CheckoutPage() {
         router.push(`/checkout/success?token=${encodeURIComponent(orderAccess.trackingToken)}&email=${encodeURIComponent(form.email)}`);
     };
 
-    const finishPayPalOrder = async (paypalOrderId: string) => {
-        setIsLoading(true);
-        setPaypalError(null);
-
-        try {
-            const orderAccess = await placeOrder({ paypal_order_id: paypalOrderId });
-
-            const captureRes = await fetchApi('/api/checkout/paypal-capture', {
-                method: 'POST',
-                body: { paypal_order_id: paypalOrderId },
-            });
-
-            const captureData = await captureRes.json();
-
-            if (!captureRes.ok) {
-                throw new Error(captureData?.message || 'PayPal payment could not be captured.');
-            }
-
-            finishSuccessSideEffectsAndRedirect(orderAccess);
-        } catch (err) {
-            console.error(err);
-            setPaypalError(err instanceof Error ? err.message : 'PayPal checkout failed. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    finishPayPalOrderRef.current = finishPayPalOrder;
-
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (form.paymentMethod === 'paypal' && paypalLiveMode) {
-            // A real PayPal button is rendered below and completes the order via its own
-            // createOrder/onApprove flow — this form submit only applies in placeholder mode.
-            return;
-        }
-
         setIsLoading(true);
         setPaymentIntentMessage(null);
+        setPaypalError(null);
 
         try {
-            if (redirectPaymentMethods.has(form.paymentMethod)) {
-                const session = await prepareRedirectSession(form.paymentMethod as 'airwallex' | 'payoneer' | 'pingpong');
+            const useRedirectFlow = redirectPaymentMethods.has(form.paymentMethod)
+                && (form.paymentMethod !== 'paypal' || paypalLiveMode);
 
-                const orderAccess = await placeOrder({ session_id: session.session_id });
+            if (useRedirectFlow) {
+                const session = await prepareRedirectSession(form.paymentMethod as 'airwallex' | 'payoneer' | 'pingpong' | 'paypal');
+
+                const paymentContext: Record<string, unknown> = { session_id: session.session_id };
+                if (form.paymentMethod === 'paypal' && session.paypal_order_id) {
+                    paymentContext.paypal_order_id = session.paypal_order_id;
+                }
+
+                const orderAccess = await placeOrder(paymentContext);
                 sessionStorage.setItem(`petposture_payment_access:${session.session_id}`, JSON.stringify({
                     email: form.email,
                     trackingToken: orderAccess.trackingToken,
                 }));
 
                 // Order is recorded (payment still pending) — clear the local cart before
-                // leaving the site, same as the card/PayPal paths do once placeOrder succeeds.
+                // leaving the site, same as the card path does once placeOrder succeeds.
                 localStorage.removeItem('petposture_cart');
                 localStorage.removeItem('petposture_cart_coupon');
                 clearCoupon();
@@ -1440,7 +1283,12 @@ export default function CheckoutPage() {
             finishSuccessSideEffectsAndRedirect(orderAccess);
         } catch (err) {
             console.error(err);
-            alert(err instanceof Error ? err.message : "Network error processing your checkout.");
+            const message = err instanceof Error ? err.message : "Network error processing your checkout.";
+            if (form.paymentMethod === 'paypal') {
+                setPaypalError(message);
+            } else {
+                alert(message);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -1536,7 +1384,7 @@ export default function CheckoutPage() {
 
 
 
-                    <form ref={formRef} onSubmit={handleCheckout} className="space-y-8">
+                    <form onSubmit={handleCheckout} className="space-y-8">
                         <section
                             id="checkout-information"
                             ref={informationSectionRef}
@@ -1872,19 +1720,11 @@ export default function CheckoutPage() {
 
                                         {method.method === 'paypal' && form.paymentMethod === 'paypal' && (
                                             <div className="grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3">
-                                                {paypalLiveMode ? (
-                                                    <>
-                                                        {!paypalButtonRendered ? (
-                                                            <div className="flex h-[45px] items-center gap-2 text-sm leading-[1.45] text-[#6f7782]">
-                                                                <Loader2 size={15} className="animate-spin" />
-                                                                Loading PayPal…
-                                                            </div>
-                                                        ) : null}
-                                                        <div ref={paypalContainerRef} />
-                                                    </>
-                                                ) : (
-                                                    <p className="text-sm leading-[1.45] text-[#6f7782]">PayPal is running in placeholder mode — click &quot;Complete order&quot; below to simulate a PayPal order without a live PayPal account.</p>
-                                                )}
+                                                <p className="text-sm leading-[1.45] text-[#6f7782]">
+                                                    {paypalLiveMode
+                                                        ? "You'll be redirected to PayPal to complete your purchase."
+                                                        : 'PayPal is running in placeholder mode — click "Complete order" below to simulate a PayPal order without a live PayPal account.'}
+                                                </p>
                                                 {paypalError ? (
                                                     <p className="text-sm font-medium text-[#b42318]">{paypalError}</p>
                                                 ) : null}
@@ -1897,23 +1737,21 @@ export default function CheckoutPage() {
                             </div>
                         </section>
 
-                        {!(form.paymentMethod === 'paypal' && paypalLiveMode) && (
-                            <div className="pt-6">
-                                <button
-                                    disabled={isLoading || items.length === 0}
-                                    className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[8px] bg-secondary px-6 text-[15px] font-bold text-ink shadow-[0_14px_30px_rgba(223,132,72,0.22)] transition hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    {isLoading ? (
-                                        'Processing...'
-                                    ) : (
-                                        <>
-                                            <Lock size={16} />
-                                            Complete order
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        )}
+                        <div className="pt-6">
+                            <button
+                                disabled={isLoading || items.length === 0}
+                                className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[8px] bg-secondary px-6 text-[15px] font-bold text-ink shadow-[0_14px_30px_rgba(223,132,72,0.22)] transition hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {isLoading ? (
+                                    'Processing...'
+                                ) : (
+                                    <>
+                                        <Lock size={16} />
+                                        Complete order
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </form>
 
                     <footer className="mt-16 border-t border-[#e6e6e6] pt-8">

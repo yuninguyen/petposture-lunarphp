@@ -30,12 +30,13 @@ class PayPalGateway implements PaymentGatewayInterface
             method: $this->method(),
             label: $this->label(),
             gateway: 'paypal',
-            collectionType: 'popup',
+            collectionType: 'redirect',
             paymentStatus: 'pending',
-            instructions: 'PayPal order created — approve in the popup to complete payment.',
+            instructions: 'PayPal order created — approve on PayPal to complete payment.',
             meta: [
                 'payment_provider_mode' => $this->payPalService->isConfigured() ? 'configured' : 'placeholder',
                 'paypal_order_id' => $paymentContext['paypal_order_id'] ?? null,
+                'paypal_session_id' => $paymentContext['session_id'] ?? null,
             ],
         );
     }
@@ -48,7 +49,7 @@ class PayPalGateway implements PaymentGatewayInterface
             'method' => $this->method(),
             'label' => $this->label(),
             'gateway' => 'paypal',
-            'collection' => 'popup',
+            'collection' => 'redirect',
             'description' => 'Pay with your PayPal balance, bank account, or linked card.',
             'enabled' => true,
             'mode' => $configured ? 'configured' : 'placeholder',
