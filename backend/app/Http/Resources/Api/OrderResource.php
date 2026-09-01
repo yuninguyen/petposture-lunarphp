@@ -100,7 +100,7 @@ class OrderResource extends JsonResource
             'internal_note' => $meta['internal_note'] ?? null,
             'currency' => $this->currency_code,
             'total' => [
-                'formatted' => '$'.number_format($total, 2).' '.$this->currency_code,
+                'formatted' => '$'.number_format($total, 2),
                 'decimal' => round($total, 2),
                 'currency' => $this->currency_code,
             ],

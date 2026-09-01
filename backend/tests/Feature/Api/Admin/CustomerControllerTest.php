@@ -5,6 +5,7 @@ namespace Tests\Feature\Api\Admin;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Illuminate\Support\Facades\Hash;
 use Lunar\Models\Address;
 use Lunar\Models\Customer;
 use Lunar\Models\Order;
@@ -160,21 +161,8 @@ class CustomerControllerTest extends TestCase
         }
     }
 
-    public function test_customer_mutation_routes_do_not_exist(): void
-    {
-        $this->asCoreAdmin();
 
-        foreach ([
-            fn () => $this->postJson('/api/admin/customers', []),
-            fn () => $this->putJson('/api/admin/customers/1', []),
-            fn () => $this->patchJson('/api/admin/customers/1', []),
-            fn () => $this->deleteJson('/api/admin/customers/1'),
-        ] as $request) {
-            $this->assertContains($request()->getStatusCode(), [404, 405]);
-        }
-    }
-
-    public function test_customer_summary_uses_the_list_contract_without_loading_tab_data(): void
+    public function test_customer_summary_exposes_the_detail_profile_contract_without_loading_tab_data(): void
     {
         $customer = $this->customer('Taylor', 'Customer');
         $customer->users()->attach(User::factory()->create(['email' => 'taylor@example.test', 'is_active' => true]));
@@ -191,7 +179,7 @@ class CustomerControllerTest extends TestCase
             ->assertJsonPath('orders_sum_total', 12999)
             ->assertJsonPath('status', 'active');
         $this->assertSame(
-            ['id', 'name', 'email', 'orders_count', 'orders_sum_total', 'created_at', 'status'],
+            ['id', 'name', 'email', 'orders_count', 'orders_sum_total', 'created_at', 'status', 'first_name', 'last_name', 'company_name', 'tax_identifier', 'phone'],
             array_keys($response->json()),
         );
     }
@@ -225,6 +213,7 @@ class CustomerControllerTest extends TestCase
             ->assertJsonPath('data.0.reference', 'ORDER-1')
             ->assertJsonPath('data.0.status', 'shipped')
             ->assertJsonPath('data.0.status_label', 'Shipped')
+            ->assertJsonPath('data.0.total.formatted', '$129.99')
             ->assertJsonPath('data.0.total.decimal', 129.99)
             ->assertJsonPath('data.0.total.currency', 'USD')
             ->assertJsonStructure(['data' => [[
@@ -296,6 +285,296 @@ class CustomerControllerTest extends TestCase
                 $this->getJson($path)->assertForbidden();
             }
         }
+    }
+
+    public function test_each_core_role_can_mutate_customer_details_and_addresses(): void
+    {
+        foreach (['super_admin', 'admin', 'staff'] as $role) {
+            $customer = $this->customer('Before', 'Customer');
+            $address = Address::factory()->create(['customer_id' => $customer->id]);
+            Sanctum::actingAs($this->userWithRole($role));
+
+            $this->putJson("/api/admin/customers/{$customer->id}", ['first_name' => 'Updated'])
+                ->assertOk()
+                ->assertJsonPath('first_name', 'Updated');
+            $this->patchJson("/api/admin/customers/{$customer->id}/addresses/{$address->id}", ['city' => 'Updated City'])
+                ->assertOk()
+                ->assertJsonPath('city', 'Updated City');
+            $this->deleteJson("/api/admin/customers/{$customer->id}/addresses/{$address->id}")
+                ->assertNoContent();
+        }
+    }
+
+    public function test_order_manager_support_and_product_manager_receive_403_for_every_customer_mutation(): void
+    {
+        $customer = $this->customer('Restricted', 'Customer');
+        $address = Address::factory()->create(['customer_id' => $customer->id]);
+
+        foreach (['Order Manager', 'Support', 'Product Manager'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+
+            $this->putJson("/api/admin/customers/{$customer->id}", ['first_name' => 'Blocked'])->assertForbidden();
+            $this->patchJson("/api/admin/customers/{$customer->id}", ['first_name' => 'Blocked'])->assertForbidden();
+            $this->putJson("/api/admin/customers/{$customer->id}/addresses/{$address->id}", ['city' => 'Blocked'])->assertForbidden();
+            $this->patchJson("/api/admin/customers/{$customer->id}/addresses/{$address->id}", ['city' => 'Blocked'])->assertForbidden();
+            $this->deleteJson("/api/admin/customers/{$customer->id}/addresses/{$address->id}")->assertForbidden();
+        }
+    }
+
+    public function test_customer_details_update_only_customer_profile_fields_and_keeps_contacts_read_only(): void
+    {
+        $customer = $this->customer('Before', 'Customer');
+        $user = User::factory()->create(['email' => 'linked@example.test']);
+        $customer->users()->attach($user);
+        $address = Address::factory()->create([
+            'customer_id' => $customer->id,
+            'contact_phone' => '555-0100',
+        ]);
+
+        $response = $this->asCoreAdmin()->patchJson("/api/admin/customers/{$customer->id}", [
+            'first_name' => 'After',
+            'last_name' => 'Profile',
+            'company_name' => 'Pet Posture Ltd',
+            'tax_identifier' => 'TAX-123',
+            'email' => 'should-not-write@example.test',
+            'phone' => '555-9999',
+            'unexpected' => 'ignored',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('first_name', 'After')
+            ->assertJsonPath('last_name', 'Profile')
+            ->assertJsonPath('company_name', 'Pet Posture Ltd')
+            ->assertJsonPath('tax_identifier', 'TAX-123')
+            ->assertJsonPath('email', 'linked@example.test')
+            ->assertJsonPath('phone', '555-0100');
+        $this->assertSame('After', $customer->refresh()->first_name);
+        $this->assertSame('Profile', $customer->last_name);
+        $this->assertSame('Pet Posture Ltd', $customer->company_name);
+        $this->assertSame('TAX-123', $customer->tax_identifier);
+        $this->assertSame('linked@example.test', $user->refresh()->email);
+        $this->assertSame('555-0100', $address->refresh()->contact_phone);
+    }
+
+    public function test_address_update_accepts_the_full_address_book_field_contract(): void
+    {
+        $customer = $this->customer('Address', 'Owner');
+        $address = Address::factory()->create(['customer_id' => $customer->id]);
+        $payload = [
+            'title' => 'Home', 'first_name' => 'Ada', 'last_name' => 'Lovelace',
+            'line_one' => '1 First Street', 'line_two' => 'Apartment 2', 'line_three' => 'Building A',
+            'city' => 'London', 'state' => 'Greater London', 'postcode' => 'E1 6AN',
+            'contact_phone' => '555-0111', 'contact_email' => 'ada@example.test',
+            'shipping_default' => true, 'billing_default' => true,
+        ];
+
+        $this->asCoreAdmin()->putJson("/api/admin/customers/{$customer->id}/addresses/{$address->id}", $payload)
+            ->assertOk()
+            ->assertJson($payload);
+
+        $this->assertSame($payload['line_three'], $address->refresh()->line_three);
+        $this->assertTrue($address->shipping_default);
+        $this->assertTrue($address->billing_default);
+    }
+
+    public function test_address_update_and_delete_reject_an_address_owned_by_another_customer(): void
+    {
+        $customer = $this->customer('First', 'Customer');
+        $otherAddress = Address::factory()->create(['customer_id' => $this->customer('Second', 'Customer')->id]);
+
+        $this->asCoreAdmin()->patchJson("/api/admin/customers/{$customer->id}/addresses/{$otherAddress->id}", ['city' => 'Hijacked'])
+            ->assertNotFound();
+        $this->deleteJson("/api/admin/customers/{$customer->id}/addresses/{$otherAddress->id}")
+            ->assertNotFound();
+        $this->assertDatabaseHas('lunar_addresses', ['id' => $otherAddress->id]);
+    }
+
+    public function test_customer_details_show_exposes_read_only_profile_email_and_first_address_phone(): void
+    {
+        $customer = $this->customer('Detail', 'Customer');
+        $customer->update(['company_name' => 'Pet Posture', 'tax_identifier' => 'TAX-456']);
+        $customer->users()->attach(User::factory()->create(['email' => 'first@example.test']));
+        $customer->users()->attach(User::factory()->create(['email' => 'second@example.test']));
+        $firstAddress = Address::factory()->create(['customer_id' => $customer->id, 'contact_phone' => '555-0101']);
+        Address::factory()->create(['customer_id' => $customer->id, 'contact_phone' => '555-0102']);
+
+        $response = $this->asCoreAdmin()->getJson("/api/admin/customers/{$customer->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('first_name', 'Detail')
+            ->assertJsonPath('last_name', 'Customer')
+            ->assertJsonPath('company_name', 'Pet Posture')
+            ->assertJsonPath('tax_identifier', 'TAX-456')
+            ->assertJsonPath('email', 'first@example.test')
+            ->assertJsonPath('phone', '555-0101');
+        $this->assertSame($firstAddress->id, $customer->addresses()->orderBy('id')->first()->id);
+    }
+
+    public function test_customer_details_show_returns_null_phone_when_the_customer_has_no_addresses(): void
+    {
+        $customer = $this->customer('No', 'Address');
+
+        $this->asCoreAdmin()->getJson("/api/admin/customers/{$customer->id}")
+            ->assertOk()
+            ->assertJsonPath('phone', null);
+    }
+
+    public function test_each_core_role_can_update_a_belonging_login_account_via_put_and_patch(): void
+    {
+        foreach (['super_admin', 'admin', 'staff'] as $role) {
+            $customer = $this->customer('Account', 'Owner');
+            $user = User::factory()->create(['email' => "{$role}@before.test"]);
+            $customer->users()->attach($user);
+            Sanctum::actingAs($this->userWithRole($role));
+
+            foreach (['putJson', 'patchJson'] as $method) {
+                $email = "{$role}-{$method}@after.test";
+                $response = $this->{$method}("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", [
+                    'email' => $email,
+                ]);
+
+                $response->assertOk()->assertJsonPath('data.id', $user->id)->assertJsonPath('data.email', $email);
+                $this->assertSame(['id', 'email'], array_keys($response->json('data')));
+            }
+        }
+    }
+
+    public function test_non_core_roles_receive_403_for_every_login_account_mutation_method(): void
+    {
+        $customer = $this->customer('Restricted', 'Account');
+        $user = User::factory()->create();
+        $customer->users()->attach($user);
+
+        foreach (['Order Manager', 'Support', 'Product Manager'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+
+            $this->putJson("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", ['email' => 'blocked-put@example.test'])
+                ->assertForbidden();
+            $this->patchJson("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", ['email' => 'blocked-patch@example.test'])
+                ->assertForbidden();
+        }
+    }
+
+    public function test_login_account_mutation_returns_404_when_the_user_belongs_to_another_customer(): void
+    {
+        $customer = $this->customer('First', 'Customer');
+        $otherUser = User::factory()->create(['email' => 'other@example.test']);
+        $this->customer('Second', 'Customer')->users()->attach($otherUser);
+
+        $this->asCoreAdmin()->patchJson("/api/admin/customers/{$customer->id}/login-accounts/{$otherUser->id}", [
+            'email' => 'hijacked@example.test',
+        ])->assertNotFound();
+
+        $this->assertSame('other@example.test', $otherUser->refresh()->email);
+    }
+
+    public function test_login_account_email_validation_excludes_the_current_user_and_rejects_another_users_email(): void
+    {
+        $customer = $this->customer('Email', 'Owner');
+        $user = User::factory()->create(['email' => 'account@example.test']);
+        $otherUser = User::factory()->create(['email' => 'taken@example.test']);
+        $customer->users()->attach($user);
+
+        $this->asCoreAdmin()->putJson("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", [
+            'email' => 'account@example.test',
+        ])->assertOk();
+
+        $this->patchJson("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", [
+            'email' => $otherUser->email,
+        ])->assertUnprocessable()->assertJsonValidationErrors('email');
+    }
+
+    public function test_core_admin_login_account_mutation_rejects_a_missing_email(): void
+    {
+        $customer = $this->customer('Missing', 'Email');
+        $user = User::factory()->create();
+        $customer->users()->attach($user);
+
+        $this->asCoreAdmin()->patchJson("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('email');
+    }
+
+    public function test_core_admin_login_account_mutation_rejects_a_malformed_email(): void
+    {
+        $customer = $this->customer('Malformed', 'Email');
+        $user = User::factory()->create();
+        $customer->users()->attach($user);
+
+        $this->asCoreAdmin()->putJson("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", [
+            'email' => 'not-an-email',
+        ])->assertUnprocessable()->assertJsonValidationErrors('email');
+    }
+
+    public function test_login_account_password_validation_rejects_mismatches_and_short_passwords(): void
+    {
+        $customer = $this->customer('Password', 'Owner');
+        $user = User::factory()->create();
+        $customer->users()->attach($user);
+
+        $this->asCoreAdmin()->putJson("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", [
+            'email' => $user->email,
+            'password' => 'valid-password',
+            'password_confirmation' => 'different-password',
+        ])->assertUnprocessable()->assertJsonValidationErrors('password');
+
+        $this->patchJson("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", [
+            'email' => $user->email,
+            'password' => 'short',
+            'password_confirmation' => 'short',
+        ])->assertUnprocessable()->assertJsonValidationErrors('password');
+    }
+
+    public function test_core_admin_login_account_mutation_rejects_matching_password_arrays(): void
+    {
+        $customer = $this->customer('Array', 'Password');
+        $user = User::factory()->create();
+        $customer->users()->attach($user);
+        $password = array_fill(0, 8, 'password');
+
+        $this->asCoreAdmin()->patchJson("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", [
+            'email' => $user->email,
+            'password' => $password,
+            'password_confirmation' => $password,
+        ])->assertUnprocessable()->assertJsonValidationErrors('password');
+    }
+
+    public function test_login_account_omitted_or_blank_password_preserves_the_existing_hash(): void
+    {
+        $customer = $this->customer('Preserve', 'Password');
+        $user = User::factory()->create(['password' => Hash::make('original-password')]);
+        $customer->users()->attach($user);
+        $originalHash = $user->password;
+
+        $this->asCoreAdmin()->putJson("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", [
+            'email' => 'omitted@example.test',
+        ])->assertOk();
+        $this->assertSame($originalHash, $user->refresh()->password);
+
+        $this->patchJson("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", [
+            'email' => 'blank@example.test',
+            'password' => '   ',
+            'password_confirmation' => '   ',
+        ])->assertOk();
+        $this->assertSame($originalHash, $user->refresh()->password);
+    }
+
+    public function test_login_account_supplied_password_is_hashed_and_the_response_is_slim(): void
+    {
+        $customer = $this->customer('Reset', 'Password');
+        $user = User::factory()->create(['email' => 'before@example.test', 'password' => Hash::make('original-password')]);
+        $customer->users()->attach($user);
+
+        $response = $this->asCoreAdmin()->patchJson("/api/admin/customers/{$customer->id}/login-accounts/{$user->id}", [
+            'email' => 'after@example.test',
+            'password' => 'replacement-password',
+            'password_confirmation' => 'replacement-password',
+        ]);
+
+        $response->assertOk()->assertJsonPath('data.id', $user->id)->assertJsonPath('data.email', 'after@example.test');
+        $this->assertSame(['id', 'email'], array_keys($response->json('data')));
+        $this->assertTrue(Hash::check('replacement-password', $user->refresh()->password));
+        $this->assertFalse(Hash::check('original-password', $user->password));
     }
 
     private function asCoreAdmin(): static

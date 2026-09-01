@@ -4,11 +4,31 @@ import { fetchJson } from '@/lib/api';
 export interface Customer {
   id: number;
   name: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  company_name?: string | null;
+  tax_identifier?: string | null;
   email: string | null;
+  phone?: string | null;
   orders_count: number;
   orders_sum_total: number | null;
   created_at: string | null;
   status: 'active' | 'inactive';
+}
+
+export interface CustomerUpdatePayload {
+  first_name: string | null;
+  last_name: string | null;
+  company_name: string | null;
+  tax_identifier: string | null;
+}
+
+export type CustomerAddressUpdatePayload = Pick<CustomerAddress, 'title' | 'first_name' | 'last_name' | 'line_one' | 'line_two' | 'line_three' | 'city' | 'state' | 'postcode' | 'contact_phone' | 'contact_email' | 'shipping_default' | 'billing_default'>;
+
+export interface CustomerLoginAccountUpdatePayload {
+  email: string;
+  password?: string;
+  password_confirmation?: string;
 }
 
 export interface CustomerListPage {
@@ -83,6 +103,22 @@ export async function fetchCustomerAddresses(id: string): Promise<CustomerAddres
 
 export async function fetchCustomerLoginAccounts(id: string): Promise<CustomerLoginAccount[]> {
   return unwrap(await fetchJson<CustomerLoginAccount[] | { data: CustomerLoginAccount[] }>(`/admin/customers/${id}/login-accounts`));
+}
+
+export async function updateCustomer(id: string, payload: CustomerUpdatePayload): Promise<Customer> {
+  return unwrap(await fetchJson<Customer | { data: Customer }>(`/admin/customers/${id}`, { method: 'PUT', body: payload as unknown as Record<string, unknown> }));
+}
+
+export async function updateCustomerAddress(customerId: string, addressId: number, payload: CustomerAddressUpdatePayload): Promise<CustomerAddress> {
+  return unwrap(await fetchJson<CustomerAddress | { data: CustomerAddress }>(`/admin/customers/${customerId}/addresses/${addressId}`, { method: 'PUT', body: payload }));
+}
+
+export async function deleteCustomerAddress(customerId: string, addressId: number): Promise<void> {
+  await fetchJson(`/admin/customers/${customerId}/addresses/${addressId}`, { method: 'DELETE' });
+}
+
+export async function updateCustomerLoginAccount(customerId: string, userId: number, payload: CustomerLoginAccountUpdatePayload): Promise<CustomerLoginAccount> {
+  return unwrap(await fetchJson<CustomerLoginAccount | { data: CustomerLoginAccount }>(`/admin/customers/${customerId}/login-accounts/${userId}`, { method: 'PUT', body: payload as unknown as Record<string, unknown> }));
 }
 
 export function useCustomers(filters: CustomerFilters) {
