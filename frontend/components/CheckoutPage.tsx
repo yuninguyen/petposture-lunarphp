@@ -8,6 +8,7 @@ import {
     CheckCircle,
     ChevronLeft,
     CreditCard,
+    Loader2,
     Lock,
     Mail,
     MapPinHouse,
@@ -53,7 +54,7 @@ declare global {
                 onError?: (error: unknown) => void;
                 onCancel?: () => void;
             }) => {
-                render: (container: string | HTMLElement) => void;
+                render: (container: string | HTMLElement) => Promise<void>;
             };
         };
         google?: {
@@ -274,6 +275,7 @@ export default function CheckoutPage() {
     const stripeElementsRef = useRef<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>['elements']> | null>(null);
     const stripeCardElementRef = useRef<ReturnType<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>['elements']>['create']> | null>(null);
     const paypalContainerRef = useRef<HTMLDivElement | null>(null);
+    const formRef = useRef<HTMLFormElement | null>(null);
     const autocompleteServiceRef = useRef<{
         getPlacePredictions: (
             request: Record<string, unknown>,
@@ -297,6 +299,7 @@ export default function CheckoutPage() {
     const [stripeReady, setStripeReady] = useState(false);
     const [stripeError, setStripeError] = useState<string | null>(null);
     const [paypalReady, setPaypalReady] = useState(false);
+    const [paypalButtonRendered, setPaypalButtonRendered] = useState(false);
     const [paypalError, setPaypalError] = useState<string | null>(null);
     const [form, setForm] = useState<CheckoutFormState>({
         email: user?.email || '',
@@ -606,10 +609,16 @@ export default function CheckoutPage() {
 
         const container = paypalContainerRef.current;
         container.innerHTML = '';
+        setPaypalButtonRendered(false);
 
         const buttons = window.paypal.Buttons({
             style: { layout: 'vertical', label: 'paypal' },
             createOrder: async () => {
+                if (formRef.current && !formRef.current.reportValidity()) {
+                    const err = new Error('Please fill in all required fields before paying with PayPal.');
+                    setPaypalError(err.message);
+                    throw err;
+                }
                 try {
                     return await preparePayPalOrder();
                 } catch (err) {
@@ -626,10 +635,13 @@ export default function CheckoutPage() {
             },
         });
 
-        buttons.render(container);
+        buttons.render(container)
+            .then(() => setPaypalButtonRendered(true))
+            .catch(() => setPaypalError('PayPal checkout failed. Please try again.'));
 
         return () => {
             container.innerHTML = '';
+            setPaypalButtonRendered(false);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [paypalLiveMode, paypalReady]);
@@ -1518,7 +1530,7 @@ export default function CheckoutPage() {
 
 
 
-                    <form onSubmit={handleCheckout} className="space-y-8">
+                    <form ref={formRef} onSubmit={handleCheckout} className="space-y-8">
                         <section
                             id="checkout-information"
                             ref={informationSectionRef}
@@ -1856,10 +1868,13 @@ export default function CheckoutPage() {
                                             <div className="grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3">
                                                 {paypalLiveMode ? (
                                                     <>
-                                                        <div ref={paypalContainerRef} />
-                                                        {!paypalReady ? (
-                                                            <p className="text-sm leading-[1.45] text-[#6f7782]">Loading PayPal…</p>
+                                                        {!paypalButtonRendered ? (
+                                                            <div className="flex h-[45px] items-center gap-2 text-sm leading-[1.45] text-[#6f7782]">
+                                                                <Loader2 size={15} className="animate-spin" />
+                                                                Loading PayPal…
+                                                            </div>
                                                         ) : null}
+                                                        <div ref={paypalContainerRef} />
                                                     </>
                                                 ) : (
                                                     <p className="text-sm leading-[1.45] text-[#6f7782]">PayPal is running in placeholder mode — click &quot;Complete order&quot; below to simulate a PayPal order without a live PayPal account.</p>
