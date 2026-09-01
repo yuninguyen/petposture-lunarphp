@@ -55,10 +55,10 @@ describe('DiscountsListPage', () => {
     const { host, root } = renderPage();
 
     for (const key of ['discounts.name', 'discounts.type', 'discounts.status', 'discounts.coupon', 'discounts.starts', 'discounts.ends', 'discounts.actions']) expect(host.textContent).toContain(key);
-    expect(host.querySelector('.bg-emerald-100')).toBeTruthy();
-    expect(host.querySelector('.bg-red-100')).toBeTruthy();
-    expect(host.querySelector('.bg-slate-100')).toBeTruthy();
-    expect(host.querySelector('.bg-blue-100')).toBeTruthy();
+    expect(host.querySelector('.bg-emerald-50')).toBeTruthy();
+    expect(host.querySelector('.bg-red-50')).toBeTruthy();
+    expect(host.querySelector('.bg-slate-50')).toBeTruthy();
+    expect(host.querySelector('.bg-blue-50')).toBeTruthy();
     expect(host.textContent).toContain('—');
     expect(host.querySelectorAll('button[aria-label="discounts.actions"]').length).toBe(4);
 

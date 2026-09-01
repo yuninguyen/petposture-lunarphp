@@ -4,15 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
+import { Badge, type BadgeColor } from '@/components/ui/badge';
 import type { Discount, DiscountStatus } from './api';
 import { useDeleteDiscount, useDiscounts } from './api';
 import { DiscountRowActions } from './DiscountRowActions';
 
-const statusClasses: Record<DiscountStatus, string> = {
-  active: 'bg-emerald-100 text-emerald-700',
-  expired: 'bg-red-100 text-red-700',
-  pending: 'bg-slate-100 text-slate-600',
-  scheduled: 'bg-blue-100 text-blue-700',
+const statusColors: Record<DiscountStatus, BadgeColor> = {
+  active: 'emerald',
+  expired: 'red',
+  pending: 'slate',
+  scheduled: 'blue',
 };
 
 function displayDate(value: string | null): string {
@@ -73,7 +74,7 @@ export function DiscountsListPage() {
                     : discounts.map((discount) => <tr key={discount.id} className="hover:bg-slate-50">
                       <td className="px-6 py-3 text-sm font-semibold text-slate-900">{discount.name}</td>
                       <td className="px-6 py-3 text-sm text-slate-700">{discount.type_label || '—'}</td>
-                      <td className="px-6 py-3 text-sm"><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusClasses[discount.status]}`}>{t(`discounts.status_${discount.status}`)}</span></td>
+                      <td className="px-6 py-3 text-sm"><Badge color={statusColors[discount.status]}>{t(`discounts.status_${discount.status}`)}</Badge></td>
                       <td className="px-6 py-3 text-sm text-slate-700">{discount.coupon || '—'}</td>
                       <td className="px-6 py-3 text-sm text-slate-700">{displayDate(discount.starts_at)}</td>
                       <td className="px-6 py-3 text-sm text-slate-700">{displayDate(discount.ends_at)}</td>

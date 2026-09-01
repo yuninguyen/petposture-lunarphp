@@ -163,7 +163,7 @@ describe('OrderDetailPage', () => {
     expect(visible.host.textContent).toContain('Highest');
     expect(visible.host.textContent).toContain('91');
     expect(visible.host.textContent).toContain('Review before fulfillment');
-    expect(visible.host.querySelector('.bg-red-100')).not.toBeNull();
+    expect(visible.host.querySelector('.bg-red-50')).not.toBeNull();
 
     act(() => visible.root.unmount());
     visible.host.remove();

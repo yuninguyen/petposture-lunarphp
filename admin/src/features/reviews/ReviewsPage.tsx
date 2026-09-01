@@ -2,10 +2,16 @@ import { FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
+import { Badge, type BadgeColor } from '@/components/ui/badge';
 import { Review, ReviewStatus, useDeleteReview, useReviewProducts, useReviews, useUpdateReview } from './api';
 import { ReviewRowActions } from './ReviewRowActions';
 
 const statuses: ReviewStatus[] = ['pending', 'approved', 'rejected'];
+const statusColors: Record<ReviewStatus, BadgeColor> = {
+  pending: 'amber',
+  approved: 'emerald',
+  rejected: 'red',
+};
 
 export function ReviewsPage({ canDelete }: { canDelete: boolean }) {
   const { t } = useTranslation();
@@ -84,7 +90,7 @@ export function ReviewsPage({ canDelete }: { canDelete: boolean }) {
           <td className="px-6 py-4 text-sm text-slate-700">{review.customer_name}</td>
           <td className="px-6 py-4 text-sm text-amber-600">{'★'.repeat(review.rating)}</td>
           <td className="px-6 py-4 text-sm text-slate-700">{review.is_verified ? t('reviews.verified') : t('reviews.not_verified')}</td>
-          <td className="px-6 py-4 text-sm"><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">{t(`reviews.status_${review.status}`)}</span></td>
+          <td className="px-6 py-4 text-sm"><Badge color={statusColors[review.status]}>{t(`reviews.status_${review.status}`)}</Badge></td>
           <td className="px-6 py-4 text-sm text-slate-500">{review.created_at ? new Date(review.created_at).toLocaleDateString() : t('reviews.no_date')}</td>
           <td className="px-6 py-4 text-sm"><ReviewRowActions review={review} canDelete={canDelete} onEdit={setEditingReview} onDelete={setDeletingReview} /></td>
         </tr>)}

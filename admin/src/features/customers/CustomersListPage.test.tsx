@@ -45,7 +45,7 @@ describe('CustomersListPage', () => {
     const inactiveStatus = Array.from(host.querySelectorAll('span')).find((span) => span.textContent === 'customers.status_inactive')!;
     expect(inactiveStatus).toBeTruthy();
     expect(inactiveStatus.className).toContain('inline-flex');
-    expect(inactiveStatus.className).toContain('rounded-full');
+    expect(inactiveStatus.className).toContain('rounded-md');
 
     const customer = Array.from(host.querySelectorAll('button')).find((button) => button.textContent === 'Guest Customer')!;
     act(() => customer.click());

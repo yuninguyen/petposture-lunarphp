@@ -9,8 +9,7 @@ import { fetchJson } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
-
-import { ReactNode } from 'react';
+import { Badge, type BadgeColor } from '@/components/ui/badge';
 
 const columnHelper = createColumnHelper<Post>();
 
@@ -20,23 +19,7 @@ interface BlogCategoryOption {
   slug: string;
 }
 
-const BADGE_COLORS = {
-  emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  slate: 'bg-slate-50 text-slate-700 border-slate-200',
-  blue: 'bg-blue-50 text-blue-700 border-blue-200',
-  amber: 'bg-amber-50 text-amber-700 border-amber-200',
-  red: 'bg-red-50 text-red-700 border-red-200',
-};
-
-function Badge({ children, color = 'slate', className = '' }: { children: ReactNode; color?: keyof typeof BADGE_COLORS; className?: string }) {
-  return (
-    <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-md text-xs font-semibold border ${BADGE_COLORS[color]} ${className}`}>
-      {children}
-    </span>
-  );
-}
-
-const TYPE_BADGE_COLORS: Record<Post['type'], keyof typeof BADGE_COLORS> = {
+const TYPE_BADGE_COLORS: Record<Post['type'], BadgeColor> = {
   article: 'slate',
   guide: 'blue',
   comparison: 'amber',

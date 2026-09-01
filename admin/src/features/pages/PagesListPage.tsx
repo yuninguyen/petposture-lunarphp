@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 import { usePages, useDeletePage, useBulkDeletePages, Page } from './api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { SearchIcon, PlusIcon, PencilIcon, TrashIcon, DotsVerticalIcon } from '@/components/ui/icons';
 
 const columnHelper = createColumnHelper<Page>();
@@ -111,9 +112,9 @@ export function PagesListPage() {
         <div>
           <div className="font-medium text-ink">{info.getValue()}</div>
           {info.row.original.is_core && (
-            <span className="inline-flex items-center rounded bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 mt-1">
+            <Badge color="blue" className="mt-1">
               Core
-            </span>
+            </Badge>
           )}
         </div>
       ),
@@ -126,14 +127,12 @@ export function PagesListPage() {
       header: t('pages.header_status', 'Status'),
       cell: (info) => {
         const status = info.getValue();
-        let colors = 'bg-gray-50 text-gray-600 ring-gray-500/10';
-        if (status === 'published') colors = 'bg-green-50 text-green-700 ring-green-600/20';
-        if (status === 'invisible') colors = 'bg-blue-50 text-blue-700 ring-blue-600/20';
-        
+        const color = status === 'published' ? 'emerald' : status === 'invisible' ? 'blue' : 'slate';
+
         return (
-          <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${colors} capitalize`}>
+          <Badge color={color} className="capitalize">
             {t(`pages.status_${status}`, status)}
-          </span>
+          </Badge>
         );
       },
     }),
