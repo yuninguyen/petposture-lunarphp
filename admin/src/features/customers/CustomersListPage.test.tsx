@@ -55,6 +55,21 @@ describe('CustomersListPage', () => {
     host.remove();
   });
 
+  it('navigates to the customer detail when its accessible View action is clicked', () => {
+    mocks.navigate.mockReset();
+    mocks.useCustomers.mockReturnValue(customerPage(1));
+    const { host, root } = renderPage();
+
+    expect(host.textContent).toContain('common.actions');
+    const view = Array.from(host.querySelectorAll('button')).find((button) => button.getAttribute('aria-label') === 'common.view');
+    expect(view).toBeTruthy();
+    act(() => view!.click());
+    expect(mocks.navigate).toHaveBeenCalledWith('/customers/42');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
   it('issues only a page-one query when search changes from page two', () => {
     mocks.useCustomers.mockImplementation(({ page }: { page: number }) => customerPage(page));
     const { host, root } = renderPage();

@@ -908,6 +908,20 @@ class CheckoutApiTest extends TestCase
         $this->postJson("/api/admin/orders/{$orderId}/return")->assertForbidden();
     }
 
+    public function test_admin_order_resource_formats_total_as_dollars_without_currency_code(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $orderId = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant))->json('order.id');
+
+        $this->makeAdmin();
+
+        $formattedTotal = $this->getJson("/api/admin/orders/{$orderId}")
+            ->assertOk()
+            ->json('data.total.formatted');
+
+        $this->assertMatchesRegularExpression('/^\$\d+\.\d{2}$/', $formattedTotal);
+    }
+
     public function test_admin_order_aliases_filter_by_status_and_return_order_data(): void
     {
         $variant = $this->createPurchasableVariant();

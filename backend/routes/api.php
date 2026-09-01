@@ -273,7 +273,11 @@ Route::prefix('/admin')
             Route::get('/customers/{customer}/orders', [CustomerController::class, 'orders']);
             Route::get('/customers/{customer}/addresses', [CustomerController::class, 'addresses']);
             Route::get('/customers/{customer}/login-accounts', [CustomerController::class, 'loginAccounts']);
+            Route::match(['put', 'patch'], '/customers/{customer}/login-accounts/{user}', [CustomerController::class, 'updateLoginAccount']);
+            Route::match(['put', 'patch'], '/customers/{customer}/addresses/{address}', [CustomerController::class, 'updateAddress']);
+            Route::delete('/customers/{customer}/addresses/{address}', [CustomerController::class, 'destroyAddress']);
             Route::get('/customers/{customer}', [CustomerController::class, 'show']);
+            Route::match(['put', 'patch'], '/customers/{customer}', [CustomerController::class, 'update']);
 
             Route::get('/shipping-methods', [ShippingMethodController::class, 'index']);
             Route::post('/shipping-methods', [ShippingMethodController::class, 'store']);

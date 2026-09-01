@@ -1,75 +1,85 @@
-import { useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
-import { useCustomer, useCustomerAddresses, useCustomerLoginAccounts, useCustomerOrders } from './api';
+import { Input } from '@/components/ui/input';
+import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
+import { EyeIcon, PencilIcon, TrashIcon } from '@/components/ui/icons';
+import { Customer, CustomerAddress, CustomerAddressUpdatePayload, CustomerLoginAccount, CustomerLoginAccountUpdatePayload, CustomerUpdatePayload, deleteCustomerAddress, updateCustomer, updateCustomerAddress, updateCustomerLoginAccount, useCustomer, useCustomerAddresses, useCustomerLoginAccounts, useCustomerOrders } from './api';
 
 type Tab = 'orders' | 'addresses' | 'accounts';
+
+const money = (cents: number | null) => `$${((cents ?? 0) / 100).toFixed(2)}`;
+const nullable = (value: string) => value.trim() || null;
 
 export function CustomerDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('orders');
   const [ordersPage, setOrdersPage] = useState(1);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
+  const [deletingAddress, setDeletingAddress] = useState<CustomerAddress | null>(null);
+  const [editingAccount, setEditingAccount] = useState<CustomerLoginAccount | null>(null);
   const customerQuery = useCustomer(id);
   const ordersQuery = useCustomerOrders(id, ordersPage, tab === 'orders');
   const addressesQuery = useCustomerAddresses(id, tab === 'addresses');
   const accountsQuery = useCustomerLoginAccounts(id, tab === 'accounts');
   const customer = customerQuery.data;
+  const invalidate = (key: 'addresses' | 'login-accounts' | undefined) => {
+    queryClient.invalidateQueries({ queryKey: ['customers', id] });
+    if (key) queryClient.invalidateQueries({ queryKey: ['customers', id, key] });
+  };
+  const customerMutation = useMutation({ mutationFn: (payload: CustomerUpdatePayload) => updateCustomer(id!, payload), onSuccess: () => { invalidate(undefined); toast.success(t('customers.update_success')); setDetailsOpen(false); }, onError: (error: Error) => toast.error(error.message || t('customers.update_error')) });
+  const addressMutation = useMutation({ mutationFn: ({ addressId, payload }: { addressId: number; payload: CustomerAddressUpdatePayload }) => updateCustomerAddress(id!, addressId, payload), onSuccess: () => { invalidate('addresses'); toast.success(t('customers.address_update_success')); setEditingAddress(null); }, onError: (error: Error) => toast.error(error.message || t('customers.address_update_error')) });
+  const deleteMutation = useMutation({ mutationFn: (addressId: number) => deleteCustomerAddress(id!, addressId), onSuccess: () => { invalidate('addresses'); toast.success(t('customers.address_delete_success')); setDeletingAddress(null); }, onError: (error: Error) => toast.error(error.message || t('customers.address_delete_error')) });
+  const accountMutation = useMutation({ mutationFn: ({ userId, payload }: { userId: number; payload: CustomerLoginAccountUpdatePayload }) => updateCustomerLoginAccount(id!, userId, payload), onSuccess: () => { invalidate('login-accounts'); toast.success(t('customers.login_account_update_success')); setEditingAccount(null); }, onError: (error: Error) => toast.error(error.message || t('customers.login_account_update_error')) });
 
   if (customerQuery.isLoading) return <PageState text={t('customers.loading')} />;
   if (customerQuery.isError || !customer) return <PageState text={customerQuery.isError ? (customerQuery.error as Error).message : t('customers.not_found')} error />;
+  const average = customer.orders_count ? money((customer.orders_sum_total ?? 0) / customer.orders_count) : '—';
 
   return <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
     <header className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h1 className="text-2xl font-bold text-slate-900">{customer.name}</h1>
-      <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Detail label={t('customers.column_email')} value={customer.email ?? t('customers.guest')} />
-        <Detail label={t('customers.column_total_orders')} value={String(customer.orders_count)} />
-        <Detail label={t('customers.column_total_spent')} value={`$${((customer.orders_sum_total ?? 0) / 100).toFixed(2)}`} />
-        <Detail label={t('customers.column_status')} value={t(`customers.status_${customer.status}`)} />
-      </dl>
+      <div className="flex items-start justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">{customer.name}</h1><p className="mt-1 text-sm text-slate-500">{customer.email ?? t('customers.guest')}</p></div><Button onClick={() => setDetailsOpen(true)} aria-label={t('customers.edit')}>{t('customers.edit')}</Button></div>
+      <div className="mt-6 grid gap-4 sm:grid-cols-3"><Stat label={t('customers.total_orders')} value={String(customer.orders_count)} /><Stat label={t('customers.average_spend')} value={average} /><Stat label={t('customers.total_spend')} value={money(customer.orders_sum_total)} /></div>
     </header>
-
-    <div className="mt-6 flex gap-2 border-b border-slate-200" role="tablist">
-      <TabButton active={tab === 'orders'} onClick={() => setTab('orders')}>{t('customers.orders')}</TabButton>
-      <TabButton active={tab === 'addresses'} onClick={() => setTab('addresses')}>{t('customers.address_book')}</TabButton>
-      <TabButton active={tab === 'accounts'} onClick={() => setTab('accounts')}>{t('customers.login_accounts')}</TabButton>
+    <div className="mt-6 flex gap-2" role="tablist">
+      <TabButton active={tab === 'orders'} onClick={() => setTab('orders')}>{t('customers.orders')}</TabButton><TabButton active={tab === 'addresses'} onClick={() => setTab('addresses')}>{t('customers.address_book')}</TabButton><TabButton active={tab === 'accounts'} onClick={() => setTab('accounts')}>{t('customers.login_accounts')}</TabButton>
     </div>
-
-    <section className="rounded-b-xl border border-t-0 border-slate-200 bg-white p-6 shadow-sm">
+    <section className="mt-3 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       {tab === 'orders' && <OrdersTab query={ordersQuery} page={ordersPage} onPageChange={setOrdersPage} />}
-      {tab === 'addresses' && <AddressesTab query={addressesQuery} />}
-      {tab === 'accounts' && <AccountsTab query={accountsQuery} />}
+      {tab === 'addresses' && <AddressesTab query={addressesQuery} onEdit={setEditingAddress} onDelete={setDeletingAddress} />}
+      {tab === 'accounts' && <AccountsTab query={accountsQuery} onEdit={setEditingAccount} />}
     </section>
+    <CustomerDetailsModal open={detailsOpen} customer={customer} saving={customerMutation.isPending} onClose={() => setDetailsOpen(false)} onSubmit={(payload) => customerMutation.mutate(payload)} />
+    <AddressModal address={editingAddress} saving={addressMutation.isPending} onClose={() => setEditingAddress(null)} onSubmit={(payload) => editingAddress && addressMutation.mutate({ addressId: editingAddress.id, payload })} />
+    <LoginAccountModal account={editingAccount} saving={accountMutation.isPending} onClose={() => setEditingAccount(null)} onSubmit={(payload) => editingAccount && accountMutation.mutate({ userId: editingAccount.id, payload })} />
+    <DeleteConfirmModal open={Boolean(deletingAddress)} title={t('customers.delete_address_title')} message={t('customers.delete_address_warning', { name: deletingAddress?.title ?? t('customers.address') })} isLoading={deleteMutation.isPending} onClose={() => setDeletingAddress(null)} onConfirm={() => deletingAddress && deleteMutation.mutate(deletingAddress.id)} />
   </div>;
 }
 
-function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return <button role="tab" aria-selected={active} onClick={onClick} className={`border-b-2 px-4 py-3 text-sm font-medium ${active ? 'border-primary text-primary' : 'border-transparent text-slate-500'}`}>{children}</button>;
-}
+function Stat({ label, value }: { label: string; value: string }) { return <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-medium text-slate-500">{label}</p><p className="mt-1 text-2xl font-bold text-slate-900">{value}</p></div>; }
+function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) { return <button role="tab" aria-selected={active} onClick={onClick} className={`rounded-full border px-4 py-2 text-sm font-medium ${active ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>{children}</button>; }
 
 function OrdersTab({ query, page, onPageChange }: { query: ReturnType<typeof useCustomerOrders>; page: number; onPageChange: (page: number) => void }) {
-  const { t } = useTranslation();
-  if (query.isLoading) return <PageState text={t('customers.loading')} />;
-  if (query.isError) return <PageState text={(query.error as Error).message} error />;
-  const orders = query.data?.data ?? [];
-  return <><div className="overflow-x-auto"><table className="w-full"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-slate-500"><th className="px-3 py-3">{t('customers.order_reference')}</th><th className="px-3 py-3">{t('customers.status')}</th><th className="px-3 py-3">{t('customers.order_total')}</th><th className="px-3 py-3">{t('customers.order_date')}</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id} className="border-b border-slate-100 text-sm"><td className="px-3 py-3"><Link to={`/orders/${order.id}`} className="font-medium text-primary">{order.reference}</Link></td><td className="px-3 py-3">{order.status_label ?? order.status}</td><td className="px-3 py-3">{order.total.formatted}</td><td className="px-3 py-3">{order.created_at ? new Date(order.created_at).toLocaleDateString() : t('customers.not_available')}</td></tr>)}</tbody></table></div>{!orders.length && <PageState text={t('customers.orders_empty')} />}{query.data && query.data.meta.last_page > 1 && <div className="mt-4 flex items-center justify-between"><span className="text-sm text-slate-500">{t('customers.page_of', { current: query.data.meta.current_page, last: query.data.meta.last_page })}</span><div className="flex gap-2"><Button variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>{t('customers.previous')}</Button><Button variant="secondary" disabled={page >= query.data.meta.last_page} onClick={() => onPageChange(page + 1)}>{t('customers.next')}</Button></div></div>}</>;
+  const { t } = useTranslation(); if (query.isLoading) return <PageState text={t('customers.loading')} />; if (query.isError) return <PageState text={(query.error as Error).message} error />; const orders = query.data?.data ?? [];
+  return <><div className="overflow-x-auto"><table className="w-full"><thead><tr className="border-b text-left text-xs uppercase tracking-wide text-slate-500"><th className="px-3 py-3">{t('customers.order_reference')}</th><th className="px-3 py-3">{t('customers.status')}</th><th className="px-3 py-3">{t('customers.order_total')}</th><th className="px-3 py-3">{t('customers.order_date')}</th><th className="px-3 py-3">{t('customers.actions')}</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id} className="border-b border-slate-100 text-sm"><td className="px-3 py-3"><Link to={`/orders/${order.id}`} className="font-medium text-primary">{order.reference}</Link></td><td className="px-3 py-3">{order.status_label ?? order.status}</td><td className="px-3 py-3">{order.total.formatted}</td><td className="px-3 py-3">{order.created_at ? new Date(order.created_at).toLocaleDateString() : t('customers.not_available')}</td><td className="px-3 py-3"><Link to={`/orders/${order.id}`} aria-label={t('customers.view_order')} className="inline-flex rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-primary"><EyeIcon /></Link></td></tr>)}</tbody></table></div>{!orders.length && <PageState text={t('customers.orders_empty')} />}{query.data && query.data.meta.last_page > 1 && <div className="mt-4 flex items-center justify-between"><span className="text-sm text-slate-500">{t('customers.page_of', { current: query.data.meta.current_page, last: query.data.meta.last_page })}</span><div className="flex gap-2"><Button variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>{t('customers.previous')}</Button><Button variant="secondary" disabled={page >= query.data.meta.last_page} onClick={() => onPageChange(page + 1)}>{t('customers.next')}</Button></div></div>}</>;
 }
 
-function AddressesTab({ query }: { query: ReturnType<typeof useCustomerAddresses> }) {
-  const { t } = useTranslation();
-  if (query.isLoading) return <PageState text={t('customers.loading')} />;
-  if (query.isError) return <PageState text={(query.error as Error).message} error />;
-  return <div className="space-y-4">{(query.data ?? []).map((address) => <article key={address.id} className="rounded-lg border border-slate-200 p-4 text-sm text-slate-700"><div className="flex flex-wrap items-center gap-2"><h2 className="font-semibold text-slate-900">{address.title ?? t('customers.address')}</h2>{address.shipping_default && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{t('customers.shipping_default')}</span>}{address.billing_default && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{t('customers.billing_default')}</span>}</div><p className="mt-2">{[address.first_name, address.last_name].filter(Boolean).join(' ')}</p><p>{address.line_one}</p>{address.line_two && <p>{address.line_two}</p>}{address.line_three && <p>{address.line_three}</p>}<p>{[address.city, address.state, address.postcode].filter(Boolean).join(', ')}</p><p>{address.contact_phone}</p><p>{address.contact_email}</p><p className="mt-2 text-slate-500">{t('customers.column_joined')}: {address.created_at ? new Date(address.created_at).toLocaleDateString() : t('customers.not_available')}</p></article>)}{!query.data?.length && <PageState text={t('customers.addresses_empty')} />}</div>;
-}
+function AddressesTab({ query, onEdit, onDelete }: { query: ReturnType<typeof useCustomerAddresses>; onEdit: (address: CustomerAddress) => void; onDelete: (address: CustomerAddress) => void }) { const { t } = useTranslation(); if (query.isLoading) return <PageState text={t('customers.loading')} />; if (query.isError) return <PageState text={(query.error as Error).message} error />; return <div className="space-y-4">{(query.data ?? []).map((address) => <article key={address.id} className="rounded-lg border border-slate-200 p-4 text-sm text-slate-700"><div className="flex flex-wrap items-center justify-between gap-2"><div className="flex flex-wrap items-center gap-2"><h2 className="font-semibold text-slate-900">{address.title ?? t('customers.address')}</h2>{address.shipping_default && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{t('customers.shipping_default')}</span>}{address.billing_default && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{t('customers.billing_default')}</span>}</div><div className="flex gap-1"><button type="button" aria-label={t('customers.edit_address')} onClick={() => onEdit(address)} className="rounded p-1 text-slate-500 hover:bg-slate-100"><PencilIcon /></button><button type="button" aria-label={t('customers.delete_address')} onClick={() => onDelete(address)} className="rounded p-1 text-red-600 hover:bg-red-50"><TrashIcon /></button></div></div><p className="mt-2">{[address.first_name, address.last_name].filter(Boolean).join(' ')}</p><p>{address.line_one}</p>{address.line_two && <p>{address.line_two}</p>}{address.line_three && <p>{address.line_three}</p>}<p>{[address.city, address.state, address.postcode].filter(Boolean).join(', ')}</p><p>{address.contact_phone}</p><p>{address.contact_email}</p><p className="mt-2 text-slate-500">{t('customers.column_joined')}: {address.created_at ? new Date(address.created_at).toLocaleDateString() : t('customers.not_available')}</p></article>)}{!query.data?.length && <PageState text={t('customers.addresses_empty')} />}</div>; }
+function AccountsTab({ query, onEdit }: { query: ReturnType<typeof useCustomerLoginAccounts>; onEdit: (account: CustomerLoginAccount) => void }) { const { t } = useTranslation(); if (query.isLoading) return <PageState text={t('customers.loading')} />; if (query.isError) return <PageState text={(query.error as Error).message} error />; return <div className="divide-y divide-slate-100">{(query.data ?? []).map((account) => <div key={account.id} className="flex items-center justify-between py-3 text-sm text-slate-700"><span>{account.email}</span><button type="button" aria-label={t('customers.edit_login_account')} onClick={() => onEdit(account)} className="inline-flex rounded p-1 text-slate-500 hover:bg-slate-100"><PencilIcon /></button></div>)}{!query.data?.length && <PageState text={t('customers.login_accounts_empty')} />}</div>; }
 
-function AccountsTab({ query }: { query: ReturnType<typeof useCustomerLoginAccounts> }) {
-  const { t } = useTranslation();
-  if (query.isLoading) return <PageState text={t('customers.loading')} />;
-  if (query.isError) return <PageState text={(query.error as Error).message} error />;
-  return <div className="divide-y divide-slate-100">{(query.data ?? []).map((account) => <p key={account.id} className="py-3 text-sm text-slate-700">{account.email}</p>)}{!query.data?.length && <PageState text={t('customers.login_accounts_empty')} />}</div>;
-}
+function Modal({ open, title, children }: { open: boolean; title: string; children: React.ReactNode }) { if (!open) return null; return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"><div className="w-full max-w-lg rounded-xl bg-white shadow-2xl" role="dialog" aria-modal="true"><div className="border-b border-slate-200 px-5 py-4"><h2 className="text-lg font-semibold text-slate-900">{title}</h2></div>{children}</div></div>; }
+function Field({ id, label, value, onChange, readOnly = false, type = 'text' }: { id: string; label: string; value: string; onChange?: (value: string) => void; readOnly?: boolean; type?: string }) { return <label className="block text-sm font-medium text-slate-700">{label}<Input id={id} type={type} value={value} readOnly={readOnly} onChange={(event) => onChange?.(event.target.value)} className="mt-1" /></label>; }
 
-function Detail({ label, value }: { label: string; value: string }) { return <div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</dt><dd className="mt-1 text-sm text-slate-900">{value}</dd></div>; }
+function CustomerDetailsModal({ open, customer, saving, onClose, onSubmit }: { open: boolean; customer: Customer; saving: boolean; onClose: () => void; onSubmit: (payload: CustomerUpdatePayload) => void }) { const { t } = useTranslation(); const [values, setValues] = useState<CustomerUpdatePayload>({ first_name: null, last_name: null, company_name: null, tax_identifier: null }); useEffect(() => { if (open) setValues({ first_name: customer.first_name ?? null, last_name: customer.last_name ?? null, company_name: customer.company_name ?? null, tax_identifier: customer.tax_identifier ?? null }); }, [customer, open]); return <Modal open={open} title={t('customers.edit_details')}><form data-customer-details-form onSubmit={(event) => { event.preventDefault(); onSubmit(values); }}><div className="grid gap-4 p-5 sm:grid-cols-2"><Field id="customer-first_name" label={t('customers.first_name')} value={values.first_name ?? ''} onChange={(value) => setValues({ ...values, first_name: nullable(value) })} /><Field id="customer-last_name" label={t('customers.last_name')} value={values.last_name ?? ''} onChange={(value) => setValues({ ...values, last_name: nullable(value) })} /><Field id="customer-company_name" label={t('customers.company_name')} value={values.company_name ?? ''} onChange={(value) => setValues({ ...values, company_name: nullable(value) })} /><Field id="customer-tax_identifier" label={t('customers.tax_identifier')} value={values.tax_identifier ?? ''} onChange={(value) => setValues({ ...values, tax_identifier: nullable(value) })} /><Field id="customer-email" label={t('customers.column_email')} value={customer.email ?? ''} readOnly /><Field id="customer-phone" label={t('customers.phone')} value={customer.phone ?? ''} readOnly /></div><ModalActions saving={saving} onClose={onClose} /></form></Modal>; }
+
+function AddressModal({ address, saving, onClose, onSubmit }: { address: CustomerAddress | null; saving: boolean; onClose: () => void; onSubmit: (payload: CustomerAddressUpdatePayload) => void }) { const { t } = useTranslation(); const [values, setValues] = useState<CustomerAddressUpdatePayload | null>(null); useEffect(() => { if (address) { const { id, created_at, ...payload } = address; setValues(payload); } }, [address]); if (!address || !values) return null; const text = (key: Exclude<keyof CustomerAddressUpdatePayload, 'shipping_default' | 'billing_default'>, value: string) => setValues({ ...values, [key]: nullable(value) }); return <Modal open title={t('customers.edit_address_title')}><form data-address-form onSubmit={(event) => { event.preventDefault(); onSubmit(values); }}><div className="grid gap-4 p-5 sm:grid-cols-2">{(['title', 'first_name', 'last_name', 'line_one', 'line_two', 'line_three', 'city', 'state', 'postcode', 'contact_phone', 'contact_email'] as const).map((key) => <Field key={key} id={`address-${key}`} label={t(`customers.${key}`)} value={values[key] ?? ''} onChange={(value) => text(key, value)} />)}<label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={values.shipping_default} onChange={(event) => setValues({ ...values, shipping_default: event.target.checked })} />{t('customers.shipping_default')}</label><label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={values.billing_default} onChange={(event) => setValues({ ...values, billing_default: event.target.checked })} />{t('customers.billing_default')}</label></div><ModalActions saving={saving} onClose={onClose} /></form></Modal>; }
+
+function LoginAccountModal({ account, saving, onClose, onSubmit }: { account: CustomerLoginAccount | null; saving: boolean; onClose: () => void; onSubmit: (payload: CustomerLoginAccountUpdatePayload) => void }) { const { t } = useTranslation(); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [confirmation, setConfirmation] = useState(''); const [error, setError] = useState(''); useEffect(() => { if (account) { setEmail(account.email); setPassword(''); setConfirmation(''); setError(''); } }, [account]); if (!account) return null; const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (password !== confirmation) { setError(t('customers.password_mismatch')); return; } const payload: CustomerLoginAccountUpdatePayload = { email }; if (password) { payload.password = password; payload.password_confirmation = confirmation; } onSubmit(payload); }; return <Modal open title={t('customers.edit_login_account_title')}><form data-login-account-form onSubmit={submit}><div className="space-y-4 p-5"><Field id="login-email" label={t('customers.column_email')} value={email} onChange={setEmail} type="email" /><Field id="login-password" label={t('customers.new_password')} value={password} onChange={setPassword} type="password" /><Field id="login-password_confirmation" label={t('customers.confirm_password')} value={confirmation} onChange={setConfirmation} type="password" />{error && <p className="text-sm text-red-600">{error}</p>}</div><ModalActions saving={saving} onClose={onClose} /></form></Modal>; }
+function ModalActions({ saving, onClose }: { saving: boolean; onClose: () => void }) { const { t } = useTranslation(); return <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4"><Button type="button" variant="secondary" onClick={onClose} disabled={saving}>{t('common.cancel')}</Button><Button type="submit" disabled={saving}>{t('customers.save')}</Button></div>; }
 function PageState({ text, error = false }: { text: string; error?: boolean }) { return <p className={`py-8 text-center text-sm ${error ? 'text-red-600' : 'text-slate-500'}`}>{text}</p>; }

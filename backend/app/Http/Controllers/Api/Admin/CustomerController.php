@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Lunar\Models\Address;
 use Lunar\Models\Customer;
 use Lunar\Models\Order;
@@ -61,7 +64,52 @@ class CustomerController extends Controller
             ->loadCount('orders')
             ->loadSum('orders', 'total');
 
-        return response()->json($this->resource($customer));
+        return response()->json($this->detailResource($customer));
+    }
+
+    public function update(Customer $customer, Request $request): JsonResponse
+    {
+        $customer->fill($request->validate([
+            'first_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'last_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'company_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'tax_identifier' => ['sometimes', 'nullable', 'string', 'max:255'],
+        ]));
+        $customer->save();
+
+        return $this->show($customer->refresh());
+    }
+
+    public function updateAddress(Customer $customer, Address $address, Request $request): JsonResponse
+    {
+        $this->ensureAddressBelongsToCustomer($customer, $address);
+
+        $address->fill($request->validate([
+            'title' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'first_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'last_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'line_one' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'line_two' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'line_three' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'city' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'state' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'postcode' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'contact_phone' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'contact_email' => ['sometimes', 'nullable', 'email', 'max:255'],
+            'shipping_default' => ['sometimes', 'boolean'],
+            'billing_default' => ['sometimes', 'boolean'],
+        ]));
+        $address->save();
+
+        return response()->json($this->address($address));
+    }
+
+    public function destroyAddress(Customer $customer, Address $address): JsonResponse
+    {
+        $this->ensureAddressBelongsToCustomer($customer, $address);
+        $address->delete();
+
+        return response()->json(null, 204);
     }
 
     public function orders(Customer $customer, Request $request): JsonResponse
@@ -118,6 +166,35 @@ class CustomerController extends Controller
         ]);
     }
 
+    public function updateLoginAccount(Customer $customer, User $user, Request $request): JsonResponse
+    {
+        abort_unless($customer->users()->whereKey($user->getKey())->exists(), 404);
+
+        if (blank($request->input('password'))) {
+            $request->merge(['password' => null, 'password_confirmation' => null]);
+        }
+
+        $validated = $request->validate([
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user)],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user->email = $validated['email'];
+
+        if (filled($validated['password'] ?? null)) {
+            $user->password = Hash::make($validated['password']);
+        }
+
+        $user->save();
+
+        return response()->json([
+            'data' => [
+                'id' => $user->id,
+                'email' => $user->email,
+            ],
+        ]);
+    }
+
     private function resource(Customer $customer): array
     {
         $user = $customer->users->first();
@@ -133,6 +210,28 @@ class CustomerController extends Controller
         ];
     }
 
+    private function detailResource(Customer $customer): array
+    {
+        $resource = $this->resource($customer);
+        $user = $customer->users->sortBy('id')->first();
+        $address = $customer->addresses()->orderBy('id')->first();
+
+        return [
+            ...$resource,
+            'email' => $user?->email,
+            'first_name' => $customer->first_name,
+            'last_name' => $customer->last_name,
+            'company_name' => $customer->company_name,
+            'tax_identifier' => $customer->tax_identifier,
+            'phone' => $address?->contact_phone,
+        ];
+    }
+
+    private function ensureAddressBelongsToCustomer(Customer $customer, Address $address): void
+    {
+        abort_unless($address->customer_id === $customer->id, 404);
+    }
+
     private function orderSummary(Order $order): array
     {
         $decimal = $this->decimal($order->total);
@@ -143,7 +242,7 @@ class CustomerController extends Controller
             'status' => $order->status,
             'status_label' => $order->status_label,
             'total' => [
-                'formatted' => '$'.number_format($decimal, 2).' '.$order->currency_code,
+                'formatted' => '$'.number_format($decimal, 2),
                 'decimal' => round($decimal, 2),
                 'currency' => $order->currency_code,
             ],
