@@ -2,14 +2,16 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ navigate: vi.fn(), refund: vi.fn(), returnOrder: vi.fn(), toastError: vi.fn(), toastSuccess: vi.fn(), order: { id: '42', reference: 'ORD-42', customer_email: 'customer@example.com', status: 'processing', status_label: 'Processing', payment_status: 'paid', payment_status_label: 'Paid', fulfillment_status: 'unfulfilled', fulfillment_status_label: 'Unfulfilled', refund_status: 'partially_refunded', refund_amount: 450, coupon_code: 'SAVE10', total: { formatted: '$12.50 USD', decimal: 12.5, currency: 'USD' }, sub_total: 15, discount_total: 5, shipping_total: 0, shipping_label: 'Express', tax_total: 2.5, lines: [{ id: 1, type: 'product', description: 'Orthopedic Bed', quantity: 2, unit_price: 7.5, sub_total: 15, discount_total: 0, tax_total: 0, total: 15, image: null }], attribution_origin: 'newsletter', attribution_device_type: 'mobile', attribution_session_page_views: 4, fraud_risk_level: null as string | null, fraud_risk_score: null as number | null, fraud_seller_message: null as string | null, shipping_address: {}, billing_address: {}, order_events: [{ type: 'shipped', title: 'Shipped second', detail: null, created_at: '2026-08-30 12:00:00' }, { type: 'created', title: 'Created first', detail: null, created_at: '2026-08-29 12:00:00' }] } }));
+const mocks = vi.hoisted(() => ({ navigate: vi.fn(), refund: vi.fn(), returnOrder: vi.fn(), action: vi.fn(), shipment: vi.fn(), refetch: vi.fn(), toastError: vi.fn(), toastSuccess: vi.fn(), order: { id: '42', reference: 'ORD-42', customer_email: 'customer@example.com', status: 'processing', status_label: 'Processing', payment_status: 'paid', payment_status_label: 'Paid', fulfillment_status: 'unfulfilled', fulfillment_status_label: 'Unfulfilled', refund_status: 'partially_refunded', refund_amount: 450, coupon_code: 'SAVE10', total: { formatted: '$12.50 USD', decimal: 12.5, currency: 'USD' }, sub_total: 15, discount_total: 5, shipping_total: 0, shipping_label: 'Express', tax_total: 2.5, lines: [{ id: 1, type: 'product', description: 'Orthopedic Bed', quantity: 2, unit_price: 7.5, sub_total: 15, discount_total: 0, tax_total: 0, total: 15, image: null }], attribution_origin: 'newsletter', attribution_device_type: 'mobile', attribution_session_page_views: 4, fraud_risk_level: null as string | null, fraud_risk_score: null as number | null, fraud_seller_message: null as string | null, shipping_address: {}, billing_address: {}, order_events: [{ type: 'shipped', title: 'Shipped second', detail: null, created_at: '2026-08-30 12:00:00' }, { type: 'created', title: 'Created first', detail: null, created_at: '2026-08-29 12:00:00' }], available_actions: [{ action: 'cancelOrder', label: 'Cancel order' }, { action: 'capturePayment', label: 'Capture payment' }, { action: 'markShipped', label: 'Mark shipped' }], remaining_shippable_quantities: { '1': 2 }, refund_reason_options: [{ value: 'customer_request', label: 'Customer request' }, { value: 'duplicate', label: 'Duplicate order' }] } }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate, useParams: () => ({ id: '42' }) }));
 vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError, success: mocks.toastSuccess } }));
 vi.mock('./api', () => ({
-  useOrder: () => ({ isLoading: false, isError: false, data: mocks.order }),
+  useOrder: () => ({ isLoading: false, isError: false, data: mocks.order, refetch: mocks.refetch }),
   useRefundOrder: () => ({ mutateAsync: mocks.refund, isPending: false }),
   useReturnOrder: () => ({ mutateAsync: mocks.returnOrder, isPending: false }),
+  useOrderAction: () => ({ mutateAsync: mocks.action, isPending: false }),
+  useCreateShipment: () => ({ mutateAsync: mocks.shipment, isPending: false }),
 }));
 
 import { OrderDetailPage } from './OrderDetailPage';
@@ -28,19 +30,29 @@ function button(host: HTMLElement, text: string) {
   return Array.from(host.querySelectorAll('button')).find((candidate) => candidate.textContent === text)!;
 }
 
-function changeValue(input: HTMLInputElement, value: string) {
-  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+function changeValue(input: HTMLInputElement | HTMLSelectElement, value: string) {
+  const prototype = input instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
   setter?.call(input, value);
-  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(new Event(input instanceof HTMLSelectElement ? 'change' : 'input', { bubbles: true }));
 }
 
 beforeEach(() => {
   mocks.refund.mockReset();
   mocks.returnOrder.mockReset();
+  mocks.action.mockReset();
+  mocks.shipment.mockReset();
+  mocks.refetch.mockReset();
   mocks.toastError.mockReset();
   mocks.toastSuccess.mockReset();
   mocks.refund.mockResolvedValue({ id: '42' });
   mocks.returnOrder.mockResolvedValue({ id: '42' });
+  mocks.action.mockResolvedValue({ id: '42' });
+  mocks.shipment.mockResolvedValue({ id: '42' });
+  mocks.refetch.mockResolvedValue({});
+  mocks.order.available_actions = [{ action: 'cancelOrder', label: 'Cancel order' }, { action: 'capturePayment', label: 'Capture payment' }, { action: 'markShipped', label: 'Mark shipped' }];
+  mocks.order.remaining_shippable_quantities = { '1': 2 };
+  mocks.order.refund_reason_options = [{ value: 'customer_request', label: 'Customer request' }, { value: 'duplicate', label: 'Duplicate order' }];
 });
 
 describe('OrderDetailPage', () => {
@@ -68,10 +80,11 @@ describe('OrderDetailPage', () => {
     act(() => button(host, 'orders.refund').click());
     const input = host.querySelector('input[type="number"]') as HTMLInputElement;
     act(() => changeValue(input, '4.25'));
+    act(() => changeValue(host.querySelector('select[name="refund-reason"]') as HTMLSelectElement, 'customer_request'));
 
     await act(async () => button(host, 'common.confirm').click());
 
-    expect(mocks.refund).toHaveBeenCalledWith({ id: '42', amount: 4.25 });
+    expect(mocks.refund).toHaveBeenCalledWith({ id: '42', amount: 4.25, reason: 'customer_request' });
     expect(mocks.toastSuccess).toHaveBeenCalledWith('orders.refund_success');
     expect(host.querySelector('input[type="number"]')).toBeNull();
 
@@ -92,9 +105,10 @@ describe('OrderDetailPage', () => {
 
     mocks.refund.mockRejectedValueOnce(new Error('Refund rejected'));
     act(() => changeValue(host.querySelector('input[type="number"]') as HTMLInputElement, '4.25'));
+    act(() => changeValue(host.querySelector('select[name="refund-reason"]') as HTMLSelectElement, 'customer_request'));
     await act(async () => button(host, 'common.confirm').click());
 
-    expect(mocks.refund).toHaveBeenCalledWith({ id: '42', amount: 4.25 });
+    expect(mocks.refund).toHaveBeenCalledWith({ id: '42', amount: 4.25, reason: 'customer_request' });
     expect(mocks.toastError).toHaveBeenCalledWith('Refund rejected');
     expect((host.querySelector('input[type="number"]') as HTMLInputElement).value).toBe('4.25');
 
@@ -183,6 +197,90 @@ describe('OrderDetailPage', () => {
     expect(mocks.returnOrder).toHaveBeenCalledWith({ id: '42' });
     expect(mocks.toastError).toHaveBeenCalledWith('Return rejected');
     expect(host.textContent).toContain('orders.return_confirm');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('renders available generic actions but excludes markShipped and styles cancellation as danger', () => {
+    const { host, root } = renderPage();
+
+    expect(button(host, 'Cancel order').className).toContain('bg-red-600');
+    expect(button(host, 'Capture payment')).toBeTruthy();
+    expect(Array.from(host.querySelectorAll('button')).map((candidate) => candidate.textContent)).not.toContain('Mark shipped');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('opens a shipment form with manual carrier and exact remaining quantities, then submits selected positive items', async () => {
+    const { host, root } = renderPage();
+    act(() => button(host, 'orders.mark_shipped').click());
+
+    const carrier = host.querySelector('select[name="carrier"]') as HTMLSelectElement;
+    expect(carrier.value).toBe('manual');
+    expect(Array.from(carrier.options).map((option) => option.text)).toEqual(['orders.carrier_ups', 'orders.carrier_usps', 'orders.carrier_fedex', 'orders.carrier_dhl', 'orders.carrier_manual']);
+    expect((host.querySelector('input[name="shipment-quantity-1"]') as HTMLInputElement).value).toBe('2');
+    expect(host.textContent).toContain('Orthopedic Bed');
+    act(() => changeValue(host.querySelector('input[name="tracking-number"]') as HTMLInputElement, 'TRACK-123'));
+    act(() => changeValue(carrier, 'ups'));
+    act(() => changeValue(host.querySelector('input[name="shipment-quantity-1"]') as HTMLInputElement, '1'));
+
+    await act(async () => button(host, 'common.confirm').click());
+
+    expect(mocks.action).toHaveBeenCalledWith({ id: '42', action: 'markShipped' });
+    expect(mocks.shipment).toHaveBeenCalledWith({ id: '42', payload: { tracking_number: 'TRACK-123', shipment_carrier: 'ups', items: [{ order_line_id: 1, quantity: 1 }] } });
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('does not create a shipment when markShipped fails, and refetches after a shipment failure', async () => {
+    const { host, root } = renderPage();
+    act(() => button(host, 'orders.mark_shipped').click());
+    act(() => changeValue(host.querySelector('input[name="tracking-number"]') as HTMLInputElement, 'TRACK-123'));
+    mocks.action.mockRejectedValueOnce(new Error('Action rejected'));
+
+    await act(async () => button(host, 'common.confirm').click());
+
+    expect(mocks.shipment).not.toHaveBeenCalled();
+    expect(mocks.refetch).not.toHaveBeenCalled();
+    expect(mocks.toastError).toHaveBeenCalledWith('Action rejected');
+
+    mocks.action.mockResolvedValueOnce({ id: '42' });
+    mocks.shipment.mockRejectedValueOnce(new Error('Shipment rejected'));
+    await act(async () => button(host, 'common.confirm').click());
+
+    expect(mocks.action).toHaveBeenLastCalledWith({ id: '42', action: 'markShipped' });
+    expect(mocks.refetch).toHaveBeenCalledTimes(1);
+    expect(mocks.toastError).toHaveBeenCalledWith('Shipment rejected');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('requires an API-provided refund reason and includes it in the refund payload', async () => {
+    const { host, root } = renderPage();
+    act(() => button(host, 'orders.refund').click());
+
+    const reason = host.querySelector('select[name="refund-reason"]') as HTMLSelectElement;
+    expect(Array.from(reason.options).map((option) => option.text)).toEqual(['orders.refund_reason_placeholder', 'Customer request', 'Duplicate order']);
+    await act(async () => button(host, 'common.confirm').click());
+    expect(mocks.refund).not.toHaveBeenCalled();
+
+    act(() => changeValue(reason, 'duplicate'));
+    await act(async () => button(host, 'common.confirm').click());
+    expect(mocks.refund).toHaveBeenCalledWith({ id: '42', amount: undefined, reason: 'duplicate' });
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('hides shipment controls when every remaining shippable quantity is zero', () => {
+    mocks.order.remaining_shippable_quantities = { '1': 0 };
+    const { host, root } = renderPage();
+
+    expect(Array.from(host.querySelectorAll('button')).map((candidate) => candidate.textContent)).not.toContain('orders.mark_shipped');
 
     act(() => root.unmount());
     host.remove();

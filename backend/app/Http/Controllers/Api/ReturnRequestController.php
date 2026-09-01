@@ -241,6 +241,96 @@ class ReturnRequestController extends Controller
         return new OrderReturnRequestResource($returnRequest);
     }
 
+    public function addTracking(Request $request, $id)
+    {
+        if (! $this->canManageOrders($request)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $validated = Validator::make($request->all(), [
+            'tracking_number' => 'required|string|max:255',
+            'carrier' => 'nullable|string|in:manual,ups,usps,fedex,dhl',
+        ])->validate();
+
+        $returnRequest = OrderReturnRequest::with(['order', 'items.orderLine'])->find($id);
+
+        if (! $returnRequest) {
+            return response()->json(['message' => 'Return request not found'], 404);
+        }
+
+        if ($returnRequest->status !== OrderReturnRequest::STATUS_APPROVED || ! blank($returnRequest->return_tracking_number)) {
+            return response()->json([
+                'message' => 'Return tracking can only be added once to approved requests.',
+                'errors' => ['tracking_number' => ['Return tracking can only be added once to approved requests.']],
+            ], 422);
+        }
+
+        return new OrderReturnRequestResource($this->returnRequestService->addTracking(
+            $returnRequest,
+            trim($validated['tracking_number']),
+            $validated['carrier'] ?? null,
+        ));
+    }
+
+    public function approveLowValueWaiver(Request $request, $id)
+    {
+        if (! $this->canManageOrders($request)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $validated = Validator::make($request->all(), [
+            'admin_note' => 'nullable|string|max:2000',
+        ])->validate();
+
+        $returnRequest = OrderReturnRequest::with(['order', 'items.orderLine'])->find($id);
+
+        if (! $returnRequest) {
+            return response()->json(['message' => 'Return request not found'], 404);
+        }
+
+        if ($returnRequest->status !== OrderReturnRequest::STATUS_REQUESTED
+            || ($returnRequest->meta['low_value_auto_waive_eligible'] ?? false) !== true) {
+            return response()->json([
+                'message' => 'Return request is not eligible for a low-value waiver.',
+                'errors' => ['low_value_auto_waive_eligible' => ['Return request is not eligible for a low-value waiver.']],
+            ], 422);
+        }
+
+        return new OrderReturnRequestResource($this->returnRequestService->approveLowValueWaiver(
+            $returnRequest,
+            $validated['admin_note'] ?? null,
+        ));
+    }
+
+    public function adminPreview(Request $request, $id)
+    {
+        if (! $this->canManageOrders($request)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $validated = Validator::make($request->all(), [
+            'fee_waived' => 'nullable|boolean',
+        ])->validate();
+
+        $returnRequest = OrderReturnRequest::with(['order', 'items.orderLine'])->find($id);
+
+        if (! $returnRequest) {
+            return response()->json(['message' => 'Return request not found'], 404);
+        }
+
+        $estimate = $this->returnRequestService->calculateRefundEstimate(
+            $returnRequest,
+            (bool) ($validated['fee_waived'] ?? false),
+        );
+
+        return response()->json([
+            'item_subtotal' => $estimate['item_subtotal_minor'] / 100,
+            'tax' => $estimate['tax_minor'] / 100,
+            'restocking_fee' => $estimate['restocking_fee_minor'] / 100,
+            'estimated_refund' => $estimate['refund_amount_minor'] / 100,
+        ]);
+    }
+
     private function canManageOrders(Request $request): bool
     {
         return (bool) $request->user()?->hasAnyRole([

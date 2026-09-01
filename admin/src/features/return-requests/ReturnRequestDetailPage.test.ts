@@ -2,7 +2,7 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ navigate: vi.fn(), approve: vi.fn(), reject: vi.fn(), complete: vi.fn(), toastError: vi.fn(), toastSuccess: vi.fn(), status: 'requested' }));
+const mocks = vi.hoisted(() => ({ navigate: vi.fn(), approve: vi.fn(), reject: vi.fn(), complete: vi.fn(), addTracking: vi.fn(), approveWaiver: vi.fn(), preview: vi.fn(), toastError: vi.fn(), toastSuccess: vi.fn(), status: 'requested' }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate, useParams: () => ({ id: '42' }) }));
 vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError, success: mocks.toastSuccess } }));
@@ -11,6 +11,9 @@ vi.mock('./api', () => ({
   useApproveReturnRequest: () => ({ mutateAsync: mocks.approve, isPending: false }),
   useRejectReturnRequest: () => ({ mutateAsync: mocks.reject, isPending: false }),
   useCompleteReturnRequest: () => ({ mutateAsync: mocks.complete, isPending: false }),
+  useAddReturnTracking: () => ({ mutateAsync: mocks.addTracking, isPending: false }),
+  useApproveLowValueWaiver: () => ({ mutateAsync: mocks.approveWaiver, isPending: false }),
+  previewReturnRequest: (...args: unknown[]) => mocks.preview(...args),
 }));
 
 import { ReturnRequestDetailPage } from './ReturnRequestDetailPage';
@@ -54,6 +57,9 @@ beforeEach(() => {
   mocks.approve.mockReset().mockResolvedValue({ id: '42' });
   mocks.reject.mockReset().mockResolvedValue({ id: '42' });
   mocks.complete.mockReset().mockResolvedValue({ id: '42' });
+  mocks.addTracking.mockReset().mockResolvedValue({ id: '42' });
+  mocks.approveWaiver.mockReset().mockResolvedValue({ id: '42' });
+  mocks.preview.mockReset().mockResolvedValue({ item_subtotal: 10, tax: 0, restocking_fee: 1, estimated_refund: 9 });
   mocks.toastError.mockReset();
   mocks.toastSuccess.mockReset();
 });

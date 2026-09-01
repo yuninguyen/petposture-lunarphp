@@ -12,6 +12,7 @@ use App\Services\StripePaymentIntentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Lunar\Models\Order;
 
 class OrderController extends Controller
@@ -238,6 +239,9 @@ class OrderController extends Controller
             'tracking_number' => 'required|string|max:255',
             'shipment_carrier' => 'nullable|string|in:'.self::SHIPMENT_CARRIERS,
             'shipment_tracking_url' => 'nullable|url|max:2000',
+            'items' => ['nullable', 'array'],
+            'items.*.order_line_id' => ['required_with:items', 'integer'],
+            'items.*.quantity' => ['required_with:items', 'integer', 'min:1'],
         ])->validate();
 
         $order = Order::with(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])->find($id);
@@ -255,19 +259,20 @@ class OrderController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $validated = Validator::make($request->all(), [
-            'amount' => 'nullable|numeric|min:0.01',
-        ])->validate();
-
         $order = Order::with(['lines', 'shippingAddress', 'billingAddress', 'orderEvents'])->find($id);
 
         if (! $order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
 
+        $validated = Validator::make($request->all(), [
+            'amount' => 'nullable|numeric|min:0.01',
+            'reason' => ['required', 'string', Rule::in(array_keys(OrderOperationsService::REFUND_REASON_LABELS))],
+        ])->validate();
+
         $amountMinor = isset($validated['amount']) ? (int) round((float) $validated['amount'] * 100) : null;
 
-        return new OrderResource($this->orderOperationsService->refundOrder($order, $amountMinor));
+        return new OrderResource($this->orderOperationsService->refundOrder($order, $amountMinor, $validated['reason']));
     }
 
     public function return(Request $request, $id)
