@@ -276,6 +276,10 @@ export default function CheckoutPage() {
     const stripeCardElementRef = useRef<ReturnType<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>['elements']>['create']> | null>(null);
     const paypalContainerRef = useRef<HTMLDivElement | null>(null);
     const formRef = useRef<HTMLFormElement | null>(null);
+    const preparePayPalOrderRef = useRef<() => Promise<string>>(async () => {
+        throw new Error('PayPal is not ready yet.');
+    });
+    const finishPayPalOrderRef = useRef<(paypalOrderId: string) => Promise<void>>(async () => undefined);
     const autocompleteServiceRef = useRef<{
         getPlacePredictions: (
             request: Record<string, unknown>,
@@ -620,14 +624,14 @@ export default function CheckoutPage() {
                     throw err;
                 }
                 try {
-                    return await preparePayPalOrder();
+                    return await preparePayPalOrderRef.current();
                 } catch (err) {
                     setPaypalError(err instanceof Error ? err.message : 'Unable to start PayPal checkout.');
                     throw err;
                 }
             },
             onApprove: async (data) => {
-                await finishPayPalOrder(data.orderID);
+                await finishPayPalOrderRef.current(data.orderID);
             },
             onError: (err) => {
                 console.error(err);
@@ -1129,6 +1133,7 @@ export default function CheckoutPage() {
 
         return data.paypal_order.paypal_order_id as string;
     };
+    preparePayPalOrderRef.current = preparePayPalOrder;
 
     const handleApplyCoupon = async () => {
         if (!couponCode.trim()) return;
@@ -1359,6 +1364,7 @@ export default function CheckoutPage() {
             setIsLoading(false);
         }
     };
+    finishPayPalOrderRef.current = finishPayPalOrder;
 
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
