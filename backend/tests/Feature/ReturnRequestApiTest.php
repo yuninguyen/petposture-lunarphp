@@ -492,6 +492,190 @@ class ReturnRequestApiTest extends TestCase
         $this->postJson("/api/admin/return-requests/{$returnRequestId}/complete")->assertForbidden();
     }
 
+    public function test_each_permitted_role_can_use_the_new_admin_return_request_endpoints(): void
+    {
+        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+
+        foreach (['super_admin', 'admin', 'staff', 'Order Manager', 'Support'] as $role) {
+            $previewRequestId = $this->createReturnRequestViaApi()['id'];
+            $trackingRequestId = $this->createReturnRequestViaApi()['id'];
+            $waiverRequestId = $this->createReturnRequestViaApi()['id'];
+            OrderReturnRequest::findOrFail($trackingRequestId)->update(['status' => OrderReturnRequest::STATUS_APPROVED]);
+            OrderReturnRequest::findOrFail($waiverRequestId)->update(['meta' => ['low_value_auto_waive_eligible' => true]]);
+            $user = User::factory()->create();
+            Role::findOrCreate($role, 'web');
+            $user->assignRole($role);
+            Sanctum::actingAs($user);
+
+            $this->postJson("/api/admin/return-requests/{$previewRequestId}/preview")
+                ->assertOk()
+                ->assertJsonPath('restocking_fee', 22.5);
+            $this->postJson("/api/admin/return-requests/{$trackingRequestId}/tracking", ['tracking_number' => 'TRACK-'.$role])
+                ->assertOk();
+            $this->postJson("/api/admin/return-requests/{$waiverRequestId}/approve-low-value-waiver")
+                ->assertOk();
+        }
+    }
+
+    public function test_new_admin_return_request_endpoints_require_authentication_and_forbid_unprivileged_users(): void
+    {
+        $returnRequestId = $this->createReturnRequestViaApi()['id'];
+
+        $this->app['auth']->forgetGuards();
+        foreach (['tracking', 'approve-low-value-waiver', 'preview'] as $action) {
+            $this->postJson("/api/admin/return-requests/{$returnRequestId}/{$action}")->assertUnauthorized();
+        }
+
+        Sanctum::actingAs(User::factory()->create());
+        foreach (['tracking', 'approve-low-value-waiver', 'preview'] as $action) {
+            $this->postJson("/api/admin/return-requests/{$returnRequestId}/{$action}")->assertForbidden();
+        }
+    }
+
+    public function test_new_admin_return_request_endpoints_return_not_found_for_unknown_return_requests(): void
+    {
+        $this->makeAdmin();
+
+        foreach ([
+            'tracking' => ['tracking_number' => 'TRACK-404'],
+            'approve-low-value-waiver' => [],
+            'preview' => [],
+        ] as $action => $payload) {
+            $this->postJson("/api/admin/return-requests/999999/{$action}", $payload)->assertNotFound();
+        }
+    }
+
+    public function test_admin_return_request_waiver_and_preview_validate_inputs(): void
+    {
+        $returnRequestId = $this->createReturnRequestViaApi()['id'];
+        $this->makeAdmin();
+
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/approve-low-value-waiver", [
+            'admin_note' => str_repeat('a', 2001),
+        ])->assertUnprocessable()->assertJsonValidationErrors('admin_note');
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/approve-low-value-waiver", [
+            'admin_note' => ['not a string'],
+        ])->assertUnprocessable()->assertJsonValidationErrors('admin_note');
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/preview", ['fee_waived' => 'invalid'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('fee_waived');
+    }
+
+    public function test_admin_adds_trimmed_tracking_to_an_approved_return_request_once(): void
+    {
+        $returnRequestId = $this->createReturnRequestViaApi()['id'];
+        $this->makeAdmin();
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/approve", ['rma_address' => '123 Warehouse Rd'])->assertOk();
+
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/tracking", [
+            'tracking_number' => '  1Z999  ',
+            'carrier' => 'ups',
+        ])->assertOk()
+            ->assertJsonPath('data.return_tracking_number', '1Z999')
+            ->assertJsonPath('data.return_carrier', 'ups')
+            ->assertJsonPath('data.return_tracking_url', 'https://www.ups.com/track?tracknum=1Z999');
+
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/tracking", ['tracking_number' => 'REPLACE'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('tracking_number');
+        $this->assertDatabaseHas('order_return_requests', ['id' => $returnRequestId, 'return_tracking_number' => '1Z999']);
+    }
+
+    public function test_tracking_rejects_requested_requests_and_malformed_carriers_without_mutation(): void
+    {
+        $returnRequestId = $this->createReturnRequestViaApi()['id'];
+        $this->makeAdmin();
+
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/tracking", ['tracking_number' => 'ABC'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('tracking_number');
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/tracking", ['tracking_number' => 'ABC', 'carrier' => 'other'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('carrier');
+        $this->assertDatabaseHas('order_return_requests', ['id' => $returnRequestId, 'status' => OrderReturnRequest::STATUS_REQUESTED, 'return_tracking_number' => null]);
+    }
+
+    public function test_admin_approves_only_strictly_eligible_requested_low_value_waivers(): void
+    {
+        $returnRequestId = $this->createReturnRequestViaApi()['id'];
+        OrderReturnRequest::findOrFail($returnRequestId)->update(['meta' => ['low_value_auto_waive_eligible' => true]]);
+        $this->makeAdmin();
+
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/approve-low-value-waiver", ['admin_note' => 'Keep it.'])
+            ->assertOk()
+            ->assertJsonPath('data.status', OrderReturnRequest::STATUS_WAIVED)
+            ->assertJsonPath('data.fee_waived', true)
+            ->assertJsonPath('data.low_value_auto_waive_eligible', true)
+            ->assertJsonPath('data.admin_note', 'Keep it.');
+    }
+
+    public function test_low_value_waiver_rejects_false_string_true_and_nonrequested_records_without_mutation(): void
+    {
+        foreach ([false, 'true'] as $eligibility) {
+            $returnRequestId = $this->createReturnRequestViaApi()['id'];
+            OrderReturnRequest::findOrFail($returnRequestId)->update(['meta' => ['low_value_auto_waive_eligible' => $eligibility]]);
+            $this->makeAdmin();
+
+            $this->postJson("/api/admin/return-requests/{$returnRequestId}/approve-low-value-waiver")
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors('low_value_auto_waive_eligible');
+            $this->assertDatabaseHas('order_return_requests', ['id' => $returnRequestId, 'status' => OrderReturnRequest::STATUS_REQUESTED]);
+        }
+
+        $returnRequestId = $this->createReturnRequestViaApi()['id'];
+        OrderReturnRequest::findOrFail($returnRequestId)->update(['meta' => ['low_value_auto_waive_eligible' => true]]);
+        $this->makeAdmin();
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/approve", ['rma_address' => '123 Warehouse Rd'])->assertOk();
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/approve-low-value-waiver")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('low_value_auto_waive_eligible');
+        $this->assertDatabaseHas('order_return_requests', ['id' => $returnRequestId, 'status' => OrderReturnRequest::STATUS_APPROVED]);
+    }
+
+    public function test_return_request_resource_exposes_tracking_and_strict_low_value_eligibility(): void
+    {
+        $returnRequestId = $this->createReturnRequestViaApi()['id'];
+        OrderReturnRequest::findOrFail($returnRequestId)->update([
+            'return_tracking_number' => 'TRACK-1',
+            'return_carrier' => 'manual',
+            'return_tracking_url' => null,
+            'meta' => ['low_value_auto_waive_eligible' => 'true'],
+        ]);
+        $this->makeAdmin();
+
+        $this->getJson("/api/admin/return-requests/{$returnRequestId}")
+            ->assertOk()
+            ->assertJsonPath('data.return_tracking_number', 'TRACK-1')
+            ->assertJsonPath('data.return_carrier', 'manual')
+            ->assertJsonPath('data.return_tracking_url', null)
+            ->assertJsonPath('data.low_value_auto_waive_eligible', false);
+    }
+
+    public function test_admin_preview_returns_fee_variants_without_mutating_the_return_request_or_public_preview(): void
+    {
+        ['tracking_token' => $trackingToken, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
+        $returnRequestId = $this->createReturnRequestViaApi()['id'];
+        $this->makeAdmin();
+
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/preview")
+            ->assertOk()
+            ->assertJsonPath('item_subtotal', 89.99)
+            ->assertJsonPath('tax', 7.38)
+            ->assertJsonPath('restocking_fee', 22.5)
+            ->assertJsonPath('estimated_refund', 74.87);
+        $this->postJson("/api/admin/return-requests/{$returnRequestId}/preview", ['fee_waived' => true])
+            ->assertOk()
+            ->assertJsonPath('restocking_fee', 0)
+            ->assertJsonPath('estimated_refund', 97.37);
+        $this->assertDatabaseHas('order_return_requests', ['id' => $returnRequestId, 'status' => OrderReturnRequest::STATUS_REQUESTED]);
+
+        $this->postJson('/api/orders/return-requests/preview', [
+            'tracking_token' => $trackingToken,
+            'email' => 'guest@petposture.com',
+            'items' => [['order_line_id' => $lineId, 'quantity' => 1]],
+        ])->assertOk()->assertJsonPath('estimated_refund', 74.87);
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     /**

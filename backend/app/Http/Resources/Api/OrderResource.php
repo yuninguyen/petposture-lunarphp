@@ -102,6 +102,14 @@ class OrderResource extends JsonResource
                 ->values()
                 ->all(),
             'available_actions' => app(OrderOperationsService::class)->availableActions($this->resource),
+            'remaining_shippable_quantities' => (object) collect(app(OrderOperationsService::class)
+                ->remainingShippableQuantities($this->resource))
+                ->mapWithKeys(fn (int $quantity, int $lineId) => [(string) $lineId => $quantity])
+                ->all(),
+            'refund_reason_options' => collect(OrderOperationsService::REFUND_REASON_LABELS)
+                ->map(fn (string $label, string $value) => ['value' => $value, 'label' => $label])
+                ->values()
+                ->all(),
             'customer_note' => $meta['customer_note'] ?? $this->notes,
             'internal_note' => $meta['internal_note'] ?? null,
             'currency' => $this->currency_code,

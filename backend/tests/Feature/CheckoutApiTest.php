@@ -753,7 +753,82 @@ class CheckoutApiTest extends TestCase
             ->assertJsonPath('rates.1.price', 9.99);
     }
 
+    public function test_admin_order_resource_exposes_remaining_shippable_quantities_and_refund_reason_options(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $orderId = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'items' => [['variantId' => $variant->id, 'quantity' => 2]],
+        ]))->json('order.id');
+        $orderLineId = Order::query()->findOrFail($orderId)->lines()->where('type', '!=', 'shipping')->value('id');
+
+        $this->makeAdmin();
+
+        $response = $this->getJson("/api/admin/orders/{$orderId}");
+
+        $response->assertOk()
+            ->assertJsonPath("data.remaining_shippable_quantities.{$orderLineId}", 2)
+            ->assertJsonPath('data.refund_reason_options.0', [
+                'value' => 'return_approved',
+                'label' => 'Approved Return Request',
+            ]);
+        $this->assertInstanceOf(\stdClass::class, json_decode($response->getContent())->data->remaining_shippable_quantities);
+    }
+
+    public function test_admin_can_create_a_shipment_for_only_selected_partial_quantity(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $orderId = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'items' => [['variantId' => $variant->id, 'quantity' => 2]],
+        ]))->json('order.id');
+        $orderLineId = Order::query()->findOrFail($orderId)->lines()->where('type', '!=', 'shipping')->value('id');
+
+        $this->makeAdmin();
+
+        $response = $this->postJson("/api/orders/{$orderId}/shipments", [
+            'tracking_number' => '1Z-PARTIAL-SHIPMENT',
+            'shipment_carrier' => 'ups',
+            'items' => [[
+                'order_line_id' => $orderLineId,
+                'quantity' => 1,
+            ]],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath("data.remaining_shippable_quantities.{$orderLineId}", 1);
+        $this->assertInstanceOf(\stdClass::class, json_decode($response->getContent())->data->remaining_shippable_quantities);
+        $this->assertDatabaseHas('order_shipment_items', [
+            'order_line_id' => $orderLineId,
+            'quantity' => 1,
+        ]);
+    }
+
     // ─── Refund ──────────────────────────────────────────────────────────────
+
+    public function test_refund_requires_a_valid_reason_and_records_the_valid_reason_in_its_audit_path(): void
+    {
+        config()->set('services.stripe.webhook_secret', null);
+        config()->set('services.stripe.secret', null);
+
+        $variant = $this->createPurchasableVariant();
+        ['order_id' => $orderId] = $this->createPaidCardOrder($variant);
+        $this->makeAdmin();
+
+        $this->postJson("/api/admin/orders/{$orderId}/refund")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['reason']);
+        $this->postJson("/api/admin/orders/{$orderId}/refund", ['reason' => 'not-a-reason'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['reason']);
+
+        $response = $this->postJson("/api/admin/orders/{$orderId}/refund", ['reason' => 'defective']);
+
+        $response->assertOk();
+        $this->assertSame('defective', Order::query()->findOrFail($orderId)->meta['refund_reason']);
+        $this->assertStringContainsString(
+            'Reason: Defective / Damaged Item',
+            collect($response->json('data.order_events'))->firstWhere('type', 'payment.refunded')['detail'],
+        );
+    }
 
     public function test_admin_can_issue_full_refund_on_paid_order(): void
     {
@@ -765,7 +840,7 @@ class CheckoutApiTest extends TestCase
 
         $admin = $this->makeAdmin();
 
-        $response = $this->postJson("/api/admin/orders/{$orderId}/refund");
+        $response = $this->postJson("/api/admin/orders/{$orderId}/refund", ['reason' => 'return_approved']);
 
         $response->assertOk()
             ->assertJsonPath('data.payment_status', 'refunded')
@@ -787,7 +862,10 @@ class CheckoutApiTest extends TestCase
 
         $this->makeAdmin();
 
-        $response = $this->postJson("/api/admin/orders/{$orderId}/refund", ['amount' => 10.00]);
+        $response = $this->postJson("/api/admin/orders/{$orderId}/refund", [
+            'amount' => 10.00,
+            'reason' => 'customer_request',
+        ]);
 
         $response->assertOk()
             ->assertJsonPath('data.refund_status', 'refunded')
@@ -806,7 +884,7 @@ class CheckoutApiTest extends TestCase
 
         $this->makeAdmin();
 
-        $this->postJson("/api/admin/orders/{$orderId}/refund")
+        $this->postJson("/api/admin/orders/{$orderId}/refund", ['reason' => 'other'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['refund']);
     }
@@ -825,7 +903,7 @@ class CheckoutApiTest extends TestCase
 
         $this->makeAdmin();
 
-        $this->postJson("/api/admin/orders/{$orderId}/refund")
+        $this->postJson("/api/admin/orders/{$orderId}/refund", ['reason' => 'other'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['refund']);
     }

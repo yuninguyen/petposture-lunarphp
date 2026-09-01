@@ -252,6 +252,9 @@ Route::prefix('/admin')
         Route::post('/return-requests/{id}/approve', [ReturnRequestController::class, 'approve']);
         Route::post('/return-requests/{id}/reject', [ReturnRequestController::class, 'reject']);
         Route::post('/return-requests/{id}/complete', [ReturnRequestController::class, 'complete']);
+        Route::post('/return-requests/{id}/tracking', [ReturnRequestController::class, 'addTracking']);
+        Route::post('/return-requests/{id}/approve-low-value-waiver', [ReturnRequestController::class, 'approveLowValueWaiver']);
+        Route::post('/return-requests/{id}/preview', [ReturnRequestController::class, 'adminPreview']);
         Route::get('/media', [\App\Http\Controllers\Api\Admin\MediaController::class, 'index']);
         Route::post('/media', [\App\Http\Controllers\Api\Admin\MediaController::class, 'store'])->middleware('throttle:api-write');
         Route::patch('/media/{media}', [\App\Http\Controllers\Api\Admin\MediaController::class, 'update'])->middleware('throttle:api-write');
