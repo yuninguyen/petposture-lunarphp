@@ -922,6 +922,46 @@ class CheckoutApiTest extends TestCase
         $this->assertMatchesRegularExpression('/^\$\d+\.\d{2}$/', $formattedTotal);
     }
 
+    public function test_admin_order_resource_exposes_nullable_attribution_and_fraud_metadata(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $orderId = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant))->json('order.id');
+        $this->makeAdmin();
+
+        $order = Order::query()->findOrFail($orderId);
+        $meta = (array) $order->meta;
+        unset($meta['attribution_origin'], $meta['attribution_device_type'], $meta['attribution_session_page_views'], $meta['fraud_risk_level'], $meta['fraud_risk_score'], $meta['fraud_seller_message']);
+        $order->update(['meta' => $meta]);
+
+        $this->getJson("/api/admin/orders/{$orderId}")
+            ->assertOk()
+            ->assertJsonPath('data.attribution_origin', null)
+            ->assertJsonPath('data.attribution_device_type', null)
+            ->assertJsonPath('data.attribution_session_page_views', null)
+            ->assertJsonPath('data.fraud_risk_level', null)
+            ->assertJsonPath('data.fraud_risk_score', null)
+            ->assertJsonPath('data.fraud_seller_message', null);
+
+        $order = Order::query()->findOrFail($orderId);
+        $order->update(['meta' => array_merge((array) $order->meta, [
+            'attribution_origin' => 'newsletter',
+            'attribution_device_type' => 'mobile',
+            'attribution_session_page_views' => 4,
+            'fraud_risk_level' => 'highest',
+            'fraud_risk_score' => 91,
+            'fraud_seller_message' => 'Review before fulfillment',
+        ])]);
+
+        $this->getJson("/api/admin/orders/{$orderId}")
+            ->assertOk()
+            ->assertJsonPath('data.attribution_origin', 'newsletter')
+            ->assertJsonPath('data.attribution_device_type', 'mobile')
+            ->assertJsonPath('data.attribution_session_page_views', 4)
+            ->assertJsonPath('data.fraud_risk_level', 'highest')
+            ->assertJsonPath('data.fraud_risk_score', 91)
+            ->assertJsonPath('data.fraud_seller_message', 'Review before fulfillment');
+    }
+
     public function test_admin_order_aliases_filter_by_status_and_return_order_data(): void
     {
         $variant = $this->createPurchasableVariant();

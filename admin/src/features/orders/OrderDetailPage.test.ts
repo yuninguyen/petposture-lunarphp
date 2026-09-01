@@ -2,12 +2,12 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ navigate: vi.fn(), refund: vi.fn(), returnOrder: vi.fn(), toastError: vi.fn(), toastSuccess: vi.fn() }));
+const mocks = vi.hoisted(() => ({ navigate: vi.fn(), refund: vi.fn(), returnOrder: vi.fn(), toastError: vi.fn(), toastSuccess: vi.fn(), order: { id: '42', reference: 'ORD-42', customer_email: 'customer@example.com', status: 'processing', status_label: 'Processing', payment_status: 'paid', payment_status_label: 'Paid', fulfillment_status: 'unfulfilled', fulfillment_status_label: 'Unfulfilled', refund_status: 'partially_refunded', refund_amount: 450, coupon_code: 'SAVE10', total: { formatted: '$12.50 USD', decimal: 12.5, currency: 'USD' }, sub_total: 15, discount_total: 5, shipping_total: 0, shipping_label: 'Express', tax_total: 2.5, lines: [{ id: 1, type: 'product', description: 'Orthopedic Bed', quantity: 2, unit_price: 7.5, sub_total: 15, discount_total: 0, tax_total: 0, total: 15, image: null }], attribution_origin: 'newsletter', attribution_device_type: 'mobile', attribution_session_page_views: 4, fraud_risk_level: null as string | null, fraud_risk_score: null as number | null, fraud_seller_message: null as string | null, shipping_address: {}, billing_address: {}, order_events: [{ type: 'shipped', title: 'Shipped second', detail: null, created_at: '2026-08-30 12:00:00' }, { type: 'created', title: 'Created first', detail: null, created_at: '2026-08-29 12:00:00' }] } }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate, useParams: () => ({ id: '42' }) }));
 vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError, success: mocks.toastSuccess } }));
 vi.mock('./api', () => ({
-  useOrder: () => ({ isLoading: false, isError: false, data: { id: '42', reference: 'ORD-42', customer_email: 'customer@example.com', status: 'processing', status_label: 'Processing', payment_status: 'paid', payment_status_label: 'Paid', fulfillment_status: 'unfulfilled', fulfillment_status_label: 'Unfulfilled', refund_status: null, refund_amount: null, coupon_code: 'SAVE10', total: { formatted: '$12.50 USD', decimal: 12.5, currency: 'USD' }, lines: [], shipping_address: {}, billing_address: {}, order_events: [{ type: 'shipped', title: 'Shipped second', detail: null, created_at: '2026-08-30 12:00:00' }, { type: 'created', title: 'Created first', detail: null, created_at: '2026-08-29 12:00:00' }] } }),
+  useOrder: () => ({ isLoading: false, isError: false, data: mocks.order }),
   useRefundOrder: () => ({ mutateAsync: mocks.refund, isPending: false }),
   useReturnOrder: () => ({ mutateAsync: mocks.returnOrder, isPending: false }),
 }));
@@ -100,6 +100,62 @@ describe('OrderDetailPage', () => {
 
     act(() => root.unmount());
     host.remove();
+  });
+
+  it('renders title-cased refund money, item rows, totals, and attribution', () => {
+    const { host, root } = renderPage();
+
+    expect(host.textContent).toContain('Partially Refunded');
+    expect(host.textContent).toContain('$4.50');
+    expect(host.querySelector('table')?.textContent).toContain('orders.product');
+    expect(host.querySelector('table')?.textContent).toContain('orders.qty');
+    expect(host.querySelector('table')?.textContent).toContain('orders.unit_price');
+    expect(host.querySelector('table')?.textContent).toContain('orders.subtotal');
+    expect(host.querySelector('table')?.textContent).toContain('Orthopedic Bed');
+    expect(host.querySelector('table')?.textContent).toContain('$7.50');
+    expect(host.querySelector('table')?.textContent).toContain('$15.00');
+    expect(host.textContent).toContain('orders.items_subtotal');
+    expect(host.textContent).toContain('orders.discount');
+    expect(host.textContent).toContain('SAVE10');
+    expect(host.textContent).toContain('orders.shipping');
+    expect(host.textContent).toContain('Express');
+    expect(host.textContent).toContain('$0.00');
+    expect(host.textContent).toContain('orders.tax');
+    expect(host.textContent).toContain('$2.50');
+    expect(host.textContent).toContain('orders.order_total');
+    expect(host.textContent).toContain('orders.attribution');
+    expect(host.textContent).toContain('newsletter');
+    expect(host.textContent).toContain('mobile');
+    expect(host.textContent).toContain('4');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('hides Fraud & Risk without fraud data and shows a red badge when present', () => {
+    const { host, root } = renderPage();
+
+    expect(host.textContent).not.toContain('orders.fraud_risk');
+
+    act(() => root.unmount());
+    host.remove();
+
+    mocks.order.fraud_risk_level = 'highest';
+    mocks.order.fraud_risk_score = 91;
+    mocks.order.fraud_seller_message = 'Review before fulfillment';
+    const visible = renderPage();
+
+    expect(visible.host.textContent).toContain('orders.fraud_risk');
+    expect(visible.host.textContent).toContain('highest');
+    expect(visible.host.textContent).toContain('91');
+    expect(visible.host.textContent).toContain('Review before fulfillment');
+    expect(visible.host.querySelector('.bg-red-100')).not.toBeNull();
+
+    act(() => visible.root.unmount());
+    visible.host.remove();
+    mocks.order.fraud_risk_level = null;
+    mocks.order.fraud_risk_score = null;
+    mocks.order.fraud_seller_message = null;
   });
 
   it('shows return confirmation and submits the return action', async () => {

@@ -31,6 +31,7 @@ vi.mock('./api', () => ({
 }));
 
 import { CustomerDetailPage } from './CustomerDetailPage';
+import type { Customer } from './api';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -51,7 +52,7 @@ function renderPage() {
   return { host, root, client };
 }
 
-function resetHooks(summary = customer) {
+function resetHooks(summary: Customer = customer) {
   mocks.useCustomer.mockReset().mockReturnValue(query(summary));
   mocks.useCustomerOrders.mockReset().mockReturnValue(query(orders));
   mocks.useCustomerAddresses.mockReset().mockReturnValue(query(addresses));
@@ -92,10 +93,37 @@ describe('CustomerDetailPage', () => {
     act(() => root.unmount()); host.remove();
   });
 
-  it('renders a dash for average spend without orders', () => {
-    resetHooks(zeroCustomer);
+  it('shows read-only customer details from actual fields before the tab list', () => {
+    resetHooks({ ...customer, name: 'Display fallback', first_name: 'Taylor', last_name: 'Customer' });
     const { host, root } = renderPage();
-    expect(host.textContent).toContain('—');
+    const details = Array.from(host.querySelectorAll('section')).find((section) => section.textContent?.includes('customers.customer_details'));
+    const tabList = host.querySelector('[role="tablist"]');
+
+    expect(details).toBeTruthy();
+    expect(details?.textContent).toContain('customers.full_name');
+    expect(details?.textContent).toContain('Taylor Customer');
+    expect(details?.textContent).toContain('Pet Posture');
+    expect(details?.textContent).toContain('VAT-1');
+    expect(details?.textContent).toContain('taylor@example.com');
+    expect(details?.textContent).toContain('0123456789');
+    expect(Boolean(details && tabList && (details.compareDocumentPosition(tabList) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+
+    act(() => root.unmount()); host.remove();
+  });
+
+  it('uses dashes for blank customer details and contains the existing tab pills', () => {
+    resetHooks({ ...customer, first_name: ' ', last_name: null, company_name: ' ', tax_identifier: null, email: ' ', phone: null });
+    const { host, root } = renderPage();
+    const details = Array.from(host.querySelectorAll('section')).find((section) => section.textContent?.includes('customers.customer_details'));
+    const tabList = host.querySelector<HTMLElement>('[role="tablist"]');
+
+    expect(details).toBeTruthy();
+    expect(details?.textContent?.match(/—/g)).toHaveLength(5);
+    expect(tabList?.className).toContain('inline-flex gap-1 rounded-full bg-slate-100 p-1');
+    expect(host.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe('customers.orders');
+    click(host, 'customers.address_book');
+    expect(host.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe('customers.address_book');
+
     act(() => root.unmount()); host.remove();
   });
 
