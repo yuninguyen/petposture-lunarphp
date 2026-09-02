@@ -173,8 +173,76 @@ export default function BlogPage() {
         <main className="min-h-screen overflow-x-hidden bg-white font-hanken">
             <Header />
 
+            <nav className="sticky top-0 z-40 border-y border-zinc-100 bg-white">
+                <div className="relative mx-auto flex max-w-[1200px] flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between md:px-8">
+                    <div className="relative w-full md:max-w-[380px]">
+                        <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                        <input
+                            id="blog-search-input"
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search articles..."
+                            className="w-full rounded-xl border border-zinc-200 py-2 pl-9 pr-4 text-sm outline-none focus:border-secondary"
+                        />
+                    </div>
+                    <div
+                        ref={tabsScrollRef}
+                        onScroll={updateTabsScrollState}
+                        className="flex items-center gap-2 overflow-x-auto whitespace-nowrap no-scrollbar"
+                    >
+                        <button
+                            onClick={() => setActiveTab("All")}
+                            className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-colors md:text-sm ${activeTab === "All"
+                                ? "text-white"
+                                : "text-primary/60 hover:text-primary"
+                                }`}
+                        >
+                            {activeTab === "All" && (
+                                <motion.div
+                                    layoutId="activeTabPill"
+                                    className="absolute inset-0 rounded-full bg-secondary"
+                                    transition={{ type: "spring", duration: 0.4 }}
+                                />
+                            )}
+                            <span className="relative">All</span>
+                        </button>
+                        {categories.map((cat) => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setActiveTab(cat.name)}
+                                className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-colors md:text-sm ${activeTab === cat.name
+                                    ? "text-white"
+                                    : "text-primary/60 hover:text-primary"
+                                    }`}
+                            >
+                                {activeTab === cat.name && (
+                                    <motion.div
+                                        layoutId="activeTabPill"
+                                        className="absolute inset-0 rounded-full bg-secondary"
+                                        transition={{ type: "spring", duration: 0.4 }}
+                                    />
+                                )}
+                                <span className="relative">{cat.name}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {canScrollLeft && (
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex w-10 items-center bg-gradient-to-r from-white to-transparent pl-1 md:hidden">
+                            <ChevronLeft size={16} className="text-primary/40" />
+                        </div>
+                    )}
+                    {canScrollRight && (
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-end bg-gradient-to-l from-white to-transparent pr-1 md:hidden">
+                            <ChevronRight size={16} className="text-primary/40" />
+                        </div>
+                    )}
+                </div>
+            </nav>
+
             {featuredPost && (
-                <section className="bg-[#f8f9fa] px-4 pb-16 pt-8 md:px-8">
+                <section className="bg-[#f8f9fa] px-4 py-10 md:px-8 md:py-14">
                     <div className="mx-auto max-w-[1200px]">
                         <motion.div
                             initial="initial"
@@ -246,73 +314,6 @@ export default function BlogPage() {
                     </div>
                 </section>
             )}
-
-            <nav className="sticky top-[65px] z-40 border-y border-zinc-100 bg-white md:top-[100px]">
-                <div className="relative mx-auto flex max-w-[1200px] flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between md:px-8">
-                    <div className="relative w-full md:max-w-[380px]">
-                        <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search articles..."
-                            className="w-full rounded-full border border-zinc-200 py-2 pl-9 pr-4 text-sm outline-none focus:border-secondary"
-                        />
-                    </div>
-                    <div
-                        ref={tabsScrollRef}
-                        onScroll={updateTabsScrollState}
-                        className="flex items-center gap-2 overflow-x-auto whitespace-nowrap no-scrollbar"
-                    >
-                        <button
-                            onClick={() => setActiveTab("All")}
-                            className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-colors md:text-sm ${activeTab === "All"
-                                ? "text-white"
-                                : "text-primary/60 hover:text-primary"
-                                }`}
-                        >
-                            {activeTab === "All" && (
-                                <motion.div
-                                    layoutId="activeTabPill"
-                                    className="absolute inset-0 rounded-full bg-secondary"
-                                    transition={{ type: "spring", duration: 0.4 }}
-                                />
-                            )}
-                            <span className="relative">All</span>
-                        </button>
-                        {categories.map((cat) => (
-                            <button
-                                key={cat.id}
-                                onClick={() => setActiveTab(cat.name)}
-                                className={`relative shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-colors md:text-sm ${activeTab === cat.name
-                                    ? "text-white"
-                                    : "text-primary/60 hover:text-primary"
-                                    }`}
-                            >
-                                {activeTab === cat.name && (
-                                    <motion.div
-                                        layoutId="activeTabPill"
-                                        className="absolute inset-0 rounded-full bg-secondary"
-                                        transition={{ type: "spring", duration: 0.4 }}
-                                    />
-                                )}
-                                <span className="relative">{cat.name}</span>
-                            </button>
-                        ))}
-                    </div>
-
-                    {canScrollLeft && (
-                        <div className="pointer-events-none absolute inset-y-0 left-0 flex w-10 items-center bg-gradient-to-r from-white to-transparent pl-1 md:hidden">
-                            <ChevronLeft size={16} className="text-primary/40" />
-                        </div>
-                    )}
-                    {canScrollRight && (
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex w-10 items-center justify-end bg-gradient-to-l from-white to-transparent pr-1 md:hidden">
-                            <ChevronRight size={16} className="text-primary/40" />
-                        </div>
-                    )}
-                </div>
-            </nav>
 
             <section className="px-4 py-16 md:px-8">
                 <div className="mx-auto flex max-w-[1200px] flex-col gap-16 lg:flex-row">

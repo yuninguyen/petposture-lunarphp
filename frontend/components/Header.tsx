@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, User, ShoppingBag, Menu, Phone, Mail, Clock, Truck, X, Facebook, Instagram, Twitter, Youtube, ChevronRight, LogOut, Search } from "lucide-react";
+import { Heart, User, ShoppingBag, Menu, Phone, Mail, Clock, Truck, X, Facebook, Instagram, Twitter, Youtube, ChevronRight, LogOut, Search, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,6 +25,20 @@ export default function Header() {
     if (!term) return;
     router.push(`/shop?q=${encodeURIComponent(term)}`);
     setMobileSearchOpen(false);
+  };
+
+  const handleSearchIconClick = () => {
+    // Blog already has its own inline article search right below the header;
+    // opening the product search dropdown there stacked two search bars.
+    if (pathname?.startsWith("/blog")) {
+      const blogSearchInput = document.getElementById("blog-search-input");
+      if (blogSearchInput) {
+        blogSearchInput.scrollIntoView({ behavior: "smooth", block: "center" });
+        (blogSearchInput as HTMLInputElement).focus();
+        return;
+      }
+    }
+    setMobileSearchOpen((open) => !open);
   };
   const { items, setCartOpen } = useCart();
   const { items: wishlistItems } = useWishlist();
@@ -92,19 +106,21 @@ export default function Header() {
 
           {/* Center: Search (Desktop) */}
           <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-[500px]">
-            <div className="flex w-full border border-zinc-300 rounded overflow-hidden focus-within:border-zinc-400 transition-colors">
+            <div className="group flex h-[44px] w-full items-center rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-secondary focus-within:shadow-focus">
+              <Search size={15} strokeWidth={1.6} className="ml-3.5 flex-shrink-0 text-zinc-400 transition-colors group-focus-within:text-secondary" />
               <input
                 type="text"
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-4 h-[44px] border-none outline-none focus:ring-0 text-[14px] text-primary bg-transparent"
+                className="h-full flex-1 border-none bg-transparent px-3 text-[14px] text-primary outline-none focus:ring-0"
               />
               <button
                 type="submit"
-                className="bg-secondary text-ink px-8 h-[44px] font-bold tracking-wider text-sm capitalize hover:bg-secondary-dark transition-colors border-none m-0 rounded-none"
+                aria-label="Search"
+                className={`mr-1.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-ink transition-all duration-200 hover:bg-secondary-dark ${searchTerm ? "scale-100 opacity-100" : "scale-75 opacity-0 group-focus-within:scale-100 group-focus-within:opacity-100"}`}
               >
-                Search
+                <ArrowRight size={15} />
               </button>
             </div>
           </form>
@@ -113,7 +129,7 @@ export default function Header() {
           <div className="flex items-center gap-4 md:gap-6 text-primary flex-shrink-0">
             <button
               className="md:hidden hover:text-rust transition-colors"
-              onClick={() => setMobileSearchOpen((open) => !open)}
+              onClick={handleSearchIconClick}
               aria-label="Search"
               aria-expanded={mobileSearchOpen}
             >
@@ -132,16 +148,16 @@ export default function Header() {
                 <Link href="/account" className="text-sm font-bold uppercase tracking-widest text-rust hidden lg:block hover:underline">
                   Hi, {user.name.split(' ')[0]}
                 </Link>
-                <Link href="/account" className="hover:text-rust transition-colors" title="My Account">
-                  <User size={22} strokeWidth={2} />
+                <Link href="/account" className="hover:text-rust transition-colors" title="My Account" aria-label="My account">
+                  <User size={22} strokeWidth={2} aria-hidden="true" />
                 </Link>
-                <button onClick={logout} className="hover:text-rust transition-colors" title="Log Out">
-                  <LogOut size={22} strokeWidth={2} />
+                <button onClick={logout} className="hover:text-rust transition-colors" title="Log Out" aria-label="Log out">
+                  <LogOut size={22} strokeWidth={2} aria-hidden="true" />
                 </button>
               </div>
             ) : (
-              <Link href="/sign-in" className="hover:text-rust transition-colors" title="Login / Register">
-                <User size={22} strokeWidth={2} />
+              <Link href="/sign-in" className="hover:text-rust transition-colors" title="Login / Register" aria-label="Login or register">
+                <User size={22} strokeWidth={2} aria-hidden="true" />
               </Link>
             )}
             <button
@@ -231,17 +247,22 @@ export default function Header() {
             className="md:hidden overflow-hidden bg-white border-b border-zinc-100"
           >
             <form onSubmit={handleSearchSubmit} className="p-4">
-              <div className="flex w-full border-2 border-zinc-200 rounded overflow-hidden">
+              <div className="group flex h-[44px] w-full items-center rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-secondary focus-within:shadow-focus">
+                <Search size={15} strokeWidth={1.6} className="ml-3.5 flex-shrink-0 text-zinc-400 transition-colors group-focus-within:text-secondary" />
                 <input
                   type="text"
                   placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   autoFocus
-                  className="flex-1 px-3 py-2 outline-none text-sm"
+                  className="h-full flex-1 border-none bg-transparent px-3 text-sm outline-none"
                 />
-                <button type="submit" className="bg-secondary px-4 text-ink capitalize text-sm font-bold">
-                  Search
+                <button
+                  type="submit"
+                  aria-label="Search"
+                  className={`mr-1.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-ink transition-all duration-200 hover:bg-secondary-dark ${searchTerm ? "scale-100 opacity-100" : "scale-75 opacity-0 group-focus-within:scale-100 group-focus-within:opacity-100"}`}
+                >
+                  <ArrowRight size={15} />
                 </button>
               </div>
             </form>
@@ -284,9 +305,10 @@ export default function Header() {
                 </Link>
                 <button
                   onClick={() => setMobileOpen(false)}
+                  aria-label="Close menu"
                   className="p-2 text-primary hover:bg-zinc-100 rounded-full transition-colors relative z-[60]"
                 >
-                  <X size={24} />
+                  <X size={24} aria-hidden="true" />
                 </button>
               </div>
 
