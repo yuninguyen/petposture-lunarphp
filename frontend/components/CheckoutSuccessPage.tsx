@@ -101,6 +101,78 @@ function AddressBlock({ title, address }: { title: string; address: TrackingOrde
     );
 }
 
+function OrderSummaryBody({ order }: { order: TrackingOrder }) {
+    return (
+        <>
+            <div className="space-y-4">
+                {order.lines.map((line) => (
+                    <div key={line.id} className="flex items-center gap-4 py-1">
+                        <div className="relative h-16 w-16 flex-shrink-0 rounded-[10px] border border-[#e6e6e6] bg-white">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={line.image ?? "/assets/product/Pug-Dog-Bed.webp"}
+                                alt=""
+                                width={64}
+                                height={64}
+                                className="h-full w-full object-contain p-1"
+                            />
+                            <span className="absolute -right-2 -top-2 z-10 flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#111827] px-1 text-xs font-bold text-white shadow-[0_0_0_2px_#fafafa]">
+                                {line.quantity}
+                            </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="line-clamp-1 text-sm font-medium text-[#1a1a1a]">{line.description}</p>
+                        </div>
+                        <span className="flex-shrink-0 text-[14px] font-medium text-[#1a1a1a]">{formatMoney(line.sub_total)}</span>
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-6 space-y-3 border-t border-[#e6e6e6] pt-6">
+                <div className="flex items-center justify-between text-[14px] text-[#333333]">
+                    <span>Subtotal</span>
+                    <span className="font-medium">{formatMoney(order.sub_total)}</span>
+                </div>
+                {order.discount_total > 0 ? (
+                    <div className="flex items-center justify-between text-[14px] text-[#df8448]">
+                        <span>Discount</span>
+                        <span className="font-medium">&minus;{formatMoney(order.discount_total)}</span>
+                    </div>
+                ) : null}
+                <div className="flex items-center justify-between text-[14px] text-[#333333]">
+                    <span>Shipping</span>
+                    <span className="font-medium">{order.shipping_total > 0 ? formatMoney(order.shipping_total) : "Free"}</span>
+                </div>
+                <div className="flex items-center justify-between text-[14px] text-[#333333]">
+                    <span>Estimated taxes</span>
+                    <span className="font-medium">{formatMoney(order.tax_total)}</span>
+                </div>
+                <div className="flex items-center justify-between pt-3 text-[16px] font-bold text-[#333333]">
+                    <span>Total</span>
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-xs font-normal text-[#707070]">{order.currency}</span>
+                        <span>{formatMoney(order.total)}</span>
+                    </div>
+                </div>
+
+                {order.status === "cancelled" ? (
+                    order.payment_confirmed_before_cancellation ? (
+                        <div className="flex items-start gap-2 rounded-[10px] border border-[#f0ddd0] bg-[#fff8f4] px-3 py-2 text-sm text-[#7a4020]">
+                            <Mail size={14} className="mt-0.5 flex-shrink-0 text-[#df8448]" />
+                            <span>This order was cancelled after payment. Your refund is being processed.</span>
+                        </div>
+                    ) : null
+                ) : (
+                    <div className="flex items-center gap-2 rounded-[10px] border border-[#e6f3ea] bg-[#f6fbf7] px-3 py-2 text-sm text-[#4d6357]">
+                        <ShieldCheck size={14} className="text-[#0f9f61]" />
+                        <span>Secure checkout and encrypted payment details.</span>
+                    </div>
+                )}
+            </div>
+        </>
+    );
+}
+
 const STATUS_ORDER = ["awaiting-payment", "payment-offline", "payment-received", "processing", "shipped", "delivered"];
 
 function buildTimeline(order: TrackingOrder) {
@@ -270,7 +342,7 @@ function OrderSuccessContent() {
     }
 
     const timeline = buildTimeline(order);
-    const customerName = `${order.shipping_address.first_name ?? ""} ${order.shipping_address.last_name ?? ""}`.trim();
+    const customerName = order.shipping_address.first_name ?? "";
     const orderDate = order.created_at
         ? new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(new Date(order.created_at))
         : "—";
@@ -415,7 +487,7 @@ function OrderSuccessContent() {
                             <RetryPaymentPanel trackingToken={trackingToken} email={email} orderStatus={order.status} />
                         ) : null}
 
-                        <div className="flex flex-col items-center gap-3 pb-2 pt-1 sm:flex-row">
+                        <div className="hidden flex-col items-center gap-3 pb-2 pt-1 sm:flex-row lg:flex">
                             <Link href="/shop" className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#df8448] px-8 text-[14px] font-semibold text-white transition-all hover:bg-[#c9713a] hover:shadow-md sm:w-auto">
                                 Continue shopping
                             </Link>
@@ -428,88 +500,26 @@ function OrderSuccessContent() {
                     </div>
                 </div>
 
-                <aside className="w-full border-t border-[#e8e8ea] bg-[#fafafa] px-4 py-6 md:px-8 lg:order-last lg:w-[440px] lg:border-t-0 lg:border-l lg:px-10 lg:py-12">
+                <aside className="hidden w-[440px] border-l border-[#e8e8ea] bg-[#fafafa] px-10 py-12 lg:order-last lg:block">
                     <div className="lg:sticky lg:top-12">
-                        <div className="mb-6 flex items-center justify-between lg:hidden">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-rust">
-                                    <ShoppingBag size={16} />
-                                </div>
-                                <span className="text-[15px] font-semibold text-[#333333]">Order Summary</span>
-                            </div>
-                            <span className="flex items-baseline gap-1 text-[16px] font-bold text-[#1a1a1a]">
-                                {formatMoney(order.total)}
-                                <span className="text-[11px] font-semibold text-[#9ca3af]">{order.currency}</span>
-                            </span>
-                        </div>
-
-                        <div className="space-y-4">
-                            {order.lines.map((line) => (
-                                <div key={line.id} className="flex items-center gap-4 py-1">
-                                    <div className="relative h-16 w-16 flex-shrink-0 rounded-[10px] border border-[#e6e6e6] bg-white">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
-                                            src={line.image ?? "/assets/product/Pug-Dog-Bed.webp"}
-                                            alt=""
-                                            width={64}
-                                            height={64}
-                                            className="h-full w-full object-contain p-1"
-                                        />
-                                        <span className="absolute -right-2 -top-2 z-10 flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#111827] px-1 text-xs font-bold text-white shadow-[0_0_0_2px_#fafafa]">
-                                            {line.quantity}
-                                        </span>
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="line-clamp-1 text-sm font-medium text-[#1a1a1a]">{line.description}</p>
-                                    </div>
-                                    <span className="flex-shrink-0 text-[14px] font-medium text-[#1a1a1a]">{formatMoney(line.sub_total)}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="mt-6 space-y-3 border-t border-[#e6e6e6] pt-6">
-                            <div className="flex items-center justify-between text-[14px] text-[#333333]">
-                                <span>Subtotal</span>
-                                <span className="font-medium">{formatMoney(order.sub_total)}</span>
-                            </div>
-                            {order.discount_total > 0 ? (
-                                <div className="flex items-center justify-between text-[14px] text-[#df8448]">
-                                    <span>Discount</span>
-                                    <span className="font-medium">&minus;{formatMoney(order.discount_total)}</span>
-                                </div>
-                            ) : null}
-                            <div className="flex items-center justify-between text-[14px] text-[#333333]">
-                                <span>Shipping</span>
-                                <span className="font-medium">{order.shipping_total > 0 ? formatMoney(order.shipping_total) : "Free"}</span>
-                            </div>
-                            <div className="flex items-center justify-between text-[14px] text-[#333333]">
-                                <span>Estimated taxes</span>
-                                <span className="font-medium">{formatMoney(order.tax_total)}</span>
-                            </div>
-                            <div className="flex items-center justify-between pt-3 text-[18px] font-bold text-[#333333]">
-                                <span>Total</span>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-xs font-normal text-[#707070]">{order.currency}</span>
-                                    <span>{formatMoney(order.total)}</span>
-                                </div>
-                            </div>
-
-                            {order.status === "cancelled" ? (
-                                order.payment_confirmed_before_cancellation ? (
-                                    <div className="flex items-start gap-2 rounded-[10px] border border-[#f0ddd0] bg-[#fff8f4] px-3 py-2 text-sm text-[#7a4020]">
-                                        <Mail size={14} className="mt-0.5 flex-shrink-0 text-[#df8448]" />
-                                        <span>This order was cancelled after payment. Your refund is being processed.</span>
-                                    </div>
-                                ) : null
-                            ) : (
-                                <div className="flex items-center gap-2 rounded-[10px] border border-[#e6f3ea] bg-[#f6fbf7] px-3 py-2 text-sm text-[#4d6357]">
-                                    <ShieldCheck size={14} className="text-[#0f9f61]" />
-                                    <span>Secure checkout and encrypted payment details.</span>
-                                </div>
-                            )}
-                        </div>
+                        <OrderSummaryBody order={order} />
                     </div>
                 </aside>
+
+                <div className="w-full border-t border-[#e8e8ea] bg-[#fafafa] px-4 py-6 md:px-8 lg:hidden">
+                    <OrderSummaryBody order={order} />
+
+                    <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row">
+                        <Link href="/shop" className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#df8448] px-8 text-[14px] font-semibold text-white transition-all hover:bg-[#c9713a] hover:shadow-md sm:w-auto">
+                            Continue shopping
+                        </Link>
+                        {deliveredDone ? (
+                            <Link href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} className="flex h-11 w-full items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white px-8 text-[14px] font-semibold text-[#555555] transition-all hover:bg-[#faf9f8] hover:shadow-sm sm:w-auto">
+                                Request a return
+                            </Link>
+                        ) : null}
+                    </div>
+                </div>
             </div>
         </main>
     );
