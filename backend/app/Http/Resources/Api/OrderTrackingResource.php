@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api;
 
+use App\Services\ProductSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Str;
@@ -39,7 +40,50 @@ class OrderTrackingResource extends JsonResource
                 'postcode' => $this->maskPostcode($address?->postcode),
                 'country' => $address?->country?->name,
             ],
+            'total' => round($this->moneyValue($order->total), 2),
+            'sub_total' => round($this->moneyValue($order->sub_total), 2),
+            'shipping_total' => round($this->moneyValue($order->shipping_total), 2),
+            'tax_total' => round($this->moneyValue($order->tax_total), 2),
+            'discount_total' => round($this->moneyValue($order->discount_total), 2),
+            'currency' => $order->currency_code,
+            'lines' => $order->lines
+                ->where('type', '!=', 'shipping')
+                ->map(fn ($line) => [
+                    'id' => $line->id,
+                    'description' => $line->description,
+                    'quantity' => $line->quantity,
+                    'unit_price' => round($this->moneyValue($line->unit_price), 2),
+                    'sub_total' => round($this->moneyValue($line->sub_total), 2),
+                    'image' => $this->resolveLineImage($line),
+                ])
+                ->values(),
         ];
+    }
+
+    private function moneyValue(mixed $amount): float
+    {
+        if (is_object($amount) && method_exists($amount, 'decimal')) {
+            return (float) $amount->decimal();
+        }
+
+        if (is_numeric($amount)) {
+            return ((float) $amount) / 100;
+        }
+
+        return 0.0;
+    }
+
+    private function resolveLineImage(mixed $line): ?string
+    {
+        $purchasable = $line->getRelationValue('purchasable');
+
+        if (! $purchasable || ! method_exists($purchasable, 'product') || ! $purchasable->product) {
+            return null;
+        }
+
+        return ProductSyncService::normalizePublicImageUrl(
+            $purchasable->product->translateAttribute('image_url')
+        );
     }
 
     private function fulfillmentStatus(Order $order, array $meta): string

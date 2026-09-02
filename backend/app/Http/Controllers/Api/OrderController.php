@@ -80,6 +80,7 @@ class OrderController extends Controller
         $order = Order::query()
             ->where("meta->{$gateway}_session_id", $sessionId)
             ->where('created_at', '>', now()->subHours(24))
+            ->with(['shippingAddress', 'lines'])
             ->first();
 
         if (! $order) {

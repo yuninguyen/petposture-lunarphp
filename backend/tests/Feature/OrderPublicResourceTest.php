@@ -79,12 +79,12 @@ class OrderPublicResourceTest extends TestCase
                     'carrier',
                     'eta',
                     'shipping_address' => ['city', 'state', 'postcode', 'country'],
+                    'total',
+                    'lines' => [['id', 'description', 'quantity', 'unit_price', 'sub_total', 'image']],
                 ],
             ])
             ->assertJsonMissingPath('data.id')
             ->assertJsonMissingPath('data.customer_email')
-            ->assertJsonMissingPath('data.lines')
-            ->assertJsonMissingPath('data.total')
             ->assertJsonMissingPath('data.payment_status')
             ->assertJsonMissingPath('data.payment_method')
             ->assertJsonMissingPath('data.payment_intent_id')
@@ -154,13 +154,11 @@ class OrderPublicResourceTest extends TestCase
 
         $response->assertJsonPath('data.reference', $placeResponse->json('order.reference'))
             ->assertJsonStructure([
-                'data' => ['status', 'fulfillment_status', 'carrier', 'eta', 'shipping_address'],
+                'data' => ['status', 'fulfillment_status', 'carrier', 'eta', 'shipping_address', 'total', 'lines'],
             ])
             ->assertJsonMissingPath('data.customer_email')
             ->assertJsonMissingPath('data.payment_status')
             ->assertJsonMissingPath('data.payment_method')
-            ->assertJsonMissingPath('data.lines')
-            ->assertJsonMissingPath('data.total')
             ->assertJsonMissingPath('data.billing_address');
     }
 
