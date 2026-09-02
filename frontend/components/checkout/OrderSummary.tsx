@@ -50,7 +50,6 @@ export function OrderSummary({
     shippingAmount,
     taxAmount,
     taxRate,
-    taxQuote,
     finalTotal,
 }: OrderSummaryProps) {
     const [showShippingInfo, setShowShippingInfo] = useState(false);
@@ -170,12 +169,6 @@ export function OrderSummary({
                                     <span>
                                         Estimated tax ({(taxRate * 100).toFixed(taxRate * 100 % 1 === 0 ? 0 : 2)}%)
                                     </span>
-                                    {taxQuote?.source_label && (
-                                        <p className="mt-1 text-xs leading-4 text-[#707070]">
-                                            {taxQuote.source_label}
-                                            {taxQuote.effective_date ? `, effective ${taxQuote.effective_date}` : ''}
-                                        </p>
-                                    )}
                                 </div>
                                 <span className="font-medium">${taxAmount.toFixed(2)}</span>
                             </div>
