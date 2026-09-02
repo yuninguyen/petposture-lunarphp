@@ -67,21 +67,40 @@ function OrderSuccessContent() {
                     // PayPal appends its own order id as `token` (and `PayerID`) when it
                     // redirects the buyer back — the order was already created before the
                     // redirect, but the payment still needs an explicit capture call.
-                    const captureRes = await fetchApi('/api/checkout/paypal-capture', {
-                        method: "POST",
-                        body: { paypal_order_id: initialToken },
-                    });
+                    // capturePayPalOrder() is idempotent server-side, so retrying here is
+                    // safe; a transient network hiccup on this step shouldn't block the
+                    // confirmation page — the order lookup below still works either way,
+                    // and a failed capture can be retried on the next page load.
+                    for (let attempt = 0; attempt < 2; attempt += 1) {
+                        try {
+                            const captureRes = await fetchApi('/api/checkout/paypal-capture', {
+                                method: "POST",
+                                body: { paypal_order_id: initialToken },
+                            });
 
-                    if (!captureRes.ok) {
-                        const captureData = await captureRes.json().catch(() => null);
-                        throw new Error(captureData?.message || "PayPal payment could not be captured.");
+                            if (!captureRes.ok) {
+                                const captureData = await captureRes.json().catch(() => null);
+                                console.error("PayPal capture failed:", captureData?.message);
+                            }
+
+                            break;
+                        } catch (captureError) {
+                            console.error("PayPal capture request failed:", captureError);
+                            if (attempt === 0) {
+                                await new Promise((resolve) => setTimeout(resolve, 800));
+                            }
+                        }
                     }
                 }
 
                 if (gateway && sessionId) {
-                    response = await fetch(
-                        `${apiBase}/api/orders/by-payment-session?gateway=${encodeURIComponent(gateway)}&session_id=${encodeURIComponent(sessionId)}`,
-                    );
+                    const lookupUrl = `${apiBase}/api/orders/by-payment-session?gateway=${encodeURIComponent(gateway)}&session_id=${encodeURIComponent(sessionId)}`;
+                    try {
+                        response = await fetch(lookupUrl);
+                    } catch {
+                        await new Promise((resolve) => setTimeout(resolve, 800));
+                        response = await fetch(lookupUrl);
+                    }
                 } else {
                     if (!initialToken || !accessEmail) {
                         throw new Error("This confirmation link is incomplete.");
