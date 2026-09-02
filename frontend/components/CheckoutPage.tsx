@@ -36,6 +36,7 @@ declare global {
                     mount: (element: string | HTMLElement) => void;
                     unmount: () => void;
                     destroy: () => void;
+                    on: (event: 'change', handler: (event: { brand?: string }) => void) => void;
                 };
             };
             confirmCardPayment: (
@@ -284,6 +285,7 @@ export default function CheckoutPage() {
     const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
     const [activeAddressTarget, setActiveAddressTarget] = useState<AddressTarget | null>(null);
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>([]);
+    const [detectedCardBrand, setDetectedCardBrand] = useState<string>('unknown');
     const [preparedPaymentIntent, setPreparedPaymentIntent] = useState<PreparedPaymentIntent | null>(null);
     const [paymentIntentMessage, setPaymentIntentMessage] = useState<string | null>(null);
     const [taxQuote, setTaxQuote] = useState<TaxQuote | null>(null);
@@ -554,6 +556,10 @@ export default function CheckoutPage() {
         cardExpiryElement.mount(stripeCardExpiryMountRef.current);
         cardCvcElement.mount(stripeCardCvcMountRef.current);
 
+        cardNumberElement.on('change', (event) => {
+            setDetectedCardBrand(event.brand || 'unknown');
+        });
+
         stripeCardNumberElementRef.current = cardNumberElement;
         stripeCardExpiryElementRef.current = cardExpiryElement;
         stripeCardCvcElementRef.current = cardCvcElement;
@@ -568,6 +574,7 @@ export default function CheckoutPage() {
             stripeCardCvcElementRef.current?.unmount();
             stripeCardCvcElementRef.current?.destroy();
             stripeCardCvcElementRef.current = null;
+            setDetectedCardBrand('unknown');
         };
     }, [stripeLiveMode, stripeReady]);
 
@@ -884,8 +891,35 @@ export default function CheckoutPage() {
         );
     };
 
+    const cardBrandIcons: Record<string, { src: string; alt: string }> = {
+        visa: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/visa.sxIq5Dot.svg', alt: 'VISA' },
+        mastercard: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/mastercard.1c4_lyMp.svg', alt: 'MASTERCARD' },
+        amex: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/amex.Csr7hRoy.svg', alt: 'AMEX' },
+        discover: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/discover.C7UbFpNb.svg', alt: 'Discover' },
+        diners: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/diners_club.B9hVEmwz.svg', alt: 'Diners Club' },
+        jcb: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/jcb.BgZHqF0u.svg', alt: 'JCB' },
+        unionpay: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/unionpay.8M-Boq_z.svg', alt: 'UnionPay' },
+    };
+
     const renderPaymentBadges = (method: PaymentMethodOption) => {
         if (method.method === 'card') {
+            const detectedIcon = form.paymentMethod === 'card' ? cardBrandIcons[detectedCardBrand] : undefined;
+
+            if (detectedIcon) {
+                return (
+                    <div className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] border border-[#e5e7eb] bg-white overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={detectedIcon.src}
+                            alt={detectedIcon.alt}
+                            width="38"
+                            height="24"
+                            className="h-full w-full object-contain"
+                        />
+                    </div>
+                );
+            }
+
             return (
                 <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                     <div className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] bg-white overflow-hidden">
@@ -1599,7 +1633,7 @@ export default function CheckoutPage() {
                                     <p>All transactions are secure and encrypted.</p>
                                 </div>
                             </div>
-                            <div className="rounded-[8px] border border-[#d9d9d9] shadow-[0_8px_24px_rgba(17,24,39,0.03)]">
+                            <div className="overflow-hidden rounded-[8px] border border-[#d9d9d9] shadow-[0_8px_24px_rgba(17,24,39,0.03)]">
                                 {availablePaymentMethods.map((method, index) => (
                                     <React.Fragment key={method.method}>
                                         <label

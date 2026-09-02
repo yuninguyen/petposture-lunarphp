@@ -15,6 +15,7 @@ declare global {
                     mount: (element: string | HTMLElement) => void;
                     unmount: () => void;
                     destroy: () => void;
+                    on: (event: "change", handler: (event: { brand?: string }) => void) => void;
                 };
             };
             confirmCardPayment: (
