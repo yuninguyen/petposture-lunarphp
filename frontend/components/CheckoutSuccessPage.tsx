@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle, CreditCard, Loader2, Mail, Package, ShoppingBag, Truck } from "lucide-react";
+import { CheckCircle, CreditCard, Loader2, Mail, Package, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api";
 import { fetchApi } from "@/lib/fetchApi";
 import { useCart } from "@/context/CartContext";
@@ -403,55 +403,60 @@ function OrderSuccessContent() {
 
                 <aside className="order-first w-full border-b border-[#e8e8ea] bg-[#fafafa] px-4 py-6 md:px-8 lg:order-last lg:w-[440px] lg:border-b-0 lg:border-l lg:px-10 lg:py-12">
                     <div className="lg:sticky lg:top-12">
-                        <div className="divide-y divide-[#f3f3f5] rounded-[10px] border border-[#e8e8ea] bg-white">
+                        <div className="space-y-4">
                             {order.lines.map((line) => (
-                                <div key={line.id} className="flex items-center gap-3.5 px-5 py-4">
-                                    <div className="relative flex-shrink-0">
+                                <div key={line.id} className="flex items-center gap-4 py-1">
+                                    <div className="relative h-16 w-16 flex-shrink-0 rounded-[10px] border border-[#e6e6e6] bg-white">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                             src={line.image ?? "/assets/product/Pug-Dog-Bed.webp"}
                                             alt=""
                                             width={64}
                                             height={64}
-                                            className="h-16 w-16 rounded-[8px] border border-[#ececef] bg-[#faf9f8] object-contain p-1.5"
+                                            className="h-full w-full object-contain p-1"
                                         />
-                                        <span className="absolute -right-1.5 -top-1.5 z-10 flex h-[21px] w-[21px] items-center justify-center rounded-full bg-black text-[11px] font-bold leading-none text-white ring-2 ring-white">
+                                        <span className="absolute -right-2 -top-2 z-10 flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#111827] px-1 text-xs font-bold text-white shadow-[0_0_0_2px_#fafafa]">
                                             {line.quantity}
                                         </span>
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-[13px] font-medium leading-[1.5] text-[#1a1a1a]">{line.description}</p>
+                                        <p className="line-clamp-1 text-sm font-medium text-[#1a1a1a]">{line.description}</p>
                                     </div>
-                                    <p className="flex-shrink-0 text-[13px] font-semibold text-[#1a1a1a]">{formatMoney(line.sub_total)}</p>
+                                    <span className="flex-shrink-0 text-[14px] font-medium text-[#1a1a1a]">{formatMoney(line.sub_total)}</span>
                                 </div>
                             ))}
+                        </div>
 
-                            <div className="space-y-2.5 px-5 py-5">
-                                <div className="flex items-center justify-between text-[13px]">
-                                    <span className="text-[#707070]">Subtotal</span>
-                                    <span className="font-medium text-[#1a1a1a]">{formatMoney(order.sub_total)}</span>
+                        <div className="mt-6 space-y-3 border-t border-[#e6e6e6] pt-6">
+                            <div className="flex items-center justify-between text-[14px] text-[#333333]">
+                                <span>Subtotal</span>
+                                <span className="font-medium">{formatMoney(order.sub_total)}</span>
+                            </div>
+                            {order.discount_total > 0 ? (
+                                <div className="flex items-center justify-between text-[14px] text-[#df8448]">
+                                    <span>Discount</span>
+                                    <span className="font-medium">&minus;{formatMoney(order.discount_total)}</span>
                                 </div>
-                                {order.discount_total > 0 ? (
-                                    <div className="flex items-center justify-between text-[13px]">
-                                        <span className="text-[#707070]">Discount</span>
-                                        <span className="font-semibold text-[#df8448]">&minus;{formatMoney(order.discount_total)}</span>
-                                    </div>
-                                ) : null}
-                                <div className="flex items-center justify-between text-[13px]">
-                                    <span className="text-[#707070]">Shipping</span>
-                                    <span className="font-medium text-[#1a1a1a]">{order.shipping_total > 0 ? formatMoney(order.shipping_total) : "Free"}</span>
+                            ) : null}
+                            <div className="flex items-center justify-between text-[14px] text-[#333333]">
+                                <span>Shipping</span>
+                                <span className="font-medium">{order.shipping_total > 0 ? formatMoney(order.shipping_total) : "Free"}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-[14px] text-[#333333]">
+                                <span>Estimated taxes</span>
+                                <span className="font-medium">{formatMoney(order.tax_total)}</span>
+                            </div>
+                            <div className="flex items-center justify-between pt-3 text-[18px] font-bold text-[#333333]">
+                                <span>Total</span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-xs font-normal text-[#707070]">{order.currency}</span>
+                                    <span>{formatMoney(order.total)}</span>
                                 </div>
-                                <div className="flex items-center justify-between text-[13px]">
-                                    <span className="text-[#707070]">Estimated taxes</span>
-                                    <span className="font-medium text-[#1a1a1a]">{formatMoney(order.tax_total)}</span>
-                                </div>
-                                <div className="mt-1 flex items-center justify-between border-t border-[#e8e8ea] pt-4">
-                                    <span className="text-[14px] font-semibold text-[#1a1a1a]">Total</span>
-                                    <p className="flex items-baseline gap-1.5 text-[18px] font-bold tracking-tight text-[#1a1a1a]">
-                                        <span className="text-[11px] font-semibold text-[#9ca3af]">{order.currency}</span>
-                                        {formatMoney(order.total)}
-                                    </p>
-                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 rounded-[10px] border border-[#e6f3ea] bg-[#f6fbf7] px-3 py-2 text-sm text-[#4d6357]">
+                                <ShieldCheck size={14} className="text-[#0f9f61]" />
+                                <span>Secure checkout and encrypted payment details.</span>
                             </div>
                         </div>
                     </div>
