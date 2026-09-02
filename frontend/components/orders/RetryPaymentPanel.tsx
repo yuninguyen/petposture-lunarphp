@@ -9,7 +9,7 @@ declare global {
         Stripe?: (publishableKey: string) => {
             elements: () => {
                 create: (
-                    type: "card",
+                    type: "card" | "cardNumber" | "cardExpiry" | "cardCvc",
                     options?: Record<string, unknown>
                 ) => {
                     mount: (element: string | HTMLElement) => void;

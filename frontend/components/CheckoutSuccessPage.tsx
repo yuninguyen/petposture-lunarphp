@@ -1,12 +1,13 @@
 "use client";
 
 import React, { Suspense, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle, Loader2, Package, Truck } from "lucide-react";
+import { CheckCircle, CreditCard, Loader2, Mail, Package, ShoppingBag, Truck } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api";
 import { fetchApi } from "@/lib/fetchApi";
-import Header from "@/components/Header";
+import { useCart } from "@/context/CartContext";
 import RetryPaymentPanel from "@/components/orders/RetryPaymentPanel";
 
 type TrackingOrder = {
@@ -112,6 +113,7 @@ function buildTimeline(order: TrackingOrder) {
 }
 
 function OrderSuccessContent() {
+    const { items } = useCart();
     const searchParams = useSearchParams();
     const initialToken = searchParams.get("token") ?? "";
     const queryEmail = searchParams.get("email") ?? "";
@@ -229,7 +231,7 @@ function OrderSuccessContent() {
 
     if (loading) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-[#f6f6f7]">
+            <main className="flex min-h-screen items-center justify-center bg-[#fcfcfd]">
                 <Loader2 className="animate-spin text-rust" size={34} />
             </main>
         );
@@ -237,7 +239,7 @@ function OrderSuccessContent() {
 
     if (error || !order) {
         return (
-            <main className="flex min-h-screen items-center justify-center bg-[#f6f6f7] px-6">
+            <main className="flex min-h-screen items-center justify-center bg-[#fcfcfd] px-6">
                 <div className="max-w-lg rounded-3xl border border-[#e8e8ea] bg-white p-10 text-center shadow-sm">
                     <Package className="mx-auto mb-5 text-rust" size={38} />
                     <h1 className="text-2xl font-semibold text-[#1a1a1a]">Order confirmation unavailable</h1>
@@ -256,20 +258,53 @@ function OrderSuccessContent() {
         ? new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(new Date(order.created_at))
         : "—";
 
-    return (
-        <main className="min-h-screen bg-[#faf9f8] font-hanken">
-            <Header />
+    const deliveredDone = timeline.find((step) => step.key === "delivered")?.done ?? false;
 
-            <div className="border-b border-[#ececef] bg-white">
+    return (
+        <main className="min-h-screen bg-[#fcfcfd] font-hanken text-[#333333]">
+            <div className="sticky top-0 z-40 border-b border-[#e8e8ea] bg-white">
+                <div className="mx-auto flex max-w-[1100px] items-center justify-between px-4 py-3 lg:px-12 lg:py-4">
+                    <Link href="/" className="flex items-center transition hover:opacity-80">
+                        <Image
+                            src="/assets/logo/Logo-PetPosture-1.webp"
+                            alt="PetPosture Logo"
+                            width={160}
+                            height={80}
+                            priority
+                            className="h-9 w-auto object-contain lg:h-11"
+                        />
+                    </Link>
+                    <Link href="/cart" className="relative flex items-center justify-center p-1 text-[#333333] transition hover:text-rust" aria-label="Shopping cart">
+                        <ShoppingBag size={22} />
+                        {items.length > 0 && (
+                            <span className="absolute -right-1.5 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-secondary text-[10px] font-black text-ink shadow-sm">
+                                {items.reduce((total, item) => total + item.quantity, 0)}
+                            </span>
+                        )}
+                    </Link>
+                </div>
+            </div>
+
+            <div className="border-b border-[#e8e8ea] bg-white">
                 <div className="mx-auto max-w-[1120px] px-5 py-7 md:py-9">
                     <div className="flex items-center gap-4">
                         <div className="flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-full bg-[#fff3eb]">
                             <CheckCircle size={28} strokeWidth={2} className="text-[#df8448]" />
                         </div>
                         <div>
-                            <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-[#df8448]">Order #{order.reference}</p>
+                            <p className="text-[14px] font-semibold text-[#df8448]">Confirmation #{order.reference}</p>
                             <h1 className="mt-0.5 text-[26px] font-bold leading-tight tracking-tight text-[#2f3d46] md:text-[30px]">Thank you{customerName ? `, ${customerName}` : ""}!</h1>
                         </div>
+                    </div>
+
+                    <div className="mt-6 rounded-[8px] border border-[#f0ddd0] bg-[#fff8f4] px-5 py-4">
+                        <p className="flex items-start gap-2.5 text-[14px] leading-[1.65] text-[#7a4020]">
+                            <Mail size={15} className="mt-0.5 flex-shrink-0 text-[#df8448]" />
+                            <span>
+                                <span className="font-semibold">Your order is confirmed</span><br />
+                                You&apos;ll receive a confirmation email soon
+                            </span>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -290,71 +325,65 @@ function OrderSuccessContent() {
                                         <span className={`relative z-10 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border ${step.done ? "border-[#df8448] bg-[#df8448] text-white" : "border-[#d1d5db] bg-white text-[#9ca3af]"}`}>
                                             {step.done ? <CheckCircle size={14} /> : <span className="h-2 w-2 rounded-full bg-current" />}
                                         </span>
-                                        <p className="pb-1 text-[13.5px] font-semibold text-[#1a1a1a]">{step.label}</p>
+                                        <div className="pb-1">
+                                            <p className="text-[13.5px] font-semibold text-[#1a1a1a]">{step.label}</p>
+                                            {step.key === "shipped" && step.done && order.tracking_url ? (
+                                                <div className="mt-2 flex flex-wrap items-center gap-3 rounded-[8px] border border-[#e8e8ea] bg-[#faf9f8] px-3.5 py-3">
+                                                    <div>
+                                                        <p className="text-[12.5px] font-medium text-[#555555]">{order.carrier ? formatStatus(order.carrier) : "Carrier"}</p>
+                                                        {order.tracking_number ? (
+                                                            <p className="mt-0.5 text-[12px] leading-[1.6] text-[#707070]">Tracking number: {order.tracking_number}</p>
+                                                        ) : null}
+                                                    </div>
+                                                    <a href={order.tracking_url} target="_blank" rel="noreferrer" className="ml-auto inline-flex h-9 items-center justify-center gap-2 rounded-[6px] border border-[#df8448] px-3.5 text-[12px] font-semibold text-[#df8448] transition hover:bg-[#fff4ec]">
+                                                        <Truck size={14} /> Open tracking
+                                                    </a>
+                                                </div>
+                                            ) : null}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     </div>
 
-                    {order.tracking_url ? (
-                        <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
-                            <div className="border-b border-[#f3f3f5] px-6 py-4">
-                                <h2 className="text-[14px] font-semibold text-[#1a1a1a]">Shipment tracking</h2>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 px-6 py-5">
-                                <div>
-                                    <p className="text-[13.5px] font-medium text-[#555555]">{order.carrier ? formatStatus(order.carrier) : "Carrier"}</p>
-                                    {order.tracking_number ? (
-                                        <p className="mt-0.5 text-[12.5px] leading-[1.6] text-[#707070]">Tracking number: {order.tracking_number}</p>
-                                    ) : null}
-                                </div>
-                                <a href={order.tracking_url} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center justify-center gap-2 rounded-[6px] border border-[#df8448] px-4 text-[12px] font-semibold text-[#df8448] transition hover:bg-[#fff4ec]">
-                                    <Truck size={14} /> Open tracking
-                                </a>
-                            </div>
-                        </div>
-                    ) : null}
-
                     <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
                         <div className="border-b border-[#f3f3f5] px-6 py-4">
                             <h2 className="text-[14px] font-semibold text-[#1a1a1a]">Order details</h2>
                         </div>
-                        <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-                            <div className="px-6 py-4">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Order number</p>
-                                <p className="mt-1.5 text-[14px] font-semibold text-[#1a1a1a]">{order.reference}</p>
-                            </div>
-                            <div className="px-6 py-4">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Date</p>
-                                <p className="mt-1.5 text-[14px] font-medium text-[#555555]">{orderDate}</p>
-                            </div>
-                            <div className="px-6 py-4">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Order total</p>
-                                <p className="mt-1.5 text-[14px] font-semibold text-[#1a1a1a]">{formatMoney(order.total)}</p>
-                            </div>
-                        </div>
-                        <div className="grid divide-y divide-[#f3f3f5] border-t border-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                        <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
                             <div className="px-6 py-5">
                                 <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Contact information</p>
                                 <p className="text-[13.5px] text-[#555555]">{order.customer_email || "Not available"}</p>
                             </div>
                             <div className="px-6 py-5">
+                                <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Date</p>
+                                <p className="text-[13.5px] text-[#555555]">{orderDate}</p>
+                            </div>
+                        </div>
+                        <div className="grid divide-y divide-[#f3f3f5] border-t border-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                            <div className="px-6 py-5">
+                                <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Shipping method</p>
+                                <p className="text-[13.5px] text-[#555555]">{order.shipping_method}</p>
+                            </div>
+                            <div className="px-6 py-5">
                                 <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Payment method</p>
-                                <p className="text-[13.5px] text-[#555555]">
-                                    {order.payment_label || "—"}
-                                    {order.card_brand ? ` — ${formatStatus(order.card_brand)}` : ""}
-                                    {order.card_last4 ? ` •••• ${order.card_last4}` : ""}
-                                </p>
+                                <div className="flex items-center gap-2">
+                                    {order.card_brand ? (
+                                        <span className="flex h-7 w-10 flex-shrink-0 items-center justify-center rounded-[4px] border border-[#e8e8ea] bg-[#faf9f8]">
+                                            <CreditCard size={14} className="text-[#9ca3af]" />
+                                        </span>
+                                    ) : null}
+                                    <p className="text-[13.5px] text-[#555555]">
+                                        {order.card_brand ? `${formatStatus(order.card_brand)} •••• ${order.card_last4}` : (order.payment_label || "—")}
+                                        {" — "}{formatMoney(order.total)} <span className="text-[11px] text-[#9ca3af]">{order.currency}</span>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                         <div className="grid divide-y divide-[#f3f3f5] border-t border-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
                             <AddressBlock title="Shipping address" address={order.shipping_address} />
                             <AddressBlock title="Billing address" address={order.billing_address} />
-                        </div>
-                        <div className="border-t border-[#f3f3f5] px-6 py-5">
-                            <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Shipping method</p>
-                            <p className="text-[13.5px] text-[#555555]">{order.shipping_method}</p>
                         </div>
                     </div>
 
@@ -366,9 +395,11 @@ function OrderSuccessContent() {
                         <Link href="/shop" className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#df8448] px-8 text-[14px] font-semibold text-white transition-all hover:bg-[#c9713a] hover:shadow-md sm:w-auto">
                             Continue shopping
                         </Link>
-                        <Link href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} className="flex h-11 w-full items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white px-8 text-[14px] font-semibold text-[#555555] transition-all hover:bg-[#faf9f8] hover:shadow-sm sm:w-auto">
-                            Request a return
-                        </Link>
+                        {deliveredDone ? (
+                            <Link href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} className="flex h-11 w-full items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white px-8 text-[14px] font-semibold text-[#555555] transition-all hover:bg-[#faf9f8] hover:shadow-sm sm:w-auto">
+                                Request a return
+                            </Link>
+                        ) : null}
                     </div>
                 </div>
 
@@ -414,15 +445,15 @@ function OrderSuccessContent() {
                                 <span className="font-medium text-[#1a1a1a]">{order.shipping_total > 0 ? formatMoney(order.shipping_total) : "Free"}</span>
                             </div>
                             <div className="flex items-center justify-between text-[13px]">
-                                <span className="text-[#707070]">Tax</span>
+                                <span className="text-[#707070]">Estimated taxes</span>
                                 <span className="font-medium text-[#1a1a1a]">{formatMoney(order.tax_total)}</span>
                             </div>
                             <div className="mt-1 flex items-center justify-between border-t border-[#e8e8ea] pt-4">
                                 <span className="text-[14px] font-semibold text-[#1a1a1a]">Total</span>
-                                <div className="text-right">
-                                    <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">{order.currency}</p>
-                                    <p className="text-[22px] font-bold tracking-tight text-[#1a1a1a]">{formatMoney(order.total)}</p>
-                                </div>
+                                <p className="flex items-baseline gap-1.5 text-[22px] font-bold tracking-tight text-[#1a1a1a]">
+                                    {formatMoney(order.total)}
+                                    <span className="text-[11px] font-semibold text-[#9ca3af]">{order.currency}</span>
+                                </p>
                             </div>
                         </div>
                     </div>

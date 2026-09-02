@@ -8,6 +8,7 @@ import {
     CheckCircle,
     ChevronLeft,
     CreditCard,
+    HelpCircle,
     Lock,
     Mail,
     MapPinHouse,
@@ -29,7 +30,7 @@ declare global {
         Stripe?: (publishableKey: string) => {
             elements: () => {
                 create: (
-                    type: 'card',
+                    type: 'card' | 'cardNumber' | 'cardExpiry' | 'cardCvc',
                     options?: Record<string, unknown>
                 ) => {
                     mount: (element: string | HTMLElement) => void;
@@ -257,11 +258,16 @@ export default function CheckoutPage() {
     const shippingSectionRef = useRef<HTMLElement | null>(null);
     const paymentSectionRef = useRef<HTMLElement | null>(null);
     const placesContainerRef = useRef<HTMLDivElement | null>(null);
-    const stripeCardMountRef = useRef<HTMLDivElement | null>(null);
+    const stripeCardNumberMountRef = useRef<HTMLDivElement | null>(null);
+    const stripeCardExpiryMountRef = useRef<HTMLDivElement | null>(null);
+    const stripeCardCvcMountRef = useRef<HTMLDivElement | null>(null);
     const paypalPopupRef = useRef<Window | null>(null);
     const stripeInstanceRef = useRef<ReturnType<NonNullable<typeof window.Stripe>> | null>(null);
     const stripeElementsRef = useRef<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>['elements']> | null>(null);
-    const stripeCardElementRef = useRef<ReturnType<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>['elements']>['create']> | null>(null);
+    type StripeElement = ReturnType<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>['elements']>['create']>;
+    const stripeCardNumberElementRef = useRef<StripeElement | null>(null);
+    const stripeCardExpiryElementRef = useRef<StripeElement | null>(null);
+    const stripeCardCvcElementRef = useRef<StripeElement | null>(null);
     const autocompleteServiceRef = useRef<{
         getPlacePredictions: (
             request: Record<string, unknown>,
@@ -517,15 +523,16 @@ export default function CheckoutPage() {
     }, [selectedCardMethod?.publishable_key, stripeLiveMode]);
 
     useEffect(() => {
-        if (!stripeLiveMode || !stripeReady || !stripeElementsRef.current || !stripeCardMountRef.current) {
+        if (!stripeLiveMode || !stripeReady || !stripeElementsRef.current
+            || !stripeCardNumberMountRef.current || !stripeCardExpiryMountRef.current || !stripeCardCvcMountRef.current) {
             return;
         }
 
-        if (stripeCardElementRef.current) {
+        if (stripeCardNumberElementRef.current) {
             return;
         }
 
-        const cardElement = stripeElementsRef.current.create('card', {
+        const elementStyle = {
             style: {
                 base: {
                     color: '#1f2937',
@@ -536,15 +543,31 @@ export default function CheckoutPage() {
                     },
                 },
             },
-        });
+        };
 
-        cardElement.mount(stripeCardMountRef.current);
-        stripeCardElementRef.current = cardElement;
+        const elements = stripeElementsRef.current;
+        const cardNumberElement = elements.create('cardNumber', elementStyle);
+        const cardExpiryElement = elements.create('cardExpiry', elementStyle);
+        const cardCvcElement = elements.create('cardCvc', elementStyle);
+
+        cardNumberElement.mount(stripeCardNumberMountRef.current);
+        cardExpiryElement.mount(stripeCardExpiryMountRef.current);
+        cardCvcElement.mount(stripeCardCvcMountRef.current);
+
+        stripeCardNumberElementRef.current = cardNumberElement;
+        stripeCardExpiryElementRef.current = cardExpiryElement;
+        stripeCardCvcElementRef.current = cardCvcElement;
 
         return () => {
-            stripeCardElementRef.current?.unmount();
-            stripeCardElementRef.current?.destroy();
-            stripeCardElementRef.current = null;
+            stripeCardNumberElementRef.current?.unmount();
+            stripeCardNumberElementRef.current?.destroy();
+            stripeCardNumberElementRef.current = null;
+            stripeCardExpiryElementRef.current?.unmount();
+            stripeCardExpiryElementRef.current?.destroy();
+            stripeCardExpiryElementRef.current = null;
+            stripeCardCvcElementRef.current?.unmount();
+            stripeCardCvcElementRef.current?.destroy();
+            stripeCardCvcElementRef.current = null;
         };
     }, [stripeLiveMode, stripeReady]);
 
@@ -1283,13 +1306,13 @@ export default function CheckoutPage() {
             const orderAccess = await placeOrder(paymentContext);
 
             if (form.paymentMethod === 'card' && paymentContext?.mode === 'configured') {
-                if (!stripeInstanceRef.current || !stripeCardElementRef.current) {
+                if (!stripeInstanceRef.current || !stripeCardNumberElementRef.current) {
                     throw new Error('Stripe card form is not ready yet.');
                 }
 
                 const confirmation = await stripeInstanceRef.current.confirmCardPayment(paymentContext.client_secret, {
                     payment_method: {
-                        card: stripeCardElementRef.current,
+                        card: stripeCardNumberElementRef.current,
                         billing_details: {
                             name: form.cardName.trim() || `${form.firstName} ${form.lastName}`.trim(),
                             email: form.email,
@@ -1616,22 +1639,37 @@ export default function CheckoutPage() {
                                         {method.method === 'card' && form.paymentMethod === 'card' && (
                                             <div className="grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3">
                                                 {stripeLiveMode ? (
-                                                    <div className="rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 py-[15px]">
-                                                        <div ref={stripeCardMountRef} />
-                                                    </div>
+                                                    <>
+                                                        <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5">
+                                                            <div ref={stripeCardNumberMountRef} className="flex-1" />
+                                                            <Lock size={15} className="ml-2 flex-shrink-0 text-[#9ca3af]" />
+                                                        </div>
+                                                        <div className="grid gap-3 md:grid-cols-2">
+                                                            <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5">
+                                                                <div ref={stripeCardExpiryMountRef} className="flex-1" />
+                                                            </div>
+                                                            <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5">
+                                                                <div ref={stripeCardCvcMountRef} className="flex-1" />
+                                                                <HelpCircle size={15} className="ml-2 flex-shrink-0 text-[#9ca3af]" />
+                                                            </div>
+                                                        </div>
+                                                    </>
                                                 ) : (
                                                     <>
-                                                        <input value={form.cardNumber} onChange={(e) => updateField('cardNumber', e.target.value)} placeholder="Card number" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
+                                                        <div className="relative">
+                                                            <input value={form.cardNumber} onChange={(e) => updateField('cardNumber', e.target.value)} placeholder="Card number" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 pr-10 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
+                                                            <Lock size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
+                                                        </div>
                                                         <div className="grid gap-3 md:grid-cols-2">
                                                             <input value={form.expiry} onChange={(e) => updateField('expiry', e.target.value)} placeholder="Expiration date (MM / YY)" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
-                                                            <input value={form.securityCode} onChange={(e) => updateField('securityCode', e.target.value)} placeholder="Security code" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
+                                                            <div className="relative">
+                                                                <input value={form.securityCode} onChange={(e) => updateField('securityCode', e.target.value)} placeholder="Security code" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 pr-10 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
+                                                                <HelpCircle size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
+                                                            </div>
                                                         </div>
                                                     </>
                                                 )}
                                                 <input value={form.cardName} onChange={(e) => updateField('cardName', e.target.value)} placeholder="Name on card" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
-                                                {stripeLiveMode ? (
-                                                    <p className="text-sm leading-[1.45] text-[#6f7782]">Card details are collected securely by Stripe.</p>
-                                                ) : null}
                                                 {stripeError ? (
                                                     <p className="text-sm font-medium text-[#b42318]">{stripeError}</p>
                                                 ) : null}
