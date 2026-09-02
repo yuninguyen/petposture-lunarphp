@@ -34,7 +34,7 @@ export function ShippingMethodSelector({
                 <h2 className="text-[18px] font-semibold text-[#333333]">Shipping method</h2>
             </div>
 
-            <div className="overflow-hidden rounded-[8px] border border-[#d9d9d9] bg-white shadow-[0_8px_24px_rgba(17,24,39,0.03)]">
+            <div className="overflow-hidden rounded-[8px] bg-white shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
                 {options.map((option, index) => (
                     <label
                         key={option.id}
