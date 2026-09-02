@@ -78,15 +78,7 @@ export function OrderSummary({
                     <span className="text-[16px] font-bold text-[#333333]">${finalTotal.toFixed(2)}</span>
                 </button>
 
-                {/* Desktop: always-visible header */}
-                <div className="hidden items-center gap-3 lg:flex">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-rust">
-                        <ShoppingBag size={16} />
-                    </div>
-                    <h2 className="text-[18px] font-semibold text-[#333333]">Order summary</h2>
-                </div>
-
-                <div className={`${mobileExpanded ? 'mt-6 flex' : 'hidden'} flex-col space-y-8 lg:mt-4 lg:flex`}>
+                <div className={`${mobileExpanded ? 'mt-6 flex' : 'hidden'} flex-col space-y-8 lg:mt-0 lg:flex`}>
                     {/* Line items */}
                     {items.length > 0 && (
                     <div className="max-h-[380px] space-y-4 overflow-y-auto overflow-x-hidden p-1 pr-2">
