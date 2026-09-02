@@ -28,7 +28,7 @@
 
 <tr>
 <td align="center" style="{{ $font }} padding-bottom:36px;">
-<img src="{{ isset($message) ? $message->embed(public_path('logo.png')) : 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('logo.png'))) }}" height="52" alt="{{ config('app.name') }}" style="{{ $font }} display:block; height:52px; width:auto;">
+<img src="{{ asset('logo.png') }}" height="52" alt="{{ config('app.name') }}" style="{{ $font }} display:block; height:52px; width:auto;">
 </td>
 </tr>
 

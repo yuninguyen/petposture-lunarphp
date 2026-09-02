@@ -32,6 +32,9 @@
             ?? ucwords(str_replace(['_', '-'], ' ', $shippingMethodRaw)))
         : 'Standard';
 
+    $paymentMethodLabel = $meta['payment_label']
+        ?? ($meta['payment_method'] ? ucwords(str_replace(['_', '-'], ' ', $meta['payment_method'])) : null);
+
     $viewOrderUrl = rtrim(config('app.frontend_url'), '/') . '/checkout/success?ref=' . urlencode($order->reference) . '&email=' . urlencode($order->customer_reference ?? '');
 @endphp
 <!DOCTYPE html>
@@ -59,7 +62,7 @@
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td valign="middle">
-<img src="{{ isset($message) ? $message->embed(public_path('logo.png')) : 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('logo.png'))) }}" height="44" alt="{{ config('app.name') }}" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:block; height:44px; width:auto;">
+<img src="{{ asset('logo.png') }}" height="44" alt="{{ config('app.name') }}" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:block; height:44px; width:auto;">
 </td>
 <td valign="middle" align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:15px; letter-spacing:0.5px; color:#9a9a9a; text-transform:uppercase;">
 Order {{ $order->reference }}
@@ -236,8 +239,20 @@ ${{ number_format($lineTotal, 2) }}
 
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:20px; padding-bottom:24px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td width="50%" valign="top" class="stack-col stack-gap">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 4px; font-size:14px; font-weight:500; color:#1a1a1a;">Shipping method</p>
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">{{ $shippingMethodLabel }}</p>
+</td>
+@if($paymentMethodLabel)
+<td width="50%" valign="top" class="stack-col">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 4px; font-size:14px; font-weight:500; color:#1a1a1a;">Payment method</p>
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">{{ $paymentMethodLabel }}</p>
+</td>
+@endif
+</tr>
+</table>
 </td>
 </tr>
 
