@@ -1633,7 +1633,7 @@ export default function CheckoutPage() {
                                     <p>All transactions are secure and encrypted.</p>
                                 </div>
                             </div>
-                            <div className="overflow-hidden rounded-[8px] border border-[#d9d9d9] shadow-[0_8px_24px_rgba(17,24,39,0.03)]">
+                            <div className="overflow-hidden rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
                                 {availablePaymentMethods.map((method, index) => (
                                     <React.Fragment key={method.method}>
                                         <label
