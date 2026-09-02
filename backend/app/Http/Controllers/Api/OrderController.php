@@ -60,13 +60,13 @@ class OrderController extends Controller
     /**
      * Resolve an order by its redirect-checkout gateway session (Public) — used by the
      * checkout success page when a shopper is bounced back from a hosted payment page
-     * (Airwallex/Payoneer/PingPong). A successful lookup rotates and returns a
+     * (Airwallex/Payoneer/PingPong/PayPal). A successful lookup rotates and returns a
      * fresh tracking access token because the browser only knows the session id.
      */
     public function byPaymentSession(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'gateway' => 'required|string|in:airwallex,payoneer,pingpong',
+            'gateway' => 'required|string|in:airwallex,payoneer,pingpong,paypal',
             'session_id' => 'required|string',
         ]);
 
