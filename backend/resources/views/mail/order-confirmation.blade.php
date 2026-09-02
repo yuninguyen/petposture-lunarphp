@@ -47,7 +47,9 @@
         'unionpay' => ['src' => 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/unionpay.8M-Boq_z.svg', 'alt' => 'UnionPay'],
     ];
 
-    $viewOrderUrl = rtrim(config('app.frontend_url'), '/') . '/checkout/success?ref=' . urlencode($order->reference) . '&email=' . urlencode($order->customer_reference ?? '');
+    $viewOrderUrl = isset($trackingToken) && $trackingToken
+        ? rtrim(config('app.frontend_url'), '/') . '/checkout/success?token=' . urlencode($trackingToken) . '&email=' . urlencode($order->customer_reference ?? '')
+        : rtrim(config('app.frontend_url'), '/') . '/track-order';
 @endphp
 <!DOCTYPE html>
 <html lang="en">

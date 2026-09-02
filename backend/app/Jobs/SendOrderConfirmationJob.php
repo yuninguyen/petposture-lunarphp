@@ -25,6 +25,7 @@ class SendOrderConfirmationJob implements ShouldQueue
 
     public function __construct(
         public readonly int $orderId,
+        public readonly ?string $trackingToken = null,
     ) {
         $this->afterCommit = true;
     }
@@ -52,7 +53,7 @@ class SendOrderConfirmationJob implements ShouldQueue
             jobType: 'order_confirmation.customer',
             orderId: $order->id,
             recipient: (string) $order->customer_reference,
-            send: fn () => Mail::send(new OrderConfirmation($order)),
+            send: fn () => Mail::send(new OrderConfirmation($order, $this->trackingToken)),
         );
 
         $adminRecipient = config('mail.from.address');

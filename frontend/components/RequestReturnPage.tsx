@@ -270,7 +270,7 @@ function RequestReturnContent() {
                                     <p className="text-zinc-500 text-[15px] leading-relaxed mb-8">
                                         We&rsquo;ve received your request for order #{order?.reference}. Our team will review it and email you with next steps.
                                     </p>
-                                    <Link href="/" className="inline-flex items-center gap-3 text-rust font-bold uppercase tracking-[0.2em] text-sm hover:text-primary transition-all">
+                                    <Link href="/" className="inline-flex items-center gap-3 text-[#1a2128b8] hover:text-rust font-bold uppercase tracking-[0.1em] text-sm transition-all">
                                         <ArrowLeft size={16} /> Back to Homepage
                                     </Link>
                                 </div>
@@ -288,26 +288,26 @@ function RequestReturnContent() {
 
                                     <form onSubmit={handleLookup} className="space-y-8">
                                         <div className="grid md:grid-cols-2 gap-6">
-                                            <div className="space-y-3">
-                                                <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Tracking Access Token</label>
+                                            <div className="space-y-2">
+                                                <label className="block pb-1 text-sm font-semibold text-primary ml-1">Tracking access token</label>
                                                 <input
                                                     type="text"
                                                     required
                                                     value={trackingToken}
                                                     onChange={(e) => setTrackingToken(e.target.value)}
                                                     placeholder="e.g. 00000014"
-                                                    className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium"
+                                                    className="w-full px-6 py-3 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-[13px]"
                                                 />
                                             </div>
-                                            <div className="space-y-3">
-                                                <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Email</label>
+                                            <div className="space-y-2">
+                                                <label className="block pb-1 text-sm font-semibold text-primary ml-1">Email</label>
                                                 <input
                                                     type="email"
                                                     required
                                                     value={email}
                                                     onChange={(e) => setEmail(e.target.value)}
                                                     placeholder="email@example.com"
-                                                    className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium"
+                                                    className="w-full px-6 py-3 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-[13px]"
                                                 />
                                             </div>
                                         </div>
@@ -315,9 +315,9 @@ function RequestReturnContent() {
                                         <button
                                             type="submit"
                                             disabled={isLookingUp}
-                                            className="w-full bg-secondary text-ink py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                            className="w-full bg-secondary text-ink py-5 rounded-xl font-bold text-[15px] hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                         >
-                                            {isLookingUp ? "Looking up..." : "Find My Order"}
+                                            {isLookingUp ? "Looking up..." : "Find my order"}
                                             <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                         </button>
                                     </form>
@@ -379,12 +379,12 @@ function RequestReturnContent() {
                                         })}
                                     </div>
 
-                                    <div className="space-y-3">
-                                        <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Reason for return</label>
+                                    <div className="space-y-2">
+                                        <label className="block pb-1 text-sm font-semibold text-primary ml-1">Reason for return</label>
                                         <select
                                             value={reason}
                                             onChange={(e) => setReason(e.target.value)}
-                                            className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium"
+                                            className="w-full px-6 py-3 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium"
                                         >
                                             {REASONS.map((r) => (
                                                 <option key={r} value={r}>{r}</option>
@@ -392,14 +392,14 @@ function RequestReturnContent() {
                                         </select>
                                     </div>
 
-                                    <div className="space-y-3">
-                                        <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Additional notes (optional)</label>
+                                    <div className="space-y-2">
+                                        <label className="block pb-1 text-sm font-semibold text-primary ml-1">Additional notes (optional)</label>
                                         <textarea
                                             value={note}
                                             onChange={(e) => setNote(e.target.value)}
                                             rows={4}
                                             placeholder="Anything else we should know?"
-                                            className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium resize-none"
+                                            className="w-full px-6 py-3 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium resize-none placeholder:text-[13px]"
                                         />
                                     </div>
 
@@ -433,9 +433,9 @@ function RequestReturnContent() {
                                     <button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="w-full bg-secondary text-ink py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                        className="w-full bg-secondary text-ink py-5 rounded-xl font-bold text-[15px] hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                     >
-                                        {isSubmitting ? "Submitting..." : "Submit Return Request"}
+                                        {isSubmitting ? "Submitting..." : "Submit return request"}
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                     </button>
                                 </form>

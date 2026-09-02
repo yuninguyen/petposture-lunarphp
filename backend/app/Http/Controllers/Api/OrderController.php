@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\OrderResource;
 use App\Http\Resources\Api\OrderTrackingResource;
+use App\Mail\TrackingLinkResend;
 use App\Models\OrderReturnRequest;
 use App\Services\OrderOperationsService;
 use App\Services\OrderTrackingAccessService;
 use App\Services\StripePaymentIntentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Lunar\Models\Order;
 
@@ -54,6 +57,43 @@ class OrderController extends Controller
 
         return (new OrderTrackingResource($order))->additional([
             'has_active_return_request' => $hasActiveReturnRequest,
+        ]);
+    }
+
+    /**
+     * Public, enumeration-safe "forgot my tracking link" flow: a shopper who no
+     * longer has the confirmation email supplies their order number + email; if
+     * it matches, we email them a fresh tracking link instead of returning the
+     * order data directly. The response is identical whether or not it matched,
+     * so this endpoint never confirms/denies which order numbers or emails exist.
+     */
+    public function resendTrackingLink(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'order_number' => 'required|string|max:255',
+            'email' => 'required|email',
+        ])->validate();
+
+        $reference = ltrim(trim((string) $validated['order_number']), '#');
+
+        $order = Order::query()
+            ->whereRaw('LOWER(reference) = ?', [Str::lower($reference)])
+            ->whereRaw('LOWER(customer_reference) = ?', [Str::lower(trim((string) $validated['email']))])
+            ->first();
+
+        if ($order) {
+            $token = $this->orderTrackingAccessService->issue($order);
+            Mail::send(new TrackingLinkResend($order, $token));
+        } else {
+            Log::warning('Public tracking-link resend lookup failed.', [
+                'credential_hash' => hash('sha256', strtolower(trim((string) $validated['email'])).'|'.strtolower($reference)),
+                'ip' => $request->ip(),
+                'user_agent_hash' => hash('sha256', (string) $request->userAgent()),
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'If that matches an order on file, we\'ve sent a tracking link to the email on record.',
         ]);
     }
 

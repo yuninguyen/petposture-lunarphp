@@ -3,34 +3,11 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Search, Package, CheckCircle2, Truck, HelpCircle, ChevronRight, Mail, ArrowLeft } from "lucide-react";
+import { Search, Package, MailCheck, Truck, HelpCircle, ChevronRight, Mail, ArrowLeft } from "lucide-react";
 import Header from "./Header";
 import Footer from "./Footer";
 import { fetchApi } from "@/lib/fetchApi";
-import RetryPaymentPanel from "./orders/RetryPaymentPanel";
 import { useSettings } from "@/context/SettingsContext";
-
-type OrderAddress = {
-    city: string | null;
-    state: string | null;
-    postcode: string | null;
-    country: string | null;
-};
-
-type TrackedOrder = {
-    reference: string;
-    status: string;
-    fulfillment_status: string;
-    carrier: string | null;
-    tracking_number: string | null;
-    tracking_url: string | null;
-    eta: string | null;
-    shipping_address: OrderAddress;
-};
-
-function formatStatus(value: string) {
-    return value.replace(/[_-]/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
-}
 
 const fadeUp = {
     initial: { opacity: 0, y: 20 },
@@ -43,46 +20,33 @@ const staggerContainer = {
 
 export default function TrackOrderPage() {
     const { contact } = useSettings();
-    const [trackingToken, setTrackingToken] = useState("");
+    const [orderNumber, setOrderNumber] = useState("");
     const [email, setEmail] = useState("");
-    const [statusData, setStatusData] = useState<TrackedOrder | null>(null);
+    const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-
-    const formatAddress = (address: OrderAddress) => {
-        return [
-            [address.city, address.state, address.postcode].filter(Boolean).join(", ").trim(),
-            address.country,
-        ].filter(Boolean).join(", ");
-    };
-
-    const fetchTrackedOrder = async (accessToken: string, trackingEmail: string) => {
-        const res = await fetchApi('/api/orders/track', {
-            method: "POST",
-            body: {
-                tracking_token: accessToken.trim(),
-                email: trackingEmail.trim(),
-            },
-        });
-
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || "Unable to access this order. Please verify your tracking access token and email.");
-        }
-
-        const data = await res.json();
-        return data?.data ?? null;
-    };
 
     const handleTrack = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError(null);
-        setStatusData(null);
+        setSubmitted(false);
 
         try {
-            const data = await fetchTrackedOrder(trackingToken, email);
-            setStatusData(data);
+            const res = await fetchApi('/api/orders/resend-tracking-link', {
+                method: "POST",
+                body: {
+                    order_number: orderNumber.trim(),
+                    email: email.trim(),
+                },
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || "Could not send the tracking link. Please try again.");
+            }
+
+            setSubmitted(true);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Could not connect to the tracking server. Please check your connection and try again.");
         } finally {
@@ -101,7 +65,7 @@ export default function TrackOrderPage() {
                         <motion.span
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            className="inline-block px-4 py-1.5 bg-secondary/10 text-rust text-xs font-bold uppercase tracking-[0.2em] rounded-[3px] mb-6"
+                            className="inline-block px-4 py-1.5 bg-secondary/10 text-rust text-xs font-bold uppercase tracking-[0.1em] rounded-[3px] mb-6"
                         >
                             Order Tracking
                         </motion.span>
@@ -146,44 +110,44 @@ export default function TrackOrderPage() {
                                     </div>
                                 </div>
 
-                                <p className="text-zinc-500 text-[15px] mb-10 leading-relaxed uppercase tracking-wider font-medium">
-                                    Enter the private tracking access token from your confirmation link and the email used at checkout.
+                                <p className="text-zinc-500 text-[15px] mb-10 leading-relaxed font-medium">
+                                    Enter your order number and the email used at checkout — we&apos;ll send a tracking link to that email.
                                 </p>
 
                                 <form onSubmit={handleTrack} className="space-y-8">
                                     <div className="grid md:grid-cols-2 gap-6">
-                                        <div className="space-y-3">
-                                            <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Tracking Access Token</label>
+                                        <div className="space-y-2">
+                                            <label className="block pb-1 text-sm font-semibold text-primary ml-1">Order number</label>
                                             <input
                                                 type="text"
                                                 required
-                                                value={trackingToken}
-                                                onChange={(e) => setTrackingToken(e.target.value)}
-                                                placeholder="64-character private token"
-                                                className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium"
+                                                value={orderNumber}
+                                                onChange={(e) => setOrderNumber(e.target.value)}
+                                                placeholder="e.g. 00020"
+                                                className="w-full px-6 py-3 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-[13px]"
                                             />
-                                            <p className="text-sm text-zinc-400 italic ml-1">(Found in your private order confirmation link.)</p>
+                                            <p className="text-xs text-zinc-400 italic ml-1">(Found in your order confirmation email)</p>
                                         </div>
-                                        <div className="space-y-3">
-                                            <label className="text-sm font-extrabold uppercase tracking-widest text-primary ml-1">Billing Email</label>
+                                        <div className="space-y-2">
+                                            <label className="block pb-1 text-sm font-semibold text-primary ml-1">Billing Email</label>
                                             <input
                                                 type="email"
                                                 required
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 placeholder="email@example.com"
-                                                className="w-full px-6 py-4 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium"
+                                                className="w-full px-6 py-3 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-[13px]"
                                             />
-                                            <p className="text-sm text-zinc-400 italic ml-1">(Email you used during checkout.)</p>
+                                            <p className="text-xs text-zinc-400 italic ml-1">(Email you used during checkout)</p>
                                         </div>
                                     </div>
 
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full bg-secondary text-ink py-5 rounded-xl font-bold uppercase tracking-[0.25em] text-sm hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                        className="w-full bg-secondary text-ink py-5 rounded-xl font-bold text-[15px] hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                     >
-                                        {isLoading ? 'Tracking...' : 'Track My Order'}
+                                        {isLoading ? 'Sending...' : 'Send my tracking link'}
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                     </button>
                                 </form>
@@ -194,80 +158,19 @@ export default function TrackOrderPage() {
                                     </div>
                                 )}
 
-                                {statusData && (
+                                {submitted && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="mt-10 space-y-4"
+                                        className="mt-10 flex items-start gap-4 rounded-2xl border border-secondary/20 bg-[#f8f9fa] p-6 shadow-sm"
                                     >
-                                        <div className="rounded-2xl border border-secondary/20 bg-[#f8f9fa] p-6 shadow-sm">
-                                            <div className="flex items-center gap-3 mb-4 border-b border-zinc-200 pb-4">
-                                                <CheckCircle2 className="text-green-500" size={24} />
-                                                <div>
-                                                    <h3 className="text-[16px] font-bold text-primary">Order Found: {statusData.reference}</h3>
-                                                    <p className="text-xs text-zinc-500 font-medium">Private tracking details</p>
-                                                </div>
-                                            </div>
-                                            <div className="space-y-4 pt-2">
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <span className="text-zinc-500 font-bold uppercase tracking-wider">Status</span>
-                                                    <span className="bg-secondary text-ink px-3 py-1 rounded-[4px] font-black uppercase text-xs tracking-widest">{formatStatus(statusData.status)}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <span className="text-zinc-500 font-bold uppercase tracking-wider">Fulfillment</span>
-                                                    <span className="font-medium text-primary">{formatStatus(statusData.fulfillment_status)}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <span className="text-zinc-500 font-bold uppercase tracking-wider">Carrier</span>
-                                                    <span className="font-medium text-primary">{statusData.carrier ? formatStatus(statusData.carrier) : "Not assigned"}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <span className="text-zinc-500 font-bold uppercase tracking-wider">Estimated arrival</span>
-                                                    <span className="font-medium text-primary">{statusData.eta || "Pending carrier update"}</span>
-                                                </div>
-                                                <div className="flex justify-between items-start text-sm">
-                                                    <span className="text-zinc-500 font-bold uppercase tracking-wider">Destination</span>
-                                                    <span className="font-medium text-primary text-right max-w-[220px]">{formatAddress(statusData.shipping_address)}</span>
-                                                </div>
-                                                {statusData.tracking_url ? (
-                                                    <div className="flex justify-between items-center text-sm">
-                                                        <span className="text-zinc-500 font-bold uppercase tracking-wider">Tracking link</span>
-                                                        <a
-                                                            href={statusData.tracking_url}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="font-semibold text-rust hover:underline"
-                                                        >
-                                                            Open carrier tracking
-                                                        </a>
-                                                    </div>
-                                                ) : null}
-                                            </div>
+                                        <MailCheck className="text-green-500 flex-shrink-0 mt-0.5" size={24} />
+                                        <div>
+                                            <h3 className="text-[16px] font-bold text-primary">Check your email</h3>
+                                            <p className="mt-1 text-sm leading-relaxed text-zinc-500">
+                                                If that order number and email match one on file, we&apos;ve sent a tracking link to the email on record. It may take a few minutes to arrive — check your spam folder too.
+                                            </p>
                                         </div>
-                                        <RetryPaymentPanel
-                                            trackingToken={trackingToken}
-                                            email={email}
-                                            orderStatus={statusData.status}
-                                            onCompleted={() => {
-                                                void fetchTrackedOrder(trackingToken, email).then(setStatusData).catch((err) => {
-                                                    setError(err instanceof Error ? err.message : "Failed to refresh order.");
-                                                });
-                                            }}
-                                        />
-                                        {(statusData.status === "delivered" || statusData.status === "shipped") && (
-                                            <div className="rounded-2xl border border-secondary/20 bg-white p-6 shadow-sm flex items-center justify-between gap-4">
-                                                <div>
-                                                    <p className="text-sm font-bold text-primary">Need to send something back?</p>
-                                                    <p className="mt-1 text-sm text-zinc-500">Request a return for this order.</p>
-                                                </div>
-                                                <Link
-                                                    href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`}
-                                                    className="whitespace-nowrap text-sm font-bold text-rust hover:text-rust transition-colors"
-                                                >
-                                                    Request a Return
-                                                </Link>
-                                            </div>
-                                        )}
                                     </motion.div>
                                 )}
                             </motion.div>
@@ -324,8 +227,8 @@ export default function TrackOrderPage() {
                                         <p className="text-zinc-600 text-[14px] leading-relaxed mb-6">
                                             Every PetPosture product undergoes rigorous quality checks before leaving our facility to ensure your pet receives only the best.
                                         </p>
-                                        <Link href="/contact" className="text-rust font-bold uppercase tracking-widest text-sm flex items-center gap-2 hover:text-primary transition-colors">
-                                            Contact Support <ChevronRight size={14} />
+                                        <Link href="/contact" className="text-rust font-semibold text-sm flex items-center gap-2 hover:text-primary transition-colors">
+                                            Contact support <ChevronRight size={14} />
                                         </Link>
                                     </div>
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full -mr-16 -mt-16 blur-2xl" />
@@ -342,7 +245,7 @@ export default function TrackOrderPage() {
                 {/* Return Link Footer */}
                 <section className="py-16 bg-zinc-50">
                     <div className="max-w-[1200px] mx-auto px-4 text-center">
-                        <Link href="/" className="inline-flex items-center gap-3 text-primary/40 hover:text-rust font-bold uppercase tracking-[0.25em] text-sm transition-all">
+                        <Link href="/" className="inline-flex items-center gap-3 text-[#1a2128b8] hover:text-rust font-bold uppercase tracking-[0.1em] text-sm transition-all">
                             <ArrowLeft size={16} /> Back to Homepage
                         </Link>
                     </div>

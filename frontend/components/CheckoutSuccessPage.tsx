@@ -87,7 +87,7 @@ function AddressBlock({ title, address }: { title: string; address: TrackingOrde
     const cityLine = [address.city, address.state, address.postcode].filter(Boolean).join(" ");
 
     return (
-        <div className="px-6 py-5">
+        <div className="px-6 py-4 sm:py-5">
             <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">{title}</p>
             <div className="space-y-0.5 text-[13.5px] leading-[1.8] text-[#555555]">
                 {name ? <p className="font-semibold text-[#1a1a1a]">{name}</p> : null}
@@ -442,22 +442,20 @@ function OrderSuccessContent() {
                             <div className="border-b border-[#f3f3f5] px-6 py-4">
                                 <h2 className="text-[14px] font-semibold text-[#1a1a1a]">Order details</h2>
                             </div>
-                            <div className="grid sm:grid-cols-2">
-                                <div className="px-6 py-5">
+                            <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-2 sm:divide-y-0">
+                                <div className="px-6 py-4 sm:py-5">
                                     <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Contact information</p>
                                     <p className="text-[13.5px] text-[#555555]">{order.customer_email || "Not available"}</p>
                                 </div>
-                                <div className="px-6 py-5">
+                                <div className="px-6 py-4 sm:py-5">
                                     <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Date</p>
                                     <p className="text-[13.5px] text-[#555555]">{orderDate}</p>
                                 </div>
-                            </div>
-                            <div className="grid sm:grid-cols-2">
-                                <div className="px-6 py-5">
+                                <div className="px-6 py-4 sm:py-5">
                                     <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Shipping method</p>
                                     <p className="text-[13.5px] text-[#555555]">{order.shipping_method}</p>
                                 </div>
-                                <div className="px-6 py-5">
+                                <div className="px-6 py-4 sm:py-5">
                                     <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Payment method</p>
                                     <div className="flex items-center gap-2">
                                         {order.card_brand && cardBrandIcons[order.card_brand] ? (
@@ -476,8 +474,6 @@ function OrderSuccessContent() {
                                         </p>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="grid sm:grid-cols-2">
                                 <AddressBlock title="Shipping address" address={order.shipping_address} />
                                 <AddressBlock title="Billing address" address={order.billing_address} />
                             </div>

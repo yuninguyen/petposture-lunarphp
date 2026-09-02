@@ -9,7 +9,10 @@ use Lunar\Models\Order;
 
 class OrderConfirmation extends Mailable
 {
-    public function __construct(public readonly Order $order) {}
+    public function __construct(
+        public readonly Order $order,
+        public readonly ?string $trackingToken = null,
+    ) {}
 
     public function envelope(): Envelope
     {
@@ -21,6 +24,6 @@ class OrderConfirmation extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'mail.order-confirmation');
+        return new Content(view: 'mail.order-confirmation', with: ['trackingToken' => $this->trackingToken]);
     }
 }
