@@ -40,6 +40,8 @@ class OrderTrackingResource extends JsonResource
                 'postcode' => $this->maskPostcode($address?->postcode),
                 'country' => $address?->country?->name,
             ],
+            'created_at' => $order->created_at?->toIso8601String(),
+            'shipping_method' => $this->shippingMethodLabel($meta),
             'total' => round($this->moneyValue($order->total), 2),
             'sub_total' => round($this->moneyValue($order->sub_total), 2),
             'shipping_total' => round($this->moneyValue($order->shipping_total), 2),
@@ -84,6 +86,18 @@ class OrderTrackingResource extends JsonResource
         return ProductSyncService::normalizePublicImageUrl(
             $purchasable->product->translateAttribute('image_url')
         );
+    }
+
+    private function shippingMethodLabel(array $meta): string
+    {
+        $code = $meta['shipping_method'] ?? null;
+
+        if (! $code) {
+            return 'Standard';
+        }
+
+        return \App\Models\ShippingMethod::where('code', $code)->value('name')
+            ?? Str::of($code)->replace(['_', '-'], ' ')->title()->toString();
     }
 
     private function fulfillmentStatus(Order $order, array $meta): string

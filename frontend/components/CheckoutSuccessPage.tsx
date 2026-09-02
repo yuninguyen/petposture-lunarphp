@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle, Loader2, Package, Truck } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api";
 import { fetchApi } from "@/lib/fetchApi";
+import Header from "@/components/Header";
 import RetryPaymentPanel from "@/components/orders/RetryPaymentPanel";
 
 type TrackingOrder = {
@@ -23,6 +24,8 @@ type TrackingOrder = {
         postcode: string | null;
         country: string | null;
     };
+    created_at: string | null;
+    shipping_method: string;
     total: number;
     sub_total: number;
     shipping_total: number;
@@ -45,6 +48,28 @@ function formatMoney(value: number) {
 
 function formatStatus(value: string) {
     return value.replace(/[_-]/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+const STATUS_ORDER = ["awaiting-payment", "payment-offline", "payment-received", "processing", "shipped", "delivered"];
+
+function buildTimeline(order: TrackingOrder) {
+    if (order.status === "cancelled") {
+        return [
+            { key: "placed", label: "Order placed", done: true },
+            { key: "cancelled", label: "Order cancelled", done: true },
+        ];
+    }
+
+    const currentIndex = STATUS_ORDER.indexOf(order.status);
+    const at = (key: string) => currentIndex >= STATUS_ORDER.indexOf(key);
+
+    return [
+        { key: "placed", label: "Order placed", done: true },
+        { key: "payment", label: at("payment-received") ? "Payment confirmed" : "Awaiting payment", done: at("payment-received") },
+        { key: "processing", label: "Preparing your order", done: at("processing") },
+        { key: "shipped", label: "Shipped", done: at("shipped") },
+        { key: "delivered", label: "Delivered", done: at("delivered") },
+    ];
 }
 
 function OrderSuccessContent() {
@@ -193,109 +218,176 @@ function OrderSuccessContent() {
         order.shipping_address.country,
     ].filter(Boolean).join(", ");
 
-    return (
-        <main className="min-h-screen bg-[#f6f6f7] px-6 py-16">
-            <div className="mx-auto max-w-3xl space-y-6">
-                <section className="rounded-3xl border border-[#e8e8ea] bg-white p-8 shadow-sm md:p-10">
-                    <CheckCircle className="mb-5 text-[#198754]" size={44} />
-                    <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#198754]">Order received</p>
-                    <h1 className="mt-3 text-3xl font-semibold text-[#1a1a1a]">Thanks for your order.</h1>
-                    <p className="mt-3 text-sm leading-6 text-[#6b6b70]">
-                        Keep this private confirmation link. Your order reference is <strong>{order.reference}</strong>.
-                    </p>
-                </section>
+    const timeline = buildTimeline(order);
+    const orderDate = order.created_at
+        ? new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(new Date(order.created_at))
+        : "—";
 
-                {order.lines.length > 0 ? (
-                    <section className="rounded-3xl border border-[#e8e8ea] bg-white p-8 shadow-sm">
-                        <p className="mb-5 text-xs font-bold uppercase tracking-wider text-[#8a8a90]">Order items</p>
-                        <div className="divide-y divide-[#f1f1f3]">
-                            {order.lines.map((line) => (
-                                <div key={line.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                        src={line.image ?? "/assets/product/Pug-Dog-Bed.webp"}
-                                        alt=""
-                                        width={56}
-                                        height={56}
-                                        className="h-14 w-14 flex-shrink-0 rounded-xl border border-[#ececec] object-cover"
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-semibold text-[#1a1a1a]">{line.description}</p>
-                                        <p className="mt-0.5 text-sm text-[#8a8a90]">Qty {line.quantity}</p>
+    return (
+        <main className="min-h-screen bg-[#faf9f8] font-hanken">
+            <Header />
+
+            <div className="border-b border-[#ececef] bg-white">
+                <div className="mx-auto max-w-[1120px] px-5 py-7 md:py-9">
+                    <div className="flex items-center gap-4">
+                        <div className="flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-full bg-[#fff3eb]">
+                            <CheckCircle size={28} strokeWidth={2} className="text-[#df8448]" />
+                        </div>
+                        <div>
+                            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#df8448]">Order #{order.reference}</p>
+                            <h1 className="mt-0.5 text-[26px] font-bold leading-tight tracking-tight text-[#2f3d46] md:text-[30px]">Thank you for your order!</h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mx-auto flex max-w-[1120px] flex-col gap-6 px-5 py-8 md:py-10 lg:grid lg:grid-cols-[1fr_370px] lg:items-start lg:gap-8">
+                <div className="order-last space-y-5 lg:order-first">
+                    <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
+                        <div className="border-b border-[#f3f3f5] px-6 py-4">
+                            <h2 className="text-[14px] font-semibold text-[#1a1a1a]">Order progress</h2>
+                        </div>
+                        <div className="px-6 py-5">
+                            <div className="space-y-5">
+                                {timeline.map((step, index) => (
+                                    <div key={step.key} className="relative flex gap-4">
+                                        {index < timeline.length - 1 ? (
+                                            <span className={`absolute left-[11px] top-6 h-[calc(100%+8px)] w-px ${step.done ? "bg-[#df8448]" : "bg-[#e5e7eb]"}`} />
+                                        ) : null}
+                                        <span className={`relative z-10 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border ${step.done ? "border-[#df8448] bg-[#df8448] text-white" : "border-[#d1d5db] bg-white text-[#9ca3af]"}`}>
+                                            {step.done ? <CheckCircle size={14} /> : <span className="h-2 w-2 rounded-full bg-current" />}
+                                        </span>
+                                        <p className="pb-1 text-[13.5px] font-semibold text-[#1a1a1a]">{step.label}</p>
                                     </div>
-                                    <p className="flex-shrink-0 text-sm font-semibold text-[#1a1a1a]">{formatMoney(line.sub_total)}</p>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {order.tracking_url ? (
+                        <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
+                            <div className="border-b border-[#f3f3f5] px-6 py-4">
+                                <h2 className="text-[14px] font-semibold text-[#1a1a1a]">Shipment tracking</h2>
+                            </div>
+                            <div className="flex items-center justify-between gap-4 px-6 py-5">
+                                <div>
+                                    <p className="text-[13.5px] font-medium text-[#555555]">{order.carrier ? formatStatus(order.carrier) : "Carrier"}</p>
+                                    {order.tracking_number ? (
+                                        <p className="mt-0.5 text-[12.5px] leading-[1.6] text-[#707070]">Tracking number: {order.tracking_number}</p>
+                                    ) : null}
+                                </div>
+                                <a href={order.tracking_url} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center justify-center gap-2 rounded-[6px] border border-[#df8448] px-4 text-[12px] font-semibold text-[#df8448] transition hover:bg-[#fff4ec]">
+                                    <Truck size={14} /> Open tracking
+                                </a>
+                            </div>
+                        </div>
+                    ) : null}
+
+                    <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
+                        <div className="border-b border-[#f3f3f5] px-6 py-4">
+                            <h2 className="text-[14px] font-semibold text-[#1a1a1a]">Order details</h2>
+                        </div>
+                        <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                            <div className="px-6 py-4">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">Order number</p>
+                                <p className="mt-1.5 text-[14px] font-semibold text-[#1a1a1a]">{order.reference}</p>
+                            </div>
+                            <div className="px-6 py-4">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">Date</p>
+                                <p className="mt-1.5 text-[14px] font-medium text-[#555555]">{orderDate}</p>
+                            </div>
+                            <div className="px-6 py-4">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">Order total</p>
+                                <p className="mt-1.5 text-[14px] font-semibold text-[#1a1a1a]">{formatMoney(order.total)}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
+                        <div className="border-b border-[#f3f3f5] px-6 py-4">
+                            <h2 className="text-[14px] font-semibold text-[#1a1a1a]">Shipping</h2>
+                        </div>
+                        <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                            <div className="px-6 py-5">
+                                <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">Shipping method</p>
+                                <p className="text-[13.5px] text-[#555555]">{order.shipping_method}</p>
+                            </div>
+                            <div className="px-6 py-5">
+                                <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">Ships to</p>
+                                <p className="text-[13.5px] text-[#555555]">{destination || "Not available"}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {trackingToken && email ? (
+                        <RetryPaymentPanel trackingToken={trackingToken} email={email} orderStatus={order.status} />
+                    ) : null}
+
+                    <div className="flex flex-col items-center gap-3 pb-8 pt-1 sm:flex-row lg:pb-0">
+                        <Link href="/shop" className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#df8448] px-8 text-[14px] font-semibold text-white transition-all hover:bg-[#c9713a] hover:shadow-md sm:w-auto">
+                            Continue shopping
+                        </Link>
+                        <Link href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} className="flex h-11 w-full items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white px-8 text-[14px] font-semibold text-[#555555] transition-all hover:bg-[#faf9f8] hover:shadow-sm sm:w-auto">
+                            Request a return
+                        </Link>
+                    </div>
+                </div>
+
+                <aside className="order-first lg:order-last lg:mt-0">
+                    <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
+                        <div className="divide-y divide-[#f3f3f5]">
+                            {order.lines.map((line) => (
+                                <div key={line.id} className="flex items-center gap-3.5 px-5 py-4">
+                                    <div className="relative flex-shrink-0">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={line.image ?? "/assets/product/Pug-Dog-Bed.webp"}
+                                            alt=""
+                                            width={64}
+                                            height={64}
+                                            className="h-16 w-16 rounded-[8px] border border-[#ececef] bg-[#faf9f8] object-contain p-1.5"
+                                        />
+                                        <span className="absolute -right-1.5 -top-1.5 z-10 flex h-[21px] w-[21px] items-center justify-center rounded-full bg-black text-[11px] font-bold leading-none text-white ring-2 ring-white">
+                                            {line.quantity}
+                                        </span>
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[13px] font-medium leading-[1.5] text-[#1a1a1a]">{line.description}</p>
+                                    </div>
+                                    <p className="flex-shrink-0 text-[13px] font-semibold text-[#1a1a1a]">{formatMoney(line.sub_total)}</p>
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-5 space-y-2 border-t border-[#f1f1f3] pt-5 text-sm">
-                            <div className="flex justify-between text-[#6b6b70]">
-                                <span>Subtotal</span>
-                                <span>{formatMoney(order.sub_total)}</span>
+
+                        <div className="space-y-2.5 border-t border-[#e8e8ea] px-5 py-5">
+                            <div className="flex items-center justify-between text-[13px]">
+                                <span className="text-[#707070]">Subtotal</span>
+                                <span className="font-medium text-[#1a1a1a]">{formatMoney(order.sub_total)}</span>
                             </div>
                             {order.discount_total > 0 ? (
-                                <div className="flex justify-between text-[#198754]">
-                                    <span>Discount</span>
-                                    <span>&minus;{formatMoney(order.discount_total)}</span>
+                                <div className="flex items-center justify-between text-[13px]">
+                                    <span className="text-[#707070]">Discount</span>
+                                    <span className="font-semibold text-[#df8448]">&minus;{formatMoney(order.discount_total)}</span>
                                 </div>
                             ) : null}
-                            <div className="flex justify-between text-[#6b6b70]">
-                                <span>Shipping</span>
-                                <span>{order.shipping_total > 0 ? formatMoney(order.shipping_total) : "Free"}</span>
+                            <div className="flex items-center justify-between text-[13px]">
+                                <span className="text-[#707070]">Shipping</span>
+                                <span className="font-medium text-[#1a1a1a]">{order.shipping_total > 0 ? formatMoney(order.shipping_total) : "Free"}</span>
                             </div>
-                            <div className="flex justify-between text-[#6b6b70]">
-                                <span>Taxes</span>
-                                <span>{formatMoney(order.tax_total)}</span>
+                            <div className="flex items-center justify-between text-[13px]">
+                                <span className="text-[#707070]">Tax</span>
+                                <span className="font-medium text-[#1a1a1a]">{formatMoney(order.tax_total)}</span>
                             </div>
-                            <div className="flex justify-between border-t border-[#f1f1f3] pt-2 text-base font-bold text-[#1a1a1a]">
-                                <span>Total</span>
-                                <span>{formatMoney(order.total)} <span className="text-xs font-normal text-[#8a8a90]">{order.currency}</span></span>
+                            <div className="mt-1 flex items-center justify-between border-t border-[#e8e8ea] pt-4">
+                                <span className="text-[14px] font-semibold text-[#1a1a1a]">Total</span>
+                                <div className="text-right">
+                                    <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">{order.currency}</p>
+                                    <p className="text-[22px] font-bold tracking-tight text-[#1a1a1a]">{formatMoney(order.total)}</p>
+                                </div>
                             </div>
                         </div>
-                    </section>
-                ) : null}
-
-                <section className="grid gap-4 rounded-3xl border border-[#e8e8ea] bg-white p-8 shadow-sm md:grid-cols-2">
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-[#8a8a90]">Order status</p>
-                        <p className="mt-2 font-semibold text-[#1a1a1a]">{formatStatus(order.status)}</p>
                     </div>
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-[#8a8a90]">Fulfillment</p>
-                        <p className="mt-2 font-semibold text-[#1a1a1a]">{formatStatus(order.fulfillment_status)}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-[#8a8a90]">Carrier / ETA</p>
-                        <p className="mt-2 font-semibold text-[#1a1a1a]">
-                            {order.carrier ? formatStatus(order.carrier) : "Not assigned"} · {order.eta || "Pending update"}
-                        </p>
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-[#8a8a90]">Masked destination</p>
-                        <p className="mt-2 font-semibold text-[#1a1a1a]">{destination || "Not available"}</p>
-                    </div>
-                    {order.tracking_url ? (
-                        <a href={order.tracking_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-semibold text-rust">
-                            <Truck size={16} /> Open carrier tracking
-                        </a>
-                    ) : null}
-                </section>
-
-                {trackingToken && email ? (
-                    <RetryPaymentPanel
-                        trackingToken={trackingToken}
-                        email={email}
-                        orderStatus={order.status}
-                    />
-                ) : null}
-
-                <div className="flex flex-wrap gap-3">
-                    <Link href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} className="rounded-lg border border-[#d8d8dc] bg-white px-5 py-3 text-sm font-semibold text-[#333]">
-                        Request a return
-                    </Link>
-                    <Link href="/" className="rounded-lg bg-rust px-5 py-3 text-sm font-semibold text-white">
-                        Continue shopping
-                    </Link>
-                </div>
+                </aside>
             </div>
         </main>
     );
