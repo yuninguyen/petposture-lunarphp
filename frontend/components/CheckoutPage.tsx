@@ -258,6 +258,7 @@ export default function CheckoutPage() {
     const paymentSectionRef = useRef<HTMLElement | null>(null);
     const placesContainerRef = useRef<HTMLDivElement | null>(null);
     const stripeCardMountRef = useRef<HTMLDivElement | null>(null);
+    const paypalPopupRef = useRef<Window | null>(null);
     const stripeInstanceRef = useRef<ReturnType<NonNullable<typeof window.Stripe>> | null>(null);
     const stripeElementsRef = useRef<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>['elements']> | null>(null);
     const stripeCardElementRef = useRef<ReturnType<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>['elements']>['create']> | null>(null);
@@ -284,6 +285,7 @@ export default function CheckoutPage() {
     const [stripeReady, setStripeReady] = useState(false);
     const [stripeError, setStripeError] = useState<string | null>(null);
     const [paypalError, setPaypalError] = useState<string | null>(null);
+    const [paypalPopupWaiting, setPaypalPopupWaiting] = useState(false);
     const [form, setForm] = useState<CheckoutFormState>({
         email: user?.email || '',
         country: 'United States',
@@ -1218,10 +1220,20 @@ export default function CheckoutPage() {
                 && (form.paymentMethod !== 'paypal' || paypalLiveMode);
 
             if (useRedirectFlow) {
+                const isPaypal = form.paymentMethod === 'paypal';
+
+                // Open the popup synchronously, before any await, so browsers still treat
+                // it as a direct result of the click and don't block it. It starts blank
+                // and gets navigated to the real approval URL once we have it.
+                const popup = isPaypal
+                    ? window.open('about:blank', 'paypal_checkout', 'width=460,height=700,resizable=yes,scrollbars=yes')
+                    : null;
+                paypalPopupRef.current = popup;
+
                 const session = await prepareRedirectSession(form.paymentMethod as 'airwallex' | 'payoneer' | 'pingpong' | 'paypal');
 
                 const paymentContext: Record<string, unknown> = { session_id: session.session_id };
-                if (form.paymentMethod === 'paypal' && session.paypal_order_id) {
+                if (isPaypal && session.paypal_order_id) {
                     paymentContext.paypal_order_id = session.paypal_order_id;
                 }
 
@@ -1237,6 +1249,29 @@ export default function CheckoutPage() {
                 localStorage.removeItem('petposture_cart_coupon');
                 clearCoupon();
 
+                if (isPaypal && popup && !popup.closed) {
+                    popup.location.href = session.checkout_url;
+                    setIsLoading(false);
+                    setPaypalPopupWaiting(true);
+
+                    const successUrl = `/checkout/success?gateway=paypal&session_id=${encodeURIComponent(session.session_id)}`;
+                    const poll = setInterval(() => {
+                        let closed = false;
+                        try {
+                            closed = popup.closed;
+                        } catch {
+                            closed = true;
+                        }
+                        if (closed) {
+                            clearInterval(poll);
+                            router.push(successUrl);
+                        }
+                    }, 500);
+                    return;
+                }
+
+                // Popup blocked or PayPal not in live mode — fall back to a normal
+                // same-tab redirect so checkout still completes.
                 window.location.href = session.checkout_url;
                 return;
             }
@@ -1286,6 +1321,11 @@ export default function CheckoutPage() {
             const message = err instanceof Error ? err.message : "Network error processing your checkout.";
             if (form.paymentMethod === 'paypal') {
                 setPaypalError(message);
+                if (paypalPopupRef.current && !paypalPopupRef.current.closed) {
+                    paypalPopupRef.current.close();
+                }
+                paypalPopupRef.current = null;
+                setPaypalPopupWaiting(false);
             } else {
                 alert(message);
             }
@@ -1722,9 +1762,12 @@ export default function CheckoutPage() {
                                             <div className="grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3">
                                                 <p className="text-sm leading-[1.45] text-[#6f7782]">
                                                     {paypalLiveMode
-                                                        ? "You'll be redirected to PayPal to complete your purchase."
+                                                        ? 'A PayPal window will open to complete your purchase.'
                                                         : 'PayPal is running in placeholder mode — click "Complete order" below to simulate a PayPal order without a live PayPal account.'}
                                                 </p>
+                                                {paypalPopupWaiting ? (
+                                                    <p className="text-sm font-medium text-[#1a1a1a]">Complete your payment in the PayPal window — this page will update automatically once it&apos;s done.</p>
+                                                ) : null}
                                                 {paypalError ? (
                                                     <p className="text-sm font-medium text-[#b42318]">{paypalError}</p>
                                                 ) : null}
@@ -1739,10 +1782,12 @@ export default function CheckoutPage() {
 
                         <div className="pt-6">
                             <button
-                                disabled={isLoading || items.length === 0}
+                                disabled={isLoading || items.length === 0 || paypalPopupWaiting}
                                 className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[8px] bg-secondary px-6 text-[15px] font-bold text-ink shadow-[0_14px_30px_rgba(223,132,72,0.22)] transition hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                {isLoading ? (
+                                {paypalPopupWaiting ? (
+                                    'Waiting for PayPal…'
+                                ) : isLoading ? (
                                     'Processing...'
                                 ) : (
                                     <>
