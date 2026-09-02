@@ -54,6 +54,7 @@ export function OrderSummary({
 }: OrderSummaryProps) {
     const [showShippingInfo, setShowShippingInfo] = useState(false);
     const [mobileExpanded, setMobileExpanded] = useState(false);
+    const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
     return (
         <aside className={`order-first w-full border-b border-[#e8e8ea] bg-[#fafafa] px-4 ${mobileExpanded ? 'py-6' : 'py-3'} md:px-8 lg:order-last lg:w-[440px] lg:border-b-0 lg:border-l lg:px-10 lg:py-12`}>
@@ -132,7 +133,7 @@ export function OrderSummary({
                     {/* Price breakdown */}
                     <div className="space-y-3 border-t border-[#e6e6e6] pt-6">
                         <div className="flex items-center justify-between text-[14px] text-[#333333]">
-                            <span>Subtotal</span>
+                            <span>Subtotal &middot; {itemCount} item{itemCount === 1 ? '' : 's'}</span>
                             <span className="font-medium">${totalAmount.toFixed(2)}</span>
                         </div>
 

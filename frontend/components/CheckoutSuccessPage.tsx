@@ -102,6 +102,8 @@ function AddressBlock({ title, address }: { title: string; address: TrackingOrde
 }
 
 function OrderSummaryBody({ order }: { order: TrackingOrder }) {
+    const itemCount = order.lines.reduce((total, line) => total + line.quantity, 0);
+
     return (
         <>
             <div className="space-y-4">
@@ -130,7 +132,7 @@ function OrderSummaryBody({ order }: { order: TrackingOrder }) {
 
             <div className="mt-6 space-y-3 border-t border-[#e6e6e6] pt-6">
                 <div className="flex items-center justify-between text-[14px] text-[#333333]">
-                    <span>Subtotal &middot; {order.lines.reduce((total, line) => total + line.quantity, 0)} items</span>
+                    <span>Subtotal &middot; {itemCount} item{itemCount === 1 ? "" : "s"}</span>
                     <span className="font-medium">{formatMoney(order.sub_total)}</span>
                 </div>
                 {order.discount_total > 0 ? (
