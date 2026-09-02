@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Search, ChevronRight, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Search, ChevronRight, ArrowLeft, CheckCircle2, MailCheck } from "lucide-react";
 import Header from "./Header";
 import Footer from "./Footer";
 import { fetchApi } from "@/lib/fetchApi";
@@ -59,11 +59,16 @@ function RequestReturnContent() {
     const prefillToken = searchParams.get("token") ?? "";
     const prefillEmail = searchParams.get("email") ?? "";
 
-    const [trackingToken, setTrackingToken] = useState(prefillToken);
+    const [trackingToken] = useState(prefillToken);
     const [email, setEmail] = useState(prefillEmail);
     const [order, setOrder] = useState<LookedUpOrder | null>(null);
     const [lookupError, setLookupError] = useState<string | null>(null);
     const [isLookingUp, setIsLookingUp] = useState(false);
+
+    const [orderNumber, setOrderNumber] = useState("");
+    const [linkRequested, setLinkRequested] = useState(false);
+    const [isRequestingLink, setIsRequestingLink] = useState(false);
+    const [linkRequestError, setLinkRequestError] = useState<string | null>(null);
 
     const [selectedQuantities, setSelectedQuantities] = useState<Record<number, number>>({});
     const [reason, setReason] = useState(REASONS[0]);
@@ -120,9 +125,33 @@ function RequestReturnContent() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleLookup = async (e: React.FormEvent) => {
+    const handleRequestLink = async (e: React.FormEvent) => {
         e.preventDefault();
-        await lookupOrder(trackingToken, email);
+        setIsRequestingLink(true);
+        setLinkRequestError(null);
+        setLinkRequested(false);
+
+        try {
+            const res = await fetchApi('/api/orders/resend-tracking-link', {
+                method: "POST",
+                body: {
+                    order_number: orderNumber.trim(),
+                    email: email.trim(),
+                    context: "returns",
+                },
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || "Could not send the return link. Please try again.");
+            }
+
+            setLinkRequested(true);
+        } catch (err) {
+            setLinkRequestError(err instanceof Error ? err.message : "Could not connect to the server. Please try again.");
+        } finally {
+            setIsRequestingLink(false);
+        }
     };
 
     const productLines = order?.lines.filter((line) => line.type !== "shipping") ?? [];
@@ -275,59 +304,77 @@ function RequestReturnContent() {
                                     </Link>
                                 </div>
                             ) : !order ? (
-                                <>
-                                    <div className="flex items-center gap-4 mb-8">
-                                        <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center text-ink shadow-lg shadow-orange-200">
-                                            <Search size={24} strokeWidth={2.5} />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-[24px] font-bold text-primary">Find Your Order</h2>
-                                            <div className="h-1 w-12 bg-secondary mt-2 rounded-full" />
-                                        </div>
+                                isLookingUp ? (
+                                    <div className="text-center py-8">
+                                        <p className="text-zinc-500 text-[15px]">Looking up your order…</p>
                                     </div>
-
-                                    <form onSubmit={handleLookup} className="space-y-8">
-                                        <div className="grid md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="block pb-1 text-sm font-semibold text-primary ml-1">Tracking access token</label>
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    value={trackingToken}
-                                                    onChange={(e) => setTrackingToken(e.target.value)}
-                                                    placeholder="e.g. 00000014"
-                                                    className="w-full px-6 py-3 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-[13px]"
-                                                />
+                                ) : linkRequested ? (
+                                    <div className="text-center py-8">
+                                        <MailCheck className="mx-auto text-green-500 mb-6" size={48} />
+                                        <h2 className="text-[24px] font-bold text-primary mb-3">Check your email</h2>
+                                        <p className="text-zinc-500 text-[15px] leading-relaxed">
+                                            If that order number and email match one on file, we&rsquo;ve sent a link to the email on record. Click it to continue your return request.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center gap-4 mb-8">
+                                            <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center text-ink shadow-lg shadow-orange-200">
+                                                <Search size={24} strokeWidth={2.5} />
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="block pb-1 text-sm font-semibold text-primary ml-1">Email</label>
-                                                <input
-                                                    type="email"
-                                                    required
-                                                    value={email}
-                                                    onChange={(e) => setEmail(e.target.value)}
-                                                    placeholder="email@example.com"
-                                                    className="w-full px-6 py-3 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-[13px]"
-                                                />
+                                            <div>
+                                                <h2 className="text-[24px] font-bold text-primary">Find Your Order</h2>
+                                                <div className="h-1 w-12 bg-secondary mt-2 rounded-full" />
                                             </div>
                                         </div>
 
-                                        <button
-                                            type="submit"
-                                            disabled={isLookingUp}
-                                            className="w-full bg-secondary text-ink py-5 rounded-xl font-bold text-[15px] hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
-                                        >
-                                            {isLookingUp ? "Looking up..." : "Find my order"}
-                                            <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                                        </button>
-                                    </form>
+                                        <p className="text-zinc-500 text-[15px] mb-8 leading-relaxed font-medium">
+                                            Enter your order number and the email used at checkout — we&apos;ll send a link to continue your return.
+                                        </p>
 
-                                    {lookupError && (
-                                        <div className="mt-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium">
-                                            {lookupError}
-                                        </div>
-                                    )}
-                                </>
+                                        <form onSubmit={handleRequestLink} className="space-y-8">
+                                            <div className="grid md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="block pb-1 text-sm font-semibold text-primary ml-1">Order number</label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        value={orderNumber}
+                                                        onChange={(e) => setOrderNumber(e.target.value)}
+                                                        placeholder="e.g. 00020"
+                                                        className="w-full px-6 py-3 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-[13px]"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="block pb-1 text-sm font-semibold text-primary ml-1">Email</label>
+                                                    <input
+                                                        type="email"
+                                                        required
+                                                        value={email}
+                                                        onChange={(e) => setEmail(e.target.value)}
+                                                        placeholder="email@example.com"
+                                                        className="w-full px-6 py-3 rounded-xl bg-[#f8f9fa] border-2 border-transparent focus:border-secondary focus:bg-white outline-none transition-all text-primary font-medium placeholder:text-[13px]"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                type="submit"
+                                                disabled={isRequestingLink}
+                                                className="w-full bg-secondary text-ink py-5 rounded-xl font-bold text-[15px] hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                            >
+                                                {isRequestingLink ? "Sending..." : "Send my return link"}
+                                                <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                            </button>
+                                        </form>
+
+                                        {(lookupError || linkRequestError) && (
+                                            <div className="mt-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium">
+                                                {lookupError || linkRequestError}
+                                            </div>
+                                        )}
+                                    </>
+                                )
                             ) : (
                                 <form onSubmit={handleSubmit} className="space-y-8">
                                     <div>

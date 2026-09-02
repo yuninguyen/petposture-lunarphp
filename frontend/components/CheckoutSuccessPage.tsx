@@ -130,7 +130,7 @@ function OrderSummaryBody({ order }: { order: TrackingOrder }) {
 
             <div className="mt-6 space-y-3 border-t border-[#e6e6e6] pt-6">
                 <div className="flex items-center justify-between text-[14px] text-[#333333]">
-                    <span>Subtotal</span>
+                    <span>Subtotal &middot; {order.lines.reduce((total, line) => total + line.quantity, 0)} items</span>
                     <span className="font-medium">{formatMoney(order.sub_total)}</span>
                 </div>
                 {order.discount_total > 0 ? (
@@ -397,8 +397,8 @@ function OrderSuccessContent() {
                     </div>
 
                     <div className="mt-6 space-y-5">
-                        <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
-                            <div className="border-b border-[#f3f3f5] px-6 py-4">
+                        <div className="overflow-hidden rounded-[10px] border border-[#e8e8ea] bg-white">
+                            <div className="border-b border-[#f3f3f5] bg-[#1a212805] px-6 py-4">
                                 <h2 className="text-[14px] font-semibold text-[#1a1a1a]">Order progress</h2>
                             </div>
                             <div className="px-6 py-5">
@@ -438,8 +438,8 @@ function OrderSuccessContent() {
                             </div>
                         </div>
 
-                        <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
-                            <div className="border-b border-[#f3f3f5] px-6 py-4">
+                        <div className="overflow-hidden rounded-[10px] border border-[#e8e8ea] bg-white">
+                            <div className="border-b border-[#f3f3f5] bg-[#1a212805] px-6 py-4">
                                 <h2 className="text-[14px] font-semibold text-[#1a1a1a]">Order details</h2>
                             </div>
                             <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-2 sm:divide-y-0">
@@ -483,15 +483,20 @@ function OrderSuccessContent() {
                             <RetryPaymentPanel trackingToken={trackingToken} email={email} orderStatus={order.status} />
                         ) : null}
 
-                        <div className="hidden flex-col items-center gap-3 pb-2 pt-1 sm:flex-row lg:flex">
-                            <Link href="/shop" className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#df8448] px-8 text-[14px] font-semibold text-white transition-all hover:bg-[#c9713a] hover:shadow-md sm:w-auto">
-                                Continue shopping
-                            </Link>
-                            {deliveredDone ? (
-                                <Link href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} className="flex h-11 w-full items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white px-8 text-[14px] font-semibold text-[#555555] transition-all hover:bg-[#faf9f8] hover:shadow-sm sm:w-auto">
-                                    Request a return
+                        <div className="hidden flex-col items-center justify-between gap-4 pb-2 pt-1 sm:flex-row lg:flex">
+                            <p className="text-[14px] text-[#555555]">
+                                Need help? <Link href="/contact" className="font-semibold text-[#1a1a1a] underline underline-offset-2 hover:text-[#df8448]">Contact us</Link>
+                            </p>
+                            <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
+                                <Link href="/shop" className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#df8448] px-8 text-[14px] font-semibold text-white transition-all hover:bg-[#c9713a] hover:shadow-md sm:w-auto">
+                                    Continue shopping
                                 </Link>
-                            ) : null}
+                                {deliveredDone ? (
+                                    <Link href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} className="flex h-11 w-full items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white px-8 text-[14px] font-semibold text-[#555555] transition-all hover:bg-[#faf9f8] hover:shadow-sm sm:w-auto">
+                                        Request a return
+                                    </Link>
+                                ) : null}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -505,15 +510,20 @@ function OrderSuccessContent() {
                 <div className="w-full border-t border-[#e8e8ea] bg-[#fafafa] px-4 py-6 md:px-8 lg:hidden">
                     <OrderSummaryBody order={order} />
 
-                    <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row">
-                        <Link href="/shop" className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#df8448] px-8 text-[14px] font-semibold text-white transition-all hover:bg-[#c9713a] hover:shadow-md sm:w-auto">
-                            Continue shopping
-                        </Link>
-                        {deliveredDone ? (
-                            <Link href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} className="flex h-11 w-full items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white px-8 text-[14px] font-semibold text-[#555555] transition-all hover:bg-[#faf9f8] hover:shadow-sm sm:w-auto">
-                                Request a return
+                    <div className="mt-6 flex flex-col items-center gap-4">
+                        <p className="text-[14px] text-[#555555]">
+                            Need help? <Link href="/contact" className="font-semibold text-[#1a1a1a] underline underline-offset-2 hover:text-[#df8448]">Contact us</Link>
+                        </p>
+                        <div className="flex w-full flex-col items-center gap-3 sm:flex-row">
+                            <Link href="/shop" className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#df8448] px-8 text-[14px] font-semibold text-white transition-all hover:bg-[#c9713a] hover:shadow-md sm:w-auto">
+                                Continue shopping
                             </Link>
-                        ) : null}
+                            {deliveredDone ? (
+                                <Link href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} className="flex h-11 w-full items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white px-8 text-[14px] font-semibold text-[#555555] transition-all hover:bg-[#faf9f8] hover:shadow-sm sm:w-auto">
+                                    Request a return
+                                </Link>
+                            ) : null}
+                        </div>
                     </div>
                 </div>
             </div>

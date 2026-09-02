@@ -72,6 +72,7 @@ class OrderController extends Controller
         $validated = Validator::make($request->all(), [
             'order_number' => 'required|string|max:255',
             'email' => 'required|email',
+            'context' => 'nullable|string|in:tracking,returns',
         ])->validate();
 
         $reference = ltrim(trim((string) $validated['order_number']), '#');
@@ -83,7 +84,7 @@ class OrderController extends Controller
 
         if ($order) {
             $token = $this->orderTrackingAccessService->issue($order);
-            Mail::send(new TrackingLinkResend($order, $token));
+            Mail::send(new TrackingLinkResend($order, $token, $validated['context'] ?? 'tracking'));
         } else {
             Log::warning('Public tracking-link resend lookup failed.', [
                 'credential_hash' => hash('sha256', strtolower(trim((string) $validated['email'])).'|'.strtolower($reference)),
