@@ -145,9 +145,8 @@ class CheckoutApiTest extends TestCase
             ->assertJsonPath('data.fulfillment_status', 'unfulfilled')
             ->assertJsonPath('data.carrier', null)
             ->assertJsonPath('data.shipping_address.city', 'Austin')
-            ->assertJsonPath('data.shipping_address.postcode', '787***')
-            ->assertJsonMissingPath('data.customer_email')
-            ->assertJsonMissingPath('data.billing_address');
+            ->assertJsonPath('data.shipping_address.postcode', '78701')
+            ->assertJsonPath('data.customer_email', 'guest@petposture.com');
     }
 
     public function test_track_order_returns_not_found_for_invalid_credentials(): void

@@ -18,12 +18,32 @@ type TrackingOrder = {
     tracking_number: string | null;
     tracking_url: string | null;
     eta: string | null;
+    customer_email: string | null;
     shipping_address: {
+        first_name: string | null;
+        last_name: string | null;
+        line_one: string | null;
+        line_two: string | null;
         city: string | null;
         state: string | null;
         postcode: string | null;
         country: string | null;
+        phone: string | null;
     };
+    billing_address: {
+        first_name: string | null;
+        last_name: string | null;
+        line_one: string | null;
+        line_two: string | null;
+        city: string | null;
+        state: string | null;
+        postcode: string | null;
+        country: string | null;
+        phone: string | null;
+    };
+    payment_label: string | null;
+    card_brand: string | null;
+    card_last4: string | null;
     created_at: string | null;
     shipping_method: string;
     total: number;
@@ -48,6 +68,25 @@ function formatMoney(value: number) {
 
 function formatStatus(value: string) {
     return value.replace(/[_-]/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function AddressBlock({ title, address }: { title: string; address: TrackingOrder["shipping_address"] }) {
+    const name = `${address.first_name ?? ""} ${address.last_name ?? ""}`.trim();
+    const cityLine = [address.city, address.state, address.postcode].filter(Boolean).join(" ");
+
+    return (
+        <div className="px-6 py-5">
+            <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">{title}</p>
+            <div className="space-y-0.5 text-[13.5px] leading-[1.8] text-[#555555]">
+                {name ? <p className="font-semibold text-[#1a1a1a]">{name}</p> : null}
+                {address.line_one ? <p>{address.line_one}</p> : null}
+                {address.line_two ? <p>{address.line_two}</p> : null}
+                {cityLine ? <p>{cityLine}</p> : null}
+                {address.country ? <p>{address.country}</p> : null}
+                {address.phone ? <p className="text-[#707070]">{address.phone}</p> : null}
+            </div>
+        </div>
+    );
 }
 
 const STATUS_ORDER = ["awaiting-payment", "payment-offline", "payment-received", "processing", "shipped", "delivered"];
@@ -211,14 +250,8 @@ function OrderSuccessContent() {
         );
     }
 
-    const destination = [
-        order.shipping_address.city,
-        order.shipping_address.state,
-        order.shipping_address.postcode,
-        order.shipping_address.country,
-    ].filter(Boolean).join(", ");
-
     const timeline = buildTimeline(order);
+    const customerName = `${order.shipping_address.first_name ?? ""} ${order.shipping_address.last_name ?? ""}`.trim();
     const orderDate = order.created_at
         ? new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(new Date(order.created_at))
         : "—";
@@ -234,8 +267,8 @@ function OrderSuccessContent() {
                             <CheckCircle size={28} strokeWidth={2} className="text-[#df8448]" />
                         </div>
                         <div>
-                            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#df8448]">Order #{order.reference}</p>
-                            <h1 className="mt-0.5 text-[26px] font-bold leading-tight tracking-tight text-[#2f3d46] md:text-[30px]">Thank you for your order!</h1>
+                            <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-[#df8448]">Order #{order.reference}</p>
+                            <h1 className="mt-0.5 text-[26px] font-bold leading-tight tracking-tight text-[#2f3d46] md:text-[30px]">Thank you{customerName ? `, ${customerName}` : ""}!</h1>
                         </div>
                     </div>
                 </div>
@@ -289,33 +322,39 @@ function OrderSuccessContent() {
                         </div>
                         <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
                             <div className="px-6 py-4">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">Order number</p>
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Order number</p>
                                 <p className="mt-1.5 text-[14px] font-semibold text-[#1a1a1a]">{order.reference}</p>
                             </div>
                             <div className="px-6 py-4">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">Date</p>
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Date</p>
                                 <p className="mt-1.5 text-[14px] font-medium text-[#555555]">{orderDate}</p>
                             </div>
                             <div className="px-6 py-4">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">Order total</p>
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Order total</p>
                                 <p className="mt-1.5 text-[14px] font-semibold text-[#1a1a1a]">{formatMoney(order.total)}</p>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="rounded-[10px] border border-[#e8e8ea] bg-white">
-                        <div className="border-b border-[#f3f3f5] px-6 py-4">
-                            <h2 className="text-[14px] font-semibold text-[#1a1a1a]">Shipping</h2>
+                        <div className="grid divide-y divide-[#f3f3f5] border-t border-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                            <div className="px-6 py-5">
+                                <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Contact information</p>
+                                <p className="text-[13.5px] text-[#555555]">{order.customer_email || "Not available"}</p>
+                            </div>
+                            <div className="px-6 py-5">
+                                <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Payment method</p>
+                                <p className="text-[13.5px] text-[#555555]">
+                                    {order.payment_label || "—"}
+                                    {order.card_brand ? ` — ${formatStatus(order.card_brand)}` : ""}
+                                    {order.card_last4 ? ` •••• ${order.card_last4}` : ""}
+                                </p>
+                            </div>
                         </div>
-                        <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-                            <div className="px-6 py-5">
-                                <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">Shipping method</p>
-                                <p className="text-[13.5px] text-[#555555]">{order.shipping_method}</p>
-                            </div>
-                            <div className="px-6 py-5">
-                                <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#9ca3af]">Ships to</p>
-                                <p className="text-[13.5px] text-[#555555]">{destination || "Not available"}</p>
-                            </div>
+                        <div className="grid divide-y divide-[#f3f3f5] border-t border-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                            <AddressBlock title="Shipping address" address={order.shipping_address} />
+                            <AddressBlock title="Billing address" address={order.billing_address} />
+                        </div>
+                        <div className="border-t border-[#f3f3f5] px-6 py-5">
+                            <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Shipping method</p>
+                            <p className="text-[13.5px] text-[#555555]">{order.shipping_method}</p>
                         </div>
                     </div>
 

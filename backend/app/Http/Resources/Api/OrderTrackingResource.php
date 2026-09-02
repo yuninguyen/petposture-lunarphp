@@ -21,6 +21,7 @@ class OrderTrackingResource extends JsonResource
                 && ($item['tracking_number'] ?? null) === $order->reference)
             ->last();
         $address = $order->shippingAddress;
+        $billing = $order->billingAddress ?? $address;
         $trackingToken = $order->getAttribute('tracking_access_token');
 
         return [
@@ -34,12 +35,32 @@ class OrderTrackingResource extends JsonResource
             'eta' => is_array($shipment)
                 ? ($shipment['estimated_delivery_at'] ?? $shipment['eta'] ?? null)
                 : ($meta['estimated_delivery_at'] ?? null),
+            'customer_email' => $order->customer_reference,
             'shipping_address' => [
+                'first_name' => $address?->first_name,
+                'last_name' => $address?->last_name,
+                'line_one' => $address?->line_one,
+                'line_two' => $address?->line_two,
                 'city' => $address?->city,
                 'state' => $address?->state,
-                'postcode' => $this->maskPostcode($address?->postcode),
+                'postcode' => $address?->postcode,
                 'country' => $address?->country?->name,
+                'phone' => $address?->contact_phone,
             ],
+            'billing_address' => [
+                'first_name' => $billing?->first_name,
+                'last_name' => $billing?->last_name,
+                'line_one' => $billing?->line_one,
+                'line_two' => $billing?->line_two,
+                'city' => $billing?->city,
+                'state' => $billing?->state,
+                'postcode' => $billing?->postcode,
+                'country' => $billing?->country?->name,
+                'phone' => $billing?->contact_phone,
+            ],
+            'payment_label' => $meta['payment_label'] ?? null,
+            'card_brand' => $meta['card_brand'] ?? null,
+            'card_last4' => $meta['card_last4'] ?? null,
             'created_at' => $order->created_at?->toIso8601String(),
             'shipping_method' => $this->shippingMethodLabel($meta),
             'total' => round($this->moneyValue($order->total), 2),
@@ -109,14 +130,4 @@ class OrderTrackingResource extends JsonResource
         };
     }
 
-    private function maskPostcode(?string $postcode): ?string
-    {
-        $postcode = trim((string) $postcode);
-
-        if ($postcode === '') {
-            return null;
-        }
-
-        return Str::substr($postcode, 0, min(3, Str::length($postcode))).'***';
-    }
 }

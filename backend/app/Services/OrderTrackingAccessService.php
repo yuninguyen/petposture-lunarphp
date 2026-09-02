@@ -38,7 +38,7 @@ class OrderTrackingAccessService
             ->where('tracking_access_token_hash', hash('sha256', $token))
             ->whereRaw('LOWER(customer_reference) = ?', [Str::lower(trim($email))])
             ->where('tracking_access_token_expires_at', '>', now())
-            ->with(['shippingAddress', 'lines'])
+            ->with(['shippingAddress', 'billingAddress', 'lines'])
             ->first();
     }
 }

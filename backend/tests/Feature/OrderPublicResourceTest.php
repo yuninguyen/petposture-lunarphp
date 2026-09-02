@@ -78,19 +78,17 @@ class OrderPublicResourceTest extends TestCase
                     'fulfillment_status',
                     'carrier',
                     'eta',
-                    'shipping_address' => ['city', 'state', 'postcode', 'country'],
+                    'customer_email',
+                    'shipping_address' => ['first_name', 'last_name', 'line_one', 'city', 'state', 'postcode', 'country', 'phone'],
+                    'billing_address' => ['first_name', 'last_name', 'line_one', 'city', 'state', 'postcode', 'country', 'phone'],
                     'total',
                     'lines' => [['id', 'description', 'quantity', 'unit_price', 'sub_total', 'image']],
                 ],
             ])
             ->assertJsonMissingPath('data.id')
-            ->assertJsonMissingPath('data.customer_email')
             ->assertJsonMissingPath('data.payment_status')
             ->assertJsonMissingPath('data.payment_method')
-            ->assertJsonMissingPath('data.payment_intent_id')
-            ->assertJsonMissingPath('data.billing_address')
-            ->assertJsonMissingPath('data.shipping_address.line_one')
-            ->assertJsonMissingPath('data.shipping_address.phone');
+            ->assertJsonMissingPath('data.payment_intent_id');
     }
 
     public function test_authenticated_owner_can_rotate_tracking_access_for_an_account_order(): void
@@ -154,12 +152,10 @@ class OrderPublicResourceTest extends TestCase
 
         $response->assertJsonPath('data.reference', $placeResponse->json('order.reference'))
             ->assertJsonStructure([
-                'data' => ['status', 'fulfillment_status', 'carrier', 'eta', 'shipping_address', 'total', 'lines'],
+                'data' => ['status', 'fulfillment_status', 'carrier', 'eta', 'customer_email', 'shipping_address', 'billing_address', 'total', 'lines'],
             ])
-            ->assertJsonMissingPath('data.customer_email')
             ->assertJsonMissingPath('data.payment_status')
-            ->assertJsonMissingPath('data.payment_method')
-            ->assertJsonMissingPath('data.billing_address');
+            ->assertJsonMissingPath('data.payment_method');
     }
 
     public function test_retry_payment_endpoint_never_leaks_internal_or_staff_only_fields(): void
