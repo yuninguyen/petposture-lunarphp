@@ -35,6 +35,18 @@
     $paymentMethodLabel = $meta['payment_label']
         ?? ($meta['payment_method'] ? ucwords(str_replace(['_', '-'], ' ', $meta['payment_method'])) : null);
 
+    $cardBrand = $meta['card_brand'] ?? null;
+    $cardLast4 = $meta['card_last4'] ?? null;
+    $cardBrandIcons = [
+        'visa' => ['src' => 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/visa.sxIq5Dot.svg', 'alt' => 'VISA'],
+        'mastercard' => ['src' => 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/mastercard.1c4_lyMp.svg', 'alt' => 'MASTERCARD'],
+        'amex' => ['src' => 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/amex.Csr7hRoy.svg', 'alt' => 'AMEX'],
+        'discover' => ['src' => 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/discover.C7UbFpNb.svg', 'alt' => 'Discover'],
+        'diners' => ['src' => 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/diners_club.B9hVEmwz.svg', 'alt' => 'Diners Club'],
+        'jcb' => ['src' => 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/jcb.BgZHqF0u.svg', 'alt' => 'JCB'],
+        'unionpay' => ['src' => 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/unionpay.8M-Boq_z.svg', 'alt' => 'UnionPay'],
+    ];
+
     $viewOrderUrl = rtrim(config('app.frontend_url'), '/') . '/checkout/success?ref=' . urlencode($order->reference) . '&email=' . urlencode($order->customer_reference ?? '');
 @endphp
 <!DOCTYPE html>
@@ -248,7 +260,14 @@ ${{ number_format($lineTotal, 2) }}
 @if($paymentMethodLabel)
 <td width="50%" valign="top" class="stack-col">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 4px; font-size:14px; font-weight:500; color:#1a1a1a;">Payment method</p>
+@if($cardBrand && isset($cardBrandIcons[$cardBrand]))
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+<td style="padding-right:8px;"><img src="{{ $cardBrandIcons[$cardBrand]['src'] }}" alt="{{ $cardBrandIcons[$cardBrand]['alt'] }}" width="36" height="24" style="display:block; border:0;"></td>
+<td valign="middle"><p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">&bull;&bull;&bull;&bull; {{ $cardLast4 }} &middot; ${{ number_format($total, 2) }} USD</p></td>
+</tr></table>
+@else
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">{{ $paymentMethodLabel }}</p>
+@endif
 </td>
 @endif
 </tr>

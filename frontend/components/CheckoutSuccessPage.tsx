@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle, CreditCard, Loader2, Mail, Package, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import { CheckCircle, Loader2, Mail, Package, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api";
 import { fetchApi } from "@/lib/fetchApi";
 import { useCart } from "@/context/CartContext";
@@ -45,6 +45,7 @@ type TrackingOrder = {
     payment_label: string | null;
     card_brand: string | null;
     card_last4: string | null;
+    payment_confirmed_before_cancellation?: boolean;
     created_at: string | null;
     shipping_method: string;
     total: number;
@@ -66,6 +67,16 @@ type TrackingOrder = {
 function formatMoney(value: number) {
     return `$${value.toFixed(2)}`;
 }
+
+const cardBrandIcons: Record<string, { src: string; alt: string }> = {
+    visa: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/visa.sxIq5Dot.svg', alt: 'VISA' },
+    mastercard: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/mastercard.1c4_lyMp.svg', alt: 'MASTERCARD' },
+    amex: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/amex.Csr7hRoy.svg', alt: 'AMEX' },
+    discover: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/discover.C7UbFpNb.svg', alt: 'Discover' },
+    diners: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/diners_club.B9hVEmwz.svg', alt: 'Diners Club' },
+    jcb: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/jcb.BgZHqF0u.svg', alt: 'JCB' },
+    unionpay: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/unionpay.8M-Boq_z.svg', alt: 'UnionPay' },
+};
 
 function formatStatus(value: string) {
     return value.replace(/[_-]/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
@@ -94,10 +105,16 @@ const STATUS_ORDER = ["awaiting-payment", "payment-offline", "payment-received",
 
 function buildTimeline(order: TrackingOrder) {
     if (order.status === "cancelled") {
-        return [
-            { key: "placed", label: "Order placed", done: true },
-            { key: "cancelled", label: "Order cancelled", done: true },
-        ];
+        return order.payment_confirmed_before_cancellation
+            ? [
+                { key: "placed", label: "Order placed", done: true },
+                { key: "payment", label: "Payment confirmed", done: true },
+                { key: "cancelled", label: "Order cancelled", done: true },
+            ]
+            : [
+                { key: "placed", label: "Order placed", done: true },
+                { key: "cancelled", label: "Order cancelled", done: true },
+            ];
     }
 
     const currentIndex = STATUS_ORDER.indexOf(order.status);
@@ -293,7 +310,7 @@ function OrderSuccessContent() {
                         </div>
                         <div>
                             <p className="text-[14px] font-semibold text-[#df8448]">Confirmation #{order.reference}</p>
-                            <h1 className="mt-0.5 text-[26px] font-bold leading-tight tracking-tight text-[#2f3d46] md:text-[30px]">Thank you{customerName ? `, ${customerName}` : ""}!</h1>
+                            <h1 className="mt-0.5 text-[22px] font-bold leading-tight tracking-tight text-[#2f3d46]">Thank you{customerName ? `, ${customerName}` : ""}!</h1>
                         </div>
                     </div>
 
@@ -337,6 +354,11 @@ function OrderSuccessContent() {
                                                         </a>
                                                     </div>
                                                 ) : null}
+                                                {step.key === "cancelled" && order.payment_confirmed_before_cancellation ? (
+                                                    <p className="mt-1.5 text-[12.5px] leading-[1.6] text-[#8a5a34]">
+                                                        This order was cancelled after payment. Your refund is being processed.
+                                                    </p>
+                                                ) : null}
                                             </div>
                                         </div>
                                     ))}
@@ -348,7 +370,7 @@ function OrderSuccessContent() {
                             <div className="border-b border-[#f3f3f5] px-6 py-4">
                                 <h2 className="text-[14px] font-semibold text-[#1a1a1a]">Order details</h2>
                             </div>
-                            <div className="grid divide-y divide-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                            <div className="grid sm:grid-cols-2">
                                 <div className="px-6 py-5">
                                     <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Contact information</p>
                                     <p className="text-[13.5px] text-[#555555]">{order.customer_email || "Not available"}</p>
@@ -358,7 +380,7 @@ function OrderSuccessContent() {
                                     <p className="text-[13.5px] text-[#555555]">{orderDate}</p>
                                 </div>
                             </div>
-                            <div className="grid divide-y divide-[#f3f3f5] border-t border-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                            <div className="grid sm:grid-cols-2">
                                 <div className="px-6 py-5">
                                     <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Shipping method</p>
                                     <p className="text-[13.5px] text-[#555555]">{order.shipping_method}</p>
@@ -366,19 +388,24 @@ function OrderSuccessContent() {
                                 <div className="px-6 py-5">
                                     <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#9ca3af]">Payment method</p>
                                     <div className="flex items-center gap-2">
-                                        {order.card_brand ? (
-                                            <span className="flex h-7 w-10 flex-shrink-0 items-center justify-center rounded-[4px] border border-[#e8e8ea] bg-[#faf9f8]">
-                                                <CreditCard size={14} className="text-[#9ca3af]" />
+                                        {order.card_brand && cardBrandIcons[order.card_brand] ? (
+                                            <span className="flex h-6 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-[4px]">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={cardBrandIcons[order.card_brand].src}
+                                                    alt={cardBrandIcons[order.card_brand].alt}
+                                                    className="h-full w-full object-contain"
+                                                />
                                             </span>
                                         ) : null}
                                         <p className="text-[13.5px] text-[#555555]">
-                                            {order.card_brand ? `${formatStatus(order.card_brand)} •••• ${order.card_last4}` : (order.payment_label || "—")}
-                                            {" — "}{formatMoney(order.total)} <span className="text-[11px] text-[#9ca3af]">{order.currency}</span>
+                                            {order.card_brand ? `•••• ${order.card_last4}` : (order.payment_label || "—")}
+                                            {" · "}{formatMoney(order.total)} {order.currency}
                                         </p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="grid divide-y divide-[#f3f3f5] border-t border-[#f3f3f5] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+                            <div className="grid sm:grid-cols-2">
                                 <AddressBlock title="Shipping address" address={order.shipping_address} />
                                 <AddressBlock title="Billing address" address={order.billing_address} />
                             </div>
@@ -401,8 +428,21 @@ function OrderSuccessContent() {
                     </div>
                 </div>
 
-                <aside className="order-first w-full border-b border-[#e8e8ea] bg-[#fafafa] px-4 py-6 md:px-8 lg:order-last lg:w-[440px] lg:border-b-0 lg:border-l lg:px-10 lg:py-12">
+                <aside className="w-full border-t border-[#e8e8ea] bg-[#fafafa] px-4 py-6 md:px-8 lg:order-last lg:w-[440px] lg:border-t-0 lg:border-l lg:px-10 lg:py-12">
                     <div className="lg:sticky lg:top-12">
+                        <div className="mb-6 flex items-center justify-between lg:hidden">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#fff3eb] text-rust">
+                                    <ShoppingBag size={16} />
+                                </div>
+                                <span className="text-[15px] font-semibold text-[#333333]">Order Summary</span>
+                            </div>
+                            <span className="flex items-baseline gap-1 text-[16px] font-bold text-[#1a1a1a]">
+                                {formatMoney(order.total)}
+                                <span className="text-[11px] font-semibold text-[#9ca3af]">{order.currency}</span>
+                            </span>
+                        </div>
+
                         <div className="space-y-4">
                             {order.lines.map((line) => (
                                 <div key={line.id} className="flex items-center gap-4 py-1">
@@ -454,10 +494,19 @@ function OrderSuccessContent() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 rounded-[10px] border border-[#e6f3ea] bg-[#f6fbf7] px-3 py-2 text-sm text-[#4d6357]">
-                                <ShieldCheck size={14} className="text-[#0f9f61]" />
-                                <span>Secure checkout and encrypted payment details.</span>
-                            </div>
+                            {order.status === "cancelled" ? (
+                                order.payment_confirmed_before_cancellation ? (
+                                    <div className="flex items-start gap-2 rounded-[10px] border border-[#f0ddd0] bg-[#fff8f4] px-3 py-2 text-sm text-[#7a4020]">
+                                        <Mail size={14} className="mt-0.5 flex-shrink-0 text-[#df8448]" />
+                                        <span>This order was cancelled after payment. Your refund is being processed.</span>
+                                    </div>
+                                ) : null
+                            ) : (
+                                <div className="flex items-center gap-2 rounded-[10px] border border-[#e6f3ea] bg-[#f6fbf7] px-3 py-2 text-sm text-[#4d6357]">
+                                    <ShieldCheck size={14} className="text-[#0f9f61]" />
+                                    <span>Secure checkout and encrypted payment details.</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </aside>

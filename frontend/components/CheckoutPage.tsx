@@ -1052,10 +1052,11 @@ export default function CheckoutPage() {
         }
 
         const intent = data.payment_intent as PreparedPaymentIntent;
+        const isLiveStripeKey = selectedCardMethod.publishable_key?.startsWith('pk_live_') ?? false;
         setPreparedPaymentIntent(intent);
         setPaymentIntentMessage(
             intent.mode === 'configured'
-                ? 'Stripe payment intent prepared. Live confirmation is the next integration step.'
+                ? (isLiveStripeKey ? null : 'Stripe payment intent prepared. Live confirmation is the next integration step.')
                 : 'Stripe payment intent prepared in placeholder mode. Live Stripe keys are not configured yet.'
         );
 
