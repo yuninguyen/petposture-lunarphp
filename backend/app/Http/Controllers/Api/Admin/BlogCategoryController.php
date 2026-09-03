@@ -7,6 +7,7 @@ use App\Models\BlogCategory;
 use App\Http\Resources\Admin\BlogCategoryResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 
 class BlogCategoryController extends Controller
 {
@@ -37,12 +38,15 @@ class BlogCategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:blog_categories,slug',
+            'slug' => 'nullable|string|max:255|unique:blog_categories,slug',
         ]);
 
-        $category = BlogCategory::create($validated);
+        $category = BlogCategory::create([
+            'name' => $validated['name'],
+            'slug' => $validated['slug'] ?? Str::slug($validated['name']).'-'.rand(1000, 9999),
+        ]);
 
-        return new BlogCategoryResource($category);
+        return response()->json(new BlogCategoryResource($category), 201);
     }
 
     /**
@@ -51,8 +55,8 @@ class BlogCategoryController extends Controller
     public function show(BlogCategory $blogCategory)
     {
         $blogCategory->loadCount('posts');
-        
-        return new BlogCategoryResource($blogCategory);
+
+        return response()->json(new BlogCategoryResource($blogCategory));
     }
 
     /**
@@ -62,12 +66,16 @@ class BlogCategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:blog_categories,slug,' . $blogCategory->id,
+            'slug' => 'nullable|string|max:255|unique:blog_categories,slug,' . $blogCategory->id,
         ]);
+
+        if (empty($validated['slug'])) {
+            $validated['slug'] = Str::slug($validated['name']).'-'.rand(1000, 9999);
+        }
 
         $blogCategory->update($validated);
 
-        return new BlogCategoryResource($blogCategory);
+        return response()->json(new BlogCategoryResource($blogCategory));
     }
 
     /**
