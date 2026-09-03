@@ -23,6 +23,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getApiBaseUrl } from "@/lib/api";
 import { formatDate } from "@/lib/date";
+import { SITE_URL } from "@/lib/site";
 import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
 import { useSettings } from "@/context/SettingsContext";
 import { stripHtml } from "@/lib/text";
@@ -66,6 +67,7 @@ export default function BlogPage() {
     const [categories, setCategories] = useState<BlogCategory[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
     const tabsScrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
@@ -144,6 +146,24 @@ export default function BlogPage() {
             if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
         };
     }, [searchQuery]);
+
+    const handleShare = async (post: BlogPost) => {
+        const postSlug = post.slug || post.id;
+        const shareUrl = `${SITE_URL}/blog/${postSlug}`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: post.title, url: shareUrl });
+            } catch {
+                // Native share cancellation is intentionally ignored.
+            }
+            return;
+        }
+
+        await navigator.clipboard.writeText(shareUrl);
+        setCopiedSlug(postSlug);
+        setTimeout(() => setCopiedSlug(null), 2000);
+    };
 
     const filteredPosts =
         activeTab === "All"
@@ -372,12 +392,19 @@ export default function BlogPage() {
                                             </p>
                                             <div className="mt-auto flex items-center justify-between border-t border-zinc-50 pt-5">
                                                 <div className="flex items-center gap-6">
-                                                    <button className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-rust">
-                                                        <Share2 size={14} /> Share
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleShare(post)}
+                                                        className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-rust"
+                                                    >
+                                                        <Share2 size={14} /> {copiedSlug === (post.slug || post.id) ? "Copied!" : "Share"}
                                                     </button>
-                                                    <button className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-rust">
+                                                    <Link
+                                                        href={`/blog/${post.slug || post.id}#comments`}
+                                                        className="flex items-center gap-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-rust"
+                                                    >
                                                         <MessageSquare size={14} /> Discuss
-                                                    </button>
+                                                    </Link>
                                                 </div>
                                                 <Link
                                                     href={`/blog/${post.slug || post.id}`}
@@ -394,7 +421,7 @@ export default function BlogPage() {
 
                         {latestPosts.length > 0 && (
                             <div className="mt-20 flex justify-center border-t border-zinc-100 pt-10">
-                                <button className="rounded-[3px] bg-secondary px-14 py-4 text-sm font-bold uppercase tracking-[0.08em] text-ink shadow-xl shadow-orange-100/50 transition-all hover:bg-secondary-dark">
+                                <button className="rounded-[3px] bg-secondary px-8 py-4 text-sm font-bold uppercase tracking-[0.08em] text-ink shadow-xl shadow-orange-100/50 transition-all hover:bg-secondary-dark md:px-14">
                                     Load More Content
                                 </button>
                             </div>

@@ -13,15 +13,13 @@ class OrderTrackingAccessService
         $token = Str::random(64);
         $expiresAt = now()->addDays(90);
 
-        DB::table('lunar_orders')
-            ->where('id', $order->id)
-            ->update([
-                'tracking_access_token_hash' => hash('sha256', $token),
-                'tracking_access_token_expires_at' => $expiresAt,
-                'updated_at' => now(),
-            ]);
+        DB::table('order_tracking_tokens')->insert([
+            'order_id' => $order->id,
+            'token_hash' => hash('sha256', $token),
+            'expires_at' => $expiresAt,
+            'created_at' => now(),
+        ]);
 
-        $order->setAttribute('tracking_access_token_hash', hash('sha256', $token));
         $order->setAttribute('tracking_access_token_expires_at', $expiresAt);
         $order->setAttribute('tracking_access_token', $token);
 
@@ -30,14 +28,22 @@ class OrderTrackingAccessService
 
     public function find(string $token, string $email): ?Order
     {
-        if ($token === '' || $email === '') {
+        if (trim($token) === '' || trim($email) === '') {
+            return null;
+        }
+
+        $orderId = DB::table('order_tracking_tokens')
+            ->where('token_hash', hash('sha256', $token))
+            ->where('expires_at', '>', now())
+            ->value('order_id');
+
+        if (! $orderId) {
             return null;
         }
 
         return Order::query()
-            ->where('tracking_access_token_hash', hash('sha256', $token))
+            ->whereKey($orderId)
             ->whereRaw('LOWER(customer_reference) = ?', [Str::lower(trim($email))])
-            ->where('tracking_access_token_expires_at', '>', now())
             ->with(['shippingAddress', 'billingAddress', 'lines'])
             ->first();
     }

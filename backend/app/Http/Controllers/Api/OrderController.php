@@ -188,7 +188,7 @@ class OrderController extends Controller
 
         return response()->json([
             'tracking_access_token' => $token,
-            'tracking_access_expires_at' => $order->tracking_access_token_expires_at?->toIso8601String(),
+            'tracking_access_expires_at' => optional($order->getAttribute('tracking_access_token_expires_at'))->toIso8601String(),
         ]);
     }
 

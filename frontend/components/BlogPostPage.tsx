@@ -273,7 +273,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         </div>
 
                         {/* Comments Section */}
-                        <div className="mt-24 space-y-16">
+                        <div id="comments" className="mt-24 space-y-16">
                             <div className="flex items-center gap-4">
                                 <h3 className="text-[24px] font-bold text-primary">Discussion</h3>
                                 <div className="flex-1 h-[1px] bg-zinc-100" />
