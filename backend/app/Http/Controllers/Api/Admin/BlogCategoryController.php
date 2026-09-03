@@ -56,7 +56,7 @@ class BlogCategoryController extends Controller
     {
         $blogCategory->loadCount('posts');
 
-        return response()->json(new BlogCategoryResource($blogCategory));
+        return new BlogCategoryResource($blogCategory);
     }
 
     /**
