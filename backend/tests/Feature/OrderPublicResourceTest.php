@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -48,15 +49,16 @@ class OrderPublicResourceTest extends TestCase
         $placeResponse->assertCreated();
 
         $reference = (string) $placeResponse->json('order.reference');
+        $orderId = (string) $placeResponse->json('order.id');
         $trackingToken = (string) $placeResponse->json('order.tracking_access_token');
         $this->assertSame(64, strlen($trackingToken));
-        $this->assertDatabaseHas('lunar_orders', [
-            'reference' => $reference,
-            'tracking_access_token_hash' => hash('sha256', $trackingToken),
+        $this->assertDatabaseHas('order_tracking_tokens', [
+            'order_id' => $orderId,
+            'token_hash' => hash('sha256', $trackingToken),
         ]);
-        $this->assertDatabaseMissing('lunar_orders', [
-            'reference' => $reference,
-            'tracking_access_token_hash' => $trackingToken,
+        $this->assertDatabaseMissing('order_tracking_tokens', [
+            'order_id' => $orderId,
+            'token_hash' => $trackingToken,
         ]);
 
         $this->postJson('/api/orders/track', [
@@ -89,6 +91,30 @@ class OrderPublicResourceTest extends TestCase
             ->assertJsonMissingPath('data.payment_status')
             ->assertJsonMissingPath('data.payment_method')
             ->assertJsonMissingPath('data.payment_intent_id');
+    }
+
+    public function test_tracking_token_migration_backfills_a_valid_legacy_token(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $order = Order::query()->findOrFail($placeResponse->json('order.id'));
+        $legacyToken = Str::random(64);
+        $legacyExpiresAt = now()->addDay();
+
+        $migration = require database_path('migrations/2026_09_03_000001_create_order_tracking_tokens_table.php');
+        $migration->down();
+        $order->forceFill([
+            'tracking_access_token_hash' => hash('sha256', $legacyToken),
+            'tracking_access_token_expires_at' => $legacyExpiresAt,
+        ])->save();
+        $migration->up();
+
+        $this->assertDatabaseCount('order_tracking_tokens', 1);
+        $this->assertDatabaseHas('order_tracking_tokens', [
+            'order_id' => $order->id,
+            'token_hash' => hash('sha256', $legacyToken),
+            'expires_at' => $legacyExpiresAt,
+        ]);
     }
 
     public function test_authenticated_owner_can_rotate_tracking_access_for_an_account_order(): void
@@ -187,10 +213,11 @@ class OrderPublicResourceTest extends TestCase
         $response->assertJsonMissingPath('order.available_actions');
     }
 
-    public function test_payment_session_lookup_rotates_and_returns_a_new_tracking_token(): void
+    public function test_payment_session_lookup_keeps_the_initial_and_new_tracking_tokens_valid(): void
     {
         $variant = $this->createPurchasableVariant();
         $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $reference = (string) $placeResponse->json('order.reference');
         $oldToken = (string) $placeResponse->json('order.tracking_access_token');
         $order = Order::query()->findOrFail($placeResponse->json('order.id'));
         $meta = (array) $order->meta;
@@ -203,16 +230,17 @@ class OrderPublicResourceTest extends TestCase
         $newToken = (string) $response->json('data.tracking_access_token');
         $this->assertSame(64, strlen($newToken));
         $this->assertNotSame($oldToken, $newToken);
-        $this->assertSame(hash('sha256', $newToken), $order->fresh()->tracking_access_token_hash);
 
         $this->postJson('/api/orders/track', [
             'tracking_token' => $oldToken,
             'email' => 'guest@petposture.com',
-        ])->assertNotFound();
+        ])->assertOk()
+            ->assertJsonPath('data.reference', $reference);
         $this->postJson('/api/orders/track', [
             'tracking_token' => $newToken,
             'email' => 'guest@petposture.com',
-        ])->assertOk();
+        ])->assertOk()
+            ->assertJsonPath('data.reference', $reference);
     }
 
     public function test_expired_payment_session_cannot_rotate_tracking_access(): void
@@ -246,7 +274,9 @@ class OrderPublicResourceTest extends TestCase
         $token = (string) $placeResponse->json('order.tracking_access_token');
         $order = Order::query()->findOrFail($placeResponse->json('order.id'));
 
-        $order->forceFill(['tracking_access_token_expires_at' => now()->subMinute()])->save();
+        DB::table('order_tracking_tokens')
+            ->where('token_hash', hash('sha256', $token))
+            ->update(['expires_at' => now()->subMinute()]);
         $this->postJson('/api/orders/retry-payment', [
             'tracking_token' => $token,
             'email' => 'guest@petposture.com',
@@ -255,8 +285,10 @@ class OrderPublicResourceTest extends TestCase
 
         $meta = (array) $order->meta;
         $meta['payment_status'] = 'paid';
+        DB::table('order_tracking_tokens')
+            ->where('token_hash', hash('sha256', $token))
+            ->update(['expires_at' => now()->addDay()]);
         $order->forceFill([
-            'tracking_access_token_expires_at' => now()->addDay(),
             'meta' => $meta,
         ])->save();
 
