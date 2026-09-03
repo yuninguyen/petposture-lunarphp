@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import dynamic from 'next/dynamic';
+const Footer = dynamic(() => import('@/components/Footer'));
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, X, ChevronRight, ArrowLeft, Tag } from 'lucide-react';
@@ -182,22 +183,23 @@ export default function CartPage() {
                                 </div>
                                 
                                 <div className="divide-y divide-zinc-100">
-                                    {items.map(item => (
+                                    {items.map((item, index) => (
                                         <div key={item.variantId} className="py-6 flex flex-col md:flex-row md:items-center relative group">
                                             {/* Remove Button */}
                                             <div className="absolute top-6 right-0 md:relative md:top-0 md:w-10 md:flex-shrink-0 z-10 flex md:items-center md:justify-start">
                                                 <button
                                                     onClick={() => removeItem(item.variantId)}
+                                                    aria-label="Remove item"
                                                     className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-100 bg-white md:bg-transparent"
                                                 >
-                                                    <X size={16} strokeWidth={2.5} />
+                                                    <X size={16} strokeWidth={2.5} aria-hidden="true" />
                                                 </button>
                                             </div>
                                             
                                             {/* Product Info (Image + Name) */}
                                             <div className="flex items-start md:items-center gap-4 flex-1 pr-10 md:pr-4">
                                                 <div className="relative w-[80px] h-[80px] md:w-[56px] md:h-[56px] bg-zinc-50 rounded-[6px] overflow-hidden flex-shrink-0 border border-zinc-100">
-                                                    <Image src={item.image} alt={item.name} fill sizes="(max-width: 768px) 80px, 56px" className="object-cover mix-blend-multiply" />
+                                                    <Image src={item.image} alt={item.name} fill sizes="(max-width: 768px) 80px, 56px" className="object-cover mix-blend-multiply" priority={index === 0} />
                                                 </div>
                                                 <div className="flex-1 flex flex-col justify-center min-h-[80px] md:min-h-0">
                                                     <h3 className="text-[14px] font-semibold text-primary hover:text-rust transition-colors leading-snug">
@@ -213,16 +215,18 @@ export default function CartPage() {
                                                         <div className="inline-flex items-center bg-white border border-zinc-200 rounded-[4px] overflow-hidden shadow-sm">
                                                             <button
                                                                 onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                                                                aria-label="Decrease quantity"
                                                                 className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-primary transition-colors"
                                                             >
-                                                                <Minus size={12} strokeWidth={2.5} />
+                                                                <Minus size={12} strokeWidth={2.5} aria-hidden="true" />
                                                             </button>
-                                                            <span className="w-6 text-center text-[13px] font-bold text-primary">{item.quantity}</span>
+                                                            <span className="w-6 text-center text-[13px] font-bold text-primary" aria-label={`Quantity: ${item.quantity}`}>{item.quantity}</span>
                                                             <button
                                                                 onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                                                                aria-label="Increase quantity"
                                                                 className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-primary transition-colors"
                                                             >
-                                                                <Plus size={12} strokeWidth={2.5} />
+                                                                <Plus size={12} strokeWidth={2.5} aria-hidden="true" />
                                                             </button>
                                                         </div>
                                                         <div className="text-[15px] font-black text-rust">
@@ -242,16 +246,18 @@ export default function CartPage() {
                                                 <div className="inline-flex items-center bg-white border border-zinc-200 rounded-[4px] overflow-hidden shadow-sm">
                                                     <button
                                                         onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                                                        aria-label="Decrease quantity"
                                                         className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-primary transition-colors"
                                                     >
-                                                        <Minus size={12} strokeWidth={2.5} />
+                                                        <Minus size={12} strokeWidth={2.5} aria-hidden="true" />
                                                     </button>
-                                                    <span className="w-6 text-center text-[13px] font-bold text-primary">{item.quantity}</span>
+                                                    <span className="w-6 text-center text-[13px] font-bold text-primary" aria-label={`Quantity: ${item.quantity}`}>{item.quantity}</span>
                                                     <button
                                                         onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                                                        aria-label="Increase quantity"
                                                         className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-primary transition-colors"
                                                     >
-                                                        <Plus size={12} strokeWidth={2.5} />
+                                                        <Plus size={12} strokeWidth={2.5} aria-hidden="true" />
                                                     </button>
                                                 </div>
                                             </div>

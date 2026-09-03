@@ -63,47 +63,52 @@ export function CartDrawer() {
                                 </div>
                             ) : (
                                 items.map(item => (
-                                    <div key={item.variantId} className="flex gap-6 items-center">
+                                    <div key={item.variantId} className="flex gap-4 items-start">
                                         {/* Image */}
-                                        <div className="w-[80px] h-[100px] bg-white rounded-[4px] overflow-hidden flex-shrink-0 border border-zinc-100 group relative">
-                                            <Image src={item.image} alt={item.name} fill sizes="80px" className="object-cover" />
+                                        <div className="w-[64px] h-[64px] bg-white rounded-[4px] overflow-hidden flex-shrink-0 border border-zinc-100 group relative">
+                                            <Image src={item.image} alt={item.name} fill sizes="64px" className="object-cover" />
                                         </div>
 
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="text-sm font-bold text-primary leading-tight mb-1 hover:text-rust transition-colors cursor-pointer">
+                                            <h3 
+                                                title={item.name}
+                                                className="text-sm font-bold text-primary leading-tight hover:text-rust transition-colors cursor-pointer truncate"
+                                            >
                                                 {item.name}
                                             </h3>
-                                            <div className="flex items-center gap-2 text-sm font-medium text-zinc-400">
-                                                <span>{item.quantity}</span>
-                                                <span>&times;</span>
-                                                <span className="text-rust font-bold">${item.price.toFixed(2)}</span>
-                                            </div>
 
-                                            {/* Quantity Adjuster Mini */}
-                                            <div className="flex items-center mt-3 bg-zinc-50 rounded-[4px] w-fit border border-zinc-100">
-                                                <button
-                                                    onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                                                    className="px-2.5 py-1 text-zinc-400 hover:text-primary transition-colors"
-                                                >
-                                                    <Minus size={10} strokeWidth={3} />
-                                                </button>
-                                                <span className="px-2 text-sm font-black text-primary min-w-[20px] text-center">{item.quantity}</span>
-                                                <button
-                                                    onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                                                    className="px-2.5 py-1 text-zinc-400 hover:text-primary transition-colors"
-                                                >
-                                                    <Plus size={10} strokeWidth={3} />
-                                                </button>
+                                            <div className="flex justify-between items-center mt-2">
+                                                <div className="flex items-center bg-zinc-50 rounded-[4px] w-fit border border-zinc-100">
+                                                    <button
+                                                        onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                                                        aria-label="Decrease quantity"
+                                                        className="px-2.5 py-1 text-zinc-400 hover:text-primary transition-colors"
+                                                    >
+                                                        <Minus size={10} strokeWidth={3} aria-hidden="true" />
+                                                    </button>
+                                                    <span className="px-2 text-sm font-black text-primary min-w-[20px] text-center" aria-label="Quantity">{item.quantity}</span>
+                                                    <button
+                                                        onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                                                        aria-label="Increase quantity"
+                                                        className="px-2.5 py-1 text-zinc-400 hover:text-primary transition-colors"
+                                                    >
+                                                        <Plus size={10} strokeWidth={3} aria-hidden="true" />
+                                                    </button>
+                                                </div>
+                                                <span className="text-sm font-black text-rust">
+                                                    ${(item.price * item.quantity).toFixed(2)}
+                                                </span>
                                             </div>
                                         </div>
 
                                         {/* Remove Button - Circular logic */}
                                         <button
                                             onClick={() => removeItem(item.variantId)}
-                                            className="w-8 h-8 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-300 hover:text-red-500 hover:bg-red-50 hover:border-red-100 border border-transparent transition-all"
+                                            aria-label="Remove item"
+                                            className="w-6 h-6 mt-0.5 rounded-full bg-zinc-50 flex flex-shrink-0 items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 hover:border-red-100 border border-transparent transition-all"
                                         >
-                                            <X size={14} strokeWidth={3} />
+                                            <X size={12} strokeWidth={3} aria-hidden="true" />
                                         </button>
                                     </div>
                                 ))

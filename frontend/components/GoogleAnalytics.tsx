@@ -34,7 +34,7 @@ export function GoogleAnalytics({ measurementId }: { measurementId: string }) {
     return (
         <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
-            strategy="afterInteractive"
+            strategy="lazyOnload"
         />
     );
 }

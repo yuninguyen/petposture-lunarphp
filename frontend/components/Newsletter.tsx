@@ -46,7 +46,7 @@ export default function Newsletter() {
             <h2 className="mb-1.5 text-[20px] font-bold text-primary">
               Better recommendations for your dog.
             </h2>
-            <p className="max-w-[380px] text-sm leading-relaxed text-primary/60">
+            <p className="max-w-[380px] text-sm leading-relaxed text-[#1a2128b8]">
               Get breed-focused guides, product updates and 10% off your first PetPosture order.
             </p>
           </div>
@@ -58,8 +58,8 @@ export default function Newsletter() {
               <form
                 onSubmit={handleSubmit}
                 className={`flex flex-col gap-2 rounded-[4px] border bg-white p-1 transition-all duration-300 sm:flex-row sm:gap-0 sm:p-[4px] ${isFocused
-                    ? "border-secondary shadow-[0_10px_32px_-4px_rgba(223,132,72,0.2)]"
-                    : "border-zinc-200 shadow-[0_4px_16px_rgba(0,0,0,0.06)]"
+                  ? "border-secondary shadow-[0_10px_32px_-4px_rgba(223,132,72,0.2)]"
+                  : "border-zinc-200 shadow-[0_4px_16px_rgba(0,0,0,0.06)]"
                   }`}
               >
                 <label htmlFor="footer-newsletter-email" className="sr-only">Email address</label>
@@ -86,7 +86,7 @@ export default function Newsletter() {
               {error && (
                 <p className="mt-2.5 text-[13px] font-bold text-red-600">{error}</p>
               )}
-              <div className="mt-3 flex flex-row flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-xs text-primary/60 sm:justify-start sm:text-left">
+              <div className="mt-3 flex flex-row flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-xs text-[#1a2128b8] sm:justify-start sm:text-left">
                 <span className="flex items-center gap-1.5"><Lock size={13} /> No spam ever</span>
                 <span className="flex items-center gap-1.5"><Ban size={13} /> Unsubscribe anytime</span>
                 <span className="flex items-center gap-1.5"><Tag size={13} /> Exclusive offers</span>

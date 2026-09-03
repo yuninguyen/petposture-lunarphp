@@ -129,6 +129,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {googleAnalyticsId ? <GoogleAnalytics measurementId={googleAnalyticsId} /> : null}
         <script
+          suppressHydrationWarning
           nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
