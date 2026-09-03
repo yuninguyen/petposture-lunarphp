@@ -130,7 +130,7 @@ class ProductCatalogApiTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.0.slug', 'published-bed')
             ->assertJsonPath('data.0.price', 99.99)
-            ->assertJsonPath('data.0.oldPrice', 129.99)
+            ->assertJsonPath('data.0.comparePrice', 129.99)
             ->assertJsonPath('data.0.badge', 'SALE')
             ->assertJsonPath('data.0.isNew', true)
             ->assertJsonPath('data.0.rating', 0)
