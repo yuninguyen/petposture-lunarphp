@@ -60,7 +60,7 @@ You requested a tracking link for order <strong style="font-family:-apple-system
 <table role="presentation" cellpadding="0" cellspacing="0">
 <tr>
 <td align="center" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; border-radius:6px; background-color:#df8448;">
-<a href="{{ $trackingUrl }}" target="_blank" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:inline-block; padding:16px 44px; font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#ffffff; text-decoration:none;">{{ ($context ?? 'tracking') === 'returns' ? 'Continue My Return' : 'Track My Order' }}</a>
+<a href="{{ $trackingUrl }}" target="_blank" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:inline-block; padding:16px 44px; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#ffffff; text-decoration:none;">{{ ($context ?? 'tracking') === 'returns' ? 'Continue My Return' : 'Track My Order' }}</a>
 </td>
 </tr>
 </table>

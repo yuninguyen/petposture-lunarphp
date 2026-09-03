@@ -102,8 +102,8 @@ function RequestReturnContent() {
             const data = await res.json();
             const foundOrder: LookedUpOrder = data?.data ?? null;
 
-            if (!foundOrder || foundOrder.status !== "delivered") {
-                throw new Error("This order isn't eligible for a return yet. Returns can be requested once an order has been delivered.");
+            if (!foundOrder || !["delivered", "shipped"].includes(foundOrder.status)) {
+                throw new Error("This order isn't eligible for a return yet. Returns can be requested once an order has shipped or been delivered.");
             }
 
             if (data?.has_active_return_request) {

@@ -478,7 +478,7 @@ class ViewOrder extends ViewRecord
                             $shippingMethodName = app(ShippingService::class)
                                 ->nameFor((string) ($record->meta['shipping_method'] ?? 'standard'));
                             $rows[] = "Shipping - {$shippingMethodName}: ".$money($record->shipping_total);
-                            $rows[] = 'Estimated Tax: '.$money($record->tax_total);
+                            $rows[] = 'Tax: '.$money($record->tax_total);
                             $rows[] = '<strong>Order Total: '.$money($record->total).'</strong>';
 
                             return '<div style="line-height: 2; margin-right: 1.5rem;">'

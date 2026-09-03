@@ -39,9 +39,9 @@ class ReturnRequestService
      */
     public function create(Order $order, array $items, string $reason, ?string $customerNote): OrderReturnRequest
     {
-        if ((string) $order->status !== 'delivered') {
+        if (! in_array((string) $order->status, ['delivered', 'shipped'], true)) {
             throw ValidationException::withMessages([
-                'order' => ['Only delivered orders are eligible for a return request.'],
+                'order' => ['Only delivered or shipped orders are eligible for a return request.'],
             ]);
         }
 
