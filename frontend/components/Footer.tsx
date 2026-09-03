@@ -75,7 +75,7 @@ const getShopHref = (item: string) => {
 function ShopLinkGroup({ heading, items }: { heading: string; items: string[] }) {
   return (
     <div>
-      <h4 className="text-[12px] font-bold uppercase tracking-[0.1em] text-white/40 mb-3">
+      <h4 className="text-[12px] font-bold uppercase tracking-[0.1em] text-white/60 mb-3">
         {heading}
       </h4>
       <ul className="space-y-3">
@@ -108,7 +108,7 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent, wr
           </h3>
           <div className="hidden lg:block w-8 h-[2px] bg-secondary mt-3" />
         </div>
-        <div className="lg:hidden text-white/40 group-hover:text-white transition-colors">
+        <div className="lg:hidden text-white/60 group-hover:text-white transition-colors">
           {isOpen ? <Minus size={18} /> : <Plus size={18} />}
         </div>
       </button>
