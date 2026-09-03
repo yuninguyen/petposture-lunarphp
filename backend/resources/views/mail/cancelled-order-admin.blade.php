@@ -234,7 +234,7 @@ ${{ number_format($lineTotal, 2) }}
 <table role="presentation" cellpadding="0" cellspacing="0">
 <tr>
 <td align="center" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; border-radius:6px; background-color:#df8448;">
-<a href="{{ config('app.url') }}/admin/orders" target="_blank" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:inline-block; padding:16px 44px; font-size:12px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#ffffff; text-decoration:none;">View in Admin</a>
+<a href="{{ config('app.url') }}/admin/orders" target="_blank" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:inline-block; padding:16px 44px; font-size:13px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:#ffffff; text-decoration:none;">View in Admin</a>
 </td>
 </tr>
 </table>

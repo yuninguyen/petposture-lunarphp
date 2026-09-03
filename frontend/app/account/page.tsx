@@ -314,7 +314,7 @@ export default function AccountPage() {
                                                             </div>
 
                                                             <div className="pt-3 border-t border-zinc-100">
-                                                                <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Payment</p>
+                                                                <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Payment Method</p>
                                                                 <div className="flex items-center justify-between text-sm">
                                                                     <span className="text-zinc-600">{order.payment_label || 'N/A'}</span>
                                                                     <span className="text-xs font-bold uppercase tracking-wide text-rust">{order.payment_status_label}</span>

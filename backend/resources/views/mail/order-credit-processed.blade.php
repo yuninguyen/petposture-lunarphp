@@ -64,7 +64,7 @@ If you have further questions on your {{ config('app.name') }}.com order, please
 
 <tr>
 <td align="center" style="{{ $font }} padding-bottom:16px;">
-<p style="{{ $font }} margin:0; font-size:17px; font-weight:700; letter-spacing:1px; color:#9a9a9a; text-transform:uppercase;">Customer support</p>
+<p style="{{ $font }} margin:0; font-size:18px; font-weight:650; letter-spacing:0.5px; color:#9a9a9a; text-transform:capitalize;">Customer support</p>
 </td>
 </tr>
 
