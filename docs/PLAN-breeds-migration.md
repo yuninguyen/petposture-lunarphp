@@ -43,5 +43,16 @@ Người dùng yêu cầu di chuyển toàn bộ chức năng quản lý "Breeds
 - **frontend-specialist**: Chịu trách nhiệm thực hiện các Phase 1, 2, 3 và 4. Đảm bảo tuân thủ thiết kế UI/UX mới.
 
 ## 5. Câu hỏi mở (Open Questions)
-- Breeds có những thuộc tính nào cụ thể (Name, Slug, Image, Description, Attributes...)?
-- Có cần chức năng Bulk Delete cho Breeds không?
+- Breeds có những thuộc tính nào cụ thể (Name, Slug, Image, Description, Attributes...)? Trả lời: Thuộc tính hiển thị ở Breeds Lists bao gồm: 
+- Các cột dữ liệu: Name |Slug | Body Type | Products | Posts | icon View hiển thị modal hay là box chi tiết Breed | dấu ba chấm action bọc edit và delete bên trong như những page khác.
+- Có cần chức năng Bulk Delete cho Breeds không? Trả lời: Có xây Bulk Delete
+- Khi vào chi tiết breed cần hiển thị gì? Trả lời:
+    - Name
+    - Slug
+    - Body Type
+    - Description
+    - Thumbnail là ảnh đại diện nhỉ (Khi upload ảnh đại diện thì ngoài frontend store cũng sẽ hiển thị ảnh đó, cần thêm API)
+    - Alt Text (nếu có)
+    - SEO Title
+    - SEO Description
+    - SEO Keywords

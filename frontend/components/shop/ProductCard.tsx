@@ -79,7 +79,7 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
                             className={product.reviews > 0 && i < product.rating ? "fill-secondary text-rust" : "text-zinc-200"}
                         />
                     ))}
-                    <span className="ml-1 text-xs font-medium text-[#8b8f93]">
+                    <span className="ml-1 text-xs font-medium text-[#1a2128b8]">
                         {product.reviews > 0 ? `${product.reviews} reviews` : 'No reviews yet'}
                     </span>
                 </div>
@@ -100,7 +100,7 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
 
                     <Link
                         href={`/shop/${product.categorySlug}/${product.slug}`}
-                        className="inline-flex items-center gap-1 text-xs font-semibold capitalize text-[#8b8f93] transition-colors hover:text-rust"
+                        className="inline-flex items-center gap-1 text-xs font-semibold capitalize text-[#1a2128b8] transition-colors hover:text-rust"
                     >
                         View <ArrowUpRight size={12} />
                     </Link>
