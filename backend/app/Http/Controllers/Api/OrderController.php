@@ -7,6 +7,7 @@ use App\Http\Resources\Api\OrderResource;
 use App\Http\Resources\Api\OrderTrackingResource;
 use App\Mail\TrackingLinkResend;
 use App\Models\OrderReturnRequest;
+use App\Services\CheckoutService;
 use App\Services\OrderOperationsService;
 use App\Services\OrderTrackingAccessService;
 use App\Services\StripePaymentIntentService;
@@ -23,6 +24,7 @@ class OrderController extends Controller
     private const SHIPMENT_CARRIERS = 'manual,ups,usps,fedex,dhl';
 
     public function __construct(
+        private readonly CheckoutService $checkoutService,
         private readonly OrderOperationsService $orderOperationsService,
         private readonly StripePaymentIntentService $stripePaymentIntentService,
         private readonly OrderTrackingAccessService $orderTrackingAccessService,
@@ -224,6 +226,76 @@ class OrderController extends Controller
         }
 
         return new OrderResource($order);
+    }
+
+    public function create(Request $request)
+    {
+        if (! $request->user()?->can('update_order')) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $validated = Validator::make($request->all(), [
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.variant_id' => ['required', 'integer', 'exists:lunar_product_variants,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'email' => ['required', 'email', 'max:255'],
+            'shipping' => ['required', 'array'],
+            'shipping.first_name' => ['required', 'string', 'max:255'],
+            'shipping.last_name' => ['nullable', 'string', 'max:255'],
+            'shipping.company' => ['nullable', 'string', 'max:255'],
+            'shipping.line_one' => ['required', 'string', 'max:255'],
+            'shipping.line_two' => ['nullable', 'string', 'max:255'],
+            'shipping.city' => ['required', 'string', 'max:255'],
+            'shipping.state' => ['nullable', 'string', 'max:255'],
+            'shipping.postcode' => ['nullable', 'string', 'max:32'],
+            'shipping.country' => ['nullable', 'string', 'max:255'],
+            'shipping.phone' => ['nullable', 'string', 'max:50'],
+            'billing_same_as_shipping' => ['required', 'boolean'],
+            'billing' => [Rule::requiredIf(fn () => ! $request->boolean('billing_same_as_shipping')), 'nullable', 'array'],
+            'billing.first_name' => [Rule::requiredIf(fn () => ! $request->boolean('billing_same_as_shipping')), 'string', 'max:255'],
+            'billing.last_name' => ['nullable', 'string', 'max:255'],
+            'billing.company' => ['nullable', 'string', 'max:255'],
+            'billing.line_one' => [Rule::requiredIf(fn () => ! $request->boolean('billing_same_as_shipping')), 'string', 'max:255'],
+            'billing.line_two' => ['nullable', 'string', 'max:255'],
+            'billing.city' => [Rule::requiredIf(fn () => ! $request->boolean('billing_same_as_shipping')), 'string', 'max:255'],
+            'billing.state' => ['nullable', 'string', 'max:255'],
+            'billing.postcode' => ['nullable', 'string', 'max:32'],
+            'billing.country' => ['nullable', 'string', 'max:255'],
+            'billing.phone' => ['nullable', 'string', 'max:50'],
+            'payment_method' => ['required', 'string', 'in:cod,card'],
+            'shipping_method' => ['required', 'string', 'in:standard,express'],
+            'coupon_code' => ['nullable', 'string', 'max:255'],
+            'customer_note' => ['nullable', 'string', 'max:2000'],
+            'internal_note' => ['nullable', 'string', 'max:4000'],
+            'shipping_fee_override' => ['nullable', 'numeric', 'min:0'],
+        ])->validate();
+
+        $shipping = array_merge(['country' => 'US'], $validated['shipping']);
+        $billing = $validated['billing_same_as_shipping']
+            ? null
+            : array_merge(['country' => 'US'], $validated['billing']);
+        $payload = [
+            'items' => collect($validated['items'])->map(fn (array $item) => [
+                'variantId' => (int) $item['variant_id'],
+                'quantity' => (int) $item['quantity'],
+            ])->all(),
+            'shipping' => ['email' => $validated['email'], ...$shipping],
+            'billing_same_as_shipping' => $validated['billing_same_as_shipping'],
+            'billing' => $billing,
+            'payment_method' => $validated['payment_method'],
+            'shipping_method' => $validated['shipping_method'],
+            'coupon_code' => $validated['coupon_code'] ?? null,
+            'customer_note' => $validated['customer_note'] ?? null,
+            'internal_note' => $validated['internal_note'] ?? null,
+            'shipping_fee_override' => isset($validated['shipping_fee_override'])
+                ? (int) round(((float) $validated['shipping_fee_override']) * 100)
+                : null,
+            'created_by_admin' => true,
+        ];
+
+        $order = $this->checkoutService->placeOrder($payload, $request->user()->id, $request->ip());
+
+        return (new OrderResource($order))->response()->setStatusCode(201);
     }
 
     public function update(Request $request, $id)

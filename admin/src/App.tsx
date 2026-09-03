@@ -28,6 +28,7 @@ const CollectionsPage = lazy(() => import('@/features/collections/CollectionsPag
 const ProductsListPage = lazy(() => import('@/features/products/ProductsListPage').then(m => ({ default: m.ProductsListPage })));
 const ProductFormPage = lazy(() => import('@/features/products/ProductFormPage').then(m => ({ default: m.ProductFormPage })));
 const OrdersListPage = lazy(() => import('@/features/orders/OrdersListPage').then(m => ({ default: m.OrdersListPage })));
+const OrderFormPage = lazy(() => import('@/features/orders/OrderFormPage').then(m => ({ default: m.OrderFormPage })));
 const OrderDetailPage = lazy(() => import('@/features/orders/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
 const ReturnRequestsListPage = lazy(() => import('@/features/return-requests/ReturnRequestsListPage').then(m => ({ default: m.ReturnRequestsListPage })));
 const ReturnRequestDetailPage = lazy(() => import('@/features/return-requests/ReturnRequestDetailPage').then(m => ({ default: m.ReturnRequestDetailPage })));
@@ -190,6 +191,7 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
       </>}
       {canManageSales && <>
         <Route path="/orders" element={<OrdersListPage />} />
+        <Route path="/orders/new" element={<OrderFormPage />} />
         <Route path="/orders/:id" element={<OrderDetailPage canRefund={canRefundOrders(userRoles)} />} />
         <Route path="/return-requests" element={<ReturnRequestsListPage />} />
         <Route path="/return-requests/:id" element={<ReturnRequestDetailPage />} />

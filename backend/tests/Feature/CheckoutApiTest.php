@@ -6,6 +6,7 @@ use App\Models\CheckoutSession;
 use App\Models\ShippingMethod;
 use App\Models\StripeWebhookEvent;
 use App\Models\User;
+use App\Services\CheckoutService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -1107,6 +1108,123 @@ class CheckoutApiTest extends TestCase
             ->assertJsonMissing(['id' => $otherOrder->json('order.id')]);
     }
 
+    public function test_order_manager_and_support_can_create_manual_orders_but_product_manager_cannot(): void
+    {
+        $variant = $this->createPurchasableVariant();
+
+        foreach (['Order Manager', 'Support'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+
+            $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant))
+                ->assertCreated()
+                ->assertJsonPath('data.status', 'awaiting-payment');
+        }
+
+        Sanctum::actingAs($this->userWithRole('Product Manager'));
+        $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant))
+            ->assertForbidden();
+    }
+
+    public function test_manual_order_requires_the_filament_parity_fields_and_valid_choices(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        Sanctum::actingAs($this->makeAdmin());
+
+        $missingItems = $this->manualOrderPayload($variant);
+        $missingItems['items'] = [];
+
+        $invalidPayloads = [
+            'items' => $missingItems,
+            'email' => array_replace_recursive($this->manualOrderPayload($variant), ['email' => null]),
+            'shipping.first_name' => array_replace_recursive($this->manualOrderPayload($variant), ['shipping' => ['first_name' => null]]),
+            'shipping.line_one' => array_replace_recursive($this->manualOrderPayload($variant), ['shipping' => ['line_one' => null]]),
+            'shipping.city' => array_replace_recursive($this->manualOrderPayload($variant), ['shipping' => ['city' => null]]),
+            'payment_method' => array_replace_recursive($this->manualOrderPayload($variant), ['payment_method' => 'paypal']),
+            'shipping_method' => array_replace_recursive($this->manualOrderPayload($variant), ['shipping_method' => 'overnight']),
+            'items.0.quantity' => array_replace_recursive($this->manualOrderPayload($variant), ['items' => [['quantity' => 0]]]),
+            'billing.first_name' => array_replace_recursive($this->manualOrderPayload($variant), [
+                'billing_same_as_shipping' => false,
+                'billing' => [],
+            ]),
+        ];
+
+        foreach ($invalidPayloads as $field => $payload) {
+            $this->postJson('/api/admin/orders', $payload)
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors([$field]);
+        }
+
+        $this->postJson('/api/admin/orders', array_replace_recursive($this->manualOrderPayload($variant), [
+            'items' => [['quantity' => -1]],
+        ]))->assertUnprocessable()->assertJsonValidationErrors(['items.0.quantity']);
+    }
+
+    public function test_manual_card_order_forces_admin_flag_when_calling_checkout_service(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $existingOrder = Order::query()->findOrFail(
+            $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant))->json('order.id'),
+        );
+        $admin = $this->makeAdmin();
+
+        $checkoutService = \Mockery::mock(CheckoutService::class);
+        $checkoutService->shouldReceive('placeOrder')
+            ->once()
+            ->with(\Mockery::on(function (array $payload) use ($variant): bool {
+                return $payload['created_by_admin'] === true
+                    && $payload['payment_method'] === 'card'
+                    && $payload['items'][0] === ['variantId' => $variant->id, 'quantity' => 1];
+            }), $admin->id, '127.0.0.1')
+            ->andReturn($existingOrder);
+        app()->instance(CheckoutService::class, $checkoutService);
+
+        $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, [
+            'payment_method' => 'card',
+            'created_by_admin' => false,
+        ]))->assertCreated()->assertJsonPath('data.id', (string) $existingOrder->id);
+    }
+
+    public function test_manual_order_uses_server_shipping_rate_unless_a_non_null_override_is_supplied(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        Sanctum::actingAs($this->makeAdmin());
+
+        $omitted = $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, [
+            'shipping_method' => 'express',
+        ]));
+        $omitted->assertCreated();
+
+        $null = $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, [
+            'shipping_method' => 'express',
+            'shipping_fee_override' => null,
+        ]));
+        $null->assertCreated();
+
+        $blank = $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, [
+            'shipping_method' => 'express',
+            'shipping_fee_override' => '',
+        ]));
+        $blank->assertCreated();
+
+        $zero = $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, [
+            'shipping_method' => 'express',
+            'shipping_fee_override' => 0,
+        ]));
+        $zero->assertCreated();
+
+        $positive = $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, [
+            'shipping_method' => 'express',
+            'shipping_fee_override' => 12.34,
+        ]));
+        $positive->assertCreated();
+
+        $this->assertSame(2500, (int) Order::query()->findOrFail($omitted->json('data.id'))->shipping_total->value);
+        $this->assertSame(2500, (int) Order::query()->findOrFail($null->json('data.id'))->shipping_total->value);
+        $this->assertSame(2500, (int) Order::query()->findOrFail($blank->json('data.id'))->shipping_total->value);
+        $this->assertSame(0, (int) Order::query()->findOrFail($zero->json('data.id'))->shipping_total->value);
+        $this->assertSame(1234, (int) Order::query()->findOrFail($positive->json('data.id'))->shipping_total->value);
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private function makeAdmin(): User
@@ -1117,6 +1235,40 @@ class CheckoutApiTest extends TestCase
         Sanctum::actingAs($admin);
 
         return $admin;
+    }
+
+    private function userWithRole(string $role): User
+    {
+        Role::findOrCreate($role, 'web');
+        $user = User::factory()->create();
+        $user->assignRole($role);
+
+        return $user;
+    }
+
+    private function manualOrderPayload(ProductVariant $variant, array $overrides = []): array
+    {
+        return array_replace_recursive([
+            'items' => [[
+                'variant_id' => $variant->id,
+                'quantity' => 1,
+            ]],
+            'email' => 'manual@petposture.com',
+            'shipping' => [
+                'first_name' => 'Manual',
+                'last_name' => 'Customer',
+                'line_one' => '123 Congress Ave',
+                'line_two' => null,
+                'city' => 'Austin',
+                'state' => 'TX',
+                'postcode' => '78701',
+                'country' => 'US',
+                'phone' => '5125550101',
+            ],
+            'billing_same_as_shipping' => true,
+            'payment_method' => 'cod',
+            'shipping_method' => 'standard',
+        ], $overrides);
     }
 
     /**

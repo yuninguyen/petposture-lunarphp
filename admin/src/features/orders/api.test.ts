@@ -1,9 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ fetchJson: vi.fn() }));
+const mocks = vi.hoisted(() => ({ fetchJson: vi.fn(), invalidateQueries: vi.fn(), useMutation: vi.fn((options) => options) }));
 vi.mock('@/lib/api', () => ({ fetchJson: mocks.fetchJson }));
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: vi.fn((options) => options),
+  useQueryClient: vi.fn(() => ({ invalidateQueries: mocks.invalidateQueries })),
+  useMutation: mocks.useMutation,
+}));
 
-import { buildOrdersQuery, createShipment, fetchOrder, fetchOrders, refundOrder, returnOrder } from './api';
+import { buildOrdersQuery, createOrder, createShipment, fetchOrder, fetchOrderProductVariants, fetchOrderProducts, fetchOrders, refundOrder, returnOrder, useCreateOrder } from './api';
 
 describe('orders api', () => {
   it('builds the list query with only non-empty status and page values', () => {
@@ -48,5 +53,51 @@ describe('orders api', () => {
     // @ts-expect-error refundOrder accepts only the object refund payload.
     const numericRefund = () => refundOrder('42', 12.5);
     expect(numericRefund).toBeTypeOf('function');
+  });
+
+  it('posts the exact create-order payload and unwraps the response', async () => {
+    const payload = {
+      items: [{ variant_id: 9, quantity: 2 }],
+      email: 'customer@example.com',
+      shipping: { first_name: 'Customer', line_one: '1 Main St' },
+      billing_same_as_shipping: true,
+      payment_method: 'cod' as const,
+      shipping_method: 'express' as const,
+      coupon_code: 'SAVE10',
+      customer_note: 'Leave at reception',
+      internal_note: 'Priority customer',
+      shipping_fee_override: 4.5,
+    };
+    const order = { id: '43', reference: 'ORD-43' };
+    mocks.fetchJson.mockReset().mockResolvedValue({ data: order });
+
+    await expect(createOrder(payload)).resolves.toEqual(order);
+    expect(mocks.fetchJson).toHaveBeenCalledWith('/admin/orders', { method: 'POST', body: payload });
+  });
+
+  it('fetches minimal order-picker products from the exact scoped endpoint', async () => {
+    const products = [{ id: 12, name: 'Dog Harness' }];
+    mocks.fetchJson.mockReset().mockResolvedValue({ data: products });
+
+    await expect(fetchOrderProducts(' dog harness ')).resolves.toEqual(products);
+    expect(mocks.fetchJson).toHaveBeenCalledWith('/admin/orders/product-picker?search=dog+harness');
+  });
+
+  it('fetches order product variants from the exact scoped endpoint and preserves null prices', async () => {
+    const variants = [{ id: 9, sku: 'DOG-9', label: 'Dog Harness', price: null, formatted_price: null, stock: 3, purchasable: 'purchasable' }];
+    mocks.fetchJson.mockReset().mockResolvedValue({ data: variants });
+
+    await expect(fetchOrderProductVariants(12)).resolves.toEqual(variants);
+    expect(mocks.fetchJson).toHaveBeenCalledWith('/admin/orders/product-picker/12/variants');
+  });
+
+  it('invalidates orders after creating an order', () => {
+    mocks.invalidateQueries.mockReset();
+    mocks.useMutation.mockClear();
+
+    const mutation = useCreateOrder() as unknown as { onSuccess: () => void };
+    mutation.onSuccess();
+
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['orders'] });
   });
 });

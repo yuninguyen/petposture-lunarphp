@@ -6,9 +6,12 @@ interface SearchableMultiSelectProps {
   value: number[];
   onChange: (value: number[]) => void;
   placeholder?: string;
+  noResultsText?: string;
+  selectedCountText?: (count: number) => string;
+  clearAllText?: string;
 }
 
-export function SearchableMultiSelect({ options, value = [], onChange, placeholder = 'Search...' }: SearchableMultiSelectProps) {
+export function SearchableMultiSelect({ options, value = [], onChange, placeholder = 'Search...', noResultsText = 'No results found.', selectedCountText = (count) => `${count} selected`, clearAllText = 'Clear all' }: SearchableMultiSelectProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredOptions = useMemo(() => {
@@ -37,7 +40,7 @@ export function SearchableMultiSelect({ options, value = [], onChange, placehold
       </div>
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {filteredOptions.length === 0 ? (
-          <p className="text-sm text-slate-500 text-center py-4">No results found.</p>
+          <p className="text-sm text-slate-500 text-center py-4">{noResultsText}</p>
         ) : (
           filteredOptions.map(option => {
             const isSelected = value.includes(option.id);
@@ -61,14 +64,14 @@ export function SearchableMultiSelect({ options, value = [], onChange, placehold
         )}
       </div>
       <div className="p-2 border-t border-gray-100 bg-slate-50 text-xs text-slate-500 flex justify-between items-center">
-        <span className="font-medium text-slate-600">{value.length} selected</span>
+        <span className="font-medium text-slate-600">{selectedCountText(value.length)}</span>
         {value.length > 0 && (
           <button 
             type="button" 
             onClick={() => onChange([])}
             className="text-red-500 hover:text-red-600 font-medium hover:underline"
           >
-            Clear all
+            {clearAllText}
           </button>
         )}
       </div>

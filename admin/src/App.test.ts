@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('./features/orders/OrdersListPage', () => ({ OrdersListPage: () => createElement('div', null, 'Orders route') }));
+vi.mock('./features/orders/OrderFormPage', () => ({ OrderFormPage: () => createElement('h1', null, 'orders.create_title') }));
 vi.mock('./features/products/ProductsListPage', () => ({ ProductsListPage: () => createElement('div', null, 'Products route') }));
 vi.mock('./features/shipping/ShippingMethodsPage', () => ({ ShippingMethodsPage: () => createElement('div', null, 'Shipping route') }));
 vi.mock('./features/reviews/ReviewsPage', () => ({ ReviewsPage: ({ canDelete }: { canDelete: boolean }) => createElement('div', null, `Reviews route delete=${canDelete}`) }));
@@ -133,6 +134,14 @@ describe('commerce admin role handling', () => {
       act(() => root.unmount());
       host.remove();
     }
+  });
+
+  it('routes /orders/new to the create form before the dynamic order route', async () => {
+    const { host, root } = renderRoutes(['Order Manager'], '/orders/new');
+    await act(async () => await Promise.resolve());
+    expect(host.textContent).toContain('orders.create_title');
+    act(() => root.unmount());
+    host.remove();
   });
 
   it('allows Shipping routes only for core administrators', () => {
