@@ -44,10 +44,17 @@ export async function proxy(request: NextRequest) {
     }));
 
     const { pathname } = request.nextUrl;
-    const needsUser = pathname.startsWith('/admin') || pathname.startsWith('/account');
-    const user = needsUser ? await fetchNavigationUser(request) : null;
 
+    // /account's own client-side AuthContext check already gates this route
+    // reliably (confirmed working) — this middleware previously duplicated
+    // that check via its own server-to-server fetch to /api/me, which
+    // Laravel does not recognize as authenticated even with a valid,
+    // correctly-forwarded session cookie, incorrectly bouncing logged-in
+    // users back to /sign-in. Removed for /account; /admin keeps its own
+    // gate below since that path hasn't been verified the same way.
     if (pathname.startsWith('/admin')) {
+        const user = await fetchNavigationUser(request);
+
         if (!user) {
             return secure(NextResponse.redirect(new URL('/sign-in', request.url)));
         }
@@ -57,10 +64,6 @@ export async function proxy(request: NextRequest) {
         if (!hasAccess) {
             return secure(NextResponse.redirect(new URL('/', request.url)));
         }
-    }
-
-    if (pathname.startsWith('/account') && !user) {
-        return secure(NextResponse.redirect(new URL('/sign-in', request.url)));
     }
 
     return next();
