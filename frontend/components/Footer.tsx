@@ -75,7 +75,7 @@ const getShopHref = (item: string) => {
 function ShopLinkGroup({ heading, items }: { heading: string; items: string[] }) {
   return (
     <div>
-      <h4 className="text-[12px] font-bold uppercase tracking-[0.15em] text-white/40 mb-3">
+      <h4 className="text-[12px] font-bold uppercase tracking-[0.1em] text-white/40 mb-3">
         {heading}
       </h4>
       <ul className="space-y-3">
@@ -83,7 +83,7 @@ function ShopLinkGroup({ heading, items }: { heading: string; items: string[] })
           <li key={item}>
             <Link
               href={getShopHref(item)}
-              className="text-[16px] text-white/60 hover:text-secondary transition-colors flex items-center gap-2 group"
+              className="text-[16px] text-white/80 hover:text-secondary transition-colors flex items-center gap-2 group"
             >
               <span className="w-0 h-[1px] bg-secondary transition-all group-hover:w-3" />
               {item}
@@ -132,7 +132,7 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent, wr
                             item === "Track Your Order" ? "/track-order" :
                               item === "Request a Return" ? "/returns" : "#"
                   }
-                  className="text-[16px] text-white/60 hover:text-secondary transition-colors flex items-center gap-2 group"
+                  className="text-[16px] text-white/80 hover:text-secondary transition-colors flex items-center gap-2 group"
                 >
                   <span className="w-0 h-[1px] bg-secondary transition-all group-hover:w-3" />
                   {item}
@@ -170,7 +170,7 @@ export default function Footer() {
               wrapperClassName="lg:w-64 lg:shrink-0"
               isCustomContent={
                 <div className="pb-4 lg:pb-0">
-                  <p className="text-[16px] text-white/60 leading-[1.75] mb-6">
+                  <p className="text-[16px] text-white/80 leading-[1.75] mb-6">
                     {description}
                   </p>
                   <div className="flex flex-wrap gap-3">
@@ -190,7 +190,7 @@ export default function Footer() {
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={label}
-                          className="w-11 h-11 shrink-0 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
+                          className="w-11 h-11 shrink-0 rounded-full border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
                         >
                           <Icon size={18} strokeWidth={2} className="transition-transform duration-300 group-hover:scale-125" />
                         </a>
@@ -198,7 +198,7 @@ export default function Footer() {
                     <Link
                       href="/contact"
                       aria-label="Email"
-                      className="w-11 h-11 shrink-0 rounded-full border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
+                      className="w-11 h-11 shrink-0 rounded-full border border-white/10 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
                     >
                       <Mail size={18} strokeWidth={2} className="transition-transform duration-300 group-hover:scale-125" />
                     </Link>
@@ -232,7 +232,7 @@ export default function Footer() {
                     <li key={link}>
                       <Link
                         href={getLegalHref(link)}
-                        className="text-[16px] text-white/60 hover:text-secondary transition-colors flex items-center gap-2 group"
+                        className="text-[16px] text-white/80 hover:text-secondary transition-colors flex items-center gap-2 group"
                       >
                         <span className="w-0 h-[1px] bg-secondary transition-all group-hover:w-3" />
                         {link}
@@ -281,7 +281,7 @@ export default function Footer() {
 
               <div className="pt-[10px] border-t border-white/10 w-full">
                 <p className="text-xs text-white/70 font-normal tracking-wide">
-                  Copyright {new Date().getFullYear()} © <span className="text-white/60 font-bold">PetPosture</span>. All rights reserved.
+                  Copyright {new Date().getFullYear()} © <span className="text-white/80 font-bold">PetPosture</span>. All rights reserved.
                 </p>
               </div>
             </div>
