@@ -147,6 +147,10 @@ class CheckoutController extends Controller
                 Cache::put($cacheKey, $result, now()->addHours(24));
             }
 
+            if ($userId && ! empty($validated['shipping'])) {
+                $this->saveShippingAddressForUser($userId, $validated['shipping']);
+            }
+
             return response()->json(['success' => true, 'order' => $result], 201);
         } catch (ValidationException $e) {
             throw $e;
@@ -158,6 +162,60 @@ class CheckoutController extends Controller
                 'success' => false,
                 'message' => 'Checkout failed. Please try again.',
             ], 500);
+        }
+    }
+
+    /**
+     * Save the shipping address used at checkout to the logged-in customer's
+     * address book, matching the "Shopify always saves it" convention — no
+     * checkbox opt-in, since remembering the customer's own data for their
+     * own next order isn't a consent-requiring action. Skips if a matching
+     * address (same line_one + postcode) already exists. Never allowed to
+     * fail the order itself — this is a convenience side effect only.
+     *
+     * @param  array<string, mixed>  $shipping
+     */
+    private function saveShippingAddressForUser(int $userId, array $shipping): void
+    {
+        try {
+            $lineOne = trim((string) ($shipping['line_one'] ?? ''));
+            $postcode = trim((string) ($shipping['postcode'] ?? ''));
+
+            if ($lineOne === '' || $postcode === '') {
+                return;
+            }
+
+            $alreadySaved = UserAddress::query()
+                ->where('user_id', $userId)
+                ->where('line_one', $lineOne)
+                ->where('postcode', $postcode)
+                ->exists();
+
+            if ($alreadySaved) {
+                return;
+            }
+
+            $countryName = trim((string) ($shipping['country'] ?? 'United States'));
+            $countryCode = $countryName === 'United States' ? 'US' : strtoupper(substr($countryName, 0, 2));
+
+            $isFirstAddress = ! UserAddress::query()->where('user_id', $userId)->exists();
+
+            UserAddress::create([
+                'user_id' => $userId,
+                'label' => 'Home',
+                'first_name' => (string) ($shipping['first_name'] ?? ''),
+                'last_name' => (string) ($shipping['last_name'] ?? ''),
+                'line_one' => $lineOne,
+                'line_two' => $shipping['line_two'] ?? null,
+                'city' => (string) ($shipping['city'] ?? ''),
+                'state' => (string) ($shipping['state'] ?? ''),
+                'postcode' => $postcode,
+                'country_code' => $countryCode,
+                'phone' => $shipping['phone'] ?? null,
+                'is_default' => $isFirstAddress,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Failed to auto-save shipping address for user {$userId}: {$e->getMessage()}");
         }
     }
 

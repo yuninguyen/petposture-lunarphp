@@ -145,7 +145,7 @@ export default function Header() {
             </Link>
             {user ? (
               <div className="flex items-center gap-3">
-                <Link href="/account" className="text-sm font-bold uppercase tracking-widest text-rust hidden lg:block hover:underline">
+                <Link href="/account" className="text-sm font-bold text-rust hidden lg:block hover:underline">
                   Hi, {user.name.split(' ')[0]}
                 </Link>
                 <Link href="/account" className="hover:text-rust transition-colors" title="My Account" aria-label="My account">

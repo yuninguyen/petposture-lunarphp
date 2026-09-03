@@ -6,6 +6,7 @@ use App\Models\CheckoutSession;
 use App\Models\ShippingMethod;
 use App\Models\StripeWebhookEvent;
 use App\Models\User;
+use App\Models\UserAddress;
 use App\Services\CheckoutService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -65,6 +66,49 @@ class CheckoutApiTest extends TestCase
         $this->assertSame('TX', $order->meta['tax_state']);
         $this->assertSame('cod', $order->meta['payment_method']);
         $this->assertSame(64, strlen((string) $response->json('order.tracking_access_token')));
+    }
+
+    public function test_place_order_auto_saves_shipping_address_for_logged_in_customer(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $user = User::factory()->create(['email' => 'guest@petposture.com']);
+        Role::findOrCreate('customer', 'web');
+        $user->assignRole('customer');
+        Sanctum::actingAs($user);
+
+        $this->assertSame(0, UserAddress::query()->where('user_id', $user->id)->count());
+
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant))->assertCreated();
+
+        $address = UserAddress::query()->where('user_id', $user->id)->first();
+        $this->assertNotNull($address);
+        $this->assertSame('123 Congress Ave', $address->line_one);
+        $this->assertSame('78701', $address->postcode);
+        $this->assertSame('US', $address->country_code);
+        $this->assertTrue($address->is_default);
+    }
+
+    public function test_place_order_does_not_duplicate_an_already_saved_address(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $user = User::factory()->create(['email' => 'guest@petposture.com']);
+        Role::findOrCreate('customer', 'web');
+        $user->assignRole('customer');
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant))->assertCreated();
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant))->assertCreated();
+
+        $this->assertSame(1, UserAddress::query()->where('user_id', $user->id)->count());
+    }
+
+    public function test_place_order_does_not_save_address_for_guest_checkout(): void
+    {
+        $variant = $this->createPurchasableVariant();
+
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant))->assertCreated();
+
+        $this->assertSame(0, UserAddress::query()->count());
     }
 
     public function test_checkout_session_ignores_client_financial_state_and_returns_server_totals(): void

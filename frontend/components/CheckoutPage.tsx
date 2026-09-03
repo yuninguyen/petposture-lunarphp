@@ -85,7 +85,6 @@ type CheckoutFormState = {
     postalCode: string;
     phone: string;
     saveInfo: boolean;
-    saveDelivery: boolean;
     shippingMethod: string;
     paymentMethod: PaymentMethod;
     cardNumber: string;
@@ -307,7 +306,6 @@ export default function CheckoutPage() {
         postalCode: '',
         phone: '',
         saveInfo: true,
-        saveDelivery: true,
         shippingMethod: 'standard',
         paymentMethod: 'cod',
         cardNumber: '',
@@ -1225,37 +1223,25 @@ export default function CheckoutPage() {
             }).catch(() => undefined);
         }
 
-        if (form.saveDelivery) {
-            if (user) {
-                fetchApi('/api/me/addresses', {
-                    method: 'POST',
-                    body: {
-                        first_name: form.firstName,
-                        last_name: form.lastName,
-                        line_one: form.address1,
-                        line_two: form.address2 || null,
-                        city: form.city,
-                        state: form.province,
-                        postcode: form.postalCode,
-                        phone: form.phone || null,
-                        is_default: true,
-                    },
-                }).catch(() => undefined);
-            } else {
-                try {
-                    localStorage.setItem('petposture_guest_address', JSON.stringify({
-                        firstName: form.firstName,
-                        lastName: form.lastName,
-                        address1: form.address1,
-                        address2: form.address2,
-                        city: form.city,
-                        province: form.province,
-                        postalCode: form.postalCode,
-                        phone: form.phone,
-                    }));
-                } catch {
-                    // storage unavailable — skip silently
-                }
+        // Logged-in checkouts are auto-saved to the address book server-side
+        // (CheckoutController::saveShippingAddressForUser), atomically with
+        // order placement — no separate client-side follow-up call needed.
+        // Guests have no account to save into, so remember the address
+        // locally for a faster repeat guest checkout instead.
+        if (!user) {
+            try {
+                localStorage.setItem('petposture_guest_address', JSON.stringify({
+                    firstName: form.firstName,
+                    lastName: form.lastName,
+                    address1: form.address1,
+                    address2: form.address2,
+                    city: form.city,
+                    province: form.province,
+                    postalCode: form.postalCode,
+                    phone: form.phone,
+                }));
+            } catch {
+                // storage unavailable — skip silently
             }
         }
 
@@ -1585,17 +1571,6 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <input name="phone" autoComplete="shipping tel" placeholder="Phone" value={form.phone} onChange={(e) => updateField('phone', e.target.value)} className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
-
-                                <div className="flex items-center gap-3 py-1">
-                                    <input
-                                        type="checkbox"
-                                        id="saveDelivery"
-                                        checked={form.saveDelivery}
-                                        onChange={(e) => updateField('saveDelivery', e.target.checked)}
-                                        className="h-4 w-4 rounded border-[#d9d9d9] text-[#197bbd] focus:ring-[#197bbd]"
-                                    />
-                                    <label htmlFor="saveDelivery" className="text-sm text-[#333333]">Save this information for next time</label>
-                                </div>
                             </div>
                         </section>
 

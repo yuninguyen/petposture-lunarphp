@@ -69,13 +69,14 @@ class ReturnRequestApiTest extends TestCase
         Mail::assertSent(OrderReturnRequested::class);
     }
 
-    public function test_guest_can_submit_return_request_for_shipped_order_without_delivered_at(): void
+    public function test_guest_cannot_submit_return_request_for_shipped_order_not_yet_delivered(): void
     {
         ['reference' => $reference, 'order_line_id' => $lineId] = $this->placeShippedOrder();
 
-        $this->postJson('/api/orders/return-requests', $this->returnRequestPayload($reference, $lineId))
-            ->assertCreated()
-            ->assertJsonPath('data.status', OrderReturnRequest::STATUS_REQUESTED);
+        $response = $this->postJson('/api/orders/return-requests', $this->returnRequestPayload($reference, $lineId));
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['order']);
     }
 
     public function test_return_request_returns_not_found_for_unknown_credentials(): void
@@ -93,7 +94,7 @@ class ReturnRequestApiTest extends TestCase
             ->assertJsonValidationErrors(['tracking_token', 'email', 'reason', 'items']);
     }
 
-    public function test_return_request_rejects_order_not_delivered_or_shipped(): void
+    public function test_return_request_rejects_order_not_delivered(): void
     {
         $variant = $this->createPurchasableVariant();
         $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));

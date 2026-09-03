@@ -248,14 +248,14 @@ export default function AccountPage() {
                                     <button
                                         key={t.id}
                                         onClick={() => setTab(t.id)}
-                                        className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wide transition-colors ${tab === t.id ? 'bg-secondary text-ink' : 'bg-white text-primary hover:bg-zinc-50'}`}
+                                        className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-sm font-bold transition-colors ${tab === t.id ? 'bg-secondary text-ink' : 'bg-white text-primary hover:bg-zinc-50'}`}
                                     >
                                         {t.icon} {t.label}
                                     </button>
                                 ))}
                                 <button
                                     onClick={handleLogout}
-                                    className="flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wide text-red-500 bg-white hover:bg-red-50 transition-colors"
+                                    className="flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-sm font-bold text-red-500 bg-white hover:bg-red-50 transition-colors"
                                 >
                                     <LogOut size={16} /> Log Out
                                 </button>
@@ -291,7 +291,7 @@ export default function AccountPage() {
                                                         </div>
                                                         <div className="flex items-center gap-3">
                                                             <div className="text-right">
-                                                                <p className="text-sm font-bold uppercase tracking-wide text-rust">{order.status_label}</p>
+                                                                <p className="text-sm font-bold text-rust">{order.status_label}</p>
                                                                 <p className="text-[14px] font-bold text-primary">{order.total.formatted}</p>
                                                             </div>
                                                             <ChevronDown size={18} className={`text-zinc-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
@@ -302,11 +302,11 @@ export default function AccountPage() {
                                                         <div className="border-t border-zinc-100 bg-[#fafbfc] p-4 space-y-4">
                                                             <div className="grid sm:grid-cols-2 gap-4">
                                                                 <div>
-                                                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Order Number</p>
+                                                                    <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Order Number</p>
                                                                     <p className="text-sm font-medium text-primary">#{order.reference}</p>
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Order Placed</p>
+                                                                    <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Order Placed</p>
                                                                     <p className="text-sm font-medium text-primary">
                                                                         {new Date(order.created_at).toLocaleString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                                                                     </p>
@@ -314,7 +314,7 @@ export default function AccountPage() {
                                                             </div>
 
                                                             <div className="pt-3 border-t border-zinc-100">
-                                                                <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Payment</p>
+                                                                <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Payment</p>
                                                                 <div className="flex items-center justify-between text-sm">
                                                                     <span className="text-zinc-600">{order.payment_label || 'N/A'}</span>
                                                                     <span className="text-xs font-bold uppercase tracking-wide text-rust">{order.payment_status_label}</span>
@@ -324,7 +324,7 @@ export default function AccountPage() {
 
                                                             <div className="grid sm:grid-cols-2 gap-4 pt-3 border-t border-zinc-100">
                                                                 <div>
-                                                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Shipping Address</p>
+                                                                    <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Shipping Address</p>
                                                                     <p className="text-sm text-zinc-600 leading-relaxed">
                                                                         {order.shipping_address.first_name} {order.shipping_address.last_name}<br />
                                                                         {order.shipping_address.line_one}{order.shipping_address.line_two ? `, ${order.shipping_address.line_two}` : ''}<br />
@@ -332,7 +332,7 @@ export default function AccountPage() {
                                                                     </p>
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Billing Address</p>
+                                                                    <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Billing Address</p>
                                                                     <p className="text-sm text-zinc-600 leading-relaxed">
                                                                         {order.billing_address.first_name} {order.billing_address.last_name}<br />
                                                                         {order.billing_address.line_one}{order.billing_address.line_two ? `, ${order.billing_address.line_two}` : ''}<br />
@@ -343,7 +343,7 @@ export default function AccountPage() {
 
                                                             {order.shipments.length > 0 && (
                                                                 <div className="pt-3 border-t border-zinc-100">
-                                                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Tracking</p>
+                                                                    <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Tracking</p>
                                                                     {order.shipments.map((shipment) => (
                                                                         <div key={shipment.id} className="flex items-center justify-between text-sm text-zinc-600">
                                                                             <span>
@@ -382,7 +382,7 @@ export default function AccountPage() {
                                                                     <div className="flex justify-between text-zinc-500"><span>Discount</span><span>-${order.discount_total.toFixed(2)}</span></div>
                                                                 )}
                                                                 <div className="flex justify-between text-zinc-500"><span>Shipping - {order.shipping_label}</span><span>{order.shipping_total === 0 ? 'Free' : `$${order.shipping_total.toFixed(2)}`}</span></div>
-                                                                <div className="flex justify-between text-zinc-500"><span>Tax</span><span>${order.tax_total.toFixed(2)}</span></div>
+                                                                <div className="flex justify-between text-zinc-500"><span>Estimated Tax</span><span>${order.tax_total.toFixed(2)}</span></div>
                                                                 <div className="flex justify-between font-bold text-primary pt-1"><span>Total</span><span>{order.total.formatted}</span></div>
                                                             </div>
 
@@ -478,15 +478,15 @@ export default function AccountPage() {
                             ) : (
                                 <div className="grid sm:grid-cols-2 gap-6 text-[14px] text-primary">
                                     <div>
-                                        <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Full Name</p>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Full Name</p>
                                         <p className="font-medium">{user.name}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Email Address</p>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Email Address</p>
                                         <p className="font-medium">{user.email}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Member Since</p>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Member Since</p>
                                         <p className="font-medium">
                                             {user.created_at
                                                 ? new Date(user.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
@@ -494,7 +494,7 @@ export default function AccountPage() {
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-1">Orders Placed</p>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Orders Placed</p>
                                         <p className="font-medium">{orders.length}</p>
                                     </div>
                                 </div>
