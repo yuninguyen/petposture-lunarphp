@@ -244,6 +244,9 @@ Route::prefix('/admin')
         Route::delete('/blog/tags/{blogTag}', [\App\Http\Controllers\Api\Admin\BlogTagController::class, 'destroy']);
         Route::get('/users', [\App\Http\Controllers\Api\Admin\UserController::class, 'index']);
         Route::get('/orders', [OrderController::class, 'index']);
+        Route::post('/orders', [OrderController::class, 'create']);
+        Route::get('/orders/product-picker', [AdminProductController::class, 'orderProductPicker']);
+        Route::get('/orders/product-picker/{product}/variants', [AdminProductController::class, 'variants']);
         Route::get('/orders/{id}', [OrderController::class, 'show']);
         Route::post('/orders/{id}/refund', [OrderController::class, 'refund']);
         Route::post('/orders/{id}/return', [OrderController::class, 'return']);

@@ -19,6 +19,7 @@ final class AdminPermissionMatrix
     public const ORDER = [
         'view_any_order',
         'view_order',
+        'create_order',
         'update_order',
         'refund_order',
     ];
@@ -65,6 +66,7 @@ final class AdminPermissionMatrix
             'Support' => [
                 'view_any_order',
                 'view_order',
+                'create_order',
                 'update_order',
                 'view_any_review',
                 'view_review',

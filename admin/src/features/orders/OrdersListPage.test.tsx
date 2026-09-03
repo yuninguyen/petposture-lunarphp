@@ -41,4 +41,22 @@ describe('OrdersListPage', () => {
     act(() => root.unmount());
     host.remove();
   });
+
+  it('navigates to the create-order form from the translated header button', () => {
+    mocks.navigate.mockReset();
+    mocks.useOrders.mockReturnValue({
+      isLoading: false,
+      isError: false,
+      data: { data: [], meta: { current_page: 1, last_page: 1, per_page: 15, total: 0 } },
+    });
+    const { host, root } = renderPage();
+
+    const create = Array.from(host.querySelectorAll('button')).find((button) => button.textContent === 'orders.create');
+    expect(create).toBeTruthy();
+    act(() => create!.click());
+    expect(mocks.navigate).toHaveBeenCalledWith('/orders/new');
+
+    act(() => root.unmount());
+    host.remove();
+  });
 });

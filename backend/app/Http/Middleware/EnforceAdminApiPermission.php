@@ -67,6 +67,13 @@ class EnforceAdminApiPermission
         }
 
         if ($request->user()?->hasAnyRole(['Order Manager', 'Support']) && $this->isOrderPath($relativePath)) {
+            if ($request->isMethod('get') && in_array($relativePath, [
+                'orders/product-picker',
+                'orders/product-picker/{product}/variants',
+            ], true)) {
+                return 'update_order';
+            }
+
             if ($request->isMethod('get')) {
                 return 'view_any_order';
             }

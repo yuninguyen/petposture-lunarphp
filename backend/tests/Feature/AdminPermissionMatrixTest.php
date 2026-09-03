@@ -190,6 +190,19 @@ class AdminPermissionMatrixTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_create_order_permission_matches_update_order_for_every_admin_role(): void
+    {
+        foreach (['super_admin', 'admin', 'staff', 'Order Manager', 'Support', 'Product Manager'] as $role) {
+            $user = $this->userWithRole($role);
+
+            $this->assertSame(
+                $user->can('update_order'),
+                $user->can('create_order'),
+                "{$role} must have create_order exactly when it has update_order.",
+            );
+        }
+    }
+
     private function userWithRole(string $role): User
     {
         $user = User::factory()->create();

@@ -105,6 +105,73 @@ class ProductController extends Controller
         ]);
     }
 
+    public function orderProductPicker(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+        ]);
+        $query = Product::query()->select(['id', 'attribute_data'])->orderByDesc('id');
+
+        if ($search = trim((string) ($validated['search'] ?? ''))) {
+            $like = '%'.strtolower($search).'%';
+            $query->where(function ($query) use ($like): void {
+                $query->whereRaw('LOWER(CAST(attribute_data AS CHAR)) LIKE ?', [$like])
+                    ->orWhereHas('variants', fn ($variantQuery) => $variantQuery->whereRaw('LOWER(sku) LIKE ?', [$like]));
+            });
+        }
+
+        return response()->json([
+            'data' => $query->limit(20)->get()->map(fn (Product $product): array => [
+                'id' => $product->id,
+                'name' => (string) ($product->translateAttribute('name') ?: 'Untitled product'),
+            ])->values(),
+        ]);
+    }
+
+    public function variants(Product $product): JsonResponse
+    {
+        $currency = Currency::getDefault();
+        $product->load([
+            'variants' => fn ($query) => $query->orderBy('id'),
+            'variants.prices.currency',
+            'variants.values' => fn ($query) => $query->orderBy('product_option_id')->orderBy('position')->orderBy('id'),
+            'variants.values.option',
+        ]);
+        $productName = (string) ($product->translateAttribute('name') ?: 'Untitled product');
+
+        return response()->json([
+            'data' => $product->variants->map(function (ProductVariant $variant) use ($currency, $productName): array {
+                $price = $currency ? $variant->prices->first(
+                    fn ($price) => (int) $price->currency_id === (int) $currency->id
+                        && $price->customer_group_id === null
+                        && (int) $price->min_quantity === 1
+                ) : null;
+                $parts = [$productName];
+                $values = $variant->values
+                    ->map(fn ($value) => (string) $value->translate('name'))
+                    ->filter()
+                    ->implode(' / ');
+
+                if ($values !== '') {
+                    $parts[] = $values;
+                }
+                if ($variant->sku !== null && $variant->sku !== '') {
+                    $parts[] = $variant->sku;
+                }
+
+                return [
+                    'id' => $variant->id,
+                    'sku' => $variant->sku ?? '',
+                    'label' => implode(' — ', $parts),
+                    'price' => $price ? (int) $price->getRawOriginal('price') : null,
+                    'formatted_price' => $price?->price?->formatted(),
+                    'stock' => (int) $variant->stock,
+                    'purchasable' => $variant->purchasable,
+                ];
+            })->values(),
+        ]);
+    }
+
     public function store(StoreProductRequest $request): JsonResponse
     {
         $validated = $request->validated();

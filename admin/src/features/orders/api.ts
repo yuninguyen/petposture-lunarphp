@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/api';
 
 export interface OrderMoney { formatted: string; decimal: number; currency: string }
@@ -16,6 +16,24 @@ export interface Order {
 }
 export interface OrdersPage { data: Order[]; meta: { current_page: number; last_page: number; per_page: number; total: number } }
 export interface OrderFilters { status?: string; page?: number }
+export interface CreateOrderPayload {
+  items: Array<{ variant_id: number; quantity: number }>;
+  email: string;
+  shipping: OrderAddress;
+  billing_same_as_shipping: boolean;
+  billing?: OrderAddress;
+  payment_method: 'cod' | 'card';
+  shipping_method: 'standard' | 'express';
+  coupon_code?: string;
+  customer_note?: string;
+  internal_note?: string;
+  shipping_fee_override?: number;
+}
+export interface OrderProductPickerItem { id: number; name: string; }
+export interface OrderVariantPickerItem {
+  id: number; sku: string; label: string; price: number | null;
+  formatted_price: string | null; stock: number; purchasable: string;
+}
 
 export function buildOrdersQuery(filters: OrderFilters): string {
   const params = new URLSearchParams();
@@ -28,13 +46,24 @@ export function buildOrdersQuery(filters: OrderFilters): string {
 function unwrap<T>(response: T | { data: T }): T { return 'data' in (response as object) ? (response as { data: T }).data : response as T; }
 export async function fetchOrders(filters: OrderFilters): Promise<OrdersPage> { return fetchJson(buildOrdersQuery(filters)); }
 export async function fetchOrder(id: string): Promise<Order> { return unwrap(await fetchJson<Order | { data: Order }>(`/admin/orders/${id}`)); }
+export async function createOrder(payload: CreateOrderPayload): Promise<Order> { return unwrap(await fetchJson<Order | { data: Order }>('/admin/orders', { method: 'POST', body: payload as unknown as Record<string, unknown> })); }
+export async function fetchOrderProducts(search: string): Promise<OrderProductPickerItem[]> {
+  const query = new URLSearchParams({ search: search.trim() }).toString();
+  return unwrap(await fetchJson<OrderProductPickerItem[] | { data: OrderProductPickerItem[] }>(`/admin/orders/product-picker${query ? `?${query}` : ''}`));
+}
+export async function fetchOrderProductVariants(productId: number): Promise<OrderVariantPickerItem[]> { return unwrap(await fetchJson<OrderVariantPickerItem[] | { data: OrderVariantPickerItem[] }>(`/admin/orders/product-picker/${productId}/variants`)); }
 export async function performOrderAction(id: string, action: string): Promise<Order> { return unwrap(await fetchJson<Order | { data: Order }>(`/orders/${id}/actions/${action}`, { method: 'POST' })); }
 export async function createShipment(id: string, payload: CreateShipmentPayload): Promise<Order> { return unwrap(await fetchJson<Order | { data: Order }>(`/orders/${id}/shipments`, { method: 'POST', body: payload as unknown as Record<string, unknown> })); }
 export async function refundOrder(id: string, payload: RefundPayload): Promise<Order> { return unwrap(await fetchJson<Order | { data: Order }>(`/admin/orders/${id}/refund`, { method: 'POST', body: payload as unknown as Record<string, unknown> })); }
 export async function returnOrder(id: string): Promise<Order> { return unwrap(await fetchJson<Order | { data: Order }>(`/admin/orders/${id}/return`, { method: 'POST' })); }
 
 export function useOrders(filters: OrderFilters) { return useQuery({ queryKey: ['orders', filters], queryFn: () => fetchOrders(filters) }); }
+export function useOrderProductPicker(search: string) { return useQuery({ queryKey: ['orders', 'product-picker', search], queryFn: () => fetchOrderProducts(search) }); }
 export function useOrder(id?: string) { return useQuery({ queryKey: ['orders', id], queryFn: () => fetchOrder(id!), enabled: Boolean(id) }); }
+export function useCreateOrder(): UseMutationResult<Order, Error, CreateOrderPayload> {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: createOrder, onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); } });
+}
 function useOrderMutation<TVariables>(mutationFn: (variables: TVariables) => Promise<Order>) {
   const queryClient = useQueryClient();
   return useMutation({ mutationFn, onSuccess: (order) => { queryClient.setQueryData(['orders', order.id], order); queryClient.invalidateQueries({ queryKey: ['orders'] }); } });
