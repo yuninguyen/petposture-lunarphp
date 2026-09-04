@@ -3,9 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { login, isAdminRole, AdminUser } from '@/lib/auth';
+import { useBranding } from '@/context/BrandingContext';
 
 export function LoginPage({ onLoggedIn }: { onLoggedIn: (user: AdminUser) => void }) {
   const { t, i18n } = useTranslation();
+  const branding = useBranding();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -34,7 +36,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: (user: AdminUser) => voi
     <div className="flex min-h-screen bg-white">
       {/* Left Column: Brand/Logo (Hidden on Mobile) */}
       <div className="relative hidden lg:flex lg:w-1/2 flex-col items-center justify-center bg-slate-50">
-        <img src="/logo.png" alt="Pet Posture" className="h-24 w-auto object-contain" />
+        <img src={branding.logoUrl} alt="Pet Posture" className="h-24 w-auto object-contain" />
         <p className="mt-5 text-sm font-medium tracking-wide text-slate-500 uppercase">
           {t('auth.slogan')}
         </p>
@@ -82,7 +84,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: (user: AdminUser) => voi
         <div className="w-full max-w-sm xl:max-w-md">
           {/* Mobile Logo */}
           <div className="flex lg:hidden items-center justify-center mt-10 mb-8">
-            <img src="/logo.png" alt="Pet Posture" className="h-16 w-auto object-contain" />
+            <img src={branding.logoUrl} alt="Pet Posture" className="h-16 w-auto object-contain" />
           </div>
 
           <div className="mb-10 text-center lg:text-left">

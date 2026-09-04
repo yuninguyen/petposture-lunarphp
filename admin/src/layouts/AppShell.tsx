@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
 import { logout } from '@/lib/auth';
+import { useBranding } from '@/context/BrandingContext';
 
 interface NavItem {
   to: string;
@@ -17,6 +18,7 @@ interface NavGroup {
 
 export function AppShell({ children, userName, userRoles }: { children: ReactNode; userName: string; userRoles: string[] }) {
   const { t, i18n } = useTranslation();
+  const branding = useBranding();
   const location = useLocation();
   const [expandedNavGroups, setExpandedNavGroups] = useState<Record<string, boolean>>({
     '0': true,
@@ -235,7 +237,7 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
         
         {/* Logo Area */}
         <div className="h-16 flex items-center px-6 flex-shrink-0 border-b border-white/5">
-          <img src="/logo.png" alt="Logo" className="h-9 w-auto object-contain" />
+          <img src={branding.logoUrl} alt="Logo" className="h-9 w-auto object-contain" />
         </div>
         
         {/* Navigation */}

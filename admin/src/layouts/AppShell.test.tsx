@@ -8,16 +8,33 @@ vi.mock('react-i18next', () => ({
 }));
 
 import { AppShell } from './AppShell';
+import { BrandingContext } from '@/context/BrandingContext';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-function renderShell(userRoles: string[]) {
+function renderShell(userRoles: string[], logoUrl = '/logo.png') {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const root = createRoot(host);
-  act(() => root.render(createElement(MemoryRouter, null, createElement(AppShell, { userName: 'Admin', userRoles, children: createElement('div') }))));
+  act(() => root.render(createElement(MemoryRouter, null, createElement(BrandingContext.Provider, { value: { name: 'PetPosture', logoUrl, faviconUrl: '/favicon.png' } }, createElement(AppShell, { userName: 'Admin', userRoles, children: createElement('div') })))));
   return { host, root };
 }
+
+describe('AppShell branding', () => {
+  it('renders the configured logo', () => {
+    const shell = renderShell(['admin'], '/custom-admin-logo.png');
+    expect(shell.host.querySelector('img')?.getAttribute('src')).toBe('/custom-admin-logo.png');
+    act(() => shell.root.unmount());
+    shell.host.remove();
+  });
+
+  it('renders the static logo fallback', () => {
+    const shell = renderShell(['admin']);
+    expect(shell.host.querySelector('img')?.getAttribute('src')).toBe('/logo.png');
+    act(() => shell.root.unmount());
+    shell.host.remove();
+  });
+});
 
 describe('AppShell sales navigation', () => {
   it.each([

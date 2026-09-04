@@ -6,6 +6,7 @@ import { AppShell } from '@/layouts/AppShell';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { AdminUser, fetchCurrentUser, isAdminRole } from '@/lib/auth';
 import { Toaster } from 'react-hot-toast';
+import { BrandingProvider } from '@/context/BrandingContext';
 
 // Lazy-load all page components → Vite creates separate chunks per route
 const PostsListPage   = lazy(() => import('@/features/posts/PostsListPage').then(m => ({ default: m.PostsListPage })));
@@ -49,6 +50,14 @@ function PageLoader() {
 
 
 export default function App() {
+  return (
+    <BrandingProvider>
+      <AdminApp />
+    </BrandingProvider>
+  );
+}
+
+function AdminApp() {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [authFailed, setAuthFailed] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
