@@ -82,7 +82,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: (user: AdminUser) => voi
         <div className="w-full max-w-sm xl:max-w-md">
           {/* Mobile Logo */}
           <div className="flex lg:hidden items-center justify-center mt-10 mb-8">
-            <img src="/logo.png" alt="Pet Posture" className="h-12 w-auto object-contain" />
+            <img src="/logo.png" alt="Pet Posture" className="h-16 w-auto object-contain" />
           </div>
 
           <div className="mb-10 text-center lg:text-left">
