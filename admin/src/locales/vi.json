@@ -678,6 +678,7 @@
   "orders.back": "Quay lại đơn hàng",
   "orders.refund": "Hoàn tiền",
   "orders.mark_returned": "Đánh dấu đã trả",
+  "orders.more_actions": "Hành động khác",
   "orders.total": "Tổng tiền",
   "orders.payment_method": "Phương thức thanh toán",
   "orders.customer_ip": "IP khách hàng",

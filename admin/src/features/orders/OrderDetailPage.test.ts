@@ -30,6 +30,10 @@ function button(host: HTMLElement, text: string) {
   return Array.from(host.querySelectorAll('button')).find((candidate) => candidate.textContent === text)!;
 }
 
+function openMoreActions(host: HTMLElement) {
+  act(() => (host.querySelector('button[aria-label="orders.more_actions"]') as HTMLButtonElement).click());
+}
+
 function changeValue(input: HTMLInputElement | HTMLSelectElement, value: string) {
   const prototype = input instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
   const setter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
@@ -50,17 +54,94 @@ beforeEach(() => {
   mocks.action.mockResolvedValue({ id: '42' });
   mocks.shipment.mockResolvedValue({ id: '42' });
   mocks.refetch.mockResolvedValue({});
+  mocks.order.status = 'processing';
   mocks.order.available_actions = [{ action: 'cancelOrder', label: 'Cancel order' }, { action: 'capturePayment', label: 'Capture payment' }, { action: 'markShipped', label: 'Mark shipped' }];
   mocks.order.remaining_shippable_quantities = { '1': 2 };
   mocks.order.refund_reason_options = [{ value: 'customer_request', label: 'Customer request' }, { value: 'duplicate', label: 'Duplicate order' }];
 });
 
 describe('OrderDetailPage', () => {
-  it('hides the refund action when canRefund is false while retaining return', () => {
+  it('hides the refund action when canRefund is false while retaining return in more actions', () => {
     const { host, root } = renderPage(false);
 
+    openMoreActions(host);
     expect(Array.from(host.querySelectorAll('button')).map((candidate) => candidate.textContent)).not.toContain('orders.refund');
     expect(Array.from(host.querySelectorAll('button')).map((candidate) => candidate.textContent)).toContain('orders.mark_returned');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('exposes menu semantics and restores focus after closing with Escape or selecting an item', () => {
+    const { host, root } = renderPage();
+    const trigger = host.querySelector('button[aria-label="orders.more_actions"]') as HTMLButtonElement;
+
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(host.querySelector('[role="menu"]')).toBeNull();
+
+    act(() => trigger.click());
+    const menu = host.querySelector('[role="menu"]') as HTMLElement;
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(menu).not.toBeNull();
+    expect(menu.querySelectorAll('[role="menuitem"]')).toHaveLength(4);
+
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(host.querySelector('[role="menu"]')).toBeNull();
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(trigger);
+
+    act(() => trigger.click());
+    act(() => (host.querySelector('[role="menuitem"]') as HTMLButtonElement).click());
+    expect(host.querySelector('[role="menu"]')).toBeNull();
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(trigger);
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('focuses the first menu item when more actions opens', () => {
+    const { host, root } = renderPage();
+    const trigger = host.querySelector('button[aria-label="orders.more_actions"]') as HTMLButtonElement;
+
+    act(() => trigger.click());
+
+    expect(document.activeElement).toBe(host.querySelector('[role="menuitem"]'));
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('cycles menu items with ArrowDown and ArrowUp', () => {
+    const { host, root } = renderPage();
+    const trigger = host.querySelector('button[aria-label="orders.more_actions"]') as HTMLButtonElement;
+
+    act(() => trigger.click());
+    const items = Array.from(host.querySelectorAll('[role="menuitem"]')) as HTMLButtonElement[];
+
+    act(() => items[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })));
+    expect(document.activeElement).toBe(items[1]);
+    act(() => items[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true })));
+    expect(document.activeElement).toBe(items[0]);
+    act(() => items[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true })));
+    expect(document.activeElement).toBe(items[items.length - 1]);
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('focuses the first and last menu items with Home and End', () => {
+    const { host, root } = renderPage();
+    const trigger = host.querySelector('button[aria-label="orders.more_actions"]') as HTMLButtonElement;
+
+    act(() => trigger.click());
+    const items = Array.from(host.querySelectorAll('[role="menuitem"]')) as HTMLButtonElement[];
+
+    act(() => items[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true })));
+    expect(document.activeElement).toBe(items[items.length - 1]);
+    act(() => items[items.length - 1].dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true })));
+    expect(document.activeElement).toBe(items[0]);
 
     act(() => root.unmount());
     host.remove();
@@ -77,6 +158,7 @@ describe('OrderDetailPage', () => {
 
   it('submits a positive refund amount and closes the successful confirmation', async () => {
     const { host, root } = renderPage();
+    openMoreActions(host);
     act(() => button(host, 'orders.refund').click());
     const input = host.querySelector('input[type="number"]') as HTMLInputElement;
     act(() => changeValue(input, '4.25'));
@@ -94,6 +176,7 @@ describe('OrderDetailPage', () => {
 
   it('keeps the refund modal and entered amount open for invalid and failed refunds', async () => {
     const { host, root } = renderPage();
+    openMoreActions(host);
     act(() => button(host, 'orders.refund').click());
     const input = host.querySelector('input[type="number"]') as HTMLInputElement;
     act(() => changeValue(input, '0'));
@@ -174,6 +257,7 @@ describe('OrderDetailPage', () => {
 
   it('shows return confirmation and submits the return action', async () => {
     const { host, root } = renderPage();
+    openMoreActions(host);
     act(() => button(host, 'orders.mark_returned').click());
 
     expect(host.textContent).toContain('orders.return_confirm');
@@ -190,6 +274,7 @@ describe('OrderDetailPage', () => {
   it('keeps return confirmation open and shows an error when marking returned fails', async () => {
     const { host, root } = renderPage();
     mocks.returnOrder.mockRejectedValueOnce(new Error('Return rejected'));
+    openMoreActions(host);
     act(() => button(host, 'orders.mark_returned').click());
 
     await act(async () => button(host, 'common.confirm').click());
@@ -202,12 +287,52 @@ describe('OrderDetailPage', () => {
     host.remove();
   });
 
-  it('renders available generic actions but excludes markShipped and styles cancellation as danger', () => {
+  it('renders one shipment primary and keeps all generic actions in more actions', () => {
+    mocks.order.available_actions = [{ action: 'cancelOrder', label: 'Cancel order' }, { action: 'capturePayment', label: 'Capture payment' }, { action: 'markDelivered', label: 'Mark delivered' }, { action: 'markShipped', label: 'Mark shipped' }];
     const { host, root } = renderPage();
 
-    expect(button(host, 'Cancel order').className).toContain('bg-red-600');
+    expect(button(host, 'orders.mark_shipped')).toBeTruthy();
+    expect(host.querySelector('button[aria-label="orders.more_actions"]')).toBeTruthy();
+    expect(Array.from(host.querySelectorAll('button')).map((candidate) => candidate.textContent)).not.toContain('Capture payment');
+
+    openMoreActions(host);
+    expect(button(host, 'Cancel order')).toBeTruthy();
     expect(button(host, 'Capture payment')).toBeTruthy();
+    expect(button(host, 'Mark delivered')).toBeTruthy();
+    expect(button(host, 'orders.refund')).toBeTruthy();
+    expect(button(host, 'orders.mark_returned')).toBeTruthy();
+    expect(button(host, 'Cancel order').className).toContain('text-red-600');
     expect(Array.from(host.querySelectorAll('button')).map((candidate) => candidate.textContent)).not.toContain('Mark shipped');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('uses the first non-cancel generic action as primary and keeps add shipment in more actions outside processing', () => {
+    mocks.order.status = 'payment-received';
+    mocks.order.available_actions = [{ action: 'markProcessing', label: 'Mark processing' }, { action: 'cancelOrder', label: 'Cancel order' }];
+    const { host, root } = renderPage();
+
+    expect(button(host, 'Mark processing')).toBeTruthy();
+    expect(Array.from(host.querySelectorAll('button')).map((candidate) => candidate.textContent)).not.toContain('orders.add_shipment');
+    openMoreActions(host);
+    expect(button(host, 'orders.add_shipment')).toBeTruthy();
+    expect(button(host, 'Cancel order')).toBeTruthy();
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('shows only more actions when no non-cancel generic action is available', () => {
+    mocks.order.status = 'cancelled';
+    mocks.order.available_actions = [{ action: 'cancelOrder', label: 'Cancel order' }];
+    mocks.order.remaining_shippable_quantities = { '1': 0 };
+    const { host, root } = renderPage();
+
+    expect(host.querySelector('button[aria-label="orders.more_actions"]')).toBeTruthy();
+    expect(Array.from(host.querySelectorAll('button')).map((candidate) => candidate.textContent)).not.toContain('Cancel order');
+    openMoreActions(host);
+    expect(button(host, 'Cancel order')).toBeTruthy();
 
     act(() => root.unmount());
     host.remove();
@@ -261,6 +386,7 @@ describe('OrderDetailPage', () => {
 
   it('requires an API-provided refund reason and includes it in the refund payload', async () => {
     const { host, root } = renderPage();
+    openMoreActions(host);
     act(() => button(host, 'orders.refund').click());
 
     const reason = host.querySelector('select[name="refund-reason"]') as HTMLSelectElement;

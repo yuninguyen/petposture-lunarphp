@@ -678,6 +678,7 @@
   "orders.back": "Back to orders",
   "orders.refund": "Refund",
   "orders.mark_returned": "Mark returned",
+  "orders.more_actions": "More actions",
   "orders.total": "Total",
   "orders.payment_method": "Payment method",
   "orders.customer_ip": "Customer IP",

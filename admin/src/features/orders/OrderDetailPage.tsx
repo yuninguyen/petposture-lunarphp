@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu } from '@/components/ui/dropdown-menu';
 import { useCreateShipment, useOrder, useOrderAction, useRefundOrder, useReturnOrder, type Order, type OrderAddress, type ShipmentCarrier } from './api';
 
 export function OrderDetailPage({ canRefund = true }: { canRefund?: boolean }) {
@@ -57,9 +58,21 @@ export function OrderDetailPage({ canRefund = true }: { canRefund?: boolean }) {
   const events = [...(order.order_events ?? [])].sort((left, right) => new Date(left.created_at ?? 0).getTime() - new Date(right.created_at ?? 0).getTime());
   const shippableLines = (order.lines ?? []).filter((line) => line.type !== 'shipping' && (order.remaining_shippable_quantities[String(line.id)] ?? 0) > 0);
   const genericActions = (order.available_actions ?? []).filter((action) => action.action !== 'markShipped');
+  const shipLabel = order.status === 'processing' ? t('orders.mark_shipped') : t('orders.add_shipment');
+  const canShipNow = order.status === 'processing' && shippableLines.length > 0;
+  const nonDestructiveAction = genericActions.find((action) => action.action !== 'cancelOrder');
+  type PrimarySlot = { kind: 'ship' } | { kind: 'action'; action: typeof genericActions[number] } | null;
+  const primary: PrimarySlot = canShipNow ? { kind: 'ship' } : nonDestructiveAction ? { kind: 'action', action: nonDestructiveAction } : null;
+  const remainingGenericActions = genericActions.filter((action) => primary?.kind !== 'action' || action.action !== primary.action.action);
+  const menuItems = [
+    ...(shippableLines.length > 0 && primary?.kind !== 'ship' ? [{ key: 'shipment', label: shipLabel, onClick: openShipment, destructive: false }] : []),
+    ...remainingGenericActions.map((action) => ({ key: action.action, label: action.label, onClick: () => setPendingAction(action), destructive: action.action === 'cancelOrder' })),
+    ...(canRefund ? [{ key: 'refund', label: t('orders.refund'), onClick: () => setRefundOpen(true), destructive: true }] : []),
+    { key: 'markReturned', label: t('orders.mark_returned'), onClick: () => setReturnOpen(true), destructive: false },
+  ];
   return <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
     <Button variant="secondary" onClick={() => navigate('/orders')}>← {t('orders.back')}</Button>
-    <div className="mt-6 flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">{order.reference}</h1><p className="mt-1 text-sm text-slate-500">{order.customer_email}</p></div><div className="flex flex-wrap gap-2">{genericActions.map((action) => <Button key={action.action} variant={action.action === 'cancelOrder' ? 'danger' : 'primary'} onClick={() => setPendingAction(action)}>{action.label}</Button>)}{shippableLines.length > 0 && <Button onClick={openShipment}>{order.status === 'processing' ? t('orders.mark_shipped') : t('orders.add_shipment')}</Button>}{canRefund && <Button variant="danger" onClick={() => setRefundOpen(true)}>{t('orders.refund')}</Button>}<Button variant="secondary" onClick={() => setReturnOpen(true)}>{t('orders.mark_returned')}</Button></div></div>
+    <div className="mt-6 flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">{order.reference}</h1><p className="mt-1 text-sm text-slate-500">{order.customer_email}</p></div><div className="flex flex-wrap items-center gap-2">{primary?.kind === 'ship' && <Button onClick={openShipment}>{shipLabel}</Button>}{primary?.kind === 'action' && <Button onClick={() => setPendingAction(primary.action)}>{primary.action.label}</Button>}<DropdownMenu items={menuItems} label={t('orders.more_actions')} /></div></div>
     <div className="mt-6 grid items-stretch gap-6 md:grid-cols-3">
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm md:col-span-2"><h2 className="text-lg font-semibold text-slate-900">{t('orders.summary')}</h2><div className="mt-4 grid gap-4 sm:grid-cols-2"><Detail label={t('orders.total')} value={displayMoney(order.total.decimal)}/><Detail label={t('orders.status')} value={order.status_label ?? order.status}/><Detail label={t('orders.payment_method')} value={paymentMethodDisplay(order)}/><Detail label={t('orders.payment_status')} value={order.payment_status_label ?? order.payment_status}/><Detail label={t('orders.fulfillment_status')} value={order.fulfillment_status_label ?? order.fulfillment_status}/><Detail label={t('orders.refund_status')} value={titleCase(order.refund_status)}/><Detail label={t('orders.refund_amount')} value={displayRefundMoney(order.refund_amount)}/>{order.coupon_code && <Detail label={t('orders.coupon')} value={order.coupon_code}/>}</div>{hasCustomerIpData(order) && <div className="mt-4 border-t border-slate-100 pt-4"><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{t('orders.customer_ip')}</dt><dd className="mt-1 space-y-0.5 text-sm text-slate-900">{order.customer_ip && <p><span className="font-medium">{t('orders.ip')}:</span> {order.customer_ip}</p>}{order.customer_ip_location && <p><span className="font-medium">{t('orders.location')}:</span> {order.customer_ip_location}</p>}{order.customer_ip_isp && <p><span className="font-medium">{t('orders.isp')}:</span> {order.customer_ip_isp}</p>}{order.customer_user_agent && <p><span className="font-medium">{t('orders.user_agent')}:</span> {order.customer_user_agent}</p>}{order.customer_ip_service_type && <p><span className="font-medium">{t('orders.service')}:</span> {order.customer_ip_service_type}</p>}</dd></div>}</section>
       {hasFraudData(order)
