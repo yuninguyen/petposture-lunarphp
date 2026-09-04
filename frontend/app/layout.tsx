@@ -22,7 +22,6 @@ const DEFAULT_DESCRIPTION = 'Breed-focused pet product recommendations based on 
 async function getShopSettings() {
   let shopName = 'PetPosture';
   let shopLogo: string | null = null;
-  let shopFavicon: string | null = null;
   let description: string | null = null;
   let social: { facebook?: string | null; instagram?: string | null; twitter?: string | null; tiktok?: string | null; pinterest?: string | null; youtube?: string | null } = {};
   let contact: { phone?: string | null; address?: string | null } = {};
@@ -33,20 +32,18 @@ async function getShopSettings() {
     const json = await res.json();
     shopName = json?.data?.shop_name || shopName;
     shopLogo = json?.data?.shop_logo || null;
-    shopFavicon = json?.data?.shop_favicon || null;
     description = json?.data?.description || null;
     social = json?.data?.social || {};
     contact = json?.data?.contact || {};
     googleAnalyticsId = json?.data?.analytics?.google_analytics_id || null;
   } catch { }
 
-  return { shopName, shopLogo, shopFavicon, description, social, contact, googleAnalyticsId };
+  return { shopName, shopLogo, description, social, contact, googleAnalyticsId };
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { shopName, shopFavicon, description } = await getShopSettings();
+  const { shopName, description } = await getShopSettings();
 
-  const faviconUrl = shopFavicon || '/favicon.png';
   const metaDescription = description || DEFAULT_DESCRIPTION;
   const socialPreview = {
     url: '/assets/banner/social-preview.webp',
@@ -77,9 +74,9 @@ export async function generateMetadata(): Promise<Metadata> {
       images: [socialPreview.url],
     },
     icons: {
-      icon: [{ url: faviconUrl, sizes: '100x100', type: 'image/png' }],
-      apple: faviconUrl,
-      shortcut: faviconUrl,
+      icon: [{ url: '/favicon.png', sizes: '96x96', type: 'image/png' }],
+      shortcut: [{ url: '/favicon.png', sizes: '96x96', type: 'image/png' }],
+      apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
     },
   };
 }
