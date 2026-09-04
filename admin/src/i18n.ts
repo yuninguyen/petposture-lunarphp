@@ -4,7 +4,7 @@ import viTranslations from './locales/vi.json';
 import enTranslations from './locales/en.json';
 
 const getSavedLanguage = () => {
-  return localStorage.getItem('language') || 'vi';
+  return localStorage.getItem('language') || 'en';
 };
 
 i18next
@@ -15,7 +15,7 @@ i18next
       en: { translation: enTranslations },
     },
     lng: getSavedLanguage(),
-    fallbackLng: 'vi',
+    fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
     },
