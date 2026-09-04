@@ -217,7 +217,10 @@ class PayPalService
         $webhookId = $this->webhookId();
 
         if ($webhookId === '') {
-            return true;
+            // Unconfigured webhook_id must not silently trust incoming webhooks in
+            // real environments — only the test suite (which cannot call PayPal's
+            // live verify-signature endpoint) is allowed to bypass verification.
+            return app()->environment('testing');
         }
 
         $response = Http::withToken($this->accessToken())

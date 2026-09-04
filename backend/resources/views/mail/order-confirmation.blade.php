@@ -32,6 +32,8 @@
             ?? ucwords(str_replace(['_', '-'], ' ', $shippingMethodRaw)))
         : 'Standard';
 
+    $itemCount = $productLines->sum('quantity');
+
     $paymentMethodLabel = $meta['payment_label']
         ?? ($meta['payment_method'] ? ucwords(str_replace(['_', '-'], ' ', $meta['payment_method'])) : null);
 
@@ -170,7 +172,7 @@ ${{ number_format($lineTotal, 2) }}
 <td width="260" valign="top" class="full-col">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Subtotal</td>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Subtotal &middot; {{ $itemCount }} item{{ $itemCount === 1 ? '' : 's' }}</td>
 <td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; font-weight:700; color:#1a1a1a;">${{ number_format($subTotal, 2) }}</td>
 </tr>
 @if($discountTotal > 0)
@@ -180,11 +182,11 @@ ${{ number_format($lineTotal, 2) }}
 </tr>
 @endif
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Shipping</td>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Shipping - {{ $shippingMethodLabel }}</td>
 <td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; font-weight:700; color:#1a1a1a;">{{ $shippingTotal > 0 ? '$' . number_format($shippingTotal, 2) : 'Free' }}</td>
 </tr>
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Taxes</td>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Estimated Taxes</td>
 <td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; font-weight:700; color:#1a1a1a;">${{ number_format($taxTotal, 2) }}</td>
 </tr>
 </table>
@@ -203,7 +205,7 @@ ${{ number_format($lineTotal, 2) }}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:15px; font-weight:700; color:#1a1a1a;">Total</td>
-<td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:20px; font-weight:700; color:#1a1a1a;">${{ number_format($total, 2) }} <span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:12px; font-weight:400; color:#9a9a9a;">USD</span></td>
+<td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:20px; font-weight:700; color:#1a1a1a;"><span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:12px; font-weight:400; color:#9a9a9a;">{{ $order->currency_code ?? 'USD' }}</span> ${{ number_format($total, 2) }}</td>
 </tr>
 </table>
 </td>
@@ -232,6 +234,9 @@ ${{ number_format($lineTotal, 2) }}
 @endif
 {{ $order->shippingAddress?->city }} {{ $order->shippingAddress?->state }} {{ $order->shippingAddress?->postcode }}<br>
 {{ $order->shippingAddress?->country?->name ?? 'United States' }}
+@if($order->shippingAddress?->contact_phone)
+<br>{{ $order->shippingAddress->contact_phone }}
+@endif
 </p>
 </td>
 <td width="50%" valign="top" class="stack-col">
@@ -244,6 +249,9 @@ ${{ number_format($lineTotal, 2) }}
 @endif
 {{ ($order->billingAddress ?? $order->shippingAddress)?->city }} {{ ($order->billingAddress ?? $order->shippingAddress)?->state }} {{ ($order->billingAddress ?? $order->shippingAddress)?->postcode }}<br>
 {{ ($order->billingAddress ?? $order->shippingAddress)?->country?->name ?? 'United States' }}
+@if(($order->billingAddress ?? $order->shippingAddress)?->contact_phone)
+<br>{{ ($order->billingAddress ?? $order->shippingAddress)->contact_phone }}
+@endif
 </p>
 </td>
 </tr>

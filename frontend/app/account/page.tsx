@@ -53,6 +53,7 @@ interface Order {
     payment_instructions: string | null;
     shipping_label: string;
     delivered_at: string | null;
+    currency: string;
     total: { formatted: string };
     sub_total: number;
     tax_total: number;
@@ -66,6 +67,10 @@ interface Order {
 }
 
 const RETURN_WINDOW_DAYS = 30;
+
+function itemCount(order: Order): number {
+    return order.lines.filter((line) => line.type !== 'shipping').reduce((total, line) => total + line.quantity, 0);
+}
 
 function returnEligibility(order: Order): 'open' | 'closed' | null {
     if (order.status === 'shipped') {
@@ -329,6 +334,7 @@ export default function AccountPage() {
                                                                         {order.shipping_address.first_name} {order.shipping_address.last_name}<br />
                                                                         {order.shipping_address.line_one}{order.shipping_address.line_two ? `, ${order.shipping_address.line_two}` : ''}<br />
                                                                         {order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.postcode}
+                                                                        {order.shipping_address.phone && <><br />{order.shipping_address.phone}</>}
                                                                     </p>
                                                                 </div>
                                                                 <div>
@@ -337,6 +343,7 @@ export default function AccountPage() {
                                                                         {order.billing_address.first_name} {order.billing_address.last_name}<br />
                                                                         {order.billing_address.line_one}{order.billing_address.line_two ? `, ${order.billing_address.line_two}` : ''}<br />
                                                                         {order.billing_address.city}, {order.billing_address.state} {order.billing_address.postcode}
+                                                                        {order.billing_address.phone && <><br />{order.billing_address.phone}</>}
                                                                     </p>
                                                                 </div>
                                                             </div>
@@ -355,7 +362,7 @@ export default function AccountPage() {
                                                                                     href={shipment.tracking_url}
                                                                                     target="_blank"
                                                                                     rel="noreferrer"
-                                                                                    className="font-bold text-rust hover:text-rust"
+                                                                                    className="font-bold text-rust hover:underline underline-offset-2"
                                                                                 >
                                                                                     Track Package
                                                                                 </a>
@@ -377,13 +384,13 @@ export default function AccountPage() {
                                                             </div>
 
                                                             <div className="pt-3 border-t border-zinc-100 space-y-1 text-sm">
-                                                                <div className="flex justify-between text-zinc-500"><span>Subtotal</span><span>${order.sub_total.toFixed(2)}</span></div>
+                                                                <div className="flex justify-between text-zinc-500"><span>Subtotal &middot; {itemCount(order)} item{itemCount(order) === 1 ? '' : 's'}</span><span>${order.sub_total.toFixed(2)}</span></div>
                                                                 {order.discount_total > 0 && (
                                                                     <div className="flex justify-between text-zinc-500"><span>Discount</span><span>-${order.discount_total.toFixed(2)}</span></div>
                                                                 )}
                                                                 <div className="flex justify-between text-zinc-500"><span>Shipping - {order.shipping_label}</span><span>{order.shipping_total === 0 ? 'Free' : `$${order.shipping_total.toFixed(2)}`}</span></div>
                                                                 <div className="flex justify-between text-zinc-500"><span>Estimated Tax</span><span>${order.tax_total.toFixed(2)}</span></div>
-                                                                <div className="flex justify-between font-bold text-primary pt-1"><span>Total</span><span>{order.total.formatted}</span></div>
+                                                                <div className="flex justify-between font-bold text-primary pt-1"><span>Total</span><span>{order.currency} {order.total.formatted}</span></div>
                                                             </div>
 
                                                             {returnEligibility(order) === 'open' && (
@@ -392,7 +399,7 @@ export default function AccountPage() {
                                                                         type="button"
                                                                         onClick={() => void handleRequestReturn(order)}
                                                                         disabled={returnAccessOrderId === order.id}
-                                                                        className="text-sm font-bold text-rust hover:text-rust transition-colors disabled:cursor-wait disabled:opacity-60"
+                                                                        className="text-sm font-bold text-rust hover:underline underline-offset-2 transition-colors disabled:cursor-wait disabled:opacity-60 disabled:hover:no-underline"
                                                                     >
                                                                         {returnAccessOrderId === order.id ? 'Preparing secure access…' : 'Request a Return'}
                                                                     </button>
