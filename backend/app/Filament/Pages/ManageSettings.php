@@ -244,20 +244,38 @@ class ManageSettings extends Page
                                     ->label(__('Shop Name'))
                                     ->required(),
                                 FileUpload::make('shop_logo')
-                                    ->label(__('Shop Logo'))
+                                    ->label(__('Storefront Logo'))
                                     ->image()
                                     ->directory('settings')
                                     ->saveUploadedFileUsing(ImageUploadResizer::make(800, 800)),
                                 FileUpload::make('shop_favicon')
-                                    ->label(__('Favicon'))
+                                    ->label(__('Storefront Favicon'))
                                     ->image()
                                     ->directory('settings')
-                                    ->acceptedFileTypes(['image/x-icon', 'image/png', 'image/svg+xml'])
-                                    ->helperText('Recommended: 32×32 or 64×64 px (.ico, .png, .svg)'),
+                                    ->acceptedFileTypes(['image/png'])
+                                    ->maxSize(512)
+                                    ->rules(['dimensions:ratio=1/1'])
+                                    ->helperText('Upload a square PNG. It will be served as a normalized 96×96 storefront favicon.'),
                                 Textarea::make('shop_description')
                                     ->label(__('Shop Description'))
                                     ->rows(3)
                                     ->helperText(__('Shown in the site footer and used as the default SEO description for pages that don\'t have their own (homepage, contact, etc.). Keep it to about 150–160 characters for best results in search results.')),
+                            ]),
+
+                        Tabs\Tab::make(__('Admin Branding'))
+                            ->icon('heroicon-o-building-office-2')
+                            ->schema([
+                                FileUpload::make('admin_logo')
+                                    ->label(__('Admin Logo'))
+                                    ->image()
+                                    ->directory('settings/admin')
+                                    ->saveUploadedFileUsing(ImageUploadResizer::make(800, 800)),
+                                FileUpload::make('admin_favicon')
+                                    ->label(__('Admin Favicon'))
+                                    ->image()
+                                    ->directory('settings/admin')
+                                    ->acceptedFileTypes(['image/png', 'image/x-icon'])
+                                    ->maxSize(512),
                             ]),
 
                         Tabs\Tab::make(__('Analytics'))
@@ -420,6 +438,9 @@ class ManageSettings extends Page
         }
         if (str_starts_with($key, 'stripe_') || str_starts_with($key, 'paypal_')) {
             return 'payment';
+        }
+        if (str_starts_with($key, 'admin_')) {
+            return 'admin';
         }
         if ($key === 'ai_seo_provider' || in_array($key, [
             ...self::AI_SECRET_KEYS,

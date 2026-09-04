@@ -13,12 +13,16 @@ class SettingsController extends Controller
     {
         $shopLogo = setting('shop_logo');
         $shopFavicon = setting('shop_favicon');
+        $adminLogo = setting('admin_logo');
+        $adminFavicon = setting('admin_favicon');
 
         // Expose structured settings for frontend
         return $this->success([
             'shop_name' => setting('shop_name', 'PetPosture'),
             'shop_logo' => $this->resolveAssetUrl($shopLogo),
             'shop_favicon' => $this->resolveAssetUrl($shopFavicon),
+            'admin_logo' => $this->resolveAssetUrl($adminLogo),
+            'admin_favicon' => $this->resolveAssetUrl($adminFavicon),
             'description' => setting('shop_description'),
             // Single source of truth for the storefront URL — the admin uses
             // this for its View/preview links so they always match the

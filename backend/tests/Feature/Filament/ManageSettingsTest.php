@@ -26,6 +26,20 @@ class ManageSettingsTest extends TestCase
         $this->actingAs($user);
     }
 
+    public function test_storefront_and_admin_branding_settings_persist_separately(): void
+    {
+        Setting::set('shop_name', 'PetPosture', 'string', 'general');
+
+        Livewire::test(ManageSettings::class)
+            ->set('data.shop_favicon', ['settings/storefront.png'])
+            ->set('data.admin_favicon', ['settings/admin/admin.png'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('settings/storefront.png', Setting::get('shop_favicon'));
+        $this->assertSame('settings/admin/admin.png', Setting::get('admin_favicon'));
+    }
+
     public function test_ai_settings_persist_preference_and_model_without_hydrating_stored_keys(): void
     {
         Setting::set('shop_name', 'PetPosture', 'string', 'general');
