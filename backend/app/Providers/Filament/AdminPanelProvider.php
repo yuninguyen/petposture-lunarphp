@@ -136,12 +136,12 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->font('Public Sans')
             ->brandName('PetPosture')
-            ->brandLogo(fn () => Setting::get('shop_logo')
-                ? asset('storage/'.Setting::get('shop_logo'))
+            ->brandLogo(fn () => Setting::get('admin_logo')
+                ? asset('storage/'.Setting::get('admin_logo'))
                 : asset('logo.png'))
             ->brandLogoHeight('45px')
-            ->favicon(fn () => Setting::get('shop_favicon')
-                ? asset('storage/'.Setting::get('shop_favicon'))
+            ->favicon(fn () => Setting::get('admin_favicon')
+                ? asset('storage/'.Setting::get('admin_favicon'))
                 : asset('favicon.ico'))
             ->navigationGroups([
                 __('lunarpanel::global.sections.catalog'),
