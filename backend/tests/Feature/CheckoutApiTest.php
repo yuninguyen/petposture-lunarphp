@@ -676,7 +676,7 @@ class CheckoutApiTest extends TestCase
         $trackedOrderResponse->assertJsonMissingPath('data.payment_intent_id');
         $trackedOrderResponse->assertJsonMissingPath('data.order_events');
         $trackedOrderResponse->assertJsonMissingPath('data.available_actions');
-        $trackedOrderResponse->assertJsonMissingPath('data.refund_status');
+        $trackedOrderResponse->assertJsonPath('data.refund_status', null);
     }
 
     public function test_duplicate_stripe_webhook_event_is_ignored(): void

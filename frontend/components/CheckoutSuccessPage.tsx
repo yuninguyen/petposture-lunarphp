@@ -46,6 +46,7 @@ type TrackingOrder = {
     card_brand: string | null;
     card_last4: string | null;
     payment_confirmed_before_cancellation?: boolean;
+    refund_status: string | null;
     created_at: string | null;
     shipping_method: string;
     total: number;
@@ -161,7 +162,11 @@ function OrderSummaryBody({ order }: { order: TrackingOrder }) {
                     order.payment_confirmed_before_cancellation ? (
                         <div className="flex items-start gap-2 rounded-[10px] border border-[#f0ddd0] bg-[#fff8f4] px-3 py-2 text-sm text-[#7a4020]">
                             <Mail size={14} className="mt-0.5 flex-shrink-0 text-[#df8448]" />
-                            <span>This order was cancelled after payment. Your refund is being processed.</span>
+                            <span>
+                                {order.refund_status === "refunded"
+                                    ? "This order was cancelled and your refund has been completed."
+                                    : "This order was cancelled after payment. Your refund is being processed."}
+                            </span>
                         </div>
                     ) : null
                 ) : (
@@ -430,7 +435,9 @@ function OrderSuccessContent() {
                                                 ) : null}
                                                 {step.key === "cancelled" && order.payment_confirmed_before_cancellation ? (
                                                     <p className="mt-1.5 text-[12.5px] leading-[1.6] text-[#8a5a34]">
-                                                        This order was cancelled after payment. Your refund is being processed.
+                                                        {order.refund_status === "refunded"
+                                                            ? "This order was cancelled and your refund has been completed."
+                                                            : "This order was cancelled after payment. Your refund is being processed."}
                                                     </p>
                                                 ) : null}
                                             </div>

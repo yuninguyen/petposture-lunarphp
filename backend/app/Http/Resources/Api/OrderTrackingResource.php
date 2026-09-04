@@ -65,6 +65,7 @@ class OrderTrackingResource extends JsonResource
                 $order->status === 'cancelled',
                 fn () => ($meta['payment_status'] ?? null) === 'paid'
             ),
+            'refund_status' => $meta['refund_status'] ?? null,
             'created_at' => $order->created_at?->toIso8601String(),
             'shipping_method' => $this->shippingMethodLabel($meta),
             'total' => round($this->moneyValue($order->total), 2),

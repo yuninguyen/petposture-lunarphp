@@ -167,7 +167,7 @@ class OrderPublicResourceTest extends TestCase
         $response->assertJsonMissingPath('data.payment_gateway');
         $response->assertJsonMissingPath('data.payment_collection');
         $response->assertJsonMissingPath('data.payment_last_event_type');
-        $response->assertJsonMissingPath('data.refund_status');
+        $response->assertJsonPath('data.refund_status', 'refunded');
         $response->assertJsonMissingPath('data.refund_id');
         $response->assertJsonMissingPath('data.refund_amount');
         $response->assertJsonMissingPath('data.refunded_at');
