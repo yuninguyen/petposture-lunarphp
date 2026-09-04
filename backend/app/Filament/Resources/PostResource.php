@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\AiSeoGeneratorService;
 use App\Support\ImageUploadResizer;
 use Awcodes\Curator\Components\Forms\CuratorPicker;
+use FilamentTiptapEditor\Facades\TiptapConverter;
 use FilamentTiptapEditor\TiptapEditor;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -311,7 +312,7 @@ class PostResource extends Resource
                             ->color('gray')
                             ->action(function (Get $get, Set $set) {
                                 $title = (string) $get('title');
-                                $content = (string) $get('content');
+                                $content = TiptapConverter::asHTML($get('content') ?? '');
 
                                 if (blank($title)) {
                                     Notification::make()
@@ -367,7 +368,7 @@ class PostResource extends Resource
                                                 $toStr = fn ($value) => is_array($value) ? '' : (string) $value;
 
                                                 $title = Str::limit($toStr($get('seo.title')) ?: $toStr($get('title')) ?: __('Untitled Post'), 60, '');
-                                                $description = Str::limit($toStr($get('seo.description')) ?: strip_tags($toStr($get('content'))), 160, '');
+                                                $description = Str::limit($toStr($get('seo.description')) ?: strip_tags(TiptapConverter::asHTML($get('content') ?? '')), 160, '');
                                                 $url = rtrim(config('app.frontend_url'), '/').'/blog/'.($toStr($get('slug')) ?: 'post-slug');
 
                                                 return new \Illuminate\Support\HtmlString(
