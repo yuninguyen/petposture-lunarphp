@@ -48,7 +48,7 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: (user: AdminUser) => voi
       </div>
 
       {/* Right Column: Form Area */}
-      <div className="relative flex w-full lg:w-1/2 flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <div className="relative flex w-full flex-col items-center justify-start px-4 pt-20 pb-12 sm:px-6 lg:w-1/2 lg:justify-center lg:px-8 lg:py-12">
         
         {/* Language Selector */}
         <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
@@ -81,8 +81,8 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: (user: AdminUser) => voi
         {/* Form Container */}
         <div className="w-full max-w-sm xl:max-w-md">
           {/* Mobile Logo */}
-          <div className="flex lg:hidden items-center justify-center mb-8">
-            <img src="/logo.png" alt="Pet Posture" className="h-12 w-auto object-contain" />
+          <div className="flex lg:hidden items-center justify-center mt-10 mb-8">
+            <img src="/logo.png" alt="Pet Posture" className="h-16 w-auto object-contain" />
           </div>
 
           <div className="mb-10 text-center lg:text-left">
