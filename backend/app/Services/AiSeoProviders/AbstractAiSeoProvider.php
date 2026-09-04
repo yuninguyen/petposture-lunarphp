@@ -16,6 +16,16 @@ abstract class AbstractAiSeoProvider implements AiSeoProvider
 
     abstract protected function modelConfig(): string;
 
+    protected function baseUrlSetting(): ?string
+    {
+        return null;
+    }
+
+    protected function baseUrlConfig(): ?string
+    {
+        return null;
+    }
+
     protected function apiKey(): string
     {
         return trim((string) (Setting::get($this->apiKeySetting()) ?: config($this->apiKeyConfig(), '')));
@@ -24,6 +34,15 @@ abstract class AbstractAiSeoProvider implements AiSeoProvider
     public function model(): string
     {
         return trim((string) (Setting::get($this->modelSetting()) ?: config($this->modelConfig(), '')));
+    }
+
+    protected function baseUrl(): string
+    {
+        if ($this->baseUrlSetting() === null || $this->baseUrlConfig() === null) {
+            return '';
+        }
+
+        return trim((string) (Setting::get($this->baseUrlSetting()) ?: config($this->baseUrlConfig(), '')));
     }
 
     public function isConfigured(): bool

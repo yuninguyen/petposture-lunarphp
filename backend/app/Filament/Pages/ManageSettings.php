@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Services\AiSeoGeneratorService;
 use App\Support\ImageUploadResizer;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
@@ -16,6 +17,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Http;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Symfony\Component\Mime\Email;
@@ -32,6 +34,7 @@ class ManageSettings extends Page
     private const AI_MODEL_KEYS = [
         'anthropic_model',
         'openai_model',
+        'openai_base_url',
         'xai_model',
         'gemini_model',
     ];
@@ -57,6 +60,8 @@ class ManageSettings extends Page
 
     public ?array $data = [];
 
+    public array $openaiAvailableModels = [];
+
     public function mount(): void
     {
         $data = [];
@@ -68,7 +73,73 @@ class ManageSettings extends Page
             $data[$setting->key] = $setting->value;
         }
 
+        if (filled($data['openai_model'] ?? null)) {
+            $this->openaiAvailableModels = [$data['openai_model'] => $data['openai_model']];
+        }
+
         $this->form->fill($data);
+    }
+
+    public function fetchOpenAiModels(\Filament\Forms\Get $get): void
+    {
+        $apiKey = trim((string) $get('openai_api_key')) ?: (Setting::get('openai_api_key') ?: config('services.openai.key'));
+        $baseUrl = trim((string) $get('openai_base_url')) ?: (Setting::get('openai_base_url') ?: config('services.openai.base_url')) ?: 'https://api.openai.com/v1';
+
+        if (! $apiKey) {
+            Notification::make()
+                ->title('OpenAI API key not set')
+                ->body('Enter your OpenAI API Key (and Base URL, if using a proxy) above first.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        try {
+            $response = Http::withToken($apiKey)
+                ->timeout(15)
+                ->get(rtrim($baseUrl, '/').'/models');
+
+            if (! $response->successful()) {
+                $error = $response->json('error');
+                $message = is_string($error) ? $error : ($error['message'] ?? null);
+
+                throw new \RuntimeException(
+                    'HTTP '.$response->status().': '.($message ?: \Illuminate\Support\Str::limit($response->body(), 200))
+                );
+            }
+
+            $ids = collect($response->json('data', []))
+                ->pluck('id')
+                ->filter()
+                ->unique()
+                ->sort()
+                ->values()
+                ->all();
+
+            if ($ids === []) {
+                Notification::make()
+                    ->title('No models returned')
+                    ->warning()
+                    ->send();
+
+                return;
+            }
+
+            $this->openaiAvailableModels = array_combine($ids, $ids);
+
+            Notification::make()
+                ->title(count($ids).' models loaded')
+                ->body('Pick one from the OpenAI Model dropdown.')
+                ->success()
+                ->send();
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title('Failed to fetch models')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     protected function getHeaderActions(): array
@@ -257,10 +328,23 @@ class ManageSettings extends Page
                                         ->label(__('OpenAI API Key'))
                                         ->password()
                                         ->helperText(__('Leave blank to keep the stored value or use OPENAI_API_KEY.')),
-                                    TextInput::make('openai_model')
+                                    Select::make('openai_model')
                                         ->label(__('OpenAI Model'))
+                                        ->options(fn (): array => $this->openaiAvailableModels)
+                                        ->searchable()
                                         ->requiredWith('openai_api_key')
-                                        ->helperText(__('Required with an OpenAI API key.')),
+                                        ->helperText(__('Required with an OpenAI API key. Fill in the API Key (and Base URL, if using a proxy), then click refresh to list available models.'))
+                                        ->suffixAction(
+                                            FormAction::make('fetchOpenAiModels')
+                                                ->icon('heroicon-o-arrow-path')
+                                                ->tooltip(__('Fetch available models'))
+                                                ->action(fn (\Filament\Forms\Get $get) => $this->fetchOpenAiModels($get)),
+                                        ),
+                                    TextInput::make('openai_base_url')
+                                        ->label(__('OpenAI Base URL'))
+                                        ->url()
+                                        ->placeholder('https://api.openai.com/v1')
+                                        ->helperText(__('Optional: point at an OpenAI-compatible proxy (e.g. cliproxyapi) instead of the official API.')),
                                     TextInput::make('xai_api_key')
                                         ->label(__('xAI API Key'))
                                         ->password()

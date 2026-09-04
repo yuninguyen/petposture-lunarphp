@@ -31,9 +31,19 @@ class OpenAiSeoProvider extends AbstractAiSeoProvider
         return 'services.openai.model';
     }
 
+    protected function baseUrlSetting(): ?string
+    {
+        return 'openai_base_url';
+    }
+
+    protected function baseUrlConfig(): ?string
+    {
+        return 'services.openai.base_url';
+    }
+
     protected function endpoint(): string
     {
-        return 'https://api.openai.com/v1/chat/completions';
+        return rtrim($this->baseUrl() ?: 'https://api.openai.com/v1', '/').'/chat/completions';
     }
 
     /**
