@@ -325,9 +325,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/me/wishlist/{productId}', [WishlistController::class, 'destroy']);
 
     // Checkout & Orders
-    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders', [OrderController::class, 'customerIndex']);
     Route::post('/orders/{id}/tracking-access', [OrderController::class, 'trackingAccess']);
-    Route::get('/orders/{id}', [OrderController::class, 'show']);
+    Route::get('/orders/{id}', [OrderController::class, 'customerShow']);
     Route::patch('/orders/{id}', [OrderController::class, 'update']);
     Route::post('/orders/{id}/actions/{action}', [OrderController::class, 'performAction']);
     Route::post('/orders/{id}/shipments', [OrderController::class, 'createShipment']);

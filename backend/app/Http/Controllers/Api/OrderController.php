@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\CustomerOrderResource;
 use App\Http\Resources\Api\OrderResource;
 use App\Http\Resources\Api\OrderTrackingResource;
 use App\Mail\TrackingLinkResend;
@@ -212,6 +213,22 @@ class OrderController extends Controller
         return OrderResource::collection($orders);
     }
 
+    public function customerIndex(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'status' => 'nullable|string|in:awaiting-payment,payment-offline,payment-received,processing,shipped,delivered,cancelled',
+        ])->validate();
+
+        $orders = Order::query()
+            ->where('user_id', $request->user()->id)
+            ->when(isset($validated['status']), fn ($query) => $query->where('status', $validated['status']))
+            ->with(['lines', 'shippingAddress', 'billingAddress'])
+            ->latest()
+            ->paginate(10);
+
+        return CustomerOrderResource::collection($orders);
+    }
+
     /**
      * Show a specific order.
      */
@@ -226,6 +243,20 @@ class OrderController extends Controller
         }
 
         return new OrderResource($order);
+    }
+
+    public function customerShow(Request $request, $id)
+    {
+        $order = Order::query()
+            ->where('user_id', $request->user()->id)
+            ->with(['lines', 'shippingAddress', 'billingAddress'])
+            ->find($id);
+
+        if (! $order) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+
+        return new CustomerOrderResource($order);
     }
 
     public function create(Request $request)
