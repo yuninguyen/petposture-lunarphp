@@ -1152,6 +1152,187 @@ class CheckoutApiTest extends TestCase
             ->assertJsonMissing(['id' => $otherOrder->json('order.id')]);
     }
 
+    public function test_customer_order_index_is_owner_scoped_and_excludes_staff_only_fields(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $owner = User::factory()->create(['email' => 'owner-boundary@petposture.test']);
+        Sanctum::actingAs($owner);
+        $ownedOrderResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'shipping' => ['email' => $owner->email],
+        ]));
+        $ownedOrder = Order::query()->findOrFail($ownedOrderResponse->json('order.id'));
+        $ownedOrder->update([
+            'notes' => 'CUSTOMER-NOTE-MUST-NOT-LEAK',
+            'meta' => array_merge((array) $ownedOrder->meta, [
+                'internal_note' => 'INTERNAL-NOTE-MUST-NOT-LEAK',
+                'customer_note' => 'CUSTOMER-NOTE-MUST-NOT-LEAK',
+                'fraud_risk_level' => 'highest',
+                'fraud_risk_score' => 99,
+                'fraud_seller_message' => 'FRAUD-MESSAGE-MUST-NOT-LEAK',
+                'customer_ip' => '203.0.113.42',
+                'customer_ip_location' => 'SECURITY-TEST-LOCATION',
+                'customer_ip_isp' => 'SECURITY-TEST-ISP',
+                'customer_user_agent' => 'SECURITY-TEST-DEVICE',
+                'customer_ip_service_type' => 'SECURITY-TEST-SERVICE',
+                'attribution_origin' => 'SECURITY-TEST-ORIGIN',
+                'attribution_device_type' => 'SECURITY-TEST-ATTRIBUTION-DEVICE',
+                'attribution_session_page_views' => 987,
+                'payment_intent_id' => 'pi_SECURITY_BOUNDARY',
+                'payment_intent_status' => 'requires_review',
+                'payment_last_event_type' => 'payment_intent.security_boundary',
+                'payment_gateway' => 'SECURITY-TEST-GATEWAY',
+                'payment_collection' => 'SECURITY-TEST-COLLECTION',
+                'refund_id' => 're_SECURITY_BOUNDARY',
+                'refund_amount' => 4242,
+                'card_funding' => 'SECURITY-TEST-FUNDING',
+                'paypal_payer_email' => 'payer-boundary@petposture.test',
+                'available_actions' => ['security-boundary-action'],
+            ]),
+        ]);
+
+        $otherCustomer = User::factory()->create(['email' => 'other-boundary@petposture.test']);
+        Sanctum::actingAs($otherCustomer);
+        $otherOrderResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'shipping' => ['email' => $otherCustomer->email],
+        ]));
+
+        Sanctum::actingAs($owner);
+        $response = $this->getJson('/api/orders');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', (string) $ownedOrder->id)
+            ->assertJsonMissing(['id' => $otherOrderResponse->json('order.id')])
+            ->assertJsonStructure([
+                'data' => [[
+                    'id', 'reference', 'status', 'status_label',
+                    'payment_status', 'payment_status_label',
+                    'fulfillment_status', 'fulfillment_status_label',
+                    'customer_email', 'payment_method', 'payment_label', 'payment_instructions',
+                    'shipping_label', 'delivered_at', 'currency',
+                    'sub_total', 'tax_total', 'shipping_total', 'discount_total',
+                    'total' => ['formatted', 'decimal', 'currency'],
+                    'created_at', 'lines', 'shipping_address', 'billing_address', 'shipments',
+                ]],
+            ]);
+
+        foreach ([
+            'internal_note', 'notes', 'customer_note',
+            'available_actions', 'remaining_shippable_quantities', 'refund_reason_options',
+            'order_events',
+            'fraud_risk_level', 'fraud_risk_score', 'fraud_seller_message',
+            'customer_ip', 'customer_ip_location', 'customer_ip_isp',
+            'customer_user_agent', 'customer_ip_service_type',
+            'attribution_origin', 'attribution_device_type', 'attribution_session_page_views',
+            'payment_intent_id', 'payment_intent_status', 'payment_last_event_type',
+            'payment_gateway', 'payment_collection',
+            'refund_id', 'refund_amount',
+            'card_funding', 'paypal_payer_email',
+        ] as $path) {
+            $response->assertJsonMissingPath("data.0.{$path}");
+        }
+    }
+
+    public function test_customer_order_show_returns_safe_owner_contract_and_hides_other_customers_order(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $owner = User::factory()->create(['email' => 'show-owner@petposture.test']);
+        Sanctum::actingAs($owner);
+        $orderResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'shipping' => ['email' => $owner->email],
+        ]));
+        $order = Order::query()->findOrFail($orderResponse->json('order.id'));
+        $order->update([
+            'notes' => 'SHOW-CUSTOMER-NOTE-MUST-NOT-LEAK',
+            'meta' => array_merge((array) $order->meta, [
+                'internal_note' => 'SHOW-INTERNAL-NOTE-MUST-NOT-LEAK',
+                'customer_note' => 'SHOW-CUSTOMER-NOTE-MUST-NOT-LEAK',
+                'fraud_risk_level' => 'highest',
+                'fraud_risk_score' => 98,
+                'fraud_seller_message' => 'SHOW-FRAUD-MESSAGE-MUST-NOT-LEAK',
+                'customer_ip' => '198.51.100.24',
+                'customer_ip_location' => 'SHOW-SECURITY-TEST-LOCATION',
+                'customer_ip_isp' => 'SHOW-SECURITY-TEST-ISP',
+                'customer_user_agent' => 'SHOW-SECURITY-TEST-DEVICE',
+                'customer_ip_service_type' => 'SHOW-SECURITY-TEST-SERVICE',
+                'attribution_origin' => 'SHOW-SECURITY-TEST-ORIGIN',
+                'attribution_device_type' => 'SHOW-SECURITY-TEST-ATTRIBUTION-DEVICE',
+                'attribution_session_page_views' => 986,
+                'payment_intent_id' => 'pi_SHOW_SECURITY_BOUNDARY',
+                'payment_intent_status' => 'requires_review',
+                'payment_last_event_type' => 'payment_intent.show_security_boundary',
+                'payment_gateway' => 'SHOW-SECURITY-TEST-GATEWAY',
+                'payment_collection' => 'SHOW-SECURITY-TEST-COLLECTION',
+                'refund_id' => 're_SHOW_SECURITY_BOUNDARY',
+                'refund_amount' => 4343,
+                'card_funding' => 'SHOW-SECURITY-TEST-FUNDING',
+                'paypal_payer_email' => 'show-payer-boundary@petposture.test',
+                'available_actions' => ['show-security-boundary-action'],
+            ]),
+        ]);
+
+        $response = $this->getJson("/api/orders/{$order->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.id', (string) $order->id)
+            ->assertJsonStructure([
+                'data' => [
+                    'id', 'reference', 'status', 'status_label',
+                    'payment_status', 'payment_status_label',
+                    'fulfillment_status', 'fulfillment_status_label',
+                    'customer_email', 'payment_method', 'payment_label', 'payment_instructions',
+                    'shipping_label', 'delivered_at', 'currency',
+                    'sub_total', 'tax_total', 'shipping_total', 'discount_total',
+                    'total' => ['formatted', 'decimal', 'currency'],
+                    'created_at', 'lines', 'shipping_address', 'billing_address', 'shipments',
+                ],
+            ]);
+
+        foreach ([
+            'internal_note', 'notes', 'customer_note',
+            'available_actions', 'remaining_shippable_quantities', 'refund_reason_options',
+            'order_events',
+            'fraud_risk_level', 'fraud_risk_score', 'fraud_seller_message',
+            'customer_ip', 'customer_ip_location', 'customer_ip_isp',
+            'customer_user_agent', 'customer_ip_service_type',
+            'attribution_origin', 'attribution_device_type', 'attribution_session_page_views',
+            'payment_intent_id', 'payment_intent_status', 'payment_last_event_type',
+            'payment_gateway', 'payment_collection',
+            'refund_id', 'refund_amount',
+            'card_funding', 'paypal_payer_email',
+        ] as $path) {
+            $response->assertJsonMissingPath("data.{$path}");
+        }
+
+        $otherCustomer = User::factory()->create();
+        Sanctum::actingAs($otherCustomer);
+        $this->getJson("/api/orders/{$order->id}")
+            ->assertNotFound()
+            ->assertJsonPath('message', 'Order not found');
+    }
+
+    public function test_admin_order_show_preserves_staff_rich_contract(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $orderId = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant))->json('order.id');
+        $order = Order::query()->findOrFail($orderId);
+        $order->update(['meta' => array_merge((array) $order->meta, [
+            'internal_note' => 'ADMIN-INTERNAL-NOTE',
+            'fraud_risk_score' => 97,
+            'customer_ip' => '192.0.2.18',
+            'payment_intent_id' => 'pi_ADMIN_SECURITY_BOUNDARY',
+        ])]);
+        $this->makeAdmin();
+
+        $this->getJson("/api/admin/orders/{$orderId}")
+            ->assertOk()
+            ->assertJsonPath('data.internal_note', 'ADMIN-INTERNAL-NOTE')
+            ->assertJsonPath('data.fraud_risk_score', 97)
+            ->assertJsonPath('data.customer_ip', '192.0.2.18')
+            ->assertJsonPath('data.payment_intent_id', 'pi_ADMIN_SECURITY_BOUNDARY')
+            ->assertJsonStructure(['data' => ['available_actions']]);
+    }
+
     public function test_order_manager_and_support_can_create_manual_orders_but_product_manager_cannot(): void
     {
         $variant = $this->createPurchasableVariant();
