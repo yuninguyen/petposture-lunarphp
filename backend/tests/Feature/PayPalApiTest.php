@@ -217,6 +217,40 @@ class PayPalApiTest extends TestCase
         $this->assertSame('CAPTURE-DECLINED-123', $order->meta['paypal_capture_id'] ?? null);
     }
 
+    public function test_capture_paypal_order_returns_failed_and_persists_failed_status(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'paypal',
+            'payment_context' => ['paypal_order_id' => 'PAYPAL-FAILED-123'],
+        ]))->assertCreated();
+
+        $payPalService = Mockery::mock(PayPalService::class);
+        $payPalService->shouldReceive('captureOrder')
+            ->once()
+            ->with('PAYPAL-FAILED-123')
+            ->andReturn([
+                'status' => 'FAILED',
+                'payer_email' => 'private-payer@example.com',
+                'capture_id' => 'CAPTURE-FAILED-123',
+            ]);
+        $this->app->instance(PayPalService::class, $payPalService);
+
+        $response = $this->postJson('/api/checkout/paypal-capture', [
+            'paypal_order_id' => 'PAYPAL-FAILED-123',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertExactJson([
+                'success' => false,
+                'capture' => ['status' => 'FAILED'],
+            ]);
+
+        $order = Order::findOrFail($placeResponse->json('order.id'));
+        $this->assertSame('failed', $order->meta['payment_status'] ?? null);
+        $this->assertSame('CAPTURE-FAILED-123', $order->meta['paypal_capture_id'] ?? null);
+    }
+
     public function test_capture_paypal_order_returns_pending_and_persists_pending_status(): void
     {
         $variant = $this->createPurchasableVariant();
