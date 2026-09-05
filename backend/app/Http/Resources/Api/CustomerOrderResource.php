@@ -87,9 +87,13 @@ class CustomerOrderResource extends JsonResource
                 ->filter(fn ($shipment) => is_array($shipment))
                 ->reject(fn ($shipment) => ($shipment['carrier'] ?? null) === 'manual'
                     && ($shipment['tracking_number'] ?? null) === $this->reference)
-                ->map(fn ($shipment) => array_merge([
-                    'tracking_url' => null,
-                ], $shipment))
+                ->map(fn ($shipment) => [
+                    'id' => $shipment['id'] ?? null,
+                    'tracking_number' => $shipment['tracking_number'] ?? null,
+                    'carrier' => $shipment['carrier'] ?? null,
+                    'tracking_url' => $shipment['tracking_url'] ?? null,
+                    'status' => $shipment['status'] ?? null,
+                ])
                 ->values()
                 ->all(),
         ];
