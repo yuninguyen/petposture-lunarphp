@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UpsertCheckoutSessionRequest;
 use App\Http\Resources\Api\CheckoutSessionResource;
 use App\Http\Resources\Api\OrderCreatedResource;
-use App\Http\Resources\Api\OrderResource;
 use App\Models\CheckoutSession;
 use App\Models\UserAddress;
 use App\Services\AirwallexService;
@@ -514,8 +513,7 @@ class CheckoutController extends Controller
             if (($order->meta['payment_status'] ?? null) === 'paid') {
                 return response()->json([
                     'success' => true,
-                    'order' => new OrderResource($order),
-                    'capture' => ['status' => 'COMPLETED', 'already_captured' => true],
+                    'capture' => ['status' => 'COMPLETED'],
                 ]);
             }
 
@@ -527,7 +525,7 @@ class CheckoutController extends Controller
                 default => 'pending',
             };
 
-            $updatedOrder = $this->orderOperationsService->syncPayPalPayment($order, [
+            $this->orderOperationsService->syncPayPalPayment($order, [
                 'payment_status' => $paymentStatus,
                 'event_type' => 'checkout.capture',
                 'payer_email' => $capture['payer_email'],
@@ -536,8 +534,7 @@ class CheckoutController extends Controller
 
             return response()->json([
                 'success' => true,
-                'order' => new OrderResource($updatedOrder),
-                'capture' => $capture,
+                'capture' => ['status' => 'COMPLETED'],
             ]);
         } catch (ModelNotFoundException $e) {
             throw $e;

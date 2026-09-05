@@ -144,7 +144,7 @@ class PayPalApiTest extends TestCase
         $this->assertSame('COMPLETED', $capture['status']);
     }
 
-    public function test_capture_paypal_order_marks_order_as_paid(): void
+    public function test_capture_paypal_order_marks_order_as_paid_and_returns_only_safe_status(): void
     {
         $variant = $this->createPurchasableVariant();
         $payload = $this->checkoutPayload($variant, [
@@ -152,23 +152,70 @@ class PayPalApiTest extends TestCase
             'payment_context' => ['paypal_order_id' => 'PAYPAL-TEST-CAPTURE-123'],
         ]);
 
-        $this->postJson('/api/checkout/place-order', $payload)->assertCreated();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $payload)->assertCreated();
+        $order = Order::findOrFail($placeResponse->json('order.id'));
+        $order->update(['meta' => array_merge((array) $order->meta, [
+            'internal_note' => 'STAFF-ONLY-CAPTURE-NOTE',
+            'fraud_risk_score' => 91,
+            'customer_ip' => '203.0.113.42',
+        ])]);
 
         $response = $this->postJson('/api/checkout/paypal-capture', [
             'paypal_order_id' => 'PAYPAL-TEST-CAPTURE-123',
         ]);
 
         $response->assertOk()
-            ->assertJsonPath('success', true)
-            ->assertJsonPath('order.payment_status', 'paid')
-            ->assertJsonPath('order.payment_gateway', 'paypal')
-            ->assertJsonPath('capture.status', 'COMPLETED')
-            ->assertJsonPath('capture.mode', 'placeholder');
+            ->assertExactJson([
+                'success' => true,
+                'capture' => ['status' => 'COMPLETED'],
+            ])
+            ->assertJsonMissingPath('order')
+            ->assertJsonMissingPath('capture.capture_id')
+            ->assertJsonMissingPath('capture.payer_email')
+            ->assertJsonMissingPath('capture.mode');
 
-        $this->assertStringStartsWith('CAPTURE-PLACEHOLDER-', $response->json('capture.capture_id'));
-
-        $order = Order::query()->where('meta->paypal_order_id', 'PAYPAL-TEST-CAPTURE-123')->firstOrFail();
+        $order->refresh();
+        $this->assertSame('paid', $order->meta['payment_status'] ?? null);
+        $this->assertSame('paypal', $order->meta['payment_gateway'] ?? null);
+        $this->assertSame('STAFF-ONLY-CAPTURE-NOTE', $order->meta['internal_note'] ?? null);
         $this->assertStringStartsWith('CAPTURE-PLACEHOLDER-', $order->meta['paypal_capture_id'] ?? '');
+    }
+
+    public function test_capture_paypal_order_already_paid_returns_same_safe_status(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'paypal',
+            'payment_context' => ['paypal_order_id' => 'PAYPAL-ALREADY-CAPTURED-123'],
+        ]))->assertCreated();
+
+        $order = Order::findOrFail($placeResponse->json('order.id'));
+        $order->update(['meta' => array_merge((array) $order->meta, [
+            'payment_status' => 'paid',
+            'paypal_capture_id' => 'CAPTURE-EXISTING-123',
+            'paypal_payer_email' => 'private-payer@example.com',
+            'internal_note' => 'STAFF-ONLY-ALREADY-CAPTURED-NOTE',
+        ])]);
+
+        $response = $this->postJson('/api/checkout/paypal-capture', [
+            'paypal_order_id' => 'PAYPAL-ALREADY-CAPTURED-123',
+        ]);
+
+        $response->assertOk()
+            ->assertExactJson([
+                'success' => true,
+                'capture' => ['status' => 'COMPLETED'],
+            ])
+            ->assertJsonMissingPath('order')
+            ->assertJsonMissingPath('capture.already_captured')
+            ->assertJsonMissingPath('capture.capture_id')
+            ->assertJsonMissingPath('capture.payer_email');
+
+        $order->refresh();
+        $this->assertSame('paid', $order->meta['payment_status'] ?? null);
+        $this->assertSame('CAPTURE-EXISTING-123', $order->meta['paypal_capture_id'] ?? null);
+        $this->assertSame('private-payer@example.com', $order->meta['paypal_payer_email'] ?? null);
+        $this->assertSame('STAFF-ONLY-ALREADY-CAPTURED-NOTE', $order->meta['internal_note'] ?? null);
     }
 
     public function test_capture_paypal_order_rejects_unknown_paypal_order_id(): void
