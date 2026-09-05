@@ -532,6 +532,13 @@ class CheckoutController extends Controller
                 'capture_id' => $capture['capture_id'],
             ]);
 
+            if ($capture['status'] !== 'COMPLETED') {
+                return response()->json([
+                    'success' => false,
+                    'capture' => ['status' => $capture['status']],
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
             return response()->json([
                 'success' => true,
                 'capture' => ['status' => 'COMPLETED'],

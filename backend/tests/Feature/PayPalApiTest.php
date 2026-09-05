@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\PayPalService;
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -10,7 +12,6 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Lunar\FieldTypes\Text;
-use Mockery;
 use Lunar\Models\Channel;
 use Lunar\Models\Country;
 use Lunar\Models\Currency;
@@ -25,6 +26,7 @@ use Lunar\Models\TaxClass;
 use Lunar\Models\TaxRate;
 use Lunar\Models\TaxRateAmount;
 use Lunar\Models\TaxZone;
+use Mockery;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -121,7 +123,7 @@ class PayPalApiTest extends TestCase
         Cache::forget('paypal_mode');
         Cache::put('paypal_access_token_'.config('services.paypal.mode'), 'test-access-token');
 
-        $captureResponse = new \Illuminate\Http\Client\Response(new \GuzzleHttp\Psr7\Response(
+        $captureResponse = new \Illuminate\Http\Client\Response(new Response(
             200,
             ['Content-Type' => 'application/json'],
             json_encode([
@@ -139,7 +141,7 @@ class PayPalApiTest extends TestCase
             ))
             ->andReturn($captureResponse);
 
-        $capture = app(\App\Services\PayPalService::class)->captureOrder('APPROVED-ORDER-123');
+        $capture = app(PayPalService::class)->captureOrder('APPROVED-ORDER-123');
 
         $this->assertSame('COMPLETED', $capture['status']);
     }
@@ -179,6 +181,74 @@ class PayPalApiTest extends TestCase
         $this->assertSame('paypal', $order->meta['payment_gateway'] ?? null);
         $this->assertSame('STAFF-ONLY-CAPTURE-NOTE', $order->meta['internal_note'] ?? null);
         $this->assertStringStartsWith('CAPTURE-PLACEHOLDER-', $order->meta['paypal_capture_id'] ?? '');
+    }
+
+    public function test_capture_paypal_order_returns_declined_and_persists_failed_status(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'paypal',
+            'payment_context' => ['paypal_order_id' => 'PAYPAL-DECLINED-123'],
+        ]))->assertCreated();
+
+        $payPalService = Mockery::mock(PayPalService::class);
+        $payPalService->shouldReceive('captureOrder')
+            ->once()
+            ->with('PAYPAL-DECLINED-123')
+            ->andReturn([
+                'status' => 'DECLINED',
+                'payer_email' => 'private-payer@example.com',
+                'capture_id' => 'CAPTURE-DECLINED-123',
+            ]);
+        $this->app->instance(PayPalService::class, $payPalService);
+
+        $response = $this->postJson('/api/checkout/paypal-capture', [
+            'paypal_order_id' => 'PAYPAL-DECLINED-123',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertExactJson([
+                'success' => false,
+                'capture' => ['status' => 'DECLINED'],
+            ]);
+
+        $order = Order::findOrFail($placeResponse->json('order.id'));
+        $this->assertSame('failed', $order->meta['payment_status'] ?? null);
+        $this->assertSame('CAPTURE-DECLINED-123', $order->meta['paypal_capture_id'] ?? null);
+    }
+
+    public function test_capture_paypal_order_returns_pending_and_persists_pending_status(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'paypal',
+            'payment_context' => ['paypal_order_id' => 'PAYPAL-PENDING-123'],
+        ]))->assertCreated();
+
+        $payPalService = Mockery::mock(PayPalService::class);
+        $payPalService->shouldReceive('captureOrder')
+            ->once()
+            ->with('PAYPAL-PENDING-123')
+            ->andReturn([
+                'status' => 'PENDING',
+                'payer_email' => 'private-payer@example.com',
+                'capture_id' => 'CAPTURE-PENDING-123',
+            ]);
+        $this->app->instance(PayPalService::class, $payPalService);
+
+        $response = $this->postJson('/api/checkout/paypal-capture', [
+            'paypal_order_id' => 'PAYPAL-PENDING-123',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertExactJson([
+                'success' => false,
+                'capture' => ['status' => 'PENDING'],
+            ]);
+
+        $order = Order::findOrFail($placeResponse->json('order.id'));
+        $this->assertSame('pending', $order->meta['payment_status'] ?? null);
+        $this->assertSame('CAPTURE-PENDING-123', $order->meta['paypal_capture_id'] ?? null);
     }
 
     public function test_capture_paypal_order_already_paid_returns_same_safe_status(): void
