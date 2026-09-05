@@ -1186,8 +1186,16 @@ class CheckoutApiTest extends TestCase
                 'refund_amount' => 4242,
                 'card_funding' => 'SECURITY-TEST-FUNDING',
                 'paypal_payer_email' => 'payer-boundary@petposture.test',
-                'available_actions' => ['security-boundary-action'],
+                'payment_status' => 'paid',
+                'delivered_at' => '2026-09-06T10:30:00+00:00',
+                'shipments' => [[
+                    'tracking_number' => '1Z-CUSTOMER-BOUNDARY',
+                    'carrier' => 'ups',
+                    'tracking_url' => 'https://www.ups.com/track?tracknum=1Z-CUSTOMER-BOUNDARY',
+                    'status' => 'delivered',
+                ]],
             ]),
+            'status' => 'delivered',
         ]);
 
         $otherCustomer = User::factory()->create(['email' => 'other-boundary@petposture.test']);
@@ -1203,18 +1211,37 @@ class CheckoutApiTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', (string) $ownedOrder->id)
             ->assertJsonMissing(['id' => $otherOrderResponse->json('order.id')])
-            ->assertJsonStructure([
-                'data' => [[
-                    'id', 'reference', 'status', 'status_label',
-                    'payment_status', 'payment_status_label',
-                    'fulfillment_status', 'fulfillment_status_label',
-                    'customer_email', 'payment_method', 'payment_label', 'payment_instructions',
-                    'shipping_label', 'delivered_at', 'currency',
-                    'sub_total', 'tax_total', 'shipping_total', 'discount_total',
-                    'total' => ['formatted', 'decimal', 'currency'],
-                    'created_at', 'lines', 'shipping_address', 'billing_address', 'shipments',
-                ]],
-            ]);
+            ->assertJsonPath('meta.current_page', 1)
+            ->assertJsonPath('meta.per_page', 10)
+            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.status', 'delivered')
+            ->assertJsonPath('data.0.status_label', 'Delivered')
+            ->assertJsonPath('data.0.payment_status', 'paid')
+            ->assertJsonPath('data.0.payment_status_label', 'Paid')
+            ->assertJsonPath('data.0.fulfillment_status', 'delivered')
+            ->assertJsonPath('data.0.fulfillment_status_label', 'Delivered')
+            ->assertJsonPath('data.0.customer_email', $owner->email)
+            ->assertJsonPath('data.0.payment_method', 'cod')
+            ->assertJsonPath('data.0.payment_label', 'Cash on delivery')
+            ->assertJsonPath('data.0.payment_instructions', 'Collect payment when the shipment is delivered.')
+            ->assertJsonPath('data.0.shipping_label', 'Standard')
+            ->assertJsonPath('data.0.delivered_at', '2026-09-06T10:30:00+00:00')
+            ->assertJsonPath('data.0.currency', 'USD')
+            ->assertJsonPath('data.0.lines.0.description', 'Test Pet Bed')
+            ->assertJsonPath('data.0.lines.0.image', '/assets/Pug-Dog-Bed.jpg')
+            ->assertJsonPath('data.0.shipping_address.first_name', 'Jane')
+            ->assertJsonPath('data.0.shipping_address.line_one', '123 Congress Ave')
+            ->assertJsonPath('data.0.shipping_address.city', 'Austin')
+            ->assertJsonPath('data.0.shipping_address.state', 'TX')
+            ->assertJsonPath('data.0.shipping_address.postcode', '78701')
+            ->assertJsonPath('data.0.shipping_address.country', 'United States')
+            ->assertJsonPath('data.0.shipping_address.phone', '5125550101')
+            ->assertJsonPath('data.0.billing_address.first_name', 'Jane')
+            ->assertJsonPath('data.0.billing_address.line_one', '123 Congress Ave')
+            ->assertJsonPath('data.0.shipments.0.tracking_number', '1Z-CUSTOMER-BOUNDARY')
+            ->assertJsonPath('data.0.shipments.0.carrier', 'ups')
+            ->assertJsonPath('data.0.shipments.0.tracking_url', 'https://www.ups.com/track?tracknum=1Z-CUSTOMER-BOUNDARY')
+            ->assertJsonPath('data.0.shipments.0.status', 'delivered');
 
         foreach ([
             'internal_note', 'notes', 'customer_note',
@@ -1231,6 +1258,19 @@ class CheckoutApiTest extends TestCase
         ] as $path) {
             $response->assertJsonMissingPath("data.0.{$path}");
         }
+
+        $orderKeys = array_keys($response->json('data.0'));
+        sort($orderKeys);
+        $this->assertSame([
+            'billing_address', 'created_at', 'currency', 'customer_email', 'delivered_at',
+            'discount_total', 'fulfillment_status', 'fulfillment_status_label', 'id', 'lines',
+            'payment_instructions', 'payment_label', 'payment_method', 'payment_status',
+            'payment_status_label', 'reference', 'shipments', 'shipping_address', 'shipping_label',
+            'shipping_total', 'status', 'status_label', 'sub_total', 'tax_total', 'total',
+        ], $orderKeys);
+        $totalKeys = array_keys($response->json('data.0.total'));
+        sort($totalKeys);
+        $this->assertSame(['currency', 'decimal', 'formatted'], $totalKeys);
     }
 
     public function test_customer_order_show_returns_safe_owner_contract_and_hides_other_customers_order(): void
@@ -1267,26 +1307,54 @@ class CheckoutApiTest extends TestCase
                 'refund_amount' => 4343,
                 'card_funding' => 'SHOW-SECURITY-TEST-FUNDING',
                 'paypal_payer_email' => 'show-payer-boundary@petposture.test',
-                'available_actions' => ['show-security-boundary-action'],
+                'payment_status' => 'paid',
+                'delivered_at' => '2026-09-06T11:45:00+00:00',
+                'shipments' => [[
+                    'tracking_number' => '9400-SHOW-BOUNDARY',
+                    'carrier' => 'usps',
+                    'tracking_url' => 'https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=9400-SHOW-BOUNDARY',
+                    'status' => 'delivered',
+                ]],
             ]),
+            'status' => 'delivered',
         ]);
 
         $response = $this->getJson("/api/orders/{$order->id}");
 
         $response->assertOk()
             ->assertJsonPath('data.id', (string) $order->id)
-            ->assertJsonStructure([
-                'data' => [
-                    'id', 'reference', 'status', 'status_label',
-                    'payment_status', 'payment_status_label',
-                    'fulfillment_status', 'fulfillment_status_label',
-                    'customer_email', 'payment_method', 'payment_label', 'payment_instructions',
-                    'shipping_label', 'delivered_at', 'currency',
-                    'sub_total', 'tax_total', 'shipping_total', 'discount_total',
-                    'total' => ['formatted', 'decimal', 'currency'],
-                    'created_at', 'lines', 'shipping_address', 'billing_address', 'shipments',
-                ],
-            ]);
+            ->assertJsonPath('data.status', 'delivered')
+            ->assertJsonPath('data.status_label', 'Delivered')
+            ->assertJsonPath('data.payment_status', 'paid')
+            ->assertJsonPath('data.payment_status_label', 'Paid')
+            ->assertJsonPath('data.fulfillment_status', 'delivered')
+            ->assertJsonPath('data.fulfillment_status_label', 'Delivered')
+            ->assertJsonPath('data.customer_email', $owner->email)
+            ->assertJsonPath('data.payment_method', 'cod')
+            ->assertJsonPath('data.payment_label', 'Cash on delivery')
+            ->assertJsonPath('data.payment_instructions', 'Collect payment when the shipment is delivered.')
+            ->assertJsonPath('data.shipping_label', 'Standard')
+            ->assertJsonPath('data.delivered_at', '2026-09-06T11:45:00+00:00')
+            ->assertJsonPath('data.currency', 'USD')
+            ->assertJsonPath('data.lines.0.description', 'Test Pet Bed')
+            ->assertJsonPath('data.lines.0.image', '/assets/Pug-Dog-Bed.jpg')
+            ->assertJsonPath('data.shipping_address.first_name', 'Jane')
+            ->assertJsonPath('data.shipping_address.last_name', 'Doe')
+            ->assertJsonPath('data.shipping_address.line_one', '123 Congress Ave')
+            ->assertJsonPath('data.shipping_address.line_two', 'Unit 4B')
+            ->assertJsonPath('data.shipping_address.city', 'Austin')
+            ->assertJsonPath('data.shipping_address.state', 'TX')
+            ->assertJsonPath('data.shipping_address.postcode', '78701')
+            ->assertJsonPath('data.shipping_address.country', 'United States')
+            ->assertJsonPath('data.shipping_address.phone', '5125550101')
+            ->assertJsonPath('data.billing_address.first_name', 'Jane')
+            ->assertJsonPath('data.billing_address.last_name', 'Doe')
+            ->assertJsonPath('data.billing_address.line_one', '123 Congress Ave')
+            ->assertJsonPath('data.billing_address.city', 'Austin')
+            ->assertJsonPath('data.shipments.0.tracking_number', '9400-SHOW-BOUNDARY')
+            ->assertJsonPath('data.shipments.0.carrier', 'usps')
+            ->assertJsonPath('data.shipments.0.tracking_url', 'https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=9400-SHOW-BOUNDARY')
+            ->assertJsonPath('data.shipments.0.status', 'delivered');
 
         foreach ([
             'internal_note', 'notes', 'customer_note',
@@ -1303,6 +1371,19 @@ class CheckoutApiTest extends TestCase
         ] as $path) {
             $response->assertJsonMissingPath("data.{$path}");
         }
+
+        $orderKeys = array_keys($response->json('data'));
+        sort($orderKeys);
+        $this->assertSame([
+            'billing_address', 'created_at', 'currency', 'customer_email', 'delivered_at',
+            'discount_total', 'fulfillment_status', 'fulfillment_status_label', 'id', 'lines',
+            'payment_instructions', 'payment_label', 'payment_method', 'payment_status',
+            'payment_status_label', 'reference', 'shipments', 'shipping_address', 'shipping_label',
+            'shipping_total', 'status', 'status_label', 'sub_total', 'tax_total', 'total',
+        ], $orderKeys);
+        $totalKeys = array_keys($response->json('data.total'));
+        sort($totalKeys);
+        $this->assertSame(['currency', 'decimal', 'formatted'], $totalKeys);
 
         $otherCustomer = User::factory()->create();
         Sanctum::actingAs($otherCustomer);
