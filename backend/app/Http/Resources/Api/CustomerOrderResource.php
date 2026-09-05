@@ -123,13 +123,13 @@ class CustomerOrderResource extends JsonResource
 
         $purchasable = $line->getRelationValue('purchasable');
 
-        if (! is_object($purchasable)) {
+        if (! is_object($purchasable) || ! method_exists($purchasable, 'getRelationValue')) {
             return null;
         }
 
         $product = $purchasable->getRelationValue('product');
 
-        if (! is_object($product)) {
+        if (! is_object($product) || ! method_exists($product, 'translateAttribute')) {
             return null;
         }
 
