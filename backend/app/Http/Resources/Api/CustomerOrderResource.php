@@ -7,49 +7,52 @@ use App\Support\Orders\OrderStateMachine;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Lang;
+use Lunar\Models\Order;
 
 class CustomerOrderResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $shippingAddress = $this->shippingAddress;
-        $billingAddress = $this->billingAddress ?? $shippingAddress;
-        $total = $this->moneyValue($this->total);
-        $subTotal = $this->moneyValue($this->sub_total);
-        $taxTotal = $this->moneyValue($this->tax_total);
-        $shippingTotal = $this->resolvedShippingTotal();
-        $discountTotal = $this->moneyValue($this->discount_total);
-        $paymentStatus = $this->resolvePaymentStatus();
-        $fulfillmentStatus = $this->resolveFulfillmentStatus();
-        $meta = (array) ($this->meta ?? []);
+        /** @var Order $order */
+        $order = $this->resource;
+        $shippingAddress = $order->shippingAddress;
+        $billingAddress = $order->billingAddress ?? $shippingAddress;
+        $total = $this->moneyValue($order->total);
+        $subTotal = $this->moneyValue($order->sub_total);
+        $taxTotal = $this->moneyValue($order->tax_total);
+        $shippingTotal = $this->resolvedShippingTotal($order);
+        $discountTotal = $this->moneyValue($order->discount_total);
+        $paymentStatus = $this->resolvePaymentStatus($order);
+        $fulfillmentStatus = $this->resolveFulfillmentStatus($order);
+        $meta = (array) ($order->meta ?? []);
 
         return [
-            'id' => (string) $this->id,
-            'reference' => $this->reference,
-            'status' => $this->status,
-            'status_label' => $this->translatedStatusLabel($this->status),
+            'id' => (string) $order->id,
+            'reference' => $order->reference,
+            'status' => $order->status,
+            'status_label' => $this->translatedStatusLabel($order->status),
             'payment_status' => $paymentStatus,
             'payment_status_label' => $this->formatStatusLabel($paymentStatus),
             'fulfillment_status' => $fulfillmentStatus,
             'fulfillment_status_label' => $this->formatStatusLabel($fulfillmentStatus),
-            'customer_email' => $this->customer_reference,
+            'customer_email' => $order->customer_reference,
             'payment_method' => $meta['payment_method'] ?? null,
             'payment_label' => $meta['payment_label'] ?? $this->formatPaymentLabel($meta['payment_method'] ?? null),
             'payment_instructions' => $meta['payment_instructions'] ?? null,
             'shipping_label' => $this->formatShippingLabel($meta['shipping_method'] ?? null),
             'delivered_at' => $meta['delivered_at'] ?? null,
-            'currency' => $this->currency_code,
+            'currency' => $order->currency_code,
             'total' => [
                 'formatted' => '$'.number_format($total, 2),
                 'decimal' => round($total, 2),
-                'currency' => $this->currency_code,
+                'currency' => $order->currency_code,
             ],
             'sub_total' => round($subTotal, 2),
             'tax_total' => round($taxTotal, 2),
             'shipping_total' => round($shippingTotal, 2),
             'discount_total' => round($discountTotal, 2),
-            'created_at' => $this->created_at->toDateTimeString(),
-            'lines' => $this->lines->map(fn ($line) => [
+            'created_at' => $order->created_at->toDateTimeString(),
+            'lines' => $order->lines->map(fn ($line) => [
                 'id' => $line->id,
                 'type' => $line->type,
                 'description' => $line->description,
@@ -86,7 +89,7 @@ class CustomerOrderResource extends JsonResource
             'shipments' => collect($meta['shipments'] ?? [])
                 ->filter(fn ($shipment) => is_array($shipment))
                 ->reject(fn ($shipment) => ($shipment['carrier'] ?? null) === 'manual'
-                    && ($shipment['tracking_number'] ?? null) === $this->reference)
+                    && ($shipment['tracking_number'] ?? null) === $order->reference)
                 ->map(fn ($shipment) => [
                     'id' => $shipment['id'] ?? null,
                     'tracking_number' => $shipment['tracking_number'] ?? null,
@@ -120,24 +123,30 @@ class CustomerOrderResource extends JsonResource
 
         $purchasable = $line->getRelationValue('purchasable');
 
-        if (! $purchasable || ! method_exists($purchasable, 'product') || ! $purchasable->product) {
+        if (! is_object($purchasable)) {
+            return null;
+        }
+
+        $product = $purchasable->getRelationValue('product');
+
+        if (! is_object($product)) {
             return null;
         }
 
         return ProductSyncService::normalizePublicImageUrl(
-            $purchasable->product->translateAttribute('image_url')
+            $product->translateAttribute('image_url')
         );
     }
 
-    private function resolvedShippingTotal(): float
+    private function resolvedShippingTotal(Order $order): float
     {
-        $shippingTotal = $this->moneyValue($this->shipping_total);
+        $shippingTotal = $this->moneyValue($order->shipping_total);
 
         if ($shippingTotal > 0) {
             return $shippingTotal;
         }
 
-        $shippingLine = $this->lines->firstWhere('type', 'shipping');
+        $shippingLine = $order->lines->firstWhere('type', 'shipping');
 
         if (! $shippingLine) {
             return 0.0;
@@ -146,19 +155,19 @@ class CustomerOrderResource extends JsonResource
         return $this->moneyValue($shippingLine->total);
     }
 
-    private function resolvePaymentStatus(): string
+    private function resolvePaymentStatus(Order $order): string
     {
         return app(OrderStateMachine::class)->resolvePaymentStatus(
-            (array) ($this->meta ?? []),
-            (string) $this->status,
+            (array) ($order->meta ?? []),
+            (string) $order->status,
         );
     }
 
-    private function resolveFulfillmentStatus(): string
+    private function resolveFulfillmentStatus(Order $order): string
     {
         return app(OrderStateMachine::class)->resolveFulfillmentStatus(
-            (array) ($this->meta ?? []),
-            (string) $this->status,
+            (array) ($order->meta ?? []),
+            (string) $order->status,
         );
     }
 
