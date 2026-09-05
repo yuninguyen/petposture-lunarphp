@@ -1193,6 +1193,11 @@ class CheckoutApiTest extends TestCase
                     'carrier' => 'ups',
                     'tracking_url' => 'https://www.ups.com/track?tracknum=1Z-CUSTOMER-BOUNDARY',
                     'status' => 'delivered',
+                    'provider_response' => ['raw' => 'INDEX-PROVIDER-RESPONSE-MUST-NOT-LEAK'],
+                    'label_id' => 'INDEX-LABEL-ID-MUST-NOT-LEAK',
+                    'internal_cost' => 1234,
+                    'payment_gateway' => 'INDEX-PAYMENT-GATEWAY-MUST-NOT-LEAK',
+                    'refund_id' => 'INDEX-REFUND-ID-MUST-NOT-LEAK',
                 ]],
             ]),
             'status' => 'delivered',
@@ -1258,7 +1263,31 @@ class CheckoutApiTest extends TestCase
         ] as $path) {
             $response->assertJsonMissingPath("data.0.{$path}");
         }
+        foreach (['provider_response', 'label_id', 'internal_cost', 'payment_gateway', 'refund_id'] as $path) {
+            $response->assertJsonMissingPath("data.0.shipments.0.{$path}");
+        }
 
+        $lineKeys = array_keys($response->json('data.0.lines.0'));
+        sort($lineKeys);
+        $this->assertSame([
+            'description', 'discount_total', 'id', 'image', 'quantity', 'sub_total',
+            'tax_total', 'total', 'type', 'unit_price',
+        ], $lineKeys);
+        $shippingAddressKeys = array_keys($response->json('data.0.shipping_address'));
+        sort($shippingAddressKeys);
+        $this->assertSame([
+            'city', 'country', 'first_name', 'last_name', 'line_one', 'line_two', 'phone',
+            'postcode', 'state',
+        ], $shippingAddressKeys);
+        $billingAddressKeys = array_keys($response->json('data.0.billing_address'));
+        sort($billingAddressKeys);
+        $this->assertSame([
+            'city', 'country', 'first_name', 'last_name', 'line_one', 'line_two', 'phone',
+            'postcode', 'state',
+        ], $billingAddressKeys);
+        $shipmentKeys = array_keys($response->json('data.0.shipments.0'));
+        sort($shipmentKeys);
+        $this->assertSame(['carrier', 'id', 'status', 'tracking_number', 'tracking_url'], $shipmentKeys);
         $orderKeys = array_keys($response->json('data.0'));
         sort($orderKeys);
         $this->assertSame([
@@ -1314,6 +1343,11 @@ class CheckoutApiTest extends TestCase
                     'carrier' => 'usps',
                     'tracking_url' => 'https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=9400-SHOW-BOUNDARY',
                     'status' => 'delivered',
+                    'provider_response' => ['raw' => 'SHOW-PROVIDER-RESPONSE-MUST-NOT-LEAK'],
+                    'label_id' => 'SHOW-LABEL-ID-MUST-NOT-LEAK',
+                    'internal_cost' => 5678,
+                    'payment_gateway' => 'SHOW-PAYMENT-GATEWAY-MUST-NOT-LEAK',
+                    'refund_id' => 'SHOW-REFUND-ID-MUST-NOT-LEAK',
                 ]],
             ]),
             'status' => 'delivered',
@@ -1371,7 +1405,31 @@ class CheckoutApiTest extends TestCase
         ] as $path) {
             $response->assertJsonMissingPath("data.{$path}");
         }
+        foreach (['provider_response', 'label_id', 'internal_cost', 'payment_gateway', 'refund_id'] as $path) {
+            $response->assertJsonMissingPath("data.shipments.0.{$path}");
+        }
 
+        $lineKeys = array_keys($response->json('data.lines.0'));
+        sort($lineKeys);
+        $this->assertSame([
+            'description', 'discount_total', 'id', 'image', 'quantity', 'sub_total',
+            'tax_total', 'total', 'type', 'unit_price',
+        ], $lineKeys);
+        $shippingAddressKeys = array_keys($response->json('data.shipping_address'));
+        sort($shippingAddressKeys);
+        $this->assertSame([
+            'city', 'country', 'first_name', 'last_name', 'line_one', 'line_two', 'phone',
+            'postcode', 'state',
+        ], $shippingAddressKeys);
+        $billingAddressKeys = array_keys($response->json('data.billing_address'));
+        sort($billingAddressKeys);
+        $this->assertSame([
+            'city', 'country', 'first_name', 'last_name', 'line_one', 'line_two', 'phone',
+            'postcode', 'state',
+        ], $billingAddressKeys);
+        $shipmentKeys = array_keys($response->json('data.shipments.0'));
+        sort($shipmentKeys);
+        $this->assertSame(['carrier', 'id', 'status', 'tracking_number', 'tracking_url'], $shipmentKeys);
         $orderKeys = array_keys($response->json('data'));
         sort($orderKeys);
         $this->assertSame([
