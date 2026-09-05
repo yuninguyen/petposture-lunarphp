@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import sharp from 'sharp';
 import { GET } from './route';
 
@@ -19,6 +21,20 @@ function settings(source: string | null) {
     headers: { 'Content-Type': 'application/json' },
   });
 }
+
+describe('legacy favicon.ico', () => {
+  it('is a valid icon directory containing 16, 32, and 48 pixel images', async () => {
+    const bytes = await readFile(join(process.cwd(), 'public/favicon.ico'));
+    expect([...bytes.subarray(0, 4)]).toEqual([0, 0, 1, 0]);
+    const count = bytes.readUInt16LE(4);
+    const sizes = Array.from({ length: count }, (_, index) => {
+      const width = bytes[6 + (index * 16)];
+      const height = bytes[7 + (index * 16)];
+      return [width || 256, height || 256];
+    });
+    expect(sizes).toEqual(expect.arrayContaining([[16, 16], [32, 32], [48, 48]]));
+  });
+});
 
 describe('GET /favicon.png', () => {
   it('normalizes an approved configured source to a 96x96 PNG', async () => {
