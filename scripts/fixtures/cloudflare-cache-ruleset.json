@@ -15,7 +15,7 @@
     {
       "ref": "api",
       "description": "Cache safe public catalog/content API GET endpoints (5 min edge TTL)",
-      "expression": "(http.host eq \"api.petposture.com\") and (http.request.method eq \"GET\") and (http.request.uri.path matches \"^/(catalog|content)/\")",
+      "expression": "(http.host eq \"api.petposture.com\") and (http.request.method eq \"GET\") and (http.request.uri.path eq \"/api/settings\" or http.request.uri.path eq \"/api/site-media\" or http.request.uri.path eq \"/api/checkout/payment-methods\" or http.request.uri.path eq \"/api/categories\" or http.request.uri.path eq \"/api/blog/categories\" or starts_with(http.request.uri.path, \"/api/products\") or starts_with(http.request.uri.path, \"/api/brands\") or starts_with(http.request.uri.path, \"/api/posts\") or starts_with(http.request.uri.path, \"/api/breeds\") or starts_with(http.request.uri.path, \"/api/solutions\"))",
       "action": "set_cache_settings",
       "action_parameters": {
         "cache": true,

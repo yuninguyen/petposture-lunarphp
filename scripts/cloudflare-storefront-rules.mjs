@@ -10,7 +10,7 @@ export const HOME_RULE_DESCRIPTION = 'Cache anonymous petposture.com homepage';
 const PHASE = 'http_request_cache_settings';
 const ARTIFACT_SCHEMA = 'petposture-cloudflare-cache-ruleset-export-v1';
 export const API_EXPRESSION = '(http.host eq "api.petposture.com") and (http.request.method eq "GET") and (http.request.uri.path matches "^/(catalog|content)/")';
-export const LIVE_API_EXPRESSION = '(http.host eq "api.petposture.com") and (http.request.method eq "GET") and (http.request.uri.path eq "/api/settings" or http.request.uri.path eq "/api/checkout/payment-methods" or http.request.uri.path eq "/api/categories" or http.request.uri.path eq "/api/blog/categories" or starts_with(http.request.uri.path, "/api/products") or starts_with(http.request.uri.path, "/api/brands") or starts_with(http.request.uri.path, "/api/posts"))';
+export const LIVE_API_EXPRESSION = '(http.host eq "api.petposture.com") and (http.request.method eq "GET") and (http.request.uri.path eq "/api/settings" or http.request.uri.path eq "/api/site-media" or http.request.uri.path eq "/api/checkout/payment-methods" or http.request.uri.path eq "/api/categories" or http.request.uri.path eq "/api/blog/categories" or starts_with(http.request.uri.path, "/api/products") or starts_with(http.request.uri.path, "/api/brands") or starts_with(http.request.uri.path, "/api/posts") or starts_with(http.request.uri.path, "/api/breeds") or starts_with(http.request.uri.path, "/api/solutions"))';
 const LEGACY_API_EXPRESSION = '(http.request.method eq "GET") and (http.request.uri.path matches "^/(catalog|content)/")';
 const SAFE_EARLIER_CACHE_EXPRESSIONS = new Set([
   '(http.host eq "petposture.com") and (http.request.uri.path matches "^/_next/static/")',

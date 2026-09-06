@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -15,11 +16,12 @@ import {
   runCommand,
   HOME_EXPRESSION,
   API_EXPRESSION,
+  LIVE_API_EXPRESSION,
 } from './cloudflare-storefront-rules.mjs';
 
 const fixture = JSON.parse(await readFile(new URL('./fixtures/cloudflare-cache-ruleset.json', import.meta.url), 'utf8'));
 const rules = fixture.rules;
-const LIVE_API_EXPRESSION = '(http.host eq "api.petposture.com") and (http.request.method eq "GET") and (http.request.uri.path eq "/api/settings" or http.request.uri.path eq "/api/checkout/payment-methods" or http.request.uri.path eq "/api/categories" or http.request.uri.path eq "/api/blog/categories" or starts_with(http.request.uri.path, "/api/products") or starts_with(http.request.uri.path, "/api/brands") or starts_with(http.request.uri.path, "/api/posts"))';
+const AUTHORITATIVE_LIVE_API_EXPRESSION_SHA256 = '7d8150a31baeda7b3d3453bb3b2c949187f6f686f3eff9988250943bba1bded9';
 
 function ruleset(overrides = {}) {
   return { ...structuredClone(fixture), ...overrides };
@@ -168,10 +170,14 @@ test('apply-home dry-run and execute atomically migrate broad HTML plus path-onl
   }
 });
 
+test('captured live API expression matches the authoritative fresh production SHA-256', () => {
+  assert.equal(createHash('sha256').update(LIVE_API_EXPRESSION).digest('hex'), AUTHORITATIVE_LIVE_API_EXPRESSION_SHA256);
+  assert.equal(rules.find((rule) => rule.ref === 'api').expression, LIVE_API_EXPRESSION);
+});
+
 test('apply-home accepts and preserves the exact current live hostname-scoped GET-only API allowlist', async () => {
-  const live = ruleset({
-    rules: rules.map((rule) => rule.ref === 'api' ? { ...rule, expression: LIVE_API_EXPRESSION } : rule),
-  });
+  const liveApiRule = rules.find((rule) => rule.ref === 'api');
+  const live = ruleset();
   const artifactDir = await mkdtemp(path.join(os.tmpdir(), 'cloudflare-live-api-'));
   const exportPath = path.join(artifactDir, 'fresh.json');
   await writeFile(exportPath, JSON.stringify(createExportArtifact(live)));
@@ -183,16 +189,25 @@ test('apply-home accepts and preserves the exact current live hostname-scoped GE
     artifactDir,
   });
   assert.deepEqual(requests.map(({ method }) => method), ['GET']);
-  assert.equal(result.request.rules.find((rule) => rule.ref === 'api').expression, LIVE_API_EXPRESSION);
+  assert.deepEqual(result.request.rules.find((rule) => rule.ref === 'api'), liveApiRule);
 });
 
 test('audit rejects near-misses of the exact current live API allowlist', () => {
   const reviewed = ruleset({
     rules: buildApplyRules(ruleset()).rules.map((rule) => rule.ref === 'api' ? { ...rule, expression: LIVE_API_EXPRESSION } : rule),
   });
+  const priorExpression = LIVE_API_EXPRESSION
+    .replace(' or http.request.uri.path eq "/api/site-media"', '')
+    .replace(' or starts_with(http.request.uri.path, "/api/breeds")', '')
+    .replace(' or starts_with(http.request.uri.path, "/api/solutions")', '');
   assert.equal(auditRuleset(reviewed).expected.api.reviewed, true);
   for (const expression of [
-    LIVE_API_EXPRESSION.replace('/api/posts"))', '/api/posts")) or (http.request.uri.path eq "/api/orders")'),
+    LIVE_API_EXPRESSION.replace(' or http.request.uri.path eq "/api/site-media"', ''),
+    LIVE_API_EXPRESSION.replace(' or starts_with(http.request.uri.path, "/api/breeds")', ''),
+    LIVE_API_EXPRESSION.replace(' or starts_with(http.request.uri.path, "/api/solutions")', ''),
+    priorExpression.replace('http.request.uri.path eq "/api/settings"', 'http.request.uri.path eq "/api/settings" or http.request.uri.path eq "/api/site-media"'),
+    priorExpression.replace('starts_with(http.request.uri.path, "/api/posts")', 'starts_with(http.request.uri.path, "/api/posts") or starts_with(http.request.uri.path, "/api/breeds")'),
+    priorExpression.replace('starts_with(http.request.uri.path, "/api/posts")', 'starts_with(http.request.uri.path, "/api/posts") or starts_with(http.request.uri.path, "/api/solutions")'),
     LIVE_API_EXPRESSION.replace('(http.request.method eq "GET")', '(http.request.method in {"GET" "POST"})'),
     LIVE_API_EXPRESSION.replace('api.petposture.com', 'petposture.com'),
     `${LIVE_API_EXPRESSION} or (http.request.uri.path eq "/api/orders")`,

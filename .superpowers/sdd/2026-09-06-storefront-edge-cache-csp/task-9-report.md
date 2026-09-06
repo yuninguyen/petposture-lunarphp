@@ -160,3 +160,48 @@ Completed the post-production tooling fixes with offline fixture coverage only. 
 
 - The protected VPS v5 export could not be read from this delegated runtime because SSH authentication was unavailable. The exact deployed path predicate was recovered from the repository's production rules backup and cross-checked against the Task 10/11 reports and current architecture documentation; the accepted form adds the Task 11-confirmed `api.petposture.com` host scope without changing that predicate.
 - This round deliberately made no network mutation. A future operator must still use a fresh trusted export and the existing dry-run/execute gates.
+
+## Production provenance check (2026-09-06T19:18:09.460Z)
+
+Read-only fresh production evidence was obtained from the live Cloudflare `http_request_cache_settings` entrypoint. Credentials were sourced only inside a non-tracing VPS process from `/opt/petposture/backend/.env`; no token, zone ID, cookie, or secret value was printed or stored. No apply, PUT, purge, or source edit was performed as part of the production check.
+
+- Fresh ruleset version: `5`
+- Total rules: `3`
+- Exact named-rule count for `Cache safe public catalog/content API GET endpoints (5 min edge TTL)`: `1`
+- Live expression SHA-256: `7d8150a31baeda7b3d3453bb3b2c949187f6f686f3eff9988250943bba1bded9`
+- Exported `LIVE_API_EXPRESSION` SHA-256: `6b6d08e1e847452c015549048caa1b80dcfdd0e97775f77639044a53d051d9a9`
+- Byte-for-byte equality: `false`
+- Normalized-whitespace equality: `false`
+- Verdict: **MISMATCH**
+
+The live rule remains host-scoped to `api.petposture.com`, method-scoped to `GET`, enabled, and uses `set_cache_settings`. Its exact paths are `/api/settings`, `/api/site-media`, `/api/checkout/payment-methods`, `/api/categories`, and `/api/blog/categories`; its prefixes are `/api/products`, `/api/brands`, `/api/posts`, `/api/breeds`, and `/api/solutions`. Compared with the current exported constant, production has exactly three additional allowlist entries: exact `/api/site-media`, prefix `/api/breeds`, and prefix `/api/solutions`. No current exported path was absent from production.
+
+The live API rule fields are `action`, `action_parameters`, `description`, `enabled`, `expression`, `id`, `last_updated`, `ref`, and `version`. The non-expression fields remain compatible with the clone-preservation behavior of `buildApplyRules`; an accepted API rule is preserved field-for-field, including response metadata and action parameters. However, invoking `buildApplyRules` against this fresh live ruleset fails closed before producing an apply rules array because the live expression is outside the finite reviewed set. Existing settings are unchanged: browser TTL is `override_origin` with 60 seconds, edge TTL is `override_origin` with 300 seconds, and `cache` is `true`.
+
+## Task 9 Fix Round 4 follow-up (fresh provenance correction)
+
+### Status
+
+Updated the reviewed live API expression and captured production fixture to the exact fresh v5 expression from the read-only production provenance above. No Cloudflare mutation, PUT, purge, or subagent activity occurred.
+
+### Changes
+
+- `LIVE_API_EXPRESSION` now preserves the authoritative live condition order and parentheses while adding exactly `/api/site-media`, `/api/breeds`, and `/api/solutions`.
+- The captured production fixture stores the exact live API rule fields needed to verify byte-for-byte preservation by `buildApplyRules`; writable PUT sanitation remains unchanged.
+- Added a SHA-256 assertion pinning the captured expression to authoritative hash `7d8150a31baeda7b3d3453bb3b2c949187f6f686f3eff9988250943bba1bded9`.
+- Near-miss coverage now rejects removing or adding each of the three newly confirmed endpoint entries, plus method broadening, host broadening, and an appended `or` broadening.
+
+### TDD and verification evidence
+
+1. The provenance hash test first failed with the prior constant hash `6b6d08e1e847452c015549048caa1b80dcfdd0e97775f77639044a53d051d9a9`, and the near-miss suite first accepted the expression missing the three newly confirmed entries.
+2. After the minimal expression/fixture update, `node --test scripts/cloudflare-storefront-rules.test.mjs` passed 25/25.
+3. `npm run test:storefront-cache-script` passed 33/33.
+4. `node --check` passed for both Task 9 script files, and `git diff --check` passed for the Task 9 files/report (with only existing LF-to-CRLF warnings).
+
+### Fresh-source provenance
+
+- Source: read-only live Cloudflare `http_request_cache_settings` export from the protected VPS, as recorded above.
+- Fresh ruleset version: `5`; exact named API rule count: `1`.
+- Authoritative exact live expression SHA-256: `7d8150a31baeda7b3d3453bb3b2c949187f6f686f3eff9988250943bba1bded9`.
+- Confirmed exact additions relative to the prior constant: `/api/site-media` (exact), `/api/breeds` (prefix), `/api/solutions` (prefix).
+- No credentials, tokens, zone IDs, Cloudflare writes, or production mutations were performed during this follow-up.
