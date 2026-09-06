@@ -72,9 +72,13 @@ describe('content security policy', () => {
     "default-src 'nonce-aB09+/_-'",
     "default-src 'self'; script-src 'nonce-aB09+/_-' 'strict-dynamic'",
     '<script nonce="abc"></script>',
+    '<script title=example nonce="abc"></script>',
     '<script nonce="abc def"></script>',
     "<style nonce='abc'></style>",
+    "<style title='example' nonce='abc'></style>",
     '<script nonce=abc></script>',
+    '<script title=example nonce=abc></script>',
+    '<script title=">" nonce="abc"></script>',
     '<script nonce></script>',
   ])('detects an actual request nonce source in %s', (value) => {
     expect(containsRequestNonce(value)).toBe(true);
@@ -91,6 +95,7 @@ describe('content security policy', () => {
     '<div data-nonce="abc"></div>',
     '<div aria-nonce="abc"></div>',
     '<div nonce-value="abc"></div>',
+    '<div title=" nonce=abc "></div>',
   ])('rejects nonce-like text without a valid request nonce in %s', (value) => {
     expect(containsRequestNonce(value)).toBe(false);
   });

@@ -46,8 +46,75 @@ export function containsRequestNonce(value: string): boolean {
         return true;
     }
 
-    const nonceAttribute = /(?:^|\s)nonce(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?(?=\s|\/?>)/i;
-    return value.match(/<[A-Za-z][^>]*>/g)?.some((tag) => nonceAttribute.test(tag)) === true;
+    for (let index = 0; index < value.length; index += 1) {
+        if (value[index] !== "<" || !/[A-Za-z]/.test(value[index + 1] ?? "")) {
+            continue;
+        }
+
+        index += 2;
+        while (index < value.length && !/[\s/>]/.test(value[index])) {
+            index += 1;
+        }
+
+        while (index < value.length) {
+            while (/\s/.test(value[index] ?? "")) {
+                index += 1;
+            }
+            if (value[index] === ">" || (value[index] === "/" && value[index + 1] === ">")) {
+                break;
+            }
+
+            const nameStart = index;
+            while (index < value.length && !/[\s/>=]/.test(value[index])) {
+                index += 1;
+            }
+            const isNonce = value.slice(nameStart, index).toLowerCase() === "nonce";
+
+            while (/\s/.test(value[index] ?? "")) {
+                index += 1;
+            }
+            if (value[index] !== "=") {
+                if (isNonce) {
+                    return true;
+                }
+                continue;
+            }
+
+            index += 1;
+            while (/\s/.test(value[index] ?? "")) {
+                index += 1;
+            }
+
+            const quote = value[index] === "\"" || value[index] === "'" ? value[index] : undefined;
+            if (quote) {
+                index += 1;
+                while (index < value.length && value[index] !== quote) {
+                    index += 1;
+                }
+                if (index === value.length) {
+                    return false;
+                }
+                index += 1;
+                if (isNonce) {
+                    return true;
+                }
+                continue;
+            }
+
+            const valueStart = index;
+            while (index < value.length && !/[\s>]/.test(value[index])) {
+                if (/["'=<`]/.test(value[index])) {
+                    return false;
+                }
+                index += 1;
+            }
+            if (isNonce && index > valueStart) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 export function buildContentSecurityPolicy(nonce: string): string {

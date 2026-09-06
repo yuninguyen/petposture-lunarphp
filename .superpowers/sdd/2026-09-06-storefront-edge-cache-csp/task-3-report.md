@@ -242,3 +242,89 @@ The broad result includes unrelated pre-existing worktree changes. Task 3 symbol
 
 - `containsRequestNonce` intentionally validates CSP nonce source syntax more narrowly than HTML attribute value syntax: CSP nonce source values cannot contain whitespace, while quoted HTML nonce attribute values are still recognized as actual attributes.
 - Unrelated worktree modifications remain present and must stay outside this fix commit.
+
+## Fix round 2
+
+### Status
+
+Replaced the quote-blind HTML tag regular expressions with a small opening-tag/attribute scanner.
+
+### Impact before edit
+
+The index was stale at `b194c8e` versus current `256b2d4`, so it was refreshed first:
+
+```text
+npx gitnexus analyze --skip-agents-md
+Repository indexed successfully
+15,018 nodes | 32,444 edges | 1851 clusters | 300 flows
+```
+
+Then the required repository-specific impact check was run:
+
+```text
+npx gitnexus impact containsRequestNonce --direction upstream --repo storefront-edge-cache-csp --depth 3
+```
+
+Result:
+
+- Risk: LOW
+- Direct graph dependents: 0
+- Affected processes: 0
+- Affected modules: 0
+
+### TDD evidence
+
+Added the exact review regressions plus single-quoted, double-quoted, and unquoted attribute cases before changing the detector:
+
+```text
+<div title=" nonce=abc "></div>
+<script title=">" nonce="abc"></script>
+```
+
+RED result from `npx vitest run lib/content-security-policy.test.ts`:
+
+```text
+Test Files 1 failed (1)
+Tests 2 failed | 25 passed (27)
+```
+
+The detector false-positived nonce text inside the `title` value and stopped the opening tag at the quoted `>` before reaching the real nonce attribute.
+
+### Implementation
+
+- Scans opening tags character-by-character while respecting single- and double-quoted attribute values.
+- Compares complete attribute names case-insensitively to exactly `nonce`, so prefixed names remain rejected.
+- Accepts valueless nonce attributes and quoted or valid non-empty unquoted nonce values.
+- Adds no DOM or parser dependency.
+
+### Verification
+
+```text
+npx vitest run lib/content-security-policy.test.ts
+PASS: 1 file, 27 tests
+
+npm test
+PASS: 3 files, 61 tests
+
+node --test lib/content-security-policy.test.mjs
+PASS: 2 tests
+
+git diff --check -- frontend/lib/content-security-policy.ts frontend/lib/content-security-policy.test.ts
+PASS (no output)
+```
+
+Pre-commit GitNexus change detection was run for repository `storefront-edge-cache-csp` with scope `all`:
+
+```text
+Changed: 14 symbols in 9 tracked files
+Affected processes: 0
+Risk: LOW
+```
+
+The broad result includes unrelated pre-existing worktree changes. The Task 3 production symbol detected was `containsRequestNonce` (plus scanner-local constants), with no affected execution flows. This fix commit stages only the CSP implementation, CSP tests, and this report.
+
+### Concerns / follow-up
+
+- The scanner is intentionally limited to opening-tag and attribute syntax needed by nonce detection; it is not a general HTML parser.
+- The legacy Node CSP suite passes but continues to emit the pre-existing module-type warning.
+- Unrelated worktree modifications remain unstaged and outside the Task 3 fix commit.
