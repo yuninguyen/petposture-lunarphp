@@ -126,3 +126,37 @@ Closed the remaining apply guard finding with offline end-to-end coverage. No Cl
 - Refreshed the stale index at commit `5ac7e92` before editing.
 - Upstream impact for `runCommand` was LOW: two direct dependants and zero affected execution flows.
 - Upstream impact for `auditRuleset` was LOW: three direct callers, one script module, and zero affected execution flows.
+
+## Task 9 Fix Round 4
+
+### Status
+
+Completed the post-production tooling fixes with offline fixture coverage only. No Cloudflare mutation was made.
+
+### Changes
+
+- Added the exact deployed hostname-scoped, GET-only API expression to the finite reviewed semantics set. It preserves the existing allowlist for `/api/settings`, `/api/checkout/payment-methods`, `/api/categories`, `/api/blog/categories`, and the `/api/products`, `/api/brands`, and `/api/posts` prefixes.
+- `auditRuleset()` and `apply-home` accept that exact live expression in addition to the existing reviewed expression; `apply-home` clones and preserves an already accepted live API rule unchanged.
+- Added fail-closed tests for near-misses that add a path, permit an unsafe method, use the wrong host, or append an `or` broadening.
+- Full-ruleset apply and restore PUT payloads now contain only writable top-level fields: `name`, `description`, `phase`, and `rules`. Response-only `kind`, `version`, and `last_updated` are omitted.
+- Stock restore execute coverage now succeeds without the Task 11 in-memory adapter while preserving the exact exported rule array, evaluation order, refs, and extra rule fields.
+- All existing export trust, identity/version/hash, precedence, confirmation, dry-run, mutation-result, rule-order, and origin-policy guards remain in place.
+
+### TDD and verification evidence
+
+1. The new focused suite was observed failing in four expected areas: live API acceptance/preservation, live API reviewed status, apply payload generation, and restore payload response-field omission.
+2. `node --test scripts/cloudflare-storefront-rules.test.mjs` — 24/24 passing.
+3. `npm run test:storefront-cache-script` — 32/32 passing.
+4. `node --check scripts/cloudflare-storefront-rules.mjs` and `node --check scripts/cloudflare-storefront-rules.test.mjs` — passing.
+5. `git diff --check` for the Task 9 files — passing, with only the worktree's existing LF-to-CRLF warnings.
+
+### GitNexus
+
+- The index was current at commit `495e3ed` before editing.
+- Upstream impact remained LOW: `auditRuleset` had three direct dependants, `buildApplyRules` one, and `runCommand` two; no indexed execution flows were affected.
+- The installed GitNexus CLI does not expose `detect_changes`; pre-commit change detection therefore used the current indexed impact results plus exact staged-path and staged-diff inspection.
+
+### Concerns
+
+- The protected VPS v5 export could not be read from this delegated runtime because SSH authentication was unavailable. The exact deployed path predicate was recovered from the repository's production rules backup and cross-checked against the Task 10/11 reports and current architecture documentation; the accepted form adds the Task 11-confirmed `api.petposture.com` host scope without changing that predicate.
+- This round deliberately made no network mutation. A future operator must still use a fresh trusted export and the existing dry-run/execute gates.

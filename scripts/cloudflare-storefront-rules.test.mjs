@@ -19,6 +19,7 @@ import {
 
 const fixture = JSON.parse(await readFile(new URL('./fixtures/cloudflare-cache-ruleset.json', import.meta.url), 'utf8'));
 const rules = fixture.rules;
+const LIVE_API_EXPRESSION = '(http.host eq "api.petposture.com") and (http.request.method eq "GET") and (http.request.uri.path eq "/api/settings" or http.request.uri.path eq "/api/checkout/payment-methods" or http.request.uri.path eq "/api/categories" or http.request.uri.path eq "/api/blog/categories" or starts_with(http.request.uri.path, "/api/products") or starts_with(http.request.uri.path, "/api/brands") or starts_with(http.request.uri.path, "/api/posts"))';
 
 function ruleset(overrides = {}) {
   return { ...structuredClone(fixture), ...overrides };
@@ -164,6 +165,41 @@ test('apply-home dry-run and execute atomically migrate broad HTML plus path-onl
     assert.equal(request.rules.filter((rule) => rule.description === API_RULE_DESCRIPTION).length, 1);
     assert.equal(request.rules.find((rule) => rule.description === API_RULE_DESCRIPTION).expression, API_EXPRESSION);
     assert.equal(request.rules.find((rule) => rule.description === HTML_RULE_DESCRIPTION).expression, HOME_EXPRESSION);
+  }
+});
+
+test('apply-home accepts and preserves the exact current live hostname-scoped GET-only API allowlist', async () => {
+  const live = ruleset({
+    rules: rules.map((rule) => rule.ref === 'api' ? { ...rule, expression: LIVE_API_EXPRESSION } : rule),
+  });
+  const artifactDir = await mkdtemp(path.join(os.tmpdir(), 'cloudflare-live-api-'));
+  const exportPath = path.join(artifactDir, 'fresh.json');
+  await writeFile(exportPath, JSON.stringify(createExportArtifact(live)));
+  const requests = [];
+  const result = await runCommand(['apply-home', '--from-export', exportPath], {
+    env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+    fetchImpl: async (_url, options) => { requests.push(options); return cloudflareResponse(live); },
+    stdout: output().stream,
+    artifactDir,
+  });
+  assert.deepEqual(requests.map(({ method }) => method), ['GET']);
+  assert.equal(result.request.rules.find((rule) => rule.ref === 'api').expression, LIVE_API_EXPRESSION);
+});
+
+test('audit rejects near-misses of the exact current live API allowlist', () => {
+  const reviewed = ruleset({
+    rules: buildApplyRules(ruleset()).rules.map((rule) => rule.ref === 'api' ? { ...rule, expression: LIVE_API_EXPRESSION } : rule),
+  });
+  assert.equal(auditRuleset(reviewed).expected.api.reviewed, true);
+  for (const expression of [
+    LIVE_API_EXPRESSION.replace('/api/posts"))', '/api/posts")) or (http.request.uri.path eq "/api/orders")'),
+    LIVE_API_EXPRESSION.replace('(http.request.method eq "GET")', '(http.request.method in {"GET" "POST"})'),
+    LIVE_API_EXPRESSION.replace('api.petposture.com', 'petposture.com'),
+    `${LIVE_API_EXPRESSION} or (http.request.uri.path eq "/api/orders")`,
+  ]) {
+    assert.throws(() => auditRuleset(ruleset({
+      rules: reviewed.rules.map((rule) => rule.ref === 'api' ? { ...rule, expression } : rule),
+    })), /semantic|reviewed|safe/i, expression);
   }
 });
 
@@ -373,6 +409,58 @@ test('mutation failures are distinguishable from post-PUT artifact failures with
     },
   }), (error) => error.mutationSucceeded === true && error.result?.version === 'v8' && /MUTATION SUCCEEDED|artifact/i.test(error.message));
   assert.equal(puts, 1);
+});
+
+test('apply-home PUT omits response-only top-level fields and preserves writable metadata plus exact live API rule', async () => {
+  const live = ruleset({
+    description: 'live description',
+    last_updated: '2026-09-06T19:00:00Z',
+    rules: rules.map((rule) => rule.ref === 'api' ? { ...rule, expression: LIVE_API_EXPRESSION } : rule),
+  });
+  const artifactDir = await mkdtemp(path.join(os.tmpdir(), 'cloudflare-apply-payload-'));
+  const exportPath = path.join(artifactDir, 'fresh.json');
+  await writeFile(exportPath, JSON.stringify(createExportArtifact(live)));
+  const requests = [];
+  await runCommand(['apply-home', '--from-export', exportPath, '--execute'], {
+    env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+    fetchImpl: async (_url, options) => {
+      requests.push(options);
+      return cloudflareResponse(options.method === 'PUT' ? { ...live, version: 'v8' } : live);
+    },
+    stdout: output().stream,
+    artifactDir,
+  });
+  const request = JSON.parse(requests[1].body);
+  assert.deepEqual(Object.keys(request), ['name', 'description', 'phase', 'rules']);
+  assert.deepEqual({ name: request.name, description: request.description, phase: request.phase }, {
+    name: live.name, description: live.description, phase: live.phase,
+  });
+  assert.equal(request.rules.find((rule) => rule.ref === 'api').expression, LIVE_API_EXPRESSION);
+});
+
+test('stock restore execute omits response-only top-level fields and preserves exact exported rules/order/refs', async () => {
+  const artifactDir = await mkdtemp(path.join(os.tmpdir(), 'cloudflare-restore-payload-'));
+  const exported = ruleset({
+    description: 'restore description',
+    last_updated: '2026-09-06T19:00:00Z',
+    rules: rules.map((rule, index) => ({ ...rule, ref: `restore-${index}`, marker: index })),
+  });
+  const exportPath = path.join(artifactDir, 'fresh.json');
+  await writeFile(exportPath, JSON.stringify(createExportArtifact(exported)));
+  const requests = [];
+  await runCommand(['restore', '--from-export', exportPath, '--confirm-restore', '--execute'], {
+    env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+    fetchImpl: async (_url, options) => {
+      requests.push(options);
+      return cloudflareResponse(options.method === 'PUT' ? { ...exported, version: 'v8' } : exported);
+    },
+    stdout: output().stream,
+    artifactDir,
+  });
+  const request = JSON.parse(requests[1].body);
+  assert.deepEqual(Object.keys(request), ['name', 'description', 'phase', 'rules']);
+  assert.deepEqual(request.rules, exported.rules);
+  assert.deepEqual(request.rules.map((rule) => rule.ref), exported.rules.map((rule) => rule.ref));
 });
 
 test('all generated mutation payloads preserve fields/order/refs and contain no override_origin anywhere', () => {

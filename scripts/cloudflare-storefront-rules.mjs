@@ -10,10 +10,12 @@ export const HOME_RULE_DESCRIPTION = 'Cache anonymous petposture.com homepage';
 const PHASE = 'http_request_cache_settings';
 const ARTIFACT_SCHEMA = 'petposture-cloudflare-cache-ruleset-export-v1';
 export const API_EXPRESSION = '(http.host eq "api.petposture.com") and (http.request.method eq "GET") and (http.request.uri.path matches "^/(catalog|content)/")';
+export const LIVE_API_EXPRESSION = '(http.host eq "api.petposture.com") and (http.request.method eq "GET") and (http.request.uri.path eq "/api/settings" or http.request.uri.path eq "/api/checkout/payment-methods" or http.request.uri.path eq "/api/categories" or http.request.uri.path eq "/api/blog/categories" or starts_with(http.request.uri.path, "/api/products") or starts_with(http.request.uri.path, "/api/brands") or starts_with(http.request.uri.path, "/api/posts"))';
 const LEGACY_API_EXPRESSION = '(http.request.method eq "GET") and (http.request.uri.path matches "^/(catalog|content)/")';
 const SAFE_EARLIER_CACHE_EXPRESSIONS = new Set([
   '(http.host eq "petposture.com") and (http.request.uri.path matches "^/_next/static/")',
   API_EXPRESSION,
+  LIVE_API_EXPRESSION,
   LEGACY_API_EXPRESSION,
 ]);
 export const HOME_EXPRESSION = [
@@ -84,7 +86,7 @@ export function auditRuleset(ruleset, { throwOnFailure = true } = {}) {
   const apiExpression = apiRules[0]?.expression;
   const htmlReviewed = htmlRules.length === 1 && exactExpression(htmlExpression, HOME_EXPRESSION);
   const htmlLegacy = htmlRules.length === 1 && exactExpression(htmlExpression, LEGACY_HTML_EXPRESSION);
-  const apiReviewed = apiRules.length === 1 && exactExpression(apiExpression, API_EXPRESSION);
+  const apiReviewed = apiRules.length === 1 && [API_EXPRESSION, LIVE_API_EXPRESSION].some((reviewed) => exactExpression(apiExpression, reviewed));
   const apiLegacy = apiRules.length === 1 && exactExpression(apiExpression, LEGACY_API_EXPRESSION);
   if (htmlRules.length === 1 && !htmlReviewed) {
     failures.push(htmlLegacy
@@ -153,7 +155,7 @@ function replaceBroadHtmlRule(rule) {
 }
 
 function scopeApiRule(rule) {
-  if (exactExpression(rule.expression, API_EXPRESSION)) return clone(rule);
+  if ([API_EXPRESSION, LIVE_API_EXPRESSION].some((reviewed) => exactExpression(rule.expression, reviewed))) return clone(rule);
   const legacyPathOnly = exactExpression(rule.expression, LEGACY_API_EXPRESSION);
   if (!legacyPathOnly) throw new Error(`${API_RULE_DESCRIPTION} is not the reviewed safe legacy path-only expression`);
   return { ...clone(rule), expression: API_EXPRESSION };
@@ -313,7 +315,7 @@ export async function runCommand(argv, {
     const rollbackArtifact = createExportArtifact(live);
     const rollbackFile = await artifactWriter(rollbackArtifact, { artifactDir, suffix: '-pre-apply-rollback' });
     const update = buildApplyRules(live);
-    const request = { name: live.name, description: live.description, kind: live.kind, phase: live.phase, rules: update.rules };
+    const request = { name: live.name, description: live.description, phase: live.phase, rules: update.rules };
     if (!options.execute) {
       stdout.write(`DRY RUN: no Cloudflare mutation performed\nRollback export ${rollbackFile}\nWould atomically PUT ${update.rules.length} rules\n`);
       return { command, dryRun: true, rollbackFile, request };
@@ -346,7 +348,7 @@ export async function runCommand(argv, {
   if (String(exported.id) !== String(live.id)) throw new Error('Restore export ruleset ID does not match the fresh live ruleset ID');
   const staleVersion = String(exported.version) !== String(live.version);
   if (staleVersion) stdout.write(`STALE VERSION WARNING: intentionally restoring exported version ${exported.version} over live version ${live.version}.\n`);
-  const request = { name: exported.name, description: exported.description, kind: exported.kind, phase: exported.phase, rules: clone(exported.rules) };
+  const request = { name: exported.name, description: exported.description, phase: exported.phase, rules: clone(exported.rules) };
   if (!options.execute) {
     stdout.write(`DRY RUN: no Cloudflare mutation performed\nWould restore ${exported.rules.length} exact exported rules from ${options.fromExport}\n`);
     return { command, dryRun: true, request };
