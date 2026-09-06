@@ -151,3 +151,94 @@ Additional repository-wide checks exposed pre-existing/non-Task-3 harness issues
 - `frontend/proxy.ts` still consumes the compatibility alias by design. Task 4 must migrate it to select the public or private builder and can then remove the alias.
 - `frontend/package.json` currently lists an explicit configured test set that does not include the new CSP test; Task 3’s required focused command was run directly. The package file is outside Task 3 scope and was not modified.
 - The worktree remains dirty with unrelated prior-task changes. Only Task 3 paths are included in the Task 3 commit.
+
+## Fix round 1
+
+### Status
+
+Addressed the Task 3 review findings with focused changes to the nonce detector and CSP tests.
+
+### Impact before edit
+
+The stale GitNexus index was refreshed at commit `b194c8e` with:
+
+```text
+npx gitnexus analyze . --skip-agents-md
+```
+
+The required upstream impact check used repository `storefront-edge-cache-csp`:
+
+```text
+npx gitnexus impact containsRequestNonce --direction upstream --repo storefront-edge-cache-csp --depth 3
+```
+
+Result:
+
+- Risk: LOW
+- Direct graph dependents: 0
+- Affected processes: 0
+- Affected modules: 0
+- GitNexus context showed the focused CSP test file as the only incoming reference.
+
+### TDD evidence
+
+Added focused positive and negative cases before changing `containsRequestNonce`, then ran:
+
+```text
+npx vitest run lib/content-security-policy.test.ts
+```
+
+RED result:
+
+```text
+Test Files 1 failed (1)
+Tests 6 failed | 13 passed (19)
+```
+
+The expected failures demonstrated false positives for `data-nonce`, `aria-nonce`, and CSP nonce values containing whitespace. Additional positive cases established that a CSP nonce source may occur in directives such as `default-src`, while an actual HTML `nonce` attribute follows HTML attribute syntax and may be empty or contain whitespace when quoted.
+
+After the minimal implementation changes, the focused result was:
+
+```text
+Test Files 1 passed (1)
+Tests 22 passed (22)
+```
+
+### Implementation
+
+- CSP detection now tokenizes directives and accepts only complete quoted `'nonce-<base64-value>'` source tokens, rejecting malformed values containing whitespace.
+- HTML detection now examines opening tags and matches only an actual whitespace-delimited `nonce` attribute, rejecting `data-nonce`, `aria-nonce`, `nonce-value`, and nonce-like prose.
+- Origin-preservation tests now extract the `script-src` directive and assert approved script origins within that directive rather than anywhere in the policy.
+
+### Verification
+
+```text
+npx vitest run lib/content-security-policy.test.ts
+PASS: 1 file, 22 tests
+
+npm test
+PASS: 3 files, 61 tests
+
+node --test lib/content-security-policy.test.mjs
+PASS: 2 tests
+
+git diff --check -- frontend/lib/content-security-policy.ts frontend/lib/content-security-policy.test.ts
+PASS (no output)
+```
+
+The legacy Node test still emits the pre-existing module-type warning documented above; it has zero test failures.
+
+Pre-commit GitNexus change detection was run through the local GitNexus tool endpoint with repository `storefront-edge-cache-csp` and scope `all`:
+
+```text
+Changes: 9 files, 13 symbols
+Affected processes: 0
+Risk level: low
+```
+
+The broad result includes unrelated pre-existing worktree changes. Task 3 symbols detected were `containsRequestNonce` plus test-local variables in `frontend/lib/content-security-policy.test.ts`; staging remains restricted to the two CSP files and this report.
+
+### Concerns / follow-up
+
+- `containsRequestNonce` intentionally validates CSP nonce source syntax more narrowly than HTML attribute value syntax: CSP nonce source values cannot contain whitespace, while quoted HTML nonce attribute values are still recognized as actual attributes.
+- Unrelated worktree modifications remain present and must stay outside this fix commit.

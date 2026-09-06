@@ -36,7 +36,18 @@ export function buildPrivateContentSecurityPolicy(nonce: string): string {
 }
 
 export function containsRequestNonce(value: string): boolean {
-    return /'nonce-[^']+'|\bnonce\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/i.test(value);
+    const nonceSource = /^'nonce-[A-Za-z0-9+/_-]+={0,2}'$/i;
+    const hasCspNonce = value.split(";").some((directive) => {
+        const sources = directive.trim().split(/\s+/);
+        return sources.slice(1).some((source) => nonceSource.test(source));
+    });
+
+    if (hasCspNonce) {
+        return true;
+    }
+
+    const nonceAttribute = /(?:^|\s)nonce(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?(?=\s|\/?>)/i;
+    return value.match(/<[A-Za-z][^>]*>/g)?.some((tag) => nonceAttribute.test(tag)) === true;
 }
 
 export function buildContentSecurityPolicy(nonce: string): string {

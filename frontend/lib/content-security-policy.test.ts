@@ -28,6 +28,10 @@ const preservedScriptOrigins = [
   'https://challenges.cloudflare.com',
 ];
 
+function extractDirective(policy: string, directive: string): string {
+  return policy.split('; ').find((part) => part.startsWith(`${directive} `)) ?? '';
+}
+
 describe('content security policy', () => {
   it('builds deterministic public CSP without nonce or strict-dynamic', () => {
     const first = buildPublicContentSecurityPolicy();
@@ -52,8 +56,10 @@ describe('content security policy', () => {
     ['public', buildPublicContentSecurityPolicy()],
     ['private', buildPrivateContentSecurityPolicy('abc')],
   ])('preserves existing origins and restrictive directives in the %s CSP', (_, policy) => {
+    const scriptSource = extractDirective(policy, 'script-src');
+
     for (const origin of preservedScriptOrigins) {
-      expect(policy).toContain(origin);
+      expect(scriptSource).toContain(origin);
     }
     for (const directive of preservedDirectives) {
       expect(policy).toContain(directive);
@@ -61,11 +67,31 @@ describe('content security policy', () => {
     expect(policy).toMatch(/connect-src 'self' https: wss:/);
   });
 
-  it('detects request nonce sources without matching unrelated text', () => {
-    expect(containsRequestNonce("script-src 'self' 'nonce-abc'")).toBe(true);
-    expect(containsRequestNonce('<script nonce="abc"></script>')).toBe(true);
-    expect(containsRequestNonce('<style nonce=abc></style>')).toBe(true);
-    expect(containsRequestNonce('nonce-value')).toBe(false);
-    expect(containsRequestNonce("script-src 'self' 'unsafe-inline'")).toBe(false);
+  it.each([
+    "script-src 'self' 'nonce-abc'",
+    "default-src 'nonce-aB09+/_-'",
+    "default-src 'self'; script-src 'nonce-aB09+/_-' 'strict-dynamic'",
+    '<script nonce="abc"></script>',
+    '<script nonce="abc def"></script>',
+    "<style nonce='abc'></style>",
+    '<script nonce=abc></script>',
+    '<script nonce></script>',
+  ])('detects an actual request nonce source in %s', (value) => {
+    expect(containsRequestNonce(value)).toBe(true);
+  });
+
+  it.each([
+    'data-nonce="abc"',
+    'aria-nonce="abc"',
+    'nonce-value="abc"',
+    'the page nonce is abc',
+    "script-src 'self' 'unsafe-inline'",
+    "script-src 'nonce-abc def'",
+    "script-src 'nonce- abc'",
+    '<div data-nonce="abc"></div>',
+    '<div aria-nonce="abc"></div>',
+    '<div nonce-value="abc"></div>',
+  ])('rejects nonce-like text without a valid request nonce in %s', (value) => {
+    expect(containsRequestNonce(value)).toBe(false);
   });
 });
