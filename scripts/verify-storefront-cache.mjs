@@ -17,31 +17,66 @@ function hasNonce(value) {
   return /(?:nonce[-=]["']?|\bnonce=)[^\s;>"']+/i.test(value);
 }
 
-export function evaluateResponse({ scenario, expectedCacheable, headers, body, expectation = 'baseline' }) {
+function cacheDirectives(value) {
+  return new Set((value ?? '')
+    .split(',')
+    .map((directive) => directive.trim().split('=', 1)[0].toLowerCase())
+    .filter(Boolean));
+}
+
+export function evaluateResponse({
+  scenario,
+  expectedCacheable,
+  headers,
+  body,
+  expectation = 'baseline',
+  sample = 'response',
+  requireCloudflareHit = expectation === 'cloudflare' && expectedCacheable,
+}) {
   const cacheControl = headers.get('cache-control');
+  const directives = cacheDirectives(cacheControl);
   const cfCacheStatus = headers.get('cf-cache-status');
   const setCookie = headers.get('set-cookie');
   const csp = headers.get('content-security-policy');
   const reasons = [];
+  const label = `${scenario} ${sample}`;
+
+  if (expectation === 'cloudflare' && !cfCacheStatus) {
+    reasons.push(`${label} must include CF-Cache-Status in cloudflare mode`);
+  }
 
   if (!expectedCacheable && cfCacheStatus?.toUpperCase() === 'HIT') {
-    reasons.push(`${scenario} must never be HIT`);
+    reasons.push(`${label} must never be HIT`);
   }
 
   if (expectedCacheable && setCookie) {
-    reasons.push(`${scenario} cacheable HTML must not emit Set-Cookie`);
+    reasons.push(`${label} cacheable HTML must not emit Set-Cookie`);
   }
 
   if (expectedCacheable && (hasNonce(csp ?? '') || hasNonce(body))) {
-    reasons.push(`${scenario} cacheable HTML must not contain a nonce`);
+    reasons.push(`${label} cacheable HTML must not contain a nonce`);
   }
 
-  if (expectedCacheable && expectation !== 'baseline' && !/(?:^|,)\s*public\b/i.test(cacheControl ?? '')) {
-    reasons.push(`${scenario} must use public Cache-Control in ${expectation} mode`);
+  if (expectedCacheable && expectation !== 'baseline') {
+    if (!directives.has('public') || !directives.has('s-maxage')) {
+      reasons.push(`${label} must use public and s-maxage Cache-Control in ${expectation} mode`);
+    }
+    if (['private', 'no-store', 'no-cache'].some((directive) => directives.has(directive))) {
+      reasons.push(`${label} must not use private, no-store, or no-cache Cache-Control in ${expectation} mode`);
+    }
   }
 
-  if (expectedCacheable && expectation === 'cloudflare' && cfCacheStatus?.toUpperCase() !== 'HIT') {
-    reasons.push(`${scenario} warm response must be HIT in cloudflare mode`);
+  if (!expectedCacheable) {
+    if (directives.has('public') || directives.has('s-maxage')) {
+      reasons.push(`${label} must not use public or s-maxage Cache-Control`);
+    }
+    if (expectation !== 'baseline' && (!directives.has('private') || !directives.has('no-store'))) {
+      reasons.push(`${label} must use private, no-store Cache-Control in ${expectation} mode`);
+    }
+  }
+
+  if (requireCloudflareHit && cfCacheStatus?.toUpperCase() !== 'HIT') {
+    reasons.push(`${label} must be HIT in cloudflare mode`);
   }
 
   return { pass: reasons.length === 0, reasons };
@@ -55,20 +90,20 @@ export function median(values) {
     : sorted[middle];
 }
 
-async function requestScenario(baseUrl, scenario) {
+async function requestScenario(baseUrl, scenario, fetchImpl = fetch, now = () => performance.now()) {
   const url = new URL(scenario.path, baseUrl);
-  const startedAt = performance.now();
-  const response = await fetch(url, {
+  const startedAt = now();
+  const response = await fetchImpl(url, {
     headers: scenario.headers,
     redirect: 'follow',
   });
-  const ttfbMs = performance.now() - startedAt;
+  const ttfbMs = now() - startedAt;
   const body = await response.text();
 
   return { response, body, ttfbMs };
 }
 
-function reportResponse(scenario, sample, expectation, ttfbMs = sample.ttfbMs) {
+function reportResponse(scenario, sample, expectation, ttfbMs = sample.ttfbMs, sampleName = 'response', requireCloudflareHit) {
   const { response, body } = sample;
   const evaluation = evaluateResponse({
     scenario: scenario.name,
@@ -76,6 +111,8 @@ function reportResponse(scenario, sample, expectation, ttfbMs = sample.ttfbMs) {
     headers: response.headers,
     body,
     expectation,
+    sample: sampleName,
+    requireCloudflareHit,
   });
 
   return {
@@ -93,7 +130,12 @@ function reportResponse(scenario, sample, expectation, ttfbMs = sample.ttfbMs) {
   };
 }
 
-export async function verifyStorefront({ baseUrl, expectation = 'baseline' }) {
+export async function verifyStorefront({
+  baseUrl,
+  expectation = 'baseline',
+  fetchImpl = fetch,
+  now = () => performance.now(),
+}) {
   if (!['baseline', 'origin', 'cloudflare'].includes(expectation)) {
     throw new Error('VERIFY_EXPECTATION must be baseline, origin, or cloudflare');
   }
@@ -102,19 +144,36 @@ export async function verifyStorefront({ baseUrl, expectation = 'baseline' }) {
 
   for (const scenario of scenarios) {
     if (scenario.name === 'public-home' && expectation === 'cloudflare') {
-      const cold = await requestScenario(baseUrl, scenario);
+      const cold = await requestScenario(baseUrl, scenario, fetchImpl, now);
       const warm = [];
       for (let request = 0; request < 10; request += 1) {
-        warm.push(await requestScenario(baseUrl, scenario));
+        warm.push(await requestScenario(baseUrl, scenario, fetchImpl, now));
       }
-      const result = reportResponse(scenario, warm.at(-1), expectation, median(warm.map((sample) => sample.ttfbMs)));
-      result.coldTtfbMs = Math.round(cold.ttfbMs * 100) / 100;
-      result.warmRequests = warm.length;
+      const sampleReports = [
+        reportResponse(scenario, cold, expectation, cold.ttfbMs, 'cold', false),
+        ...warm.map((sample, index) => reportResponse(
+          scenario,
+          sample,
+          expectation,
+          sample.ttfbMs,
+          `warm ${index + 1}`,
+          true,
+        )),
+      ];
+      const finalWarm = sampleReports.at(-1);
+      const result = {
+        ...finalWarm,
+        ttfbMs: Math.round(median(warm.map((sample) => sample.ttfbMs)) * 100) / 100,
+        coldTtfbMs: Math.round(cold.ttfbMs * 100) / 100,
+        warmRequests: warm.length,
+        pass: sampleReports.every((report) => report.pass),
+        reasons: sampleReports.flatMap((report) => report.reasons),
+      };
       results.push(result);
       continue;
     }
 
-    const sample = await requestScenario(baseUrl, scenario);
+    const sample = await requestScenario(baseUrl, scenario, fetchImpl, now);
     results.push(reportResponse(scenario, sample, expectation));
   }
 
