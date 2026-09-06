@@ -17,11 +17,16 @@ import {
   HOME_EXPRESSION,
   API_EXPRESSION,
   LIVE_API_EXPRESSION,
+  LIVE_LEGACY_HTML_EXPRESSION,
+  LIVE_LEGACY_HTML_EXPRESSION_SHA256,
+  buildMutationRequest,
 } from './cloudflare-storefront-rules.mjs';
 
 const fixture = JSON.parse(await readFile(new URL('./fixtures/cloudflare-cache-ruleset.json', import.meta.url), 'utf8'));
+const liveV5Fixture = JSON.parse(await readFile(new URL('./fixtures/cloudflare-cache-ruleset-live-v5.json', import.meta.url), 'utf8'));
 const rules = fixture.rules;
 const AUTHORITATIVE_LIVE_API_EXPRESSION_SHA256 = '7d8150a31baeda7b3d3453bb3b2c949187f6f686f3eff9988250943bba1bded9';
+const AUTHORITATIVE_LIVE_LEGACY_HTML_EXPRESSION_SHA256 = 'cf3920616575be3acb242523a918646cb76dd854a28721e1670731d492bc8a88';
 
 function ruleset(overrides = {}) {
   return { ...structuredClone(fixture), ...overrides };
@@ -170,9 +175,49 @@ test('apply-home dry-run and execute atomically migrate broad HTML plus path-onl
   }
 });
 
-test('captured live API expression matches the authoritative fresh production SHA-256', () => {
+test('captured live expressions match authoritative fresh production SHA-256 pins', () => {
   assert.equal(createHash('sha256').update(LIVE_API_EXPRESSION).digest('hex'), AUTHORITATIVE_LIVE_API_EXPRESSION_SHA256);
   assert.equal(rules.find((rule) => rule.ref === 'api').expression, LIVE_API_EXPRESSION);
+  assert.equal(LIVE_LEGACY_HTML_EXPRESSION_SHA256, AUTHORITATIVE_LIVE_LEGACY_HTML_EXPRESSION_SHA256);
+  assert.equal(createHash('sha256').update(LIVE_LEGACY_HTML_EXPRESSION).digest('hex'), AUTHORITATIVE_LIVE_LEGACY_HTML_EXPRESSION_SHA256);
+  assert.equal(liveV5Fixture.rules.find((rule) => rule.description === HTML_RULE_DESCRIPTION).expression, LIVE_LEGACY_HTML_EXPRESSION);
+  assert.equal(liveV5Fixture.rules.find((rule) => rule.description === API_RULE_DESCRIPTION).expression, LIVE_API_EXPRESSION);
+});
+
+test('exact live v5 dry-run changes only the disabled HTML rule in place', async () => {
+  const artifactDir = await mkdtemp(path.join(os.tmpdir(), 'cloudflare-live-v5-dry-'));
+  const exportPath = path.join(artifactDir, 'fresh.json');
+  await writeFile(exportPath, JSON.stringify(createExportArtifact(liveV5Fixture)));
+  const result = await runCommand(['apply-home', '--from-export', exportPath], {
+    env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+    fetchImpl: async () => cloudflareResponse(liveV5Fixture),
+    stdout: output().stream,
+    artifactDir,
+  });
+  assert.deepEqual(result.request.rules.map((rule) => rule.ref), liveV5Fixture.rules.map((rule) => rule.ref));
+  for (let index = 0; index < liveV5Fixture.rules.length; index += 1) {
+    const before = liveV5Fixture.rules[index];
+    const after = result.request.rules[index];
+    if (before.description === HTML_RULE_DESCRIPTION) {
+      assert.deepEqual(after, { ...before, enabled: true, expression: HOME_EXPRESSION, action: 'set_cache_settings', action_parameters: buildHomeRule().action_parameters });
+    } else {
+      assert.deepEqual(after, before);
+    }
+  }
+});
+
+test('audit rejects every near-miss of the exact live disabled legacy HTML expression', () => {
+  const mutations = [
+    LIVE_LEGACY_HTML_EXPRESSION.replace(' and (not starts_with(http.request.uri.path, "/account"))', ''),
+    LIVE_LEGACY_HTML_EXPRESSION.replace('/account', '/accounts'),
+    LIVE_LEGACY_HTML_EXPRESSION.replace('(http.host eq "petposture.com")', '(http.host in {"petposture.com" "www.petposture.com"})'),
+    `${LIVE_LEGACY_HTML_EXPRESSION} or (http.request.uri.path eq "/products")`,
+  ];
+  for (const expression of mutations) {
+    const nearMiss = structuredClone(liveV5Fixture);
+    nearMiss.rules.find((rule) => rule.description === HTML_RULE_DESCRIPTION).expression = expression;
+    assert.throws(() => auditRuleset(nearMiss), /homepage semantics|reviewed/i, expression);
+  }
 });
 
 test('apply-home accepts and preserves the exact current live hostname-scoped GET-only API allowlist', async () => {
@@ -446,9 +491,9 @@ test('apply-home PUT omits response-only top-level fields and preserves writable
     artifactDir,
   });
   const request = JSON.parse(requests[1].body);
-  assert.deepEqual(Object.keys(request), ['name', 'description', 'phase', 'rules']);
-  assert.deepEqual({ name: request.name, description: request.description, phase: request.phase }, {
-    name: live.name, description: live.description, phase: live.phase,
+  assert.deepEqual(Object.keys(request), ['name', 'description', 'rules']);
+  assert.deepEqual({ name: request.name, description: request.description }, {
+    name: live.name, description: live.description,
   });
   assert.equal(request.rules.find((rule) => rule.ref === 'api').expression, LIVE_API_EXPRESSION);
 });
@@ -473,9 +518,17 @@ test('stock restore execute omits response-only top-level fields and preserves e
     artifactDir,
   });
   const request = JSON.parse(requests[1].body);
-  assert.deepEqual(Object.keys(request), ['name', 'description', 'phase', 'rules']);
+  assert.deepEqual(Object.keys(request), ['name', 'description', 'rules']);
   assert.deepEqual(request.rules, exported.rules);
   assert.deepEqual(request.rules.map((rule) => rule.ref), exported.rules.map((rule) => rule.ref));
+});
+
+test('apply and restore share the exact account-proven writable top-level sanitizer', () => {
+  const source = { ...liveV5Fixture, extra_response_field: 'drop-me' };
+  const request = buildMutationRequest(source, liveV5Fixture.rules);
+  assert.deepEqual(Object.keys(request), ['name', 'description', 'rules']);
+  assert.deepEqual(request, { name: source.name, description: source.description, rules: liveV5Fixture.rules });
+  for (const field of ['kind', 'version', 'last_updated', 'phase', 'id', 'extra_response_field']) assert.equal(field in request, false);
 });
 
 test('all generated mutation payloads preserve fields/order/refs and contain no override_origin anywhere', () => {

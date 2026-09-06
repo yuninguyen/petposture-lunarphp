@@ -205,3 +205,63 @@ Updated the reviewed live API expression and captured production fixture to the 
 - Authoritative exact live expression SHA-256: `7d8150a31baeda7b3d3453bb3b2c949187f6f686f3eff9988250943bba1bded9`.
 - Confirmed exact additions relative to the prior constant: `/api/site-media` (exact), `/api/breeds` (prefix), `/api/solutions` (prefix).
 - No credentials, tokens, zone IDs, Cloudflare writes, or production mutations were performed during this follow-up.
+
+## Task 9 Fix Round 5/5 — final breaker round
+
+### Status
+
+Closed the two remaining production blockers using fresh read-only v5 evidence and account-specific non-mutating Cloudflare error evidence. No Cloudflare PUT, apply, restore, purge, or other production mutation was performed in this fix turn.
+
+### Fresh live v5 provenance
+
+- Source: protected VPS `root@51.79.54.208`, with Cloudflare credentials sourced only inside a non-tracing shell process from `/opt/petposture/backend/.env`.
+- Transport: authenticated GET of the `http_request_cache_settings` entrypoint only. The temporary response file was mode `0600` and removed by a shell trap.
+- No API token, zone ID, cookie, or secret value was printed, copied into the worktree, or included in command output.
+- Fresh ruleset: ID `eebfd01b68fb4427b8afc5174faa468f`, version `5`, name `default`, empty description, three rules.
+- Exact disabled `Cache HTML pages` expression:
+
+  ```text
+  (http.host eq "petposture.com") and (not starts_with(http.request.uri.path, "/api/")) and (not starts_with(http.request.uri.path, "/account")) and (not starts_with(http.request.uri.path, "/cart")) and (not starts_with(http.request.uri.path, "/checkout")) and (not starts_with(http.request.uri.path, "/sign-in")) and (not starts_with(http.request.uri.path, "/sign-up")) and (not starts_with(http.request.uri.path, "/returns")) and (not starts_with(http.request.uri.path, "/admin"))
+  ```
+
+- Exact expression SHA-256: `cf3920616575be3acb242523a918646cb76dd854a28721e1670731d492bc8a88`.
+- Exact live HTML rule object fields captured in the fixture: `action`, `action_parameters`, `description`, `enabled`, `expression`, `id`, `last_updated`, `ref`, and `version`. It is disabled, uses `set_cache_settings`, respects origin browser TTL, and uses edge `bypass_by_default`.
+- The live API rule remains byte-for-byte pinned to SHA-256 `7d8150a31baeda7b3d3453bb3b2c949187f6f686f3eff9988250943bba1bded9` and is preserved unchanged by the proposed apply.
+
+### Writable entrypoint PUT schema evidence
+
+The sanitizer is based on this account's actual non-mutating failure sequence, not on inferred response fields:
+
+1. Task 11's first stock full-entrypoint restore request included the GET response's top-level `kind`; Cloudflare rejected the request with HTTP 400 before mutation. Removing response-only top-level fields allowed the guarded adapter path to proceed.
+2. The reviewed retry then sent `name`, `description`, `phase`, and `rules`; Cloudflare again rejected the stock request non-mutating, this time specifically for top-level `phase`.
+3. The same guarded request succeeded only after the adapter removed `phase`, leaving `name`, `description`, and `rules` unchanged.
+
+Therefore the account-proven writable full-entrypoint body is exactly `name`, `description`, and `rules`. The shared `buildMutationRequest()` helper is now used by both `apply-home` and stock `restore`; it excludes `id`, `kind`, `version`, `last_updated`, `phase`, and any other response-only top-level field. Rule objects themselves remain cloned exactly except for the reviewed HTML transformation.
+
+### Implementation and fixture
+
+- Added the exact live disabled legacy HTML expression as one finite recognized candidate, separately SHA-pinned. Whitespace normalization remains the existing comparison behavior, but no path, host, boolean, or allowlist near-miss is accepted.
+- `apply-home` transforms that exact disabled candidate in place to `HOME_EXPRESSION`, enables it, preserves its `id`, `ref`, position, description, version metadata, and other fields, and applies the reviewed cache settings.
+- Added `scripts/fixtures/cloudflare-cache-ruleset-live-v5.json`, representing the complete fresh v5 entrypoint response with the exact HTML and API rules plus the intervening static/storage rule.
+- The fixture dry-run proves one changed rule only: rule index 0, `Cache HTML pages`; changed keys are `enabled`, `expression`, and `action_parameters`. API and intervening rule objects are byte-for-byte preserved, as are all refs and evaluation order.
+- Added fail-closed near-miss tests for omitted exclusions, changed paths, broadened hosts, and appended boolean broadening.
+
+### TDD and verification evidence
+
+1. The new suite first failed at module load because `LIVE_LEGACY_HTML_EXPRESSION` was not exported.
+2. After adding the exact candidate and sanitizer, the focused suite passed; a separate activation test was then made strict and observed failing because the live disabled rule remained `enabled: false`. The minimal implementation now sets `enabled: true` during the reviewed in-place transformation.
+3. `node --test scripts/cloudflare-storefront-rules.test.mjs` — 28/28 passing.
+4. `npm run test:storefront-cache-script` — 36/36 passing.
+5. `node --check scripts/cloudflare-storefront-rules.mjs` and `node --check scripts/cloudflare-storefront-rules.test.mjs` — passing.
+6. Safe fixture dry-run summary: request keys exactly `name`, `description`, `rules`; one changed rule; HTML changed keys exactly `enabled`, `expression`, `action_parameters`; API preserved; order preserved.
+
+### GitNexus
+
+- The existing index was stale at `5648f89`; `npx gitnexus analyze` updated the generated instruction metadata/graph even though the Windows CLI exited with its known unsigned `4294967295` code. No generated GitNexus files are included in this Task 9 commit.
+- Pre-edit upstream impact was LOW: `auditRuleset` had three direct dependants and zero affected processes; `buildApplyRules` one direct test dependant and zero processes; `runCommand` two direct dependants and zero processes; `replaceBroadHtmlRule` one direct caller and zero processes.
+- Pre-commit change-scope verification is recorded in the final response.
+
+### Concerns
+
+- This round proves tool behavior and the exact request shape from read-only live state plus prior account-specific rejected/successful restore evidence. It intentionally does not prove a new live PUT because production mutation was forbidden.
+- The older synthetic broad HTML candidate remains separately recognized for historical fixture compatibility; the newly added production candidate is exact and finite, and near misses fail closed.

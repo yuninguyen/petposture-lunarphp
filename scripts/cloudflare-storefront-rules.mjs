@@ -11,6 +11,8 @@ const PHASE = 'http_request_cache_settings';
 const ARTIFACT_SCHEMA = 'petposture-cloudflare-cache-ruleset-export-v1';
 export const API_EXPRESSION = '(http.host eq "api.petposture.com") and (http.request.method eq "GET") and (http.request.uri.path matches "^/(catalog|content)/")';
 export const LIVE_API_EXPRESSION = '(http.host eq "api.petposture.com") and (http.request.method eq "GET") and (http.request.uri.path eq "/api/settings" or http.request.uri.path eq "/api/site-media" or http.request.uri.path eq "/api/checkout/payment-methods" or http.request.uri.path eq "/api/categories" or http.request.uri.path eq "/api/blog/categories" or starts_with(http.request.uri.path, "/api/products") or starts_with(http.request.uri.path, "/api/brands") or starts_with(http.request.uri.path, "/api/posts") or starts_with(http.request.uri.path, "/api/breeds") or starts_with(http.request.uri.path, "/api/solutions"))';
+export const LIVE_LEGACY_HTML_EXPRESSION = '(http.host eq "petposture.com") and (not starts_with(http.request.uri.path, "/api/")) and (not starts_with(http.request.uri.path, "/account")) and (not starts_with(http.request.uri.path, "/cart")) and (not starts_with(http.request.uri.path, "/checkout")) and (not starts_with(http.request.uri.path, "/sign-in")) and (not starts_with(http.request.uri.path, "/sign-up")) and (not starts_with(http.request.uri.path, "/returns")) and (not starts_with(http.request.uri.path, "/admin"))';
+export const LIVE_LEGACY_HTML_EXPRESSION_SHA256 = 'cf3920616575be3acb242523a918646cb76dd854a28721e1670731d492bc8a88';
 const LEGACY_API_EXPRESSION = '(http.request.method eq "GET") and (http.request.uri.path matches "^/(catalog|content)/")';
 const SAFE_EARLIER_CACHE_EXPRESSIONS = new Set([
   '(http.host eq "petposture.com") and (http.request.uri.path matches "^/_next/static/")',
@@ -85,7 +87,8 @@ export function auditRuleset(ruleset, { throwOnFailure = true } = {}) {
   const htmlExpression = htmlRules[0]?.expression;
   const apiExpression = apiRules[0]?.expression;
   const htmlReviewed = htmlRules.length === 1 && exactExpression(htmlExpression, HOME_EXPRESSION);
-  const htmlLegacy = htmlRules.length === 1 && exactExpression(htmlExpression, LEGACY_HTML_EXPRESSION);
+  const htmlLegacy = htmlRules.length === 1 && [LEGACY_HTML_EXPRESSION, LIVE_LEGACY_HTML_EXPRESSION]
+    .some((candidate) => exactExpression(htmlExpression, candidate));
   const apiReviewed = apiRules.length === 1 && [API_EXPRESSION, LIVE_API_EXPRESSION].some((reviewed) => exactExpression(apiExpression, reviewed));
   const apiLegacy = apiRules.length === 1 && exactExpression(apiExpression, LEGACY_API_EXPRESSION);
   if (htmlRules.length === 1 && !htmlReviewed) {
@@ -148,6 +151,7 @@ function replaceBroadHtmlRule(rule) {
   const home = buildHomeRule();
   return {
     ...clone(rule),
+    enabled: true,
     expression: home.expression,
     action: home.action,
     action_parameters: home.action_parameters,
@@ -173,6 +177,10 @@ export function buildApplyRules(ruleset) {
     return clone(rule);
   });
   return { rules, changed: stableJson(rules) !== stableJson(ruleset.rules) };
+}
+
+export function buildMutationRequest(ruleset, rules) {
+  return { name: ruleset.name, description: ruleset.description, rules: clone(rules) };
 }
 
 export function createExportArtifact(ruleset, exportedAt = new Date().toISOString()) {
@@ -315,7 +323,7 @@ export async function runCommand(argv, {
     const rollbackArtifact = createExportArtifact(live);
     const rollbackFile = await artifactWriter(rollbackArtifact, { artifactDir, suffix: '-pre-apply-rollback' });
     const update = buildApplyRules(live);
-    const request = { name: live.name, description: live.description, phase: live.phase, rules: update.rules };
+    const request = buildMutationRequest(live, update.rules);
     if (!options.execute) {
       stdout.write(`DRY RUN: no Cloudflare mutation performed\nRollback export ${rollbackFile}\nWould atomically PUT ${update.rules.length} rules\n`);
       return { command, dryRun: true, rollbackFile, request };
@@ -348,7 +356,7 @@ export async function runCommand(argv, {
   if (String(exported.id) !== String(live.id)) throw new Error('Restore export ruleset ID does not match the fresh live ruleset ID');
   const staleVersion = String(exported.version) !== String(live.version);
   if (staleVersion) stdout.write(`STALE VERSION WARNING: intentionally restoring exported version ${exported.version} over live version ${live.version}.\n`);
-  const request = { name: exported.name, description: exported.description, phase: exported.phase, rules: clone(exported.rules) };
+  const request = buildMutationRequest(exported, exported.rules);
   if (!options.execute) {
     stdout.write(`DRY RUN: no Cloudflare mutation performed\nWould restore ${exported.rules.length} exact exported rules from ${options.fromExport}\n`);
     return { command, dryRun: true, request };
