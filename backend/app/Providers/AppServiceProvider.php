@@ -10,6 +10,7 @@ use App\Models\OrderShipment;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Setting;
+use App\Models\SiteMedia;
 use App\Models\Solution;
 use App\Observers\BrandCacheObserver;
 use App\Observers\LegacyProductObserver;
@@ -18,6 +19,7 @@ use App\Observers\PostCacheObserver;
 use App\Observers\ProductBadgeIndexObserver;
 use App\Observers\ProductCacheObserver;
 use App\Observers\ProductVariantObserver;
+use App\Observers\PublicContentCacheObserver;
 use App\Observers\SanitizeRichTextObserver;
 use App\Observers\SettingCacheObserver;
 use App\Payments\Gateways\AirwallexGateway;
@@ -94,8 +96,11 @@ class AppServiceProvider extends ServiceProvider
         Product::observe([ProductBadgeIndexObserver::class, ProductCacheObserver::class]);
         Brand::observe(BrandCacheObserver::class);
         Post::observe([SanitizeRichTextObserver::class, PostCacheObserver::class]);
-        Page::observe(SanitizeRichTextObserver::class);
+        Page::observe([SanitizeRichTextObserver::class, PublicContentCacheObserver::class]);
+        Breed::observe(PublicContentCacheObserver::class);
+        Solution::observe(PublicContentCacheObserver::class);
         Setting::observe(SettingCacheObserver::class);
+        SiteMedia::observe(PublicContentCacheObserver::class);
         $this->app->make(ShippingModifiers::class)->add(DefaultShippingModifier::class);
         Order::resolveRelationUsing('orderEvents', function (Order $order) {
             return $order->hasMany(OrderEvent::class, 'order_id')->orderBy('occurred_at');

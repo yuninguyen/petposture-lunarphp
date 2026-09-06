@@ -5,7 +5,7 @@ import { queryClient } from '@/lib/queryClient';
 import { AppShell } from '@/layouts/AppShell';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { AdminUser, fetchCurrentUser, isAdminRole } from '@/lib/auth';
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import { BrandingProvider } from '@/context/BrandingContext';
 
 // Lazy-load all page components → Vite creates separate chunks per route
@@ -49,9 +49,25 @@ function PageLoader() {
 }
 
 
+export function CacheWarningListener() {
+  useEffect(() => {
+    const handleCacheWarning = () => {
+      toast('Content was saved, but the storefront cache purge is still retrying. Public pages may remain stale for up to 5 minutes.', {
+        duration: 6000,
+      });
+    };
+
+    window.addEventListener('petposture:cache-warning', handleCacheWarning);
+    return () => window.removeEventListener('petposture:cache-warning', handleCacheWarning);
+  }, []);
+
+  return null;
+}
+
 export default function App() {
   return (
     <BrandingProvider>
+      <CacheWarningListener />
       <AdminApp />
     </BrandingProvider>
   );
