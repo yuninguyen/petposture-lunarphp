@@ -37,20 +37,78 @@ class SiteMediaApiTest extends TestCase
         $this->assertSame($first->json(), $second->json());
     }
 
-    public function test_site_media_save_delete_and_media_update_invalidate_only_its_collection_key(): void
+    public function test_site_media_endpoint_caches_distinct_payloads_per_collection(): void
     {
         $banner = SiteMedia::create(['title' => 'hero', 'collection' => 'banner']);
-        $media = $this->createMedia($banner, 'banner', 'hero.jpg');
+        $this->createMedia($banner, 'banner', 'hero.jpg');
+        $general = SiteMedia::create(['title' => 'footer', 'collection' => 'general']);
+        $this->createMedia($general, 'general', 'footer.jpg');
 
+        $this->getJson('/api/site-media?collection=banner')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'hero');
+        $this->getJson('/api/site-media?collection=general')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'footer');
+
+        $this->assertTrue(Cache::has('public-api:site-media:v1:banner'));
+        $this->assertTrue(Cache::has('public-api:site-media:v1:general'));
+        $this->assertNotSame(
+            Cache::get('public-api:site-media:v1:banner'),
+            Cache::get('public-api:site-media:v1:general')
+        );
+    }
+
+    public function test_site_media_move_invalidates_original_and_current_collection_keys(): void
+    {
+        $siteMedia = SiteMedia::create(['title' => 'hero', 'collection' => 'banner']);
+        Cache::put('public-api:site-media:v1:banner', ['stale-banner'], 300);
+        Cache::put('public-api:site-media:v1:general', ['stale-general'], 300);
+
+        $siteMedia->update(['collection' => 'general']);
+
+        $this->assertFalse(Cache::has('public-api:site-media:v1:banner'));
+        $this->assertFalse(Cache::has('public-api:site-media:v1:general'));
+    }
+
+    public function test_media_move_invalidates_original_and_current_collection_keys(): void
+    {
+        $siteMedia = SiteMedia::create(['title' => 'hero', 'collection' => 'banner']);
+        $media = $this->createMedia($siteMedia, 'banner', 'hero.jpg');
+        Cache::put('public-api:site-media:v1:banner', ['stale-banner'], 300);
+        Cache::put('public-api:site-media:v1:general', ['stale-general'], 300);
+
+        $media->update(['collection_name' => 'general']);
+
+        $this->assertFalse(Cache::has('public-api:site-media:v1:banner'));
+        $this->assertFalse(Cache::has('public-api:site-media:v1:general'));
+    }
+
+    public function test_media_create_and_delete_invalidate_its_collection_key(): void
+    {
+        $siteMedia = SiteMedia::create(['title' => 'hero', 'collection' => 'banner']);
         Cache::put('public-api:site-media:v1:banner', ['stale'], 300);
         Cache::put('public-api:site-media:v1:general', ['keep'], 300);
 
-        $banner->update(['title' => 'updated']);
+        $media = $this->createMedia($siteMedia, 'banner', 'hero.jpg');
         $this->assertFalse(Cache::has('public-api:site-media:v1:banner'));
         $this->assertTrue(Cache::has('public-api:site-media:v1:general'));
 
         Cache::put('public-api:site-media:v1:banner', ['stale'], 300);
-        $media->update(['file_name' => 'updated.jpg']);
+        $media->delete();
+        $this->assertFalse(Cache::has('public-api:site-media:v1:banner'));
+        $this->assertTrue(Cache::has('public-api:site-media:v1:general'));
+    }
+
+    public function test_site_media_save_and_delete_invalidate_its_collection_key(): void
+    {
+        $banner = SiteMedia::create(['title' => 'hero', 'collection' => 'banner']);
+        Cache::put('public-api:site-media:v1:banner', ['stale'], 300);
+        Cache::put('public-api:site-media:v1:general', ['keep'], 300);
+
+        $banner->update(['title' => 'updated']);
         $this->assertFalse(Cache::has('public-api:site-media:v1:banner'));
         $this->assertTrue(Cache::has('public-api:site-media:v1:general'));
 

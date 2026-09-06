@@ -2,128 +2,108 @@
 
 ## Status
 
-Implemented the bounded application cache because the fresh local HTTP measurements exceeded the explicit 100 ms gate and profiling showed repeated database work for site media.
+Round 1 retained **site-media assembled caching only**. The settings assembled-response cache was removed after review because the measured database work did not improve enough to justify that cache. Existing per-setting cache invalidation remains in place for both save and delete.
 
-## Measurement environment
+## Measurement environment and deviations
 
 - Worktree: `C:\laragon\www\petposture\.worktrees\storefront-edge-cache-csp`
 - GitNexus repository: `storefront-edge-cache-csp`
 - Endpoint address: `127.0.0.1:8001`
-- Local runtime: PHP 8.3.30, Laravel 11.51.0
-- Isolated SQLite database migrated from scratch; no production data or secrets were copied.
-- Docker/VPS container runtime was unavailable locally, so `php artisan serve` was used on the required address.
-- Ten HTTP requests were made for each endpoint. The first request is treated as cold; requests 2–10 are the warm sample.
+- Environment: **Windows local development workstation**, PHP 8.3.30, Laravel 11.51.0.
+- Database: **SQLite**, isolated local `storage/task8-profile.sqlite`, migrated from scratch; no production data or secrets were copied.
+- Cache backend for the final HTTP run: local file cache, not production Redis.
+- **VPS/container timing is absent.** Docker/VPS runtime was unavailable locally, so these measurements are not VPS evidence and must not be treated as VPS compliance.
+- The initial benchmark attempt used a missing/unmigrated SQLite file and returned HTTP 500; that run is excluded from timing evidence. The final run used a freshly migrated database and returned HTTP 200 for all 20 requests.
 
 ## Before-change HTTP profile
 
+The pre-fix profile from the original Task 8 implementation report was collected through the local Windows PHP development server at `127.0.0.1:8001`:
+
 ### `GET /api/settings`
 
-| Request | Status | Elapsed ms | Bytes |
-|---:|---:|---:|---:|
-| 1 | 200 | 281.554 | 462 |
-| 2 | 200 | 204.565 | 462 |
-| 3 | 200 | 209.614 | 462 |
-| 4 | 200 | 252.286 | 462 |
-| 5 | 200 | 202.952 | 462 |
-| 6 | 200 | 256.754 | 462 |
-| 7 | 200 | 214.193 | 462 |
-| 8 | 200 | 255.761 | 462 |
-| 9 | 200 | 351.656 | 462 |
-| 10 | 200 | 278.052 | 462 |
-
-- Cold: **281.554 ms**
-- Warm median (requests 2–10): **252.286 ms**
+- Requests: 10 total, status 200, 462 bytes each.
+- Cold request: **281.554 ms**.
+- Warm median (requests 2–10): **252.286 ms**.
 
 ### `GET /api/site-media?collection=banner`
 
-| Request | Status | Elapsed ms | Bytes |
-|---:|---:|---:|---:|
-| 1 | 200 | 278.329 | 61 |
-| 2 | 200 | 232.548 | 61 |
-| 3 | 200 | 317.061 | 61 |
-| 4 | 200 | 233.166 | 61 |
-| 5 | 200 | 233.719 | 61 |
-| 6 | 200 | 283.439 | 61 |
-| 7 | 200 | 225.808 | 61 |
-| 8 | 200 | 540.729 | 61 |
-| 9 | 200 | 208.377 | 61 |
-| 10 | 200 | 351.311 | 61 |
-
-- Cold: **278.329 ms**
-- Warm median (requests 2–10): **233.719 ms**
+- Requests: 10 total, status 200, 61 bytes each.
+- Cold request: **278.329 ms**.
+- Warm median (requests 2–10): **233.719 ms**.
 
 ## Before-change non-public query instrumentation
 
-The endpoints were dispatched directly through Laravel's HTTP kernel with `DB::listen`, ten times each.
+The original profile dispatched requests through Laravel's HTTP kernel with `DB::listen`:
 
-- Settings query counts: **18 cold, then 1 per warm request**. The cold request performed 17 individual setting lookups plus Laravel's settings-table existence check. Per-setting `rememberForever` entries removed those lookups from later requests.
-- Site-media query counts: **2 on every request**. Each request repeated the `site_media` collection query; the other query was Laravel's settings-table existence check. With populated records, MediaLibrary additionally loads media per `SiteMedia` model through `getMedia($collection)`.
-- In-process warm medians were 1.328 ms (settings) and 1.405 ms (site media), demonstrating that the >100 ms HTTP result is substantially affected by local server/process overhead. The repeated site-media database work independently satisfies the gate.
+- Settings: **18 queries cold, then 1 per warm request**. Per-setting `rememberForever` entries removed the individual setting lookups after the first request.
+- Site media: **2 queries on every request**. The collection query repeated on every request; with populated records, MediaLibrary also loads media per `SiteMedia` model through `getMedia($collection)`.
+- In-process warm medians were 1.328 ms (settings) and 1.405 ms (site media), showing that local HTTP timing is substantially affected by Windows development-server/process overhead.
 
-## Gate conclusion
+## Review ruling and implementation
 
-**Gate met.** Both HTTP warm medians were above 100 ms, and site media repeated its collection query on every request. Proceeding with the optional cache was justified by both branches of the brief's criterion.
+The review ruling was to retain only site-media assembled caching because measured database work did not improve enough to justify settings assembled caching.
 
-## GitNexus safety evidence
+- `SiteMediaController` continues to cache assembled payloads independently with `public-api:site-media:v1:{collection}` for five minutes.
+- `SettingsController` now assembles the same response per request; `public-api:settings:v1` is no longer read or written.
+- `SettingCacheObserver` continues to forget `setting:{key}` on save and delete and continues the existing public-content purge. It no longer invalidates the removed assembled settings key.
+- `SiteMediaCacheObserver` invalidates both the original and current `collection` values on save/delete, so collection moves clear both endpoint cache keys safely.
+- `SiteMediaLibraryCacheObserver` invalidates both the original and current `collection_name` values on Media save/delete, restricted to `SiteMedia` morphs. Non-SiteMedia media remains unaffected.
+- The site-media response wrapper, fields, media URL generation, ordering, and HTTP status remain unchanged.
 
-The stale index was refreshed before exploration (`15400` symbols, `33069` relationships, `300` flows).
+## Tests added or updated
 
-Pre-edit upstream impact:
+- Settings tests verify that the assembled settings response is not cached and that deleting an existing setting invalidates its per-setting cache.
+- Site-media tests verify distinct payloads and cache keys for `banner` and `general`, SiteMedia collection moves, Media collection moves, SiteMedia save/delete, and Media create/delete observer behavior.
 
-- `SettingsController`: LOW, one direct upstream importer (`backend/routes/api.php`), zero affected processes.
-- `SiteMediaController`: LOW, one direct upstream importer (`backend/routes/api.php`), zero affected processes.
-- Exact controller `index` symbols were disambiguated with `gitnexus context`; each routes through `backend/routes/api.php`.
-- `SettingCacheObserver`: LOW, one direct importer (`AppServiceProvider`), two total upstream files.
-- `PublicContentCacheObserver`: LOW, four direct dependents, zero affected processes.
-- `AppServiceProvider::boot`: LOW, no graph upstream callers.
-- No HIGH or CRITICAL result occurred.
+TDD evidence:
 
-The installed GitNexus CLI has no `detect-changes` command. Before commit, equivalent graph detection was run with a GitNexus Cypher query over every changed source file. It mapped only the expected controller routes, observer/provider registration, settings resolver, and existing provider unit-test dependency; no execution process was reported.
-
-## Implementation
-
-- `public-api:settings:v1` caches the assembled settings data for five minutes.
-- `public-api:site-media:v1:{collection}` caches assembled site-media data independently for five minutes.
-- Setting save/delete invalidates the exact settings response key while retaining existing per-setting invalidation and public edge purge.
-- SiteMedia save/delete invalidates only its collection key and retains the existing public edge purge observer.
-- MediaLibrary media save/delete invalidates only the collection key when the media belongs to `App\Models\SiteMedia`.
-- The JSON response wrapper, data fields, media URL generation, order, and HTTP status remain unchanged.
-
-## After-change measurements
-
-HTTP through `127.0.0.1:8001` with persistent file cache:
-
-- Settings warm median (requests 2–10): **213.095 ms**; response remained 462 bytes.
-- Site-media warm median (requests 2–10): **219.534 ms**; response remained 61 bytes.
-
-The local single-process development server did not reach the optional `<100 ms` HTTP target. However, correctness changes are retained under Step 6 because query profiling proves reduced database work:
-
-- Site-media query counts changed from **2 on every request** to **2 cold, then 1 per warm request**, eliminating the repeated `site_media` query after cache fill.
-- Settings retains one framework settings-table existence query per request, but its assembled response cache prevents controller assembly and the per-key setting reads after fill.
-- Post-change in-process warm medians: **1.269 ms** settings and **1.317 ms** site media.
-
-## TDD and verification
-
-RED evidence:
-
-- The new settings test failed because `public-api:settings:v1` did not exist.
-- The site-media tests failed because the collection cache did not exist and save did not invalidate it.
-
-GREEN evidence:
+- RED: the new no-settings-cache assertion failed against the assembled settings cache; both move tests failed because only the current collection key was invalidated.
+- GREEN: after the minimal changes, the focused suite passed:
 
 ```text
 php artisan test tests/Feature/SettingsApiTest.php tests/Feature/SiteMediaApiTest.php
-6 passed (33 assertions)
+11 passed (50 assertions)
 ```
 
-PHP syntax checks passed for both controllers, all three relevant observers, and `AppServiceProvider`.
+## After-change HTTP evidence
 
-`git diff --check` passed.
+Final run through the local Windows PHP development server at `127.0.0.1:8001`, using the freshly migrated isolated SQLite database and local file cache. All responses were HTTP 200 and retained the original response sizes.
 
-A full `php artisan test` run was attempted. It did not complete green because the pre-existing broader suite has unrelated failures, including session-cookie assertions in `AdminAuthTest` and an `AffiliateNetworkControllerTest` shape assertion. The Task 8 targeted tests remained green in a fresh rerun.
+### `GET /api/settings`
+
+- 10 requests; 462 bytes each.
+- Cold: **1869.352 ms**.
+- Warm median (requests 2–10): **1586.667 ms**.
+
+### `GET /api/site-media?collection=banner`
+
+- 10 requests; 61 bytes each.
+- Cold: **1556.039 ms**.
+- Warm median (requests 2–10): **1395.486 ms**.
+
+These are **Windows/SQLite local timings only**. They are not VPS measurements and do not establish VPS compliance. The local HTTP warm target of `<100 ms` was not met; the result is dominated by local PHP development-server/process overhead.
+
+## After-change query evidence available
+
+The focused Laravel tests verify the observable cache behavior and observer invalidation. The original non-public query instrumentation showed the settings branch's per-setting cache work and the repeated site-media query. In this fix round, no new VPS/production DB timing is available. The retained site-media cache is justified by the existing measured repeated collection/MediaLibrary work and by the regression tests proving the assembled collection payload is cached and correctly invalidated. The settings assembled cache was removed because the measured DB work did not demonstrate a sufficient improvement.
+
+## GitNexus safety evidence
+
+- GitNexus index was refreshed before exploration: **15,425 symbols, 33,136 relationships, 300 flows**.
+- Pre-edit upstream impact for `SiteMediaCacheObserver`, `SiteMediaLibraryCacheObserver`, `SettingsController`, `SettingCacheObserver`, and `AppServiceProvider` was LOW; no HIGH or CRITICAL result occurred.
+- Direct upstream dependencies were the provider registration and API route registration paths described by the refreshed index.
+- The installed CLI does not expose a `detect-changes` subcommand. The available equivalent Cypher change-scope query mapped the six changed PHP files only to the expected API route, `AppServiceProvider`, observer namespace, and feature-test namespace; it reported no unexpected execution flow.
+
+## Verification
+
+- Focused Task 8 tests: **11 passed, 50 assertions**.
+- Focused Task 8 plus existing public-content purge regression suite: **29 passed, 74 assertions**.
+- PHP syntax checks passed for the changed settings controller and three observers.
+- `git diff --check` passed.
+- A fresh full backend run was started and reproduced unrelated pre-existing failures in `AdminAuthTest` session-cookie assertions and `AffiliateNetworkControllerTest` response-shape assertion. It was stopped after those known failures were confirmed; the focused Task 8 and purge suites remained green.
 
 ## Concerns
 
-1. The local HTTP benchmark is dominated by Laravel's Windows development-server/process overhead, so it is not a VPS production-performance substitute.
-2. The `<100 ms` post-change HTTP target was not met locally. The retained change is justified by measured query elimination, as explicitly permitted by Step 6.
-3. The worktree already contained unrelated modified and untracked files. The Task 8 commit must stage only the files named in this report.
+1. All timing evidence is from Windows local PHP + SQLite/file-cache execution. VPS/container/Redis timing and compliance remain unverified.
+2. The final local HTTP warm medians are above 100 ms; this is not evidence to retain the removed settings assembled cache because the measured settings DB work was already largely eliminated by per-setting caching.
+3. The worktree contains unrelated modified and untracked files. Only the Task 8 report, controllers/observers, and focused feature tests are eligible for this fix commit.

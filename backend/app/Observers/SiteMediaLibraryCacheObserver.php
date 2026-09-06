@@ -24,6 +24,13 @@ class SiteMediaLibraryCacheObserver
             return;
         }
 
-        Cache::forget("public-api:site-media:v1:{$media->collection_name}");
+        $collections = array_unique(array_filter([
+            $media->getOriginal('collection_name'),
+            $media->collection_name,
+        ]));
+
+        foreach ($collections as $collection) {
+            Cache::forget("public-api:site-media:v1:{$collection}");
+        }
     }
 }

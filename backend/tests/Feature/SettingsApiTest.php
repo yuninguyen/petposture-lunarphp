@@ -49,22 +49,32 @@ class SettingsApiTest extends TestCase
             ->assertJsonPath('data.frontend_url', 'http://petposture.test:3000');
     }
 
-    public function test_settings_response_is_cached_and_setting_changes_invalidate_the_exact_key(): void
+    public function test_settings_response_is_assembled_per_request_without_a_response_cache(): void
     {
-        Setting::set('shop_name', 'Before');
-
-        $first = $this->getJson('/api/settings')->assertOk();
-        $this->assertTrue(Cache::has('public-api:settings:v1'));
-
-        Setting::withoutEvents(fn () => Setting::where('key', 'shop_name')->update(['value' => 'Database only']));
-        $second = $this->getJson('/api/settings')->assertOk();
-        $this->assertSame($first->json(), $second->json());
-
-        Setting::set('shop_name', 'After');
-        $this->assertFalse(Cache::has('public-api:settings:v1'));
+        config(['app.frontend_url' => 'https://before.petposture.test']);
 
         $this->getJson('/api/settings')
             ->assertOk()
-            ->assertJsonPath('data.shop_name', 'After');
+            ->assertJsonPath('data.frontend_url', 'https://before.petposture.test');
+
+        config(['app.frontend_url' => 'https://after.petposture.test']);
+
+        $this->getJson('/api/settings')
+            ->assertOk()
+            ->assertJsonPath('data.frontend_url', 'https://after.petposture.test');
+
+        $this->assertFalse(Cache::has('public-api:settings:v1'));
+    }
+
+    public function test_setting_delete_invalidates_the_existing_per_setting_cache(): void
+    {
+        $setting = Setting::set('shop_name', 'Before');
+        $this->assertSame('Before', Setting::get('shop_name'));
+        $this->assertTrue(Cache::has('setting:shop_name'));
+
+        $setting->delete();
+
+        $this->assertFalse(Cache::has('setting:shop_name'));
+        $this->assertSame('Fallback', Setting::get('shop_name', 'Fallback'));
     }
 }

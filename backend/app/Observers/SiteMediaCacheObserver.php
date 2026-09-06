@@ -3,7 +3,6 @@
 namespace App\Observers;
 
 use App\Models\SiteMedia;
-use App\Services\PublicContentPurgeCoordinator;
 use Illuminate\Support\Facades\Cache;
 
 class SiteMediaCacheObserver
@@ -20,7 +19,13 @@ class SiteMediaCacheObserver
 
     private function invalidate(SiteMedia $siteMedia): void
     {
-        Cache::forget("public-api:site-media:v1:{$siteMedia->collection}");
-        app(PublicContentPurgeCoordinator::class)->purge();
+        $collections = array_unique(array_filter([
+            $siteMedia->getOriginal('collection'),
+            $siteMedia->collection,
+        ]));
+
+        foreach ($collections as $collection) {
+            Cache::forget("public-api:site-media:v1:{$collection}");
+        }
     }
 }
