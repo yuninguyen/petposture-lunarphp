@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class SettingsApiTest extends TestCase
@@ -46,5 +47,24 @@ class SettingsApiTest extends TestCase
         $this->getJson('/api/settings')
             ->assertOk()
             ->assertJsonPath('data.frontend_url', 'http://petposture.test:3000');
+    }
+
+    public function test_settings_response_is_cached_and_setting_changes_invalidate_the_exact_key(): void
+    {
+        Setting::set('shop_name', 'Before');
+
+        $first = $this->getJson('/api/settings')->assertOk();
+        $this->assertTrue(Cache::has('public-api:settings:v1'));
+
+        Setting::withoutEvents(fn () => Setting::where('key', 'shop_name')->update(['value' => 'Database only']));
+        $second = $this->getJson('/api/settings')->assertOk();
+        $this->assertSame($first->json(), $second->json());
+
+        Setting::set('shop_name', 'After');
+        $this->assertFalse(Cache::has('public-api:settings:v1'));
+
+        $this->getJson('/api/settings')
+            ->assertOk()
+            ->assertJsonPath('data.shop_name', 'After');
     }
 }

@@ -22,6 +22,8 @@ use App\Observers\ProductVariantObserver;
 use App\Observers\PublicContentCacheObserver;
 use App\Observers\SanitizeRichTextObserver;
 use App\Observers\SettingCacheObserver;
+use App\Observers\SiteMediaCacheObserver;
+use App\Observers\SiteMediaLibraryCacheObserver;
 use App\Payments\Gateways\AirwallexGateway;
 use App\Payments\Gateways\CashOnDeliveryGateway;
 use App\Payments\Gateways\PayoneerGateway;
@@ -43,6 +45,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Lunar\Base\DiscountManagerInterface;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Lunar\Base\ShippingModifiers;
 use Lunar\Facades\Telemetry;
 use Lunar\Models\Brand;
@@ -100,7 +103,8 @@ class AppServiceProvider extends ServiceProvider
         Breed::observe(PublicContentCacheObserver::class);
         Solution::observe(PublicContentCacheObserver::class);
         Setting::observe(SettingCacheObserver::class);
-        SiteMedia::observe(PublicContentCacheObserver::class);
+        SiteMedia::observe([PublicContentCacheObserver::class, SiteMediaCacheObserver::class]);
+        Media::observe(SiteMediaLibraryCacheObserver::class);
         $this->app->make(ShippingModifiers::class)->add(DefaultShippingModifier::class);
         Order::resolveRelationUsing('orderEvents', function (Order $order) {
             return $order->hasMany(OrderEvent::class, 'order_id')->orderBy('occurred_at');
