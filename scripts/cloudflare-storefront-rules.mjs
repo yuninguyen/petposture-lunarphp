@@ -73,6 +73,7 @@ export function auditRuleset(ruleset, { throwOnFailure = true } = {}) {
   const htmlRules = findExact(ruleset.rules, HTML_RULE_DESCRIPTION);
   const apiRules = findExact(ruleset.rules, API_RULE_DESCRIPTION);
   const failures = [];
+  const precedenceConflicts = [];
 
   if (htmlRules.length === 0) failures.push(`${HTML_RULE_DESCRIPTION} is missing`);
   if (htmlRules.length > 1) failures.push(`${HTML_RULE_DESCRIPTION} is duplicated`);
@@ -99,13 +100,18 @@ export function auditRuleset(ruleset, { throwOnFailure = true } = {}) {
       const enabledCacheRule = rule.enabled !== false && rule.action === 'set_cache_settings' && rule.action_parameters?.cache === true;
       const expression = normalizeExpression(rule.expression);
       const conclusivelySafe = SAFE_EARLIER_CACHE_EXPRESSIONS.has(expression);
-      if (enabledCacheRule && !conclusivelySafe) failures.push(`Earlier enabled rule ${rule.description ?? rule.ref ?? index + 1} creates a homepage precedence conflict because its expression is not conclusively recognized as safe`);
+      if (enabledCacheRule && !conclusivelySafe) {
+        const conflict = `Earlier enabled rule ${rule.description ?? rule.ref ?? index + 1} creates a homepage precedence conflict because its expression is not conclusively recognized as safe`;
+        precedenceConflicts.push(conflict);
+        failures.push(conflict);
+      }
     }
   }
 
   const report = {
     pass: failures.length === 0,
     failures,
+    precedenceConflicts,
     expected: {
       html: { count: htmlRules.length, hostnameScoped: htmlReviewed || htmlLegacy, reviewed: htmlReviewed, legacyCandidate: htmlLegacy, expression: htmlExpression ?? null },
       api: { count: apiRules.length, hostnameScoped: apiReviewed, reviewed: apiReviewed, legacyCandidate: apiLegacy, expression: apiExpression ?? null },
@@ -301,8 +307,9 @@ export async function runCommand(argv, {
     parseExport(supplied, live, { requireTrusted: true });
     const audit = auditRuleset(live, { throwOnFailure: false });
     const expectedCountSafe = audit.expected.html.count === 1 && audit.expected.api.count === 1;
-    const semanticsSafeToTransform = audit.expected.html.legacyCandidate && (audit.expected.api.reviewed || audit.expected.api.legacyCandidate);
-    if (!expectedCountSafe || (!audit.pass && !semanticsSafeToTransform)) auditRuleset(live);
+    const semanticsSafeToTransform = (audit.expected.html.reviewed || audit.expected.html.legacyCandidate)
+      && (audit.expected.api.reviewed || audit.expected.api.legacyCandidate);
+    if (!expectedCountSafe || audit.precedenceConflicts.length > 0 || !semanticsSafeToTransform) auditRuleset(live);
     const rollbackArtifact = createExportArtifact(live);
     const rollbackFile = await artifactWriter(rollbackArtifact, { artifactDir, suffix: '-pre-apply-rollback' });
     const update = buildApplyRules(live);

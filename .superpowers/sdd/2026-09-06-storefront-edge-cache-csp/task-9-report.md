@@ -98,3 +98,31 @@ Resolved the four round-2 findings with offline fixture coverage only. No Cloudf
 
 - The precedence allowlist is intentionally exact and conservative rather than a boolean-expression parser. A newly introduced safe predicate will block until it is explicitly reviewed and added.
 - Cloudflare grammar remains fixture-validated offline; an operator must still run the guarded export/audit process before any production execution.
+
+## Task 9 Fix Round 3
+
+### Status
+
+Closed the remaining apply guard finding with offline end-to-end coverage. No Cloudflare network request or production mutation was made.
+
+### Changes
+
+- `auditRuleset()` now records earlier-rule precedence conflicts separately while retaining them in the fail-closed audit failures.
+- `apply-home` permits transformation only when both named rules have exact reviewed or recognized legacy semantic statuses, both counts are exactly one, and `precedenceConflicts` is empty.
+- Missing/duplicate named rules, unsafe named-rule semantics, and any earlier unknown/broad enabled cache rule fail before rollback/dry-run output or a PUT.
+- Added end-to-end dry-run and `--execute` coverage for legacy HTML/API candidates preceded by an unknown broad enabled cache rule; both modes reject after the live GET and execute performs zero PUTs.
+- Preserved the successful atomic migration path for the exact broad legacy HTML and path-only legacy API rules.
+
+### TDD and verification evidence
+
+1. The new end-to-end precedence test was observed failing with `Missing expected rejection` against the round-2 implementation.
+2. `node --test scripts/cloudflare-storefront-rules.test.mjs` — 20/20 passing.
+3. `npm run test:storefront-cache-script` — 28/28 passing.
+4. `node --check scripts/cloudflare-storefront-rules.mjs` and `node --check scripts/cloudflare-storefront-rules.test.mjs` — passing.
+5. `git diff --check -- scripts/cloudflare-storefront-rules.mjs scripts/cloudflare-storefront-rules.test.mjs` — passing (Git emitted only the worktree's existing LF-to-CRLF warnings).
+
+### GitNexus
+
+- Refreshed the stale index at commit `5ac7e92` before editing.
+- Upstream impact for `runCommand` was LOW: two direct dependants and zero affected execution flows.
+- Upstream impact for `auditRuleset` was LOW: three direct callers, one script module, and zero affected execution flows.

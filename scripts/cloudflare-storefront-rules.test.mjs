@@ -183,6 +183,43 @@ test('apply-home rejects unsafe API semantics before dry-run or execute PUT', as
   }
 });
 
+test('apply-home rejects legacy named rules when an earlier unknown cache rule creates a precedence conflict', async () => {
+  const earlierBroadRule = {
+    ref: 'earlier-broad-cache',
+    description: 'Earlier broad cache',
+    expression: '(http.host eq "petposture.com")',
+    action: 'set_cache_settings',
+    action_parameters: { cache: true },
+  };
+  const legacy = ruleset({
+    rules: [earlierBroadRule, ...rules.map((rule) => rule.ref === 'api'
+      ? { ...rule, expression: API_EXPRESSION.replace('(http.host eq "api.petposture.com") and ', '') }
+      : rule)],
+  });
+
+  for (const execute of [false, true]) {
+    const artifactDir = await mkdtemp(path.join(os.tmpdir(), `cloudflare-precedence-${execute ? 'execute' : 'dry'}-`));
+    const exportPath = path.join(artifactDir, 'fresh.json');
+    await writeFile(exportPath, JSON.stringify(createExportArtifact(legacy)));
+    const methods = [];
+    const logs = output();
+    let artifactWrites = 0;
+    await assert.rejects(() => runCommand(['apply-home', '--from-export', exportPath, ...(execute ? ['--execute'] : [])], {
+      env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+      fetchImpl: async (_url, options) => {
+        methods.push(options.method);
+        return cloudflareResponse(legacy);
+      },
+      stdout: logs.stream,
+      artifactDir,
+      artifactWriter: async () => { artifactWrites += 1; },
+    }), /precedence|earlier/i);
+    assert.deepEqual(methods, ['GET']);
+    assert.equal(artifactWrites, 0);
+    assert.equal(logs.read(), '');
+  }
+});
+
 test('restore requires confirmation and remains dry-run unless --execute is explicit', async () => {
   const artifactDir = await mkdtemp(path.join(os.tmpdir(), 'cloudflare-restore-'));
   const exportPath = path.join(artifactDir, 'fresh.json');
