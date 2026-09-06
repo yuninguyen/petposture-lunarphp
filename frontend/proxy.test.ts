@@ -25,6 +25,15 @@ describe('proxy storefront policy', () => {
     expect(policy).not.toContain('nonce-');
   });
 
+  it('uses the request Host header when Next URL retains the local browser origin', async () => {
+    const response = await proxy(new NextRequest('http://127.0.0.1:3101/', {
+      headers: { host: 'petposture.com:3101' },
+    }));
+
+    expect(response.headers.get('cache-control')).toBe(PUBLIC_HTML_CACHE_CONTROL);
+    expect(response.headers.get('content-security-policy')).toBe(buildPublicContentSecurityPolicy());
+  });
+
   it('keeps query, private, cookie, and visible prefetch requests private', async () => {
     for (const request of [
       new NextRequest('https://petposture.com/?_rsc=x'),

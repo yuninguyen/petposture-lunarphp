@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run app/favicon.png/route.test.ts lib/storefront-request-policy.test.ts"
+    "test": "vitest run app/favicon.png/route.test.ts lib/api.test.ts lib/storefront-request-policy.test.ts",
+    "test:e2e:csp": "playwright test e2e/storefront-csp.spec.ts"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.20",
@@ -20,6 +21,7 @@
     "sharp": "^0.33.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

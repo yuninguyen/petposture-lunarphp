@@ -43,8 +43,9 @@ export async function proxy(request: NextRequest) {
     // `next-router-state-tree`, and `next-router-prefetch` from request.headers.
     // We classify every visible signal here; Cloudflare rules and production
     // probes must guarantee hidden-header RSC/prefetch requests never become HIT.
+    const requestHost = request.headers.get('host')?.split(':')[0] || request.nextUrl.hostname;
     const policy = classifyStorefrontRequest({
-        host: request.nextUrl.hostname,
+        host: requestHost,
         method: request.method,
         pathname: request.nextUrl.pathname,
         search: request.nextUrl.search,
