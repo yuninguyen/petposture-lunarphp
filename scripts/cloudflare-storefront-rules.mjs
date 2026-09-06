@@ -10,19 +10,24 @@ export const HOME_RULE_DESCRIPTION = 'Cache anonymous petposture.com homepage';
 const PHASE = 'http_request_cache_settings';
 const ARTIFACT_SCHEMA = 'petposture-cloudflare-cache-ruleset-export-v1';
 const API_HOST_CONDITION = '(http.host eq "api.petposture.com")';
-const HOME_EXPRESSION = [
+export const API_EXPRESSION = '(http.host eq "api.petposture.com") and (http.request.method eq "GET") and (http.request.uri.path matches "^/(catalog|content)/")';
+export const HOME_EXPRESSION = [
   '(http.host eq "petposture.com")',
   '(http.request.method in {"GET" "HEAD"})',
   '(http.request.uri.path eq "/")',
   '(http.request.uri.query eq "")',
-  '(not http.request.headers["purpose"][*] contains "prefetch")',
-  '(not http.request.headers["sec-purpose"][*] contains "prefetch")',
-  '(not any(http.request.headers["next-router-prefetch"][*] eq "1"))',
-  '(not any(http.request.headers["rsc"][*] eq "1"))',
-  '(not http.cookie contains "petposture-session=")',
-  '(not http.cookie contains "XSRF-TOKEN=")',
-  '(not http.cookie contains "laravel_session=")',
+  '(not any(http.request.headers.names[*] eq "purpose"))',
+  '(not any(http.request.headers.names[*] eq "sec-purpose"))',
+  '(not any(http.request.headers.names[*] eq "next-router-prefetch"))',
+  '(not any(http.request.headers.names[*] eq "rsc"))',
+  '(not any(http.request.headers.names[*] eq "next-router-state-tree"))',
+  '(not any(http.request.headers.names[*] eq "next-router-segment-prefetch"))',
+  '(not http.cookie matches "(?i)(^|;\\s*)petposture-session=")',
+  '(not http.cookie matches "(?i)(^|;\\s*)XSRF-TOKEN=")',
+  '(not http.cookie matches "(?i)(^|;\\s*)laravel_session=")',
 ].join(' and ');
+
+const LEGACY_HTML_EXPRESSION = '(http.host eq "petposture.com") and (not starts_with(http.request.uri.path, "/api/"))';
 
 function clone(value) {
   return structuredClone(value);
@@ -40,9 +45,12 @@ function hash(value) {
   return createHash('sha256').update(typeof value === 'string' ? value : stableJson(value)).digest('hex');
 }
 
-function hostScope(expression, expectedHost) {
-  const escaped = expectedHost.replaceAll('.', '\\.');
-  return new RegExp(`http\\.host\\s+eq\\s+"${escaped}"`).test(expression ?? '');
+function normalizeExpression(expression) {
+  return String(expression ?? '').replace(/\s+/g, ' ').trim();
+}
+
+function exactExpression(expression, reviewed) {
+  return normalizeExpression(expression) === normalizeExpression(reviewed);
 }
 
 function findExact(rules, description) {
@@ -66,17 +74,36 @@ export function auditRuleset(ruleset, { throwOnFailure = true } = {}) {
   if (apiRules.length === 0) failures.push(`${API_RULE_DESCRIPTION} is missing`);
   if (apiRules.length > 1) failures.push(`${API_RULE_DESCRIPTION} is duplicated`);
 
-  const htmlScoped = htmlRules.length === 1 && hostScope(htmlRules[0].expression, 'petposture.com');
-  const apiScoped = apiRules.length === 1 && hostScope(apiRules[0].expression, 'api.petposture.com');
-  if (htmlRules.length === 1 && !htmlScoped) failures.push(`${HTML_RULE_DESCRIPTION} has no explicit petposture.com hostname scope`);
-  if (apiRules.length === 1 && !apiScoped) failures.push(`${API_RULE_DESCRIPTION} has no explicit api.petposture.com hostname scope`);
+  const htmlExpression = htmlRules[0]?.expression;
+  const apiExpression = apiRules[0]?.expression;
+  const htmlReviewed = htmlRules.length === 1 && exactExpression(htmlExpression, HOME_EXPRESSION);
+  const htmlLegacy = htmlRules.length === 1 && exactExpression(htmlExpression, LEGACY_HTML_EXPRESSION);
+  const apiReviewed = apiRules.length === 1 && exactExpression(apiExpression, API_EXPRESSION);
+  if (htmlRules.length === 1 && !htmlReviewed) {
+    failures.push(htmlLegacy
+      ? `${HTML_RULE_DESCRIPTION} is a recognized broad legacy candidate and must be transformed before audit can pass`
+      : `${HTML_RULE_DESCRIPTION} does not exactly match the reviewed homepage semantics`);
+  }
+  if (apiRules.length === 1 && !apiReviewed) failures.push(`${API_RULE_DESCRIPTION} does not exactly match the reviewed safe GET/path/host semantics`);
+
+  const htmlIndex = htmlRules.length === 1 ? ruleset.rules.indexOf(htmlRules[0]) : -1;
+  if (htmlIndex >= 0) {
+    for (let index = 0; index < htmlIndex; index += 1) {
+      const rule = ruleset.rules[index];
+      const enabledCacheRule = rule.enabled !== false && rule.action === 'set_cache_settings' && rule.action_parameters?.cache === true;
+      const expression = normalizeExpression(rule.expression);
+      const homepageCapable = /http\.host\s+eq\s+"petposture\.com"/.test(expression)
+        && !/uri\.path\s+(?:ne|does not equal)\s+"\/"/.test(expression);
+      if (enabledCacheRule && homepageCapable) failures.push(`Earlier enabled rule ${rule.description ?? rule.ref ?? index + 1} creates a homepage precedence conflict`);
+    }
+  }
 
   const report = {
     pass: failures.length === 0,
     failures,
     expected: {
-      html: { count: htmlRules.length, hostnameScoped: htmlScoped, expression: htmlRules[0]?.expression ?? null },
-      api: { count: apiRules.length, hostnameScoped: apiScoped, expression: apiRules[0]?.expression ?? null },
+      html: { count: htmlRules.length, hostnameScoped: htmlReviewed || htmlLegacy, reviewed: htmlReviewed, legacyCandidate: htmlLegacy, expression: htmlExpression ?? null },
+      api: { count: apiRules.length, hostnameScoped: apiReviewed, reviewed: apiReviewed, expression: apiExpression ?? null },
     },
     rules: ruleset.rules.map((rule, index) => ({
       order: index + 1,
@@ -115,8 +142,10 @@ function replaceBroadHtmlRule(rule) {
 }
 
 function scopeApiRule(rule) {
-  if (hostScope(rule.expression, 'api.petposture.com')) return clone(rule);
-  return { ...clone(rule), expression: `${API_HOST_CONDITION} and (${rule.expression})` };
+  if (exactExpression(rule.expression, API_EXPRESSION)) return clone(rule);
+  const legacyPathOnly = exactExpression(rule.expression, API_EXPRESSION.replace(`${API_HOST_CONDITION} and `, ''));
+  if (!legacyPathOnly) throw new Error(`${API_RULE_DESCRIPTION} is not the reviewed safe legacy path-only expression`);
+  return { ...clone(rule), expression: API_EXPRESSION };
 }
 
 export function buildApplyRules(ruleset) {
@@ -146,8 +175,8 @@ export function createExportArtifact(ruleset, exportedAt = new Date().toISOStrin
 
 export function parseExport(value, liveRuleset, { requireTrusted = false } = {}) {
   const artifact = value?.schema === ARTIFACT_SCHEMA ? value : null;
-  if (requireTrusted && (!artifact || artifact.source !== 'live-cloudflare-api' || !artifact.exportedAt)) {
-    throw new Error('Refusing untrusted or historical backup: use a fresh export created by this tool');
+  if (requireTrusted && (!artifact || artifact.source !== 'live-cloudflare-api' || !artifact.exportedAt || typeof artifact.sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(artifact.sha256))) {
+    throw new Error('Refusing untrusted export: a valid SHA-256 hash is required');
   }
   const exported = artifact?.ruleset ?? value;
   assertRulesetShape(exported);
@@ -158,7 +187,7 @@ export function parseExport(value, liveRuleset, { requireTrusted = false } = {})
   if (hash(exported) !== hash(liveRuleset)) {
     throw new Error('Export ruleset does not exactly match the just-read live ruleset');
   }
-  if (artifact?.sha256 && artifact.sha256 !== hash(exported)) throw new Error('Export SHA-256 does not match its ruleset payload');
+  if (artifact && artifact.sha256 !== hash(exported)) throw new Error('Export SHA-256 does not match its ruleset payload');
   return clone(exported);
 }
 
@@ -166,6 +195,7 @@ export function redactSecrets(value, ...secrets) {
   let redacted = String(value);
   for (const secret of secrets.filter(Boolean)) redacted = redacted.replaceAll(String(secret), '[REDACTED]');
   redacted = redacted.replace(/Bearer\s+[^"'\s]+/gi, 'Bearer [REDACTED]');
+  redacted = redacted.replace(/(zones\/)[A-Za-z0-9_-]+(\/rulesets)/gi, '$1[REDACTED]$2');
   return redacted;
 }
 
@@ -237,6 +267,7 @@ export async function runCommand(argv, {
   fetchImpl = fetch,
   stdout = process.stdout,
   artifactDir = path.join('artifacts', 'cloudflare'),
+  artifactWriter = saveArtifact,
 } = {}) {
   const { command, options } = parseArgs(argv);
   if (!['export', 'audit', 'apply-home', 'restore'].includes(command)) {
@@ -247,7 +278,7 @@ export async function runCommand(argv, {
 
   if (command === 'export') {
     const artifact = createExportArtifact(live);
-    const file = await saveArtifact(artifact, { artifactDir });
+    const file = await artifactWriter(artifact, { artifactDir });
     stdout.write(`Exported ${file}\nSHA-256 ${artifact.sha256}\nRuleset ${live.id} version ${live.version}\n`);
     return { command, file, artifact };
   }
@@ -265,9 +296,10 @@ export async function runCommand(argv, {
     parseExport(supplied, live, { requireTrusted: true });
     const audit = auditRuleset(live, { throwOnFailure: false });
     const expectedCountSafe = audit.expected.html.count === 1 && audit.expected.api.count === 1;
-    if (!expectedCountSafe) auditRuleset(live);
+    const semanticsSafeToTransform = audit.expected.html.legacyCandidate && audit.expected.api.reviewed;
+    if (!expectedCountSafe || (!audit.pass && !semanticsSafeToTransform)) auditRuleset(live);
     const rollbackArtifact = createExportArtifact(live);
-    const rollbackFile = await saveArtifact(rollbackArtifact, { artifactDir, suffix: '-pre-apply-rollback' });
+    const rollbackFile = await artifactWriter(rollbackArtifact, { artifactDir, suffix: '-pre-apply-rollback' });
     const update = buildApplyRules(live);
     const request = { name: live.name, description: live.description, kind: live.kind, phase: live.phase, rules: update.rules };
     if (!options.execute) {
@@ -276,21 +308,50 @@ export async function runCommand(argv, {
     }
     const result = await cloudflareRequest({ method: 'PUT', ...credentials, fetchImpl, body: request });
     const artifact = { schema: 'petposture-cloudflare-cache-ruleset-apply-v1', appliedAt: new Date().toISOString(), rollbackFile, request, result };
-    const file = await saveArtifact(artifact, { artifactDir, suffix: '-post-apply' });
+    let file;
+    try {
+      file = await artifactWriter(artifact, { artifactDir, suffix: '-post-apply' });
+    } catch (cause) {
+      const error = new Error(`MUTATION SUCCEEDED for ruleset ${result.id} version ${result.version}, but the post-PUT artifact write failed. The Cloudflare response remains attached as error.result.`);
+      error.cause = cause;
+      error.mutationSucceeded = true;
+      error.result = clone(result);
+      error.artifact = artifact;
+      throw error;
+    }
     stdout.write(`Applied atomically: ruleset ${result.id} version ${result.version}\nRollback export ${rollbackFile}\nPost-change artifact ${file}\nPurge is required before verification.\n`);
     return { command, dryRun: false, rollbackFile, file, result };
   }
 
   if (!options.confirmRestore) throw new Error('restore requires --confirm-restore');
-  const exported = parseExport(supplied, supplied?.ruleset ?? supplied, { requireTrusted: true });
+  const artifact = supplied?.schema === ARTIFACT_SCHEMA ? supplied : null;
+  if (!artifact || artifact.source !== 'live-cloudflare-api' || !artifact.exportedAt || typeof artifact.sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(artifact.sha256)) {
+    throw new Error('Refusing untrusted restore export: a valid SHA-256 hash is required');
+  }
+  const exported = artifact.ruleset;
+  assertRulesetShape(exported);
+  if (artifact.sha256 !== hash(exported)) throw new Error('Export SHA-256 does not match its ruleset payload');
+  if (String(exported.id) !== String(live.id)) throw new Error('Restore export ruleset ID does not match the fresh live ruleset ID');
+  const staleVersion = String(exported.version) !== String(live.version);
+  if (staleVersion) stdout.write(`STALE VERSION WARNING: intentionally restoring exported version ${exported.version} over live version ${live.version}.\n`);
   const request = { name: exported.name, description: exported.description, kind: exported.kind, phase: exported.phase, rules: clone(exported.rules) };
   if (!options.execute) {
     stdout.write(`DRY RUN: no Cloudflare mutation performed\nWould restore ${exported.rules.length} exact exported rules from ${options.fromExport}\n`);
     return { command, dryRun: true, request };
   }
   const result = await cloudflareRequest({ method: 'PUT', ...credentials, fetchImpl, body: request });
-  const artifact = { schema: 'petposture-cloudflare-cache-ruleset-restore-v1', restoredAt: new Date().toISOString(), sourceExport: options.fromExport, result };
-  const file = await saveArtifact(artifact, { artifactDir, suffix: '-post-restore' });
+  const responseArtifact = { schema: 'petposture-cloudflare-cache-ruleset-restore-v1', restoredAt: new Date().toISOString(), sourceExport: options.fromExport, request, result };
+  let file;
+  try {
+    file = await artifactWriter(responseArtifact, { artifactDir, suffix: '-post-restore' });
+  } catch (cause) {
+    const error = new Error(`MUTATION SUCCEEDED for ruleset ${result.id} version ${result.version}, but the post-PUT artifact write failed. The Cloudflare response remains attached as error.result.`);
+    error.cause = cause;
+    error.mutationSucceeded = true;
+    error.result = clone(result);
+    error.artifact = responseArtifact;
+    throw error;
+  }
   stdout.write(`Restored exact exported rules: new version ${result.version}\nArtifact ${file}\nPurge is required before verification.\n`);
   return { command, dryRun: false, file, result };
 }

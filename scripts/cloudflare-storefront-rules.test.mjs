@@ -13,6 +13,8 @@ import {
   parseExport,
   redactSecrets,
   runCommand,
+  HOME_EXPRESSION,
+  API_EXPRESSION,
 } from './cloudflare-storefront-rules.mjs';
 
 const fixture = JSON.parse(await readFile(new URL('./fixtures/cloudflare-cache-ruleset.json', import.meta.url), 'utf8'));
@@ -22,8 +24,8 @@ function ruleset(overrides = {}) {
   return { ...structuredClone(fixture), ...overrides };
 }
 
-test('auditRuleset identifies exact rules, host scope, and evaluation order', () => {
-  const report = auditRuleset(ruleset());
+test('auditRuleset identifies exact rules, semantic scope, and evaluation order', () => {
+  const report = auditRuleset(ruleset({ rules: buildApplyRules(ruleset()).rules }));
   assert.deepEqual(report.rules.map((rule) => rule.description), [HTML_RULE_DESCRIPTION, API_RULE_DESCRIPTION, 'Other cache rule']);
   assert.equal(report.expected.html.count, 1);
   assert.equal(report.expected.html.hostnameScoped, true);
@@ -35,7 +37,7 @@ test('auditRuleset identifies exact rules, host scope, and evaluation order', ()
 test('auditRuleset fails closed for missing, duplicate, or unscoped named rules', () => {
   assert.throws(() => auditRuleset(ruleset({ rules: rules.filter((rule) => rule.ref !== 'api') })), /missing/i);
   assert.throws(() => auditRuleset(ruleset({ rules: [...rules, rules[0]] })), /duplicat/i);
-  assert.throws(() => auditRuleset(ruleset({ rules: rules.map((rule) => rule.ref === 'api' ? { ...rule, expression: '(http.request.method eq "GET")' } : rule) })), /hostname|scop/i);
+  assert.throws(() => auditRuleset(ruleset({ rules: rules.map((rule) => rule.ref === 'api' ? { ...rule, expression: '(http.request.method eq "GET")' } : rule) })), /host|semantic|scop/i);
 });
 
 test('buildHomeRule is a narrowly scoped anonymous homepage cache rule', () => {
@@ -74,6 +76,7 @@ test('redactSecrets never exposes environment secrets', () => {
   const token = 'super-secret-token';
   assert.equal(redactSecrets(`token=${token}`, token), 'token=[REDACTED]');
   assert.doesNotMatch(redactSecrets(JSON.stringify({ authorization: `Bearer ${token}` }), token), /super-secret-token/);
+  assert.equal(redactSecrets('https://api.cloudflare.com/client/v4/zones/zone-secret/rulesets'), 'https://api.cloudflare.com/client/v4/zones/[REDACTED]/rulesets');
 });
 
 function cloudflareResponse(result) {
@@ -159,4 +162,130 @@ test('restore requires confirmation and remains dry-run unless --execute is expl
   });
   assert.equal(result.dryRun, true);
   assert.deepEqual(result.request.rules, rules);
+});
+
+test('audit requires exact reviewed HTML/API semantics and recognizes only the pre-apply broad HTML candidate', () => {
+  const reviewed = ruleset({ rules: buildApplyRules(ruleset()).rules });
+  assert.equal(auditRuleset(reviewed).pass, true);
+
+  const broadHtml = ruleset();
+  const broadReport = auditRuleset(broadHtml, { throwOnFailure: false });
+  assert.equal(broadReport.pass, false);
+  assert.equal(broadReport.expected.html.legacyCandidate, true);
+  assert.match(broadReport.failures.join('\n'), /legacy|transform/i);
+
+  for (const [ref, expression] of [
+    ['html', `${HOME_EXPRESSION} or (http.request.uri.path eq "/products")`],
+    ['api', '(http.host eq "api.petposture.com") and (http.request.method eq "GET")'],
+    ['api', API_EXPRESSION.replace('api.petposture.com', 'api.petposture.com.evil.example')],
+  ]) {
+    assert.throws(() => auditRuleset(ruleset({ rules: reviewed.rules.map((rule) => rule.ref === ref ? { ...rule, expression } : rule) })), /semantic|reviewed|safe/i);
+  }
+});
+
+test('audit rejects an earlier enabled rule capable of caching homepage traffic', () => {
+  const reviewedRules = buildApplyRules(ruleset()).rules;
+  const conflict = {
+    ref: 'earlier-conflict',
+    description: 'Earlier broad cache',
+    expression: '(http.host eq "petposture.com")',
+    action: 'set_cache_settings',
+    action_parameters: { cache: true },
+  };
+  assert.throws(() => auditRuleset(ruleset({ rules: [conflict, ...reviewedRules] })), /precedence|earlier/i);
+  assert.doesNotThrow(() => auditRuleset(ruleset({ rules: [{ ...conflict, enabled: false }, ...reviewedRules] })));
+});
+
+test('HOME expression has exact reviewed exclusions and cookie-name boundaries', () => {
+  assert.equal(buildHomeRule().expression, HOME_EXPRESSION);
+  for (const required of [
+    'not any(http.request.headers.names[*] eq "purpose")',
+    'not any(http.request.headers.names[*] eq "sec-purpose")',
+    'not any(http.request.headers.names[*] eq "next-router-prefetch")',
+    'not any(http.request.headers.names[*] eq "rsc")',
+    'not any(http.request.headers.names[*] eq "next-router-state-tree")',
+    'not any(http.request.headers.names[*] eq "next-router-segment-prefetch")',
+    'not http.cookie matches "(?i)(^|;\\s*)petposture-session="',
+    'not http.cookie matches "(?i)(^|;\\s*)XSRF-TOKEN="',
+  ]) assert.ok(HOME_EXPRESSION.includes(required), `missing ${required}`);
+  assert.doesNotMatch(HOME_EXPRESSION, /contains "petposture-session="|contains "XSRF-TOKEN="/);
+});
+
+test('trusted exports require a present valid SHA-256 matching their exact payload', () => {
+  const artifact = createExportArtifact(ruleset());
+  assert.doesNotThrow(() => parseExport(artifact, ruleset(), { requireTrusted: true }));
+  assert.throws(() => parseExport({ ...artifact, sha256: undefined }, ruleset(), { requireTrusted: true }), /SHA-256|required/i);
+  assert.throws(() => parseExport({ ...artifact, sha256: 'xyz' }, ruleset(), { requireTrusted: true }), /SHA-256|malformed/i);
+  assert.throws(() => parseExport({ ...artifact, sha256: '0'.repeat(64) }, ruleset(), { requireTrusted: true }), /SHA-256|match/i);
+});
+
+test('restore accepts a trusted older version with matching live ID, warns, preserves exact fields/order, and PUTs once', async () => {
+  const artifactDir = await mkdtemp(path.join(os.tmpdir(), 'cloudflare-restore-old-'));
+  const old = ruleset({ version: 'v6', rules: rules.map((rule, index) => ({ ...rule, ref: `${rule.ref}-${index}`, extra: { keep: index } })) });
+  const live = ruleset({ version: 'v9' });
+  const exportPath = path.join(artifactDir, 'old.json');
+  await writeFile(exportPath, JSON.stringify(createExportArtifact(old)));
+  const requests = [];
+  const logs = output();
+  await runCommand(['restore', '--from-export', exportPath, '--confirm-restore', '--execute'], {
+    env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+    fetchImpl: async (_url, options) => {
+      requests.push(options);
+      return cloudflareResponse(options.method === 'PUT' ? { ...live, version: 'v10', rules: old.rules } : live);
+    },
+    stdout: logs.stream,
+    artifactDir,
+  });
+  assert.deepEqual(requests.map(({ method }) => method), ['GET', 'PUT']);
+  assert.deepEqual(JSON.parse(requests[1].body).rules, old.rules);
+  assert.match(logs.read(), /STALE VERSION WARNING|older/i);
+
+  const mismatched = createExportArtifact({ ...old, id: 'different-ruleset' });
+  await writeFile(exportPath, JSON.stringify(mismatched));
+  await assert.rejects(() => runCommand(['restore', '--from-export', exportPath, '--confirm-restore'], {
+    env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' }, fetchImpl: async () => cloudflareResponse(live), artifactDir,
+  }), /ID|ruleset/i);
+});
+
+test('mutation failures are distinguishable from post-PUT artifact failures with recoverable response data', async () => {
+  const artifactDir = await mkdtemp(path.join(os.tmpdir(), 'cloudflare-failure-'));
+  const exportPath = path.join(artifactDir, 'fresh.json');
+  await writeFile(exportPath, JSON.stringify(createExportArtifact(ruleset())));
+  let puts = 0;
+  await assert.rejects(() => runCommand(['apply-home', '--from-export', exportPath, '--execute'], {
+    env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+    fetchImpl: async (_url, options) => {
+      if (options.method === 'PUT') { puts += 1; return new Response(JSON.stringify({ success: false, errors: [{ message: 'denied' }] }), { status: 500 }); }
+      return cloudflareResponse(ruleset());
+    },
+    artifactDir,
+  }), /PUT failed/i);
+  assert.equal(puts, 1);
+
+  puts = 0;
+  let artifactWrites = 0;
+  await assert.rejects(() => runCommand(['apply-home', '--from-export', exportPath, '--execute'], {
+    env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+    fetchImpl: async (_url, options) => {
+      if (options.method === 'PUT') puts += 1;
+      return cloudflareResponse(options.method === 'PUT' ? { ...ruleset(), version: 'v8' } : ruleset());
+    },
+    artifactDir,
+    artifactWriter: async (artifact, options) => {
+      artifactWrites += 1;
+      if (artifactWrites === 2) throw new Error('disk full');
+      const file = path.join(artifactDir, `write-${artifactWrites}${options.suffix}.json`);
+      await writeFile(file, JSON.stringify(artifact));
+      return file;
+    },
+  }), (error) => error.mutationSucceeded === true && error.result?.version === 'v8' && /MUTATION SUCCEEDED|artifact/i.test(error.message));
+  assert.equal(puts, 1);
+});
+
+test('all generated mutation payloads preserve fields/order/refs and contain no override_origin anywhere', () => {
+  const source = ruleset({ rules: rules.map((rule, index) => ({ ...rule, enabled: index !== 2, logging: { enabled: true }, extra: `keep-${index}` })) });
+  const applied = buildApplyRules(source).rules;
+  assert.deepEqual(applied.map((rule) => rule.ref), source.rules.map((rule) => rule.ref));
+  assert.deepEqual(applied.map((rule) => rule.extra), source.rules.map((rule) => rule.extra));
+  assert.doesNotMatch(JSON.stringify(applied), /override_origin/);
 });

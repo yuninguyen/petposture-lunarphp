@@ -43,3 +43,31 @@ Implemented Task 9 as offline-tested tooling only. No production Cloudflare muta
 - This task deliberately did not call Cloudflare production APIs. Fixture tests validate request sequencing and payload safety, but a real operator must run `export` and `audit` with production environment credentials before any later apply.
 - `artifacts/cloudflare` is intentionally runtime output and may contain complete ruleset configuration. Operators should store and handle those rollback artifacts securely and avoid committing them.
 - After an executed apply or restore, a separate Cloudflare purge remains mandatory before storefront verification.
+
+## Task 9 Fix Round 1
+
+### Status
+
+Fixed all load-bearing review findings in the Task 9 tooling. This round remained offline-only: no production Cloudflare network calls or mutations were performed.
+
+### Safety fixes
+
+- `auditRuleset()` now fails closed unless the named HTML rule exactly matches the normalized reviewed homepage expression, or is the explicitly recognized broad legacy candidate (which remains a FAIL until transformed). The API rule must exactly match the reviewed safe GET/path expression and `api.petposture.com` host scope; arbitrary host substrings and broadened expressions are rejected.
+- Audit now detects earlier enabled `set_cache_settings` rules capable of matching `petposture.com` homepage traffic and reports a precedence conflict; disabled earlier rules are allowed.
+- The homepage expression excludes the presence of Purpose, Sec-Purpose, Next-Router-Prefetch, RSC, Next-Router-State-Tree, and Next-Router-Segment-Prefetch headers; requires an empty query and exact `/` path; and uses cookie-name boundary regexes for `petposture-session`, `XSRF-TOKEN`, and `laravel_session`.
+- Trusted exports now require a tool schema, live source marker, timestamp, and a present, well-formed, matching SHA-256. Restore requires the same ruleset ID as the fresh live GET, permits an older version only with explicit confirmation, and emits a stale-version warning.
+- Mutation payload tests cover one PUT, exact rule order/refs/extra fields, and absence of `override_origin`. Post-PUT artifact failures now throw an unmistakable `MUTATION SUCCEEDED` error with the Cloudflare response and response artifact attached for durable recovery by the caller.
+- Secret redaction also removes zone IDs from Cloudflare URLs. The zone redaction behavior is implemented rather than merely claimed.
+
+### TDD and verification evidence
+
+1. Expanded tests were first run against the missing `API_EXPRESSION` export and failed before implementation; the intentionally broadened precedence test was also observed failing before its fail-closed detection was implemented.
+2. `node --test scripts/cloudflare-storefront-rules.test.mjs` — 17/17 passing.
+3. `npm run test:storefront-cache-script` — 25/25 passing.
+4. `node --check scripts/cloudflare-storefront-rules.mjs` and `node --check scripts/cloudflare-storefront-rules.test.mjs` — passing.
+5. `git diff --check -- scripts/cloudflare-storefront-rules.mjs scripts/cloudflare-storefront-rules.test.mjs` — passing.
+
+### Concerns
+
+- The exact Cloudflare expression grammar for header-name arrays and case-insensitive cookie regexes must still be confirmed by a real operator against the account/API schema before any production apply; this round intentionally made no network request.
+- Existing unrelated worktree modifications and generated files were left untouched and are excluded from the Task 9 commit.
