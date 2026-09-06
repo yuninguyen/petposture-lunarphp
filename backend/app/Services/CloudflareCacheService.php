@@ -37,11 +37,12 @@ class CloudflareCacheService
 
         try {
             $response = Http::withToken(config('services.cloudflare.api_token'))
+                ->timeout(5)
                 ->post('https://api.cloudflare.com/client/v4/zones/'.config('services.cloudflare.zone_id').'/purge_cache', [
                     'purge_everything' => true,
                 ]);
 
-            if (! $response->successful()) {
+            if (! $response->successful() || $response->json('success') !== true) {
                 return new CloudflarePurgeResult(
                     successful: false,
                     configured: true,

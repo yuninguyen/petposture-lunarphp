@@ -37,8 +37,6 @@ class PurgeCloudflareCache implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        Log::error('Cloudflare cache purge retry exhausted.', [
-            'message' => $exception->getMessage(),
-        ]);
+        Log::error('Cloudflare cache purge retry exhausted.', []);
     }
 }

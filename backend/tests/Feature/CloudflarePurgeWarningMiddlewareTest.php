@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
+use Mockery;
+use RuntimeException;
 use Tests\TestCase;
 
 class CloudflarePurgeWarningMiddlewareTest extends TestCase
@@ -19,7 +21,10 @@ class CloudflarePurgeWarningMiddlewareTest extends TestCase
     public function test_first_failure_dispatches_retry_and_records_request_notice(): void
     {
         Bus::fake();
-        Log::spy();
+        Log::shouldReceive('warning')->once()->with(
+            'Cloudflare cache purge pending retry.',
+            Mockery::on(fn (array $context): bool => $context === ['status' => 500]),
+        );
         $failure = new CloudflarePurgeResult(false, true, 500, 'Cloudflare cache purge failed.');
         $service = $this->mock(CloudflareCacheService::class);
         $service->shouldReceive('purgeAll')->once()->andReturn($failure);
@@ -29,6 +34,21 @@ class CloudflarePurgeWarningMiddlewareTest extends TestCase
         $this->assertSame($failure, $result);
         $this->assertTrue(app(CloudflarePurgeNotice::class)->isPending());
         Bus::assertDispatched(PurgeCloudflareCache::class);
+    }
+
+    public function test_first_failure_warning_log_does_not_leak_result_message(): void
+    {
+        Bus::fake();
+        Log::shouldReceive('warning')->once()->with(
+            'Cloudflare cache purge pending retry.',
+            Mockery::on(fn (array $context): bool => $context === ['status' => 200]),
+        );
+        $service = $this->mock(CloudflareCacheService::class);
+        $service->shouldReceive('purgeAll')->once()->andReturn(
+            new CloudflarePurgeResult(false, true, 200, 'token=test-token body=secret exception=detail'),
+        );
+
+        app(PublicContentPurgeCoordinator::class)->purge();
     }
 
     public function test_repeated_calls_in_one_request_are_deduplicated(): void
@@ -78,7 +98,7 @@ class CloudflarePurgeWarningMiddlewareTest extends TestCase
 
         $this->assertSame(4, $job->tries);
         $this->assertSame([30, 120, 300], $job->backoff());
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Cloudflare cache purge failed.');
 
         $job->handle($service);
@@ -93,6 +113,17 @@ class CloudflarePurgeWarningMiddlewareTest extends TestCase
         $job->handle($service);
 
         $this->addToAssertionCount(1);
+    }
+
+    public function test_retry_job_final_error_log_does_not_leak_exception_details(): void
+    {
+        Log::shouldReceive('error')->once()->with(
+            'Cloudflare cache purge retry exhausted.',
+            [],
+        );
+        $job = new PurgeCloudflareCache;
+
+        $job->failed(new RuntimeException('token=test-token body=secret exception=detail'));
     }
 
     public function test_warning_is_added_only_to_successful_admin_api_response_when_notice_is_present(): void

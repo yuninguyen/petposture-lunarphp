@@ -26,7 +26,6 @@ class PublicContentPurgeCoordinator
         if ($result->configured && ! $result->successful) {
             Log::warning('Cloudflare cache purge pending retry.', [
                 'status' => $result->status,
-                'message' => $result->message,
             ]);
 
             PurgeCloudflareCache::dispatch();
