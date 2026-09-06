@@ -95,6 +95,17 @@ Result: exit 1 because of a pre-existing type error in `frontend/app/favicon.png
 - Prior frontend test interfaces preserved: yes; the Task 2 commit adds its test without removing the existing favicon test, while the separate unstaged API test entry remains intact in the working copy.
 - Lockfiles unchanged: yes.
 
+## Fix Round 1 Evidence
+
+- Review finding reproduced with focused regression cases for non-null `Purpose`, `Sec-Purpose`, and `Next-Router-Prefetch` values: arbitrary `navigate`, composite `prefetch;prerender`, and empty string. Before the fix, the six `Purpose`/`Sec-Purpose` cases failed while `Next-Router-Prefetch` already passed.
+- Root cause: `isPrefetchValue` only returned true for a trimmed, case-insensitive exact `prefetch` value, so arbitrary and empty visible `Purpose`/`Sec-Purpose` values were incorrectly cacheable.
+- Fix: `isPrefetchValue` now returns `value !== null`, making every visible non-null signal private while preserving null as absent.
+- Focused TDD RED: `npx vitest run lib/storefront-request-policy.test.ts` failed 6 of 49 tests before the production fix.
+- GREEN: the focused suite passed 49/49 tests after the fix; the configured frontend suite passed 61/61 tests across 3 files.
+- Changed-file lint passed with `npx eslint lib/storefront-request-policy.ts lib/storefront-request-policy.test.ts`; `git diff --check` passed for the classifier files.
+- Pre-edit and pre-commit GitNexus impact for `isPrefetchValue`: LOW risk, one direct caller (`classifyStorefrontRequest`), zero affected processes. `classifyStorefrontRequest` itself has one direct test caller and zero affected processes.
+- The installed GitNexus CLI has no `detect_changes` command. Equivalent scope verification via `git diff --name-only` showed only the two classifier fix files plus unrelated pre-existing worktree changes; only the two classifier files and this report are staged for the fix commit.
+
 ## Concerns
 
 1. Full-project frontend typecheck remains red due solely to the existing favicon route-test `Buffer`/`BodyInit` mismatch noted above.

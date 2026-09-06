@@ -32,7 +32,7 @@ function hasSensitiveCookie(cookieHeader: string): boolean {
 }
 
 function isPrefetchValue(value: string | null): boolean {
-  return value?.trim().toLowerCase() === 'prefetch';
+  return value !== null;
 }
 
 export function classifyStorefrontRequest(

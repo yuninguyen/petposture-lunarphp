@@ -48,16 +48,22 @@ describe('classifyStorefrontRequest', () => {
     },
   );
 
-  it('bypasses visible prefetch signals case-insensitively', () => {
-    expect(classifyStorefrontRequest({ ...home, purpose: 'PreFetch' })).toEqual({
-      kind: 'private',
-      reason: 'prefetch',
-    });
-    expect(classifyStorefrontRequest({ ...home, secPurpose: 'PREFETCH' })).toEqual({
-      kind: 'private',
-      reason: 'prefetch',
-    });
-    expect(classifyStorefrontRequest({ ...home, nextRouterPrefetch: '1' })).toEqual({
+  it.each([
+    { header: 'Purpose', fact: 'purpose', value: 'navigate' },
+    { header: 'Purpose', fact: 'purpose', value: 'prefetch;prerender' },
+    { header: 'Purpose', fact: 'purpose', value: '' },
+    { header: 'Sec-Purpose', fact: 'secPurpose', value: 'navigate' },
+    { header: 'Sec-Purpose', fact: 'secPurpose', value: 'prefetch;prerender' },
+    { header: 'Sec-Purpose', fact: 'secPurpose', value: '' },
+    { header: 'Next-Router-Prefetch', fact: 'nextRouterPrefetch', value: 'navigate' },
+    {
+      header: 'Next-Router-Prefetch',
+      fact: 'nextRouterPrefetch',
+      value: 'prefetch;prerender',
+    },
+    { header: 'Next-Router-Prefetch', fact: 'nextRouterPrefetch', value: '' },
+  ] as const)('bypasses visible $header value "$value"', ({ fact, value }) => {
+    expect(classifyStorefrontRequest({ ...home, [fact]: value })).toEqual({
       kind: 'private',
       reason: 'prefetch',
     });
