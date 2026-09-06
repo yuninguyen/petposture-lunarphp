@@ -2,7 +2,7 @@
 
 ## Status
 
-PASS. Production-build Chromium coverage now verifies the homepage and `/account` with no browser page errors or CSP console violations.
+PASS. Production-build Chromium coverage verifies the homepage and `/account` with deterministic browser-failure capture, hydration readiness, and CSP/HTML/JSON-LD assertions.
 
 ## Implementation
 
@@ -47,3 +47,13 @@ GitNexus impact before symbol edits:
 - `npm install` reports 8 existing audit findings (1 low, 1 moderate, 6 high); no audit remediation was included because it is outside Task 5.
 - The worktree contained unrelated pre-existing modifications. The Task 5 commit stages only the browser test/config, dependency metadata, narrow browser-discovered fixes, and this report.
 - The installed GitNexus CLI has no `detect-changes` command, so exact change detection could not be executed. Pre-commit fallback checks used the staged path list plus fresh upstream impact analysis for the changed `proxy` and `AccountLayout` symbols; both remained LOW with no affected processes/modules.
+
+## Fix Round 1
+
+- Registered `requestfailed` before each navigation and records both request URL and Playwright failure text; assertions run only after visible route readiness and `document.readyState === 'complete'`, with no ignored failures.
+- Homepage evidence now reads the navigation response body and rejects any case-insensitive, whitespace-tolerant `nonce=` attribute anywhere in the HTML.
+- Homepage JSON-LD scripts are parsed with `JSON.parse`; collected structured `@type` values must include both `Organization` and `WebSite`.
+- `/account` now waits for the hydrated signed-out destination's visible `Sign In` heading before checking late request, console, and page failures. This directly exercises useful private-route rendering while retaining the strict nonce CSP and `no-store` assertions.
+- The Playwright harness uses deterministic HTTPS API fixtures and bridges CSP-upgraded local storefront asset requests back to the HTTP-only test server. This preserves the production CSP unchanged while allowing Chromium to execute the production build locally.
+- Fix-round verification: `npm run build` PASS; `npm run test:e2e:csp` PASS (2 tests); `npx playwright test --list e2e/storefront-csp.spec.ts` PASS. Repository-wide `npx tsc --noEmit` remains blocked by the pre-existing `app/favicon.png/route.test.ts` Buffer/BodyInit type error.
+- GitNexus pre-edit impact for `captureBrowserFailures`: LOW, one direct dependent (the Task 5 spec), zero affected processes/modules.
