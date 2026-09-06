@@ -71,3 +71,30 @@ Fixed all load-bearing review findings in the Task 9 tooling. This round remaine
 
 - The exact Cloudflare expression grammar for header-name arrays and case-insensitive cookie regexes must still be confirmed by a real operator against the account/API schema before any production apply; this round intentionally made no network request.
 - Existing unrelated worktree modifications and generated files were left untouched and are excluded from the Task 9 commit.
+
+## Task 9 Fix Round 2
+
+### Status
+
+Resolved the four round-2 findings with offline fixture coverage only. No Cloudflare network request or production mutation was made.
+
+### Changes
+
+- `apply-home` now accepts the exact broad legacy HTML candidate together with either the exact reviewed host-scoped API rule or its exact reviewed path-only predecessor. The tool scopes both named rules in the same request; broadened or otherwise unsafe API expressions still fail before a PUT.
+- Earlier enabled cache rules now use a small fail-closed recognition set. Only exact known-safe static/API predicates are permitted; unknown, broad, path-only non-API, method-only, host-set, negated-API, and composite expressions block on precedence.
+- Homepage cookie boundaries now emit Cloudflare raw regex literals exactly as `r"(?i)(^|;\s*)<cookie>="` for `petposture-session`, `XSRF-TOKEN`, and `laravel_session`.
+- Added end-to-end fixture tests for dry-run and execute migration of broad HTML plus path-only API, asserting zero PUTs in dry-run, exactly one PUT in execute, both rules atomically scoped, and unsafe API rejection in both modes.
+- Kept the specified prefetch/header minimum unchanged; `Next-Url` was not added.
+
+### TDD and verification evidence
+
+1. The new suite initially failed in three expected areas: combined legacy `apply-home`, safe earlier static precedence, and raw cookie regex grammar.
+2. `node --test scripts/cloudflare-storefront-rules.test.mjs` — 19/19 passing.
+3. `npm run test:storefront-cache-script` — 27/27 passing.
+4. `node --check scripts/cloudflare-storefront-rules.mjs` and `node --check scripts/cloudflare-storefront-rules.test.mjs` — passing.
+5. `git diff --check -- scripts/cloudflare-storefront-rules.mjs scripts/cloudflare-storefront-rules.test.mjs .superpowers/sdd/2026-09-06-storefront-edge-cache-csp/task-9-report.md` — passing (Git emitted only the worktree's existing LF-to-CRLF warnings).
+
+### Concerns
+
+- The precedence allowlist is intentionally exact and conservative rather than a boolean-expression parser. A newly introduced safe predicate will block until it is explicitly reviewed and added.
+- Cloudflare grammar remains fixture-validated offline; an operator must still run the guarded export/audit process before any production execution.

@@ -9,8 +9,13 @@ export const HOME_RULE_DESCRIPTION = 'Cache anonymous petposture.com homepage';
 
 const PHASE = 'http_request_cache_settings';
 const ARTIFACT_SCHEMA = 'petposture-cloudflare-cache-ruleset-export-v1';
-const API_HOST_CONDITION = '(http.host eq "api.petposture.com")';
 export const API_EXPRESSION = '(http.host eq "api.petposture.com") and (http.request.method eq "GET") and (http.request.uri.path matches "^/(catalog|content)/")';
+const LEGACY_API_EXPRESSION = '(http.request.method eq "GET") and (http.request.uri.path matches "^/(catalog|content)/")';
+const SAFE_EARLIER_CACHE_EXPRESSIONS = new Set([
+  '(http.host eq "petposture.com") and (http.request.uri.path matches "^/_next/static/")',
+  API_EXPRESSION,
+  LEGACY_API_EXPRESSION,
+]);
 export const HOME_EXPRESSION = [
   '(http.host eq "petposture.com")',
   '(http.request.method in {"GET" "HEAD"})',
@@ -22,9 +27,9 @@ export const HOME_EXPRESSION = [
   '(not any(http.request.headers.names[*] eq "rsc"))',
   '(not any(http.request.headers.names[*] eq "next-router-state-tree"))',
   '(not any(http.request.headers.names[*] eq "next-router-segment-prefetch"))',
-  '(not http.cookie matches "(?i)(^|;\\s*)petposture-session=")',
-  '(not http.cookie matches "(?i)(^|;\\s*)XSRF-TOKEN=")',
-  '(not http.cookie matches "(?i)(^|;\\s*)laravel_session=")',
+  '(not http.cookie matches r"(?i)(^|;\\s*)petposture-session=")',
+  '(not http.cookie matches r"(?i)(^|;\\s*)XSRF-TOKEN=")',
+  '(not http.cookie matches r"(?i)(^|;\\s*)laravel_session=")',
 ].join(' and ');
 
 const LEGACY_HTML_EXPRESSION = '(http.host eq "petposture.com") and (not starts_with(http.request.uri.path, "/api/"))';
@@ -79,6 +84,7 @@ export function auditRuleset(ruleset, { throwOnFailure = true } = {}) {
   const htmlReviewed = htmlRules.length === 1 && exactExpression(htmlExpression, HOME_EXPRESSION);
   const htmlLegacy = htmlRules.length === 1 && exactExpression(htmlExpression, LEGACY_HTML_EXPRESSION);
   const apiReviewed = apiRules.length === 1 && exactExpression(apiExpression, API_EXPRESSION);
+  const apiLegacy = apiRules.length === 1 && exactExpression(apiExpression, LEGACY_API_EXPRESSION);
   if (htmlRules.length === 1 && !htmlReviewed) {
     failures.push(htmlLegacy
       ? `${HTML_RULE_DESCRIPTION} is a recognized broad legacy candidate and must be transformed before audit can pass`
@@ -92,9 +98,8 @@ export function auditRuleset(ruleset, { throwOnFailure = true } = {}) {
       const rule = ruleset.rules[index];
       const enabledCacheRule = rule.enabled !== false && rule.action === 'set_cache_settings' && rule.action_parameters?.cache === true;
       const expression = normalizeExpression(rule.expression);
-      const homepageCapable = /http\.host\s+eq\s+"petposture\.com"/.test(expression)
-        && !/uri\.path\s+(?:ne|does not equal)\s+"\/"/.test(expression);
-      if (enabledCacheRule && homepageCapable) failures.push(`Earlier enabled rule ${rule.description ?? rule.ref ?? index + 1} creates a homepage precedence conflict`);
+      const conclusivelySafe = SAFE_EARLIER_CACHE_EXPRESSIONS.has(expression);
+      if (enabledCacheRule && !conclusivelySafe) failures.push(`Earlier enabled rule ${rule.description ?? rule.ref ?? index + 1} creates a homepage precedence conflict because its expression is not conclusively recognized as safe`);
     }
   }
 
@@ -103,7 +108,7 @@ export function auditRuleset(ruleset, { throwOnFailure = true } = {}) {
     failures,
     expected: {
       html: { count: htmlRules.length, hostnameScoped: htmlReviewed || htmlLegacy, reviewed: htmlReviewed, legacyCandidate: htmlLegacy, expression: htmlExpression ?? null },
-      api: { count: apiRules.length, hostnameScoped: apiReviewed, reviewed: apiReviewed, expression: apiExpression ?? null },
+      api: { count: apiRules.length, hostnameScoped: apiReviewed, reviewed: apiReviewed, legacyCandidate: apiLegacy, expression: apiExpression ?? null },
     },
     rules: ruleset.rules.map((rule, index) => ({
       order: index + 1,
@@ -143,7 +148,7 @@ function replaceBroadHtmlRule(rule) {
 
 function scopeApiRule(rule) {
   if (exactExpression(rule.expression, API_EXPRESSION)) return clone(rule);
-  const legacyPathOnly = exactExpression(rule.expression, API_EXPRESSION.replace(`${API_HOST_CONDITION} and `, ''));
+  const legacyPathOnly = exactExpression(rule.expression, LEGACY_API_EXPRESSION);
   if (!legacyPathOnly) throw new Error(`${API_RULE_DESCRIPTION} is not the reviewed safe legacy path-only expression`);
   return { ...clone(rule), expression: API_EXPRESSION };
 }
@@ -296,7 +301,7 @@ export async function runCommand(argv, {
     parseExport(supplied, live, { requireTrusted: true });
     const audit = auditRuleset(live, { throwOnFailure: false });
     const expectedCountSafe = audit.expected.html.count === 1 && audit.expected.api.count === 1;
-    const semanticsSafeToTransform = audit.expected.html.legacyCandidate && audit.expected.api.reviewed;
+    const semanticsSafeToTransform = audit.expected.html.legacyCandidate && (audit.expected.api.reviewed || audit.expected.api.legacyCandidate);
     if (!expectedCountSafe || (!audit.pass && !semanticsSafeToTransform)) auditRuleset(live);
     const rollbackArtifact = createExportArtifact(live);
     const rollbackFile = await artifactWriter(rollbackArtifact, { artifactDir, suffix: '-pre-apply-rollback' });

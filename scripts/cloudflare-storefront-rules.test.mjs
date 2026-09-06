@@ -55,6 +55,16 @@ test('buildHomeRule is a narrowly scoped anonymous homepage cache rule', () => {
   assert.equal('override_origin' in rule.action_parameters, false);
 });
 
+test('buildApplyRules accepts exact broad HTML and path-only API legacy candidates together', () => {
+  const legacy = ruleset({ rules: rules.map((rule) => rule.ref === 'api'
+    ? { ...rule, expression: API_EXPRESSION.replace('(http.host eq "api.petposture.com") and ', '') }
+    : rule) });
+  const result = buildApplyRules(legacy);
+  assert.equal(result.rules.length, rules.length);
+  assert.match(result.rules.find((rule) => rule.ref === 'html').expression, /http\.host\s+eq\s+"petposture\.com"/);
+  assert.match(result.rules.find((rule) => rule.ref === 'api').expression, /^\(http\.host eq "api\.petposture\.com"\)/);
+});
+
 test('buildApplyRules makes the smaller atomic diff in place and scopes API', () => {
   const result = buildApplyRules(ruleset());
   assert.equal(result.rules.length, rules.length);
@@ -128,25 +138,49 @@ test('apply-home defaults to dry-run, reads live before trusting export, and wri
   assert.deepEqual(JSON.parse(await readFile(result.rollbackFile, 'utf8')).ruleset, ruleset());
 });
 
-test('apply-home --execute performs one atomic PUT and saves rollback plus post-change response', async () => {
-  const artifactDir = await mkdtemp(path.join(os.tmpdir(), 'cloudflare-execute-'));
-  const exportPath = path.join(artifactDir, 'fresh.json');
-  await writeFile(exportPath, JSON.stringify(createExportArtifact(ruleset())));
-  const requests = [];
-  const changed = { ...ruleset(), version: 'v8', rules: buildApplyRules(ruleset()).rules };
-  const result = await runCommand(['apply-home', '--from-export', exportPath, '--execute'], {
-    env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
-    fetchImpl: async (_url, options) => {
-      requests.push(options);
-      return cloudflareResponse(options.method === 'PUT' ? changed : ruleset());
-    },
-    stdout: output().stream,
-    artifactDir,
-  });
-  assert.deepEqual(requests.map(({ method }) => method), ['GET', 'PUT']);
-  assert.equal(JSON.parse(requests[1].body).rules.length, rules.length);
-  assert.deepEqual(JSON.parse(await readFile(result.rollbackFile, 'utf8')).ruleset, ruleset());
-  assert.equal(JSON.parse(await readFile(result.file, 'utf8')).result.version, 'v8');
+test('apply-home dry-run and execute atomically migrate broad HTML plus path-only API with exactly one PUT', async () => {
+  const legacy = ruleset({ rules: rules.map((rule) => rule.ref === 'api'
+    ? { ...rule, expression: API_EXPRESSION.replace('(http.host eq "api.petposture.com") and ', '') }
+    : rule) });
+  for (const execute of [false, true]) {
+    const artifactDir = await mkdtemp(path.join(os.tmpdir(), `cloudflare-legacy-${execute ? 'execute' : 'dry'}-`));
+    const exportPath = path.join(artifactDir, 'fresh.json');
+    await writeFile(exportPath, JSON.stringify(createExportArtifact(legacy)));
+    const requests = [];
+    const changed = { ...legacy, version: 'v8', rules: buildApplyRules(legacy).rules };
+    const argv = ['apply-home', '--from-export', exportPath, ...(execute ? ['--execute'] : [])];
+    const result = await runCommand(argv, {
+      env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+      fetchImpl: async (_url, options) => {
+        requests.push(options);
+        return cloudflareResponse(options.method === 'PUT' ? changed : legacy);
+      },
+      stdout: output().stream,
+      artifactDir,
+    });
+    assert.deepEqual(requests.map(({ method }) => method), execute ? ['GET', 'PUT'] : ['GET']);
+    const request = execute ? JSON.parse(requests[1].body) : result.request;
+    assert.equal(request.rules.filter((rule) => rule.description === HTML_RULE_DESCRIPTION).length, 1);
+    assert.equal(request.rules.filter((rule) => rule.description === API_RULE_DESCRIPTION).length, 1);
+    assert.equal(request.rules.find((rule) => rule.description === API_RULE_DESCRIPTION).expression, API_EXPRESSION);
+    assert.equal(request.rules.find((rule) => rule.description === HTML_RULE_DESCRIPTION).expression, HOME_EXPRESSION);
+  }
+});
+
+test('apply-home rejects unsafe API semantics before dry-run or execute PUT', async () => {
+  for (const execute of [false, true]) {
+    const unsafe = ruleset({ rules: rules.map((rule) => rule.ref === 'api' ? { ...rule, expression: '(http.request.method eq "GET")' } : rule) });
+    const artifactDir = await mkdtemp(path.join(os.tmpdir(), 'cloudflare-unsafe-api-'));
+    const exportPath = path.join(artifactDir, 'fresh.json');
+    await writeFile(exportPath, JSON.stringify(createExportArtifact(unsafe)));
+    const methods = [];
+    await assert.rejects(() => runCommand(['apply-home', '--from-export', exportPath, ...(execute ? ['--execute'] : [])], {
+      env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+      fetchImpl: async (_url, options) => { methods.push(options.method); return cloudflareResponse(unsafe); },
+      artifactDir,
+    }), /reviewed|safe|audit/i);
+    assert.deepEqual(methods, ['GET']);
+  }
 });
 
 test('restore requires confirmation and remains dry-run unless --execute is explicit', async () => {
@@ -183,20 +217,41 @@ test('audit requires exact reviewed HTML/API semantics and recognizes only the p
   }
 });
 
-test('audit rejects an earlier enabled rule capable of caching homepage traffic', () => {
+test('audit permits only explicitly recognized earlier static or API cache predicates', () => {
   const reviewedRules = buildApplyRules(ruleset()).rules;
-  const conflict = {
-    ref: 'earlier-conflict',
-    description: 'Earlier broad cache',
-    expression: '(http.host eq "petposture.com")',
+  const earlierRule = (expression, overrides = {}) => ({
+    ref: 'earlier-cache',
+    description: 'Earlier cache rule',
+    expression,
     action: 'set_cache_settings',
     action_parameters: { cache: true },
-  };
-  assert.throws(() => auditRuleset(ruleset({ rules: [conflict, ...reviewedRules] })), /precedence|earlier/i);
-  assert.doesNotThrow(() => auditRuleset(ruleset({ rules: [{ ...conflict, enabled: false }, ...reviewedRules] })));
+    ...overrides,
+  });
+  const safeExpressions = [
+    '(http.host eq "petposture.com") and (http.request.uri.path matches "^/_next/static/")',
+    API_EXPRESSION,
+    API_EXPRESSION.replace('(http.host eq "api.petposture.com") and ', ''),
+  ];
+  for (const expression of safeExpressions) {
+    assert.doesNotThrow(() => auditRuleset(ruleset({ rules: [earlierRule(expression), ...reviewedRules] })), expression);
+  }
+
+  const unsafeExpressions = [
+    '(http.host eq "petposture.com")',
+    '(http.request.uri.path matches "^/products/")',
+    '(http.request.method eq "GET")',
+    '(http.host in {"petposture.com" "www.petposture.com"}) and (http.request.uri.path matches "^/_next/static/")',
+    '(not starts_with(http.request.uri.path, "/api/"))',
+    '(http.request.uri.path matches "^/_next/static/") or (http.request.uri.path eq "/")',
+    'true',
+  ];
+  for (const expression of unsafeExpressions) {
+    assert.throws(() => auditRuleset(ruleset({ rules: [earlierRule(expression), ...reviewedRules] })), /precedence|earlier|conclusively/i, expression);
+  }
+  assert.doesNotThrow(() => auditRuleset(ruleset({ rules: [earlierRule('true', { enabled: false }), ...reviewedRules] })));
 });
 
-test('HOME expression has exact reviewed exclusions and cookie-name boundaries', () => {
+test('HOME expression has exact reviewed exclusions and valid raw cookie regex grammar', () => {
   assert.equal(buildHomeRule().expression, HOME_EXPRESSION);
   for (const required of [
     'not any(http.request.headers.names[*] eq "purpose")',
@@ -205,10 +260,11 @@ test('HOME expression has exact reviewed exclusions and cookie-name boundaries',
     'not any(http.request.headers.names[*] eq "rsc")',
     'not any(http.request.headers.names[*] eq "next-router-state-tree")',
     'not any(http.request.headers.names[*] eq "next-router-segment-prefetch")',
-    'not http.cookie matches "(?i)(^|;\\s*)petposture-session="',
-    'not http.cookie matches "(?i)(^|;\\s*)XSRF-TOKEN="',
+    'not http.cookie matches r"(?i)(^|;\\s*)petposture-session="',
+    'not http.cookie matches r"(?i)(^|;\\s*)XSRF-TOKEN="',
+    'not http.cookie matches r"(?i)(^|;\\s*)laravel_session="',
   ]) assert.ok(HOME_EXPRESSION.includes(required), `missing ${required}`);
-  assert.doesNotMatch(HOME_EXPRESSION, /contains "petposture-session="|contains "XSRF-TOKEN="/);
+  assert.doesNotMatch(HOME_EXPRESSION, /http\.cookie matches "|contains "petposture-session="|contains "XSRF-TOKEN="/);
 });
 
 test('trusted exports require a present valid SHA-256 matching their exact payload', () => {
