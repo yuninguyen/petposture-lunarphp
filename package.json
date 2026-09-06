@@ -4,6 +4,8 @@
   "scripts": {
     "build": "node build.js",
     "build:backend": "cd backend && composer install --no-dev --optimize-autoloader && php artisan config:cache && php artisan route:cache && php artisan view:cache",
-    "start": "node frontend/server.js"
+    "start": "node frontend/server.js",
+    "verify:storefront-cache": "node scripts/verify-storefront-cache.mjs",
+    "test:storefront-cache-script": "node --test scripts/verify-storefront-cache.test.mjs"
   }
 }
