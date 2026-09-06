@@ -27,6 +27,7 @@ use App\Payments\Gateways\PayPalGateway;
 use App\Payments\Gateways\PingPongGateway;
 use App\Payments\Gateways\StripeCardGateway;
 use App\Payments\PaymentGatewayManager;
+use App\Support\CloudflarePurgeNotice;
 use App\Support\MailConfigSync;
 use App\Support\ProductionMailConfiguration;
 use Illuminate\Auth\Events\Login;
@@ -54,6 +55,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->scoped(CloudflarePurgeNotice::class);
+
         $this->app->singleton(PaymentGatewayManager::class, function ($app) {
             return new PaymentGatewayManager([
                 new CashOnDeliveryGateway,

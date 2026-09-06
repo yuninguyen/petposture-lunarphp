@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ErrorCode;
+use App\Http\Middleware\AttachCloudflarePurgeWarning;
 use App\Http\Middleware\EnforceAdminApiPermission;
 use App\Http\Middleware\RefreshMailConfig;
 use App\Http\Middleware\RejectBearerAuthentication;
@@ -45,6 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('api', SetLocale::class);
         $middleware->appendToGroup('api', ResetPermissionCache::class);
         $middleware->appendToGroup('api', RefreshMailConfig::class);
+        $middleware->appendToGroup('api', AttachCloudflarePurgeWarning::class);
         $middleware->web(append: [
             SetLocale::class,
             ResetPermissionCache::class,

@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\ValueObjects\CloudflarePurgeResult;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Purges Cloudflare's edge cache when catalog/content data changes
@@ -29,10 +29,10 @@ class CloudflareCacheService
         return filled(config('services.cloudflare.api_token')) && filled(config('services.cloudflare.zone_id'));
     }
 
-    public function purgeAll(): void
+    public function purgeAll(): CloudflarePurgeResult
     {
         if (! $this->isConfigured()) {
-            return;
+            return new CloudflarePurgeResult(successful: true, configured: false);
         }
 
         try {
@@ -42,15 +42,25 @@ class CloudflareCacheService
                 ]);
 
             if (! $response->successful()) {
-                Log::warning('Cloudflare cache purge failed.', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
+                return new CloudflarePurgeResult(
+                    successful: false,
+                    configured: true,
+                    status: $response->status(),
+                    message: 'Cloudflare cache purge failed.',
+                );
             }
-        } catch (\Throwable $e) {
-            Log::warning('Cloudflare cache purge threw an exception.', [
-                'message' => $e->getMessage(),
-            ]);
+
+            return new CloudflarePurgeResult(
+                successful: true,
+                configured: true,
+                status: $response->status(),
+            );
+        } catch (\Throwable) {
+            return new CloudflarePurgeResult(
+                successful: false,
+                configured: true,
+                message: 'Cloudflare cache purge unavailable.',
+            );
         }
     }
 }
