@@ -158,3 +158,32 @@ The Task 3 compatibility alias in `frontend/lib/content-security-policy.ts` was 
 2. The worktree contains unrelated uncommitted changes from prior tasks. They were not staged for this commit.
 3. The existing `npm test` script does not include the new proxy/schema suites; the Task 4 focused verification command is required until a later task updates the aggregate script.
 4. Build-time backend fetch warnings are environmental and pre-existing, but they reduce build-log signal quality.
+
+## Fix Round 1
+
+Addressed the Task 4 review findings without changing hidden RSC/Cloudflare behavior or Set-Cookie handling:
+
+- added `serializeJsonLd` at the homepage JSON-LD rendering boundary; it serializes with `JSON.stringify`, escapes every `<` as `\\u003c`, and escapes U+2028/U+2029 while preserving JSON parse semantics;
+- added the exact CMS payload `</script><script>alert(document.domain)</script>` regression test, asserting the serialized value contains no literal `</script` or executable injected tag and parses back to the original schema;
+- canonicalized `sameAs` in the fixed supported order `facebook`, `instagram`, `twitter`, `tiktok`, `pinterest`, `youtube`, filtering blank values and ignoring unsupported keys;
+- added an insertion-order equivalence test proving semantically identical social settings produce identical schema output;
+- confirmed there were no frontend callers of `buildContentSecurityPolicy`, migrated the legacy Node test to `buildPrivateContentSecurityPolicy`, and removed the compatibility alias.
+
+### Fix-round TDD evidence
+
+RED command:
+
+```text
+npx vitest run lib/site-schema.test.ts
+```
+
+Result: 2 failures as expected: insertion-order output differed and `serializeJsonLd` did not exist.
+
+GREEN commands:
+
+```text
+npx vitest run lib/site-schema.test.ts lib/content-security-policy.test.ts proxy.test.ts lib/storefront-request-policy.test.ts
+node --test lib/content-security-policy.test.mjs
+```
+
+Result: 4 Vitest files passed, 86 tests passed; legacy Node CSP suite passed 2 tests.

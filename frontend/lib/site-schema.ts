@@ -2,6 +2,14 @@ import { SITE_URL } from './site';
 
 const DEFAULT_DESCRIPTION =
   'Breed-focused pet product recommendations based on practical fit, materials, usability and everyday comfort.';
+const SUPPORTED_SOCIAL_KEYS = [
+  'facebook',
+  'instagram',
+  'twitter',
+  'tiktok',
+  'pinterest',
+  'youtube',
+] as const;
 
 type SiteSchemaSettings = {
   shopName: string;
@@ -11,9 +19,16 @@ type SiteSchemaSettings = {
   contact: { phone?: string | null; address?: string | null };
 };
 
+export function serializeJsonLd(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 export function buildSiteSchema(settings: SiteSchemaSettings): object {
-  const sameAs = Object.values(settings.social).filter(
-    (url): url is string => Boolean(url),
+  const sameAs = SUPPORTED_SOCIAL_KEYS.map((key) => settings.social[key]).filter(
+    (url): url is string => typeof url === 'string' && url.trim().length > 0,
   );
 
   return {

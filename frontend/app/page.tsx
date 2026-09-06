@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import HomePage from "@/components/HomePage";
 import { getApiBaseUrl } from "@/lib/api";
-import { buildSiteSchema } from "@/lib/site-schema";
+import { buildSiteSchema, serializeJsonLd } from "@/lib/site-schema";
 
 export const metadata: Metadata = {
     alternates: { canonical: '/' },
@@ -54,7 +54,7 @@ export default async function Home() {
       <script
         suppressHydrationWarning
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(siteSchema) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(siteSchema) }}
       />
       <HomePage heroImage={heroImage} />
     </>

@@ -116,7 +116,3 @@ export function containsRequestNonce(value: string): boolean {
 
     return false;
 }
-
-export function buildContentSecurityPolicy(nonce: string): string {
-    return buildPrivateContentSecurityPolicy(nonce);
-}
