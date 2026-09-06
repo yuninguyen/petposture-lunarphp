@@ -1,7 +1,6 @@
 import './globals.css';
 
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
 import { Hanken_Grotesk, Lato, Dancing_Script } from 'next/font/google';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
@@ -82,35 +81,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const nonce = (await headers()).get('x-nonce') ?? undefined;
-  const { shopName, shopLogo, description, social, contact, googleAnalyticsId } = await getShopSettings();
-
-  const sameAs = [social.facebook, social.instagram, social.twitter, social.tiktok, social.pinterest, social.youtube].filter(
-    (url): url is string => Boolean(url)
-  );
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@graph': [
-      {
-        '@type': 'Organization',
-        '@id': `${SITE_URL}/#organization`,
-        name: shopName,
-        url: SITE_URL,
-        ...(shopLogo ? { logo: shopLogo } : {}),
-        description: description || DEFAULT_DESCRIPTION,
-        ...(sameAs.length ? { sameAs } : {}),
-        ...(contact.phone ? { telephone: contact.phone } : {}),
-        ...(contact.address ? { address: { '@type': 'PostalAddress', streetAddress: contact.address } } : {}),
-      },
-      {
-        '@type': 'WebSite',
-        '@id': `${SITE_URL}/#website`,
-        name: shopName,
-        url: SITE_URL,
-      },
-    ],
-  };
+  const { googleAnalyticsId } = await getShopSettings();
 
   return (
     <html
@@ -125,12 +96,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     >
       <body>
         {googleAnalyticsId ? <GoogleAnalytics measurementId={googleAnalyticsId} /> : null}
-        <script
-          suppressHydrationWarning
-          nonce={nonce}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
         <SettingsProvider>
           <AuthProvider>
             <WishlistProvider>

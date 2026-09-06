@@ -1,11 +1,23 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { buildContentSecurityPolicy } from '@/lib/content-security-policy';
+import {
+    buildPrivateContentSecurityPolicy,
+    buildPublicContentSecurityPolicy,
+} from './lib/content-security-policy';
+import {
+    PRIVATE_HTML_CACHE_CONTROL,
+    PUBLIC_HTML_CACHE_CONTROL,
+    classifyStorefrontRequest,
+} from './lib/storefront-request-policy';
 
 type NavigationUser = { roles?: string[] };
 
 async function fetchNavigationUser(request: NextRequest): Promise<NavigationUser | null> {
-    const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+    const apiBase = (
+        process.env.INTERNAL_API_URL ||
+        process.env.NEXT_PUBLIC_API_URL ||
+        'http://localhost:8000'
+    ).replace(/\/$/, '');
 
     try {
         const response = await fetch(`${apiBase}/api/me`, {
@@ -27,14 +39,36 @@ async function fetchNavigationUser(request: NextRequest): Promise<NavigationUser
 }
 
 export async function proxy(request: NextRequest) {
-    const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-    const contentSecurityPolicy = buildContentSecurityPolicy(nonce);
+    // Next.js strips internal Flight headers such as `rsc`,
+    // `next-router-state-tree`, and `next-router-prefetch` from request.headers.
+    // We classify every visible signal here; Cloudflare rules and production
+    // probes must guarantee hidden-header RSC/prefetch requests never become HIT.
+    const policy = classifyStorefrontRequest({
+        host: request.nextUrl.hostname,
+        method: request.method,
+        pathname: request.nextUrl.pathname,
+        search: request.nextUrl.search,
+        cookieHeader: request.headers.get('cookie') || '',
+        purpose: request.headers.get('purpose'),
+        secPurpose: request.headers.get('sec-purpose'),
+        nextRouterPrefetch: request.headers.get('next-router-prefetch'),
+    });
+    const nonce = policy.kind === 'private'
+        ? Buffer.from(crypto.randomUUID()).toString('base64')
+        : null;
+    const contentSecurityPolicy = nonce
+        ? buildPrivateContentSecurityPolicy(nonce)
+        : buildPublicContentSecurityPolicy();
+    const cacheControl = policy.kind === 'public-cacheable'
+        ? PUBLIC_HTML_CACHE_CONTROL
+        : PRIVATE_HTML_CACHE_CONTROL;
     const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-nonce', nonce);
+    if (nonce) requestHeaders.set('x-nonce', nonce);
     requestHeaders.set('Content-Security-Policy', contentSecurityPolicy);
 
     const secure = (response: NextResponse) => {
         response.headers.set('Content-Security-Policy', contentSecurityPolicy);
+        response.headers.set('Cache-Control', cacheControl);
         return response;
     };
     const next = () => secure(NextResponse.next({
@@ -70,13 +104,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-    matcher: [
-        {
-            source: '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
-            missing: [
-                { type: 'header', key: 'next-router-prefetch' },
-                { type: 'header', key: 'purpose', value: 'prefetch' },
-            ],
-        },
-    ],
+    matcher: ['/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)'],
 };

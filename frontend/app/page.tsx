@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import HomePage from "@/components/HomePage";
 import { getApiBaseUrl } from "@/lib/api";
+import { buildSiteSchema } from "@/lib/site-schema";
 
 export const metadata: Metadata = {
     alternates: { canonical: '/' },
@@ -20,7 +21,42 @@ async function fetchHeroImage(): Promise<string | null> {
   }
 }
 
+async function fetchSiteSettings() {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/settings`, {
+      next: { revalidate: 3600 },
+    });
+    const json = await res.json();
+    return {
+      shopName: json?.data?.shop_name || 'PetPosture',
+      shopLogo: json?.data?.shop_logo || null,
+      description: json?.data?.description || null,
+      social: json?.data?.social || {},
+      contact: json?.data?.contact || {},
+    };
+  } catch {
+    return {
+      shopName: 'PetPosture',
+      shopLogo: null,
+      description: null,
+      social: {},
+      contact: {},
+    };
+  }
+}
+
 export default async function Home() {
-  const heroImage = await fetchHeroImage();
-  return <HomePage heroImage={heroImage} />;
+  const [heroImage, settings] = await Promise.all([fetchHeroImage(), fetchSiteSettings()]);
+  const siteSchema = buildSiteSchema(settings);
+
+  return (
+    <>
+      <script
+        suppressHydrationWarning
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(siteSchema) }}
+      />
+      <HomePage heroImage={heroImage} />
+    </>
+  );
 }
