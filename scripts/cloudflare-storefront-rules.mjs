@@ -31,9 +31,7 @@ export const HOME_EXPRESSION = [
   '(not any(http.request.headers.names[*] eq "rsc"))',
   '(not any(http.request.headers.names[*] eq "next-router-state-tree"))',
   '(not any(http.request.headers.names[*] eq "next-router-segment-prefetch"))',
-  '(not http.cookie matches r"(?i)(^|;\\s*)petposture-session=")',
-  '(not http.cookie matches r"(?i)(^|;\\s*)XSRF-TOKEN=")',
-  '(not http.cookie matches r"(?i)(^|;\\s*)laravel_session=")',
+  '(not any(http.request.headers.names[*] eq "cookie"))',
 ].join(' and ');
 
 const LEGACY_HTML_EXPRESSION = '(http.host eq "petposture.com") and (not starts_with(http.request.uri.path, "/api/"))';

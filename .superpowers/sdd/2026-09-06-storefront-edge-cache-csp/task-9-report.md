@@ -265,3 +265,23 @@ Therefore the account-proven writable full-entrypoint body is exactly `name`, `d
 
 - This round proves tool behavior and the exact request shape from read-only live state plus prior account-specific rejected/successful restore evidence. It intentionally does not prove a new live PUT because production mutation was forbidden.
 - The older synthetic broad HTML candidate remains separately recognized for historical fixture compatibility; the newly added production candidate is exact and finite, and near misses fail closed.
+
+## Post-breaker load-bearing ruling: Free-plan Cookie fail-closed expression
+
+### Status
+
+Implemented the ruling in tooling, fixtures, and tests only. No Cloudflare mutation, PUT, apply, restore, purge, credential use, or subagent activity occurred.
+
+### Ruling implementation
+
+- Cloudflare Free cannot express the prior exact sensitive-cookie-name membership safely with the unavailable regex/cookie-map capability. `HOME_EXPRESSION` now fails closed unless the `Cookie` header is absent entirely, using the header-name presence grammar `(not any(http.request.headers.names[*] eq "cookie"))`.
+- Removed every HOME predicate using `matches`, `http.cookie`, `contains`, or wildcard matching. Host `petposture.com`, method `GET`/`HEAD`, exact `/` path, empty query, and all six navigation/prefetch header exclusions remain unchanged.
+- This deliberately bypasses **all** cookie-bearing homepage requests, including unrelated and empty Cookie headers. The safety gain costs cache hit rate for browsers/extensions/proxies that attach any cookie, even when the cookie is not sensitive; only requests with no Cookie header can match the HOME cache rule.
+- The generated full expression is exact-pinned in `scripts/fixtures/cloudflare-cache-ruleset.json`. Fixture cases record that no-cookie is eligible while sensitive, unrelated, and empty Cookie headers all bypass.
+
+### TDD and parser-validation evidence
+
+1. The new exact-expression and all-cookie-bypass tests were first observed failing against the three `http.cookie matches` predicates: 27/29 passed and the two new HOME tests failed for the expected old-expression mismatch/missing cookie-header absence clause.
+2. After the one-clause implementation change, the focused suite passed 29/29.
+3. The fixture records the intended non-mutating parser endpoint `/zones/{zone_id}/filters/validate-expr`. Authenticated validation could not be performed in this delegated runtime: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ZONE_ID` were absent, and protected VPS SSH authentication was unavailable. The evidence is therefore explicitly recorded as `authenticated: false`, `success: null`, not claimed as a validation pass.
+4. No live Cloudflare request was attempted without credentials, and no mutating endpoint was called.

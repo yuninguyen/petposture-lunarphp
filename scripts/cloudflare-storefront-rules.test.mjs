@@ -384,20 +384,39 @@ test('audit permits only explicitly recognized earlier static or API cache predi
   assert.doesNotThrow(() => auditRuleset(ruleset({ rules: [earlierRule('true', { enabled: false }), ...reviewedRules] })));
 });
 
-test('HOME expression has exact reviewed exclusions and valid raw cookie regex grammar', () => {
-  assert.equal(buildHomeRule().expression, HOME_EXPRESSION);
+test('HOME expression exactly requires an entirely absent Cookie header', () => {
+  const evidence = fixture.home_expression_validation;
+  assert.equal(HOME_EXPRESSION, evidence.expression);
+  assert.equal(buildHomeRule().expression, evidence.expression);
+  assert.match(HOME_EXPRESSION, /\(not any\(http\.request\.headers\.names\[\*\] eq "cookie"\)\)/);
+  assert.doesNotMatch(HOME_EXPRESSION, /matches|contains|wildcard|http\.cookie/i);
+  assert.equal(evidence.cases.find(({ name }) => name === 'no-cookie-header').cacheEligible, true);
+  for (const testCase of evidence.cases.filter(({ cookieHeaderPresent }) => cookieHeaderPresent)) {
+    assert.equal(testCase.cacheEligible, false, `${testCase.name} must bypass`);
+  }
+});
+
+test('HOME expression preserves exact navigation, query, host, method, path, and prefetch restrictions', () => {
   for (const required of [
-    'not any(http.request.headers.names[*] eq "purpose")',
-    'not any(http.request.headers.names[*] eq "sec-purpose")',
-    'not any(http.request.headers.names[*] eq "next-router-prefetch")',
-    'not any(http.request.headers.names[*] eq "rsc")',
-    'not any(http.request.headers.names[*] eq "next-router-state-tree")',
-    'not any(http.request.headers.names[*] eq "next-router-segment-prefetch")',
-    'not http.cookie matches r"(?i)(^|;\\s*)petposture-session="',
-    'not http.cookie matches r"(?i)(^|;\\s*)XSRF-TOKEN="',
-    'not http.cookie matches r"(?i)(^|;\\s*)laravel_session="',
+    '(http.host eq "petposture.com")',
+    '(http.request.method in {"GET" "HEAD"})',
+    '(http.request.uri.path eq "/")',
+    '(http.request.uri.query eq "")',
+    '(not any(http.request.headers.names[*] eq "purpose"))',
+    '(not any(http.request.headers.names[*] eq "sec-purpose"))',
+    '(not any(http.request.headers.names[*] eq "next-router-prefetch"))',
+    '(not any(http.request.headers.names[*] eq "rsc"))',
+    '(not any(http.request.headers.names[*] eq "next-router-state-tree"))',
+    '(not any(http.request.headers.names[*] eq "next-router-segment-prefetch"))',
+    '(not any(http.request.headers.names[*] eq "cookie"))',
   ]) assert.ok(HOME_EXPRESSION.includes(required), `missing ${required}`);
-  assert.doesNotMatch(HOME_EXPRESSION, /http\.cookie matches "|contains "petposture-session="|contains "XSRF-TOKEN="/);
+  assert.deepEqual(fixture.home_expression_validation.parserValidation, {
+    endpoint: '/zones/{zone_id}/filters/validate-expr',
+    authenticated: false,
+    mutating: false,
+    success: null,
+    reason: 'credentials unavailable in delegated runtime',
+  });
 });
 
 test('trusted exports require a present valid SHA-256 matching their exact payload', () => {

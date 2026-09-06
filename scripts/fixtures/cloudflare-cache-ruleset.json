@@ -4,6 +4,22 @@
   "name": "storefront-cache",
   "kind": "zone",
   "phase": "http_request_cache_settings",
+  "home_expression_validation": {
+    "expression": "(http.host eq \"petposture.com\") and (http.request.method in {\"GET\" \"HEAD\"}) and (http.request.uri.path eq \"/\") and (http.request.uri.query eq \"\") and (not any(http.request.headers.names[*] eq \"purpose\")) and (not any(http.request.headers.names[*] eq \"sec-purpose\")) and (not any(http.request.headers.names[*] eq \"next-router-prefetch\")) and (not any(http.request.headers.names[*] eq \"rsc\")) and (not any(http.request.headers.names[*] eq \"next-router-state-tree\")) and (not any(http.request.headers.names[*] eq \"next-router-segment-prefetch\")) and (not any(http.request.headers.names[*] eq \"cookie\"))",
+    "parserValidation": {
+      "endpoint": "/zones/{zone_id}/filters/validate-expr",
+      "authenticated": false,
+      "mutating": false,
+      "success": null,
+      "reason": "credentials unavailable in delegated runtime"
+    },
+    "cases": [
+      { "name": "no-cookie-header", "cookieHeaderPresent": false, "cacheEligible": true },
+      { "name": "sensitive-cookie", "cookieHeaderPresent": true, "cacheEligible": false },
+      { "name": "unrelated-cookie", "cookieHeaderPresent": true, "cacheEligible": false },
+      { "name": "empty-cookie-header", "cookieHeaderPresent": true, "cacheEligible": false }
+    ]
+  },
   "rules": [
     {
       "ref": "html",
