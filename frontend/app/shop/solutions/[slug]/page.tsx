@@ -59,18 +59,6 @@ async function getSolutionOptions(): Promise<{ slug: string; label: string }[]> 
     }
 }
 
-export async function generateStaticParams() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/solutions`, { cache: 'no-store' });
-        if (!response.ok) return [];
-        const payload = await response.json();
-        const solutions = Array.isArray(payload?.data) ? payload.data : [];
-        return solutions.map((s: { slug: string }) => ({ slug: s.slug }));
-    } catch {
-        return [];
-    }
-}
-
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
     const { slug } = await params;
     const solution = await getSolution(slug);

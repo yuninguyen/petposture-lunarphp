@@ -59,18 +59,6 @@ async function getSolutionOptions(): Promise<{ slug: string; label: string }[]> 
     }
 }
 
-export async function generateStaticParams() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/breeds`, { cache: 'no-store' });
-        if (!response.ok) return [];
-        const payload = await response.json();
-        const breeds = Array.isArray(payload?.data) ? payload.data : [];
-        return breeds.map((b: { slug: string }) => ({ slug: b.slug }));
-    } catch {
-        return [];
-    }
-}
-
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
     const { slug } = await params;
     const breed = await getBreed(slug);
