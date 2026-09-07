@@ -407,14 +407,16 @@ export default function AccountPage() {
                                                                 ))}
                                                             </div>
 
-                                                            <div className="pt-3 border-t border-zinc-100 space-y-1 text-sm">
-                                                                <div className="flex justify-between text-zinc-500"><span>Subtotal &middot; {itemCount(order)} item{itemCount(order) === 1 ? '' : 's'}</span><span>${order.sub_total.toFixed(2)}</span></div>
-                                                                {order.discount_total > 0 && (
-                                                                    <div className="flex justify-between text-zinc-500"><span>Discount</span><span>-${order.discount_total.toFixed(2)}</span></div>
-                                                                )}
-                                                                <div className="flex justify-between text-zinc-500"><span>Shipping - {order.shipping_label}</span><span>{order.shipping_total === 0 ? 'Free' : `$${order.shipping_total.toFixed(2)}`}</span></div>
-                                                                <div className="flex justify-between text-zinc-500"><span>Estimated Taxes</span><span>${order.tax_total.toFixed(2)}</span></div>
-                                                                <div className="flex justify-between font-bold text-primary pt-1"><span>Total</span><span><span className="mr-1 text-xs font-medium text-zinc-400">{order.currency}</span>{order.total.formatted}</span></div>
+                                                            <div className="pt-3 border-t border-zinc-100 text-sm">
+                                                                <div className="ml-auto max-w-[260px] space-y-1">
+                                                                    <div className="flex justify-between text-zinc-500"><span>Subtotal &middot; {itemCount(order)} item{itemCount(order) === 1 ? '' : 's'}</span><span>${order.sub_total.toFixed(2)}</span></div>
+                                                                    {order.discount_total > 0 && (
+                                                                        <div className="flex justify-between text-zinc-500"><span>Discount</span><span>-${order.discount_total.toFixed(2)}</span></div>
+                                                                    )}
+                                                                    <div className="flex justify-between text-zinc-500"><span>Shipping ({order.shipping_label})</span><span>{order.shipping_total === 0 ? 'Free' : `$${order.shipping_total.toFixed(2)}`}</span></div>
+                                                                    <div className="flex justify-between text-zinc-500"><span>Estimated Taxes</span><span>${order.tax_total.toFixed(2)}</span></div>
+                                                                    <div className="flex justify-between font-bold text-primary pt-1"><span>Total</span><span><span className="mr-1 text-xs font-medium text-zinc-400">{order.currency}</span>{order.total.formatted}</span></div>
+                                                                </div>
                                                             </div>
 
                                                             {returnEligibility(order) === 'open' && (

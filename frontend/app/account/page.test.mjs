@@ -24,7 +24,7 @@ const collapsedOrderSummary = between(
 );
 const expandedTotals = between(
     accountSource,
-    '<div className="pt-3 border-t border-zinc-100 space-y-1 text-sm">',
+    '<div className="pt-3 border-t border-zinc-100',
     "{returnEligibility(order) === 'open'",
     'expanded order totals',
 );
@@ -128,6 +128,43 @@ function hasTrueDisabled(openingElement) {
         && disabled.initializer.expression?.kind === ts.SyntaxKind.TrueKeyword;
 }
 
+function hasSummaryRowsInsideNarrowColumn(source) {
+    const sourceFile = ts.createSourceFile('summary-contract.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    let summaryColumn;
+
+    function findSummaryColumn(node) {
+        if (ts.isJsxElement(node) && node.openingElement.tagName.getText(sourceFile) === 'div') {
+            const className = attribute(node.openingElement, 'className');
+            if (className?.initializer && ts.isStringLiteral(className.initializer)
+                && className.initializer.text === 'ml-auto max-w-[260px] space-y-1') {
+                summaryColumn = node;
+                return;
+            }
+        }
+        ts.forEachChild(node, findSummaryColumn);
+    }
+
+    findSummaryColumn(sourceFile);
+    if (!summaryColumn) return false;
+
+    const descendantSpans = [];
+    function collectSpans(node) {
+        if (ts.isJsxElement(node) && node.openingElement.tagName.getText(sourceFile) === 'span') {
+            descendantSpans.push(node.getText(sourceFile));
+        }
+        ts.forEachChild(node, collectSpans);
+    }
+    collectSpans(summaryColumn);
+
+    return [
+        'Subtotal &middot; {itemCount(order)}',
+        '<span>Discount</span>',
+        '<span>Shipping ({order.shipping_label})</span>',
+        '<span>Estimated Taxes</span>',
+        '<span>Total</span>',
+    ].every((label) => descendantSpans.some((span) => span.includes(label)));
+}
+
 function activeButtonContract(source) {
     const { sourceFile, openingElement } = buttonWithText(source, 'Request a Return', 'active return action');
     const handler = attribute(openingElement, 'onClick');
@@ -186,4 +223,18 @@ test('expanded totals use the exact plural Estimated Taxes label', () => {
 
 test('expanded totals retain the quantity-based subtotal label', () => {
     assert.match(expandedTotals, /Subtotal &middot; \{itemCount\(order\)\}/);
+});
+
+test('shipping summary row uses "Shipping (method)" format', () => {
+    assert.match(expandedTotals, /<span>Shipping \(\{order\.shipping_label\}\)<\/span>/);
+});
+
+test('summary rows are wrapped in a narrow right-aligned column', () => {
+    const emptyWrapperMutation = expandedTotals.replace(
+        '<div className="ml-auto max-w-[260px] space-y-1">',
+        '<div className="ml-auto max-w-[260px] space-y-1"></div><div>',
+    );
+
+    assert.equal(hasSummaryRowsInsideNarrowColumn(expandedTotals), true);
+    assert.equal(hasSummaryRowsInsideNarrowColumn(emptyWrapperMutation), false);
 });
