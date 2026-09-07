@@ -44,6 +44,15 @@ describe('proxy storefront policy', () => {
       new NextRequest('https://petposture.com/', {
         headers: { purpose: 'prefetch' },
       }),
+      new NextRequest('https://petposture.com/', {
+        headers: { rsc: '1' },
+      }),
+      new NextRequest('https://petposture.com/', {
+        headers: { 'next-router-state-tree': '%5B%22%22%5D' },
+      }),
+      new NextRequest('https://petposture.com/', {
+        headers: { 'next-router-segment-prefetch': '/_tree' },
+      }),
     ]) {
       const response = await proxy(request);
       const policy = response.headers.get('content-security-policy');

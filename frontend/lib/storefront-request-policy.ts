@@ -12,6 +12,9 @@ export type StorefrontRequestFacts = {
   purpose: string | null;
   secPurpose: string | null;
   nextRouterPrefetch: string | null;
+  rsc: string | null;
+  nextRouterStateTree: string | null;
+  nextRouterSegmentPrefetch: string | null;
 };
 
 export const PUBLIC_HTML_CACHE_CONTROL =
@@ -57,7 +60,10 @@ export function classifyStorefrontRequest(
   if (
     isPrefetchValue(facts.purpose) ||
     isPrefetchValue(facts.secPurpose) ||
-    facts.nextRouterPrefetch !== null
+    facts.nextRouterPrefetch !== null ||
+    facts.rsc !== null ||
+    facts.nextRouterStateTree !== null ||
+    facts.nextRouterSegmentPrefetch !== null
   ) {
     return { kind: 'private', reason: 'prefetch' };
   }

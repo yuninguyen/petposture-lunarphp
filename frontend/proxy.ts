@@ -39,10 +39,14 @@ async function fetchNavigationUser(request: NextRequest): Promise<NavigationUser
 }
 
 export async function proxy(request: NextRequest) {
-    // Next.js strips internal Flight headers such as `rsc`,
-    // `next-router-state-tree`, and `next-router-prefetch` from request.headers.
-    // We classify every visible signal here; Cloudflare rules and production
-    // probes must guarantee hidden-header RSC/prefetch requests never become HIT.
+    // Next.js may strip some internal Flight headers (e.g. `rsc`,
+    // `next-router-state-tree`) from genuine same-app client navigations
+    // before they reach this Proxy, so Cloudflare's own rule is the
+    // authoritative backstop for those hidden-header cases. But a raw
+    // request (curl, a probe, or Cloudflare simply forwarding whatever the
+    // client sent) is NOT stripped, so we classify every one of these
+    // headers here too as defense-in-depth rather than relying on the edge
+    // rule alone.
     const requestHost = request.headers.get('host')?.split(':')[0] || request.nextUrl.hostname;
     const policy = classifyStorefrontRequest({
         host: requestHost,
@@ -53,6 +57,9 @@ export async function proxy(request: NextRequest) {
         purpose: request.headers.get('purpose'),
         secPurpose: request.headers.get('sec-purpose'),
         nextRouterPrefetch: request.headers.get('next-router-prefetch'),
+        rsc: request.headers.get('rsc'),
+        nextRouterStateTree: request.headers.get('next-router-state-tree'),
+        nextRouterSegmentPrefetch: request.headers.get('next-router-segment-prefetch'),
     });
     const nonce = policy.kind === 'private'
         ? Buffer.from(crypto.randomUUID()).toString('base64')

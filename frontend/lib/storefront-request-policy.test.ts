@@ -14,6 +14,9 @@ const home = {
   purpose: null,
   secPurpose: null,
   nextRouterPrefetch: null,
+  rsc: null,
+  nextRouterStateTree: null,
+  nextRouterSegmentPrefetch: null,
 };
 
 describe('classifyStorefrontRequest', () => {
@@ -62,6 +65,12 @@ describe('classifyStorefrontRequest', () => {
       value: 'prefetch;prerender',
     },
     { header: 'Next-Router-Prefetch', fact: 'nextRouterPrefetch', value: '' },
+    { header: 'RSC', fact: 'rsc', value: '1' },
+    { header: 'RSC', fact: 'rsc', value: '' },
+    { header: 'Next-Router-State-Tree', fact: 'nextRouterStateTree', value: '%5B%22%22%5D' },
+    { header: 'Next-Router-State-Tree', fact: 'nextRouterStateTree', value: '' },
+    { header: 'Next-Router-Segment-Prefetch', fact: 'nextRouterSegmentPrefetch', value: '/_tree' },
+    { header: 'Next-Router-Segment-Prefetch', fact: 'nextRouterSegmentPrefetch', value: '' },
   ] as const)('bypasses visible $header value "$value"', ({ fact, value }) => {
     expect(classifyStorefrontRequest({ ...home, [fact]: value })).toEqual({
       kind: 'private',
@@ -126,6 +135,29 @@ describe('classifyStorefrontRequest', () => {
     'xsrf-token=x',
   ])('does not match partial or case-mismatched cookie token %s', (cookieHeader) => {
     expect(classifyStorefrontRequest({ ...home, cookieHeader }).kind).toBe('public-cacheable');
+  });
+
+  it('bypasses RSC/Flight requests even when Next.js has not stripped the header (regression: origin defense-in-depth gap found 2026-09-07)', () => {
+    // A raw request (curl, an external probe, or Cloudflare simply
+    // forwarding whatever the client sent) is not run through Next.js's own
+    // client-side fetch, so `rsc`/`next-router-state-tree`/
+    // `next-router-segment-prefetch` are NOT guaranteed to be stripped
+    // before reaching Proxy. The origin classifier must not rely solely on
+    // the Cloudflare edge rule to exclude these; verified live against a
+    // freshly deployed origin that `RSC: 1` incorrectly returned
+    // `public, s-maxage=300` before this fix.
+    expect(classifyStorefrontRequest({ ...home, rsc: '1' })).toEqual({
+      kind: 'private',
+      reason: 'prefetch',
+    });
+    expect(classifyStorefrontRequest({ ...home, nextRouterStateTree: '%5B%22%22%5D' })).toEqual({
+      kind: 'private',
+      reason: 'prefetch',
+    });
+    expect(classifyStorefrontRequest({ ...home, nextRouterSegmentPrefetch: '/_tree' })).toEqual({
+      kind: 'private',
+      reason: 'prefetch',
+    });
   });
 
   it('exports the exact public and private HTML cache policies', () => {
