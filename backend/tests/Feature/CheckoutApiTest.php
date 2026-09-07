@@ -68,6 +68,34 @@ class CheckoutApiTest extends TestCase
         $this->assertSame(64, strlen((string) $response->json('order.tracking_access_token')));
     }
 
+    public function test_place_order_stores_contact_phone_on_different_billing_address(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $payload = $this->checkoutPayload($variant, [
+            'billing_same_as_shipping' => false,
+            'billing' => [
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'company' => null,
+                'line_one' => '456 Billing St',
+                'line_two' => null,
+                'city' => 'Dallas',
+                'state' => 'TX',
+                'postcode' => '75201',
+                'country' => 'United States',
+                'phone' => '5125550101',
+            ],
+        ]);
+
+        $response = $this->postJson('/api/checkout/place-order', $payload);
+
+        $response->assertCreated();
+        $order = Order::query()->findOrFail($response->json('order.id'));
+        $this->assertNotSame($order->shippingAddress?->id, $order->billingAddress?->id);
+        $this->assertSame('456 Billing St', $order->billingAddress?->line_one);
+        $this->assertSame('5125550101', $order->billingAddress?->contact_phone);
+    }
+
     public function test_place_order_auto_saves_shipping_address_for_logged_in_customer(): void
     {
         $variant = $this->createPurchasableVariant();

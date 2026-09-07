@@ -1137,6 +1137,7 @@ export default function CheckoutPage() {
                 province: form.billingProvince,
                 postalCode: form.billingPostalCode,
                 country: form.billingCountry,
+                phone: form.phone,
             });
 
         return { shippingAddress, billingAddress };
