@@ -388,11 +388,25 @@ test('HOME expression exactly requires an entirely absent Cookie header', () => 
   const evidence = fixture.home_expression_validation;
   assert.equal(HOME_EXPRESSION, evidence.expression);
   assert.equal(buildHomeRule().expression, evidence.expression);
-  assert.match(HOME_EXPRESSION, /\(not any\(http\.request\.headers\.names\[\*\] eq "cookie"\)\)/);
+  assert.match(HOME_EXPRESSION, /\(not any\(lower\(http\.request\.headers\.names\[\*\]\)\[\*\] eq "cookie"\)\)/);
   assert.doesNotMatch(HOME_EXPRESSION, /matches|contains|wildcard|http\.cookie/i);
   assert.equal(evidence.cases.find(({ name }) => name === 'no-cookie-header').cacheEligible, true);
   for (const testCase of evidence.cases.filter(({ cookieHeaderPresent }) => cookieHeaderPresent)) {
     assert.equal(testCase.cacheEligible, false, `${testCase.name} must bypass`);
+  }
+});
+
+test('HOME expression header exclusions are case-insensitive (regression: bare eq silently ignored mixed-case headers)', () => {
+  // Incident 2026-09-06: `http.request.headers.names[*] eq "cookie"` never
+  // matched a real `Cookie` header on HTTP/1.1 because Cloudflare does not
+  // lowercase header names off HTTP/2. Every exclusion clause therefore
+  // silently passed through session cookies and RSC/prefetch headers as
+  // cacheable, and the homepage rule served them as public CF-Cache-Status:
+  // HIT. Guard against ever reintroducing an unwrapped comparison.
+  const bareComparison = /(?<!lower\()http\.request\.headers\.names\[\*\]\s+eq/;
+  assert.doesNotMatch(HOME_EXPRESSION, bareComparison, 'header-name comparison must be wrapped in lower(...) or same-case-only clients bypass the exclusion');
+  for (const header of ['purpose', 'sec-purpose', 'next-router-prefetch', 'rsc', 'next-router-state-tree', 'next-router-segment-prefetch', 'cookie']) {
+    assert.match(HOME_EXPRESSION, new RegExp(`\\(not any\\(lower\\(http\\.request\\.headers\\.names\\[\\*\\]\\)\\[\\*\\] eq "${header}"\\)\\)`), `${header} exclusion must use lower()`);
   }
 });
 
@@ -402,13 +416,13 @@ test('HOME expression preserves exact navigation, query, host, method, path, and
     '(http.request.method in {"GET" "HEAD"})',
     '(http.request.uri.path eq "/")',
     '(http.request.uri.query eq "")',
-    '(not any(http.request.headers.names[*] eq "purpose"))',
-    '(not any(http.request.headers.names[*] eq "sec-purpose"))',
-    '(not any(http.request.headers.names[*] eq "next-router-prefetch"))',
-    '(not any(http.request.headers.names[*] eq "rsc"))',
-    '(not any(http.request.headers.names[*] eq "next-router-state-tree"))',
-    '(not any(http.request.headers.names[*] eq "next-router-segment-prefetch"))',
-    '(not any(http.request.headers.names[*] eq "cookie"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "purpose"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "sec-purpose"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "next-router-prefetch"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "rsc"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "next-router-state-tree"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "next-router-segment-prefetch"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "cookie"))',
   ]) assert.ok(HOME_EXPRESSION.includes(required), `missing ${required}`);
   assert.deepEqual(fixture.home_expression_validation.parserValidation, {
     endpoint: '/zones/{zone_id}/filters/validate-expr',

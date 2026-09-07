@@ -25,13 +25,16 @@ export const HOME_EXPRESSION = [
   '(http.request.method in {"GET" "HEAD"})',
   '(http.request.uri.path eq "/")',
   '(http.request.uri.query eq "")',
-  '(not any(http.request.headers.names[*] eq "purpose"))',
-  '(not any(http.request.headers.names[*] eq "sec-purpose"))',
-  '(not any(http.request.headers.names[*] eq "next-router-prefetch"))',
-  '(not any(http.request.headers.names[*] eq "rsc"))',
-  '(not any(http.request.headers.names[*] eq "next-router-state-tree"))',
-  '(not any(http.request.headers.names[*] eq "next-router-segment-prefetch"))',
-  '(not any(http.request.headers.names[*] eq "cookie"))',
+  // Header names arrive in whatever case the client sent (Cloudflare only
+  // lowercases them on HTTP/2). Every clause here must run through lower()
+  // or a same-cased browser/Next.js request silently skips the exclusion.
+  '(not any(lower(http.request.headers.names[*])[*] eq "purpose"))',
+  '(not any(lower(http.request.headers.names[*])[*] eq "sec-purpose"))',
+  '(not any(lower(http.request.headers.names[*])[*] eq "next-router-prefetch"))',
+  '(not any(lower(http.request.headers.names[*])[*] eq "rsc"))',
+  '(not any(lower(http.request.headers.names[*])[*] eq "next-router-state-tree"))',
+  '(not any(lower(http.request.headers.names[*])[*] eq "next-router-segment-prefetch"))',
+  '(not any(lower(http.request.headers.names[*])[*] eq "cookie"))',
 ].join(' and ');
 
 const LEGACY_HTML_EXPRESSION = '(http.host eq "petposture.com") and (not starts_with(http.request.uri.path, "/api/"))';
