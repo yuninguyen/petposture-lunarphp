@@ -37,6 +37,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3001"
+      INTERNAL_API_URL: http://127.0.0.1:8001
 
   admin:
     build:
