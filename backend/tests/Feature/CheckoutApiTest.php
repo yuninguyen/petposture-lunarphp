@@ -1330,6 +1330,42 @@ class CheckoutApiTest extends TestCase
         $this->assertSame(['currency', 'decimal', 'formatted'], $totalKeys);
     }
 
+    public function test_customer_order_show_falls_back_to_shipping_phone_without_mutating_billing_address(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $owner = User::factory()->create(['email' => 'phone-fallback@petposture.test']);
+        Sanctum::actingAs($owner);
+
+        $orderResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'shipping' => ['email' => $owner->email, 'phone' => '5125550101'],
+            'billing_same_as_shipping' => false,
+            'billing' => [
+                'first_name' => 'Billing',
+                'last_name' => 'Customer',
+                'company' => null,
+                'line_one' => '456 Billing St',
+                'line_two' => null,
+                'city' => 'Dallas',
+                'state' => 'TX',
+                'postcode' => '75201',
+                'country' => 'United States',
+                'phone' => null,
+            ],
+        ]));
+        $order = Order::query()->findOrFail($orderResponse->json('order.id'));
+        $billingAddress = $order->billingAddress;
+        $shippingAddress = $order->shippingAddress;
+        $billingBefore = $billingAddress?->getAttributes();
+        $shippingBefore = $shippingAddress?->getAttributes();
+
+        $this->getJson("/api/orders/{$order->id}")
+            ->assertOk()
+            ->assertJsonPath('data.billing_address.phone', '5125550101');
+
+        $this->assertSame($billingBefore, $billingAddress?->fresh()?->getAttributes());
+        $this->assertSame($shippingBefore, $shippingAddress?->fresh()?->getAttributes());
+    }
+
     public function test_customer_order_show_returns_safe_owner_contract_and_hides_other_customers_order(): void
     {
         $variant = $this->createPurchasableVariant();

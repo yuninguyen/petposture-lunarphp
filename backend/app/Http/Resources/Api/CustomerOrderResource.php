@@ -84,7 +84,8 @@ class CustomerOrderResource extends JsonResource
                 'state' => $billingAddress?->state,
                 'postcode' => $billingAddress?->postcode,
                 'country' => $billingAddress?->country?->name ?? 'United States',
-                'phone' => $billingAddress?->contact_phone,
+                'phone' => $billingAddress?->contact_phone
+                    ?: $shippingAddress?->contact_phone,
             ],
             'shipments' => collect($meta['shipments'] ?? [])
                 ->filter(fn ($shipment) => is_array($shipment))
