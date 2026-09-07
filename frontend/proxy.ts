@@ -39,14 +39,16 @@ async function fetchNavigationUser(request: NextRequest): Promise<NavigationUser
 }
 
 export async function proxy(request: NextRequest) {
-    // Next.js may strip some internal Flight headers (e.g. `rsc`,
-    // `next-router-state-tree`) from genuine same-app client navigations
-    // before they reach this Proxy, so Cloudflare's own rule is the
-    // authoritative backstop for those hidden-header cases. But a raw
-    // request (curl, a probe, or Cloudflare simply forwarding whatever the
-    // client sent) is NOT stripped, so we classify every one of these
-    // headers here too as defense-in-depth rather than relying on the edge
-    // rule alone.
+    // Confirmed (2026-09-07, `next start` + curl, not just a unit-test
+    // harness): Next.js's own server unconditionally strips `rsc`,
+    // `next-router-state-tree`, `next-router-segment-prefetch`, and
+    // `next-router-prefetch` before this Proxy runs -- request.headers.get()
+    // for these always returns null here, no matter what the client sent.
+    // Cloudflare's edge rule is therefore the ONLY layer that can see and
+    // exclude these four; the classifier still accepts them as facts so the
+    // logic stays correct if that Next.js behavior ever changes, but they
+    // are inert against real traffic today. `purpose` and `sec-purpose` are
+    // NOT stripped and are genuinely enforced here.
     const requestHost = request.headers.get('host')?.split(':')[0] || request.nextUrl.hostname;
     const policy = classifyStorefrontRequest({
         host: requestHost,

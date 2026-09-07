@@ -137,15 +137,18 @@ describe('classifyStorefrontRequest', () => {
     expect(classifyStorefrontRequest({ ...home, cookieHeader }).kind).toBe('public-cacheable');
   });
 
-  it('bypasses RSC/Flight requests even when Next.js has not stripped the header (regression: origin defense-in-depth gap found 2026-09-07)', () => {
-    // A raw request (curl, an external probe, or Cloudflare simply
-    // forwarding whatever the client sent) is not run through Next.js's own
-    // client-side fetch, so `rsc`/`next-router-state-tree`/
-    // `next-router-segment-prefetch` are NOT guaranteed to be stripped
-    // before reaching Proxy. The origin classifier must not rely solely on
-    // the Cloudflare edge rule to exclude these; verified live against a
-    // freshly deployed origin that `RSC: 1` incorrectly returned
-    // `public, s-maxage=300` before this fix.
+  it('classifies RSC/Flight header facts as private if the classifier ever receives them', () => {
+    // This tests the pure classifier function only. Confirmed separately
+    // (2026-09-07, `next start` + curl against a real server, not this
+    // unit harness) that Next.js's own server unconditionally strips
+    // `rsc`, `next-router-state-tree`, `next-router-segment-prefetch`, and
+    // `next-router-prefetch` before Proxy ever runs -- calling `proxy()`
+    // directly with a hand-built NextRequest (as in proxy.test.ts) does NOT
+    // reproduce that stripping, which is why this class of gap is only
+    // detectable against a real running server. Cloudflare's edge rule is
+    // the sole real enforcement point for these four headers today; this
+    // test just documents that the classifier itself would still do the
+    // right thing if that Next.js behavior ever changes.
     expect(classifyStorefrontRequest({ ...home, rsc: '1' })).toEqual({
       kind: 'private',
       reason: 'prefetch',

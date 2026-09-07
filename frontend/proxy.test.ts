@@ -35,6 +35,13 @@ describe('proxy storefront policy', () => {
   });
 
   it('keeps query, private, cookie, and visible prefetch requests private', async () => {
+    // Note: constructing a NextRequest directly (as done here) does NOT
+    // reproduce Next.js's real server behavior of stripping rsc/
+    // next-router-state-tree/next-router-segment-prefetch/
+    // next-router-prefetch before Proxy runs (confirmed 2026-09-07 against
+    // a real `next start` server). These cases only prove the classifier
+    // wiring is correct in isolation; Cloudflare's edge rule is the real
+    // enforcement point for those four headers in production.
     for (const request of [
       new NextRequest('https://petposture.com/?_rsc=x'),
       new NextRequest('https://petposture.com/account'),
