@@ -85,6 +85,42 @@ describe('proxy storefront policy', () => {
     }
   });
 
+  it('applies the same no-nonce bypass to every other statically prerendered page (regression: found 2026-09-07 live on /blog with a real session cookie -- 21 blocked scripts, non-interactive page)', async () => {
+    // Removing headers()/nonce from the root layout freed every route that
+    // doesn't itself call headers() to go statically prerendered, not just
+    // `/`. Verified against a real `npm run build` (routes marked "○")
+    // 2026-09-07. Each of these must behave exactly like `/` when bypassed.
+    const staticNoNoncePaths = [
+      '/auth/reset-password',
+      '/blog',
+      '/cart',
+      '/contact',
+      '/dogs',
+      '/our-mission',
+      '/returns',
+      '/shop/breeds',
+      '/shop/breeds/flat-faced',
+      '/shop/breeds/long-backed',
+      '/shop/solutions',
+      '/sign-in',
+      '/sign-up',
+      '/solutions',
+      '/track-order',
+      '/wishlist',
+    ];
+
+    for (const path of staticNoNoncePaths) {
+      const response = await proxy(new NextRequest(`https://petposture.com${path}`, {
+        headers: { cookie: 'petposture-session=x' },
+      }));
+      const policy = response.headers.get('content-security-policy');
+
+      expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
+      expect(policy).toBe(buildPublicContentSecurityPolicy());
+      expect(policy).not.toContain('nonce-');
+    }
+  });
+
   it('never combines public shared caching with a nonce CSP', async () => {
     const requests = [
       new NextRequest('https://petposture.com/'),

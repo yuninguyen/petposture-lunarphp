@@ -63,18 +63,45 @@ export async function proxy(request: NextRequest) {
         nextRouterStateTree: request.headers.get('next-router-state-tree'),
         nextRouterSegmentPrefetch: request.headers.get('next-router-segment-prefetch'),
     });
-    // `/` is the only phase-1 statically prerendered public page (ISR,
-    // built once with no headers()/nonce dependency -- see Task 4). Its
-    // HTML body therefore NEVER contains a nonce attribute, regardless of
-    // why this particular request was classified private (cookie, query,
-    // prefetch, wrong host, unsafe method). Emitting a nonce-required CSP
-    // for it would block every script on the page for that visitor, since
-    // the body can never match a per-request nonce -- confirmed live via a
-    // real browser session carrying a session cookie (2026-09-07). Bypass
-    // is still safe: Cache-Control stays private/no-store below, so the
+    // Removing headers()/nonce from the root layout (Task 4) let every
+    // route that doesn't itself call headers() go statically prerendered
+    // (ISR), not just `/` -- confirmed against a real `npm run build`
+    // (2026-09-07). Every path below is byte-identical for all visitors and
+    // its HTML body never contains a nonce attribute, no matter why a given
+    // request to it was classified private (cookie, query, prefetch, wrong
+    // host, unsafe method). Emitting a nonce-required CSP for one of these
+    // blocks every script on the page for that visitor, since the static
+    // body can never match a per-request nonce -- reproduced live via a
+    // real browser session on `/blog` carrying a session cookie
+    // (2026-09-07: 21 console errors, page non-interactive). Bypass is
+    // still safe: Cache-Control stays private/no-store below, so the
     // response is never cached; only the CSP choice changes.
-    const isStaticHomepage = request.nextUrl.pathname === '/';
-    const nonce = policy.kind === 'private' && !isStaticHomepage
+    //
+    // MAINTENANCE: this list must be re-derived from `npm run build`
+    // output (routes marked "○") whenever a page's headers()/nonce usage
+    // changes, or this exact bug reappears on whatever page silently
+    // became static. There is no automatic check for this today.
+    const STATIC_NO_NONCE_PATHS = new Set([
+        '/',
+        '/auth/reset-password',
+        '/blog',
+        '/cart',
+        '/contact',
+        '/dogs',
+        '/our-mission',
+        '/returns',
+        '/shop/breeds',
+        '/shop/breeds/flat-faced',
+        '/shop/breeds/long-backed',
+        '/shop/solutions',
+        '/sign-in',
+        '/sign-up',
+        '/solutions',
+        '/track-order',
+        '/wishlist',
+    ]);
+    const isStaticNoNoncePage = STATIC_NO_NONCE_PATHS.has(request.nextUrl.pathname);
+    const nonce = policy.kind === 'private' && !isStaticNoNoncePage
         ? Buffer.from(crypto.randomUUID()).toString('base64')
         : null;
     const contentSecurityPolicy = nonce
