@@ -297,7 +297,7 @@ export default function AccountPage() {
                                                         <div className="flex items-center gap-3">
                                                             <div className="text-right">
                                                                 <p className="text-sm font-bold text-rust">{order.status_label}</p>
-                                                                <p className="text-[14px] font-bold text-primary">{order.total.formatted}</p>
+                                                                <p className="text-[14px] font-bold text-primary"><span className="mr-1 text-xs font-medium text-zinc-400">{order.currency}</span>{order.total.formatted}</p>
                                                             </div>
                                                             <ChevronDown size={18} className={`text-zinc-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                                         </div>
@@ -343,7 +343,7 @@ export default function AccountPage() {
                                                                         {order.billing_address.first_name} {order.billing_address.last_name}<br />
                                                                         {order.billing_address.line_one}{order.billing_address.line_two ? `, ${order.billing_address.line_two}` : ''}<br />
                                                                         {order.billing_address.city}, {order.billing_address.state} {order.billing_address.postcode}
-                                                                        {order.billing_address.phone && <><br />{order.billing_address.phone}</>}
+                                                                        {(order.billing_address.phone || order.shipping_address.phone) && <><br />{order.billing_address.phone || order.shipping_address.phone}</>}
                                                                     </p>
                                                                 </div>
                                                             </div>
@@ -389,8 +389,8 @@ export default function AccountPage() {
                                                                     <div className="flex justify-between text-zinc-500"><span>Discount</span><span>-${order.discount_total.toFixed(2)}</span></div>
                                                                 )}
                                                                 <div className="flex justify-between text-zinc-500"><span>Shipping - {order.shipping_label}</span><span>{order.shipping_total === 0 ? 'Free' : `$${order.shipping_total.toFixed(2)}`}</span></div>
-                                                                <div className="flex justify-between text-zinc-500"><span>Estimated Tax</span><span>${order.tax_total.toFixed(2)}</span></div>
-                                                                <div className="flex justify-between font-bold text-primary pt-1"><span>Total</span><span>{order.currency} {order.total.formatted}</span></div>
+                                                                <div className="flex justify-between text-zinc-500"><span>Estimated Taxes</span><span>${order.tax_total.toFixed(2)}</span></div>
+                                                                <div className="flex justify-between font-bold text-primary pt-1"><span>Total</span><span><span className="mr-1 text-xs font-medium text-zinc-400">{order.currency}</span>{order.total.formatted}</span></div>
                                                             </div>
 
                                                             {returnEligibility(order) === 'open' && (
@@ -399,7 +399,7 @@ export default function AccountPage() {
                                                                         type="button"
                                                                         onClick={() => void handleRequestReturn(order)}
                                                                         disabled={returnAccessOrderId === order.id}
-                                                                        className="text-sm font-bold text-rust hover:underline underline-offset-2 transition-colors disabled:cursor-wait disabled:opacity-60 disabled:hover:no-underline"
+                                                                        className="inline-flex items-center rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-rust shadow-sm transition-colors hover:border-rust hover:bg-zinc-50 hover:shadow-md disabled:cursor-wait disabled:opacity-60"
                                                                     >
                                                                         {returnAccessOrderId === order.id ? 'Preparing secure access…' : 'Request a Return'}
                                                                     </button>
@@ -407,9 +407,13 @@ export default function AccountPage() {
                                                             )}
                                                             {returnEligibility(order) === 'closed' && (
                                                                 <div className="pt-3 border-t border-zinc-100">
-                                                                    <p className="text-sm font-bold text-zinc-300 cursor-not-allowed">
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled
+                                                                        className="inline-flex items-center rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-300 cursor-not-allowed opacity-60"
+                                                                    >
                                                                         Request a Return
-                                                                    </p>
+                                                                    </button>
                                                                     <p className="mt-1 text-sm text-zinc-400">
                                                                         This order is outside our {RETURN_WINDOW_DAYS}-day return window.
                                                                     </p>
