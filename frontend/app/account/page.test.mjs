@@ -52,6 +52,39 @@ const separateBillingPayload = between(
     'return { shippingAddress, billingAddress };',
     'separate billing payload',
 );
+const addressesTab = between(
+    accountSource,
+    "tab === 'addresses' ? (",
+    '<div className="grid sm:grid-cols-2 gap-6 text-[14px] text-primary">',
+    'addresses tab',
+);
+
+test('address list renders an edit action that pre-fills the form', () => {
+    assert.match(addressesTab, /onClick=\{\(\) => handleEditAddress\(addr\)\}/);
+    assert.match(addressesTab, /<Pencil size=\{16\}/);
+    assert.match(accountSource, /first_name: addr\.first_name[\s\S]*line_two: addr\.line_two \?\? ''[\s\S]*phone: addr\.phone \?\? ''/);
+    assert.match(accountSource, /setEditingAddressId\(addr\.id\)[\s\S]*setShowAddressForm\(true\)/);
+});
+
+test('address form submission branches PUT vs POST on editingAddressId', () => {
+    assert.match(accountSource, /const handleSubmitAddress = async/);
+    assert.match(
+        accountSource,
+        /editingAddressId \? `\/api\/me\/addresses\/\$\{editingAddressId\}` : '\/api\/me\/addresses'/,
+    );
+    assert.match(accountSource, /method: editingAddressId \? 'PUT' : 'POST'/);
+    assert.match(accountSource, /editingAddressId[\s\S]*prev\.map\(\(a\) => \(a\.id === editingAddressId \? data\.data : a\)\)[\s\S]*\[\.\.\.prev, data\.data\]/);
+});
+
+test('address form heading and submit label reflect edit mode', () => {
+    assert.match(addressesTab, /\{editingAddressId \? 'Edit Address' : 'New Address'\}/);
+    assert.match(addressesTab, /editingAddressId \? 'Update Address' : 'Save Address'/);
+});
+
+test('closing the address form resets editingAddressId', () => {
+    assert.match(addressesTab, /setShowAddressForm\(false\);[\s\S]*setEditingAddressId\(null\);[\s\S]*setAddressForm\(emptyAddressForm\)/);
+    assert.match(addressesTab, /setAddressForm\(emptyAddressForm\);[\s\S]*setEditingAddressId\(null\);[\s\S]*setShowAddressForm\(true\)/);
+});
 
 function jsxButtons(source) {
     const sourceFile = ts.createSourceFile('contract.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
