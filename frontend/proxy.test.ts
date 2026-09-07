@@ -34,7 +34,23 @@ describe('proxy storefront policy', () => {
     expect(response.headers.get('content-security-policy')).toBe(buildPublicContentSecurityPolicy());
   });
 
-  it('keeps query, private, cookie, and visible prefetch requests private', async () => {
+  it('keeps a dynamically rendered private route uncached and nonce-protected', async () => {
+    const response = await proxy(new NextRequest('https://petposture.com/account'));
+    const policy = response.headers.get('content-security-policy');
+
+    expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
+    expect(policy).toContain('nonce-');
+  });
+
+  it('bypasses `/` from the shared cache without requiring a nonce the static body cannot have (regression: found 2026-09-07 via real browser session with a session cookie)', async () => {
+    // `/` is statically prerendered (ISR) and its body never contains a
+    // nonce attribute on any script tag, no matter which request triggers
+    // the render. Emitting nonce-required CSP for a bypassed `/` request
+    // (cookie, query, prefetch, wrong host, unsafe method) blocks every
+    // script on the page for that visitor, because the body can never
+    // satisfy that nonce. Cache-Control must still be private/no-store so
+    // the bypassed response is never cached.
+    //
     // Note: constructing a NextRequest directly (as done here) does NOT
     // reproduce Next.js's real server behavior of stripping rsc/
     // next-router-state-tree/next-router-segment-prefetch/
@@ -44,7 +60,6 @@ describe('proxy storefront policy', () => {
     // enforcement point for those four headers in production.
     for (const request of [
       new NextRequest('https://petposture.com/?_rsc=x'),
-      new NextRequest('https://petposture.com/account'),
       new NextRequest('https://petposture.com/', {
         headers: { cookie: 'petposture-session=x' },
       }),
@@ -65,7 +80,8 @@ describe('proxy storefront policy', () => {
       const policy = response.headers.get('content-security-policy');
 
       expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
-      expect(policy).toContain('nonce-');
+      expect(policy).toBe(buildPublicContentSecurityPolicy());
+      expect(policy).not.toContain('nonce-');
     }
   });
 

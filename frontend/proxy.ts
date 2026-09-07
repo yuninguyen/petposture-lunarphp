@@ -63,7 +63,18 @@ export async function proxy(request: NextRequest) {
         nextRouterStateTree: request.headers.get('next-router-state-tree'),
         nextRouterSegmentPrefetch: request.headers.get('next-router-segment-prefetch'),
     });
-    const nonce = policy.kind === 'private'
+    // `/` is the only phase-1 statically prerendered public page (ISR,
+    // built once with no headers()/nonce dependency -- see Task 4). Its
+    // HTML body therefore NEVER contains a nonce attribute, regardless of
+    // why this particular request was classified private (cookie, query,
+    // prefetch, wrong host, unsafe method). Emitting a nonce-required CSP
+    // for it would block every script on the page for that visitor, since
+    // the body can never match a per-request nonce -- confirmed live via a
+    // real browser session carrying a session cookie (2026-09-07). Bypass
+    // is still safe: Cache-Control stays private/no-store below, so the
+    // response is never cached; only the CSP choice changes.
+    const isStaticHomepage = request.nextUrl.pathname === '/';
+    const nonce = policy.kind === 'private' && !isStaticHomepage
         ? Buffer.from(crypto.randomUUID()).toString('base64')
         : null;
     const contentSecurityPolicy = nonce
