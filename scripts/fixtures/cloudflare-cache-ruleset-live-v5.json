@@ -1,0 +1,56 @@
+{
+  "description": "",
+  "id": "eebfd01b68fb4427b8afc5174faa468f",
+  "kind": "zone",
+  "last_updated": "2026-09-06T17:33:43.910138Z",
+  "name": "default",
+  "phase": "http_request_cache_settings",
+  "rules": [
+    {
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "browser_ttl": { "mode": "respect_origin" },
+        "cache": true,
+        "edge_ttl": { "mode": "bypass_by_default" }
+      },
+      "description": "Cache HTML pages",
+      "enabled": false,
+      "expression": "(http.host eq \"petposture.com\") and (not starts_with(http.request.uri.path, \"/api/\")) and (not starts_with(http.request.uri.path, \"/account\")) and (not starts_with(http.request.uri.path, \"/cart\")) and (not starts_with(http.request.uri.path, \"/checkout\")) and (not starts_with(http.request.uri.path, \"/sign-in\")) and (not starts_with(http.request.uri.path, \"/sign-up\")) and (not starts_with(http.request.uri.path, \"/returns\")) and (not starts_with(http.request.uri.path, \"/admin\"))",
+      "id": "c6ed96880130461f81f8d1bc0e864608",
+      "last_updated": "2026-09-06T17:33:43.910138Z",
+      "ref": "c6ed96880130461f81f8d1bc0e864608",
+      "version": "3"
+    },
+    {
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "browser_ttl": { "default": 2592000, "mode": "override_origin" },
+        "cache": true,
+        "edge_ttl": { "default": 2592000, "mode": "override_origin" }
+      },
+      "description": "Long cache for Next.js static assets and uploaded storage files",
+      "enabled": true,
+      "expression": "((http.host eq \"petposture.com\") and starts_with(http.request.uri.path, \"/_next/static/\")) or ((http.host eq \"api.petposture.com\") and starts_with(http.request.uri.path, \"/storage/\"))",
+      "id": "a16b292511154d2db43c41bf3a54b1ee",
+      "last_updated": "2026-09-05T22:07:32.415314Z",
+      "ref": "a16b292511154d2db43c41bf3a54b1ee",
+      "version": "2"
+    },
+    {
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "browser_ttl": { "default": 60, "mode": "override_origin" },
+        "cache": true,
+        "edge_ttl": { "default": 300, "mode": "override_origin" }
+      },
+      "description": "Cache safe public catalog/content API GET endpoints (5 min edge TTL)",
+      "enabled": true,
+      "expression": "(http.host eq \"api.petposture.com\") and (http.request.method eq \"GET\") and (http.request.uri.path eq \"/api/settings\" or http.request.uri.path eq \"/api/site-media\" or http.request.uri.path eq \"/api/checkout/payment-methods\" or http.request.uri.path eq \"/api/categories\" or http.request.uri.path eq \"/api/blog/categories\" or starts_with(http.request.uri.path, \"/api/products\") or starts_with(http.request.uri.path, \"/api/brands\") or starts_with(http.request.uri.path, \"/api/posts\") or starts_with(http.request.uri.path, \"/api/breeds\") or starts_with(http.request.uri.path, \"/api/solutions\"))",
+      "id": "e1cab25c2d12483aa864f2353fe4a713",
+      "last_updated": "2026-09-05T22:07:32.415314Z",
+      "ref": "e1cab25c2d12483aa864f2353fe4a713",
+      "version": "2"
+    }
+  ],
+  "version": "5"
+}

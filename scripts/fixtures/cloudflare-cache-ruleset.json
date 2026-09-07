@@ -1,0 +1,47 @@
+{
+  "id": "rs-123",
+  "version": "v7",
+  "name": "storefront-cache",
+  "kind": "zone",
+  "phase": "http_request_cache_settings",
+  "home_expression_validation": {
+    "expression": "(http.host eq \"petposture.com\") and (http.request.method in {\"GET\" \"HEAD\"}) and (http.request.uri.path eq \"/\") and (http.request.uri.query eq \"\") and (not any(lower(http.request.headers.names[*])[*] eq \"purpose\")) and (not any(lower(http.request.headers.names[*])[*] eq \"sec-purpose\")) and (not any(lower(http.request.headers.names[*])[*] eq \"next-router-prefetch\")) and (not any(lower(http.request.headers.names[*])[*] eq \"rsc\")) and (not any(lower(http.request.headers.names[*])[*] eq \"next-router-state-tree\")) and (not any(lower(http.request.headers.names[*])[*] eq \"next-router-segment-prefetch\")) and (not any(lower(http.request.headers.names[*])[*] eq \"cookie\"))",
+    "parserValidation": {
+      "endpoint": "/zones/{zone_id}/filters/validate-expr",
+      "authenticated": false,
+      "mutating": false,
+      "success": null,
+      "reason": "credentials unavailable in delegated runtime"
+    },
+    "cases": [
+      { "name": "no-cookie-header", "cookieHeaderPresent": false, "cacheEligible": true },
+      { "name": "sensitive-cookie", "cookieHeaderPresent": true, "cacheEligible": false },
+      { "name": "unrelated-cookie", "cookieHeaderPresent": true, "cacheEligible": false },
+      { "name": "empty-cookie-header", "cookieHeaderPresent": true, "cacheEligible": false }
+    ]
+  },
+  "rules": [
+    {
+      "ref": "html",
+      "description": "Cache HTML pages",
+      "expression": "(http.host eq \"petposture.com\") and (not starts_with(http.request.uri.path, \"/api/\"))",
+      "action": "set_cache_settings",
+      "action_parameters": { "cache": true }
+    },
+    {
+      "ref": "api",
+      "description": "Cache safe public catalog/content API GET endpoints (5 min edge TTL)",
+      "expression": "(http.host eq \"api.petposture.com\") and (http.request.method eq \"GET\") and (http.request.uri.path eq \"/api/settings\" or http.request.uri.path eq \"/api/site-media\" or http.request.uri.path eq \"/api/checkout/payment-methods\" or http.request.uri.path eq \"/api/categories\" or http.request.uri.path eq \"/api/blog/categories\" or starts_with(http.request.uri.path, \"/api/products\") or starts_with(http.request.uri.path, \"/api/brands\") or starts_with(http.request.uri.path, \"/api/posts\") or starts_with(http.request.uri.path, \"/api/breeds\") or starts_with(http.request.uri.path, \"/api/solutions\"))",
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "cache": true,
+        "edge_ttl": { "mode": "override", "default": 300 }
+      }
+    },
+    {
+      "ref": "other",
+      "description": "Other cache rule",
+      "expression": "(http.host eq \"petposture.com\")"
+    }
+  ]
+}

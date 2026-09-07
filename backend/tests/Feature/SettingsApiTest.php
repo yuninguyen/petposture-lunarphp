@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class SettingsApiTest extends TestCase
@@ -46,5 +47,34 @@ class SettingsApiTest extends TestCase
         $this->getJson('/api/settings')
             ->assertOk()
             ->assertJsonPath('data.frontend_url', 'http://petposture.test:3000');
+    }
+
+    public function test_settings_response_is_assembled_per_request_without_a_response_cache(): void
+    {
+        config(['app.frontend_url' => 'https://before.petposture.test']);
+
+        $this->getJson('/api/settings')
+            ->assertOk()
+            ->assertJsonPath('data.frontend_url', 'https://before.petposture.test');
+
+        config(['app.frontend_url' => 'https://after.petposture.test']);
+
+        $this->getJson('/api/settings')
+            ->assertOk()
+            ->assertJsonPath('data.frontend_url', 'https://after.petposture.test');
+
+        $this->assertFalse(Cache::has('public-api:settings:v1'));
+    }
+
+    public function test_setting_delete_invalidates_the_existing_per_setting_cache(): void
+    {
+        $setting = Setting::set('shop_name', 'Before');
+        $this->assertSame('Before', Setting::get('shop_name'));
+        $this->assertTrue(Cache::has('setting:shop_name'));
+
+        $setting->delete();
+
+        $this->assertFalse(Cache::has('setting:shop_name'));
+        $this->assertSame('Fallback', Setting::get('shop_name', 'Fallback'));
     }
 }

@@ -60,12 +60,18 @@ export async function fetchApi(endpoint: string, options: FetchApiOptions = {}):
       ? (body as BodyInit | null | undefined)
       : JSON.stringify(body);
 
-  return fetch(`${getApiBaseUrl()}/api${endpoint}`, {
+  const response = await fetch(`${getApiBaseUrl()}/api${endpoint}`, {
     ...rest,
     credentials: 'include',
     headers,
     ...(serializedBody !== undefined ? { body: serializedBody } : {}),
   });
+
+  if (response.headers.get('X-PetPosture-Cache-Warning') === 'purge-pending') {
+    window.dispatchEvent(new CustomEvent('petposture:cache-warning'));
+  }
+
+  return response;
 }
 
 export async function fetchJson<T = unknown>(endpoint: string, options: FetchApiOptions = {}): Promise<T> {

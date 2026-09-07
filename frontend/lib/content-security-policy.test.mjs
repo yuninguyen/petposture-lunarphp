@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildContentSecurityPolicy } from "./content-security-policy.ts";
+import { buildPrivateContentSecurityPolicy } from "./content-security-policy.ts";
 
-const contentSecurityPolicy = buildContentSecurityPolicy("test-nonce");
+const contentSecurityPolicy = buildPrivateContentSecurityPolicy("test-nonce");
 
 test("CSP uses a nonce and blocks unsafe inline scripts and embedding", () => {
     assert.match(contentSecurityPolicy, /default-src 'self'/);

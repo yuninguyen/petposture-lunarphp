@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SiteMedia;
 use App\Traits\HttpResponses;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class SiteMediaController extends Controller
 {
@@ -22,14 +23,14 @@ class SiteMediaController extends Controller
     {
         $collection = $request->query('collection', 'banner');
 
-        $items = SiteMedia::query()
+        $items = Cache::remember("public-api:site-media:v1:{$collection}", now()->addMinutes(5), fn () => SiteMedia::query()
             ->where('collection', $collection)
             ->latest('id')
             ->get()
             ->flatMap(fn (SiteMedia $siteMedia) => $siteMedia->getMedia($collection)->map(fn ($media) => [
                 'title' => $siteMedia->title,
                 'url' => $media->getUrl(),
-            ]));
+            ])));
 
         return $this->success($items);
     }

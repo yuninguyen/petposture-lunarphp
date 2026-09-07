@@ -10,6 +10,7 @@ use App\Models\OrderShipment;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Setting;
+use App\Models\SiteMedia;
 use App\Models\Solution;
 use App\Observers\BrandCacheObserver;
 use App\Observers\LegacyProductObserver;
@@ -18,8 +19,11 @@ use App\Observers\PostCacheObserver;
 use App\Observers\ProductBadgeIndexObserver;
 use App\Observers\ProductCacheObserver;
 use App\Observers\ProductVariantObserver;
+use App\Observers\PublicContentCacheObserver;
 use App\Observers\SanitizeRichTextObserver;
 use App\Observers\SettingCacheObserver;
+use App\Observers\SiteMediaCacheObserver;
+use App\Observers\SiteMediaLibraryCacheObserver;
 use App\Payments\Gateways\AirwallexGateway;
 use App\Payments\Gateways\CashOnDeliveryGateway;
 use App\Payments\Gateways\PayoneerGateway;
@@ -27,6 +31,7 @@ use App\Payments\Gateways\PayPalGateway;
 use App\Payments\Gateways\PingPongGateway;
 use App\Payments\Gateways\StripeCardGateway;
 use App\Payments\PaymentGatewayManager;
+use App\Support\CloudflarePurgeNotice;
 use App\Support\MailConfigSync;
 use App\Support\ProductionMailConfiguration;
 use Illuminate\Auth\Events\Login;
@@ -40,6 +45,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Lunar\Base\DiscountManagerInterface;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Lunar\Base\ShippingModifiers;
 use Lunar\Facades\Telemetry;
 use Lunar\Models\Brand;
@@ -54,6 +60,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->scoped(CloudflarePurgeNotice::class);
+
         $this->app->singleton(PaymentGatewayManager::class, function ($app) {
             return new PaymentGatewayManager([
                 new CashOnDeliveryGateway,
@@ -91,8 +99,12 @@ class AppServiceProvider extends ServiceProvider
         Product::observe([ProductBadgeIndexObserver::class, ProductCacheObserver::class]);
         Brand::observe(BrandCacheObserver::class);
         Post::observe([SanitizeRichTextObserver::class, PostCacheObserver::class]);
-        Page::observe(SanitizeRichTextObserver::class);
+        Page::observe([SanitizeRichTextObserver::class, PublicContentCacheObserver::class]);
+        Breed::observe(PublicContentCacheObserver::class);
+        Solution::observe(PublicContentCacheObserver::class);
         Setting::observe(SettingCacheObserver::class);
+        SiteMedia::observe([PublicContentCacheObserver::class, SiteMediaCacheObserver::class]);
+        Media::observe(SiteMediaLibraryCacheObserver::class);
         $this->app->make(ShippingModifiers::class)->add(DefaultShippingModifier::class);
         Order::resolveRelationUsing('orderEvents', function (Order $order) {
             return $order->hasMany(OrderEvent::class, 'order_id')->orderBy('occurred_at');
