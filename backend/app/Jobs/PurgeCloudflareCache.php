@@ -21,6 +21,14 @@ class PurgeCloudflareCache implements ShouldQueue
 
     public int $tries = 4;
 
+    /** @param list<string> $cacheKeys */
+    public function __construct(public array $cacheKeys = [])
+    {
+        $this->cacheKeys = array_values(array_unique(array_filter($cacheKeys,
+            fn ($key) => is_string($key) && preg_match('/\\A(?:setting:|public-api:site-media:v1:)[^\\x00-\\x20]{1,255}\\z/D', $key),
+        )));
+    }
+
     public function backoff(): array
     {
         return [30, 120, 300];
@@ -28,6 +36,9 @@ class PurgeCloudflareCache implements ShouldQueue
 
     public function handle(CloudflareCacheService $cloudflare): void
     {
+        foreach ($this->cacheKeys as $key) {
+            \Illuminate\Support\Facades\Cache::forget($key);
+        }
         $result = $cloudflare->purgeAll();
 
         if (! $result->successful) {

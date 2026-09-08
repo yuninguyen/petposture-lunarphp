@@ -10,13 +10,23 @@ class SettingCacheObserver
 {
     public function saved(Setting $setting): void
     {
-        Cache::forget("setting:{$setting->key}");
-        app(PublicContentPurgeCoordinator::class)->purge();
+        $keys = array_map(fn ($key) => "setting:{$key}", array_unique(array_filter([
+            $setting->getOriginal('key'), $setting->key,
+        ], fn ($key) => $key !== null && $key !== '')));
+        foreach ($keys as $key) {
+            Cache::forget($key);
+        }
+        app(PublicContentPurgeCoordinator::class)->requestPurge(array_values($keys), $setting->getConnectionName());
     }
 
     public function deleted(Setting $setting): void
     {
-        Cache::forget("setting:{$setting->key}");
-        app(PublicContentPurgeCoordinator::class)->purge();
+        $keys = array_map(fn ($key) => "setting:{$key}", array_unique(array_filter([
+            $setting->getOriginal('key'), $setting->key,
+        ], fn ($key) => $key !== null && $key !== '')));
+        foreach ($keys as $key) {
+            Cache::forget($key);
+        }
+        app(PublicContentPurgeCoordinator::class)->requestPurge(array_values($keys), $setting->getConnectionName());
     }
 }

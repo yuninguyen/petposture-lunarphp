@@ -15,7 +15,9 @@ class CloudflarePurgeNotice
 
     public function record(CloudflarePurgeResult $result): void
     {
-        $this->result ??= $result;
+        if (! $this->isPending()) {
+            $this->result = $result;
+        }
     }
 
     public function result(): ?CloudflarePurgeResult

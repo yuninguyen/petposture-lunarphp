@@ -24,8 +24,10 @@ class SiteMediaCacheObserver
             $siteMedia->collection,
         ]));
 
-        foreach ($collections as $collection) {
-            Cache::forget("public-api:site-media:v1:{$collection}");
+        $keys = array_map(fn ($collection) => "public-api:site-media:v1:{$collection}", $collections);
+        foreach ($keys as $key) {
+            Cache::forget($key);
         }
+        app(\App\Services\PublicContentPurgeCoordinator::class)->requestPurge($keys, $siteMedia->getConnectionName());
     }
 }

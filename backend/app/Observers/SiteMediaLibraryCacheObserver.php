@@ -20,7 +20,9 @@ class SiteMediaLibraryCacheObserver
 
     private function invalidate(Media $media): void
     {
-        if ($media->model_type !== SiteMedia::class) {
+        $types = [SiteMedia::class, (new SiteMedia)->getMorphClass()];
+        if (! in_array($media->model_type, $types, true)
+            && ! in_array($media->getOriginal('model_type'), $types, true)) {
             return;
         }
 
@@ -29,8 +31,10 @@ class SiteMediaLibraryCacheObserver
             $media->collection_name,
         ]));
 
-        foreach ($collections as $collection) {
-            Cache::forget("public-api:site-media:v1:{$collection}");
+        $keys = array_map(fn ($collection) => "public-api:site-media:v1:{$collection}", $collections);
+        foreach ($keys as $key) {
+            Cache::forget($key);
         }
+        app(\App\Services\PublicContentPurgeCoordinator::class)->requestPurge($keys, $media->getConnectionName());
     }
 }
