@@ -37,6 +37,83 @@ export const HOME_EXPRESSION = [
   '(not any(lower(http.request.headers.names[*])[*] eq "cookie"))',
 ].join(' and ');
 
+export const HOME_BYPASS_DESCRIPTION = 'Bypass excluded petposture.com homepage requests';
+export const HOME_BYPASS_EXPRESSION = `(http.host eq "petposture.com") and (http.request.uri.path eq "/") and (not (${HOME_EXPRESSION}))`;
+const HOME_BYPASS_REF = 'bypass_excluded_petposture_homepage';
+// Recorded v16 historical rule deliberately lacks lower(); never re-enable it.
+const V16_DISABLED_HTML_EXPRESSION = '(http.host eq "petposture.com") and (http.request.method in {"GET" "HEAD"}) and (http.request.uri.path eq "/") and (http.request.uri.query eq "") and (not any(http.request.headers.names[*] eq "purpose")) and (not any(http.request.headers.names[*] eq "sec-purpose")) and (not any(http.request.headers.names[*] eq "next-router-prefetch")) and (not any(http.request.headers.names[*] eq "rsc")) and (not any(http.request.headers.names[*] eq "next-router-state-tree")) and (not any(http.request.headers.names[*] eq "next-router-segment-prefetch")) and (not any(http.request.headers.names[*] eq "cookie"))';
+const V16_STATIC_EXPRESSION = '((http.host eq "petposture.com") and starts_with(http.request.uri.path, "/_next/static/")) or ((http.host eq "api.petposture.com") and starts_with(http.request.uri.path, "/storage/"))';
+
+export function buildHomeBypassRule() {
+  return {
+    ref: HOME_BYPASS_REF,
+    description: HOME_BYPASS_DESCRIPTION,
+    expression: HOME_BYPASS_EXPRESSION,
+    enabled: true,
+    action: 'set_cache_settings',
+    action_parameters: { cache: false },
+  };
+}
+
+export function auditHomeBypassRuleset(ruleset, { throwOnFailure = true } = {}) {
+  assertRulesetShape(ruleset);
+  const respectOrigin = { browser_ttl: { mode: 'respect_origin' }, cache: true, edge_ttl: { mode: 'respect_origin' } };
+  const reviewed = [
+    { description: HTML_RULE_DESCRIPTION, enabled: false, expression: V16_DISABLED_HTML_EXPRESSION, action_parameters: respectOrigin },
+    { description: 'Long cache for Next.js static assets and uploaded storage files', enabled: true, expression: V16_STATIC_EXPRESSION,
+      action_parameters: { browser_ttl: { default: 2592000, mode: 'override_origin' }, cache: true, edge_ttl: { default: 2592000, mode: 'override_origin' } } },
+    { description: API_RULE_DESCRIPTION, enabled: true, expression: LIVE_API_EXPRESSION,
+      action_parameters: { browser_ttl: { default: 60, mode: 'override_origin' }, cache: true, edge_ttl: { default: 300, mode: 'override_origin' } } },
+    { description: HOME_RULE_DESCRIPTION, enabled: true, expression: HOME_EXPRESSION, action_parameters: respectOrigin },
+    buildHomeBypassRule(),
+  ];
+  const failures = [];
+  if (![4, 5].includes(ruleset.rules.length)) failures.push('Only the reviewed four-rule baseline or five-rule bypass topology is permitted');
+  const refs = new Set();
+  const ids = new Set();
+  for (let index = 0; index < ruleset.rules.length; index += 1) {
+    const rule = ruleset.rules[index];
+    const expected = reviewed[index];
+    if (!rule || !expected) { failures.push(`Unreviewed rule at order ${index + 1}`); continue; }
+    for (const field of ['description', 'enabled']) {
+      if (rule[field] !== expected[field]) failures.push(`Rule ${index + 1} ${field} differs from reviewed topology`);
+    }
+    if (rule.action !== 'set_cache_settings') failures.push(`Rule ${index + 1} action drift`);
+    if (!exactExpression(rule.expression, expected.expression)) failures.push(`Rule ${index + 1} expression drift`);
+    if (stableJson(rule.action_parameters) !== stableJson(expected.action_parameters)) failures.push(`Rule ${index + 1} action_parameters drift`);
+    if (typeof rule.ref !== 'string' || !rule.ref.trim() || refs.has(rule.ref)) failures.push(`Rule ${index + 1} missing or duplicate ref`);
+    refs.add(rule.ref);
+    if ((index === 4 && rule.ref !== HOME_BYPASS_REF) || (index < 4 && rule.ref === HOME_BYPASS_REF)) failures.push(`Rule ${index + 1} unreviewed bypass ref`);
+    // Baseline IDs/refs are export-bound, not pinned to sanitized fixture identities.
+    if (index < 4 && (typeof rule.id !== 'string' || !rule.id.trim())) failures.push(`Rule ${index + 1} missing ID`);
+    if (rule.id !== undefined) {
+      if (ids.has(rule.id)) failures.push(`Rule ${index + 1} duplicate ID`);
+      ids.add(rule.id);
+    }
+  }
+  const report = {
+    pass: failures.length === 0, failures,
+    rules: ruleset.rules.map((rule, index) => ({ order: index + 1, ...clone(rule) })),
+    bypassPresent: ruleset.rules.some((rule) => rule?.description === HOME_BYPASS_DESCRIPTION),
+  };
+  if (!report.pass && throwOnFailure) throw new Error(`Homepage bypass ruleset audit failed closed:\n- ${failures.join('\n- ')}`);
+  return report;
+}
+
+export function buildHomeBypassRules(ruleset) {
+  const audit = auditHomeBypassRuleset(ruleset);
+  const rules = clone(ruleset.rules);
+  if (!audit.bypassPresent) rules.push(buildHomeBypassRule());
+  auditHomeBypassRuleset({ ...ruleset, rules });
+  return { rules, changed: !audit.bypassPresent };
+}
+
+function rejectSeparateHomepage(ruleset) {
+  if (findExact(ruleset.rules, HOME_RULE_DESCRIPTION).length > 0) {
+    throw new Error('Separate active homepage topology requires apply-home-bypass; apply-home must not create two allow rules');
+  }
+}
+
 const LEGACY_HTML_EXPRESSION = '(http.host eq "petposture.com") and (not starts_with(http.request.uri.path, "/api/"))';
 
 function clone(value) {
@@ -168,6 +245,7 @@ function scopeApiRule(rule) {
 
 export function buildApplyRules(ruleset) {
   assertRulesetShape(ruleset);
+  rejectSeparateHomepage(ruleset);
   const htmlRules = findExact(ruleset.rules, HTML_RULE_DESCRIPTION);
   const apiRules = findExact(ruleset.rules, API_RULE_DESCRIPTION);
   if (htmlRules.length !== 1 || apiRules.length !== 1) auditRuleset(ruleset);
@@ -292,8 +370,8 @@ export async function runCommand(argv, {
   artifactWriter = saveArtifact,
 } = {}) {
   const { command, options } = parseArgs(argv);
-  if (!['export', 'audit', 'apply-home', 'restore'].includes(command)) {
-    throw new Error('Usage: cloudflare-storefront-rules.mjs export|audit|apply-home|restore [--from-export path] [--execute] [--confirm-restore]');
+  if (!['export', 'audit', 'apply-home', 'apply-home-bypass', 'restore'].includes(command)) {
+    throw new Error('Usage: cloudflare-storefront-rules.mjs export|audit|apply-home|apply-home-bypass|restore [--from-export path] [--execute] [--confirm-restore]');
   }
   const credentials = requireEnvironment(env);
   const live = await cloudflareRequest({ ...credentials, fetchImpl });
@@ -314,17 +392,33 @@ export async function runCommand(argv, {
   if (!options.fromExport) throw new Error(`${command} requires --from-export <path>`);
   const supplied = JSON.parse(await readFile(options.fromExport, 'utf8'));
 
-  if (command === 'apply-home') {
+  if (command === 'apply-home' || command === 'apply-home-bypass') {
     parseExport(supplied, live, { requireTrusted: true });
-    const audit = auditRuleset(live, { throwOnFailure: false });
-    const expectedCountSafe = audit.expected.html.count === 1 && audit.expected.api.count === 1;
-    const semanticsSafeToTransform = (audit.expected.html.reviewed || audit.expected.html.legacyCandidate)
-      && (audit.expected.api.reviewed || audit.expected.api.legacyCandidate);
-    if (!expectedCountSafe || audit.precedenceConflicts.length > 0 || !semanticsSafeToTransform) auditRuleset(live);
+    const bypass = command === 'apply-home-bypass';
+    let update;
+    if (bypass) {
+      update = buildHomeBypassRules(live);
+      const report = auditHomeBypassRuleset({ ...live, rules: update.rules });
+      for (const rule of report.rules) {
+        stdout.write(`${rule.order}. ${rule.description}\n   enabled=${rule.enabled} action=${rule.action}\n   ${rule.expression}\n   ${JSON.stringify(rule.action_parameters)}\n`);
+      }
+      if (!update.changed) {
+        stdout.write('NO OP: reviewed homepage bypass already present; no Cloudflare mutation performed\n');
+        return { command, changed: false, dryRun: !options.execute, result: clone(live) };
+      }
+    } else {
+      rejectSeparateHomepage(live);
+      const audit = auditRuleset(live, { throwOnFailure: false });
+      const expectedCountSafe = audit.expected.html.count === 1 && audit.expected.api.count === 1;
+      const semanticsSafeToTransform = (audit.expected.html.reviewed || audit.expected.html.legacyCandidate)
+        && (audit.expected.api.reviewed || audit.expected.api.legacyCandidate);
+      if (!expectedCountSafe || audit.precedenceConflicts.length > 0 || !semanticsSafeToTransform) auditRuleset(live);
+    }
     const rollbackArtifact = createExportArtifact(live);
     const rollbackFile = await artifactWriter(rollbackArtifact, { artifactDir, suffix: '-pre-apply-rollback' });
-    const update = buildApplyRules(live);
+    update ??= buildApplyRules(live);
     const request = buildMutationRequest(live, update.rules);
+    if (bypass) auditHomeBypassRuleset({ ...live, rules: request.rules });
     if (!options.execute) {
       stdout.write(`DRY RUN: no Cloudflare mutation performed\nRollback export ${rollbackFile}\nWould atomically PUT ${update.rules.length} rules\n`);
       return { command, dryRun: true, rollbackFile, request };
