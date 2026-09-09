@@ -51,8 +51,11 @@ function PageLoader() {
 
 export function CacheWarningListener() {
   useEffect(() => {
-    const handleCacheWarning = () => {
-      toast('Content was saved, but the storefront cache purge is still retrying. Public pages may remain stale for up to 5 minutes.', {
+    const handleCacheWarning = (event: Event) => {
+      const unavailable = (event as CustomEvent<{ recovery?: unknown }>).detail?.recovery === 'unavailable';
+      toast(unavailable
+        ? 'Content saved; cache refresh recovery could not be recorded. Automatic retry is not guaranteed; operator action is required.'
+        : 'Content was saved, but the storefront cache update is unconfirmed. Public pages may remain stale.', {
         duration: 6000,
       });
     };
