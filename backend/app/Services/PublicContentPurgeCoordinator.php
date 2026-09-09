@@ -6,8 +6,6 @@ use App\Jobs\PurgeCloudflareCache;
 use App\Support\CloudflarePurgeNotice;
 use App\ValueObjects\CloudflarePurgeResult;
 use App\Support\StorefrontMutationBatch;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -22,7 +20,8 @@ class PublicContentPurgeCoordinator
 
     public function requestPurge(array $cacheKeys = [], ?string $connectionName = null): void
     {
-        $keys = (new PurgeCloudflareCache($cacheKeys))->cacheKeys;
+        // Validation happens at the durable handoff, without silently dropping keys.
+        $keys = array_values(array_unique($cacheKeys));
         $committed = function () use ($keys): void {
             if ($this->batch->isCollecting()) {
                 $this->batch->addCommitted($keys);
@@ -62,11 +61,30 @@ class PublicContentPurgeCoordinator
 
     private function queue(array $keys): void
     {
+        $id = $this->record($keys);
+        if ($id === null) {
+            return;
+        }
+        $this->notice->markPending();
         try {
-            Bus::dispatch(new PurgeCloudflareCache($keys));
+            app(StorefrontRefreshJournal::class)->dispatch($id);
         } catch (Throwable) {
-            $this->notice->markPending();
-            Log::warning('Cloudflare cache purge retry dispatch unavailable.');
+            // The committed journal, not the queue acknowledgement, owns recovery.
+        }
+    }
+
+    private function record(array $keys): ?string
+    {
+        try {
+            return app(StorefrontRefreshJournal::class)->record($keys);
+        } catch (Throwable) {
+            $this->notice->markRecoveryUnavailable();
+            try {
+                Log::critical('Storefront cache refresh recovery unavailable.', ['status' => 'journal_unavailable']);
+            } catch (Throwable) {
+                // Diagnostics must never replace a committed save or its original error.
+            }
+            return null;
         }
     }
 
@@ -81,22 +99,29 @@ class PublicContentPurgeCoordinator
 
     private function attempt(array $keys): CloudflarePurgeResult
     {
+        $id = $this->record($keys);
+        if ($id === null) {
+            return $this->notice->result();
+        }
         try {
-            foreach ($keys as $key) {
-                Cache::forget($key);
-            }
-            $result = $this->cloudflare->purgeAll();
+            $result = (new PurgeCloudflareCache([], journalId: $id))->attemptJournal($this->cloudflare, true);
         } catch (Throwable) {
             $result = new CloudflarePurgeResult(false, true, message: 'Cloudflare cache purge unavailable.');
         }
         $this->notice->record($result);
 
-        if ($result->configured && ! $result->successful) {
-            Log::warning('Cloudflare cache purge pending retry.', [
-                'status' => $result->status,
-            ]);
-
-            $this->queue($keys);
+        if (! $result->successful) {
+            $this->notice->markPending();
+            try {
+                app(StorefrontRefreshJournal::class)->dispatch($id);
+            } catch (Throwable) {
+                // Recording succeeded: replay can recover even when submission fails.
+            }
+            try {
+                Log::warning('Cloudflare cache purge pending retry.', ['status' => $result->status]);
+            } catch (Throwable) {
+                // Logging is never recovery authority.
+            }
         }
 
         return $result;

@@ -21,10 +21,15 @@ class PurgeCloudflareCache implements ShouldQueue
 
     public int $tries = 4;
 
-    /** @param list<string> $cacheKeys */
-    public function __construct(public array $cacheKeys = [])
+    public int $timeout = 60;
+
+    public ?string $journalId = null;
+
+    /** @param list<string> $cacheKeys Legacy envelopes retain their original behavior. */
+    public function __construct(public array $cacheKeys = [], ?string $journalId = null)
     {
-        $this->cacheKeys = array_values(array_unique(array_filter($cacheKeys,
+        $this->journalId = $journalId;
+        $this->cacheKeys = array_values(array_unique(array_filter($journalId === null ? $cacheKeys : [],
             fn ($key) => is_string($key) && preg_match('/\\A(?:setting:|public-api:site-media:v1:)[^\\x00-\\x20]{1,255}\\z/D', $key),
         )));
     }
@@ -36,6 +41,13 @@ class PurgeCloudflareCache implements ShouldQueue
 
     public function handle(CloudflareCacheService $cloudflare): void
     {
+        if ($this->journalId !== null) {
+            $result = $this->attemptJournal($cloudflare);
+            if (! $result->successful) {
+                throw new RuntimeException($result->message ?? 'Cloudflare cache purge failed.');
+            }
+            return;
+        }
         foreach ($this->cacheKeys as $key) {
             \Illuminate\Support\Facades\Cache::forget($key);
         }
@@ -46,8 +58,46 @@ class PurgeCloudflareCache implements ShouldQueue
         }
     }
 
+    public function attemptJournal(CloudflareCacheService $cloudflare, bool $initial = false): \App\ValueObjects\CloudflarePurgeResult
+    {
+        $journal = app(\App\Services\StorefrontRefreshJournal::class);
+        $row = $journal->claim($this->journalId, $initial);
+        if ($row === null) {
+            // Stale/duplicate envelopes are acknowledged; replay owns future due work.
+            return new \App\ValueObjects\CloudflarePurgeResult(true, true);
+        }
+        $status = 'eviction_failed';
+        try {
+            $evictionFailed = false;
+            foreach ($row->cache_keys as $key) {
+                try {
+                    \Illuminate\Support\Facades\Cache::forget($key);
+                } catch (Throwable) {
+                    $evictionFailed = true;
+                }
+            }
+            if ($evictionFailed) {
+                throw new RuntimeException('Cache eviction unavailable.');
+            }
+            $status = 'refresh_failed';
+            $result = $cloudflare->purgeAll();
+            $status = ! $result->configured ? 'not_configured' : ($result->successful ? 'success' : 'refresh_failed');
+        } catch (Throwable) {
+            $result = new \App\ValueObjects\CloudflarePurgeResult(false, true, message: 'Cloudflare cache purge unavailable.');
+        }
+        $successful = $result->configured && $result->successful;
+        if (! $journal->finish($row->id, $row->lease_token, $successful, $status)) {
+            return new \App\ValueObjects\CloudflarePurgeResult(false, true, message: 'Cache refresh completion could not be confirmed.');
+        }
+        return $successful ? $result : new \App\ValueObjects\CloudflarePurgeResult(false, true, $result->status, 'Cloudflare cache purge pending.');
+    }
+
     public function failed(Throwable $exception): void
     {
-        Log::error('Cloudflare cache purge retry exhausted.', []);
+        try {
+            Log::error('Cloudflare cache purge retry exhausted.', []);
+        } catch (Throwable) {
+            // A transport envelope cannot exhaust/reset the durable recovery budget.
+        }
     }
 }

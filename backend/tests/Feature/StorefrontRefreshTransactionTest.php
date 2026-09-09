@@ -14,6 +14,7 @@ use App\Observers\PublicContentCacheObserver;
 use App\Observers\SiteMediaCacheObserver;
 use App\Services\CloudflareCacheService;
 use App\Services\PublicContentPurgeCoordinator;
+use App\Services\StorefrontRefreshJournal;
 use App\Support\CloudflarePurgeNotice;
 use App\Support\StorefrontMutationBatch;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -60,6 +61,7 @@ class StorefrontRefreshTransactionTest extends TestCase
     protected function tearDown(): void
     {
         Relation::morphMap([], false);
+        DB::disconnect(StorefrontRefreshJournal::CONNECTION);
         DB::disconnect('committed');
         DB::disconnect('sqlite');
         parent::tearDown();
@@ -251,7 +253,7 @@ class StorefrontRefreshTransactionTest extends TestCase
         Http::assertNothingSent();
         Bus::assertNothingDispatched();
         DB::commit();
-        Bus::assertDispatched(PurgeCloudflareCache::class, fn ($job) => $job->cacheKeys === ['setting:original']);
+        Bus::assertDispatched(PurgeCloudflareCache::class, fn ($job) => $job->journalId !== null && app(StorefrontRefreshJournal::class)->find($job->journalId)?->cache_keys === ['setting:original']);
         Bus::assertDispatchedTimes(PurgeCloudflareCache::class, 1);
         DB::beginTransaction();
         Setting::set('rolled-back', 'C');
@@ -271,7 +273,7 @@ class StorefrontRefreshTransactionTest extends TestCase
         $this->assertSame('purge-pending', $response->headers->get('X-PetPosture-Cache-Warning'));
         $this->assertFalse(app(StorefrontMutationBatch::class)->isCollecting());
         DB::commit();
-        Bus::assertDispatched(PurgeCloudflareCache::class, fn ($job) => $job->cacheKeys === ['setting:late']);
+        Bus::assertDispatched(PurgeCloudflareCache::class, fn ($job) => $job->journalId !== null && app(StorefrontRefreshJournal::class)->find($job->journalId)?->cache_keys === ['setting:late']);
         Http::assertNothingSent();
     }
 
@@ -305,7 +307,7 @@ class StorefrontRefreshTransactionTest extends TestCase
         $this->assertSame('saved', $response->getContent());
         $this->assertSame('purge-pending', $response->headers->get('X-PetPosture-Cache-Warning'));
         Bus::assertDispatchedTimes(PurgeCloudflareCache::class, 1);
-        Bus::assertDispatched(PurgeCloudflareCache::class, fn ($job) => $job->cacheKeys === ['setting:one', 'setting:two']);
+        Bus::assertDispatched(PurgeCloudflareCache::class, fn ($job) => $job->journalId !== null && app(StorefrontRefreshJournal::class)->find($job->journalId)?->cache_keys === ['setting:one', 'setting:two']);
     }
 
     public function test_job_repeats_key_eviction_each_attempt_and_bounds_payload_to_known_keys(): void
@@ -355,7 +357,7 @@ class StorefrontRefreshTransactionTest extends TestCase
             $this->assertSame('original failure', $e->getMessage());
         }
         Bus::assertDispatchedTimes(PurgeCloudflareCache::class, 1);
-        Bus::assertDispatched(PurgeCloudflareCache::class, fn ($job) => $job->cacheKeys === ['setting:saved']);
+        Bus::assertDispatched(PurgeCloudflareCache::class, fn ($job) => $job->journalId !== null && app(StorefrontRefreshJournal::class)->find($job->journalId)?->cache_keys === ['setting:saved']);
     }
 
     public function test_committed_error_response_is_still_flushed(): void
@@ -406,7 +408,7 @@ class StorefrontRefreshTransactionTest extends TestCase
         app(PublicContentPurgeCoordinator::class)->flushCompletedMutation();
         Http::assertNothingSent();
         Bus::assertDispatchedTimes(PurgeCloudflareCache::class, 1);
-        Bus::assertDispatched(PurgeCloudflareCache::class, fn ($job) => $job->cacheKeys === ['setting:one', 'setting:two']);
+        Bus::assertDispatched(PurgeCloudflareCache::class, fn ($job) => $job->journalId !== null && app(StorefrontRefreshJournal::class)->find($job->journalId)?->cache_keys === ['setting:one', 'setting:two']);
     }
 
     public function test_breed_update_commits_final_seo_and_pivot_removal_before_attempt(): void

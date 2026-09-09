@@ -38,6 +38,9 @@ class AttachCloudflarePurgeWarning
 
         if ($request->is('api/admin/*') && $response->isSuccessful() && $this->notice->isPending()) {
             $response->headers->set('X-PetPosture-Cache-Warning', 'purge-pending');
+            if ($this->notice->isRecoveryUnavailable()) {
+                $response->headers->set('X-PetPosture-Cache-Recovery', 'unavailable');
+            }
         }
 
         return $response;

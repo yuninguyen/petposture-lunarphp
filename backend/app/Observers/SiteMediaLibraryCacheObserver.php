@@ -32,9 +32,13 @@ class SiteMediaLibraryCacheObserver
         ]));
 
         $keys = array_map(fn ($collection) => "public-api:site-media:v1:{$collection}", $collections);
-        foreach ($keys as $key) {
-            Cache::forget($key);
-        }
         app(\App\Services\PublicContentPurgeCoordinator::class)->requestPurge($keys, $media->getConnectionName());
+        foreach ($keys as $key) {
+            try {
+                Cache::forget($key);
+            } catch (\Throwable) {
+                // The registered snapshot survives an unavailable cache.
+            }
+        }
     }
 }

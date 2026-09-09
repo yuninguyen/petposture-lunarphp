@@ -13,10 +13,14 @@ class SettingCacheObserver
         $keys = array_map(fn ($key) => "setting:{$key}", array_unique(array_filter([
             $setting->getOriginal('key'), $setting->key,
         ], fn ($key) => $key !== null && $key !== '')));
-        foreach ($keys as $key) {
-            Cache::forget($key);
-        }
         app(PublicContentPurgeCoordinator::class)->requestPurge(array_values($keys), $setting->getConnectionName());
+        foreach ($keys as $key) {
+            try {
+                Cache::forget($key);
+            } catch (\Throwable) {
+                // Committed recovery owns mandatory eviction; early eviction is best effort.
+            }
+        }
     }
 
     public function deleted(Setting $setting): void
@@ -24,9 +28,13 @@ class SettingCacheObserver
         $keys = array_map(fn ($key) => "setting:{$key}", array_unique(array_filter([
             $setting->getOriginal('key'), $setting->key,
         ], fn ($key) => $key !== null && $key !== '')));
-        foreach ($keys as $key) {
-            Cache::forget($key);
-        }
         app(PublicContentPurgeCoordinator::class)->requestPurge(array_values($keys), $setting->getConnectionName());
+        foreach ($keys as $key) {
+            try {
+                Cache::forget($key);
+            } catch (\Throwable) {
+                // Committed recovery owns mandatory eviction; early eviction is best effort.
+            }
+        }
     }
 }
