@@ -11,6 +11,10 @@ const home = {
   pathname: '/',
   search: '',
   cookieHeader: '',
+  cookieHeaderPresent: false,
+  rsc: null,
+  nextRouterStateTree: null,
+  nextRouterSegmentPrefetch: null,
   purpose: null,
   secPurpose: null,
   nextRouterPrefetch: null,
@@ -124,9 +128,41 @@ describe('classifyStorefrontRequest', () => {
     'petposture-session-extra=x',
     'XSRF-TOKENIZED=x',
     'xsrf-token=x',
-  ])('does not match partial or case-mismatched cookie token %s', (cookieHeader) => {
-    expect(classifyStorefrontRequest({ ...home, cookieHeader }).kind).toBe('public-cacheable');
+  ])('denies non-sensitive cookies even with inconsistent false presence: %s', (cookieHeader) => {
+    expect(classifyStorefrontRequest({ ...home, cookieHeader })).toEqual({
+      kind: 'private',
+      reason: 'cookie-header',
+    });
   });
+
+  it.each(['', 'audit-unrelated=x', 'malformed-cookie', 'petposture-session=x', 'XSRF-TOKEN=x'])(
+    'denies present Cookie %j',
+    (cookieHeader) => {
+      expect(classifyStorefrontRequest({ ...home, cookieHeader, cookieHeaderPresent: true }).kind)
+        .toBe('private');
+    },
+  );
+
+  it.each([
+    { fact: 'rsc', value: '' },
+    { fact: 'rsc', value: '0' },
+    { fact: 'nextRouterStateTree', value: '' },
+    { fact: 'nextRouterStateTree', value: '0' },
+    { fact: 'nextRouterSegmentPrefetch', value: '' },
+    { fact: 'nextRouterSegmentPrefetch', value: '0' },
+  ] as const)('denies visible navigation $fact value "$value"', ({ fact, value }) => {
+    expect(classifyStorefrontRequest({ ...home, [fact]: value })).toEqual({
+      kind: 'private',
+      reason: 'navigation',
+    });
+  });
+
+  it.each(['purpose', 'secPurpose', 'nextRouterPrefetch'] as const)(
+    'denies visible %s with zero value',
+    (fact) => {
+      expect(classifyStorefrontRequest({ ...home, [fact]: '0' }).kind).toBe('private');
+    },
+  );
 
   it('exports the exact public and private HTML cache policies', () => {
     expect(PUBLIC_HTML_CACHE_CONTROL).toBe(

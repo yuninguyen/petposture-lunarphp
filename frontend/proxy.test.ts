@@ -86,6 +86,94 @@ describe('proxy storefront policy', () => {
     );
   });
 
+  // Direct NextRequest inputs prove visible policy only, not Flight visibility after Next normalization.
+  it.each([
+    ['CoOkIe', ''],
+    ['Cookie', 'audit-unrelated=x'],
+    ['Cookie', 'malformed-cookie'],
+    ['Cookie', 'petposture-session=x'],
+    ['Cookie', 'XSRF-TOKEN=x'],
+    ['RSC', ''],
+    ['RSC', '0'],
+    ['Next-Router-State-Tree', ''],
+    ['Next-Router-State-Tree', '0'],
+    ['Next-Router-Segment-Prefetch', ''],
+    ['Next-Router-Segment-Prefetch', '0'],
+    ['Purpose', ''],
+    ['Purpose', '0'],
+    ['Sec-Purpose', ''],
+    ['Sec-Purpose', '0'],
+    ['Next-Router-Prefetch', ''],
+    ['Next-Router-Prefetch', '0'],
+  ])('keeps visible %s value "%s" private with trusted nonce', async (header, value) => {
+    const response = await proxy(new NextRequest('https://petposture.com/', {
+      headers: { [header]: value, 'x-nonce': 'forged-client-nonce' },
+    }));
+    const nonce = response.headers.get('x-middleware-request-x-nonce');
+    const csp = response.headers.get('content-security-policy');
+
+    expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
+    expect(nonce).toBeTruthy();
+    expect(nonce).not.toBe('forged-client-nonce');
+    expect(csp).toContain(`'nonce-${nonce}'`);
+    expect(response.headers.get('x-middleware-request-content-security-policy')).toBe(csp);
+    expect(response.headers.has('set-cookie')).toBe(false);
+  });
+
+  it.each(['GET', 'HEAD'])('strips forged nonce from public %s upstream headers', async (method) => {
+    const response = await proxy(new NextRequest('https://petposture.com/', {
+      method,
+      headers: { 'X-Nonce': 'forged-client-nonce' },
+    }));
+    const csp = response.headers.get('content-security-policy');
+
+    expect(response.headers.get('cache-control')).toBe(PUBLIC_HTML_CACHE_CONTROL);
+    expect(response.headers.get('x-middleware-request-x-nonce')).toBeNull();
+    expect(response.headers.get('x-middleware-override-headers')?.split(',')).not.toContain('x-nonce');
+    expect(csp).not.toContain('nonce-');
+    expect(csp).toContain("'unsafe-inline'");
+    expect(csp).not.toContain('strict-dynamic');
+    expect(response.headers.get('x-middleware-request-content-security-policy')).toBe(csp);
+    expect(response.headers.has('set-cookie')).toBe(false);
+  });
+
+  it('replaces forged nonce with a fresh matching private nonce per request', async () => {
+    const nonces: string[] = [];
+    for (let i = 0; i < 2; i++) {
+      const response = await proxy(new NextRequest('https://petposture.com/account', {
+        headers: { 'x-nonce': 'forged-client-nonce' },
+      }));
+      const nonce = response.headers.get('x-middleware-request-x-nonce');
+      const csp = response.headers.get('content-security-policy');
+
+      expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
+      expect(nonce).toBeTruthy();
+      expect(nonce).not.toBe('forged-client-nonce');
+      expect(csp).toContain(`'nonce-${nonce}'`);
+      expect(response.headers.get('x-middleware-request-content-security-policy')).toBe(csp);
+      nonces.push(nonce!);
+    }
+    expect(nonces[0]).not.toBe(nonces[1]);
+  });
+
+  it.each([
+    { roles: ['customer'], location: 'https://petposture.com/', status: 307 },
+    { roles: ['admin'], location: null, status: 200 },
+  ])('preserves admin role gate for $roles', async ({ roles, location, status }) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { roles } }), {
+      headers: { 'content-type': 'application/json' },
+    })));
+    const response = await proxy(new NextRequest('https://petposture.com/admin', {
+      headers: { 'x-nonce': 'forged-client-nonce' },
+    }));
+
+    expect(response.status).toBe(status);
+    expect(response.headers.get('location')).toBe(location);
+    expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
+    expect(response.headers.get('content-security-policy')).toContain('nonce-');
+    expect(response.headers.get('content-security-policy')).not.toContain('forged-client-nonce');
+  });
+
   it('includes visible prefetch requests in the matcher', () => {
     expect(config.matcher).toEqual([
       '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',

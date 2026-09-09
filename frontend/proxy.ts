@@ -50,6 +50,10 @@ export async function proxy(request: NextRequest) {
         pathname: request.nextUrl.pathname,
         search: request.nextUrl.search,
         cookieHeader: request.headers.get('cookie') || '',
+        cookieHeaderPresent: request.headers.has('cookie'),
+        rsc: request.headers.get('rsc'),
+        nextRouterStateTree: request.headers.get('next-router-state-tree'),
+        nextRouterSegmentPrefetch: request.headers.get('next-router-segment-prefetch'),
         purpose: request.headers.get('purpose'),
         secPurpose: request.headers.get('sec-purpose'),
         nextRouterPrefetch: request.headers.get('next-router-prefetch'),
@@ -64,6 +68,7 @@ export async function proxy(request: NextRequest) {
         ? PUBLIC_HTML_CACHE_CONTROL
         : PRIVATE_HTML_CACHE_CONTROL;
     const requestHeaders = new Headers(request.headers);
+    requestHeaders.delete('x-nonce');
     if (nonce) requestHeaders.set('x-nonce', nonce);
     requestHeaders.set('Content-Security-Policy', contentSecurityPolicy);
 

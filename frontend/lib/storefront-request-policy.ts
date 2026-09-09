@@ -9,6 +9,10 @@ export type StorefrontRequestFacts = {
   pathname: string;
   search: string;
   cookieHeader: string;
+  cookieHeaderPresent: boolean;
+  rsc: string | null;
+  nextRouterStateTree: string | null;
+  nextRouterSegmentPrefetch: string | null;
   purpose: string | null;
   secPurpose: string | null;
   nextRouterPrefetch: string | null;
@@ -52,6 +56,18 @@ export function classifyStorefrontRequest(
 
   if (hasSensitiveCookie(facts.cookieHeader)) {
     return { kind: 'private', reason: 'sensitive-cookie' };
+  }
+
+  if (facts.cookieHeaderPresent || facts.cookieHeader !== '') {
+    return { kind: 'private', reason: 'cookie-header' };
+  }
+
+  if (
+    facts.rsc !== null ||
+    facts.nextRouterStateTree !== null ||
+    facts.nextRouterSegmentPrefetch !== null
+  ) {
+    return { kind: 'private', reason: 'navigation' };
   }
 
   if (
