@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import HomePage from "@/components/HomePage";
 import { getApiBaseUrl } from "@/lib/api";
 import { buildSiteSchema, serializeJsonLd } from "@/lib/site-schema";
+import { STOREFRONT_SETTINGS_TAG, STOREFRONT_SITE_MEDIA_TAG } from '@/lib/storefront-cache-tags';
 
 export const metadata: Metadata = {
     alternates: { canonical: '/' },
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 async function fetchHeroImage(): Promise<string | null> {
   try {
     const res = await fetch(`${getApiBaseUrl()}/api/site-media?collection=banner`, {
-      next: { revalidate: 300 },
+      next: { revalidate: 300, tags: [STOREFRONT_SITE_MEDIA_TAG] },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -24,7 +25,7 @@ async function fetchHeroImage(): Promise<string | null> {
 async function fetchSiteSettings() {
   try {
     const res = await fetch(`${getApiBaseUrl()}/api/settings`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 3600, tags: [STOREFRONT_SETTINGS_TAG] },
     });
     const json = await res.json();
     return {

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run app/favicon.png/route.test.ts lib/api.test.ts lib/storefront-request-policy.test.ts proxy.test.ts lib/content-security-policy.test.ts lib/site-schema.test.ts",
+    "test": "vitest run app/favicon.png/route.test.ts lib/api.test.ts lib/storefront-request-policy.test.ts proxy.test.ts lib/content-security-policy.test.ts lib/site-schema.test.ts app/api/internal/storefront-revalidate/route.test.ts lib/storefront-cache-tags.test.ts",
     "test:e2e:csp": "cross-env NEXT_PUBLIC_API_URL=https://api.petposture.com npm run build && playwright test e2e/storefront-csp.spec.ts"
   },
   "dependencies": {
