@@ -28,6 +28,19 @@ class CloudflarePurgeWarningMiddlewareTest extends TestCase
         \Illuminate\Support\Facades\DB::purge('sqlite');
         // These service tests need only the journal schema, not content fixtures.
         (require database_path('migrations/2026_09_09_000001_create_storefront_refresh_journal_table.php'))->up();
+        // Preserve the warning assertions while supplying the newly required origin barrier.
+        config()->set('services.storefront', ['internal_url' => 'http://127.0.0.1:3001',
+            'backend_internal_url' => 'http://127.0.0.1:8001', 'revalidation_secret' => 'test-secret']);
+        \Illuminate\Support\Facades\Http::preventStrayRequests();
+        \Illuminate\Support\Facades\Http::fake(function ($request) {
+            return match ($request->url()) {
+                'http://127.0.0.1:8001/api/settings' => \Illuminate\Support\Facades\Http::response(['status' => 'Request was successful.', 'data' => \Tests\Fixtures\StorefrontHtml::settings()]),
+                'http://127.0.0.1:8001/api/site-media?collection=banner' => \Illuminate\Support\Facades\Http::response(['status' => 'Request was successful.', 'data' => []]),
+                'http://127.0.0.1:3001/api/internal/storefront-revalidate' => \Illuminate\Support\Facades\Http::response(['revalidated' => true, 'scope' => 'homepage']),
+                'http://127.0.0.1:3001/' => \Illuminate\Support\Facades\Http::response(\Tests\Fixtures\StorefrontHtml::render(), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300']),
+                default => throw new RuntimeException('Unexpected test HTTP request.'),
+            };
+        });
     }
 
     protected function tearDown(): void

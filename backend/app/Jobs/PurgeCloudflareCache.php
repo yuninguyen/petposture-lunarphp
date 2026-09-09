@@ -25,7 +25,7 @@ class PurgeCloudflareCache implements ShouldQueue
 
     public ?string $journalId = null;
 
-    /** @param list<string> $cacheKeys Legacy envelopes retain their original behavior. */
+    /** @param list<string> $cacheKeys Legacy envelopes share the full chain, without journal durability. */
     public function __construct(public array $cacheKeys = [], ?string $journalId = null)
     {
         $this->journalId = $journalId;
@@ -48,10 +48,7 @@ class PurgeCloudflareCache implements ShouldQueue
             }
             return;
         }
-        foreach ($this->cacheKeys as $key) {
-            \Illuminate\Support\Facades\Cache::forget($key);
-        }
-        $result = $cloudflare->purgeAll();
+        $result = (new \App\Services\StorefrontCacheRefreshService($cloudflare))->refresh($this->cacheKeys);
 
         if (! $result->successful) {
             throw new RuntimeException($result->message ?? 'Cloudflare cache purge failed.');
@@ -68,21 +65,9 @@ class PurgeCloudflareCache implements ShouldQueue
             return new \App\ValueObjects\CloudflarePurgeResult(! $initial, true,
                 message: $initial ? 'Cache refresh completion could not be confirmed.' : null);
         }
-        $status = 'eviction_failed';
+        $status = 'refresh_failed';
         try {
-            $evictionFailed = false;
-            foreach ($row->cache_keys as $key) {
-                try {
-                    \Illuminate\Support\Facades\Cache::forget($key);
-                } catch (Throwable) {
-                    $evictionFailed = true;
-                }
-            }
-            if ($evictionFailed) {
-                throw new RuntimeException('Cache eviction unavailable.');
-            }
-            $status = 'refresh_failed';
-            $result = $cloudflare->purgeAll();
+            $result = (new \App\Services\StorefrontCacheRefreshService($cloudflare))->refresh($row->cache_keys);
             $status = ! $result->configured ? 'not_configured' : ($result->successful ? 'success' : 'refresh_failed');
         } catch (Throwable) {
             $result = new \App\ValueObjects\CloudflarePurgeResult(false, true, message: 'Cloudflare cache purge unavailable.');

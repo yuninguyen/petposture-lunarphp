@@ -78,6 +78,13 @@ return [
         'webhook_secret' => env('AFTERSHIP_WEBHOOK_SECRET'),
     ],
 
+    // Runtime/server-only. Provision outside both Docker build contexts.
+    'storefront' => [
+        'internal_url' => env('STOREFRONT_INTERNAL_URL'),
+        'backend_internal_url' => env('STOREFRONT_BACKEND_INTERNAL_URL'),
+        'revalidation_secret' => env('STOREFRONT_REVALIDATION_SECRET'),
+    ],
+
     'cloudflare' => [
         'api_token' => env('CLOUDFLARE_API_TOKEN'),
         'zone_id' => env('CLOUDFLARE_ZONE_ID'),
