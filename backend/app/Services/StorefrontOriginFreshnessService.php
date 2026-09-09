@@ -37,7 +37,7 @@ class StorefrontOriginFreshnessService
                 }
             }
             $canonical = $xpath->query('//link[@rel="canonical"]');
-            if ($canonical->length !== 1 || $canonical[0]->getAttribute('href') !== 'https://petposture.com/') {
+            if ($canonical->length !== 1 || ! in_array($canonical[0]->getAttribute('href'), ['https://petposture.com', 'https://petposture.com/'], true)) {
                 return false;
             }
             $entities = [];
