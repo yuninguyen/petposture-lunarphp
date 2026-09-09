@@ -20,16 +20,17 @@ class ReplayStorefrontRefresh extends Command
             return self::INVALID;
         }
         try {
-            $count = $journal->replay($limit, $seconds);
+            $journal->replay($limit, $seconds);
         } catch (Throwable) {
             $this->error('Storefront refresh journal unavailable; no completion guarantee.');
             return self::FAILURE;
         }
+        $summary = $journal->replaySummary();
+        $this->line("Selected {$summary['selected']}; submitted {$summary['submitted']}; deferred {$summary['deferred']}; failed {$summary['failed']}. Submission is not refresh completion.");
         if ($journal->replayDispatchFailures() > 0) {
             $this->error('Storefront refresh replay degraded: submission unavailable; journal retained for later replay.');
             return self::FAILURE;
         }
-        $this->info("Processed {$count} journal records; submission is not refresh completion.");
         return self::SUCCESS;
     }
 }

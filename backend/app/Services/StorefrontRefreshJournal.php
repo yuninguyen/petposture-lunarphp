@@ -22,6 +22,12 @@ class StorefrontRefreshJournal
     public const CONNECTION = 'storefront_refresh_journal';
 
     private int $lastReplayDispatchFailures = 0;
+    private array $lastReplaySummary = ['selected' => 0, 'submitted' => 0, 'deferred' => 0, 'failed' => 0];
+
+    public function replaySummary(): array
+    {
+        return $this->lastReplaySummary;
+    }
 
     public function replayDispatchFailures(): int
     {
@@ -169,12 +175,12 @@ class StorefrontRefreshJournal
             ->where('lease_token', $token)->where('lease_expires_at', '>', $now)->update($values) === 1;
     }
 
-    public function dispatch(string $id): bool
+    public function dispatch(string $id): ?bool
     {
         try {
             $row = $this->find($id);
             if ($row === null) {
-                return true;
+                return null;
             }
             $now = CarbonImmutable::now('UTC');
             $age = CarbonImmutable::parse($row->created_at, 'UTC')->diffInSeconds($now);
@@ -185,7 +191,7 @@ class StorefrontRefreshJournal
                 ->where('recovery_attempts', '<', 4)
                 ->update(['next_dispatch_at' => $next, 'updated_at' => $now]);
             if ($changed !== 1) {
-                return true;
+                return null;
             }
             try {
                 Bus::dispatch(new PurgeCloudflareCache([], journalId: $id));
@@ -215,6 +221,7 @@ class StorefrontRefreshJournal
     public function replay(int $limit = 100, int $maxSeconds = 20): int
     {
         $this->lastReplayDispatchFailures = 0;
+        $this->lastReplaySummary = ['selected' => 0, 'submitted' => 0, 'deferred' => 0, 'failed' => 0];
         $limit = max(0, min(100, $limit));
         $maxSeconds = max(0, min(20, $maxSeconds));
         if ($limit === 0 || $maxSeconds === 0) {
@@ -230,6 +237,8 @@ class StorefrontRefreshJournal
                 $expired->where('state', 'leased')->where('lease_expires_at', '<=', $now);
             });
         })->orderBy('updated_at')->orderBy('id')->limit($limit)->get();
+        $this->lastReplaySummary['selected'] = $rows->count();
+        $this->lastReplaySummary['deferred'] = $rows->count();
         $processed = 0;
         foreach ($rows as $row) {
             if (hrtime(true) >= $deadline) {
@@ -243,7 +252,12 @@ class StorefrontRefreshJournal
                     ->update($this->failureValues($row, 'lease_expired', CarbonImmutable::now('UTC')));
             }
             if (hrtime(true) < $deadline) {
-                if (! $this->dispatch($row->id)) {
+                $submitted = $this->dispatch($row->id);
+                if ($submitted !== null) {
+                    $this->lastReplaySummary['deferred']--;
+                    $this->lastReplaySummary[$submitted ? 'submitted' : 'failed']++;
+                }
+                if ($submitted === false) {
                     $this->lastReplayDispatchFailures++;
                 }
             }

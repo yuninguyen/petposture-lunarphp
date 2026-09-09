@@ -53,9 +53,10 @@ public function record(array $keys, ?string $id = null): string;
 public function find(string $id): ?object;
 public function claim(string $id, bool $initial = false): ?object;
 public function finish(string $id, string $token, bool $success, string $status): bool;
-public function dispatch(string $id): bool; // false infrastructure failure, true submission/no-op (not completion)
+public function dispatch(string $id): ?bool; // false infrastructure failure, true submitted, null deferred/not due (none means completion)
 public function replay(int $limit = 100, int $maxSeconds = 20): int;
 public function replayDispatchFailures(): int; // last replay only; count reset at every invocation
+public function replaySummary(): array; // exact selected/submitted/deferred/failed integer counts; reset per replay
 // Returned row: id:string, cache_keys:list<string>, state:string,
 // recovery_attempts:int, initial_attempted:bool, lease_token:?string,
 // lease_expires_at:?timestamp plus due/completion timestamps and allowlisted status.
