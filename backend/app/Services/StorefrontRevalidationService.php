@@ -35,6 +35,9 @@ class StorefrontRevalidationService
             if ($response['type'] !== 'application/json' || ! is_array($body) || ($body['status'] ?? null) !== 'Request was successful.' || ! is_array($body['data'] ?? null)) {
                 throw new RuntimeException('Independent public projection unavailable.');
             }
+            if ($path === '/api/settings') {
+                StorefrontProjection::fromPublicData($body['data'], []);
+            }
             $data[] = $body['data'];
         }
 
@@ -90,7 +93,7 @@ class StorefrontRevalidationService
             $pending = Http::withHeaders($headers)->withOptions([
                 'allow_redirects' => false, 'cookies' => false, 'proxy' => '',
                 'timeout' => min(10, $remaining), 'connect_timeout' => min(3, $remaining),
-                'stream' => false, 'sink' => $sink,
+                'stream' => false, 'sink' => $sink, 'decode_content' => false,
                 'on_headers' => function ($response) use ($limit): void {
                     $length = $response->getHeaderLine('Content-Length');
                     if ($response->getStatusCode() !== 200 || ($length !== '' && (! ctype_digit($length) || (float) $length > $limit))) {
@@ -125,6 +128,11 @@ class StorefrontRevalidationService
                 $text .= $chunk;
             }
             $body->close();
+            $length = $response->header('Content-Length');
+            if (($length !== '' && (float) $length !== (float) strlen($text))
+                || ! in_array(strtolower($response->header('Content-Encoding')), ['', 'identity'], true)) {
+                throw new RuntimeException('Incomplete or encoded storefront body.');
+            }
 
             return ['body' => $text, 'type' => strtolower(trim(explode(';', $response->header('Content-Type'))[0])),
                 'cache' => $response->header('Cache-Control'), 'cookie' => $response->header('Set-Cookie'),
