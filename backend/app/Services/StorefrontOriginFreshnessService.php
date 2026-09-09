@@ -42,7 +42,7 @@ class StorefrontOriginFreshnessService
             }
             $entities = [];
             foreach ($xpath->query('//script[@type="application/ld+json"]') as $script) {
-                $root = json_decode($script->textContent, true, 32, JSON_THROW_ON_ERROR);
+                $root = StorefrontJson::decode($script->textContent);
                 if (! is_array($root) || ($root['@context'] ?? null) !== 'https://schema.org' || ! is_array($root['@graph'] ?? null)) {
                     return false;
                 }
