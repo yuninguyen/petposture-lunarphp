@@ -21,11 +21,13 @@ class CheckStorefrontRefreshReadiness extends Command
         if (! in_array($queue['driver'] ?? null, ['database', 'redis', 'beanstalkd'], true)
             || $request === false || $io === false || $request < 1 || $io < 1
             || $request >= 120 || $io >= min($request, $worker)
-            || $visibility === false || $visibility <= $worker || $visibility >= 120) {
-            $this->error('Not ready: require verified request < 120s, IO < min(request, worker), and async worker < visibility < 120s. Unknown bounds fail closed.');
+            || $worker >= 120 || $visibility === false || $visibility <= $worker) {
+            $this->error('Not ready: require verified request < 120s, IO < min(request, worker), and async worker < visibility with worker < 120s. Unknown bounds fail closed.');
             return self::FAILURE;
         }
-        $this->info('Lease configuration checks passed against declared hard bounds; activation still requires independently verified timeout enforcement, scheduler/worker ownership and full refresh-chain approval.');
-        return self::SUCCESS;
+        $this->info('Numeric checks passed: Cloudflare HTTP 5s < job 60s < queue visibility; job < lease 120s. Initial synchronous work is not governed by the job timeout.');
+        $this->error('Not ready: missing operator evidence for wall-clock request/replay hard stops, bounded DB/cache/queue IO, enforced worker timeout and graceful drain. Numeric configuration is not runtime proof.');
+        $this->line('Replay 20s is cooperative only; PHP max_execution_time is not a Unix wall-clock IO bound. Supervisor stopwaitsecs 30s cannot certify draining a 60s job. Verify running scheduler/worker ownership and full-chain approval separately; this command cannot certify activation.');
+        return self::FAILURE;
     }
 }

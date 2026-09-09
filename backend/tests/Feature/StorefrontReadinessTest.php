@@ -23,7 +23,7 @@ class StorefrontReadinessTest extends TestCase
     public function test_compatible_async_settings_and_declared_hard_timeouts_pass_readiness(): void
     {
         config(['queue.default' => 'database', 'queue.connections.database.retry_after' => 90]);
-        $this->artisan('storefront:refresh-readiness', ['--request-timeout' => 60, '--io-timeout' => 5])->assertExitCode(0);
+        $this->artisan('storefront:refresh-readiness', ['--request-timeout' => 60, '--io-timeout' => 5])->assertExitCode(1);
         $this->artisan('storefront:refresh-readiness', ['--request-timeout' => 120, '--io-timeout' => 5])->assertExitCode(1);
     }
 }
