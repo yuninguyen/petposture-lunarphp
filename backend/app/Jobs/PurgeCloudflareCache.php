@@ -63,8 +63,10 @@ class PurgeCloudflareCache implements ShouldQueue
         $journal = app(\App\Services\StorefrontRefreshJournal::class);
         $row = $journal->claim($this->journalId, $initial);
         if ($row === null) {
-            // Stale/duplicate envelopes are acknowledged; replay owns future due work.
-            return new \App\ValueObjects\CloudflarePurgeResult(true, true);
+            // Queue acknowledgement is not proof that the initial refresh completed.
+            // Conservatively leave initial completion unconfirmed; replay owns due work.
+            return new \App\ValueObjects\CloudflarePurgeResult(! $initial, true,
+                message: $initial ? 'Cache refresh completion could not be confirmed.' : null);
         }
         $status = 'eviction_failed';
         try {
