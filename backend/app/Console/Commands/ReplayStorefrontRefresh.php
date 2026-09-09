@@ -25,6 +25,10 @@ class ReplayStorefrontRefresh extends Command
             $this->error('Storefront refresh journal unavailable; no completion guarantee.');
             return self::FAILURE;
         }
+        if ($journal->replayDispatchFailures() > 0) {
+            $this->error('Storefront refresh replay degraded: submission unavailable; journal retained for later replay.');
+            return self::FAILURE;
+        }
         $this->info("Processed {$count} journal records; submission is not refresh completion.");
         return self::SUCCESS;
     }

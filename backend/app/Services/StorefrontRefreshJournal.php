@@ -20,6 +20,13 @@ use Throwable;
 class StorefrontRefreshJournal
 {
     public const CONNECTION = 'storefront_refresh_journal';
+
+    private int $lastReplayDispatchFailures = 0;
+
+    public function replayDispatchFailures(): int
+    {
+        return $this->lastReplayDispatchFailures;
+    }
     private const BACKOFF = [30, 120, 300];
     private const STATUSES = ['enqueue_unavailable', 'eviction_failed', 'refresh_failed', 'lease_expired', 'not_configured', 'attempts_exhausted', 'success'];
 
@@ -162,12 +169,12 @@ class StorefrontRefreshJournal
             ->where('lease_token', $token)->where('lease_expires_at', '>', $now)->update($values) === 1;
     }
 
-    public function dispatch(string $id): void
+    public function dispatch(string $id): bool
     {
         try {
             $row = $this->find($id);
             if ($row === null) {
-                return;
+                return true;
             }
             $now = CarbonImmutable::now('UTC');
             $age = CarbonImmutable::parse($row->created_at, 'UTC')->diffInSeconds($now);
@@ -178,7 +185,7 @@ class StorefrontRefreshJournal
                 ->where('recovery_attempts', '<', 4)
                 ->update(['next_dispatch_at' => $next, 'updated_at' => $now]);
             if ($changed !== 1) {
-                return;
+                return true;
             }
             try {
                 Bus::dispatch(new PurgeCloudflareCache([], journalId: $id));
@@ -187,9 +194,12 @@ class StorefrontRefreshJournal
                     ->where('next_dispatch_at', $next)
                     ->update(['last_status' => 'enqueue_unavailable', 'updated_at' => $now]);
                 $this->warn();
+                return false;
             }
+            return true;
         } catch (Throwable) {
             $this->warn();
+            return false;
         }
     }
 
@@ -204,6 +214,7 @@ class StorefrontRefreshJournal
 
     public function replay(int $limit = 100, int $maxSeconds = 20): int
     {
+        $this->lastReplayDispatchFailures = 0;
         $limit = max(0, min(100, $limit));
         $maxSeconds = max(0, min(20, $maxSeconds));
         if ($limit === 0 || $maxSeconds === 0) {
@@ -232,7 +243,9 @@ class StorefrontRefreshJournal
                     ->update($this->failureValues($row, 'lease_expired', CarbonImmutable::now('UTC')));
             }
             if (hrtime(true) < $deadline) {
-                $this->dispatch($row->id);
+                if (! $this->dispatch($row->id)) {
+                    $this->lastReplayDispatchFailures++;
+                }
             }
         }
         if (hrtime(true) < $deadline) {

@@ -53,8 +53,9 @@ public function record(array $keys, ?string $id = null): string;
 public function find(string $id): ?object;
 public function claim(string $id, bool $initial = false): ?object;
 public function finish(string $id, string $token, bool $success, string $status): bool;
-public function dispatch(string $id): void;
+public function dispatch(string $id): bool; // false infrastructure failure, true submission/no-op (not completion)
 public function replay(int $limit = 100, int $maxSeconds = 20): int;
+public function replayDispatchFailures(): int; // last replay only; count reset at every invocation
 // Returned row: id:string, cache_keys:list<string>, state:string,
 // recovery_attempts:int, initial_attempted:bool, lease_token:?string,
 // lease_expires_at:?timestamp plus due/completion timestamps and allowlisted status.
@@ -172,6 +173,10 @@ try {
 Verify only intended symbols/flows, investigate HIGH/CRITICAL rather than suppress. Commit coherent correction with `git commit -m "fix: fence storefront journal claim ownership"` only after tests and scope check. No automatic deployment.
 
 - [ ] **15. Write report and stop at parent acceptance boundary.** Update task-C0-journal-report.md with this plan path, exact commit/tests/impact, RED vs added-after-GREEN attribution, all unmet spec tests and runtime limitations. State bounded post-journal guarantee, content gap, absence of driver/concurrency evidence, visible web warning completion status, replay/worker/timeout prerequisites, and C1/C2 separation. Parent owns overall goal and independent review; do not mark acceptance or proceed to later tasks.
+
+## Operational correction and activation procedure
+
+The replay command is now registered every minute in `backend/routes/console.php` with bounded options. Before any authorized activation, deployment owner MUST execute `php artisan storefront:refresh-readiness --request-timeout=<verified hard server bound> --io-timeout=<verified maximum DB/cache/queue bound>` against intended runtime configuration. Missing/unknown values, sync/unsupported queue, request>=120, IO>=min(request,worker), or visibility outside worker<visibility<120 fail readiness. Example compatible declared bounds60/5 with database visibility90 are configuration checks, NOT evidence of actual process termination. Owner must independently verify effective server/request and worker termination, driver timeouts, async consumption and scheduler ownership; no production readiness invocation or activation occurred here. This is an explicit deployment gate, not a global queue/default mutation or magic runtime enforcement. Scheduled replay infrastructure failure returns exit1 with sanitized degraded output while journal rows remain retained. Separate submitted/deferred counts and actual deployment enforcement remain subject to parent review.
 
 ## Plan self-review (performed before further source work)
 
