@@ -49,7 +49,7 @@ class StorefrontRevalidationService
         $response = $this->request('GET', $this->target('internal_url').'/',
             ['Host' => 'petposture.com', 'Accept' => 'text/html'], $deadline, 2097152);
         $policy = strtolower($response['cache']);
-        if ($response['type'] !== 'text/html' || $response['cookie'] !== '' || str_contains($response['csp'], 'nonce-')
+        if ($response['type'] !== 'text/html' || $response['has_cookie'] || str_contains($response['csp'], 'nonce-')
             || preg_match('/(?:^|,)\s*(?:private|no-store|no-cache)(?:\s|,|=|$)/', $policy)
             || ! preg_match('/(?:^|,)\s*public\s*(?:,|$)/', $policy)
             || ! preg_match('/(?:^|,)\s*s-maxage=[1-9][0-9]*\s*(?:,|$)/', $policy)) {
@@ -78,17 +78,22 @@ class StorefrontRevalidationService
             throw new RuntimeException('Storefront request deadline unavailable.');
         }
         $bytes = 0;
+        $budgetExceeded = false;
         $stream = Utils::streamFor('');
-        $sink = FnStream::decorate($stream, ['write' => function (string $chunk) use ($stream, &$bytes, $limit, $deadline): int {
+        $sink = FnStream::decorate($stream, ['write' => function (string $chunk) use ($stream, &$bytes, &$budgetExceeded, $limit, $deadline): int {
             $length = strlen($chunk);
             if ($bytes + $length > $limit || $this->consumed + $length > 13107200 || hrtime(true) / 1e9 >= $deadline) {
-                throw new RuntimeException('Storefront body budget exceeded.');
+                $budgetExceeded = true;
+                // A short native write aborts cURL immediately; throwing through its
+                // callback can defer unwinding until the transfer timeout on Windows.
+                return 0;
             }
             $bytes += $length;
             $this->consumed += $length;
 
             return $stream->write($chunk);
         }]);
+        $body = null;
         try {
             $pending = Http::withHeaders($headers)->withOptions([
                 'allow_redirects' => false, 'cookies' => false, 'proxy' => '',
@@ -102,13 +107,17 @@ class StorefrontRevalidationService
                 },
             ]);
             $response = $json === null ? $pending->send($method, $url) : $pending->send($method, $url, ['json' => $json]);
+            if ($budgetExceeded) {
+                throw new RuntimeException('Storefront body budget exceeded.');
+            }
+            $body = $response->toPsrResponse()->getBody();
             if ($response->status() !== 200 || hrtime(true) / 1e9 >= $deadline
                 || ($response->header('Content-Length') !== '' && (! ctype_digit($response->header('Content-Length')) || (float) $response->header('Content-Length') > $limit))) {
                 throw new RuntimeException('Storefront response rejected.');
             }
-            // Production cURL writes through the bounded sink. Fakes return their own PSR stream;
-            // consume those with the identical bound rather than Response::body() buffering.
-            $body = $response->toPsrResponse()->getBody();
+            // Production cURL writes through the bounded sink. This second read is also
+            // bounded, but Laravel's fake sink adapter may already buffer a fake body;
+            // fake responses are not evidence of bounded transport consumption.
             $body->rewind();
             $text = '';
             while (! $body->eof()) {
@@ -135,10 +144,19 @@ class StorefrontRevalidationService
             }
 
             return ['body' => $text, 'type' => strtolower(trim(explode(';', $response->header('Content-Type'))[0])),
-                'cache' => $response->header('Cache-Control'), 'cookie' => $response->header('Set-Cookie'),
+                'cache' => $response->header('Cache-Control'), 'has_cookie' => $response->toPsrResponse()->hasHeader('Set-Cookie'),
                 'csp' => $response->header('Content-Security-Policy')];
+        } catch (\Throwable $error) {
+            if ($budgetExceeded) {
+                throw new RuntimeException('Storefront body budget exceeded.');
+            }
+            throw $error;
         } finally {
-            $sink->close();
+            try {
+                $body?->close();
+            } finally {
+                $sink->close();
+            }
         }
     }
 }

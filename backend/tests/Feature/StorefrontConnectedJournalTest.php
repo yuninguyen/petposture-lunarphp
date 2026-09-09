@@ -19,6 +19,7 @@ class StorefrontConnectedJournalTest extends TestCase
     private string $database;
     private array $calls = [];
     private bool $purgeFails = true;
+    private string $expectedName = 'B';
 
     protected function setUp(): void
     {
@@ -36,7 +37,7 @@ class StorefrontConnectedJournalTest extends TestCase
             $this->calls[] = $request->method().' '.$request->url();
             if (str_ends_with($request->url(), '/api/settings')) {
                 $this->assertNull(Cache::get('setting:shop_name'));
-                return Http::response(['status' => 'Request was successful.', 'data' => StorefrontHtml::settings()]);
+                return Http::response(['status' => 'Request was successful.', 'data' => StorefrontHtml::settings($this->expectedName)]);
             }
             if (str_contains($request->url(), '/api/site-media?')) {
                 return Http::response(['status' => 'Request was successful.', 'data' => []]);
@@ -45,7 +46,7 @@ class StorefrontConnectedJournalTest extends TestCase
                 return Http::response(['revalidated' => true, 'scope' => 'homepage']);
             }
             if ($request->url() === 'http://127.0.0.1:3001/') {
-                return Http::response(StorefrontHtml::render(), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300']);
+                return Http::response(StorefrontHtml::render($this->expectedName), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300']);
             }
             return Http::response(['success' => ! $this->purgeFails], $this->purgeFails ? 503 : 200);
         });
@@ -74,6 +75,7 @@ class StorefrontConnectedJournalTest extends TestCase
         $this->assertSame(0, (int) $row->recovery_attempts);
         $this->assertCount(6, $this->calls);
         $this->purgeFails = false;
+        $this->expectedName = 'C'; // Recovery must reread changed expected values, not retain B.
         Cache::put('setting:shop_name', 'refilled-old');
         $job = new PurgeCloudflareCache(['setting:wrong'], journalId: $row->id);
         $job->handle(app(CloudflareCacheService::class));

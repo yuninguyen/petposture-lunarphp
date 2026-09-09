@@ -16,8 +16,8 @@ class StorefrontBodyBoundsTest extends TestCase
         Http::fake(function ($request, $options) use (&$written) {
             $sink = $options['sink'];
             $written += $sink->write(str_repeat('a', 2097152));
-            $sink->write('x');
-            $this->fail('Oversized chunk must be rejected during consumption.');
+            $this->assertSame(0, $sink->write('x'));
+            return Http::response('unused');
         });
         try {
             (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);
@@ -37,8 +37,8 @@ class StorefrontBodyBoundsTest extends TestCase
             // Test-only elapsed-time simulation; production has no sleeps or polling.
             usleep(60000);
             $this->assertGreaterThan($deadline, hrtime(true) / 1e9);
-            $options['sink']->write('late');
-            $this->fail('Late body write must be rejected.');
+            $this->assertSame(0, $options['sink']->write('late'));
+            return Http::response('unused');
         });
         try {
             (new StorefrontRevalidationService)->homepage($deadline);

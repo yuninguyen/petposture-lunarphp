@@ -34,6 +34,8 @@ class StorefrontRefreshJournalTest extends TestCase
         }
         Bus::fake();
         Http::preventStrayRequests();
+        \Tests\Fixtures\StorefrontHttp::configure();
+        Http::fake(fn ($request) => \Tests\Fixtures\StorefrontHttp::response($request));
     }
 
     protected function tearDown(): void
@@ -349,18 +351,20 @@ class StorefrontRefreshJournalTest extends TestCase
             DB::purge(StorefrontRefreshJournal::CONNECTION);
             \Illuminate\Support\Facades\Cache::put('setting:journal_old', 'stale');
             \Illuminate\Support\Facades\Cache::put('setting:journal_committed', 'stale');
-            Http::fake(function () use ($reader) {
+            Http::swap(new \Illuminate\Http\Client\Factory);
+            Http::preventStrayRequests();
+            Http::fake(function ($request) use ($reader) {
                 $this->assertFalse(\Illuminate\Support\Facades\Cache::has('setting:journal_old'));
                 $this->assertFalse(\Illuminate\Support\Facades\Cache::has('setting:journal_committed'));
                 $this->assertSame('final', $reader->table('settings')->where('key', 'journal_committed')->value('value'));
-                return Http::response(['success' => true]);
+                return \Tests\Fixtures\StorefrontHttp::response($request) ?? Http::response(['success' => true]);
             });
             $this->travel(30)->seconds();
             $j = app(StorefrontRefreshJournal::class);
             $this->assertSame(1, $j->replay());
             $this->assertSame(1, $a->table('jobs')->count());
             $this->artisan('queue:work', ['connection' => 'database', '--once' => true, '--force' => true])->assertExitCode(0);
-            Http::assertSentCount(1);
+            Http::assertSentCount(6);
             $this->assertSame(0, $a->table('jobs')->count());
             $this->assertSame('completed', $j->find($id)->state);
             $this->assertSame(1, $j->find($id)->recovery_attempts);
