@@ -55,6 +55,66 @@ class StorefrontRefreshJournalTest extends TestCase
         parent::tearDownAfterClass();
     }
 
+    public function test_claim_cannot_adopt_replacement_token_after_pause_between_update_and_read(): void
+    {
+        $journal = app(StorefrontRefreshJournal::class);
+        $id = $journal->record(['setting:fencing']);
+        $replacement = null;
+        $interleaved = false;
+        DB::connection(StorefrontRefreshJournal::CONNECTION)->listen(
+            function ($query) use ($journal, $id, &$replacement, &$interleaved) {
+                if ($interleaved || ! str_starts_with(strtolower($query->sql), 'update')) {
+                    return;
+                }
+                $interleaved = true;
+                $this->travel(121)->seconds();
+                $journal->replay(1, 20);
+                $replacement = $journal->claim($id);
+            }
+        );
+        $original = $journal->claim($id, true);
+        $this->assertNotNull($replacement);
+        $this->assertNull($original);
+        $this->assertSame($replacement->lease_token, $journal->find($id)->lease_token);
+    }
+
+    public function test_invalid_committed_snapshot_never_becomes_empty_success_or_dispatch(): void
+    {
+        $batch = app(\App\Support\StorefrontMutationBatch::class);
+        $batch->begin();
+        app(\App\Services\PublicContentPurgeCoordinator::class)->requestPurge(['setting:valid', 'session:invalid']);
+        $result = app(\App\Services\PublicContentPurgeCoordinator::class)->flushCompletedMutation();
+        $batch->end();
+        $this->assertFalse($result->successful);
+        $this->assertTrue(app(\App\Support\CloudflarePurgeNotice::class)->isRecoveryUnavailable());
+        $this->assertSame(0, DB::table('storefront_refresh_journal')->count());
+        Bus::assertNothingDispatched();
+        Http::assertNothingSent();
+    }
+
+    public function test_external_success_with_failed_completion_update_keeps_lease_for_replay(): void
+    {
+        $journal = app(StorefrontRefreshJournal::class);
+        $id = $journal->record(['setting:completion']);
+        $service = $this->mock(\App\Services\CloudflareCacheService::class);
+        $service->shouldReceive('purgeAll')->once()->andReturnUsing(function () {
+            DB::connection(StorefrontRefreshJournal::CONNECTION)->statement('PRAGMA query_only = ON');
+            return new \App\ValueObjects\CloudflarePurgeResult(true, true);
+        });
+        try {
+            (new PurgeCloudflareCache([], journalId: $id))->handle($service);
+            $this->fail('Completion update outage must not return confirmed success');
+        } catch (\Illuminate\Database\QueryException) {
+            DB::connection(StorefrontRefreshJournal::CONNECTION)->statement('PRAGMA query_only = OFF');
+        }
+        $this->assertSame('leased', $journal->find($id)->state);
+        $this->assertSame(1, $journal->find($id)->recovery_attempts);
+        $this->travel(121)->seconds();
+        $journal->replay();
+        $this->assertSame('retry', $journal->find($id)->state);
+        $this->assertSame(1, $journal->find($id)->recovery_attempts);
+    }
+
     public function test_record_is_immutable_idempotent_and_survives_default_rollback_on_distinct_pdo(): void
     {
         $journal = app(StorefrontRefreshJournal::class);

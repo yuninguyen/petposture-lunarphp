@@ -123,7 +123,13 @@ class StorefrontRefreshJournal
         if ($query->update($values) !== 1) {
             return null;
         }
-        return $this->find($id);
+        $row = $this->find($id);
+        // A paused claimant must never adopt a replacement worker's ownership.
+        if ($row === null || $row->state !== 'leased' || $row->lease_token !== $token
+            || CarbonImmutable::parse($row->lease_expires_at, 'UTC')->lessThanOrEqualTo(CarbonImmutable::now('UTC'))) {
+            return null;
+        }
+        return $row;
     }
 
     private function failureValues(object $row, string $status, CarbonImmutable $now): array
