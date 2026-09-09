@@ -113,5 +113,3 @@ export async function GET(): Promise<Response> {
     return fallback();
   }
 }
-
-export const __test__ = { allowedOrigins, isAllowedSource, normalizedImage };
