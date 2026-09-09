@@ -11,9 +11,8 @@ const routes = [
 ];
 
 function loadHelper(file, helper) {
-  const source = readFileSync(new URL(`./${file}`, import.meta.url), 'utf8');
-  const beforePage = source.slice(0, source.indexOf('export default async function Page'));
-  const helperSource = beforePage.split('\n').filter((line) => !line.trimStart().startsWith('import ')).join('\n')
+  const source = readFileSync(new URL(`./${file.replace('page.tsx', 'json-ld.ts')}`, import.meta.url), 'utf8');
+  const helperSource = source.split('\n').filter((line) => !line.trimStart().startsWith('import ')).join('\n')
     .replaceAll('export async function ', 'async function ')
     .replaceAll('export function ', 'function ')
     .replaceAll('export const ', 'const ')
