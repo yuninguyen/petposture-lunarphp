@@ -42,12 +42,47 @@ class StorefrontReplayOperationsTest extends TestCase
         Bus::assertDispatched(\App\Jobs\PurgeCloudflareCache::class, fn ($job) => $job->journalId === $id);
     }
 
+    public function test_competing_claim_after_selection_is_harmless_command_contention(): void
+    {
+        $journal = app(StorefrontRefreshJournal::class);
+        app()->instance(StorefrontRefreshJournal::class, $journal);
+        $id = $journal->record(['setting:contended']);
+        $claimed = null;
+        $interleaved = false;
+        DB::connection(StorefrontRefreshJournal::CONNECTION)->listen(function ($query) use ($journal, $id, &$claimed, &$interleaved) {
+            if (! $interleaved && str_starts_with(strtolower($query->sql), 'select')
+                && str_contains(strtolower($query->sql), 'order by')) {
+                $interleaved = true;
+                $claimed = $journal->claim($id);
+            }
+        });
+        Bus::fake();
+        $this->artisan('storefront:refresh-replay')->assertExitCode(0);
+        $this->assertTrue($interleaved);
+        $this->assertNotNull($claimed);
+        $this->assertSame('leased', $journal->find($id)->state);
+        $this->assertSame($claimed->lease_token, $journal->find($id)->lease_token);
+        $this->assertSame(0, $journal->replayDispatchFailures());
+        $this->assertSame(['selected' => 1, 'submitted' => 0, 'deferred' => 1, 'failed' => 0], $journal->replaySummary());
+        Bus::assertNothingDispatched();
+    }
+
     public function test_dispatch_failure_makes_command_fail_without_destroying_recovery(): void
     {
-        $id = app(StorefrontRefreshJournal::class)->record(['setting:ops']);
+        $journal = app(StorefrontRefreshJournal::class);
+        app()->instance(StorefrontRefreshJournal::class, $journal);
+        $id = $journal->record(['setting:ops']);
         Bus::shouldReceive('dispatch')->once()->andThrow(new RuntimeException('secret queue error'));
-        \Illuminate\Support\Facades\Log::shouldReceive('warning')->andThrow(new RuntimeException('secret logger error'));
-        $this->artisan('storefront:refresh-replay')->assertExitCode(1);
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')->once()->andThrow(new RuntimeException('secret logger error'));
+        $this->artisan('storefront:refresh-replay')
+            ->expectsOutput('Storefront refresh replay degraded: submission unavailable; journal retained for later replay.')
+            ->assertExitCode(1);
+        $this->assertSame(1, $journal->replayDispatchFailures());
+        Bus::fake();
+        $this->artisan('storefront:refresh-replay')->assertExitCode(0);
+        $this->assertSame($journal, app(StorefrontRefreshJournal::class));
+        $this->assertSame(0, $journal->replayDispatchFailures());
+        Bus::assertNothingDispatched();
         $this->assertSame('pending', app(StorefrontRefreshJournal::class)->find($id)->state);
         $this->assertSame(0, app(StorefrontRefreshJournal::class)->find($id)->recovery_attempts);
     }
