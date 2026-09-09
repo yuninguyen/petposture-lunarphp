@@ -165,7 +165,7 @@ class JournalFinalLocalAcceptanceTest extends TestCase
             Cache::swap($manager);
             $this->successfulEffects($keys);
             $job->handle(app(CloudflareCacheService::class));
-            Http::assertSentCount(1);
+            \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
             $this->assertSame(1, $failures);
             $this->assertSame('completed', app(StorefrontRefreshJournal::class)->find($row->id)->state);
         } finally {
@@ -203,7 +203,7 @@ class JournalFinalLocalAcceptanceTest extends TestCase
             $this->assertSame('leased', $journal->find($id)->state);
         });
         $job->handle(app(CloudflareCacheService::class));
-        Http::assertSentCount(1);
+        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
         $this->assertSame('completed', $journal->find($id)->state);
         $this->assertSame(2, $journal->find($id)->recovery_attempts);
         $this->assertFalse($journal->finish($id, $claim->lease_token, true, 'success'));
@@ -267,7 +267,7 @@ class JournalFinalLocalAcceptanceTest extends TestCase
         $this->assertSame('completed', $journal->find($id)->state);
         foreach ($keys as $key) Cache::put($key, 'fresh after completion');
         $replacement->handle(app(CloudflareCacheService::class));
-        Http::assertSentCount(1);
+        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
         $this->assertSame(1, $journal->find($id)->recovery_attempts);
         foreach ($keys as $key) $this->assertSame('fresh after completion', Cache::get($key));
     }
@@ -286,7 +286,7 @@ class JournalFinalLocalAcceptanceTest extends TestCase
         $this->assertSame('completed', $completed->state);
         $this->assertNotNull($completed->completed_at);
         $this->assertSame(1, $completed->recovery_attempts);
-        Http::assertSentCount(1);
+        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
         app()->forgetScopedInstances();
         DB::purge(StorefrontRefreshJournal::CONNECTION);
         Bus::fake();
@@ -311,7 +311,7 @@ class JournalFinalLocalAcceptanceTest extends TestCase
 
     private function successfulEffects(array $keys, ?callable $inside = null): void
     {
-        Http::fake(function () use ($keys, $inside) {
+        \Tests\Fixtures\StorefrontHttp::fake(function () use ($keys, $inside) {
             foreach ($keys as $key) $this->assertFalse(Cache::has($key), 'Refresh must see every captured key evicted');
             if ($inside !== null) $inside();
             return Http::response(['success' => true]);

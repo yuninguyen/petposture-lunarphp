@@ -55,7 +55,7 @@ class StorefrontRefreshTransactionTest extends TestCase
         Storage::fake('public');
         Http::preventStrayRequests();
         config(['services.cloudflare.api_token' => 'test-only', 'services.cloudflare.zone_id' => 'test-zone']);
-        Http::fake(['*' => Http::response(['success' => true])]);
+        \Tests\Fixtures\StorefrontHttp::fake();
     }
 
     protected function tearDown(): void
@@ -91,7 +91,7 @@ class StorefrontRefreshTransactionTest extends TestCase
     public function test_real_settings_controller_batches_all_nontransactional_saves(): void
     {
         $seen = [];
-        Http::fake(function () use (&$seen) {
+        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
             $seen[] = DB::connection('committed')->table('settings')->pluck('value', 'key')->all();
             $this->assertFalse(Cache::has('setting:business_phone'));
             $this->assertFalse(Cache::has('setting:business_address'));
@@ -128,14 +128,14 @@ class StorefrontRefreshTransactionTest extends TestCase
         });
         $this->assertFalse(Cache::has('setting:old'));
         $this->assertFalse(Cache::has('setting:new'));
-        Http::assertSentCount(1);
+        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
     }
 
     public function test_breed_controller_commits_final_seo_and_pivots_before_attempt(): void
     {
         $post = Post::query()->createQuietly(['title' => 'Article', 'slug' => 'article', 'content' => 'text', 'status' => 'published']);
         $seen = [];
-        Http::fake(function () use (&$seen, $post) {
+        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen, $post) {
             $reader = DB::connection('committed');
             $seen[] = $reader->table('breeds')->value('name');
             $this->assertSame('Final SEO', $reader->table('seo_metadata')->value('title'));
@@ -206,7 +206,7 @@ class StorefrontRefreshTransactionTest extends TestCase
             : [PublicContentCacheObserver::class, SiteMediaCacheObserver::class]);
         $site = SiteMedia::query()->createQuietly(['title' => 'hero', 'collection' => 'banner']);
         $seen = [];
-        Http::fake(function () use (&$seen) {
+        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
             $seen[] = DB::connection('committed')->table('media')->value('collection_name');
             $this->assertFalse(Cache::has('public-api:site-media:v1:banner'));
             $this->assertFalse(Cache::has('public-api:site-media:v1:general'));
@@ -239,7 +239,7 @@ class StorefrontRefreshTransactionTest extends TestCase
             Cache::put('public-api:site-media:v1:general', 'stale');
             Http::assertNothingSent();
         });
-        Http::assertSentCount(1);
+        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
         $this->assertFalse(Cache::has('public-api:site-media:v1:banner'));
         $this->assertFalse(Cache::has('public-api:site-media:v1:general'));
         $this->assertSame(0, DB::connection('committed')->table('media')->count());
@@ -289,7 +289,7 @@ class StorefrontRefreshTransactionTest extends TestCase
             $this->assertSame('original failure', $e->getMessage());
         }
         $this->assertSame('B', DB::connection('committed')->table('settings')->value('value'));
-        Http::assertSentCount(1);
+        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
         $this->assertFalse(app(StorefrontMutationBatch::class)->isCollecting());
     }
 
@@ -297,7 +297,11 @@ class StorefrontRefreshTransactionTest extends TestCase
     {
         Http::swap(new \Illuminate\Http\Client\Factory);
         Http::preventStrayRequests();
-        Http::fakeSequence()->push(['success' => true])->push(['success' => false], 500);
+        $purges = 0;
+        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$purges) {
+            $purges++;
+            return Http::response(['success' => $purges === 1], $purges === 1 ? 200 : 500);
+        });
         app(PublicContentPurgeCoordinator::class)->purge();
         $response = $this->complete(function () {
             Setting::set('one', 'B');
@@ -315,7 +319,7 @@ class StorefrontRefreshTransactionTest extends TestCase
         $job = new PurgeCloudflareCache(['setting:one', 'setting:one', 'public-api:site-media:v1:banner', 'session:secret', 'public-api:settings:v1']);
         $this->assertSame(['setting:one', 'public-api:site-media:v1:banner'], $job->cacheKeys);
         $seen = [];
-        Http::fake(function () use (&$seen) {
+        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
             $seen[] = Cache::has('setting:one');
             return Http::response(['success' => count($seen) > 1], count($seen) > 1 ? 200 : 500);
         });
@@ -367,7 +371,7 @@ class StorefrontRefreshTransactionTest extends TestCase
             return new Response('later validation failure', 422);
         });
         $this->assertSame(422, $response->getStatusCode());
-        Http::assertSentCount(1);
+        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
     }
 
     public function test_unrelated_media_owner_does_not_mark_content(): void
@@ -418,7 +422,7 @@ class StorefrontRefreshTransactionTest extends TestCase
         $breed->posts()->attach($post->id);
         $breed->seo()->create(['title' => 'Old SEO']);
         $seen = [];
-        Http::fake(function () use (&$seen) {
+        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
             $reader = DB::connection('committed');
             $seen[] = [$reader->table('breeds')->value('name'), $reader->table('seo_metadata')->value('title'), $reader->table('post_breed')->count()];
             return Http::response(['success' => true]);
@@ -442,7 +446,7 @@ class StorefrontRefreshTransactionTest extends TestCase
         Http::swap(new \Illuminate\Http\Client\Factory);
         Http::preventStrayRequests();
         $seen = [];
-        Http::fake(function () use (&$seen) {
+        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
             $seen[] = DB::connection('committed')->table('settings')->pluck('value', 'key')->all();
             return Http::response(['success' => false], 500);
         });

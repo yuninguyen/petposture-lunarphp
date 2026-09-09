@@ -51,6 +51,7 @@ class JournalFaultEvidenceTest extends TestCase
 
     public function test_pre_journal_serialized_envelope_executes_without_journal_recording(): void
     {
+        \Tests\Fixtures\StorefrontHttp::fake();
         // Literal old payload: only the pre-journal public keys field, no journalId/timeout.
         $payload = 'O:29:"App\\Jobs\\PurgeCloudflareCache":1:{s:9:"cacheKeys";a:1:{i:0;s:14:"setting:legacy";}}';
         $job = unserialize($payload, ['allowed_classes' => [PurgeCloudflareCache::class]]);

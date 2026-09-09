@@ -57,7 +57,7 @@ class StorefrontRefreshRoutedLifecycleTest extends TestCase
         Storage::fake('local');
         Storage::fake('tmp-for-tests');
         Http::preventStrayRequests();
-        Http::fake(['*' => Http::response(['success' => true])]);
+        \Tests\Fixtures\StorefrontHttp::fake();
         Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $user = User::factory()->create(['is_active' => true]);
         $user->assignRole('admin');
@@ -92,7 +92,7 @@ class StorefrontRefreshRoutedLifecycleTest extends TestCase
     {
         Setting::query()->createQuietly(['key' => 'business_phone', 'value' => 'Before']);
         $seen = [];
-        Http::fake(function () use (&$seen) {
+        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
             $seen[] = DB::connection('routed_committed')->table('settings')->pluck('value', 'key')->all();
             $this->assertFalse(Cache::has('setting:business_phone'));
             $this->assertFalse(Cache::has('setting:business_address'));
@@ -119,7 +119,7 @@ class StorefrontRefreshRoutedLifecycleTest extends TestCase
         $snapshot = $this->pageSnapshot('/admin/manage-settings', 'manage-settings');
         Http::assertNothingSent();
         $seen = [];
-        Http::fake(function () use (&$seen) {
+        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
             $seen[] = DB::connection('routed_committed')->table('settings')->pluck('value', 'key')->all();
             $this->assertFalse(Cache::has('setting:shop_name'));
             $this->assertFalse(Cache::has('setting:shop_description'));
@@ -167,7 +167,7 @@ class StorefrontRefreshRoutedLifecycleTest extends TestCase
         $this->assertSame(0, DB::connection('routed_committed')->table('site_media')->count());
 
         $seen = [];
-        Http::fake(function () use (&$seen) {
+        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
             $reader = DB::connection('routed_committed');
             $seen[] = $reader->table('media')->orderBy('id')->get();
             $this->assertSame('Final hero', $reader->table('site_media')->value('title'));
@@ -230,7 +230,7 @@ class StorefrontRefreshRoutedLifecycleTest extends TestCase
 
     private function assertCompletedBatch(array $keys): void
     {
-        Http::assertSentCount(1);
+        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
         Bus::assertNothingDispatched();
         $this->assertFalse(app(StorefrontMutationBatch::class)->isCollecting());
         $this->assertSame(0, DB::transactionLevel());

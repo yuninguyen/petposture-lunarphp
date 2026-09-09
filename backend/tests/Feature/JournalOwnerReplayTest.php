@@ -29,7 +29,7 @@ class JournalOwnerReplayTest extends TestCase
         $this->artisan('migrate', ['--force' => true])->assertExitCode(0);
         config(['services.cloudflare.api_token' => 'test-only', 'services.cloudflare.zone_id' => 'test-zone']);
         Http::preventStrayRequests();
-        Http::fake(['*' => Http::response(['success' => false], 503)]);
+        \Tests\Fixtures\StorefrontHttp::fake(fn () => Http::response(['success' => false], 503));
     }
     protected function tearDown(): void
     {
@@ -69,7 +69,7 @@ class JournalOwnerReplayTest extends TestCase
         $this->assertSame($row->id, $job->journalId);
         Http::swap(new \Illuminate\Http\Client\Factory);
         Http::preventStrayRequests();
-        Http::fake(function () {
+        \Tests\Fixtures\StorefrontHttp::fake(function () {
             $this->assertFalse(Cache::has('setting:old'));
             $this->assertFalse(Cache::has('setting:new'));
             return Http::response(['success' => true]);

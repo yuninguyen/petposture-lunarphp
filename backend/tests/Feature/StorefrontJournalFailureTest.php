@@ -33,7 +33,7 @@ class StorefrontJournalFailureTest extends TestCase
         Bus::fake();
         Http::preventStrayRequests();
         config(['services.cloudflare.api_token' => 'test-only', 'services.cloudflare.zone_id' => 'test-zone']);
-        Http::fake(['*' => Http::response(['success' => false], 503)]);
+        \Tests\Fixtures\StorefrontHttp::fake(fn () => Http::response(['success' => false], 503));
     }
 
     protected function tearDown(): void
