@@ -60,8 +60,22 @@ describe('fixed homepage marking acknowledgement', () => {
   it.each<Record<string, string>>([{}, { 'content-length': '1' }])('rejects 1025 bytes regardless of declared length %j', async (headers) => {
     await rejected(request('{"scope":"homepage"}'.padEnd(1025, ' '), headers), 400);
   });
-  it('counts multibyte UTF-8 bytes rather than characters', async () => {
-    await rejected(request(JSON.stringify({ scope: 'homepage', extra: 'é'.repeat(510) })), 400);
+  it('cancels multibyte input at the byte cap before schema validation or EOF', async () => {
+    // Exact homepage JSON has only ASCII content. Assert stream consumption instead
+    // of a 400 alone, which an unrelated schema failure could also produce.
+    const chunk = new TextEncoder().encode('é'.repeat(300));
+    expect(chunk.byteLength).toBe(600);
+    let pulls = 0; const cancel = vi.fn();
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulls++;
+        if (pulls <= 2) controller.enqueue(chunk);
+        else controller.close(); // Bounded negative control: wrong counting reaches EOF.
+      }, cancel,
+    }, { highWaterMark: 0 });
+    await rejected(request(body), 400);
+    expect(pulls).toBe(2); // 600 characters, but 1200 bytes: stop before third read.
+    expect(cancel).toHaveBeenCalledOnce();
   });
   it('stops and cancels after the streamed byte limit, without draining', async () => {
     let pulls = 0; const cancel = vi.fn();
