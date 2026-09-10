@@ -60,6 +60,7 @@ class StorefrontJournalFailureTest extends TestCase
         $response = $this->complete(function () {
             Setting::create(['key' => 'journal-key', 'value' => 'committed']);
         });
+        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
         $this->assertSame(201, $response->status());
         $row = DB::table('storefront_refresh_journal')->first();
         $this->assertSame(['setting:journal-key'], json_decode($row->cache_keys, true));

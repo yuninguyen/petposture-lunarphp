@@ -25,6 +25,11 @@ class StorefrontNativeCurlTest extends TestCase
                 $this->assertLessThan($case === 'oversize' ? 2.0 : 1.5, $elapsed);
                 if ($case === 'oversize') {
                     $this->assertSame('Storefront body budget exceeded.', $error->getMessage());
+                } else {
+                    $this->assertInstanceOf(\Illuminate\Http\Client\ConnectionException::class, $error);
+                    $cause = $error->getPrevious();
+                    $this->assertInstanceOf(\GuzzleHttp\Exception\ConnectException::class, $cause);
+                    $this->assertSame(28, $cause->getHandlerContext()['errno'] ?? null);
                 }
                 fwrite(STDOUT, sprintf("NATIVE_CURL_%s_ELAPSED=%.6f\n", strtoupper($case), $elapsed));
             }

@@ -308,6 +308,8 @@ class StorefrontRefreshTransactionTest extends TestCase
             Setting::set('one', 'C');
             Setting::set('two', 'D');
         });
+        $this->assertSame(2, $purges);
+        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(2);
         $this->assertSame('saved', $response->getContent());
         $this->assertSame('purge-pending', $response->headers->get('X-PetPosture-Cache-Warning'));
         Bus::assertDispatchedTimes(PurgeCloudflareCache::class, 1);

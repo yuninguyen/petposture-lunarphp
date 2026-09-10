@@ -19,6 +19,29 @@ class StorefrontTransportOwnershipTest extends TestCase
         (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);
     }
 
+    public function test_distinct_returned_body_closes_after_rejected_sink_write(): void
+    {
+        config()->set('services.storefront.internal_url', 'http://127.0.0.1:3001');
+        $closed = false;
+        $written = null;
+        $stream = Utils::streamFor('retained body');
+        $body = FnStream::decorate($stream, [
+            'close' => function () use (&$closed, $stream) { $closed = true; $stream->close(); },
+        ]);
+        Http::fake(function ($request, $options) use ($body, &$written) {
+            $written = $options['sink']->write(str_repeat('x', 2097153));
+            return \GuzzleHttp\Promise\Create::promiseFor(new Response(200, [], $body));
+        });
+        try {
+            (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);
+            $this->fail('Expected rejected sink write.');
+        } catch (\RuntimeException $error) {
+            $this->assertSame('Storefront body budget exceeded.', $error->getMessage());
+        }
+        $this->assertSame(0, $written);
+        $this->assertTrue($closed, 'Retained distinct body must close before the budget exception escapes.');
+    }
+
     public function test_distinct_response_body_is_closed_on_status_and_read_failure(): void
     {
         config()->set('services.storefront.internal_url', 'http://127.0.0.1:3001');

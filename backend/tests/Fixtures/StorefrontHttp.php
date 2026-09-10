@@ -6,6 +6,15 @@ use Illuminate\Support\Facades\Http;
 
 final class StorefrontHttp
 {
+    private static array $unexpectedRequests = [];
+
+    public static function assertNoUnexpectedRequests(): void
+    {
+        $unexpected = self::$unexpectedRequests;
+        self::$unexpectedRequests = [];
+        \PHPUnit\Framework\Assert::assertSame([], $unexpected, 'Unexpected fixture HTTP requests: '.implode(', ', $unexpected));
+    }
+
     public static function configure(): void
     {
         config()->set('services.storefront', ['internal_url' => 'http://127.0.0.1:3001',
@@ -21,7 +30,11 @@ final class StorefrontHttp
             if (self::isPurge($request)) {
                 return $purge ? $purge($request) : Http::response(['success' => true]);
             }
-            return self::response($request) ?? throw new \RuntimeException('Unexpected fixture HTTP endpoint.');
+            if (($response = self::response($request)) !== null) {
+                return $response;
+            }
+            self::$unexpectedRequests[] = $request->method().' '.$request->url();
+            throw new \RuntimeException('Unexpected fixture HTTP endpoint.');
         });
     }
 

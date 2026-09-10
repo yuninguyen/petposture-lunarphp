@@ -107,10 +107,10 @@ class StorefrontRevalidationService
                 },
             ]);
             $response = $json === null ? $pending->send($method, $url) : $pending->send($method, $url, ['json' => $json]);
+            $body = $response->toPsrResponse()->getBody();
             if ($budgetExceeded) {
                 throw new RuntimeException('Storefront body budget exceeded.');
             }
-            $body = $response->toPsrResponse()->getBody();
             if ($response->status() !== 200 || hrtime(true) / 1e9 >= $deadline
                 || ($response->header('Content-Length') !== '' && (! ctype_digit($response->header('Content-Length')) || (float) $response->header('Content-Length') > $limit))) {
                 throw new RuntimeException('Storefront response rejected.');

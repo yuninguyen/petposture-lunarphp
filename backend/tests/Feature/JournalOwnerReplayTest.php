@@ -56,6 +56,7 @@ class JournalOwnerReplayTest extends TestCase
             $this->assertSame('saved', $response->getContent());
             if ($owner === 'late') DB::commit();
         }
+        \Tests\Fixtures\StorefrontHttp::assertPurgeCount($owner === 'initial' ? 1 : 0);
         $row = DB::table('storefront_refresh_journal')->sole();
         $this->assertSame(['setting:old', 'setting:new'], json_decode($row->cache_keys, true));
         $this->assertSame('committed', Setting::where('key', 'new')->value('value'));
