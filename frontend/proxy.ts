@@ -63,9 +63,6 @@ export async function proxy(request: NextRequest) {
         purpose: request.headers.get('purpose'),
         secPurpose: request.headers.get('sec-purpose'),
         nextRouterPrefetch: request.headers.get('next-router-prefetch'),
-        rsc: request.headers.get('rsc'),
-        nextRouterStateTree: request.headers.get('next-router-state-tree'),
-        nextRouterSegmentPrefetch: request.headers.get('next-router-segment-prefetch'),
     });
     // Removing headers()/nonce from the root layout (Task 4) let every
     // route that doesn't itself call headers() go statically prerendered
