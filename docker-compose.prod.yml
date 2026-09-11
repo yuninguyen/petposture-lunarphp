@@ -38,6 +38,8 @@ services:
       NODE_ENV: production
       PORT: "3001"
       INTERNAL_API_URL: http://127.0.0.1:8001
+    env_file:
+      - ./frontend/.env
 
   admin:
     build:
