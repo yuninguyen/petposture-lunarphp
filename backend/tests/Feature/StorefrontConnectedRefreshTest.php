@@ -16,15 +16,20 @@ class StorefrontConnectedRefreshTest extends TestCase
 {
     private array $calls = [];
 
-    private function transport(array $pages, bool $purgeFails = false): void
+    private array $homepageCacheControl = [];
+
+    private function transport(array $pages, bool $purgeFails = false, string $policy = 'public, s-maxage=300, stale-while-revalidate=86400'): void
     {
         config()->set('services.storefront', ['internal_url' => 'http://127.0.0.1:3001',
             'backend_internal_url' => 'http://127.0.0.1:8001', 'revalidation_secret' => 'test-secret']);
         config()->set('services.cloudflare', ['api_token' => 'test-token', 'zone_id' => 'test-zone']);
         Http::swap(new \Illuminate\Http\Client\Factory);
         Http::preventStrayRequests();
-        Http::fake(function ($request) use (&$pages, $purgeFails) {
+        Http::fake(function ($request) use (&$pages, $purgeFails, $policy) {
             $this->calls[] = $request->method().' '.$request->url();
+            if ($request->url() === 'http://127.0.0.1:3001/') {
+                $this->homepageCacheControl[] = $request->header('Cache-Control');
+            }
             if (str_ends_with($request->url(), '/api/settings')) {
                 $this->assertNull(Cache::get('setting:shop_name'));
                 return Http::response(['status' => 'Request was successful.', 'data' => StorefrontHtml::settings()]);
@@ -37,7 +42,7 @@ class StorefrontConnectedRefreshTest extends TestCase
             }
             if ($request->url() === 'http://127.0.0.1:3001/') {
                 return Http::response(array_shift($pages) ?? StorefrontHtml::render('A'), 200,
-                    ['Content-Type' => 'text/html', 'Cache-Control' => 'public, max-age=0, s-maxage=300']);
+                    ['Content-Type' => 'text/html', 'Cache-Control' => $policy]);
             }
             return Http::response(['success' => ! $purgeFails], $purgeFails ? 503 : 200);
         });
@@ -51,6 +56,16 @@ class StorefrontConnectedRefreshTest extends TestCase
         $this->assertSame(['GET http://127.0.0.1:8001/api/settings', 'GET http://127.0.0.1:8001/api/site-media?collection=banner',
             'POST http://127.0.0.1:3001/api/internal/storefront-revalidate', 'GET http://127.0.0.1:3001/',
             'GET http://127.0.0.1:3001/', 'POST https://api.cloudflare.com/client/v4/zones/test-zone/purge_cache'], $this->calls);
+        $this->assertSame([['no-cache'], []], $this->homepageCacheControl);
+    }
+
+    public function test_invalid_homepage_cache_policy_prevents_purge(): void
+    {
+        $this->transport([StorefrontHtml::render()], policy: 'public, s-maxage=300');
+
+        $this->assertFalse(app(StorefrontCacheRefreshService::class)->refresh([])->successful);
+        $this->assertSame([['no-cache']], $this->homepageCacheControl);
+        $this->assertCount(0, Http::recorded(fn ($request) => str_contains($request->url(), '/purge_cache')));
     }
 
     public function test_accepted_invalidation_stale_first_or_second_read_never_purges(): void

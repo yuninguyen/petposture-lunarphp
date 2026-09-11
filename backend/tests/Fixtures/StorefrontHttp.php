@@ -59,7 +59,7 @@ final class StorefrontHttp
             'http://127.0.0.1:8001/api/settings' => Http::response(['status' => 'Request was successful.', 'data' => StorefrontHtml::settings()]),
             'http://127.0.0.1:8001/api/site-media?collection=banner' => Http::response(['status' => 'Request was successful.', 'data' => []]),
             'http://127.0.0.1:3001/api/internal/storefront-revalidate' => Http::response(['revalidated' => true, 'scope' => 'homepage']),
-            'http://127.0.0.1:3001/' => Http::response(StorefrontHtml::render(), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300']),
+            'http://127.0.0.1:3001/' => Http::response(StorefrontHtml::render(), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']),
             default => null,
         };
     }

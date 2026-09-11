@@ -62,7 +62,7 @@ class StorefrontRemainingFailuresTest extends TestCase
             }
         }
         Http::swap(new \Illuminate\Http\Client\Factory);
-        Http::fake(fn () => Http::response('encoded', 200, ['Content-Type' => 'text/html', 'Content-Encoding' => 'gzip', 'Cache-Control' => 'public, s-maxage=300']));
+        Http::fake(fn () => Http::response('encoded', 200, ['Content-Type' => 'text/html', 'Content-Encoding' => 'gzip', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']));
         $this->expectException(\RuntimeException::class);
         (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);
     }

@@ -37,7 +37,7 @@ class CloudflarePurgeWarningMiddlewareTest extends TestCase
                 'http://127.0.0.1:8001/api/settings' => \Illuminate\Support\Facades\Http::response(['status' => 'Request was successful.', 'data' => \Tests\Fixtures\StorefrontHtml::settings()]),
                 'http://127.0.0.1:8001/api/site-media?collection=banner' => \Illuminate\Support\Facades\Http::response(['status' => 'Request was successful.', 'data' => []]),
                 'http://127.0.0.1:3001/api/internal/storefront-revalidate' => \Illuminate\Support\Facades\Http::response(['revalidated' => true, 'scope' => 'homepage']),
-                'http://127.0.0.1:3001/' => \Illuminate\Support\Facades\Http::response(\Tests\Fixtures\StorefrontHtml::render(), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300']),
+                'http://127.0.0.1:3001/' => \Illuminate\Support\Facades\Http::response(\Tests\Fixtures\StorefrontHtml::render(), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']),
                 default => throw new RuntimeException('Unexpected test HTTP request.'),
             };
         });

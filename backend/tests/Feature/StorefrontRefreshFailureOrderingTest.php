@@ -27,7 +27,7 @@ class StorefrontRefreshFailureOrderingTest extends TestCase
                     1 => Http::response(['status' => 'Request was successful.', 'data' => StorefrontHtml::settings()]),
                     2 => Http::response(['status' => 'Request was successful.', 'data' => []]),
                     3 => Http::response(['revalidated' => true, 'scope' => 'homepage']),
-                    4, 5 => Http::response(StorefrontHtml::render(), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300']),
+                    4, 5 => Http::response(StorefrontHtml::render(), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']),
                     default => Http::response(['success' => true]),
                 };
             });

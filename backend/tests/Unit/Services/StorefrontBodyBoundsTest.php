@@ -52,7 +52,7 @@ class StorefrontBodyBoundsTest extends TestCase
     {
         config()->set('services.storefront.internal_url', 'http://127.0.0.1:3001');
         Http::fake(fn () => Http::response(str_repeat('a', 2097153), 200,
-            ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300']));
+            ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']));
         $this->expectException(RuntimeException::class);
         (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);
     }

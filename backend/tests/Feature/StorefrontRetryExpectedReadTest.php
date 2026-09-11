@@ -31,7 +31,7 @@ class StorefrontRetryExpectedReadTest extends TestCase
                 return Http::response(['revalidated' => true, 'scope' => 'homepage']);
             }
             if ($request->url() === 'http://127.0.0.1:3001/') {
-                return Http::response(StorefrontHtml::render($name), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300']);
+                return Http::response(StorefrontHtml::render($name), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']);
             }
             return Http::response(['success' => $name === 'C'], $name === 'C' ? 200 : 503);
         });

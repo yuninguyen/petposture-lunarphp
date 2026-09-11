@@ -12,7 +12,7 @@ class StorefrontRemainingBoundsTest extends TestCase
     public function test_incomplete_declared_body_is_not_accepted_as_complete_html(): void
     {
         config()->set('services.storefront.internal_url', 'http://127.0.0.1:3001');
-        Http::fake(fn () => Http::response('<html></html>', 200, ['Content-Type' => 'text/html', 'Content-Length' => '100', 'Cache-Control' => 'public, s-maxage=300']));
+        Http::fake(fn () => Http::response('<html></html>', 200, ['Content-Type' => 'text/html', 'Content-Length' => '100', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']));
         $this->expectException(RuntimeException::class);
         (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);
     }
@@ -36,7 +36,7 @@ class StorefrontRemainingBoundsTest extends TestCase
             $this->assertGreaterThan(0, $options['timeout']);
             $this->assertLessThanOrEqual(0.5, $options['timeout']);
             $this->assertSame($options['timeout'], $options['connect_timeout']);
-            return Http::response('body', 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300']);
+            return Http::response('body', 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']);
         });
         $this->assertSame('body', (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 0.5));
     }

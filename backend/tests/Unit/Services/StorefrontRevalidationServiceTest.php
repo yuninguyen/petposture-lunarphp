@@ -16,12 +16,12 @@ class StorefrontRevalidationServiceTest extends TestCase
         Http::fake(function ($request, $options) use (&$requests) {
             $requests[] = [$request, $options];
             return Http::response($request->method() === 'POST' ? ['revalidated' => true, 'scope' => 'homepage'] : '<!DOCTYPE html><html><body></body></html>', 200,
-                ['Content-Type' => $request->method() === 'POST' ? 'application/json' : 'text/html', 'Cache-Control' => 'public, max-age=0, s-maxage=300']);
+                ['Content-Type' => $request->method() === 'POST' ? 'application/json' : 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']);
         });
         $service = new StorefrontRevalidationService;
         $deadline = hrtime(true) / 1e9 + 30;
         $service->invalidate($deadline);
-        $service->homepage($deadline);
+        $service->homepage($deadline, true);
         $this->assertCount(2, $requests);
         $this->assertSame('http://127.0.0.1:3001/api/internal/storefront-revalidate', $requests[0][0]->url());
         $this->assertSame(['Bearer test-only-secret'], $requests[0][0]->header('Authorization'));
@@ -29,12 +29,48 @@ class StorefrontRevalidationServiceTest extends TestCase
         $this->assertSame('http://127.0.0.1:3001/', $requests[1][0]->url());
         $this->assertSame(['petposture.com'], $requests[1][0]->header('Host'));
         $this->assertSame(['text/html'], $requests[1][0]->header('Accept'));
+        $this->assertSame(['no-cache'], $requests[1][0]->header('Cache-Control'));
         $this->assertFalse($requests[1][0]->hasHeader('Authorization'));
         $this->assertFalse($requests[1][0]->hasHeader('Cookie'));
         foreach ($requests as [, $options]) {
             $this->assertFalse($options['allow_redirects']);
             $this->assertLessThanOrEqual(10, $options['timeout']);
             $this->assertLessThanOrEqual(3, $options['connect_timeout']);
+        }
+    }
+
+    public function test_ordinary_canonical_get_has_no_cache_bypass_header(): void
+    {
+        config()->set('services.storefront.internal_url', 'http://127.0.0.1:3001');
+        Http::fake(fn () => Http::response('<!DOCTYPE html><html><body></body></html>', 200,
+            ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']));
+
+        (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);
+
+        Http::assertSent(fn ($request) => $request->url() === 'http://127.0.0.1:3001/'
+            && ! $request->hasHeader('Cache-Control'));
+    }
+
+    public function test_only_the_exact_public_cache_policy_is_accepted(): void
+    {
+        config()->set('services.storefront.internal_url', 'http://127.0.0.1:3001');
+        foreach ([
+            'public, s-maxage=300',
+            'public, s-maxage=301, stale-while-revalidate=86400',
+            'public, s-maxage=300, stale-while-revalidate=86399',
+            'public, s-maxage=300, stale-while-revalidate=86400, no-cache',
+            'public, max-age=0, s-maxage=300, stale-while-revalidate=86400',
+        ] as $policy) {
+            Http::swap(new \Illuminate\Http\Client\Factory);
+            Http::fake(fn () => Http::response('<!DOCTYPE html><html><body></body></html>', 200,
+                ['Content-Type' => 'text/html', 'Cache-Control' => $policy]));
+
+            try {
+                (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);
+                $this->fail("Unsafe cache policy {$policy} must fail.");
+            } catch (\RuntimeException) {
+                $this->addToAssertionCount(1);
+            }
         }
     }
 

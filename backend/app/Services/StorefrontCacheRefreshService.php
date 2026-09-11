@@ -39,8 +39,8 @@ class StorefrontCacheRefreshService
             $freshness = new StorefrontOriginFreshnessService;
             // One sequential pair is within the at-most-three-pair budget. Any mismatch
             // fails this attempt; a journal retry starts with eviction and fresh expected data.
-            foreach ([1, 2] as $read) {
-                if (! $freshness->matches($transport->homepage($deadline), $expected) || hrtime(true) / 1e9 >= $deadline) {
+            foreach ([true, false] as $bypassCache) {
+                if (! $freshness->matches($transport->homepage($deadline, $bypassCache), $expected) || hrtime(true) / 1e9 >= $deadline) {
                     throw new RuntimeException('Origin projection mismatch.');
                 }
             }

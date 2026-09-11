@@ -14,7 +14,7 @@ class StorefrontTransportOwnershipTest extends TestCase
     public function test_empty_set_cookie_header_is_rejected_by_presence(): void
     {
         config()->set('services.storefront.internal_url', 'http://127.0.0.1:3001');
-        Http::fake(fn () => Http::response('body', 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300', 'Set-Cookie' => '']));
+        Http::fake(fn () => Http::response('body', 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400', 'Set-Cookie' => '']));
         $this->expectException(\RuntimeException::class);
         (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);
     }
@@ -53,7 +53,7 @@ class StorefrontTransportOwnershipTest extends TestCase
                 'close' => function () use (&$closed, $stream) { $closed = true; $stream->close(); },
                 'read' => function () { throw new \RuntimeException('Distinct read failed.'); },
             ]);
-            Http::fake(fn () => \GuzzleHttp\Promise\Create::promiseFor(new Response($status, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300'], $body)));
+            Http::fake(fn () => \GuzzleHttp\Promise\Create::promiseFor(new Response($status, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400'], $body)));
             try {
                 (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);
                 $this->fail('Unsafe response should fail.');

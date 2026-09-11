@@ -44,15 +44,15 @@ class StorefrontRevalidationService
         return StorefrontProjection::fromPublicData($data[0], $data[1]);
     }
 
-    public function homepage(float $deadline): string
+    public function homepage(float $deadline, bool $bypassCache = false): string
     {
-        $response = $this->request('GET', $this->target('internal_url').'/',
-            ['Host' => 'petposture.com', 'Accept' => 'text/html'], $deadline, 2097152);
-        $policy = strtolower($response['cache']);
+        $headers = ['Host' => 'petposture.com', 'Accept' => 'text/html'];
+        if ($bypassCache) {
+            $headers['Cache-Control'] = 'no-cache';
+        }
+        $response = $this->request('GET', $this->target('internal_url').'/', $headers, $deadline, 2097152);
         if ($response['type'] !== 'text/html' || $response['has_cookie'] || str_contains($response['csp'], 'nonce-')
-            || preg_match('/(?:^|,)\s*(?:private|no-store|no-cache)(?:\s|,|=|$)/', $policy)
-            || ! preg_match('/(?:^|,)\s*public\s*(?:,|$)/', $policy)
-            || ! preg_match('/(?:^|,)\s*s-maxage=[1-9][0-9]*\s*(?:,|$)/', $policy)) {
+            || strtolower(trim($response['cache'])) !== 'public, s-maxage=300, stale-while-revalidate=86400') {
             throw new RuntimeException('Unsafe public homepage response.');
         }
 

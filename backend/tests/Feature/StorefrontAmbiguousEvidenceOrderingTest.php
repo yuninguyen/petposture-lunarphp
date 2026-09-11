@@ -27,7 +27,7 @@ class StorefrontAmbiguousEvidenceOrderingTest extends TestCase
                     if ($request->url() === 'http://127.0.0.1:3001/') {
                         $reads++;
                         $html = StorefrontHtml::render();
-                        $headers = ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300'];
+                        $headers = ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400'];
                         if ($reads === $badRead) {
                             if ($fault === 'cookie') $headers['Set-Cookie'] = '';
                             else $html = str_replace('"name":"B"', '"name":"old","name":"B"', $html);
