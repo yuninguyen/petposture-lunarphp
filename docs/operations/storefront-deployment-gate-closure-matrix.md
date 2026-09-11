@@ -60,9 +60,40 @@ supervisorctl status
 
 Do **not** run `docker compose up`, `down`, `restart`, `pull`, `build`, `php artisan migrate`, `php artisan queue:restart`, filesystem mutation commands, Cloudflare purge endpoints, or Cloudflare POST/PUT/PATCH/DELETE requests under this inspection scope.
 
+## Audit evidence collected (2026-09-11)
+
+### Cloudflare baseline — collected via Zone Read, GET-only token (scoped to petposture.com, TTL 2026-09-11–14)
+
+No mutation call was made; only `GET /zones/:id/rulesets`, `GET /zones/:id/rulesets/:ruleset_id` (×2), `GET /zones/:id/settings`, `GET /zones/:id/cache/tiered_cache_smart_topology_enable` were issued.
+
+- **Rulesets present (5):** `http_request_sanitize`, `http_request_firewall_managed`, `ddos_l7`, `http_request_cache_settings`, `http_request_dynamic_redirect`.
+- **`http_request_cache_settings` (4 rules):**
+  1. "Cache HTML pages" — **disabled**, `respect_origin`.
+  2. "Long cache for Next.js static assets and uploaded storage files" — enabled, edge/browser TTL 2,592,000s, scoped to `/_next/static/` and `/storage/`.
+  3. "Cache safe public catalog/content API GET endpoints" — enabled, edge TTL 300s / browser TTL 60s, scoped to specific public read-only API paths.
+  4. "Cache anonymous petposture.com homepage" — **enabled**, `respect_origin`, excludes any request carrying a cookie/RSC/prefetch header — matches the `public, s-maxage=300, stale-while-revalidate=86400` policy the backend fix enforces.
+- **`http_request_dynamic_redirect` (1 rule):** "www to non-www 301 redirect" — enabled. Matches the prior non-www canonical decision; no unexpected redirect rule found.
+- **Zone settings (cache/TLS relevant subset):** `cache_level=aggressive`, `browser_cache_ttl=14400`, `edge_cache_ttl=7200`, `sort_query_string_for_cache=off`, `always_use_https=off`, `automatic_https_rewrites=on`, `min_tls_version=1.2`, `ssl=strict`, `security_level=medium`, `development_mode=off`, `always_online=off`.
+- **Tiered Cache:** `tiered_cache_smart_topology_enable=off`.
+- **Gate verdict:** Cloudflare baseline gate evidence is **complete** — fresh export retained above as rollback/comparison input. No rule was created, updated, or deleted.
+
+### VPS operator evidence — collected by operator via manual SSH, read-only commands only
+
+- **Deployed release:** `DEPLOYED_COMMIT` / `DEPLOYED_RELEASE` on the VPS both point to commit `0ca592524da3ced41d3029b0647a064358bbc15e`. This **predates** this branch's work entirely (`45a1df8`, `0edeee2`, `7cf1815` are not deployed). The freshness-barrier fix and its local/Cloudflare evidence gathered above describe code that is not yet running in production.
+- **Migrations:** `php artisan migrate:status` — all migrations show `Ran`, none pending, for the currently deployed release.
+- **Runtime secret/URL presence (backend container):** `STOREFRONT_INTERNAL_URL=unset`, `STOREFRONT_BACKEND_INTERNAL_URL=unset`, `STOREFRONT_REVALIDATION_SECRET=unset`, `APP_URL=set`, `ASSET_URL=unset`.
+- **Runtime secret presence (frontend container):** `INTERNAL_API_URL=set`, `STOREFRONT_REVALIDATION_SECRET=unset`.
+- **Interpretation:** the three `STOREFRONT_*` variables are unset because the currently deployed commit predates the feature that reads them, not because of a misconfiguration of an already-shipped feature. They will need to be provisioned before this branch is ever deployed.
+- **Scheduler and worker ownership:** confirmed via process tree — `supervisord` (in-container, PID 366765) owns exactly three children: `frankenphp run` (web), `php artisan schedule:work` (persistent scheduler daemon — not cron-based, so no crontab entry is expected or missing), and `php artisan queue:work --tries=3 --max-time=3600 --sleep=3` (auto-restarted by supervisord; observed PID changing from 672839 to 676290 across an automatic restart). Exactly one scheduler owner confirmed; worker crash-restart confirmed.
+- **Image identity:** `petposture-backend:prod`, `petposture-frontend:prod` — mutable tags, not immutable digests. Release identity gate is not yet satisfied by this alone.
+- **Unrelated finding:** the same VPS also runs an unrelated site (`rebateops.online`) with its own queue worker and cron `schedule:run` entry; not a petposture concern but relevant to shared host resource/ownership awareness.
+- **Not evidenced in this pass:** immutable image digest capture, `ASSET_URL`/authority parity for the new branch (moot until deployed), rollback owner/procedure record, post-deploy Cloudflare purge verification.
+
 ## Current status
 
 - Local C2 connected-runtime acceptance is closed only for loopback fixture/fake-purge evidence.
 - Whole-branch Critical/Important source review has accepted commit `0edeee2`.
-- The deployment gate remains **NOT READY** until the target-runtime/release and Cloudflare-baseline gates above are evidenced.
-- This document itself grants no production access or mutation permission.
+- Cloudflare baseline gate: evidenced complete (see above).
+- VPS operator evidence gate: evidenced for the **currently deployed** release (`0ca5925`) — confirms a healthy scheduler/worker/migration baseline, but confirms this branch (`45a1df8`..`0edeee2`) is **not yet merged or deployed**, and its required `STOREFRONT_*` runtime configuration does not yet exist in production.
+- The deployment gate remains **NOT READY** — the operative blocker is now "branch not merged/deployed and its runtime config not provisioned," not missing evidence.
+- This document itself grants no production access or mutation permission. No rule, secret, migration, restart, or deploy action was performed while collecting the evidence above.
