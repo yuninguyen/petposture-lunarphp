@@ -32,7 +32,7 @@ describe('CacheWarningListener', () => {
 
     expect(toast).toHaveBeenCalledTimes(1);
     expect(toast).toHaveBeenCalledWith(
-      'Content was saved, but the storefront cache purge is still retrying. Public pages may remain stale for up to 5 minutes.',
+      'Content was saved, but the storefront cache update is unconfirmed. Public pages may remain stale.',
       expect.objectContaining({ duration: expect.any(Number) }),
     );
     await act(async () => root.unmount());

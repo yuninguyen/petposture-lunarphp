@@ -68,7 +68,8 @@ export async function fetchApi(endpoint: string, options: FetchApiOptions = {}):
   });
 
   if (response.headers.get('X-PetPosture-Cache-Warning') === 'purge-pending') {
-    window.dispatchEvent(new CustomEvent('petposture:cache-warning'));
+    const recovery = response.headers.get('X-PetPosture-Cache-Recovery') === 'unavailable' ? 'unavailable' : 'pending';
+    window.dispatchEvent(new CustomEvent('petposture:cache-warning', { detail: { recovery } }));
   }
 
   return response;

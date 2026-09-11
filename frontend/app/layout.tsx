@@ -12,6 +12,7 @@ import { CookieBanner } from '@/components/CookieBanner';
 import { GoogleAnalytics } from '@/components/GoogleAnalytics';
 import { SITE_URL } from '@/lib/site';
 import { getApiBaseUrl } from '@/lib/api';
+import { STOREFRONT_SETTINGS_TAG } from '@/lib/storefront-cache-tags';
 
 const hankenGrotesk = Hanken_Grotesk({ subsets: ['latin'], weight: ['400', '700'], display: 'swap' });
 const lato = Lato({ subsets: ['latin'], weight: ['700'], display: 'swap' });
@@ -27,7 +28,7 @@ async function getShopSettings() {
   let contact: { phone?: string | null; address?: string | null } = {};
   let googleAnalyticsId: string | null = null;
   try {
-    const res = await fetch(`${getApiBaseUrl()}/api/settings`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${getApiBaseUrl()}/api/settings`, { next: { revalidate: 3600, tags: [STOREFRONT_SETTINGS_TAG] } });
     const json = await res.json();
     shopName = json?.data?.shop_name || shopName;
     shopLogo = json?.data?.shop_logo || null;

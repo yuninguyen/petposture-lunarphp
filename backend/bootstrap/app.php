@@ -48,6 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('api', RefreshMailConfig::class);
         $middleware->appendToGroup('api', AttachCloudflarePurgeWarning::class);
         $middleware->web(append: [
+            AttachCloudflarePurgeWarning::class,
             SetLocale::class,
             ResetPermissionCache::class,
             RefreshMailConfig::class,

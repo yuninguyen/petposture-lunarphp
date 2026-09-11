@@ -42,7 +42,7 @@ describe('GET /favicon.png', () => {
     const source = await sharp({ create: { width: 180, height: 90, channels: 4, background: '#123456' } }).png().toBuffer();
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(settings('https://api.petposture.com/storage/favicon.png'))
-      .mockResolvedValueOnce(new Response(source, { status: 200 }));
+      .mockResolvedValueOnce(new Response(new Uint8Array(source), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 
     const response = await GET();

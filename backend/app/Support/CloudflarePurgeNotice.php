@@ -8,6 +8,20 @@ class CloudflarePurgeNotice
 {
     private ?CloudflarePurgeResult $result = null;
 
+    private bool $recoveryUnavailable = false;
+
+    public function isRecoveryUnavailable(): bool
+    {
+        return $this->recoveryUnavailable;
+    }
+
+    public function markRecoveryUnavailable(): CloudflarePurgeResult
+    {
+        $this->recoveryUnavailable = true;
+        return $this->result = new CloudflarePurgeResult(false, true, message:
+            'Content saved; cache refresh recovery could not be recorded. Automatic retry is not guaranteed; operator action is required.');
+    }
+
     public function hasAttempted(): bool
     {
         return $this->result !== null;
@@ -15,7 +29,9 @@ class CloudflarePurgeNotice
 
     public function record(CloudflarePurgeResult $result): void
     {
-        $this->result ??= $result;
+        if (! $this->isPending()) {
+            $this->result = $result;
+        }
     }
 
     public function result(): ?CloudflarePurgeResult

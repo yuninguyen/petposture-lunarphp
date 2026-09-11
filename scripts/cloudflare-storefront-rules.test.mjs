@@ -24,6 +24,10 @@ import {
 
 const fixture = JSON.parse(await readFile(new URL('./fixtures/cloudflare-cache-ruleset.json', import.meta.url), 'utf8'));
 const liveV5Fixture = JSON.parse(await readFile(new URL('./fixtures/cloudflare-cache-ruleset-live-v5.json', import.meta.url), 'utf8'));
+const liveV16Fixture = JSON.parse(await readFile(new URL('./fixtures/cloudflare-cache-ruleset-live-v16.json', import.meta.url), 'utf8'));
+const bypassModule = await import('./cloudflare-storefront-rules.mjs');
+const { HOME_BYPASS_DESCRIPTION, HOME_BYPASS_EXPRESSION, buildHomeBypassRule, auditHomeBypassRuleset, buildHomeBypassRules } = bypassModule;
+const EXPECTED_BYPASS_EXPRESSION = '(http.host eq "petposture.com") and (http.request.uri.path eq "/") and (not ((http.host eq "petposture.com") and (http.request.method in {"GET" "HEAD"}) and (http.request.uri.path eq "/") and (http.request.uri.query eq "") and (not any(lower(http.request.headers.names[*])[*] eq "purpose")) and (not any(lower(http.request.headers.names[*])[*] eq "sec-purpose")) and (not any(lower(http.request.headers.names[*])[*] eq "next-router-prefetch")) and (not any(lower(http.request.headers.names[*])[*] eq "rsc")) and (not any(lower(http.request.headers.names[*])[*] eq "next-router-state-tree")) and (not any(lower(http.request.headers.names[*])[*] eq "next-router-segment-prefetch")) and (not any(lower(http.request.headers.names[*])[*] eq "cookie"))))';
 const rules = fixture.rules;
 const AUTHORITATIVE_LIVE_API_EXPRESSION_SHA256 = '7d8150a31baeda7b3d3453bb3b2c949187f6f686f3eff9988250943bba1bded9';
 const AUTHORITATIVE_LIVE_LEGACY_HTML_EXPRESSION_SHA256 = 'cf3920616575be3acb242523a918646cb76dd854a28721e1670731d492bc8a88';
@@ -563,6 +567,221 @@ test('apply and restore share the exact account-proven writable top-level saniti
   assert.deepEqual(request, { name: source.name, description: source.description, rules: liveV5Fixture.rules });
   for (const field of ['kind', 'version', 'last_updated', 'phase', 'id', 'extra_response_field']) assert.equal(field in request, false);
 });
+
+test('v16 bypass preserves all four reviewed rules and adds only final denial', () => {
+  assert.equal(typeof buildHomeBypassRules, 'function', 'missing v16 builder');
+  const before = structuredClone(liveV16Fixture);
+  const update = buildHomeBypassRules(liveV16Fixture);
+  assert.deepEqual(update.rules.slice(0, 4), liveV16Fixture.rules);
+  assert.equal(update.rules.length, 5);
+  assert.deepEqual(update.rules[4].action_parameters, { cache: false });
+  assert.equal(update.rules[4].enabled, true);
+  assert.equal(update.rules[4].expression, HOME_BYPASS_EXPRESSION);
+  assert.equal(auditHomeBypassRuleset({ ...liveV16Fixture, rules: update.rules }).pass, true);
+  assert.equal(buildHomeBypassRules({ ...liveV16Fixture, rules: update.rules }).changed, false);
+  assert.equal(update.changed, true);
+  assert.deepEqual(liveV16Fixture, before);
+  assert.deepEqual(buildHomeBypassRule(), {
+    ref: 'bypass_excluded_petposture_homepage', description: 'Bypass excluded petposture.com homepage requests',
+    expression: EXPECTED_BYPASS_EXPRESSION, enabled: true, action: 'set_cache_settings', action_parameters: { cache: false },
+  });
+  assert.equal(HOME_BYPASS_DESCRIPTION, 'Bypass excluded petposture.com homepage requests');
+  assert.equal(HOME_BYPASS_EXPRESSION, EXPECTED_BYPASS_EXPRESSION);
+  assert.equal(HOME_EXPRESSION, liveV16Fixture.rules[3].expression);
+  assert.doesNotMatch(HOME_BYPASS_EXPRESSION, /matches/);
+  for (const header of ['purpose', 'sec-purpose', 'next-router-prefetch', 'rsc', 'next-router-state-tree', 'next-router-segment-prefetch', 'cookie']) {
+    assert.ok(HOME_BYPASS_EXPRESSION.includes(`lower(http.request.headers.names[*])[*] eq "${header}"`));
+  }
+});
+
+// Boolean complement model only, NOT a Cloudflare expression parser or zone validation.
+test('bypass Boolean model isolates wrong hosts and non-home paths', () => {
+  const excludedHeaders = ['purpose', 'sec-purpose', 'next-router-prefetch', 'rsc', 'next-router-state-tree', 'next-router-segment-prefetch', 'cookie'];
+  for (const host of ['petposture.com', 'api.petposture.com', 'www.petposture.com']) {
+    for (const pathname of ['/', '/account', '/_next/static/a.js', '/storage/a.jpg']) {
+      for (const method of ['GET', 'HEAD', 'POST']) {
+        for (const query of ['', 'x=1']) {
+          for (const headers of [[], ...excludedHeaders.map((name) => [name.toUpperCase()])]) {
+            const scoped = host === 'petposture.com' && pathname === '/';
+            const allowed = scoped && ['GET', 'HEAD'].includes(method) && query === '' && !headers.some((name) => excludedHeaders.includes(name.toLowerCase()));
+            const bypass = scoped && !allowed;
+            assert.equal(bypass, scoped && (method === 'POST' || query !== '' || headers.length > 0));
+            if (!scoped) assert.equal(bypass, false);
+          }
+        }
+      }
+    }
+  }
+});
+
+for (let index = 0; index < 5; index += 1) {
+  for (const field of ['enabled', 'action', 'action_parameters', 'expression', 'description']) {
+    test(`v16 audit rejects rule ${index + 1} ${field} drift`, () => {
+      assert.equal(typeof buildHomeBypassRules, 'function');
+      const source = { ...structuredClone(liveV16Fixture), rules: buildHomeBypassRules(liveV16Fixture).rules };
+      const rule = source.rules[index];
+      rule[field] = field === 'enabled' ? !rule.enabled : field === 'action_parameters' ? { ...rule.action_parameters, cache: !rule.action_parameters.cache } : `${rule[field]} drift`;
+      const report = auditHomeBypassRuleset(source, { throwOnFailure: false });
+      assert.equal(report.pass, false);
+      assert.ok(report.failures.length > 0);
+      assert.throws(() => buildHomeBypassRules(source), /audit|reviewed|drift/i);
+    });
+  }
+}
+
+for (const mutation of ['missing', 'swapped', 'later allow', 'earlier unknown', 'duplicate legacy', 'duplicate active', 'duplicate bypass', 'duplicate ref', 'reserved ref', 'bypass ref', 'missing ref', 'duplicate id', 'extra parameters']) {
+  test(`v16 rejects topology: ${mutation}`, () => {
+    assert.equal(typeof buildHomeBypassRules, 'function');
+    const source = { ...structuredClone(liveV16Fixture), rules: buildHomeBypassRules(liveV16Fixture).rules };
+    if (mutation === 'missing') source.rules.splice(1, 1);
+    if (mutation === 'swapped') [source.rules[1], source.rules[2]] = [source.rules[2], source.rules[1]];
+    if (mutation === 'later allow') source.rules.push({ ...source.rules[3], ref: 'extra', id: 'extra' });
+    if (mutation === 'earlier unknown') source.rules.unshift({ ...source.rules[4], description: 'unknown', ref: 'extra' });
+    if (mutation.startsWith('duplicate ') && !['duplicate ref', 'duplicate id'].includes(mutation)) {
+      const index = mutation === 'duplicate legacy' ? 0 : mutation === 'duplicate active' ? 3 : 4;
+      source.rules[1].description = source.rules[index].description;
+    }
+    if (mutation === 'duplicate ref') source.rules[1].ref = source.rules[0].ref;
+    if (mutation === 'reserved ref') { source.rules.pop(); source.rules[1].ref = 'bypass_excluded_petposture_homepage'; }
+    if (mutation === 'bypass ref') source.rules[4].ref = 'unreviewed-bypass';
+    if (mutation === 'missing ref') delete source.rules[0].ref;
+    if (mutation === 'duplicate id') source.rules[1].id = source.rules[0].id;
+    if (mutation === 'extra parameters') source.rules[1].action_parameters.extra = true;
+    assert.throws(() => buildHomeBypassRules(source), /audit|reviewed|ref|duplicat/i);
+  });
+}
+
+test('v16 accepts whitespace and unpinned identity/version while preserving all metadata', () => {
+  assert.equal(typeof buildHomeBypassRules, 'function');
+  const source = structuredClone(liveV16Fixture);
+  source.version = '23';
+  source.id = 'other-live-id';
+  source.rules.forEach((rule, index) => { rule.ref = `fresh-${index}`; rule.id = `fresh-id-${index}`; rule.expression = `  ${rule.expression}  `; rule.logging = { enabled: true }; });
+  const update = buildHomeBypassRules(source);
+  assert.deepEqual(update.rules.slice(0, 4), source.rules);
+  const report = auditHomeBypassRuleset(source);
+  assert.equal(report.bypassPresent, false);
+  assert.deepEqual(report.rules.map((rule) => rule.action_parameters), source.rules.map((rule) => rule.action_parameters));
+});
+
+test('old apply-home builder rejects a separate active homepage topology', () => {
+  assert.throws(() => buildApplyRules(liveV16Fixture), /separate|apply-home-bypass|active homepage/i);
+});
+
+async function bypassCommandCase({ live = liveV16Fixture, exported = createExportArtifact(live), execute = true, command = 'apply-home-bypass', artifactWriter } = {}) {
+  const artifactDir = await mkdtemp(path.join(os.tmpdir(), 'cloudflare-v16-'));
+  const exportPath = path.join(artifactDir, 'fresh.json');
+  await writeFile(exportPath, JSON.stringify(exported));
+  const requests = [];
+  const logs = output();
+  const promise = runCommand([command, '--from-export', exportPath, ...(execute ? ['--execute'] : [])], {
+    env: { CLOUDFLARE_API_TOKEN: 'fake-secret', CLOUDFLARE_ZONE_ID: 'fake-zone' },
+    fetchImpl: async (_url, options) => {
+      requests.push(options);
+      return cloudflareResponse(options.method === 'PUT' ? { ...live, version: '17', rules: JSON.parse(options.body).rules } : live);
+    },
+    stdout: logs.stream, artifactDir, ...(artifactWriter ? { artifactWriter } : {}),
+  });
+  return { promise, requests, logs };
+}
+
+test('apply-home-bypass dry-run GET-only and execute exactly one PUT preserve original rules and ordered audit', async () => {
+  for (const execute of [false, true]) {
+    const { promise, requests, logs } = await bypassCommandCase({ execute });
+    const result = await promise;
+    assert.deepEqual(requests.map(({ method }) => method), execute ? ['GET', 'PUT'] : ['GET']);
+    const request = execute ? JSON.parse(requests[1].body) : result.request;
+    assert.deepEqual(request.rules.slice(0, 4), liveV16Fixture.rules);
+    assert.equal(request.rules[4].expression, EXPECTED_BYPASS_EXPRESSION);
+    assert.deepEqual(JSON.parse(await readFile(result.rollbackFile, 'utf8')).ruleset, liveV16Fixture);
+    let previous = -1;
+    for (const rule of request.rules) { const position = logs.read().indexOf(rule.description); assert.ok(position > previous); previous = position; }
+    assert.match(logs.read(), /enabled=false/);
+    assert.match(logs.read(), /override_origin/);
+    assert.equal(result.dryRun, !execute);
+  }
+});
+
+for (const drift of ['sha', 'id', 'version', 'content', 'ref']) {
+  test(`apply-home-bypass rejects stale export ${drift} before PUT`, async () => {
+    const exported = createExportArtifact(liveV16Fixture);
+    if (drift === 'sha') exported.sha256 = '0'.repeat(64);
+    if (drift === 'id') exported.ruleset.id = 'different';
+    if (drift === 'version') exported.ruleset.version = '15';
+    if (drift === 'content') exported.ruleset.rules[0].enabled = true;
+    if (drift === 'ref') exported.ruleset.rules[0].ref = 'different-ref';
+    const { promise, requests } = await bypassCommandCase({ exported });
+    await assert.rejects(promise, /stale|match|SHA-256/i);
+    assert.deepEqual(requests.map(({ method }) => method), ['GET']);
+  });
+}
+
+test('apply-home-bypass refuses failed rollback write before PUT', async () => {
+  const { promise, requests } = await bypassCommandCase({ artifactWriter: async () => { throw new Error('rollback disk full'); } });
+  await assert.rejects(promise, /rollback disk full/);
+  assert.deepEqual(requests.map(({ method }) => method), ['GET']);
+});
+
+test('apply-home-bypass audits transformed output before PUT even after rollback callback', async () => {
+  const { promise, requests } = await bypassCommandCase({ artifactWriter: async (artifact) => {
+    // A caller-controlled persistence hook must not smuggle a changed candidate to PUT.
+    if (artifact.ruleset) artifact.ruleset.rules[0].enabled = true;
+    return 'fake-rollback';
+  } });
+  const result = await promise;
+  assert.equal(result.dryRun, false);
+  assert.equal(JSON.parse(requests[1].body).rules[0].enabled, false);
+  assert.equal(auditHomeBypassRuleset({ ...liveV16Fixture, rules: JSON.parse(requests[1].body).rules }).pass, true);
+});
+
+test('apply-home-bypass reports successful mutation with recoverable result after post-PUT write failure', async () => {
+  let writes = 0;
+  const { promise, requests } = await bypassCommandCase({ artifactWriter: async () => { if (++writes === 2) throw new Error('disk full'); return 'rollback'; } });
+  await assert.rejects(promise, (error) => error.mutationSucceeded === true && error.result?.version === '17' && error.artifact?.result?.rules.length === 5);
+  assert.deepEqual(requests.map(({ method }) => method), ['GET', 'PUT']);
+});
+
+test('apply-home-bypass execute is no-op for reviewed five-rule input without redundant artifact', async () => {
+  assert.equal(typeof buildHomeBypassRules, 'function');
+  const live = { ...liveV16Fixture, rules: buildHomeBypassRules(liveV16Fixture).rules };
+  const { promise, requests } = await bypassCommandCase({ live, artifactWriter: async () => { assert.fail('no-op must not write a mutation artifact'); } });
+  const result = await promise;
+  assert.equal(result.changed, false);
+  assert.deepEqual(result.result, live);
+  assert.deepEqual(requests.map(({ method }) => method), ['GET']);
+});
+
+test('old apply-home CLI rejects v16 before artifacts or PUT', async () => {
+  const { promise, requests } = await bypassCommandCase({ command: 'apply-home', artifactWriter: async () => { assert.fail('must reject before rollback'); } });
+  await assert.rejects(promise, /separate|apply-home-bypass|active homepage/i);
+  assert.deepEqual(requests.map(({ method }) => method), ['GET']);
+});
+
+test('pure bypass builder rejects output drift rather than trusting only its input audit', () => {
+  const source = structuredClone(liveV16Fixture);
+  let reads = 0;
+  Object.defineProperty(source.rules[0], 'enabled', {
+    enumerable: true,
+    // Input check and its report see the reviewed rule; cloning the candidate sees drift.
+    get() { reads += 1; return reads > 2; },
+  });
+  assert.throws(() => buildHomeBypassRules(source), /audit.*failed|enabled.*reviewed/is);
+});
+
+for (const drift of ['enabled', 'action', 'parameters', 'expression', 'order', 'extra denial']) {
+  test(`apply-home-bypass rejects live ${drift} before rollback and PUT`, async () => {
+    const live = structuredClone(liveV16Fixture);
+    if (drift === 'enabled') live.rules[0].enabled = true;
+    if (drift === 'action') live.rules[3].action = 'skip';
+    if (drift === 'parameters') live.rules[2].action_parameters.edge_ttl.default = 301;
+    if (drift === 'expression') live.rules[3].expression += ' or true';
+    if (drift === 'order') [live.rules[1], live.rules[2]] = [live.rules[2], live.rules[1]];
+    if (drift === 'extra denial') live.rules.push({ description: 'Unknown denial', ref: 'unknown', expression: 'true', enabled: true, action: 'set_cache_settings', action_parameters: { cache: false } });
+    const { promise, requests } = await bypassCommandCase({ live, artifactWriter: async () => { assert.fail('unsafe topology must fail before rollback'); } });
+    await assert.rejects(promise, /audit.*failed/is);
+    assert.deepEqual(requests.map(({ method }) => method), ['GET']);
+  });
+}
 
 test('all generated mutation payloads preserve fields/order/refs and contain no override_origin anywhere', () => {
   const source = ruleset({ rules: rules.map((rule, index) => ({ ...rule, enabled: index !== 2, logging: { enabled: true }, extra: `keep-${index}` })) });

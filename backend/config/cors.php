@@ -28,7 +28,7 @@ return [
 
     'allowed_headers' => ['*'],
 
-    'exposed_headers' => [],
+    'exposed_headers' => ['X-PetPosture-Cache-Warning', 'X-PetPosture-Cache-Recovery'],
 
     'max_age' => 0,
 

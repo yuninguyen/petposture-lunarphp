@@ -11,7 +11,6 @@ use App\Models\Solution;
 use App\Models\User;
 use App\Services\CloudflareCacheService;
 use App\Services\PublicContentPurgeCoordinator;
-use App\ValueObjects\CloudflarePurgeResult;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -58,7 +57,7 @@ class PublicContentPurgeTest extends TestCase
     public function test_public_content_model_events_call_the_purge_coordinator_once(string $modelClass, string $event): void
     {
         $coordinator = Mockery::mock(PublicContentPurgeCoordinator::class);
-        $coordinator->shouldReceive('purge')->once()->andReturn(new CloudflarePurgeResult(true, false));
+        $coordinator->shouldReceive('requestPurge')->times($modelClass === SiteMedia::class ? 2 : 1)->with(Mockery::type('array'), null);
         $this->app->instance(PublicContentPurgeCoordinator::class, $coordinator);
 
         event("eloquent.{$event}: {$modelClass}", [new $modelClass]);
@@ -67,7 +66,7 @@ class PublicContentPurgeTest extends TestCase
     public function test_setting_events_keep_per_key_cache_invalidation(): void
     {
         $coordinator = Mockery::mock(PublicContentPurgeCoordinator::class);
-        $coordinator->shouldReceive('purge')->twice()->andReturn(new CloudflarePurgeResult(true, false));
+        $coordinator->shouldReceive('requestPurge')->twice()->with(['setting:storefront.name'], null);
         $this->app->instance(PublicContentPurgeCoordinator::class, $coordinator);
         $setting = new Setting(['key' => 'storefront.name']);
 
@@ -96,10 +95,10 @@ class PublicContentPurgeTest extends TestCase
             'is_core' => false,
         ]);
 
+        // RefreshDatabase holds an outer transaction: the HTTP response must
+        // warn pending without attempting edge work before that transaction ends.
         $service = $this->mock(CloudflareCacheService::class);
-        $service->shouldReceive('purgeAll')->once()->andReturn(
-            new CloudflarePurgeResult(false, true, 500, 'Cloudflare cache purge failed.'),
-        );
+        $service->shouldNotReceive('purgeAll');
 
         $response = $this->putJson('/api/admin/pages/'.$page->id, [
             'title' => 'Privacy Policy Updated',

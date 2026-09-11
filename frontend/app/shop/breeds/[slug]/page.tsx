@@ -7,9 +7,7 @@ import { API_BASE_URL } from '@/lib/api';
 import { SITE_URL } from '@/lib/site';
 import { headers } from 'next/headers';
 
-export function buildBreedCollectionJsonLd(data: { name: string; description: string; url: string }) {
-    return { '@context': 'https://schema.org', '@type': 'CollectionPage', ...data };
-}
+import { buildBreedCollectionJsonLd } from './json-ld';
 
 type Params = { slug: string };
 

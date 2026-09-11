@@ -1,0 +1,55 @@
+{
+  "id": "sanitized-ruleset-v16",
+  "version": "16",
+  "name": "default",
+  "description": "Sanitized recorded v16 cache settings",
+  "kind": "zone",
+  "phase": "http_request_cache_settings",
+  "last_updated": "2026-09-07T07:11:56.968936Z",
+  "rules": [
+    {
+      "id": "sanitized-html-id",
+      "ref": "sanitized-html-ref",
+      "version": "9",
+      "last_updated": "2026-09-06T21:45:54.306388Z",
+      "description": "Cache HTML pages",
+      "enabled": false,
+      "action": "set_cache_settings",
+      "action_parameters": { "browser_ttl": { "mode": "respect_origin" }, "cache": true, "edge_ttl": { "mode": "respect_origin" } },
+      "expression": "(http.host eq \"petposture.com\") and (http.request.method in {\"GET\" \"HEAD\"}) and (http.request.uri.path eq \"/\") and (http.request.uri.query eq \"\") and (not any(http.request.headers.names[*] eq \"purpose\")) and (not any(http.request.headers.names[*] eq \"sec-purpose\")) and (not any(http.request.headers.names[*] eq \"next-router-prefetch\")) and (not any(http.request.headers.names[*] eq \"rsc\")) and (not any(http.request.headers.names[*] eq \"next-router-state-tree\")) and (not any(http.request.headers.names[*] eq \"next-router-segment-prefetch\")) and (not any(http.request.headers.names[*] eq \"cookie\"))"
+    },
+    {
+      "id": "sanitized-static-id",
+      "ref": "sanitized-static-ref",
+      "version": "2",
+      "last_updated": "2026-09-05T22:07:32.415314Z",
+      "description": "Long cache for Next.js static assets and uploaded storage files",
+      "enabled": true,
+      "action": "set_cache_settings",
+      "action_parameters": { "browser_ttl": { "default": 2592000, "mode": "override_origin" }, "cache": true, "edge_ttl": { "default": 2592000, "mode": "override_origin" } },
+      "expression": "((http.host eq \"petposture.com\") and starts_with(http.request.uri.path, \"/_next/static/\")) or ((http.host eq \"api.petposture.com\") and starts_with(http.request.uri.path, \"/storage/\"))"
+    },
+    {
+      "id": "sanitized-api-id",
+      "ref": "sanitized-api-ref",
+      "version": "2",
+      "last_updated": "2026-09-05T22:07:32.415314Z",
+      "description": "Cache safe public catalog/content API GET endpoints (5 min edge TTL)",
+      "enabled": true,
+      "action": "set_cache_settings",
+      "action_parameters": { "browser_ttl": { "default": 60, "mode": "override_origin" }, "cache": true, "edge_ttl": { "default": 300, "mode": "override_origin" } },
+      "expression": "(http.host eq \"api.petposture.com\") and (http.request.method eq \"GET\") and (http.request.uri.path eq \"/api/settings\" or http.request.uri.path eq \"/api/site-media\" or http.request.uri.path eq \"/api/checkout/payment-methods\" or http.request.uri.path eq \"/api/categories\" or http.request.uri.path eq \"/api/blog/categories\" or starts_with(http.request.uri.path, \"/api/products\") or starts_with(http.request.uri.path, \"/api/brands\") or starts_with(http.request.uri.path, \"/api/posts\") or starts_with(http.request.uri.path, \"/api/breeds\") or starts_with(http.request.uri.path, \"/api/solutions\"))"
+    },
+    {
+      "id": "sanitized-home-id",
+      "ref": "sanitized-home-ref",
+      "version": "1",
+      "last_updated": "2026-09-07T07:11:56.968936Z",
+      "description": "Cache anonymous petposture.com homepage",
+      "enabled": true,
+      "action": "set_cache_settings",
+      "action_parameters": { "browser_ttl": { "mode": "respect_origin" }, "cache": true, "edge_ttl": { "mode": "respect_origin" } },
+      "expression": "(http.host eq \"petposture.com\") and (http.request.method in {\"GET\" \"HEAD\"}) and (http.request.uri.path eq \"/\") and (http.request.uri.query eq \"\") and (not any(lower(http.request.headers.names[*])[*] eq \"purpose\")) and (not any(lower(http.request.headers.names[*])[*] eq \"sec-purpose\")) and (not any(lower(http.request.headers.names[*])[*] eq \"next-router-prefetch\")) and (not any(lower(http.request.headers.names[*])[*] eq \"rsc\")) and (not any(lower(http.request.headers.names[*])[*] eq \"next-router-state-tree\")) and (not any(lower(http.request.headers.names[*])[*] eq \"next-router-segment-prefetch\")) and (not any(lower(http.request.headers.names[*])[*] eq \"cookie\"))"
+    }
+  ]
+}

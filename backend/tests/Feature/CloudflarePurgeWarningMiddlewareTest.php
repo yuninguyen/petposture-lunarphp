@@ -18,6 +18,41 @@ use Tests\TestCase;
 
 class CloudflarePurgeWarningMiddlewareTest extends TestCase
 {
+    private string $database;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->database = tempnam(storage_path('framework/testing'), 'journal-warning-');
+        config(['database.connections.sqlite.database' => $this->database]);
+        \Illuminate\Support\Facades\DB::purge('sqlite');
+        // These service tests need only the journal schema, not content fixtures.
+        (require database_path('migrations/2026_09_09_000001_create_storefront_refresh_journal_table.php'))->up();
+        // Preserve the warning assertions while supplying the newly required origin barrier.
+        config()->set('services.storefront', ['internal_url' => 'http://127.0.0.1:3001',
+            'backend_internal_url' => 'http://127.0.0.1:8001', 'revalidation_secret' => 'test-secret']);
+        \Illuminate\Support\Facades\Http::preventStrayRequests();
+        \Illuminate\Support\Facades\Http::fake(function ($request) {
+            return match ($request->url()) {
+                'http://127.0.0.1:8001/api/settings' => \Illuminate\Support\Facades\Http::response(['status' => 'Request was successful.', 'data' => \Tests\Fixtures\StorefrontHtml::settings()]),
+                'http://127.0.0.1:8001/api/site-media?collection=banner' => \Illuminate\Support\Facades\Http::response(['status' => 'Request was successful.', 'data' => []]),
+                'http://127.0.0.1:3001/api/internal/storefront-revalidate' => \Illuminate\Support\Facades\Http::response(['revalidated' => true, 'scope' => 'homepage']),
+                'http://127.0.0.1:3001/' => \Illuminate\Support\Facades\Http::response(\Tests\Fixtures\StorefrontHtml::render(), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']),
+                default => throw new RuntimeException('Unexpected test HTTP request.'),
+            };
+        });
+    }
+
+    protected function tearDown(): void
+    {
+        foreach (\Illuminate\Support\Facades\DB::getConnections() as $connection) {
+            $connection->disconnect();
+        }
+        parent::tearDown();
+        gc_collect_cycles();
+        unlink($this->database);
+    }
+
     public function test_first_failure_dispatches_retry_and_records_request_notice(): void
     {
         Bus::fake();
@@ -31,7 +66,8 @@ class CloudflarePurgeWarningMiddlewareTest extends TestCase
 
         $result = app(PublicContentPurgeCoordinator::class)->purge();
 
-        $this->assertSame($failure, $result);
+        $this->assertFalse($result->successful);
+        $this->assertSame($failure->status, $result->status);
         $this->assertTrue(app(CloudflarePurgeNotice::class)->isPending());
         Bus::assertDispatched(PurgeCloudflareCache::class);
     }
@@ -84,10 +120,13 @@ class CloudflarePurgeWarningMiddlewareTest extends TestCase
 
         $result = app(PublicContentPurgeCoordinator::class)->purge();
 
-        $this->assertTrue($result->successful);
-        $this->assertFalse($result->configured);
-        $this->assertFalse(app(CloudflarePurgeNotice::class)->isPending());
-        Bus::assertNothingDispatched();
+        // Journal rollout intentionally replaces the old unconfigured no-op contract.
+        $this->assertFalse($result->successful);
+        $this->assertTrue(app(CloudflarePurgeNotice::class)->isPending());
+        Bus::assertDispatched(PurgeCloudflareCache::class);
+        $row = \Illuminate\Support\Facades\DB::table('storefront_refresh_journal')->first();
+        $this->assertSame('retry', $row->state);
+        $this->assertSame('not_configured', $row->last_status);
     }
 
     public function test_retry_job_uses_required_attempts_backoff_and_throws_on_failure(): void

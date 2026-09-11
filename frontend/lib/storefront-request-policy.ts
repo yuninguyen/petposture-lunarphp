@@ -9,12 +9,13 @@ export type StorefrontRequestFacts = {
   pathname: string;
   search: string;
   cookieHeader: string;
-  purpose: string | null;
-  secPurpose: string | null;
-  nextRouterPrefetch: string | null;
+  cookieHeaderPresent: boolean;
   rsc: string | null;
   nextRouterStateTree: string | null;
   nextRouterSegmentPrefetch: string | null;
+  purpose: string | null;
+  secPurpose: string | null;
+  nextRouterPrefetch: string | null;
 };
 
 export const PUBLIC_HTML_CACHE_CONTROL =
@@ -57,13 +58,22 @@ export function classifyStorefrontRequest(
     return { kind: 'private', reason: 'sensitive-cookie' };
   }
 
+  if (facts.cookieHeaderPresent || facts.cookieHeader !== '') {
+    return { kind: 'private', reason: 'cookie-header' };
+  }
+
   if (
-    isPrefetchValue(facts.purpose) ||
-    isPrefetchValue(facts.secPurpose) ||
-    facts.nextRouterPrefetch !== null ||
     facts.rsc !== null ||
     facts.nextRouterStateTree !== null ||
     facts.nextRouterSegmentPrefetch !== null
+  ) {
+    return { kind: 'private', reason: 'navigation' };
+  }
+
+  if (
+    isPrefetchValue(facts.purpose) ||
+    isPrefetchValue(facts.secPurpose) ||
+    facts.nextRouterPrefetch !== null
   ) {
     return { kind: 'private', reason: 'prefetch' };
   }

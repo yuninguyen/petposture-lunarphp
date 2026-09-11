@@ -1,0 +1,7 @@
+# Captured installed-Next projection fixture provenance
+
+Source: independent local C4 capture `.superpowers/sdd/2026-09-09-storefront-cache-v16-hardening-addendum/c4-runtime-evidence.json`, labels `before-invalidation` (A) and `B-pair1-GET1` (B). Next16.2.3, overlaid8f3f812 build; synthetic font build fixture; not production evidence.
+
+Each file retains verbatim captured title, all meta elements, canonical link, application/ld+json script, and unique hero img (including every srcSet candidate). Simple html/head/body wrappers replace unrelated page structure. Stylesheets, preloads, catalog markup, Flight and executable scripts, headers, logs and runtime secrets are omitted. Relevant markup is not generated from application helpers or normalized by DOM serialization. Both source documents had no nonce; no nonce removal is used to manufacture a passing policy result.
+
+Expected B literals in StorefrontCapturedNextTest come from separate successful captured `expected-B-settings` and `expected-B-media` response data. The capture fixture envelopes are not asserted to be real backend envelopes; this is parser compatibility only. Full original120054-byte documents remain in ignored evidence and were also checked offline earlier; no server restart is needed. Bounded files here are under4KiB each. Canonical link is deliberately captured without trailing slash; JSON-LD url remains exact without slash.

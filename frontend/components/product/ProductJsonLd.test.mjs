@@ -8,10 +8,9 @@ const source = readFileSync(new URL('../../app/shop/[category]/[slug]/page.tsx',
 const productTypes = readFileSync(new URL('../../types/shop.ts', import.meta.url), 'utf8');
 
 function loadHelpers() {
-  const marker = 'export default async function Page';
-  let helperSource = source.slice(0, source.indexOf(marker))
-    .split('\n').filter((line) => !line.trimStart().startsWith('import ')).join('\n');
-  helperSource = helperSource.slice(0, helperSource.indexOf('export async function generateMetadata')).replaceAll('export function ', 'function ')
+  const helpers = readFileSync(new URL('../../app/shop/[category]/[slug]/json-ld.ts', import.meta.url), 'utf8');
+  const helperSource = helpers.split('\n').filter((line) => !line.trimStart().startsWith('import ')).join('\n')
+    .replaceAll('export function ', 'function ')
     + '\nthis.helpers = { buildProductBreadcrumbJsonLd, serializeProductJsonLd };';
   const js = ts.transpileModule(helperSource, { compilerOptions: { module: ts.ModuleKind.Script, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   const context = vm.createContext({ URL, URLSearchParams, JSON, String, Array });

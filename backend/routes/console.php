@@ -12,3 +12,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command(ExpireOverdueReturnRequests::class)->daily();
 Schedule::job(new SyncAffiliateReportJob)->dailyAt('06:00');
+Schedule::command('storefront:refresh-replay --limit=100 --max-seconds=20')->everyMinute();

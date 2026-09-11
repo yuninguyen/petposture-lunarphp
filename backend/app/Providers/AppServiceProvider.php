@@ -61,6 +61,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(CloudflarePurgeNotice::class);
+        $this->app->scoped(\App\Support\StorefrontMutationBatch::class);
 
         $this->app->singleton(PaymentGatewayManager::class, function ($app) {
             return new PaymentGatewayManager([
