@@ -36,7 +36,7 @@
 <td align="center" class="mail-px" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:36px 40px 8px 40px;">
 <table role="presentation" cellpadding="0" cellspacing="0" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 auto 14px auto;">
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; background-color:#fdf1e7; border-radius:100px; padding:6px 16px; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#df8448;">&#10003; Account Confirmed</td>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; background-color:#fdf1e7; border-radius:100px; padding:6px 16px; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#df8448;">&#10003; Account Confirmed</td>
 </tr>
 </table>
 <h1 style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:26px; line-height:1.3; font-weight:700; color:#3e4c57;">Welcome aboard, {{ $user->name }}!</h1>
@@ -87,7 +87,7 @@ Your {{ config('app.name') }} account has been created with the email <strong st
 <table role="presentation" cellpadding="0" cellspacing="0">
 <tr>
 <td align="center" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; border-radius:6px; background-color:#df8448;">
-<a href="{{ config('app.frontend_url') }}/shop" target="_blank" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:inline-block; padding:16px 44px; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#ffffff; text-decoration:none;">Start Shopping</a>
+<a href="{{ config('app.frontend_url') }}/shop" target="_blank" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:inline-block; padding:16px 44px; font-size:12px; font-weight:600; letter-spacing:0.2px; color:#ffffff; text-decoration:none;">Start Shopping</a>
 </td>
 </tr>
 </table>
