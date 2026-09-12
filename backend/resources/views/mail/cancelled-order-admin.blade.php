@@ -38,6 +38,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="format-detection" content="telephone=no,address=no,email=no,date=no">
 <title>{{ config('app.name') }}</title>
 <style>
 @media only screen and (max-width:600px) {
