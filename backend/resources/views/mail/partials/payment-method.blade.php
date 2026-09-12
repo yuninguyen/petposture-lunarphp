@@ -40,7 +40,7 @@
 @endphp
 
 @if($paymentMethod === 'paypal' || $paymentGateway === 'paypal')
-    <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">
+    <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#1a2128;">
         PayPal{{ $paypalEmail !== '' ? ' (' . e($paypalEmail) . ')' : '' }}
     </p>
 @elseif($paymentMethod === 'card' || $cardBrand !== '' || $cardLast4 !== '' || $cardFunding !== '')
@@ -51,31 +51,31 @@
                     <img src="{{ $cardBrandIcons[$cardBrand]['src'] }}" alt="{{ $cardBrandIcons[$cardBrand]['alt'] }}" width="36" height="24" style="display:block; border:0;">
                 </td>
                 <td valign="middle">
-                    <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">
+                    <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#1a2128;">
                         &bull;&bull;&bull;&bull; {{ e($cardLast4) }} &middot; ${{ number_format($amountValue, 2) }} {{ e($currencyCode) }}
                     </p>
                 </td>
             </tr>
         </table>
     @elseif($cardBrand !== '' && $cardLast4 !== '')
-        <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">
+        <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#1a2128;">
             {{ ucfirst(e($cardBrand)) }} &bull;&bull;&bull;&bull; {{ e($cardLast4) }} &middot; ${{ number_format($amountValue, 2) }} {{ e($currencyCode) }}
         </p>
     @else
-        <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">
+        <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#1a2128;">
             {{ $fundingLabel }}
         </p>
     @endif
 @elseif(!empty($meta['payment_label']))
-    <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">
+    <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#1a2128;">
         {{ e($meta['payment_label']) }}
     </p>
 @elseif($paymentMethod !== '')
-    <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">
+    <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#1a2128;">
         {{ ucwords(str_replace(['_', '-'], ' ', e($paymentMethod))) }}
     </p>
 @else
-    <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">
+    <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#1a2128;">
         Card
     </p>
 @endif

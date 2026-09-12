@@ -39,7 +39,7 @@ Order {{ $order->reference }}
 
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-bottom:32px;">
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#707070;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#1a2128;">
 Hi {{ $order->shippingAddress?->first_name ?? 'there' }}, we've reviewed your return request for order #{{ $order->reference }} and issued a full refund &mdash; <strong>there's no need to ship anything back to us</strong>.
 </p>
 </td>
@@ -51,9 +51,9 @@ Hi {{ $order->shippingAddress?->first_name ?? 'there' }}, we've reviewed your re
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:24px;">
 @if($refundAmount !== null)
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Refund amount:</strong> <span style="color:#707070;">${{ number_format($refundAmount, 2) }}</span></p>
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Refund amount:</strong> <span style="color:#1a2128;">${{ number_format($refundAmount, 2) }}</span></p>
 @endif
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:6px 0 0; font-size:13px; line-height:1.6; color:#707070;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:6px 0 0; font-size:13px; line-height:1.6; color:#1a2128;">
 Refunded to your original payment method. It may take a few business days to appear on your statement.
 </p>
 </td>
@@ -106,7 +106,7 @@ Refunded to your original payment method. It may take a few business days to app
 @if($returnRequest->admin_note)
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:24px; padding-bottom:12px;">
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#707070;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#1a2128;">
 <strong style="color:#1a1a1a;">Note from our team:</strong> {{ $returnRequest->admin_note }}
 </p>
 </td>
@@ -115,7 +115,7 @@ Refunded to your original payment method. It may take a few business days to app
 
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:32px; padding-bottom:16px;">
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#707070;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#1a2128;">
 Have questions about your refund? Our support team is happy to help.
 </p>
 </td>

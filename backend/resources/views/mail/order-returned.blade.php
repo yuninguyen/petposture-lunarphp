@@ -49,7 +49,7 @@ Order {{ $order->reference }}
 
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-bottom:32px;">
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#707070;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#1a2128;">
 Hi {{ $order->shippingAddress?->first_name ?? 'there' }}, thanks for shopping at {{ config('app.name') }}! The following item(s) from your order #{{ $order->reference }} has been received and processed.
 </p>
 </td>
@@ -60,7 +60,7 @@ Hi {{ $order->shippingAddress?->first_name ?? 'there' }}, thanks for shopping at
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf9f8; border-radius:8px;">
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:24px;">
-<p style="margin:0; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Return processed on:</strong> <span style="color:#707070;">{{ $returnedAtLabel }}</span></p>
+<p style="margin:0; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Return processed on:</strong> <span style="color:#1a2128;">{{ $returnedAtLabel }}</span></p>
 </td>
 </tr>
 </table>
@@ -114,10 +114,10 @@ ${{ number_format($lineTotal, 2) }}
 
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:32px;">
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 16px; font-size:15px; line-height:1.6; color:#707070;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 16px; font-size:15px; line-height:1.6; color:#1a2128;">
 We&rsquo;re sorry this purchase didn&rsquo;t work out for you. Your refund will be processed shortly and you&rsquo;ll get a separate email once it&rsquo;s issued.
 </p>
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#707070;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#1a2128;">
 If you returned additional items from your order, you will receive another Return Confirmation email for those items once they have been processed.
 </p>
 </td>
@@ -125,7 +125,7 @@ If you returned additional items from your order, you will receive another Retur
 
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-top:32px; padding-bottom:32px;">
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 16px; font-size:14px; line-height:1.6; color:#707070;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 16px; font-size:14px; line-height:1.6; color:#1a2128;">
 Not sure what happens next? Our team is happy to help.
 </p>
 <table role="presentation" cellpadding="0" cellspacing="0">

@@ -48,9 +48,9 @@
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; background-color:#fcfbf8; border:1px solid #eee3d7; border-radius:14px;">
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:20px 24px;">
-<p style="margin:0 0 8px; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Customer:</strong> <span style="color:#707070;">{{ $order->shippingAddress?->first_name }} {{ $order->shippingAddress?->last_name }} &ndash; {{ $order->customer_reference }}</span></p>
-<p style="margin:0 0 8px; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Payment gateway:</strong> <span style="color:#707070;">{{ ucfirst((string) ($order->meta['payment_gateway'] ?? 'unknown')) }}</span></p>
-<p style="margin:0; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Failed:</strong> <span style="color:#707070;">{{ $failureCount }} time(s) within the last {{ (int) ($windowSeconds / 60) }} minutes</span></p>
+<p style="margin:0 0 8px; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Customer:</strong> <span style="color:#1a2128;">{{ $order->shippingAddress?->first_name }} {{ $order->shippingAddress?->last_name }} &ndash; {{ $order->customer_reference }}</span></p>
+<p style="margin:0 0 8px; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Payment gateway:</strong> <span style="color:#1a2128;">{{ ucfirst((string) ($order->meta['payment_gateway'] ?? 'unknown')) }}</span></p>
+<p style="margin:0; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Failed:</strong> <span style="color:#1a2128;">{{ $failureCount }} time(s) within the last {{ (int) ($windowSeconds / 60) }} minutes</span></p>
 </td>
 </tr>
 </table>

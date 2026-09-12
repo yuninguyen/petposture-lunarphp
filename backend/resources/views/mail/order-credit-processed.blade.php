@@ -46,7 +46,7 @@
 A credit of <strong>${{ number_format($refundAmount, 2) }}</strong> has been applied to your {{ $paymentMethodLabel }} on <strong>{{ $refundedAtLabel }}</strong>.
 </p>
 
-<p style="{{ $font }} margin:0 0 20px; font-size:13px; line-height:1.7; color:#707070;">
+<p style="{{ $font }} margin:0 0 20px; font-size:13px; line-height:1.7; color:#1a2128;">
 <strong style="{{ $font }} color:#1a1a1a;">Please note:</strong> though the refund has been issued, the credit may not appear immediately on your statement depending upon the policies of your financial institution. Generally, the credit will appear in 3&ndash;5 business days; however, it may take up to two billing cycles for the credit to appear. Contact your credit/debit card company for specific posting dates.
 </p>
 

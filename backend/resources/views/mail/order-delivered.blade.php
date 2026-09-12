@@ -68,7 +68,7 @@ Order {{ $order->reference }}
 
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-bottom:32px;">
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#707070;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#1a2128;">
 Your order #{{ $order->reference }} has been delivered. We hope you love your new products!
 </p>
 </td>
@@ -105,11 +105,11 @@ Your order #{{ $order->reference }} has been delivered. We hope you love your ne
 <p style="margin:0 0 14px; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Order number:</strong> {{ $order->reference }}</p>
 <p style="margin:0 0 14px; font-size:14px; line-height:1.6; color:#1a1a1a;">
 <strong>Shipped to:</strong><br>
-<span style="color:#707070;">
+<span style="color:#1a2128;">
 @include('mail.partials.order-address', ['address' => $order->shippingAddress])
 </span>
 </p>
-<p style="margin:0; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Shipping method:</strong> <span style="color:#707070;">{{ $shippingMethodLabel }}</span></p>
+<p style="margin:0; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Shipping method:</strong> <span style="color:#1a2128;">{{ $shippingMethodLabel }}</span></p>
 </td>
 </tr>
 </table>

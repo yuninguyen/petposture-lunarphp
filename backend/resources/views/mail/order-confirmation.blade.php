@@ -97,7 +97,7 @@ Order {{ $order->reference }}
 
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding-bottom:28px;">
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#707070;">
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.6; color:#1a2128;">
 Hi {{ $order->shippingAddress?->first_name ?? 'there' }}, we're getting your order ready to be shipped. We will notify you when it has been sent.
 </p>
 </td>
@@ -173,21 +173,21 @@ ${{ number_format($lineTotal, 2) }}
 <td width="260" valign="top" class="full-col">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Subtotal &middot; {{ $itemCount }} item{{ $itemCount === 1 ? '' : 's' }}</td>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#1a2128;">Subtotal &middot; {{ $itemCount }} item{{ $itemCount === 1 ? '' : 's' }}</td>
 <td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; font-weight:700; color:#1a1a1a;">${{ number_format($subTotal, 2) }}</td>
 </tr>
 @if($discountTotal > 0)
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Discount{{ $couponCode ? ' (' . strtoupper($couponCode) . ')' : '' }}</td>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#1a2128;">Discount{{ $couponCode ? ' (' . strtoupper($couponCode) . ')' : '' }}</td>
 <td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#df8448;">&minus;${{ number_format($discountTotal, 2) }}</td>
 </tr>
 @endif
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Shipping - {{ $shippingMethodLabel }}</td>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#1a2128;">Shipping - {{ $shippingMethodLabel }}</td>
 <td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; font-weight:700; color:#1a1a1a;">{{ $shippingTotal > 0 ? '$' . number_format($shippingTotal, 2) : 'Free' }}</td>
 </tr>
 <tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Estimated Taxes</td>
+<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#1a2128;">Estimated Taxes</td>
 <td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; font-weight:700; color:#1a1a1a;">${{ number_format($taxTotal, 2) }}</td>
 </tr>
 </table>
@@ -227,7 +227,7 @@ ${{ number_format($lineTotal, 2) }}
 <tr>
 <td width="50%" valign="top" class="stack-col stack-gap">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 8px; font-size:14px; font-weight:500; color:#1a1a1a;">Shipping address</p>
-<p class="no-autolink" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#707070;">
+<p class="no-autolink" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#1a2128;">
 {{ $order->shippingAddress?->first_name }} {{ $order->shippingAddress?->last_name }}<br>
 {{ $order->shippingAddress?->line_one }}<br>
 @if($order->shippingAddress?->line_two)
@@ -242,7 +242,7 @@ ${{ number_format($lineTotal, 2) }}
 </td>
 <td width="50%" valign="top" class="stack-col">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 8px; font-size:14px; font-weight:500; color:#1a1a1a;">Billing address</p>
-<p class="no-autolink" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#707070;">
+<p class="no-autolink" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#1a2128;">
 {{ ($order->billingAddress ?? $order->shippingAddress)?->first_name }} {{ ($order->billingAddress ?? $order->shippingAddress)?->last_name }}<br>
 {{ ($order->billingAddress ?? $order->shippingAddress)?->line_one }}<br>
 @if(($order->billingAddress ?? $order->shippingAddress)?->line_two)
@@ -266,7 +266,7 @@ ${{ number_format($lineTotal, 2) }}
 <tr>
 <td width="50%" valign="top" class="stack-col stack-gap">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 4px; font-size:14px; font-weight:500; color:#1a1a1a;">Shipping method</p>
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">{{ $shippingMethodLabel }}</p>
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#1a2128;">{{ $shippingMethodLabel }}</p>
 </td>
 <td width="50%" valign="top" class="stack-col">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 4px; font-size:14px; font-weight:500; color:#1a1a1a;">Payment method</p>
