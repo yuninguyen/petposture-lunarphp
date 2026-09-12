@@ -222,11 +222,12 @@ class CheckoutService
                     'reference' => 'MANUAL-'.strtoupper($order->reference),
                     'status' => 'completed',
                     'notes' => 'Manually marked as paid by admin.',
+                    'card_type' => 'card',
                 ]);
 
                 $orderMeta['payment_status'] = 'paid';
                 $orderMeta['payment_method'] = 'card';
-                $orderMeta['payment_label'] = 'Credit Card';
+                $orderMeta['payment_label'] = 'Card';
                 $orderMeta['payment_gateway'] = 'manual';
                 $orderMeta['payment_received_at'] = now()->toIso8601String();
                 $order->update([

@@ -294,7 +294,7 @@ class OrderController extends Controller
             'billing.country' => ['nullable', 'string', 'max:255'],
             'billing.phone' => ['nullable', 'string', 'max:50'],
             'payment_method' => ['required', 'string', 'in:cod,card'],
-            'shipping_method' => ['required', 'string', 'in:standard,express'],
+            'shipping_method' => ['required', 'string', Rule::exists('shipping_methods', 'code')],
             'coupon_code' => ['nullable', 'string', 'max:255'],
             'customer_note' => ['nullable', 'string', 'max:2000'],
             'internal_note' => ['nullable', 'string', 'max:4000'],

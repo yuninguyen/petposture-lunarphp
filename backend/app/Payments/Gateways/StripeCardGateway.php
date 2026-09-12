@@ -16,7 +16,7 @@ class StripeCardGateway implements PaymentGatewayInterface
 
     public function label(): string
     {
-        return 'Credit card';
+        return 'Card';
     }
 
     private function stripeKey(): string

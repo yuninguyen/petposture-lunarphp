@@ -301,3 +301,21 @@ export function SearchIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function CardIcon({ className }: IconProps) {
+  return (
+    <svg {...base(className)} aria-hidden="true">
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <line x1="2" x2="22" y1="10" y2="10" />
+    </svg>
+  );
+}
+
+export function PayPalIcon({ className }: IconProps) {
+  return (
+    <svg {...base(className)} aria-hidden="true">
+      <path d="M7 21l3-15h5.5a4.5 4.5 0 0 1 0 9H11l-1.5 6H7z" />
+      <path d="M10 18l2-10h4.5a3.5 3.5 0 0 1 0 7H13l-1.5 5h-1.5z" opacity="0.6" />
+    </svg>
+  );
+}
