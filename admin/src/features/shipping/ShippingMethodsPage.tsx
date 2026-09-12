@@ -55,12 +55,12 @@ export function ShippingMethodsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('shipping.title')}</h1>
           <p className="mt-1 text-sm text-slate-500">{t('shipping.subtitle')}</p>
         </div>
-        <Button variant="primary" onClick={openCreate}>{t('shipping.create')}</Button>
+        <Button variant="primary" onClick={openCreate} className="whitespace-nowrap">{t('shipping.create')}</Button>
       </div>
 
       <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{t('shipping.live_checkout_warning')}</p>

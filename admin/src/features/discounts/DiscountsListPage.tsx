@@ -50,12 +50,12 @@ export function DiscountsListPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('discounts.title')}</h1>
           <p className="mt-1 text-sm text-slate-500">{t('discounts.subtitle')}</p>
         </div>
-        <Button variant="primary" onClick={() => navigate('/discounts/new')}>{t('discounts.create')}</Button>
+        <Button variant="primary" onClick={() => navigate('/discounts/new')} className="whitespace-nowrap">{t('discounts.create')}</Button>
       </div>
 
       <input aria-label={t('discounts.search')} value={search} onChange={(event) => changeSearch(event.target.value)} placeholder={t('discounts.search')} className="mb-4 w-full max-w-sm rounded-lg border border-slate-200 px-3 py-2 text-sm" />

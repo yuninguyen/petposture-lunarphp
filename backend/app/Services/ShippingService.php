@@ -42,12 +42,18 @@ class ShippingService
         return (int) round($shippingMethod->price * 100);
     }
 
+    private static array $nameCache = [];
+
     /**
      * Display name for a method code, used when building order shipping lines.
      */
     public function nameFor(string $code): string
     {
-        return $this->methodByCode($code)?->name ?? (ucfirst($code).' Shipping');
+        if (isset(self::$nameCache[$code])) {
+            return self::$nameCache[$code];
+        }
+
+        return self::$nameCache[$code] = $this->methodByCode($code)?->name ?? (ucfirst($code).' Shipping');
     }
 
     // ─── Private ─────────────────────────────────────────────────────────────

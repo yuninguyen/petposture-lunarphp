@@ -6,6 +6,7 @@ use App\Filament\Resources\OrderResource;
 use App\Models\OrderShipmentItem;
 use App\Services\OrderOperationsService;
 use App\Services\ShippingService;
+use App\Support\Orders\AdminOrderPresentation;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Infolists;
@@ -287,34 +288,7 @@ class ViewOrder extends ViewRecord
                             Infolists\Components\Group::make([
                                 Infolists\Components\TextEntry::make('meta.payment_method')
                                     ->label(__('Payment Method'))
-                                    ->formatStateUsing(function (?string $state, $record): string {
-                                        if ($state === 'card') {
-                                            $brand = $record->meta['card_brand'] ?? null;
-                                            $last4 = $record->meta['card_last4'] ?? null;
-                                            $funding = $record->meta['card_funding'] ?? null;
-
-                                            $cardType = match ($funding) {
-                                                'credit' => 'Credit Card',
-                                                'debit' => 'Debit Card',
-                                                'prepaid' => 'Prepaid Card',
-                                                default => 'Card',
-                                            };
-
-                                            if (! $brand) {
-                                                return $cardType;
-                                            }
-
-                                            $label = "{$cardType} - ".str($brand)->headline()->toString();
-
-                                            return $last4 ? "{$label} •••• {$last4}" : $label;
-                                        }
-
-                                        return match ($state) {
-                                            'cod' => 'COD',
-                                            'paypal' => 'PayPal',
-                                            default => $state ? str($state)->headline()->toString() : '—',
-                                        };
-                                    }),
+                                    ->formatStateUsing(fn (?string $state, $record): string => AdminOrderPresentation::paymentMethod((array) ($record->meta ?? []))),
                                 Infolists\Components\TextEntry::make('status')
                                     ->label(__('Order Status'))
                                     ->badge()
@@ -437,11 +411,11 @@ class ViewOrder extends ViewRecord
                                 ->columnSpan(1),
                             Infolists\Components\TextEntry::make('unit_price')
                                 ->label(__('Unit Price'))
-                                ->formatStateUsing(fn ($state) => '$'.number_format(($state->value ?? (int) $state) / 100, 2))
+                                ->formatStateUsing(fn ($state, $record) => AdminOrderPresentation::money($state, $record->order?->currency_code ?? 'USD'))
                                 ->columnSpan(1),
                             Infolists\Components\TextEntry::make('sub_total')
                                 ->label(__('Subtotal'))
-                                ->formatStateUsing(fn ($state) => '$'.number_format(($state->value ?? (int) $state) / 100, 2))
+                                ->formatStateUsing(fn ($state, $record) => AdminOrderPresentation::money($state, $record->order?->currency_code ?? 'USD'))
                                 ->columnSpan(1),
                             Infolists\Components\TextEntry::make('shipment_tracking')
                                 ->label('')
@@ -460,11 +434,15 @@ class ViewOrder extends ViewRecord
                         ->html()
                         ->columnSpanFull()
                         ->state(function ($record) {
-                            $money = fn ($state) => '$'.number_format(($state->value ?? (int) $state) / 100, 2);
+                            $currencyCode = (string) ($record->currency_code ?? 'USD');
+                            $money = fn ($state) => AdminOrderPresentation::money($state, $currencyCode, withCode: false);
+                            $moneyWithCode = fn ($state) => AdminOrderPresentation::money($state, $currencyCode);
                             $discount = (int) ($record->discount_total->value ?? $record->discount_total ?? 0);
+                            $qty = AdminOrderPresentation::productQuantity($record->lines);
+                            $itemCountLabel = $qty === 1 ? '1 item' : "{$qty} items";
 
                             $rows = [
-                                'Items Subtotal: '.$money($record->sub_total),
+                                "Subtotal · {$itemCountLabel}: ".$money($record->sub_total),
                             ];
 
                             $couponCode = $record->meta['coupon_code'] ?? null;
@@ -477,9 +455,9 @@ class ViewOrder extends ViewRecord
 
                             $shippingMethodName = app(ShippingService::class)
                                 ->nameFor((string) ($record->meta['shipping_method'] ?? 'standard'));
-                            $rows[] = "Shipping - {$shippingMethodName}: ".$money($record->shipping_total);
-                            $rows[] = 'Tax: '.$money($record->tax_total);
-                            $rows[] = '<strong>Order Total: '.$money($record->total).'</strong>';
+                            $rows[] = "Shipping ({$shippingMethodName}): ".$money($record->shipping_total);
+                            $rows[] = 'Estimated Taxes: '.$money($record->tax_total);
+                            $rows[] = '<strong>Total: '.$moneyWithCode($record->total).'</strong>';
 
                             return '<div style="line-height: 2; margin-right: 1.5rem;">'
                                 .implode('<br>', $rows)

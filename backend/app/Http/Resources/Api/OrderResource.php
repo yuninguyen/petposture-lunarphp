@@ -4,6 +4,7 @@ namespace App\Http\Resources\Api;
 
 use App\Services\OrderOperationsService;
 use App\Services\ProductSyncService;
+use App\Services\ShippingService;
 use App\Support\Orders\OrderStateMachine;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -72,6 +73,8 @@ class OrderResource extends JsonResource
             'payment_last_event_type' => $meta['payment_last_event_type'] ?? null,
             'card_brand' => $meta['card_brand'] ?? null,
             'card_last4' => $meta['card_last4'] ?? null,
+            'card_funding' => $meta['card_funding'] ?? null,
+            'paypal_payer_email' => $meta['paypal_payer_email'] ?? null,
             'amount_charged' => $meta['amount_charged'] ?? null,
             'payment_received_at' => $meta['payment_received_at'] ?? null,
             'processing_started_at' => $meta['processing_started_at'] ?? null,
@@ -250,14 +253,17 @@ class OrderResource extends JsonResource
 
     private function formatShippingLabel(?string $shippingMethod): string
     {
+        $shippingLine = $this->lines?->firstWhere('type', 'shipping');
+
+        if ($shippingLine && filled($shippingLine->description)) {
+            return (string) $shippingLine->description;
+        }
+
         if (! $shippingMethod) {
             return 'Standard';
         }
 
-        return str($shippingMethod)
-            ->replace(['_', '-'], ' ')
-            ->title()
-            ->toString();
+        return app(ShippingService::class)->nameFor($shippingMethod);
     }
 
     private function formatPaymentLabel(?string $paymentMethod): string

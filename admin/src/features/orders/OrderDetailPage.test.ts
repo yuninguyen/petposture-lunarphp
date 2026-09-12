@@ -3,7 +3,33 @@ import { createRoot } from 'react-dom/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ navigate: vi.fn(), refund: vi.fn(), returnOrder: vi.fn(), action: vi.fn(), shipment: vi.fn(), refetch: vi.fn(), toastError: vi.fn(), toastSuccess: vi.fn(), order: { id: '42', reference: 'ORD-42', customer_email: 'customer@example.com', status: 'processing', status_label: 'Processing', payment_status: 'paid', payment_status_label: 'Paid', fulfillment_status: 'unfulfilled', fulfillment_status_label: 'Unfulfilled', refund_status: 'partially_refunded', refund_amount: 450, coupon_code: 'SAVE10', total: { formatted: '$12.50 USD', decimal: 12.5, currency: 'USD' }, sub_total: 15, discount_total: 5, shipping_total: 0, shipping_label: 'Express', tax_total: 2.5, lines: [{ id: 1, type: 'product', description: 'Orthopedic Bed', quantity: 2, unit_price: 7.5, sub_total: 15, discount_total: 0, tax_total: 0, total: 15, image: null }], attribution_origin: 'newsletter', attribution_device_type: 'mobile', attribution_session_page_views: 4, fraud_risk_level: null as string | null, fraud_risk_score: null as number | null, fraud_seller_message: null as string | null, shipping_address: {}, billing_address: {}, order_events: [{ type: 'shipped', title: 'Shipped second', detail: null, created_at: '2026-08-30 12:00:00' }, { type: 'created', title: 'Created first', detail: null, created_at: '2026-08-29 12:00:00' }], available_actions: [{ action: 'cancelOrder', label: 'Cancel order' }, { action: 'capturePayment', label: 'Capture payment' }, { action: 'markShipped', label: 'Mark shipped' }], remaining_shippable_quantities: { '1': 2 }, refund_reason_options: [{ value: 'customer_request', label: 'Customer request' }, { value: 'duplicate', label: 'Duplicate order' }] } }));
-vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, any>) => {
+      if (key === 'orders.items_subtotal_with_count' && options?.count !== undefined) {
+        return `Subtotal · ${options.count} items`;
+      }
+      if (key === 'orders.shipping_with_method' && options?.method) {
+        return `Shipping (${options.method})`;
+      }
+      if (key === 'orders.estimated_taxes') {
+        return 'Estimated Taxes';
+      }
+      const paymentLabels: Record<string, string> = {
+        'orders.payment_card': 'Card',
+        'orders.payment_credit_card': 'Credit Card',
+        'orders.payment_debit_card': 'Debit Card',
+        'orders.payment_prepaid_card': 'Prepaid Card',
+        'orders.payment_paypal': 'PayPal',
+        'orders.payment_cod': 'Cash on delivery',
+      };
+      if (paymentLabels[key]) {
+        return paymentLabels[key];
+      }
+      return key;
+    },
+  }),
+}));
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate, useParams: () => ({ id: '42' }) }));
 vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError, success: mocks.toastSuccess } }));
 vi.mock('./api', () => ({
@@ -58,6 +84,17 @@ beforeEach(() => {
   mocks.order.available_actions = [{ action: 'cancelOrder', label: 'Cancel order' }, { action: 'capturePayment', label: 'Capture payment' }, { action: 'markShipped', label: 'Mark shipped' }];
   mocks.order.remaining_shippable_quantities = { '1': 2 };
   mocks.order.refund_reason_options = [{ value: 'customer_request', label: 'Customer request' }, { value: 'duplicate', label: 'Duplicate order' }];
+  mocks.order.lines = [{ id: 1, type: 'product', description: 'Orthopedic Bed', quantity: 2, unit_price: 7.5, sub_total: 15, discount_total: 0, tax_total: 0, total: 15, image: null }];
+  mocks.order.shipping_label = 'Express';
+  mocks.order.sub_total = 15;
+  mocks.order.tax_total = 2.5;
+  mocks.order.shipping_total = 0;
+  mocks.order.total = { formatted: '$12.50 USD', decimal: 12.5, currency: 'USD' };
+  delete (mocks.order as any).payment_method;
+  delete (mocks.order as any).card_funding;
+  delete (mocks.order as any).paypal_payer_email;
+  delete (mocks.order as any).card_brand;
+  delete (mocks.order as any).card_last4;
 });
 
 describe('OrderDetailPage', () => {
@@ -203,7 +240,7 @@ describe('OrderDetailPage', () => {
     const { host, root } = renderPage();
 
     expect(host.textContent).toContain('Partially Refunded');
-    expect(host.textContent).toContain('$4.50');
+    expect(host.textContent).toContain('USD $4.50');
     expect(host.querySelector('table')?.textContent).toContain('orders.product');
     expect(host.querySelector('table')?.textContent).toContain('orders.qty');
     expect(host.querySelector('table')?.textContent).toContain('orders.unit_price');
@@ -211,19 +248,71 @@ describe('OrderDetailPage', () => {
     expect(host.querySelector('table')?.textContent).toContain('Orthopedic Bed');
     expect(host.querySelector('table')?.textContent).toContain('$7.50');
     expect(host.querySelector('table')?.textContent).toContain('$15.00');
-    expect(host.textContent).toContain('orders.items_subtotal');
+    expect(host.textContent).toContain('Subtotal · 2 items');
     expect(host.textContent).toContain('orders.discount');
     expect(host.textContent).toContain('SAVE10');
-    expect(host.textContent).toContain('orders.shipping');
-    expect(host.textContent).toContain('Express');
-    expect(host.textContent).toContain('$0.00');
-    expect(host.textContent).toContain('orders.tax');
-    expect(host.textContent).toContain('$2.50');
+    expect(host.textContent).toContain('Shipping (Express)');
+    expect(host.textContent).toContain('Estimated Taxes');
     expect(host.textContent).toContain('orders.order_total');
+    expect(host.textContent).toContain('USD $12.50');
     expect(host.textContent).toContain('orders.attribution');
     expect(host.textContent).toContain('newsletter');
     expect(host.textContent).toContain('mobile');
     expect(host.textContent).toContain('4');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('renders debit card details with brand and last4 in payment method detail', () => {
+    (mocks.order as any).payment_method = 'card';
+    (mocks.order as any).card_funding = 'debit';
+    (mocks.order as any).card_brand = 'visa';
+    (mocks.order as any).card_last4 = '4242';
+
+    const { host, root } = renderPage();
+
+    expect(host.textContent).toContain('Debit Card');
+    expect(host.textContent).toContain('Visa •••• 4242');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('renders PayPal details with payer email in payment method detail', () => {
+    (mocks.order as any).payment_method = 'paypal';
+    (mocks.order as any).paypal_payer_email = 'buyer@example.com';
+
+    const { host, root } = renderPage();
+
+    expect(host.textContent).toContain('PayPal');
+    expect(host.textContent).toContain('buyer@example.com');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('renders order totals with items count, shipping method, estimated taxes, and code-first total', () => {
+    mocks.order.lines = [
+      { id: 1, type: 'product', description: 'Orthopedic Bed', quantity: 3, unit_price: 10, sub_total: 30, discount_total: 0, tax_total: 0, total: 30, image: null },
+      { id: 2, type: 'product', description: 'Chew Toy', quantity: 2, unit_price: 5, sub_total: 10, discount_total: 0, tax_total: 0, total: 10, image: null },
+      { id: 3, type: 'shipping', description: 'Shipping Line', quantity: 1, unit_price: 15, sub_total: 15, discount_total: 0, tax_total: 0, total: 15, image: null },
+    ];
+    mocks.order.shipping_label = 'Priority Express';
+    mocks.order.sub_total = 40;
+    mocks.order.tax_total = 4;
+    mocks.order.shipping_total = 15;
+    mocks.order.total = { formatted: '$59.00 USD', decimal: 59.0, currency: 'USD' };
+
+    const { host, root } = renderPage();
+
+    expect(host.textContent).toContain('Subtotal · 5 items');
+    expect(host.textContent).toContain('$40.00');
+    expect(host.textContent).toContain('Shipping (Priority Express)');
+    expect(host.textContent).toContain('$15.00');
+    expect(host.textContent).toContain('Estimated Taxes');
+    expect(host.textContent).toContain('$4.00');
+    expect(host.textContent).toContain('USD $59.00');
 
     act(() => root.unmount());
     host.remove();

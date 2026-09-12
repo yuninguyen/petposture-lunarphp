@@ -47,12 +47,12 @@ export function CustomFieldsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('custom_fields.title')}</h1>
           <p className="mt-1 text-sm text-slate-500">{t('custom_fields.subtitle')}</p>
         </div>
-        <Button onClick={openCreate} disabled={productTypesQuery.isLoading}>{t('custom_fields.create')}</Button>
+        <Button onClick={openCreate} disabled={productTypesQuery.isLoading} className="whitespace-nowrap">{t('custom_fields.create')}</Button>
       </div>
 
       <Card className="overflow-x-auto p-0 shadow-sm">

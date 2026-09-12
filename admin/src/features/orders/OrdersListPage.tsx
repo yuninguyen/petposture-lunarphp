@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { EyeIcon } from '@/components/ui/icons';
 import { useOrders } from './api';
+import { formatOrderAmount, getOrderCustomerName, OrderPaymentDisplay } from './orderPresentation';
 
 export function OrdersListPage() {
   const { t } = useTranslation();
@@ -17,7 +18,34 @@ export function OrdersListPage() {
     <div className="mb-6 flex items-start justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">{t('orders.title')}</h1><p className="mt-1 text-sm text-slate-500">{t('orders.subtitle')}</p></div><Button type="button" variant="primary" onClick={() => navigate('/orders/new')}>{t('orders.create')}</Button></div>
     <div className="rounded-t-xl border border-b-0 border-slate-200 bg-white p-4"><select aria-label={t('orders.status')} value={status} onChange={(event) => setStatus(event.target.value)} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm"><option value="">{t('orders.all_statuses')}</option><option value="awaiting-payment">{t('orders.status_awaiting_payment')}</option><option value="payment-offline">{t('orders.status_payment_offline')}</option><option value="payment-received">{t('orders.status_payment_received')}</option><option value="processing">{t('orders.status_processing')}</option><option value="shipped">{t('orders.status_shipped')}</option><option value="delivered">{t('orders.status_delivered')}</option><option value="cancelled">{t('orders.status_cancelled')}</option></select></div>
     <div className="overflow-hidden rounded-b-xl border border-slate-200 bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full"><thead className="border-b bg-slate-50"><tr>{['reference', 'customer', 'total', 'payment', 'status', 'payment_status', 'fulfillment_status', 'created_at'].map((key) => <th key={key} className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t(`orders.column_${key}`)}</th>)}<th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('common.actions')}</th></tr></thead><tbody className="divide-y divide-slate-100">
-      {query.isLoading ? <StateRow text={t('common.loading')} /> : query.isError ? <StateRow text={(query.error as Error).message} error /> : !orders.length ? <StateRow text={t('orders.empty')} /> : orders.map((order) => <tr key={order.id} className="hover:bg-slate-50"><td className="px-6 py-4"><button onClick={() => navigate(`/orders/${order.id}`)} className="font-semibold text-slate-900 hover:text-primary">{order.reference}</button></td><td className="px-6 py-4 text-sm">{order.customer_email ?? '—'}</td><td className="px-6 py-4 text-sm font-medium">{order.total.formatted}</td><td className="px-6 py-4 text-sm">{order.payment_label ?? '—'}</td><td className="px-6 py-4 text-sm">{order.status_label ?? order.status}</td><td className="px-6 py-4 text-sm">{order.payment_status_label ?? order.payment_status}</td><td className="px-6 py-4 text-sm">{order.fulfillment_status_label ?? order.fulfillment_status}</td><td className="px-6 py-4 text-sm text-slate-500">{order.created_at ? new Date(order.created_at).toLocaleDateString() : '—'}</td><td className="px-6 py-4"><button type="button" aria-label={t('common.view')} onClick={() => navigate(`/orders/${order.id}`)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-primary"><EyeIcon /></button></td></tr>)}
+      {query.isLoading ? <StateRow text={t('common.loading')} /> : query.isError ? <StateRow text={(query.error as Error).message} error /> : !orders.length ? <StateRow text={t('orders.empty')} /> : orders.map((order) => {
+        const customerName = getOrderCustomerName(order);
+        const customerEmail = order.customer_email;
+        return <tr key={order.id} className="hover:bg-slate-50">
+          <td className="px-6 py-4"><button onClick={() => navigate(`/orders/${order.id}`)} className="font-semibold text-slate-900 hover:text-primary">{order.reference}</button></td>
+          <td className="px-6 py-4 text-sm">
+            {customerName && customerEmail ? (
+              <div className="flex flex-col">
+                <span className="font-medium text-slate-900">{customerName}</span>
+                <span className="text-xs text-slate-500">{customerEmail}</span>
+              </div>
+            ) : customerName ? (
+              <span className="font-medium text-slate-900">{customerName}</span>
+            ) : customerEmail ? (
+              <span className="text-slate-900">{customerEmail}</span>
+            ) : (
+              <span className="text-slate-400">—</span>
+            )}
+          </td>
+          <td className="px-6 py-4 text-sm font-medium">{formatOrderAmount(order.total?.decimal, order.total?.currency, false)}</td>
+          <td className="px-6 py-4 text-sm"><OrderPaymentDisplay order={order} /></td>
+          <td className="px-6 py-4 text-sm">{order.status_label ?? order.status}</td>
+          <td className="px-6 py-4 text-sm">{order.payment_status_label ?? order.payment_status}</td>
+          <td className="px-6 py-4 text-sm">{order.fulfillment_status_label ?? order.fulfillment_status}</td>
+          <td className="px-6 py-4 text-sm text-slate-500">{order.created_at ? new Date(order.created_at).toLocaleDateString() : '—'}</td>
+          <td className="px-6 py-4"><button type="button" aria-label={t('common.view')} onClick={() => navigate(`/orders/${order.id}`)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-primary"><EyeIcon /></button></td>
+        </tr>;
+      })}
     </tbody></table></div>{query.data && query.data.meta.last_page > 1 && <div className="flex items-center justify-between border-t bg-slate-50 px-6 py-4"><span className="text-sm text-slate-500">{t('orders.page_of', { current: query.data.meta.current_page, last: query.data.meta.last_page })}</span><div className="flex gap-2"><Button variant="secondary" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>{t('common.previous')}</Button><Button variant="secondary" disabled={page >= query.data.meta.last_page} onClick={() => setPage((current) => current + 1)}>{t('common.next')}</Button></div></div>}</div>
   </div>;
 }

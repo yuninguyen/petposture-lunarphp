@@ -1653,6 +1653,100 @@ class CheckoutApiTest extends TestCase
         $this->assertSame(1234, (int) Order::query()->findOrFail($positive->json('data.id'))->shipping_total->value);
     }
 
+    public function test_admin_order_contract_exposes_safe_card_funding_and_paypal_payer_email(): void
+    {
+        $this->makeAdmin();
+        $variant = $this->createPurchasableVariant();
+        $orderData = $this->createPaidCardOrder($variant);
+        $order = Order::findOrFail($orderData['order_id']);
+
+        $meta = (array) ($order->meta ?? []);
+        $meta['card_funding'] = 'debit';
+        $meta['paypal_payer_email'] = 'paypal-buyer@example.com';
+        $order->update(['meta' => $meta]);
+
+        $response = $this->getJson("/api/admin/orders/{$order->id}");
+
+        $response->assertOk()
+            ->assertJsonPath('data.card_funding', 'debit')
+            ->assertJsonPath('data.paypal_payer_email', 'paypal-buyer@example.com');
+    }
+
+    public function test_customer_order_endpoint_does_not_leak_card_funding_or_paypal_payer_email(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        $variant = $this->createPurchasableVariant();
+
+        $placeOrderResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $placeOrderResponse->assertCreated();
+        $orderId = (int) $placeOrderResponse->json('order.id');
+
+        $order = Order::findOrFail($orderId);
+        $order->update([
+            'user_id' => $user->id,
+            'meta' => array_merge((array) ($order->meta ?? []), [
+                'card_funding' => 'credit',
+                'paypal_payer_email' => 'private-payer@example.com',
+            ]),
+        ]);
+
+        $detailResponse = $this->getJson("/api/orders/{$orderId}");
+        $detailResponse->assertOk()
+            ->assertJsonMissingPath('data.card_funding')
+            ->assertJsonMissingPath('data.paypal_payer_email');
+
+        $listResponse = $this->getJson('/api/orders');
+        $listResponse->assertOk()
+            ->assertJsonMissingPath('data.0.card_funding')
+            ->assertJsonMissingPath('data.0.paypal_payer_email');
+    }
+
+    public function test_supported_checkout_methods_and_manual_card_orders_use_generic_card_label(): void
+    {
+        $methodsResponse = $this->getJson('/api/checkout/payment-methods');
+        $methodsResponse->assertOk();
+
+        $cardMethod = collect($methodsResponse->json('methods'))
+            ->firstWhere('method', 'card');
+        $this->assertNotNull($cardMethod);
+        $this->assertSame('Card', $cardMethod['label']);
+
+        $this->makeAdmin();
+        $variant = $this->createPurchasableVariant();
+
+        $manualResponse = $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, [
+            'payment_method' => 'card',
+        ]));
+
+        $manualResponse->assertCreated()
+            ->assertJsonPath('data.payment_label', 'Card');
+
+        $order = Order::findOrFail($manualResponse->json('data.id'));
+        $this->assertSame('Card', $order->meta['payment_label'] ?? null);
+    }
+
+    public function test_admin_order_resolves_configured_shipping_name_when_differing_from_code(): void
+    {
+        $this->makeAdmin();
+        $variant = $this->createPurchasableVariant();
+
+        ShippingMethod::firstOrCreate(
+            ['code' => 'priority_express'],
+            [
+                'name' => 'Priority Express Overnight',
+                'price' => 19.99,
+            ]
+        );
+
+        $response = $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, [
+            'shipping_method' => 'priority_express',
+        ]));
+
+        $response->assertCreated()
+            ->assertJsonPath('data.shipping_label', 'Priority Express Overnight');
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private function makeAdmin(): User

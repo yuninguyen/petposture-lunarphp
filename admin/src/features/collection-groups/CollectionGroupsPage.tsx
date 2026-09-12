@@ -60,12 +60,12 @@ export function CollectionGroupsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('collection_groups.title')}</h1>
           <p className="mt-1 text-sm text-slate-500">{t('collection_groups.subtitle')}</p>
         </div>
-        <Button variant="primary" className="flex items-center gap-2" onClick={openCreate}>
+        <Button variant="primary" className="flex items-center gap-2 whitespace-nowrap" onClick={openCreate}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
           </svg>

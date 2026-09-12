@@ -201,7 +201,7 @@ class OrderResource extends Resource
                         ->label(__('Payment Method'))
                         ->options([
                             'cod' => __('Cash on Delivery'),
-                            'card' => __('Credit Card (Paid)'),
+                            'card' => __('Card (Paid)'),
                         ])
                         ->default('cod')
                         ->required(),
@@ -277,7 +277,7 @@ class OrderResource extends Resource
                     ->label(__('Payment'))
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'cod' => 'COD',
-                        'card' => 'Credit Card',
+                        'card' => 'Card',
                         'paypal' => 'PayPal',
                         default => $state ? str($state)->headline()->toString() : '—',
                     }),
