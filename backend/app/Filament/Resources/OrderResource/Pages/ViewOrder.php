@@ -435,13 +435,14 @@ class ViewOrder extends ViewRecord
                         ->columnSpanFull()
                         ->state(function ($record) {
                             $currencyCode = (string) ($record->currency_code ?? 'USD');
-                            $money = fn ($state) => AdminOrderPresentation::money($state, $currencyCode);
+                            $money = fn ($state) => AdminOrderPresentation::money($state, $currencyCode, withCode: false);
+                            $moneyWithCode = fn ($state) => AdminOrderPresentation::money($state, $currencyCode);
                             $discount = (int) ($record->discount_total->value ?? $record->discount_total ?? 0);
                             $qty = AdminOrderPresentation::productQuantity($record->lines);
                             $itemCountLabel = $qty === 1 ? '1 item' : "{$qty} items";
 
                             $rows = [
-                                "Items Subtotal · {$itemCountLabel}: ".$money($record->sub_total),
+                                "Subtotal · {$itemCountLabel}: ".$money($record->sub_total),
                             ];
 
                             $couponCode = $record->meta['coupon_code'] ?? null;
@@ -454,9 +455,9 @@ class ViewOrder extends ViewRecord
 
                             $shippingMethodName = app(ShippingService::class)
                                 ->nameFor((string) ($record->meta['shipping_method'] ?? 'standard'));
-                            $rows[] = "Shipping - {$shippingMethodName}: ".$money($record->shipping_total);
+                            $rows[] = "Shipping ({$shippingMethodName}): ".$money($record->shipping_total);
                             $rows[] = 'Estimated Taxes: '.$money($record->tax_total);
-                            $rows[] = '<strong>Order Total: '.$money($record->total).'</strong>';
+                            $rows[] = '<strong>Total: '.$moneyWithCode($record->total).'</strong>';
 
                             return '<div style="line-height: 2; margin-right: 1.5rem;">'
                                 .implode('<br>', $rows)

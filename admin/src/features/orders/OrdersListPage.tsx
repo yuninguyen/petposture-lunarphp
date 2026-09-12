@@ -37,7 +37,7 @@ export function OrdersListPage() {
               <span className="text-slate-400">—</span>
             )}
           </td>
-          <td className="px-6 py-4 text-sm font-medium">{formatOrderAmount(order.total?.decimal, order.total?.currency)}</td>
+          <td className="px-6 py-4 text-sm font-medium">{formatOrderAmount(order.total?.decimal, order.total?.currency, false)}</td>
           <td className="px-6 py-4 text-sm"><OrderPaymentDisplay order={order} /></td>
           <td className="px-6 py-4 text-sm">{order.status_label ?? order.status}</td>
           <td className="px-6 py-4 text-sm">{order.payment_status_label ?? order.payment_status}</td>

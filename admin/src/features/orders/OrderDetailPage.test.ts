@@ -7,10 +7,10 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, any>) => {
       if (key === 'orders.items_subtotal_with_count' && options?.count !== undefined) {
-        return `Items Subtotal · ${options.count} items`;
+        return `Subtotal · ${options.count} items`;
       }
       if (key === 'orders.shipping_with_method' && options?.method) {
-        return `Shipping - ${options.method}`;
+        return `Shipping (${options.method})`;
       }
       if (key === 'orders.estimated_taxes') {
         return 'Estimated Taxes';
@@ -246,15 +246,13 @@ describe('OrderDetailPage', () => {
     expect(host.querySelector('table')?.textContent).toContain('orders.unit_price');
     expect(host.querySelector('table')?.textContent).toContain('orders.subtotal');
     expect(host.querySelector('table')?.textContent).toContain('Orthopedic Bed');
-    expect(host.querySelector('table')?.textContent).toContain('USD $7.50');
-    expect(host.querySelector('table')?.textContent).toContain('USD $15.00');
-    expect(host.textContent).toContain('Items Subtotal · 2 items');
+    expect(host.querySelector('table')?.textContent).toContain('$7.50');
+    expect(host.querySelector('table')?.textContent).toContain('$15.00');
+    expect(host.textContent).toContain('Subtotal · 2 items');
     expect(host.textContent).toContain('orders.discount');
     expect(host.textContent).toContain('SAVE10');
-    expect(host.textContent).toContain('Shipping - Express');
-    expect(host.textContent).toContain('USD $0.00');
+    expect(host.textContent).toContain('Shipping (Express)');
     expect(host.textContent).toContain('Estimated Taxes');
-    expect(host.textContent).toContain('USD $2.50');
     expect(host.textContent).toContain('orders.order_total');
     expect(host.textContent).toContain('USD $12.50');
     expect(host.textContent).toContain('orders.attribution');
@@ -294,7 +292,7 @@ describe('OrderDetailPage', () => {
     host.remove();
   });
 
-  it('renders order totals with items count, shipping method, estimated taxes, and code-first money', () => {
+  it('renders order totals with items count, shipping method, estimated taxes, and code-first total', () => {
     mocks.order.lines = [
       { id: 1, type: 'product', description: 'Orthopedic Bed', quantity: 3, unit_price: 10, sub_total: 30, discount_total: 0, tax_total: 0, total: 30, image: null },
       { id: 2, type: 'product', description: 'Chew Toy', quantity: 2, unit_price: 5, sub_total: 10, discount_total: 0, tax_total: 0, total: 10, image: null },
@@ -308,12 +306,12 @@ describe('OrderDetailPage', () => {
 
     const { host, root } = renderPage();
 
-    expect(host.textContent).toContain('Items Subtotal · 5 items');
-    expect(host.textContent).toContain('USD $40.00');
-    expect(host.textContent).toContain('Shipping - Priority Express');
-    expect(host.textContent).toContain('USD $15.00');
+    expect(host.textContent).toContain('Subtotal · 5 items');
+    expect(host.textContent).toContain('$40.00');
+    expect(host.textContent).toContain('Shipping (Priority Express)');
+    expect(host.textContent).toContain('$15.00');
     expect(host.textContent).toContain('Estimated Taxes');
-    expect(host.textContent).toContain('USD $4.00');
+    expect(host.textContent).toContain('$4.00');
     expect(host.textContent).toContain('USD $59.00');
 
     act(() => root.unmount());

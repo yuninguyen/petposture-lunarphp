@@ -81,7 +81,7 @@ export function getOrderItemQuantity(lines?: OrderPresentationLineSource[] | nul
 /**
  * Format money in standard format e.g. "USD $123.45" (currency code first).
  */
-export function formatOrderAmount(value?: number | null, currency?: string | null): string {
+export function formatOrderAmount(value?: number | null, currency?: string | null, withCode = true): string {
   if (value == null || !Number.isFinite(value)) {
     return '—';
   }
@@ -97,6 +97,10 @@ export function formatOrderAmount(value?: number | null, currency?: string | nul
       maximumFractionDigits: 2,
     }).format(value);
 
+    if (!withCode) {
+      return formatted.startsWith(currencyCode) ? formatted.slice(currencyCode.length).trim() : formatted;
+    }
+
     // Some currencies format with the code directly (e.g. "USD 123.45")
     if (formatted.startsWith(currencyCode)) {
       return formatted;
@@ -104,7 +108,7 @@ export function formatOrderAmount(value?: number | null, currency?: string | nul
 
     return `${currencyCode} ${formatted}`;
   } catch {
-    return `${currencyCode} $${value.toFixed(2)}`;
+    return withCode ? `${currencyCode} $${value.toFixed(2)}` : `$${value.toFixed(2)}`;
   }
 }
 

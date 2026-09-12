@@ -49,7 +49,7 @@ final class AdminOrderPresentation
         return '—';
     }
 
-    public static function money(mixed $amount, ?string $currencyCode = 'USD'): string
+    public static function money(mixed $amount, ?string $currencyCode = 'USD', bool $withCode = true): string
     {
         $currency = strtoupper(trim((string) ($currencyCode ?: 'USD')));
         if ($currency === '') {
@@ -91,6 +91,10 @@ final class AdminOrderPresentation
             'GBP' => '£',
             default => '$',
         };
+
+        if (! $withCode) {
+            return sprintf('%s%01.2f', $symbol, $decimal);
+        }
 
         return sprintf('%s %s%01.2f', $currency, $symbol, $decimal);
     }

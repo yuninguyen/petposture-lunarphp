@@ -139,7 +139,7 @@ describe('OrdersListPage', () => {
     host.remove();
   });
 
-  it('displays debit Mastercard/4444 and USD $12.99; generic Credit Card must not appear', () => {
+  it('displays debit Mastercard/4444 and $12.99; generic Credit Card must not appear', () => {
     mocks.useOrders.mockReturnValue({
       isLoading: false,
       isError: false,
@@ -166,7 +166,7 @@ describe('OrdersListPage', () => {
 
     expect(host.textContent).toContain('Debit Card');
     expect(host.textContent).toContain('Mastercard •••• 4444');
-    expect(host.textContent).toContain('USD $12.99');
+    expect(host.textContent).toContain('$12.99');
     expect(host.textContent).not.toContain('Credit Card');
 
     act(() => root.unmount());
