@@ -67,9 +67,27 @@ docker compose -f docker-compose.prod.yml -p petposture build
 docker rm -f petposture-backend petposture-frontend >/dev/null 2>&1 || true
 docker compose -f docker-compose.prod.yml -p petposture up -d --force-recreate backend frontend
 
-sleep 5
-backend_status="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/ || echo 000)"
-frontend_status="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/ || echo 000)"
+# `curl ... || echo 000` was wrong: on a connection failure curl's -w still
+# writes "000" itself *and* the || branch fires too, concatenating into
+# "000000" -- which never equals "000" below, so a genuinely down backend
+# would silently pass this check. Overwrite the variable on failure instead
+# of appending to it. Retry briefly since FrankenPHP/Laravel cold boot can
+# take longer than a fixed sleep.
+check_status() {
+    local url="$1" status
+    for _ in 1 2 3 4 5 6; do
+        status="$(curl -s -o /dev/null -w '%{http_code}' "$url")" || status="000"
+        if [ "$status" != "000" ]; then
+            echo "$status"
+            return 0
+        fi
+        sleep 3
+    done
+    echo "000"
+}
+
+backend_status="$(check_status http://127.0.0.1:8001/)"
+frontend_status="$(check_status http://127.0.0.1:3001/)"
 echo "backend local status: $backend_status"
 echo "frontend local status: $frontend_status"
 
