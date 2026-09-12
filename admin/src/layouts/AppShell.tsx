@@ -1,226 +1,37 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation } from 'react-router-dom';
 import { logout } from '@/lib/auth';
 import { useBranding } from '@/context/BrandingContext';
-
-interface NavItem {
-  to: string;
-  label: string;
-  icon: ReactNode;
-  children?: NavItem[];
-}
-
-interface NavGroup {
-  title: string;
-  items: NavItem[];
-}
+import { getVisibleNavigation } from '@/navigation/adminNavigation';
+import { MobileAdminNav } from '@/components/navigation/MobileAdminNav';
 
 export function AppShell({ children, userName, userRoles }: { children: ReactNode; userName: string; userRoles: string[] }) {
   const { t, i18n } = useTranslation();
   const branding = useBranding();
   const location = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
   const [expandedNavGroups, setExpandedNavGroups] = useState<Record<string, boolean>>({
-    '0': true,
-    '1': true,
+    sales: true,
+    content: true,
+    catalogue: true,
   });
 
-  const NAV_GROUPS: NavGroup[] = [
-    {
-      title: t('sidebar.sales'),
-      items: [
-        ...(['super_admin', 'admin', 'staff', 'Order Manager', 'Support'].some((role) => userRoles.includes(role)) ? [{
-          to: '/orders',
-          label: t('orders.title'),
-          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7h18M6 3h12v4H6V3zm0 4h12v10H6V7zm3 4h6m-6 3h4" /></svg>,
-        }, {
-          to: '/return-requests',
-          label: t('return_requests.title'),
-          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 14l-4-4 4-4m-4 4h10a4 4 0 010 8h-1" /></svg>,
-        }] : []),
-        ...(['super_admin', 'admin', 'staff', 'Support', 'Product Manager'].some((role) => userRoles.includes(role)) ? [{
-          to: '/reviews',
-          label: t('reviews.title'),
-          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-        }] : []),
-        ...(['super_admin', 'admin', 'staff'].some((role) => userRoles.includes(role)) ? [{
-          to: '/customers',
-          label: t('customers.title'),
-          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2m18 0v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75M9 11a4 4 0 100-8 4 4 0 000 8z" /></svg>,
-        }, {
-          to: '/shipping',
-          label: t('shipping.title'),
-          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7h-9m9 5h-9m9 5h-9M7 7h.01M7 12h.01M7 17h.01" /></svg>,
-        }, {
-          to: '/discounts',
-          label: t('discounts.title'),
-          icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v8m-4-4h8M5 4h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" /></svg>,
-        }] : []),
-      ],
-    },
-    {
-      title: t('sidebar.content', 'CONTENT'),
-      items: [
-        { 
-          to: '/blog-categories', 
-          label: t('blog_categories.title', 'Blog Categories'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-            </svg>
-          )
-        },
-        { 
-          to: '/posts', 
-          label: t('nav.posts'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l6 6v10a2 2 0 01-2 2z" />
-            </svg>
-          )
-        },
-        { 
-          to: '/comments', 
-          label: t('comments.title', 'Comments'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-          )
-        },
-        { 
-          to: '/tags', 
-          label: t('tags.title', 'Tags'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-            </svg>
-          )
-        },
-        {
-          to: '/seo-social',
-          label: t('seo_social.title', 'SEO & Social'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          )
-        },
-        {
-          to: '/legal-policies',
-          label: t('pages.title', 'Legal & Policies'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          )
-        }
-      ]
-    },
-    {
-      title: t('sidebar.catalogue', 'CATALOGUE'),
-      items: [
-        {
-          to: '/products',
-          label: t('products.title', 'Products'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-          ),
-        },
-        {
-          to: '/product-types',
-          label: t('product_types.title', 'Product Types'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0-8 5-8-5m16 0-8 5m-8-5 8 5m0 0v3" />
-            </svg>
-          ),
-        },
-        {
-          to: '/custom-fields',
-          label: t('custom_fields.title', 'Custom Fields'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h10M4 18h7m6-8v8m-4-4h8" />
-            </svg>
-          ),
-        },
-        {
-          to: '/brands',
-          label: t('brands.title', 'Brands'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h10v10H7zM4 4h16v16H4z" />
-            </svg>
-          ),
-        },
-        {
-          to: '/collection-groups',
-          label: t('collection_groups.title', 'Collection Groups'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h10" />
-            </svg>
-          ),
-          children: [
-            {
-              to: '/collections',
-              label: t('collections.title', 'Collections'),
-              icon: (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v4m0 0H6a2 2 0 00-2 2v2m8-4h6a2 2 0 012 2v2m-8-4v4M2 15h4v4H2v-4zm8 0h4v4h-4v-4zm8 0h4v4h-4v-4z" />
-                </svg>
-              ),
-            },
-          ],
-        },
-        {
-          to: '/breeds',
-          label: t('breeds.title', 'Breeds'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
-            </svg>
-          ),
-        },
-        {
-          to: '/solutions',
-          label: t('solutions.title', 'Solutions'),
-          icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-          ),
-        },
-      ],
-    }
-  ];
+  const visibleNavGroups = getVisibleNavigation(userRoles);
 
-  const hasRole = (role: string) => userRoles.includes(role);
-  const isCoreAdmin = ['super_admin', 'admin', 'staff'].some(hasRole);
-  const canManageSales = isCoreAdmin || hasRole('Order Manager') || hasRole('Support');
-  const visibleNavGroups = isCoreAdmin
-    ? NAV_GROUPS
-    : hasRole('Product Manager')
-      ? NAV_GROUPS.filter((_, index) => index === 0 || index === 2)
-      : canManageSales
-        ? NAV_GROUPS.filter((_, index) => index === 0)
-        : [];
-
-  const activeNavGroupKey = String(visibleNavGroups.findIndex((group) => (
+  const activeNavGroupKey = visibleNavGroups.find((group) => (
     group.items.some((item) => (
-      location.pathname === item.to
-      || location.pathname.startsWith(`${item.to}/`)
+      location.pathname === item.path
+      || location.pathname.startsWith(`${item.path}/`)
       || item.children?.some((child) => (
-        location.pathname === child.to || location.pathname.startsWith(`${child.to}/`)
+        location.pathname === child.path || location.pathname.startsWith(`${child.path}/`)
       ))
     ))
-  )));
+  ))?.key;
 
   useEffect(() => {
-    if (activeNavGroupKey === '-1') return;
+    if (!activeNavGroupKey) return;
 
     setExpandedNavGroups((current) => (
       current[activeNavGroupKey]
@@ -229,8 +40,41 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
     ));
   }, [activeNavGroupKey]);
 
+  // Close mobile drawer on route / location change
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname, location.search]);
+
+  // Close mobile drawer on resize across md breakpoint (>= 768px)
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)');
+    const handleMediaChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      if (e.matches) {
+        setMobileNavOpen(false);
+      }
+    };
+    if (mql.matches) {
+      setMobileNavOpen(false);
+    }
+    if (mql.addEventListener) {
+      mql.addEventListener('change', handleMediaChange);
+      return () => mql.removeEventListener('change', handleMediaChange);
+    } else {
+      mql.addListener(handleMediaChange);
+      return () => mql.removeListener(handleMediaChange);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex bg-slate-50 overflow-hidden">
+      {/* Mobile Navigation Drawer */}
+      <MobileAdminNav
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        groups={visibleNavGroups}
+        userName={userName}
+        triggerRef={hamburgerRef}
+      />
       
       {/* Full-height Dark Sidebar */}
       <aside className="w-60 bg-[#1e293b] flex flex-col hidden md:flex z-40 flex-shrink-0 border-r border-[#0f172a]">
@@ -242,9 +86,10 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
         
         {/* Navigation */}
         <nav className="flex-1 py-6 flex flex-col gap-6 overflow-y-auto px-3">
-          {visibleNavGroups.map((group, groupIdx) => {
-            const groupKey = String(groupIdx);
+          {visibleNavGroups.map((group) => {
+            const groupKey = group.key;
             const expanded = expandedNavGroups[groupKey] ?? true;
+            const groupTitle = t(group.titleKey, group.fallbackTitle);
 
             return (
               <div key={groupKey} className="flex flex-col gap-1.5">
@@ -256,15 +101,15 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
                   }))}
                   className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-300"
                   aria-expanded={expanded}
-                  aria-label={t(expanded ? 'sidebar.collapse_group' : 'sidebar.expand_group', { group: group.title })}
+                  aria-label={t(expanded ? 'sidebar.collapse_group' : 'sidebar.expand_group', { group: groupTitle })}
                 >
-                  <span className="text-xs font-semibold uppercase tracking-wider">{group.title}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider">{groupTitle}</span>
                   <span className={`text-sm transition-transform ${expanded ? 'rotate-90' : ''}`}>›</span>
                 </button>
                 {expanded && group.items.map((item) => (
-                  <div key={item.to}>
+                  <div key={item.path}>
                     <NavLink
-                      to={item.to}
+                      to={item.path}
                       className={({ isActive }) =>
                         `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
                           isActive
@@ -274,14 +119,14 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
                       }
                     >
                       {item.icon}
-                      {item.label}
+                      {t(item.labelKey, item.fallbackLabel)}
                     </NavLink>
                     {item.children && (
                       <div className="ml-4 mt-1 border-l border-white/10 pl-2">
                         {item.children.map((child) => (
                           <NavLink
-                            key={child.to}
-                            to={child.to}
+                            key={child.path}
+                            to={child.path}
                             className={({ isActive }) =>
                               `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                                 isActive
@@ -291,7 +136,7 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
                             }
                           >
                             {child.icon}
-                            {child.label}
+                            {t(child.labelKey, child.fallbackLabel)}
                           </NavLink>
                         ))}
                       </div>
@@ -332,9 +177,26 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* White Topbar */}
-        <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-end sticky top-0 z-30 flex-shrink-0 shadow-sm">
-          
-          <div className="flex items-center gap-4 sm:gap-6">
+        <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 flex-shrink-0 shadow-sm">
+          {/* Mobile hamburger & branding */}
+          <div className="flex items-center gap-3 md:hidden">
+            <button
+              ref={hamburgerRef}
+              type="button"
+              onClick={() => setMobileNavOpen((prev) => !prev)}
+              className="p-2 -ml-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+              aria-label={t('navigation.open', 'Open navigation')}
+              aria-expanded={mobileNavOpen}
+              aria-controls="mobile-admin-drawer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <img src={branding.logoUrl} alt="Logo" className="h-8 w-auto object-contain" />
+          </div>
+
+          <div className="flex items-center gap-4 sm:gap-6 ml-auto">
             
             {/* Language Selector */}
             <div className="relative">

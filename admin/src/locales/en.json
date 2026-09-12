@@ -668,8 +668,8 @@
   "orders.column_reference": "Reference",
   "orders.column_customer": "Customer",
   "orders.column_total": "Total",
-  "orders.column_payment": "Payment",
-  "orders.column_status": "Status",
+  "orders.column_payment": "Payment Type",
+  "orders.column_status": "Order Status",
   "orders.column_payment_status": "Payment status",
   "orders.column_fulfillment_status": "Fulfillment status",
   "orders.column_created_at": "Created",
@@ -1056,5 +1056,13 @@
   "orders.validation_required": "Complete all required fields and select at least one item with a positive quantity.",
   "orders.saving": "Creating order...",
   "orders.error_occurred": "An error occurred while creating the order. Please try again.",
-  "orders.server_validation_error": "The server rejected one or more fields."
+  "orders.server_validation_error": "The server rejected one or more fields.",
+  "navigation.open": "Open navigation",
+  "navigation.close": "Close navigation",
+  "navigation.title": "Admin navigation",
+  "sidebar.sales": "Sales",
+  "sidebar.content": "Content",
+  "sidebar.catalogue": "Catalogue",
+  "sidebar.collapse_group": "Collapse {{group}}",
+  "sidebar.expand_group": "Expand {{group}}"
 }
