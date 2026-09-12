@@ -1,0 +1,152 @@
+import { describe, expect, it } from 'vitest';
+import {
+  ADMIN_NAV_GROUPS,
+  getVisibleNavigation,
+  isCoreAdminRole,
+  canAccessOrders,
+  canAccessReviews,
+  canAccessCatalogue,
+  AdminNavGroup,
+} from './adminNavigation';
+
+describe('admin navigation semantic authorization', () => {
+  it('correctly identifies core admin roles', () => {
+    expect(isCoreAdminRole(['super_admin'])).toBe(true);
+    expect(isCoreAdminRole(['admin'])).toBe(true);
+    expect(isCoreAdminRole(['staff'])).toBe(true);
+    expect(isCoreAdminRole(['Product Manager'])).toBe(false);
+    expect(isCoreAdminRole(['Order Manager'])).toBe(false);
+    expect(isCoreAdminRole(['Support'])).toBe(false);
+    expect(isCoreAdminRole([])).toBe(false);
+  });
+
+  it('correctly checks role capability predicates', () => {
+    // Orders / Return Requests
+    expect(canAccessOrders(['admin'])).toBe(true);
+    expect(canAccessOrders(['Order Manager'])).toBe(true);
+    expect(canAccessOrders(['Support'])).toBe(true);
+    expect(canAccessOrders(['Product Manager'])).toBe(false);
+
+    // Reviews
+    expect(canAccessReviews(['admin'])).toBe(true);
+    expect(canAccessReviews(['Support'])).toBe(true);
+    expect(canAccessReviews(['Product Manager'])).toBe(true);
+    expect(canAccessReviews(['Order Manager'])).toBe(false);
+
+    // Catalogue
+    expect(canAccessCatalogue(['admin'])).toBe(true);
+    expect(canAccessCatalogue(['Product Manager'])).toBe(true);
+    expect(canAccessCatalogue(['Order Manager'])).toBe(false);
+    expect(canAccessCatalogue(['Support'])).toBe(false);
+  });
+
+  it('exposes all groups and all items to core admin', () => {
+    const groups = getVisibleNavigation(['admin']);
+    expect(groups.map((g) => g.key)).toEqual(['sales', 'content', 'catalogue']);
+
+    const salesItems = groups.find((g) => g.key === 'sales')?.items.map((i) => i.path);
+    expect(salesItems).toEqual([
+      '/orders',
+      '/return-requests',
+      '/reviews',
+      '/customers',
+      '/shipping',
+      '/discounts',
+    ]);
+
+    const contentItems = groups.find((g) => g.key === 'content')?.items.map((i) => i.path);
+    expect(contentItems).toEqual([
+      '/blog-categories',
+      '/posts',
+      '/comments',
+      '/tags',
+      '/seo-social',
+      '/legal-policies',
+    ]);
+
+    const catalogueItems = groups.find((g) => g.key === 'catalogue')?.items.map((i) => i.path);
+    expect(catalogueItems).toEqual([
+      '/products',
+      '/product-types',
+      '/custom-fields',
+      '/brands',
+      '/collection-groups',
+      '/breeds',
+      '/solutions',
+    ]);
+  });
+
+  it('exposes only orders and return requests to Order Manager', () => {
+    const groups = getVisibleNavigation(['Order Manager']);
+    expect(groups.map((g) => g.key)).toEqual(['sales']);
+
+    const items = groups[0].items.map((i) => i.path);
+    expect(items).toEqual(['/orders', '/return-requests']);
+  });
+
+  it('exposes orders, return requests, and reviews to Support', () => {
+    const groups = getVisibleNavigation(['Support']);
+    expect(groups.map((g) => g.key)).toEqual(['sales']);
+
+    const items = groups[0].items.map((i) => i.path);
+    expect(items).toEqual(['/orders', '/return-requests', '/reviews']);
+  });
+
+  it('exposes reviews and full catalogue to Product Manager without content or orders', () => {
+    const groups = getVisibleNavigation(['Product Manager']);
+    expect(groups.map((g) => g.key)).toEqual(['sales', 'catalogue']);
+
+    const salesItems = groups.find((g) => g.key === 'sales')?.items.map((i) => i.path);
+    expect(salesItems).toEqual(['/reviews']);
+
+    const catalogueItems = groups.find((g) => g.key === 'catalogue')?.items.map((i) => i.path);
+    expect(catalogueItems).toEqual([
+      '/products',
+      '/product-types',
+      '/custom-fields',
+      '/brands',
+      '/collection-groups',
+      '/breeds',
+      '/solutions',
+    ]);
+  });
+
+  it('returns empty array for unknown or unauthorized roles', () => {
+    expect(getVisibleNavigation(['guest'])).toEqual([]);
+    expect(getVisibleNavigation([])).toEqual([]);
+  });
+
+  it('proves inserting or reordering groups does not alter role permissions', () => {
+    // Simulate inserting a new group at beginning or middle
+    const dummyNewGroup: AdminNavGroup = {
+      key: 'system',
+      titleKey: 'sidebar.system',
+      fallbackTitle: 'SYSTEM',
+      canAccess: isCoreAdminRole,
+      items: [
+        {
+          key: 'settings',
+          labelKey: 'settings.title',
+          fallbackLabel: 'Settings',
+          path: '/settings',
+          canAccess: isCoreAdminRole,
+          icon: null,
+        },
+      ],
+    };
+
+    const reorderedGroups = [dummyNewGroup, ...ADMIN_NAV_GROUPS];
+
+    // Order Manager still only gets sales with orders & return-requests regardless of array index
+    const visibleForOrderManager = reorderedGroups
+      .filter((g) => !g.canAccess || g.canAccess(['Order Manager']))
+      .map((g) => ({
+        ...g,
+        items: g.items.filter((i) => i.canAccess(['Order Manager'])),
+      }))
+      .filter((g) => g.items.length > 0);
+
+    expect(visibleForOrderManager.map((g) => g.key)).toEqual(['sales']);
+    expect(visibleForOrderManager[0].items.map((i) => i.path)).toEqual(['/orders', '/return-requests']);
+  });
+});
