@@ -158,7 +158,7 @@ export function SolutionFormPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div className="flex items-center gap-4">
           <Button variant="secondary" onClick={() => navigate('/solutions')} className="text-slate-500 hover:text-slate-900">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

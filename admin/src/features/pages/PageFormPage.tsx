@@ -223,7 +223,7 @@ export function PageFormPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <h1 className="text-lg font-bold text-ink">{isEdit ? t('pages.form_title_edit') : t('pages.form_title_new')}</h1>
           <div className="flex items-center gap-2">
             {isEdit && !isCore && (

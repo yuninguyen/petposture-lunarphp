@@ -127,7 +127,7 @@ export function BreedsListPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('breeds.title', 'Breeds')}</h1>
         <Link to="/breeds/new">
           <Button variant="primary" className="flex items-center gap-2">

@@ -85,7 +85,7 @@ export function SeoSocialPage() {
     <form onSubmit={handleSubmit(onSubmit)} className="min-h-full pb-20 relative">
       {/* Sticky Header with Save Action */}
       <div className="sticky top-0 z-10 bg-slate-50/80 backdrop-blur-md border-b border-slate-200/60 pb-4 mb-8 pt-4 px-1 -mx-4 sm:-mx-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">{t('seo_social.title')}</h1>
             <p className="text-sm text-slate-500 mt-1">{t('seo_social.description')}</p>

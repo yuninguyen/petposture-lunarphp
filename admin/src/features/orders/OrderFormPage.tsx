@@ -117,7 +117,7 @@ export function OrderFormPage() {
   }
 
   return <form onSubmit={submit} className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6">
-    <div className="flex items-center justify-between"><div><h1 className="text-2xl font-bold text-slate-900">{t('orders.create_title')}</h1><p className="mt-1 text-sm text-slate-500">{t('orders.create_subtitle')}</p></div><Button type="button" variant="secondary" onClick={() => navigate('/orders')}>{t('orders.back')}</Button></div>
+    <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between"><div><h1 className="text-2xl font-bold text-slate-900">{t('orders.create_title')}</h1><p className="mt-1 text-sm text-slate-500">{t('orders.create_subtitle')}</p></div><Button type="button" variant="secondary" onClick={() => navigate('/orders')} className="whitespace-nowrap">{t('orders.back')}</Button></div>
     {errorMessage && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{errorMessage}</div>}
     <Section title={t('orders.customer')}><Field label={t('orders.email')}><Input name="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></Field></Section>
     <Section title={t('orders.items')}>
