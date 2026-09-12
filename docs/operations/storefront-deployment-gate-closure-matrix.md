@@ -103,6 +103,42 @@ No mutation call was made; only `GET /zones/:id/rulesets`, `GET /zones/:id/rules
   - That same browser check found a **real, separate bug**: the public JSON-LD `Organization.logo` showed `https://127.0.0.1:8001/storage/...` (the SSR-internal authority) instead of a public URL. Root cause: `resolveAssetUrl()` and the existing `StorefrontAssetParityTest` both assume `ASSET_URL` env can override the asset authority via `config('app.asset_url')`, but that config key was never defined in `config/app.php` (removed from Laravel 11's trimmed skeleton) — so `ASSET_URL` had no effect no matter what it was set to. Fixed in `2ef6b8d` by adding `'asset_url' => env('ASSET_URL')` to `config/app.php`; default behavior (unset) is unchanged, preserving the tested SSR-authority-echo behavior. 129/129 relevant backend tests pass post-fix.
   - **`ASSET_URL` follow-up completed (2026-09-12).** `ASSET_URL=https://api.petposture.com` set in `/opt/petposture/backend/.env`; a new release built from `4ca850b` (containing `2ef6b8d`) deployed and the backend container restarted. Independently re-verified with a fresh chrome-devtools browser session against `https://petposture.com/` (not the deploying agent's own report): the public JSON-LD now reads `"logo":"https://api.petposture.com/storage/settings/01KTKAJDTSCX2ZW1SE9FY86R6R.png"` — no `127.0.0.1:8001` anywhere in the response. `origin/main`'s tree was checked directly (`git ls-tree`) and contains no real `.env` file, only `.env.example` templates — a claimed "accidentally committed .env" from this deploy, if it happened at all, never reached shared history.
   - Rollback digests for the pre-`0fb0844` images were recorded in `ROLLBACK_IMAGES` on the VPS before this deploy (backend/frontend digests noted by the release process); mutable `:prod` tags are still in use day-to-day, so treat the recorded digest, not the tag, as the actual rollback target.
-- Deployment gate closure now stands at: merged, pushed, deployed to production (`0fb0844`, then `4ca850b`), and the asset-authority gate item is closed with live verification. A named rollback *owner* (a person, not just a recorded digest) is still not established.
-- The deployment gate remains **NOT READY** only on that one remaining item — a named rollback owner/procedure — not on missing evidence, missing config, or an unverified fix.
+  - **Tracking-file discrepancy found and fixed (2026-09-12).** `/opt/petposture/DEPLOYED_COMMIT` and `DEPLOYED_RELEASE` still read the pre-branch `0ca5925` after two real deploys — a bookkeeping gap in whatever ad-hoc deploy commands the harnesses ran, not evidence the deploys didn't happen (confirmed real via `docker inspect`: `petposture-backend:prod` image `Created` and container `StartedAt` both `2026-09-12T06:0x`, matching the observed live behavior change). Corrected both files to point at the actual live release, `/opt/petposture-releases/4ca850b794d8f53a57fcf1de698b8dd0ec2d192d` (found via `find /opt/petposture-releases -maxdepth 1 -type d`, confirmed by its own `DEPLOYED_COMMIT` file matching `4ca850b`). Also found: this release directory has **no `ROLLBACK_IMAGES` file of its own** — the rollback-digest-recording step was skipped for this deploy (likely because it looked config-only). The valid rollback target is therefore still the pre-branch image pair recorded under the two earlier release dirs (`0fb08446...`, `49959a0a...`), both identical:
+    ```
+    backend_image=sha256:102e106e65f9a765737010b1cce5945b52c4f16fa7324dfb7b8c7f1ed02cba6b
+    frontend_image=sha256:d693306dfca651d3d57242edb877d8e1564777cafbe28bbb1ade0d7fbf2f0dbe
+    ```
+    Current live digests, for reference (confirmed via `docker image inspect ... RepoDigests`, 2026-09-12): `petposture-backend@sha256:b85a07c3b9cb4b9e340b92ea0c631400d2dc9422914c6fbd64672c860b492942`, `petposture-frontend@sha256:a3d044e68ba2e8841a8cd6f0ff59d9e7bd6a9b6603e190475327e41ce9e7d2a2` (frontend digest unchanged since `0fb0844` — expected, since the `ASSET_URL` fix was backend-config-only).
+  - **Process gap to fix going forward:** every deploy — including config-only ones — should write a fresh `ROLLBACK_IMAGES` in its own release directory (capturing the digest pair that was live immediately before *that* deploy, not just "before this branch ever touched production") and update `DEPLOYED_COMMIT`/`DEPLOYED_RELEASE` as its last step. Neither happened automatically here; both had to be caught and corrected manually.
+
+## Rollback owner and procedure
+
+**Owner:** Yuni (root access to the VPS). No second on-call/approver exists at this project's current scale — do not invent one. If a second person is added to operations later, update this section with an explicit name and how the two people divide decide-vs-execute.
+
+**When to roll back:** the live site serves a 5xx, a broken checkout/payment path, or another user-visible regression traced to this deploy — not a Cloudflare-curl-403 false positive (verify with a real browser first, see above) and not a cosmetic issue that can wait for a forward fix.
+
+**Procedure** (SSH in as `root@51.79.54.208`, confirmed digests above as of 2026-09-12):
+
+```bash
+# 1. Point the mutable :prod tags back at the last known-good images.
+docker tag petposture-backend@sha256:102e106e65f9a765737010b1cce5945b52c4f16fa7324dfb7b8c7f1ed02cba6b petposture-backend:prod
+docker tag petposture-frontend@sha256:d693306dfca651d3d57242edb877d8e1564777cafbe28bbb1ade0d7fbf2f0dbe petposture-frontend:prod
+
+# 2. Recreate the containers from those tags (config in docker-compose.prod.yml is unaffected; it lives outside the image).
+cd /opt/petposture && docker compose -f docker-compose.prod.yml up -d --force-recreate backend frontend
+
+# 3. Confirm recovery.
+curl -s -o /dev/null -w "backend %{http_code}\n" http://127.0.0.1:8001/
+curl -s -o /dev/null -w "frontend %{http_code}\n" http://127.0.0.1:3001/
+# Then verify https://petposture.com/ with a real browser, not curl (see the false-positive note above).
+
+# 4. Update tracking files to reflect the rollback (do not leave them pointing at the reverted-from release).
+echo "0ca592524da3ced41d3029b0647a064358bbc15e" > /opt/petposture/DEPLOYED_COMMIT
+echo "deployed_release=/opt/petposture-releases/0ca592524da3ced41d3029b0647a064358bbc15e" > /opt/petposture/DEPLOYED_RELEASE
+```
+
+This reverts to the pre-branch state entirely (skips any intermediate state between `0ca5925` and `4ca850b`), which is acceptable here since there is no recorded intermediate rollback point (see the process gap above) and the whole branch was reviewed/deployed as one unit.
+
+- Deployment gate closure now stands at: merged, pushed, deployed to production (`0fb0844`, then `4ca850b`), the asset-authority gate item closed with live verification, tracking-file discrepancy found and corrected, and a rollback owner/procedure now documented above.
+- The deployment gate can be considered **READY** for this branch's scope. Remaining open item is process hygiene, not a blocker: future deploys should write their own `ROLLBACK_IMAGES` and update `DEPLOYED_COMMIT`/`DEPLOYED_RELEASE` automatically rather than requiring manual discovery like this session's.
 - This document itself grants no production access or mutation permission beyond what is explicitly logged above. No Cloudflare rule, migration, restart, or deploy action was performed.
