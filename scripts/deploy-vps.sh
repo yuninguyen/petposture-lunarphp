@@ -56,6 +56,15 @@ EOF
 
 cd "$RELEASE_DIR"
 docker compose -f docker-compose.prod.yml -p petposture build
+
+# docker-compose.prod.yml pins fixed container_name values. If the running
+# containers were started under a different (or no) Compose project label
+# -- as every prior manual deploy did -- Compose won't recognize them as
+# "its own" and refuses to replace them, erroring on a name conflict
+# instead. Since names are already fixed and globally unique, drop
+# ownership tracking entirely: remove any container with these exact names
+# before creating fresh ones, regardless of which project (if any) made them.
+docker rm -f petposture-backend petposture-frontend >/dev/null 2>&1 || true
 docker compose -f docker-compose.prod.yml -p petposture up -d --force-recreate backend frontend
 
 sleep 5
