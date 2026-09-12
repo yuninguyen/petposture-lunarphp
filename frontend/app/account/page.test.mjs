@@ -24,7 +24,7 @@ const collapsedOrderSummary = between(
 );
 const expandedTotals = between(
     accountSource,
-    '<div className="pt-3 border-t border-zinc-100 space-y-1 text-sm">',
+    '<div className="pt-3 border-t border-zinc-100',
     "{returnEligibility(order) === 'open'",
     'expanded order totals',
 );
@@ -52,6 +52,39 @@ const separateBillingPayload = between(
     'return { shippingAddress, billingAddress };',
     'separate billing payload',
 );
+const addressesTab = between(
+    accountSource,
+    "tab === 'addresses' ? (",
+    '<div className="grid sm:grid-cols-2 gap-6 text-[14px] text-primary">',
+    'addresses tab',
+);
+
+test('address list renders an edit action that pre-fills the form', () => {
+    assert.match(addressesTab, /onClick=\{\(\) => handleEditAddress\(addr\)\}/);
+    assert.match(addressesTab, /<Pencil size=\{16\}/);
+    assert.match(accountSource, /first_name: addr\.first_name[\s\S]*line_two: addr\.line_two \?\? ''[\s\S]*phone: addr\.phone \?\? ''/);
+    assert.match(accountSource, /setEditingAddressId\(addr\.id\)[\s\S]*setShowAddressForm\(true\)/);
+});
+
+test('address form submission branches PUT vs POST on editingAddressId', () => {
+    assert.match(accountSource, /const handleSubmitAddress = async/);
+    assert.match(
+        accountSource,
+        /editingAddressId \? `\/api\/me\/addresses\/\$\{editingAddressId\}` : '\/api\/me\/addresses'/,
+    );
+    assert.match(accountSource, /method: editingAddressId \? 'PUT' : 'POST'/);
+    assert.match(accountSource, /editingAddressId[\s\S]*prev\.map\(\(a\) => \(a\.id === editingAddressId \? data\.data : a\)\)[\s\S]*\[\.\.\.prev, data\.data\]/);
+});
+
+test('address form heading and submit label reflect edit mode', () => {
+    assert.match(addressesTab, /\{editingAddressId \? 'Edit Address' : 'New Address'\}/);
+    assert.match(addressesTab, /editingAddressId \? 'Update Address' : 'Save Address'/);
+});
+
+test('closing the address form resets editingAddressId', () => {
+    assert.match(addressesTab, /setShowAddressForm\(false\);[\s\S]*setEditingAddressId\(null\);[\s\S]*setAddressForm\(emptyAddressForm\)/);
+    assert.match(addressesTab, /setAddressForm\(emptyAddressForm\);[\s\S]*setEditingAddressId\(null\);[\s\S]*setShowAddressForm\(true\)/);
+});
 
 function jsxButtons(source) {
     const sourceFile = ts.createSourceFile('contract.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
@@ -93,6 +126,43 @@ function hasTrueDisabled(openingElement) {
     if (!disabled.initializer) return true;
     return ts.isJsxExpression(disabled.initializer)
         && disabled.initializer.expression?.kind === ts.SyntaxKind.TrueKeyword;
+}
+
+function hasSummaryRowsInsideNarrowColumn(source) {
+    const sourceFile = ts.createSourceFile('summary-contract.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    let summaryColumn;
+
+    function findSummaryColumn(node) {
+        if (ts.isJsxElement(node) && node.openingElement.tagName.getText(sourceFile) === 'div') {
+            const className = attribute(node.openingElement, 'className');
+            if (className?.initializer && ts.isStringLiteral(className.initializer)
+                && className.initializer.text === 'ml-auto max-w-[260px] space-y-1') {
+                summaryColumn = node;
+                return;
+            }
+        }
+        ts.forEachChild(node, findSummaryColumn);
+    }
+
+    findSummaryColumn(sourceFile);
+    if (!summaryColumn) return false;
+
+    const descendantSpans = [];
+    function collectSpans(node) {
+        if (ts.isJsxElement(node) && node.openingElement.tagName.getText(sourceFile) === 'span') {
+            descendantSpans.push(node.getText(sourceFile));
+        }
+        ts.forEachChild(node, collectSpans);
+    }
+    collectSpans(summaryColumn);
+
+    return [
+        'Subtotal &middot; {itemCount(order)}',
+        '<span>Discount</span>',
+        '<span>Shipping ({order.shipping_label})</span>',
+        '<span>Estimated Taxes</span>',
+        '<span>Total</span>',
+    ].every((label) => descendantSpans.some((span) => span.includes(label)));
 }
 
 function activeButtonContract(source) {
@@ -153,4 +223,18 @@ test('expanded totals use the exact plural Estimated Taxes label', () => {
 
 test('expanded totals retain the quantity-based subtotal label', () => {
     assert.match(expandedTotals, /Subtotal &middot; \{itemCount\(order\)\}/);
+});
+
+test('shipping summary row uses "Shipping (method)" format', () => {
+    assert.match(expandedTotals, /<span>Shipping \(\{order\.shipping_label\}\)<\/span>/);
+});
+
+test('summary rows are wrapped in a narrow right-aligned column', () => {
+    const emptyWrapperMutation = expandedTotals.replace(
+        '<div className="ml-auto max-w-[260px] space-y-1">',
+        '<div className="ml-auto max-w-[260px] space-y-1"></div><div>',
+    );
+
+    assert.equal(hasSummaryRowsInsideNarrowColumn(expandedTotals), true);
+    assert.equal(hasSummaryRowsInsideNarrowColumn(emptyWrapperMutation), false);
 });

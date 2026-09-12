@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { fetchApi, fetchJson } from '@/lib/fetchApi';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Package, MapPin, User as UserIcon, LogOut, Trash2, Plus, X, ChevronDown } from 'lucide-react';
+import { Package, MapPin, User as UserIcon, LogOut, Trash2, Pencil, Plus, X, ChevronDown } from 'lucide-react';
 
 type Tab = 'orders' | 'addresses' | 'profile';
 
@@ -140,6 +140,7 @@ export default function AccountPage() {
     const [showAddressForm, setShowAddressForm] = useState(false);
     const [addressForm, setAddressForm] = useState(emptyAddressForm);
     const [savingAddress, setSavingAddress] = useState(false);
+    const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
     const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
     const [returnAccessOrderId, setReturnAccessOrderId] = useState<string | null>(null);
 
@@ -163,21 +164,44 @@ export default function AccountPage() {
             .finally(() => setLoading(false));
     }, [authLoading, user, router]);
 
-    const handleAddAddress = async (e: React.FormEvent) => {
+    const handleEditAddress = (addr: Address) => {
+        setAddressForm({
+            first_name: addr.first_name,
+            last_name: addr.last_name,
+            line_one: addr.line_one,
+            line_two: addr.line_two ?? '',
+            city: addr.city,
+            state: addr.state,
+            postcode: addr.postcode,
+            phone: addr.phone ?? '',
+        });
+        setEditingAddressId(addr.id);
+        setShowAddressForm(true);
+    };
+
+    const handleSubmitAddress = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
         setSavingAddress(true);
 
         try {
-            const res = await fetchApi('/api/me/addresses', {
-                method: 'POST',
-                body: addressForm,
-            });
+            const res = await fetchApi(
+                editingAddressId ? `/api/me/addresses/${editingAddressId}` : '/api/me/addresses',
+                {
+                    method: editingAddressId ? 'PUT' : 'POST',
+                    body: addressForm,
+                },
+            );
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Failed to save address.');
-            setAddresses((prev) => [...prev, data.data]);
+            setAddresses((prev) =>
+                editingAddressId
+                    ? prev.map((a) => (a.id === editingAddressId ? data.data : a))
+                    : [...prev, data.data],
+            );
             setAddressForm(emptyAddressForm);
             setShowAddressForm(false);
+            setEditingAddressId(null);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save address.');
         } finally {
@@ -383,14 +407,16 @@ export default function AccountPage() {
                                                                 ))}
                                                             </div>
 
-                                                            <div className="pt-3 border-t border-zinc-100 space-y-1 text-sm">
-                                                                <div className="flex justify-between text-zinc-500"><span>Subtotal &middot; {itemCount(order)} item{itemCount(order) === 1 ? '' : 's'}</span><span>${order.sub_total.toFixed(2)}</span></div>
-                                                                {order.discount_total > 0 && (
-                                                                    <div className="flex justify-between text-zinc-500"><span>Discount</span><span>-${order.discount_total.toFixed(2)}</span></div>
-                                                                )}
-                                                                <div className="flex justify-between text-zinc-500"><span>Shipping - {order.shipping_label}</span><span>{order.shipping_total === 0 ? 'Free' : `$${order.shipping_total.toFixed(2)}`}</span></div>
-                                                                <div className="flex justify-between text-zinc-500"><span>Estimated Taxes</span><span>${order.tax_total.toFixed(2)}</span></div>
-                                                                <div className="flex justify-between font-bold text-primary pt-1"><span>Total</span><span><span className="mr-1 text-xs font-medium text-zinc-400">{order.currency}</span>{order.total.formatted}</span></div>
+                                                            <div className="pt-3 border-t border-zinc-100 text-sm">
+                                                                <div className="ml-auto max-w-[260px] space-y-1">
+                                                                    <div className="flex justify-between text-zinc-500"><span>Subtotal &middot; {itemCount(order)} item{itemCount(order) === 1 ? '' : 's'}</span><span>${order.sub_total.toFixed(2)}</span></div>
+                                                                    {order.discount_total > 0 && (
+                                                                        <div className="flex justify-between text-zinc-500"><span>Discount</span><span>-${order.discount_total.toFixed(2)}</span></div>
+                                                                    )}
+                                                                    <div className="flex justify-between text-zinc-500"><span>Shipping ({order.shipping_label})</span><span>{order.shipping_total === 0 ? 'Free' : `$${order.shipping_total.toFixed(2)}`}</span></div>
+                                                                    <div className="flex justify-between text-zinc-500"><span>Estimated Taxes</span><span>${order.tax_total.toFixed(2)}</span></div>
+                                                                    <div className="flex justify-between font-bold text-primary pt-1"><span>Total</span><span><span className="mr-1 text-xs font-medium text-zinc-400">{order.currency}</span>{order.total.formatted}</span></div>
+                                                                </div>
                                                             </div>
 
                                                             {returnEligibility(order) === 'open' && (
@@ -439,21 +465,38 @@ export default function AccountPage() {
                                                 <p className="text-zinc-500">{addr.city}, {addr.state} {addr.postcode}</p>
                                                 {addr.phone && <p className="text-zinc-500">{addr.phone}</p>}
                                             </div>
-                                            <button
-                                                onClick={() => handleDeleteAddress(addr.id)}
-                                                className="text-zinc-400 hover:text-red-500 transition-colors"
-                                                title="Delete address"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={() => handleEditAddress(addr)}
+                                                    className="text-zinc-400 hover:text-primary transition-colors"
+                                                    title="Edit address"
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteAddress(addr.id)}
+                                                    className="text-zinc-400 hover:text-red-500 transition-colors"
+                                                    title="Delete address"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
 
                                     {showAddressForm ? (
-                                        <form onSubmit={handleAddAddress} className="border border-zinc-100 rounded-xl p-4 space-y-3">
+                                        <form onSubmit={handleSubmitAddress} className="border border-zinc-100 rounded-xl p-4 space-y-3">
                                             <div className="flex items-center justify-between">
-                                                <p className="font-bold text-sm text-primary uppercase tracking-wide">New Address</p>
-                                                <button type="button" onClick={() => setShowAddressForm(false)} className="text-zinc-400 hover:text-primary">
+                                                <p className="font-bold text-sm text-primary uppercase tracking-wide">{editingAddressId ? 'Edit Address' : 'New Address'}</p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setShowAddressForm(false);
+                                                        setEditingAddressId(null);
+                                                        setAddressForm(emptyAddressForm);
+                                                    }}
+                                                    className="text-zinc-400 hover:text-primary"
+                                                >
                                                     <X size={16} />
                                                 </button>
                                             </div>
@@ -474,12 +517,16 @@ export default function AccountPage() {
                                                 disabled={savingAddress}
                                                 className="bg-secondary text-ink px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide hover:bg-secondary-dark disabled:opacity-50 transition-colors"
                                             >
-                                                {savingAddress ? 'Saving...' : 'Save Address'}
+                                                {savingAddress ? 'Saving...' : editingAddressId ? 'Update Address' : 'Save Address'}
                                             </button>
                                         </form>
                                     ) : (
                                         <button
-                                            onClick={() => setShowAddressForm(true)}
+                                            onClick={() => {
+                                                setAddressForm(emptyAddressForm);
+                                                setEditingAddressId(null);
+                                                setShowAddressForm(true);
+                                            }}
                                             className="flex items-center gap-2 text-sm font-bold text-rust hover:text-rust transition-colors"
                                         >
                                             <Plus size={16} /> Add New Address
