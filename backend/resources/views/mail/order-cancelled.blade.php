@@ -19,12 +19,19 @@
     $isRefunded = ($meta['refund_status'] ?? null) === 'refunded';
 
     $shippingTotal = $moneyValue($order->shipping_total);
-    if ($shippingTotal <= 0) {
-        $shippingLine = $order->lines->firstWhere('type', 'shipping');
-        if ($shippingLine) {
-            $shippingTotal = $moneyValue($shippingLine->total);
-        }
+    $shippingLine = $order->lines->firstWhere('type', 'shipping');
+    if ($shippingTotal <= 0 && $shippingLine) {
+        $shippingTotal = $moneyValue($shippingLine->total);
     }
+
+    $shippingMethodRaw = $meta['shipping_method'] ?? null;
+    $shippingMethodLabel = $shippingLine?->description
+        ?: ($shippingMethodRaw
+            ? (\App\Models\ShippingMethod::where('code', $shippingMethodRaw)->value('name')
+                ?? ucwords(str_replace(['_', '-'], ' ', $shippingMethodRaw)))
+            : 'Standard');
+
+    $itemCount = $productLines->sum('quantity');
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -137,24 +144,15 @@ ${{ number_format($lineTotal, 2) }}
 <td></td>
 <td width="260" valign="top" class="full-col">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-<tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Subtotal</td>
-<td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; font-weight:700; color:#1a1a1a;">${{ number_format($subTotal, 2) }}</td>
-</tr>
-@if($discountTotal > 0)
-<tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Discount{{ $couponCode ? ' (' . strtoupper($couponCode) . ')' : '' }}</td>
-<td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#df8448;">&minus;${{ number_format($discountTotal, 2) }}</td>
-</tr>
-@endif
-<tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Shipping</td>
-<td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; font-weight:700; color:#1a1a1a;">{{ $shippingTotal > 0 ? '$' . number_format($shippingTotal, 2) : 'Free' }}</td>
-</tr>
-<tr>
-<td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; color:#707070;">Taxes</td>
-<td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:4px 0; font-size:14px; font-weight:700; color:#1a1a1a;">${{ number_format($taxTotal, 2) }}</td>
-</tr>
+@include('mail.partials.order-summary-rows', [
+    'itemCount' => $itemCount,
+    'subTotal' => $subTotal,
+    'discountTotal' => $discountTotal,
+    'couponCode' => $couponCode,
+    'shippingTotal' => $shippingTotal,
+    'shippingMethodLabel' => $shippingMethodLabel,
+    'taxTotal' => $taxTotal,
+])
 </table>
 </td>
 </tr>
@@ -171,7 +169,7 @@ ${{ number_format($lineTotal, 2) }}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:15px; font-weight:700; color:#1a1a1a;">Total</td>
-<td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:20px; font-weight:700; color:#1a1a1a;">${{ number_format($total, 2) }} <span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:12px; font-weight:400; color:#9a9a9a;">USD</span></td>
+<td align="right" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:20px; font-weight:700; color:#1a1a1a;"><span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:12px; font-weight:400; color:#9a9a9a;">{{ $order->currency_code ?? 'USD' }}</span> ${{ number_format($total, 2) }}</td>
 </tr>
 </table>
 </td>
