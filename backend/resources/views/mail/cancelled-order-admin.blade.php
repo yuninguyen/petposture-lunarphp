@@ -41,6 +41,7 @@
 <meta name="format-detection" content="telephone=no,address=no,email=no,date=no">
 <title>{{ config('app.name') }}</title>
 <style>
+.no-autolink a { color: inherit !important; text-decoration: none !important; cursor: default !important; }
 @media only screen and (max-width:600px) {
   .stack-col { display:block !important; width:100% !important; }
   .stack-gap { padding-bottom:20px !important; }

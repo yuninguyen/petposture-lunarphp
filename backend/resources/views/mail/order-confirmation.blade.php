@@ -60,6 +60,7 @@
 <meta name="format-detection" content="telephone=no,address=no,email=no,date=no">
 <title>{{ config('app.name') }}</title>
 <style>
+.no-autolink a { color: inherit !important; text-decoration: none !important; cursor: default !important; }
 @media only screen and (max-width:600px) {
   .stack-col { display:block !important; width:100% !important; }
   .stack-gap { padding-bottom:20px !important; }
@@ -226,7 +227,7 @@ ${{ number_format($lineTotal, 2) }}
 <tr>
 <td width="50%" valign="top" class="stack-col stack-gap">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 8px; font-size:14px; font-weight:500; color:#1a1a1a;">Shipping address</p>
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#707070;">
+<p class="no-autolink" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#707070;">
 {{ $order->shippingAddress?->first_name }} {{ $order->shippingAddress?->last_name }}<br>
 {{ $order->shippingAddress?->line_one }}<br>
 @if($order->shippingAddress?->line_two)
@@ -241,7 +242,7 @@ ${{ number_format($lineTotal, 2) }}
 </td>
 <td width="50%" valign="top" class="stack-col">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 8px; font-size:14px; font-weight:500; color:#1a1a1a;">Billing address</p>
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#707070;">
+<p class="no-autolink" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; line-height:1.6; color:#707070;">
 {{ ($order->billingAddress ?? $order->shippingAddress)?->first_name }} {{ ($order->billingAddress ?? $order->shippingAddress)?->last_name }}<br>
 {{ ($order->billingAddress ?? $order->shippingAddress)?->line_one }}<br>
 @if(($order->billingAddress ?? $order->shippingAddress)?->line_two)

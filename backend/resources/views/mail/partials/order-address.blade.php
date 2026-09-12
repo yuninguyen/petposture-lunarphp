@@ -3,6 +3,7 @@
     $countryName = $address?->country?->name ?? 'United States';
 @endphp
 @if($address)
+<span class="no-autolink">
 {{ $address->first_name }} {{ $address->last_name }}<br>
 {{ $address->line_one }}<br>
 @if(!empty($address->line_two))
@@ -13,4 +14,5 @@
 @if(!empty($address->contact_phone))
 <br>{{ $address->contact_phone }}
 @endif
+</span>
 @endif
