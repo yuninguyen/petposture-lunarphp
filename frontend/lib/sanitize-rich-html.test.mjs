@@ -23,3 +23,23 @@ for (const [surface, componentUrl] of Object.entries(surfaces)) {
         assert.doesNotMatch(sanitized, /<iframe/i);
     });
 }
+
+test("allows the pp-cta-* class values and their inline style, stripping any other class/style", () => {
+    const withAllowedClass = sanitizeRichHtml('<a href="/shop" class="pp-cta-primary" style="background-color:#df8448">Shop now</a>');
+    assert.match(withAllowedClass, /class="pp-cta-primary"/);
+    assert.match(withAllowedClass, /style="background-color:#df8448"/);
+
+    const withPillClass = sanitizeRichHtml('<a href="/shop" class="pp-cta-pill" style="border-color:#c9713a">Shop now</a>');
+    assert.match(withPillClass, /class="pp-cta-pill"/);
+    assert.match(withPillClass, /style="border-color:#c9713a"/);
+
+    const withArbitraryClass = sanitizeRichHtml('<a href="/shop" class="evil-tracker pp-cta-primary">Shop now</a>');
+    assert.match(withArbitraryClass, /class="pp-cta-primary"/);
+    assert.doesNotMatch(withArbitraryClass, /evil-tracker/);
+
+    const withOnlyDisallowedClass = sanitizeRichHtml('<a href="/shop" class="some-other-class">Shop now</a>');
+    assert.doesNotMatch(withOnlyDisallowedClass, /class=/);
+
+    const styleWithoutCtaClass = sanitizeRichHtml('<p style="color:red">not a cta</p>');
+    assert.doesNotMatch(styleWithoutCtaClass, /style=/);
+});
