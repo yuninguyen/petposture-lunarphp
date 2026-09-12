@@ -13,7 +13,7 @@ vi.mock('./features/customers/CustomerDetailPage', () => ({ CustomerDetailPage: 
 vi.mock('./features/discounts/DiscountsListPage', () => ({ DiscountsListPage: () => createElement('div', null, 'Discounts route') }));
 vi.mock('./features/discounts/DiscountFormPage', () => ({ DiscountFormPage: () => createElement('div', null, 'Discount form route') }));
 
-import { AppRoutes, canDeleteReviews, canManageCommerce, canManageCustomers, canManageDiscounts, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute } from './App';
+import { AppRoutes, canDeleteReviews, canManageCommerce, canManageCustomers, canManageDiscounts, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute, ADMIN_HOME_CANDIDATES, HomeRouteCandidate } from './App';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -201,5 +201,36 @@ describe('commerce admin role handling', () => {
 
     act(() => root.unmount());
     host.remove();
+  });
+});
+
+describe('admin home route resolution', () => {
+  it.each([
+    ['super_admin', ['super_admin'], '/posts'],
+    ['admin', ['admin'], '/posts'],
+    ['staff', ['staff'], '/posts'],
+    ['Product Manager', ['Product Manager'], '/products'],
+    ['Order Manager', ['Order Manager'], '/orders'],
+    ['Support', ['Support'], '/orders'],
+  ])('routes role %s to its expected home destination %s', (_role, userRoles, expectedRoute) => {
+    expect(getAdminHomeRoute(userRoles)).toBe(expectedRoute);
+  });
+
+  it('supports future dashboard route for core admin without altering specialized homes', () => {
+    const isCoreAdmin = (roles: string[]) => roles.some((r) => ['super_admin', 'admin', 'staff'].includes(r));
+    const futureCandidates: HomeRouteCandidate[] = [
+      {
+        path: '/dashboard',
+        canAccess: isCoreAdmin,
+      },
+      ...ADMIN_HOME_CANDIDATES,
+    ];
+
+    expect(getAdminHomeRoute(['admin'], futureCandidates)).toBe('/dashboard');
+    expect(getAdminHomeRoute(['super_admin'], futureCandidates)).toBe('/dashboard');
+    expect(getAdminHomeRoute(['staff'], futureCandidates)).toBe('/dashboard');
+    expect(getAdminHomeRoute(['Product Manager'], futureCandidates)).toBe('/products');
+    expect(getAdminHomeRoute(['Order Manager'], futureCandidates)).toBe('/orders');
+    expect(getAdminHomeRoute(['Support'], futureCandidates)).toBe('/orders');
   });
 });

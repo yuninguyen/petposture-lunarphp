@@ -668,8 +668,8 @@
   "orders.column_reference": "Mã đơn",
   "orders.column_customer": "Khách hàng",
   "orders.column_total": "Tổng tiền",
-  "orders.column_payment": "Thanh toán",
-  "orders.column_status": "Trạng thái",
+  "orders.column_payment": "Hình thức thanh toán",
+  "orders.column_status": "Trạng thái đơn hàng",
   "orders.column_payment_status": "Trạng thái thanh toán",
   "orders.column_fulfillment_status": "Trạng thái giao hàng",
   "orders.column_created_at": "Ngày tạo",
@@ -1056,5 +1056,13 @@
   "orders.validation_required": "Hoàn tất các trường bắt buộc và chọn ít nhất một sản phẩm với số lượng dương.",
   "orders.saving": "Đang tạo đơn hàng...",
   "orders.error_occurred": "Đã xảy ra lỗi khi tạo đơn hàng. Vui lòng thử lại.",
-  "orders.server_validation_error": "Máy chủ đã từ chối một hoặc nhiều trường."
+  "orders.server_validation_error": "Máy chủ đã từ chối một hoặc nhiều trường.",
+  "navigation.open": "Mở điều hướng",
+  "navigation.close": "Đóng điều hướng",
+  "navigation.title": "Điều hướng quản trị",
+  "sidebar.sales": "Bán hàng",
+  "sidebar.content": "Nội dung",
+  "sidebar.catalogue": "Danh mục",
+  "sidebar.collapse_group": "Thu gọn {{group}}",
+  "sidebar.expand_group": "Mở rộng {{group}}"
 }

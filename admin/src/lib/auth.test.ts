@@ -14,10 +14,14 @@ describe('session authentication', () => {
   it('scopes navigation for business roles', () => {
     const appSource = readFileSync('src/App.tsx', 'utf8');
     const shellSource = readFileSync('src/layouts/AppShell.tsx', 'utf8');
+    const navSource = readFileSync('src/navigation/adminNavigation.tsx', 'utf8');
 
     expect(appSource).toContain('userRoles={user?.roles ?? []}');
-    expect(shellSource).toContain("hasRole('Product Manager')");
+    // Role-scoping moved from ad-hoc hasRole() checks in AppShell into named
+    // capability predicates in the single shared navigation source.
+    expect(shellSource).toContain('getVisibleNavigation(userRoles)');
     expect(shellSource).toContain('visibleNavGroups');
+    expect(navSource).toContain("'Product Manager'");
   });
 
   it('recognizes every backend admin-panel role', () => {

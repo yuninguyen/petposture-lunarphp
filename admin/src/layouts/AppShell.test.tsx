@@ -1,7 +1,7 @@
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en', changeLanguage: vi.fn() } }),
@@ -11,6 +11,25 @@ import { AppShell } from './AppShell';
 import { BrandingContext } from '@/context/BrandingContext';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+// jsdom does not implement matchMedia; AppShell's resize-to-desktop
+// auto-close effect calls it unconditionally on mount.
+beforeEach(() => {
+  vi.stubGlobal('matchMedia', vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function renderShell(userRoles: string[], logoUrl = '/logo.png') {
   const host = document.createElement('div');
@@ -78,6 +97,35 @@ describe('AppShell sales navigation', () => {
     const shell = renderShell(userRoles);
 
     expect(shell.host.querySelector('a[href="/reviews"]') !== null).toBe(visible);
+
+    act(() => shell.root.unmount());
+    shell.host.remove();
+  });
+});
+
+describe('AppShell mobile navigation', () => {
+  it('renders hamburger button with accessibility attributes and toggles drawer', () => {
+    const shell = renderShell(['admin']);
+    const hamburger = shell.host.querySelector('button[aria-controls="mobile-admin-drawer"]') as HTMLButtonElement;
+    expect(hamburger).not.toBeNull();
+    expect(hamburger.getAttribute('aria-label')).toBe('navigation.open');
+    expect(hamburger.getAttribute('aria-expanded')).toBe('false');
+
+    expect(shell.host.querySelector('#mobile-admin-drawer')).toBeNull();
+
+    act(() => {
+      hamburger.click();
+    });
+
+    expect(hamburger.getAttribute('aria-expanded')).toBe('true');
+    expect(shell.host.querySelector('#mobile-admin-drawer')).not.toBeNull();
+
+    act(() => {
+      hamburger.click();
+    });
+
+    expect(hamburger.getAttribute('aria-expanded')).toBe('false');
+    expect(shell.host.querySelector('#mobile-admin-drawer')).toBeNull();
 
     act(() => shell.root.unmount());
     shell.host.remove();
