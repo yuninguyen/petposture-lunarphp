@@ -180,11 +180,30 @@ export function canRefundOrders(userRoles: string[]) {
   return isCoreAdministrator(userRoles) || userRoles.includes('Order Manager');
 }
 
-export function getAdminHomeRoute(userRoles: string[]) {
-  const isCoreAdmin = isCoreAdministrator(userRoles);
-  const canManageProducts = isCoreAdmin || userRoles.includes('Product Manager');
-  if (canManageCommerce(userRoles) && !isCoreAdmin && !canManageProducts) return '/orders';
-  return canManageProducts && !isCoreAdmin ? '/products' : '/posts';
+export interface HomeRouteCandidate {
+  path: string;
+  canAccess: (roles: string[]) => boolean;
+}
+
+export const ADMIN_HOME_CANDIDATES: HomeRouteCandidate[] = [
+  {
+    path: '/products',
+    canAccess: (roles) => !isCoreAdministrator(roles) && roles.includes('Product Manager'),
+  },
+  {
+    path: '/orders',
+    canAccess: (roles) => !isCoreAdministrator(roles) && (roles.includes('Order Manager') || roles.includes('Support')),
+  },
+  {
+    path: '/posts',
+    canAccess: (roles) => isCoreAdministrator(roles),
+  },
+];
+
+export function getAdminHomeRoute(userRoles: string[], customCandidates?: HomeRouteCandidate[]) {
+  const candidates = customCandidates ?? ADMIN_HOME_CANDIDATES;
+  const match = candidates.find((candidate) => candidate.canAccess(userRoles));
+  return match?.path ?? '/posts';
 }
 
 export function AppRoutes({ userRoles }: { userRoles: string[] }) {
