@@ -5,6 +5,7 @@ export type ComparisonItem = {
     id?: string;
     product_name: string;
     image_url?: string | null;
+    image_alt?: string | null;
     retailer: string;
     retailer_label?: string | null;
     retailer_logo?: string | null;
@@ -83,7 +84,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
                 {item.image_url ? (
                     <Image
                         src={item.image_url}
-                        alt={item.product_name}
+                        alt={item.image_alt?.trim() || item.product_name}
                         fill
                         sizes="(max-width: 768px) 100vw, 33vw"
                         className="object-cover"

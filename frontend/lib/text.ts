@@ -32,3 +32,14 @@ export function withTableOfContents(html: string): { html: string; items: TocIte
 
     return { html: processedHtml, items };
 }
+
+export function withResponsiveTables(html: string): string {
+    if (!html || typeof html !== 'string' || !html.includes('<table')) {
+        return html;
+    }
+
+    return html.replace(/<table\b[\s\S]*?<\/table>/gi, (tableHtml) => {
+        return `<div class="rich-table-scroll" role="region" aria-label="Scrollable data table" tabindex="0">${tableHtml}</div>`;
+    });
+}
+

@@ -4,12 +4,12 @@ const allowedTags = [
     "p", "br", "strong", "b", "em", "i", "u", "s", "blockquote",
     "ul", "ol", "li", "h1", "h2", "h3", "h4", "h5", "h6", "a", "img",
     "figure", "figcaption", "pre", "code", "hr", "table", "thead", "tbody",
-    "tr", "th", "td",
+    "tr", "th", "td", "colgroup", "col",
 ];
 
 const allowedAttributes = [
     "href", "title", "rel", "src", "alt", "width", "height",
-    "loading", "colspan", "rowspan", "scope", "class", "style",
+    "loading", "colspan", "rowspan", "scope", "colwidth", "class", "style",
 ];
 
 // The only class values editorial content is allowed to set -- matches the
@@ -18,7 +18,14 @@ const allowedAttributes = [
 // opening up arbitrary class injection.
 const ALLOWED_CLASSES = new Set(["pp-cta-primary", "pp-cta-pill"]);
 
+// DOMPurify still runs its own built-in per-tag/attribute validation after
+// uponSanitizeAttribute returns, unless forceKeepAttr is set explicitly.
+// Without it, table-metadata attributes (width/colwidth/scope/etc.) get
+// silently dropped again once multiple attrName branches exist in this hook,
+// even though keepAttr was never set to false for them.
 DOMPurify.addHook("uponSanitizeAttribute", (node, data) => {
+    const tagName = (node.nodeName || (node as Element).tagName || "").toLowerCase();
+
     if (data.attrName === "class") {
         data.attrValue = data.attrValue
             .split(/\s+/)
@@ -38,6 +45,34 @@ DOMPurify.addHook("uponSanitizeAttribute", (node, data) => {
         if (!hasCtaClass) {
             data.keepAttr = false;
         }
+        return;
+    }
+
+    if (data.attrName === "width") {
+        const validOnTableOrCol = (tagName === "table" || tagName === "col")
+            && /^\d+(?:px|%)?$/i.test(data.attrValue.trim());
+        const validOnImg = tagName === "img" && /^\d+(?:px)?$/i.test(data.attrValue.trim());
+        if (validOnTableOrCol || validOnImg) {
+            data.forceKeepAttr = true;
+        } else {
+            data.keepAttr = false;
+        }
+        return;
+    }
+
+    if (data.attrName === "colwidth") {
+        const validOnTableCell = (tagName === "th" || tagName === "td" || tagName === "col")
+            && /^\d+(?:,\d+)*$/.test(data.attrValue.trim());
+        if (validOnTableCell) {
+            data.forceKeepAttr = true;
+        } else {
+            data.keepAttr = false;
+        }
+        return;
+    }
+
+    if (data.attrName === "colspan" || data.attrName === "rowspan" || data.attrName === "scope") {
+        data.forceKeepAttr = true;
     }
 });
 
