@@ -18,24 +18,23 @@
     $total = $moneyValue($order->total);
     $couponCode = $meta['coupon_code'] ?? null;
 
+    $shippingLine = $order->lines->firstWhere('type', 'shipping');
     $shippingTotal = $moneyValue($order->shipping_total);
-    if ($shippingTotal <= 0) {
-        $shippingLine = $order->lines->firstWhere('type', 'shipping');
-        if ($shippingLine) {
-            $shippingTotal = $moneyValue($shippingLine->total);
-        }
+    if ($shippingTotal <= 0 && $shippingLine) {
+        $shippingTotal = $moneyValue($shippingLine->total);
     }
 
     $shippingMethodRaw = $meta['shipping_method'] ?? null;
-    $shippingMethodLabel = $shippingMethodRaw
-        ? (\App\Models\ShippingMethod::where('code', $shippingMethodRaw)->value('name')
-            ?? ucwords(str_replace(['_', '-'], ' ', $shippingMethodRaw)))
-        : 'Standard';
+    $shippingMethodLabel = $shippingLine?->description
+        ?: ($shippingMethodRaw
+            ? (\App\Models\ShippingMethod::where('code', $shippingMethodRaw)->value('name')
+                ?? ucwords(str_replace(['_', '-'], ' ', $shippingMethodRaw)))
+            : 'Standard');
 
     $itemCount = $productLines->sum('quantity');
 
     $paymentMethodLabel = $meta['payment_label']
-        ?? ($meta['payment_method'] ? ucwords(str_replace(['_', '-'], ' ', $meta['payment_method'])) : null);
+        ?? (($meta['payment_method'] ?? null) ? ucwords(str_replace(['_', '-'], ' ', $meta['payment_method'])) : null);
 
     $cardBrand = $meta['card_brand'] ?? null;
     $cardLast4 = $meta['card_last4'] ?? null;
@@ -267,19 +266,10 @@ ${{ number_format($lineTotal, 2) }}
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 4px; font-size:14px; font-weight:500; color:#1a1a1a;">Shipping method</p>
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">{{ $shippingMethodLabel }}</p>
 </td>
-@if($paymentMethodLabel)
 <td width="50%" valign="top" class="stack-col">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0 0 4px; font-size:14px; font-weight:500; color:#1a1a1a;">Payment method</p>
-@if($cardBrand && isset($cardBrandIcons[$cardBrand]))
-<table role="presentation" cellpadding="0" cellspacing="0"><tr>
-<td style="padding-right:8px;"><img src="{{ $cardBrandIcons[$cardBrand]['src'] }}" alt="{{ $cardBrandIcons[$cardBrand]['alt'] }}" width="36" height="24" style="display:block; border:0;"></td>
-<td valign="middle"><p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">&bull;&bull;&bull;&bull; {{ $cardLast4 }} &middot; ${{ number_format($total, 2) }} USD</p></td>
-</tr></table>
-@else
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#707070;">{{ $paymentMethodLabel }}</p>
-@endif
+@include('mail.partials.payment-method', ['order' => $order, 'amount' => $total])
 </td>
-@endif
 </tr>
 </table>
 </td>

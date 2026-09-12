@@ -14,11 +14,13 @@
     $trackingNumber = $meta['tracking_number'] ?? null;
     $trackingUrl = $meta['shipment_tracking_url'] ?? null;
 
+    $shippingLine = $order->lines->firstWhere('type', 'shipping');
     $shippingMethodRaw = $meta['shipping_method'] ?? null;
-    $shippingMethodLabel = $shippingMethodRaw
-        ? (\App\Models\ShippingMethod::where('code', $shippingMethodRaw)->value('name')
-            ?? ucwords(str_replace(['_', '-'], ' ', $shippingMethodRaw)))
-        : 'Standard';
+    $shippingMethodLabel = $shippingLine?->description
+        ?: ($shippingMethodRaw
+            ? (\App\Models\ShippingMethod::where('code', $shippingMethodRaw)->value('name')
+                ?? ucwords(str_replace(['_', '-'], ' ', $shippingMethodRaw)))
+            : 'Standard');
 
     $viewOrderUrl = rtrim(config('app.frontend_url'), '/') . '/checkout/success?ref=' . urlencode($order->reference) . '&email=' . urlencode($order->customer_reference ?? '');
 
@@ -100,13 +102,7 @@ Your order #{{ $order->reference }} has been delivered. We hope you love your ne
 <p style="margin:0 0 14px; font-size:14px; line-height:1.6; color:#1a1a1a;">
 <strong>Shipped to:</strong><br>
 <span style="color:#707070;">
-{{ $order->shippingAddress?->first_name }} {{ $order->shippingAddress?->last_name }}<br>
-{{ $order->shippingAddress?->line_one }}<br>
-@if($order->shippingAddress?->line_two)
-{{ $order->shippingAddress->line_two }}<br>
-@endif
-{{ $order->shippingAddress?->city }} {{ $order->shippingAddress?->state }} {{ $order->shippingAddress?->postcode }}<br>
-{{ $order->shippingAddress?->country?->name ?? 'United States' }}
+@include('mail.partials.order-address', ['address' => $order->shippingAddress])
 </span>
 </p>
 <p style="margin:0; font-size:14px; line-height:1.6; color:#1a1a1a;"><strong>Shipping method:</strong> <span style="color:#707070;">{{ $shippingMethodLabel }}</span></p>
