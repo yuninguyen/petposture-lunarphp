@@ -49,9 +49,11 @@ ln -sfn "$CANONICAL/backend/storage/logs" "$RELEASE_DIR/backend/storage/logs"
 
 backend_digest="$(docker image inspect petposture-backend:prod --format '{{index .RepoDigests 0}}' 2>/dev/null | sed 's/^.*@//' || echo unknown)"
 frontend_digest="$(docker image inspect petposture-frontend:prod --format '{{index .RepoDigests 0}}' 2>/dev/null | sed 's/^.*@//' || echo unknown)"
+admin_digest="$(docker image inspect petposture-admin:prod --format '{{index .RepoDigests 0}}' 2>/dev/null | sed 's/^.*@//' || echo unknown)"
 cat > "$RELEASE_DIR/ROLLBACK_IMAGES" <<EOF
 backend_image=$backend_digest
 frontend_image=$frontend_digest
+admin_image=$admin_digest
 EOF
 
 cd "$RELEASE_DIR"
@@ -64,8 +66,12 @@ docker compose -f docker-compose.prod.yml -p petposture build
 # instead. Since names are already fixed and globally unique, drop
 # ownership tracking entirely: remove any container with these exact names
 # before creating fresh ones, regardless of which project (if any) made them.
-docker rm -f petposture-backend petposture-frontend >/dev/null 2>&1 || true
-docker compose -f docker-compose.prod.yml -p petposture up -d --force-recreate backend frontend
+#
+# `admin` was missing from this list entirely until 2026-09-13: the image
+# was rebuilt every deploy but the container was never recreated, so admin
+# changes silently never went live. Always include it.
+docker rm -f petposture-backend petposture-frontend petposture-admin >/dev/null 2>&1 || true
+docker compose -f docker-compose.prod.yml -p petposture up -d --force-recreate backend frontend admin
 
 # `curl ... || echo 000` was wrong: on a connection failure curl's -w still
 # writes "000" itself *and* the || branch fires too, concatenating into
@@ -88,10 +94,12 @@ check_status() {
 
 backend_status="$(check_status http://127.0.0.1:8001/)"
 frontend_status="$(check_status http://127.0.0.1:3001/)"
+admin_status="$(check_status http://127.0.0.1:3002/)"
 echo "backend local status: $backend_status"
 echo "frontend local status: $frontend_status"
+echo "admin local status: $admin_status"
 
-if [ "$backend_status" = "000" ] || [ "$frontend_status" = "000" ]; then
+if [ "$backend_status" = "000" ] || [ "$frontend_status" = "000" ] || [ "$admin_status" = "000" ]; then
     echo "Health check failed -- NOT updating DEPLOYED_COMMIT/DEPLOYED_RELEASE." >&2
     echo "Investigate before retrying; the previous release is still what those markers point to." >&2
     exit 1
