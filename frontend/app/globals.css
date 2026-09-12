@@ -449,3 +449,94 @@
   background-color: #fdf2ea !important;
   border-color: #c9713a !important;
 }
+
+/*
+ * ============================================================
+ *  Rich Content Tables (Blog & Editorial Content)
+ *  Scoped to .rich-content .rich-table-scroll
+ * ============================================================
+ */
+.rich-content .rich-table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  margin: 2rem 0;
+  border-radius: 1rem;
+  border: 1px solid var(--color-border, #e4e4e7);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  background-color: #ffffff;
+}
+
+.rich-content .rich-table-scroll:focus-visible {
+  outline: 2px solid var(--color-secondary, #df8448);
+  outline-offset: 2px;
+}
+
+.rich-content .rich-table-scroll table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.rich-content .rich-table-scroll table p {
+  margin: 0;
+}
+
+.rich-content .rich-table-scroll table p + p {
+  margin-top: 0.25rem;
+}
+
+/* Header cells in both thead and tbody (TipTap often renders th inside tbody) */
+.rich-content .rich-table-scroll thead th,
+.rich-content .rich-table-scroll tbody th {
+  background-color: var(--color-secondary-light, #fdf8f4);
+  color: var(--color-primary, #1a2128);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--color-border, #e4e4e7);
+  vertical-align: middle;
+  text-align: left;
+}
+
+.rich-content .rich-table-scroll td {
+  padding: 1rem 1.25rem;
+  color: var(--color-primary, #1a2128);
+  font-weight: 400;
+  border-bottom: 1px solid #f4f4f5;
+  vertical-align: top;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Zebra striping & hover */
+.rich-content .rich-table-scroll tbody tr:nth-child(even) td {
+  background-color: #fafafa;
+}
+
+.rich-content .rich-table-scroll tbody tr:hover td {
+  background-color: #f4f4f5;
+}
+
+.rich-content .rich-table-scroll tbody tr:last-child td,
+.rich-content .rich-table-scroll tbody tr:last-child th {
+  border-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .rich-content .rich-table-scroll thead th,
+  .rich-content .rich-table-scroll tbody th {
+    padding: 0.75rem 1rem;
+  }
+
+  .rich-content .rich-table-scroll td {
+    padding: 0.75rem 1rem;
+  }
+}

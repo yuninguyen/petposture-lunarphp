@@ -23,7 +23,7 @@ import Footer from '@/components/Footer';
 import Link from 'next/link';
 import ComparisonTable, { ComparisonData } from '@/components/blog/ComparisonTable';
 import { useSettings } from '@/context/SettingsContext';
-import { withTableOfContents } from '@/lib/text';
+import { withTableOfContents, withResponsiveTables } from '@/lib/text';
 import { getApiBaseUrl } from '@/lib/api';
 import { fetchApi } from '@/lib/fetchApi';
 import { formatDate } from '@/lib/date';
@@ -73,9 +73,13 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
         () => sanitizeRichHtml(post.content || `<p>${post.excerpt}</p>`),
         [post.content, post.excerpt]
     );
-    const { html: contentHtml, items: tocItems } = React.useMemo(
+    const { html: contentWithToc, items: tocItems } = React.useMemo(
         () => withTableOfContents(sanitizedContent),
         [sanitizedContent]
+    );
+    const contentHtml = React.useMemo(
+        () => withResponsiveTables(contentWithToc),
+        [contentWithToc]
     );
 
     const [comments, setComments] = React.useState<Comment[]>([]);
@@ -212,7 +216,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         ) : null}
 
                         <article
-                            className="prose prose-zinc max-w-none text-primary text-[17px] md:text-[18px] leading-[1.8] font-medium [&>p:first-of-type]:first-letter:text-5xl [&>p:first-of-type]:first-letter:font-bold [&>p:first-of-type]:first-letter:text-rust [&>p:first-of-type]:first-letter:mr-3 [&>p:first-of-type]:first-letter:float-left [&>*+*]:mt-8 [&_h2]:text-[28px] [&_h2]:md:text-[32px] [&_h2]:font-bold [&_h2]:text-primary [&_h2]:mt-12 [&_h2]:mb-6 [&_blockquote]:border-l-4 [&_blockquote]:border-secondary [&_blockquote]:pl-8 [&_blockquote]:py-4 [&_blockquote]:bg-secondary-light [&_blockquote]:rounded-r-xl [&_blockquote]:italic [&_blockquote]:text-[22px] [&_blockquote]:text-primary [&_blockquote]:font-semibold [&_blockquote]:not-italic [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-2xl [&_table]:border [&_table]:border-zinc-200 [&_table]:my-8 [&_table]:text-[15px] [&_thead]:bg-secondary-light [&_th]:text-left [&_th]:text-[12px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-primary [&_th]:px-5 [&_th]:py-3.5 [&_th]:border-b [&_th]:border-zinc-200 [&_td]:px-5 [&_td]:py-4 [&_td]:font-normal [&_td]:text-primary [&_td]:border-b [&_td]:border-zinc-100 [&_td]:align-top [&_tbody_tr:last-child_td]:border-b-0 [&_tbody_tr:hover]:bg-zinc-50"
+                            className="rich-content prose prose-zinc max-w-none text-primary text-[17px] md:text-[18px] leading-[1.8] font-medium [&>p:first-of-type]:first-letter:text-5xl [&>p:first-of-type]:first-letter:font-bold [&>p:first-of-type]:first-letter:text-rust [&>p:first-of-type]:first-letter:mr-3 [&>p:first-of-type]:first-letter:float-left [&>*+*]:mt-8 [&_h2]:text-[28px] [&_h2]:md:text-[32px] [&_h2]:font-bold [&_h2]:text-primary [&_h2]:mt-12 [&_h2]:mb-6 [&_blockquote]:border-l-4 [&_blockquote]:border-secondary [&_blockquote]:pl-8 [&_blockquote]:py-4 [&_blockquote]:bg-secondary-light [&_blockquote]:rounded-r-xl [&_blockquote]:italic [&_blockquote]:text-[22px] [&_blockquote]:text-primary [&_blockquote]:font-semibold [&_blockquote]:not-italic"
                             dangerouslySetInnerHTML={{ __html: contentHtml }}
                         />
 

@@ -70,6 +70,7 @@
   "posts.comparison.retailer": "Nhà bán lẻ",
   "posts.comparison.select_retailer": "Chọn nhà bán lẻ",
   "posts.comparison.image": "Hình ảnh",
+  "posts.comparison.image_alt": "Văn bản thay thế hình ảnh",
   "posts.comparison.highlight_label": "Điểm nổi bật",
   "posts.comparison.price_display": "Giá hiển thị",
   "posts.comparison.price_cents": "Giá (cents)",
