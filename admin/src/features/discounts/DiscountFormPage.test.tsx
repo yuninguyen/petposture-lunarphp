@@ -31,7 +31,7 @@ vi.mock('@/features/products/api', () => ({
   useProducts: () => ({ data: { data: mocks.products }, isLoading: false }),
 }));
 
-import { AMOUNT_OFF_TYPE, FREE_SHIPPING_TYPE, type Discount } from './api';
+import { AMOUNT_OFF_TYPE, BUY_X_GET_Y_TYPE, FREE_SHIPPING_TYPE, type Discount } from './api';
 import { DiscountFormPage } from './DiscountFormPage';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -450,6 +450,110 @@ describe('DiscountFormPage', () => {
         product_ids: [],
         data: expect.objectContaining({
           free_shipping: true,
+        }),
+      }),
+    }), expect.any(Object));
+    act(() => root.unmount());
+  });
+
+  it('renders Customer buys and gets sections, validates inputs, and submits BuyXGetY payload on create', () => {
+    const { host, root } = renderForm();
+
+    // Select Buy X get Y from type selector
+    change(host.querySelector('#discount-type-selector'), 'buy_x_get_y');
+
+    // Amount off sections hidden
+    expect(host.querySelector('#discount-percentage')).toBeNull();
+    expect(host.querySelector('#discount-fixed-value')).toBeNull();
+    expect(host.querySelector('#discount-applies-to')).toBeNull();
+
+    // Buy X get Y sections visible
+    expect(host.querySelector('#discount-min-qty')).toBeTruthy();
+    expect(host.querySelector('#discount-condition-type')).toBeTruthy();
+    expect(host.querySelector('#discount-reward-qty')).toBeTruthy();
+    expect(host.textContent).toContain('discounts.reward_value_free');
+
+    // Fill basic fields
+    change(host.querySelector('#discount-name'), 'Buy 2 Collar Get 1 Leash');
+    change(host.querySelector('#discount-coupon'), 'B2COLLAR');
+    change(host.querySelector('#discount-starts-at'), '2026-08-31T12:00');
+    change(host.querySelector('#discount-min-qty'), '2');
+    change(host.querySelector('#discount-reward-qty'), '1');
+
+    // Submit without selecting products -> validation error
+    submit(host);
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(host.textContent).toContain('discounts.products_required');
+
+    // Select condition product (Posture Collar id 101)
+    const conditionLabel = Array.from(host.querySelectorAll('label')).find((l) => l.textContent?.includes('Posture Collar'));
+    change(conditionLabel?.querySelector('input[type="checkbox"]') ?? null, true);
+
+    // Select reward product (Ergonomic Leash id 102) — this product also appears
+    // in the "Customer buys" picker above (both use the same product list), so
+    // take the LAST match, which belongs to the later-rendered "Customer gets" section.
+    const rewardLabels = Array.from(host.querySelectorAll('label')).filter((l) => l.textContent?.includes('Ergonomic Leash'));
+    const rewardLabel = rewardLabels[rewardLabels.length - 1];
+    change(rewardLabel?.querySelector('input[type="checkbox"]') ?? null, true);
+
+    // Enable max reward qty
+    change(host.querySelector('#discount-has-max-reward-qty'), true);
+    change(host.querySelector('#discount-max-reward-qty'), '3');
+
+    submit(host);
+
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({
+      type: BUY_X_GET_Y_TYPE,
+      name: 'Buy 2 Collar Get 1 Leash',
+      coupon: 'B2COLLAR',
+      condition_type: 'specific_products',
+      condition_product_ids: [101],
+      reward_product_ids: [102],
+      data: expect.objectContaining({
+        min_qty: 2,
+        reward_qty: 1,
+        max_reward_qty: 3,
+      }),
+    }), expect.any(Object));
+    act(() => root.unmount());
+  });
+
+  it('displays Buy X get Y badge and rehydrates fields on edit', () => {
+    const buyXGetYDiscount = {
+      ...discount,
+      id: 10,
+      type: BUY_X_GET_Y_TYPE,
+      type_label: 'Buy X get Y',
+      condition_type: 'specific_products',
+      condition_product_ids: [101],
+      condition_products: [{ id: 101, name: 'Posture Collar' }],
+      reward_product_ids: [102],
+      reward_products: [{ id: 102, name: 'Ergonomic Leash' }],
+      data: { min_prices: { USD: null }, min_qty: 2, reward_qty: 1, max_reward_qty: 4 },
+    };
+    mocks.detail = { data: buyXGetYDiscount, isLoading: false, isError: false, error: undefined };
+    const { host, root } = renderForm('/discounts/10');
+
+    expect(host.querySelector('#discount-type-selector')).toBeNull();
+    expect(host.textContent).toContain('discounts.type');
+    expect(host.textContent).toContain('discounts.type_buy_x_get_y');
+
+    expect((host.querySelector('#discount-min-qty') as HTMLInputElement).value).toBe('2');
+    expect((host.querySelector('#discount-reward-qty') as HTMLInputElement).value).toBe('1');
+    expect((host.querySelector('#discount-max-reward-qty') as HTMLInputElement).value).toBe('4');
+
+    submit(host);
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
+      id: 10,
+      payload: expect.objectContaining({
+        type: BUY_X_GET_Y_TYPE,
+        condition_type: 'specific_products',
+        condition_product_ids: [101],
+        reward_product_ids: [102],
+        data: expect.objectContaining({
+          min_qty: 2,
+          reward_qty: 1,
+          max_reward_qty: 4,
         }),
       }),
     }), expect.any(Object));

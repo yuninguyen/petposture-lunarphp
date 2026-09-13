@@ -3,8 +3,9 @@ import { fetchJson } from '@/lib/api';
 
 export const AMOUNT_OFF_TYPE = 'Lunar\\DiscountTypes\\AmountOff' as const;
 export const FREE_SHIPPING_TYPE = 'App\\DiscountTypes\\FreeShipping' as const;
+export const BUY_X_GET_Y_TYPE = 'Lunar\\DiscountTypes\\BuyXGetY' as const;
 
-export type DiscountType = typeof AMOUNT_OFF_TYPE | typeof FREE_SHIPPING_TYPE;
+export type DiscountType = typeof AMOUNT_OFF_TYPE | typeof FREE_SHIPPING_TYPE | typeof BUY_X_GET_Y_TYPE;
 export type DiscountStatus = 'active' | 'expired' | 'pending' | 'scheduled';
 export type DiscountAppliesTo = 'all_products' | 'specific_collections' | 'specific_products';
 
@@ -19,6 +20,10 @@ export interface DiscountData {
   percentage?: number | null;
   fixed_values?: { USD: number | null };
   free_shipping?: boolean;
+  min_qty?: number | null;
+  reward_qty?: number | null;
+  max_reward_qty?: number | null;
+  automatically_add_rewards?: boolean;
 }
 
 export interface Discount {
@@ -43,6 +48,13 @@ export interface Discount {
   collections?: DiscountItemSummary[];
   product_ids?: number[];
   products?: DiscountItemSummary[];
+  condition_type?: 'specific_products' | 'specific_collections';
+  condition_collection_ids?: number[];
+  condition_collections?: DiscountItemSummary[];
+  condition_product_ids?: number[];
+  condition_products?: DiscountItemSummary[];
+  reward_product_ids?: number[];
+  reward_products?: DiscountItemSummary[];
   created_at: string;
   updated_at: string;
 }
@@ -72,12 +84,20 @@ export interface DiscountCreatePayload {
   applies_to?: DiscountAppliesTo;
   collection_ids?: number[];
   product_ids?: number[];
+  condition_type?: 'specific_products' | 'specific_collections';
+  condition_collection_ids?: number[];
+  condition_product_ids?: number[];
+  reward_product_ids?: number[];
 }
 
 export type DiscountUpdatePayload = Required<Pick<DiscountCreatePayload, 'name' | 'handle' | 'type' | 'starts_at' | 'ends_at' | 'coupon' | 'priority' | 'stop' | 'max_uses' | 'max_uses_per_user' | 'data'>> & {
   applies_to?: DiscountAppliesTo;
   collection_ids?: number[];
   product_ids?: number[];
+  condition_type?: 'specific_products' | 'specific_collections';
+  condition_collection_ids?: number[];
+  condition_product_ids?: number[];
+  reward_product_ids?: number[];
 };
 
 export interface DiscountFormValues {
@@ -98,6 +118,14 @@ export interface DiscountFormValues {
   collection_ids: number[];
   product_ids: number[];
   type?: DiscountType;
+  condition_type?: 'specific_products' | 'specific_collections';
+  condition_collection_ids?: number[];
+  condition_product_ids?: number[];
+  reward_product_ids?: number[];
+  min_qty?: string;
+  reward_qty?: string;
+  max_reward_qty?: string;
+  automatically_add_rewards?: boolean;
 }
 
 function optionalNumber(value: string): number | null {
@@ -115,6 +143,16 @@ function discountData(values: DiscountFormValues, type: DiscountType = AMOUNT_OF
     return {
       min_prices,
       free_shipping: true,
+    };
+  }
+
+  if (type === BUY_X_GET_Y_TYPE) {
+    return {
+      min_prices,
+      min_qty: optionalNumber(values.min_qty ?? '1') ?? 1,
+      reward_qty: optionalNumber(values.reward_qty ?? '1') ?? 1,
+      max_reward_qty: optionalNumber(values.max_reward_qty ?? ''),
+      automatically_add_rewards: values.automatically_add_rewards ?? false,
     };
   }
 
@@ -156,6 +194,10 @@ export function buildDiscountPayload(values: DiscountFormValues, typeOverride?: 
     applies_to: values.applies_to ?? 'all_products',
     collection_ids: values.applies_to === 'specific_collections' ? (values.collection_ids ?? []) : [],
     product_ids: values.applies_to === 'specific_products' ? (values.product_ids ?? []) : [],
+    condition_type: values.condition_type ?? 'specific_products',
+    condition_collection_ids: values.condition_type === 'specific_collections' ? (values.condition_collection_ids ?? []) : [],
+    condition_product_ids: values.condition_type !== 'specific_collections' ? (values.condition_product_ids ?? []) : [],
+    reward_product_ids: values.reward_product_ids ?? [],
   };
 }
 

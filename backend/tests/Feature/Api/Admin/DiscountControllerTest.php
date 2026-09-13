@@ -71,7 +71,7 @@ class DiscountControllerTest extends TestCase
             ->assertJsonPath('data.supported', true)
             ->assertJsonPath('data.data.min_prices.USD', 25.0)
             ->assertJsonPath('data.data.percentage', 10.0);
-        $this->assertSame(['id', 'name', 'handle', 'coupon', 'type', 'type_label', 'supported', 'status', 'starts_at', 'ends_at', 'uses', 'max_uses', 'max_uses_per_user', 'priority', 'stop', 'data', 'applies_to', 'collection_ids', 'collections', 'product_ids', 'products', 'created_at', 'updated_at'], array_keys($created->json('data')));
+        $this->assertSame(['id', 'name', 'handle', 'coupon', 'type', 'type_label', 'supported', 'status', 'starts_at', 'ends_at', 'uses', 'max_uses', 'max_uses_per_user', 'priority', 'stop', 'data', 'applies_to', 'collection_ids', 'collections', 'product_ids', 'products', 'condition_type', 'condition_collection_ids', 'condition_collections', 'condition_product_ids', 'condition_products', 'reward_product_ids', 'reward_products', 'created_at', 'updated_at'], array_keys($created->json('data')));
 
         $id = $created->json('data.id');
         $this->getJson('/api/admin/discounts')->assertOk()->assertJsonPath('meta.per_page', 15);
@@ -89,7 +89,7 @@ class DiscountControllerTest extends TestCase
             ->assertUnprocessable()->assertJsonValidationErrors('coupon');
         $this->postJson('/api/admin/discounts', $this->amountOffPayload(['type' => FixedAmountOffPerUnit::class]))
             ->assertUnprocessable()->assertJsonValidationErrors('type');
-        $this->postJson('/api/admin/discounts', $this->amountOffPayload(['type' => BuyXGetY::class]))
+        $this->postJson('/api/admin/discounts', $this->amountOffPayload(['type' => 'App\\DiscountTypes\\UnsupportedType']))
             ->assertUnprocessable()->assertJsonValidationErrors('type');
 
         $this->postJson('/api/admin/discounts', $this->amountOffPayload())->assertCreated();
@@ -651,6 +651,267 @@ class DiscountControllerTest extends TestCase
 
         $orderWithoutCoupon = Order::findOrFail($orderResponseNoCoupon->json('order.id'));
         $this->assertSame(2500, $orderWithoutCoupon->shipping_total->value);
+    }
+
+    public function test_core_admin_creates_lists_shows_updates_and_deletes_a_buy_x_get_y_discount(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $this->actingAsCoreAdmin();
+
+        $variantA = $this->createProductWithVariant(5000);
+        $variantB = $this->createProductWithVariant(3000);
+        $collection = $this->createCollection('Conditions Collection');
+
+        $created = $this->postJson('/api/admin/discounts', [
+            'name' => 'Buy 2 A Get 1 B',
+            'coupon' => 'B2A-G1B',
+            'type' => BuyXGetY::class,
+            'starts_at' => '2026-08-31T12:00:00.000Z',
+            'priority' => 5,
+            'stop' => false,
+            'condition_type' => 'specific_products',
+            'condition_product_ids' => [$variantA->product->id],
+            'reward_product_ids' => [$variantB->product->id],
+            'data' => [
+                'min_qty' => 2,
+                'reward_qty' => 1,
+                'max_reward_qty' => 3,
+                'automatically_add_rewards' => false,
+            ],
+        ])->assertCreated();
+
+        $created->assertJsonPath('data.handle', 'buy-2-a-get-1-b')
+            ->assertJsonPath('data.type', BuyXGetY::class)
+            ->assertJsonPath('data.type_label', 'Buy X get Y')
+            ->assertJsonPath('data.supported', true)
+            ->assertJsonPath('data.condition_type', 'specific_products')
+            ->assertJsonPath('data.condition_product_ids.0', $variantA->product->id)
+            ->assertJsonPath('data.reward_product_ids.0', $variantB->product->id)
+            ->assertJsonPath('data.data.min_qty', 2)
+            ->assertJsonPath('data.data.reward_qty', 1)
+            ->assertJsonPath('data.data.max_reward_qty', 3);
+
+        $id = $created->json('data.id');
+        $this->assertDatabaseHas('lunar_discounts', [
+            'id' => $id,
+            'type' => BuyXGetY::class,
+        ]);
+        $this->assertDatabaseHas('lunar_discountables', [
+            'discount_id' => $id,
+            'type' => 'condition',
+            'discountable_type' => (new LunarProduct)->getMorphClass(),
+            'discountable_id' => $variantA->product->id,
+        ]);
+        $this->assertDatabaseHas('lunar_discountables', [
+            'discount_id' => $id,
+            'type' => 'reward',
+            'discountable_type' => (new LunarProduct)->getMorphClass(),
+            'discountable_id' => $variantB->product->id,
+        ]);
+
+        $this->getJson("/api/admin/discounts/{$id}")
+            ->assertOk()
+            ->assertJsonPath('data.type_label', 'Buy X get Y')
+            ->assertJsonPath('data.condition_products.0.id', $variantA->product->id)
+            ->assertJsonPath('data.reward_products.0.id', $variantB->product->id);
+
+        // Update to collection condition
+        $this->putJson("/api/admin/discounts/{$id}", [
+            'name' => 'Buy 3 in Collection Get 1 B',
+            'handle' => 'buy-3-col-get-1-b',
+            'coupon' => 'B3COL-G1B',
+            'type' => BuyXGetY::class,
+            'starts_at' => '2026-08-31T12:00:00.000Z',
+            'condition_type' => 'specific_collections',
+            'condition_collection_ids' => [$collection->id],
+            'reward_product_ids' => [$variantB->product->id],
+            'data' => [
+                'min_qty' => 3,
+                'reward_qty' => 1,
+            ],
+        ])->assertOk()
+            ->assertJsonPath('data.handle', 'buy-3-col-get-1-b')
+            ->assertJsonPath('data.condition_type', 'specific_collections')
+            ->assertJsonPath('data.condition_collection_ids.0', $collection->id)
+            ->assertJsonPath('data.data.min_qty', 3);
+
+        $this->assertDatabaseMissing('lunar_discountables', [
+            'discount_id' => $id,
+            'type' => 'condition',
+            'discountable_type' => (new LunarProduct)->getMorphClass(),
+            'discountable_id' => $variantA->product->id,
+        ]);
+        $this->assertDatabaseHas('lunar_discountables', [
+            'discount_id' => $id,
+            'type' => 'condition',
+            'discountable_type' => (new LunarCollection)->getMorphClass(),
+            'discountable_id' => $collection->id,
+        ]);
+
+        $this->deleteJson("/api/admin/discounts/{$id}")->assertNoContent();
+        $this->assertDatabaseMissing('lunar_discounts', ['id' => $id]);
+        $this->assertDatabaseMissing('lunar_discountables', ['discount_id' => $id]);
+    }
+
+    public function test_buy_x_get_y_validation_requires_positive_quantities_and_scoped_items(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $this->actingAsCoreAdmin();
+
+        $variantA = $this->createProductWithVariant(5000);
+        $variantB = $this->createProductWithVariant(3000);
+
+        // Missing min_qty
+        $this->postJson('/api/admin/discounts', [
+            'name' => 'Invalid min_qty',
+            'coupon' => 'ERR-QTY-1',
+            'type' => BuyXGetY::class,
+            'starts_at' => '2026-08-31T12:00:00.000Z',
+            'condition_type' => 'specific_products',
+            'condition_product_ids' => [$variantA->product->id],
+            'reward_product_ids' => [$variantB->product->id],
+            'data' => ['reward_qty' => 1],
+        ])->assertUnprocessable()->assertJsonValidationErrors('data.min_qty');
+
+        // min_qty < 1
+        $this->postJson('/api/admin/discounts', [
+            'name' => 'Zero min_qty',
+            'coupon' => 'ERR-QTY-0',
+            'type' => BuyXGetY::class,
+            'starts_at' => '2026-08-31T12:00:00.000Z',
+            'condition_type' => 'specific_products',
+            'condition_product_ids' => [$variantA->product->id],
+            'reward_product_ids' => [$variantB->product->id],
+            'data' => ['min_qty' => 0, 'reward_qty' => 1],
+        ])->assertUnprocessable()->assertJsonValidationErrors('data.min_qty');
+
+        // Missing reward_qty
+        $this->postJson('/api/admin/discounts', [
+            'name' => 'Invalid reward_qty',
+            'coupon' => 'ERR-REW-1',
+            'type' => BuyXGetY::class,
+            'starts_at' => '2026-08-31T12:00:00.000Z',
+            'condition_type' => 'specific_products',
+            'condition_product_ids' => [$variantA->product->id],
+            'reward_product_ids' => [$variantB->product->id],
+            'data' => ['min_qty' => 2],
+        ])->assertUnprocessable()->assertJsonValidationErrors('data.reward_qty');
+
+        // Empty condition_product_ids
+        $this->postJson('/api/admin/discounts', [
+            'name' => 'Missing condition products',
+            'coupon' => 'ERR-COND-1',
+            'type' => BuyXGetY::class,
+            'starts_at' => '2026-08-31T12:00:00.000Z',
+            'condition_type' => 'specific_products',
+            'condition_product_ids' => [],
+            'reward_product_ids' => [$variantB->product->id],
+            'data' => ['min_qty' => 2, 'reward_qty' => 1],
+        ])->assertUnprocessable()->assertJsonValidationErrors('condition_product_ids');
+
+        // Empty condition_collection_ids
+        $this->postJson('/api/admin/discounts', [
+            'name' => 'Missing condition collections',
+            'coupon' => 'ERR-COND-2',
+            'type' => BuyXGetY::class,
+            'starts_at' => '2026-08-31T12:00:00.000Z',
+            'condition_type' => 'specific_collections',
+            'condition_collection_ids' => [],
+            'reward_product_ids' => [$variantB->product->id],
+            'data' => ['min_qty' => 2, 'reward_qty' => 1],
+        ])->assertUnprocessable()->assertJsonValidationErrors('condition_collection_ids');
+
+        // Empty reward_product_ids
+        $this->postJson('/api/admin/discounts', [
+            'name' => 'Missing reward products',
+            'coupon' => 'ERR-REW-2',
+            'type' => BuyXGetY::class,
+            'starts_at' => '2026-08-31T12:00:00.000Z',
+            'condition_type' => 'specific_products',
+            'condition_product_ids' => [$variantA->product->id],
+            'reward_product_ids' => [],
+            'data' => ['min_qty' => 2, 'reward_qty' => 1],
+        ])->assertUnprocessable()->assertJsonValidationErrors('reward_product_ids');
+    }
+
+    public function test_cart_apply_with_buy_x_get_y_discount(): void
+    {
+        $this->setUpLunarPrerequisites();
+        $this->actingAsCoreAdmin();
+
+        $variantA = $this->createProductWithVariant(5000); // $50
+        $variantB = $this->createProductWithVariant(3000); // $30
+
+        // Create Buy 2 of Product A, Get 1 of Product B Free (max_reward_qty = 1)
+        $this->postJson('/api/admin/discounts', [
+            'name' => 'Buy 2 A Get 1 B Free',
+            'coupon' => 'B2G1FREE',
+            'type' => BuyXGetY::class,
+            'starts_at' => '2026-08-31T12:00:00.000Z',
+            'condition_type' => 'specific_products',
+            'condition_product_ids' => [$variantA->product->id],
+            'reward_product_ids' => [$variantB->product->id],
+            'data' => [
+                'min_qty' => 2,
+                'reward_qty' => 1,
+                'max_reward_qty' => 1,
+                'automatically_add_rewards' => false,
+            ],
+        ])->assertCreated();
+
+        $currency = Currency::getDefault();
+        $channel = Channel::getDefault();
+
+        // 1. Cart with 1x Product A + 1x Product B -> Condition not met (1 < 2), 0 discount
+        $cart1 = Cart::create(['currency_id' => $currency->id, 'channel_id' => $channel->id]);
+        $cart1->add($variantA, 1);
+        $cart1->add($variantB, 1);
+        $cart1->coupon_code = 'B2G1FREE';
+        $cart1->discounts = collect();
+        $cart1->discountBreakdown = collect();
+
+        $cart1 = app(DiscountManagerInterface::class)->resetDiscounts()->apply($cart1);
+        $lineB1 = $cart1->lines->firstWhere('purchasable_id', $variantB->id);
+        $this->assertSame(0, $lineB1->discountTotal?->value ?? 0);
+        $this->assertSame(3000, $lineB1->subTotal->value);
+        $this->assertSame(3000, $lineB1->subTotalDiscounted->value);
+
+        // 2. Cart with 2x Product A + 1x Product B -> Condition met (2 >= 2), Product B is 100% free!
+        $cart2 = Cart::create(['currency_id' => $currency->id, 'channel_id' => $channel->id]);
+        $cart2->add($variantA, 2);
+        $cart2->add($variantB, 1);
+        $cart2->coupon_code = 'B2G1FREE';
+        $cart2->discounts = collect();
+        $cart2->discountBreakdown = collect();
+
+        $cart2 = app(DiscountManagerInterface::class)->resetDiscounts()->apply($cart2);
+        $lineA2 = $cart2->lines->firstWhere('purchasable_id', $variantA->id);
+        $lineB2 = $cart2->lines->firstWhere('purchasable_id', $variantB->id);
+
+        $this->assertSame(0, $lineA2->discountTotal?->value ?? 0);
+        $this->assertSame(10000, $lineA2->subTotal->value);
+        $this->assertSame(10000, $lineA2->subTotalDiscounted->value);
+
+        // Reward line is 100% free (discount = 3000, subTotalDiscounted = 0)
+        $this->assertSame(3000, $lineB2->discountTotal->value);
+        $this->assertSame(3000, $lineB2->subTotal->value);
+        $this->assertSame(0, $lineB2->subTotalDiscounted->value);
+
+        // 3. Cart with 4x Product A + 2x Product B -> floor(4/2)*1 = 2, but max_reward_qty = 1 caps reward to 1 item free
+        $cart3 = Cart::create(['currency_id' => $currency->id, 'channel_id' => $channel->id]);
+        $cart3->add($variantA, 4);
+        $cart3->add($variantB, 2);
+        $cart3->coupon_code = 'B2G1FREE';
+        $cart3->discounts = collect();
+        $cart3->discountBreakdown = collect();
+
+        $cart3 = app(DiscountManagerInterface::class)->resetDiscounts()->apply($cart3);
+        $lineB3 = $cart3->lines->firstWhere('purchasable_id', $variantB->id);
+
+        // 1 of the 2 units is free: discount = 3000, subTotal = 6000, subTotalDiscounted = 3000
+        $this->assertSame(3000, $lineB3->discountTotal->value);
+        $this->assertSame(6000, $lineB3->subTotal->value);
+        $this->assertSame(3000, $lineB3->subTotalDiscounted->value);
     }
 
     private function createCollection(string $name = 'Test Collection'): LunarCollection

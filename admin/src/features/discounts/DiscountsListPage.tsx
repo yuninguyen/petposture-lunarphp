@@ -24,6 +24,7 @@ function displayTypeLabel(typeLabel: string | null | undefined, t: (key: string)
   if (typeLabel === 'Amount off order') return t('discounts.type_amount_off_order');
   if (typeLabel === 'Amount off products') return t('discounts.type_amount_off_products');
   if (typeLabel === 'Free shipping') return t('discounts.type_free_shipping');
+  if (typeLabel === 'Buy X get Y') return t('discounts.type_buy_x_get_y');
   return typeLabel || '—';
 }
 

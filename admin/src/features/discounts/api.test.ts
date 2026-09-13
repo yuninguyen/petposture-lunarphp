@@ -11,6 +11,7 @@ vi.mock('@tanstack/react-query', () => ({
 
 import {
   AMOUNT_OFF_TYPE,
+  BUY_X_GET_Y_TYPE,
   buildDiscountPayload,
   buildDiscountUpdatePayload,
   toIsoUtc,
@@ -92,6 +93,36 @@ describe('discounts api', () => {
       applies_to: 'all_products',
       collection_ids: [],
       product_ids: [],
+    });
+  });
+
+  it('builds BuyXGetY payloads with condition and reward scoped fields and quantity values', () => {
+    const bxyPayload = buildDiscountPayload(
+      {
+        ...values,
+        condition_type: 'specific_products',
+        condition_product_ids: [10, 11],
+        reward_product_ids: [20],
+        min_qty: '2',
+        reward_qty: '1',
+        max_reward_qty: '3',
+      },
+      BUY_X_GET_Y_TYPE
+    );
+
+    expect(bxyPayload).toMatchObject({
+      type: BUY_X_GET_Y_TYPE,
+      condition_type: 'specific_products',
+      condition_product_ids: [10, 11],
+      condition_collection_ids: [],
+      reward_product_ids: [20],
+      data: {
+        min_prices: { USD: 25 },
+        min_qty: 2,
+        reward_qty: 1,
+        max_reward_qty: 3,
+        automatically_add_rewards: false,
+      },
     });
   });
 });

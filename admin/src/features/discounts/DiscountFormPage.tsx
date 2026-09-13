@@ -7,6 +7,7 @@ import { SearchableMultiSelect } from '@/components/ui/SearchableMultiSelect';
 import { useProductLookups, useProducts } from '@/features/products/api';
 import {
   AMOUNT_OFF_TYPE,
+  BUY_X_GET_Y_TYPE,
   FREE_SHIPPING_TYPE,
   buildDiscountPayload,
   buildDiscountUpdatePayload,
@@ -15,6 +16,7 @@ import {
   type Discount,
   type DiscountAppliesTo,
   type DiscountFormValues,
+  type DiscountType,
   useCreateDiscount,
   useDiscount,
   useUpdateDiscount,
@@ -44,6 +46,14 @@ function createValues(): DiscountFormValues {
     applies_to: 'all_products',
     collection_ids: [],
     product_ids: [],
+    condition_type: 'specific_products',
+    condition_collection_ids: [],
+    condition_product_ids: [],
+    reward_product_ids: [],
+    min_qty: '1',
+    reward_qty: '1',
+    max_reward_qty: '',
+    automatically_add_rewards: false,
   };
 }
 
@@ -65,6 +75,14 @@ function valuesFromDiscount(discount: Discount): DiscountFormValues {
     applies_to: discount.applies_to ?? 'all_products',
     collection_ids: discount.collection_ids ?? [],
     product_ids: discount.product_ids ?? [],
+    condition_type: discount.condition_type ?? 'specific_products',
+    condition_collection_ids: discount.condition_collection_ids ?? [],
+    condition_product_ids: discount.condition_product_ids ?? [],
+    reward_product_ids: discount.reward_product_ids ?? [],
+    min_qty: discount.data.min_qty == null ? '1' : String(discount.data.min_qty),
+    reward_qty: discount.data.reward_qty == null ? '1' : String(discount.data.reward_qty),
+    max_reward_qty: discount.data.max_reward_qty == null ? '' : String(discount.data.max_reward_qty),
+    automatically_add_rewards: discount.data.automatically_add_rewards ?? false,
   };
 }
 
@@ -106,6 +124,7 @@ export function DiscountFormPage() {
   const [hasEndDate, setHasEndDate] = useState(false);
   const [hasMaxUses, setHasMaxUses] = useState(false);
   const [hasMaxUsesPerUser, setHasMaxUsesPerUser] = useState(false);
+  const [hasMaxRewardQty, setHasMaxRewardQty] = useState(false);
   const [minReqType, setMinReqType] = useState<'none' | 'amount'>('none');
 
   const { collectionOptions: rawCollectionOptions } = useProductLookups();
@@ -113,27 +132,32 @@ export function DiscountFormPage() {
 
   const collectionOptions = useMemo(() => {
     const options = [...(rawCollectionOptions ?? [])];
-    if (detailQuery.data?.collections) {
-      for (const col of detailQuery.data.collections) {
-        if (!options.some((o) => o.id === col.id)) {
-          options.push({ id: col.id, label: col.name, slug: '' });
-        }
+    const extraCollections = [
+      ...(detailQuery.data?.collections ?? []),
+      ...(detailQuery.data?.condition_collections ?? []),
+    ];
+    for (const col of extraCollections) {
+      if (!options.some((o) => o.id === col.id)) {
+        options.push({ id: col.id, label: col.name, slug: '' });
       }
     }
     return options.map((o) => ({ id: o.id, label: o.label }));
-  }, [rawCollectionOptions, detailQuery.data?.collections]);
+  }, [rawCollectionOptions, detailQuery.data?.collections, detailQuery.data?.condition_collections]);
 
   const productOptions = useMemo(() => {
     const items = (productsQuery.data?.data ?? []).map((p) => ({ id: p.id, label: p.name }));
-    if (detailQuery.data?.products) {
-      for (const prod of detailQuery.data.products) {
-        if (!items.some((i) => i.id === prod.id)) {
-          items.push({ id: prod.id, label: prod.name });
-        }
+    const extraProducts = [
+      ...(detailQuery.data?.products ?? []),
+      ...(detailQuery.data?.condition_products ?? []),
+      ...(detailQuery.data?.reward_products ?? []),
+    ];
+    for (const prod of extraProducts) {
+      if (!items.some((i) => i.id === prod.id)) {
+        items.push({ id: prod.id, label: prod.name });
       }
     }
     return items;
-  }, [productsQuery.data?.data, detailQuery.data?.products]);
+  }, [productsQuery.data?.data, detailQuery.data?.products, detailQuery.data?.condition_products, detailQuery.data?.reward_products]);
 
   useEffect(() => {
     if (editId && detailQuery.data?.supported) {
@@ -143,8 +167,11 @@ export function DiscountFormPage() {
       setHasEndDate(Boolean(detailQuery.data.ends_at));
       setHasMaxUses(detailQuery.data.max_uses != null && detailQuery.data.max_uses > 0);
       setHasMaxUsesPerUser(detailQuery.data.max_uses_per_user != null && detailQuery.data.max_uses_per_user > 0);
+      setHasMaxRewardQty(detailQuery.data.data?.max_reward_qty != null && Number(detailQuery.data.data.max_reward_qty) > 0);
       setMinReqType(detailQuery.data.data?.min_prices?.USD != null && Number(detailQuery.data.data.min_prices.USD) > 0 ? 'amount' : 'none');
-      if (detailQuery.data.type === FREE_SHIPPING_TYPE || detailQuery.data.type_label === 'Free shipping') {
+      if (detailQuery.data.type === BUY_X_GET_Y_TYPE || detailQuery.data.type_label === 'Buy X get Y') {
+        setDiscountType('buy_x_get_y');
+      } else if (detailQuery.data.type === FREE_SHIPPING_TYPE || detailQuery.data.type_label === 'Free shipping') {
         setDiscountType('free_shipping');
       } else if (detailQuery.data.type_label === 'Amount off order' || detailQuery.data.applies_to === 'all_products') {
         setDiscountType('amount_off_order');
@@ -177,7 +204,9 @@ export function DiscountFormPage() {
       values.max_uses,
       values.max_uses_per_user,
       values.min_price_usd,
-      ...(discountType !== 'free_shipping' ? [values.fixed_value ? values.fixed_value_usd : values.percentage] : []),
+      ...(discountType === 'amount_off_products' || discountType === 'amount_off_order'
+        ? [values.fixed_value ? values.fixed_value_usd : values.percentage]
+        : []),
     ];
     for (const value of numericValues) {
       if (!value.trim()) continue;
@@ -186,7 +215,7 @@ export function DiscountFormPage() {
       else if (number < 0) validationErrors.push(t('discounts.numeric_non_negative'));
     }
 
-    if (discountType !== 'free_shipping') {
+    if (discountType === 'amount_off_products' || discountType === 'amount_off_order') {
       if (!values.fixed_value && Number(values.percentage) > 100) validationErrors.push(t('discounts.percentage_maximum'));
       if (!(values.fixed_value ? values.fixed_value_usd : values.percentage).trim()) validationErrors.push(t('discounts.amount_off_value_required'));
     }
@@ -205,16 +234,59 @@ export function DiscountFormPage() {
       }
     }
 
+    if (discountType === 'buy_x_get_y') {
+      const minQtyNum = Number(values.min_qty);
+      if (!values.min_qty?.trim() || !Number.isInteger(minQtyNum) || minQtyNum < 1) {
+        validationErrors.push(t('discounts.min_qty_required'));
+      }
+
+      const rewardQtyNum = Number(values.reward_qty);
+      if (!values.reward_qty?.trim() || !Number.isInteger(rewardQtyNum) || rewardQtyNum < 1) {
+        validationErrors.push(t('discounts.reward_qty_required'));
+      }
+
+      if (values.max_reward_qty?.trim()) {
+        const maxRewardNum = Number(values.max_reward_qty);
+        if (!Number.isInteger(maxRewardNum) || maxRewardNum < 1) {
+          validationErrors.push(t('discounts.numeric_invalid'));
+        }
+      }
+
+      if (values.condition_type === 'specific_collections' && (!values.condition_collection_ids || values.condition_collection_ids.length === 0)) {
+        validationErrors.push(t('discounts.collections_required'));
+      }
+      if (values.condition_type === 'specific_products' && (!values.condition_product_ids || values.condition_product_ids.length === 0)) {
+        validationErrors.push(t('discounts.products_required'));
+      }
+
+      if (!values.reward_product_ids || values.reward_product_ids.length === 0) {
+        validationErrors.push(t('discounts.reward_products_required'));
+      }
+    }
+
     if (validationErrors.length) {
       setErrors(validationErrors);
       return;
     }
 
-    const selectedType = discountType === 'free_shipping' ? FREE_SHIPPING_TYPE : AMOUNT_OFF_TYPE;
+    let selectedType: DiscountType = AMOUNT_OFF_TYPE;
+    if (discountType === 'free_shipping') selectedType = FREE_SHIPPING_TYPE;
+    else if (discountType === 'buy_x_get_y') selectedType = BUY_X_GET_Y_TYPE;
+
     const valuesToSubmit: DiscountFormValues = {
       ...values,
       type: selectedType,
-      ...(discountType !== 'amount_off_products' ? { applies_to: 'all_products' as DiscountAppliesTo, collection_ids: [], product_ids: [] } : {}),
+      ...(discountType === 'buy_x_get_y' ? {
+        applies_to: 'all_products' as DiscountAppliesTo,
+        collection_ids: [],
+        product_ids: [],
+        min_price_usd: '',
+      } : {}),
+      ...(discountType === 'amount_off_order' || discountType === 'free_shipping' ? {
+        applies_to: 'all_products' as DiscountAppliesTo,
+        collection_ids: [],
+        product_ids: [],
+      } : {}),
     };
 
     const payload = editId ? buildDiscountUpdatePayload(valuesToSubmit, selectedType) : buildDiscountPayload(valuesToSubmit, selectedType);
@@ -288,7 +360,7 @@ export function DiscountFormPage() {
                 >
                   <option value="amount_off_products">{t('discounts.type_amount_off_products')}</option>
                   <option value="amount_off_order">{t('discounts.type_amount_off_order')}</option>
-                  <option value="buy_x_get_y" disabled>{t('discounts.type_buy_x_get_y')} (Coming soon)</option>
+                  <option value="buy_x_get_y">{t('discounts.type_buy_x_get_y')}</option>
                   <option value="free_shipping">{t('discounts.type_free_shipping')}</option>
                 </select>
               </Field>
@@ -298,7 +370,9 @@ export function DiscountFormPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
             <span className="text-sm font-medium text-slate-700">{t('discounts.type')}</span>
             <span className="inline-flex items-center rounded-md bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-800">
-              {detailQuery.data?.type === FREE_SHIPPING_TYPE || detailQuery.data?.type_label === 'Free shipping'
+              {detailQuery.data?.type === BUY_X_GET_Y_TYPE || detailQuery.data?.type_label === 'Buy X get Y'
+                ? t('discounts.type_buy_x_get_y')
+                : detailQuery.data?.type === FREE_SHIPPING_TYPE || detailQuery.data?.type_label === 'Free shipping'
                 ? t('discounts.type_free_shipping')
                 : detailQuery.data?.type_label === 'Amount off order'
                 ? t('discounts.type_amount_off_order')
@@ -355,8 +429,8 @@ export function DiscountFormPage() {
           </div>
         </Section>
 
-        {/* Discount Value Section */}
-        {discountType !== 'free_shipping' && (
+        {/* Discount Value Section - Amount off only */}
+        {discountType !== 'free_shipping' && discountType !== 'buy_x_get_y' && (
           <Section title={t('discounts.type_configuration')}>
             <div className="sm:col-span-2 space-y-4">
               <Check
@@ -439,51 +513,170 @@ export function DiscountFormPage() {
           </Section>
         )}
 
-        {/* Minimum Purchase Requirements */}
-        <Section title={t('discounts.minimum_requirements')}>
-          <div className="sm:col-span-2 space-y-3">
-            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-              <input
-                type="radio"
-                name="min_requirement"
-                id="discount-min-req-none"
-                checked={minReqType === 'none'}
-                onChange={() => {
-                  setMinReqType('none');
-                  update('min_price_usd', '');
-                }}
-                className="text-primary focus:ring-primary"
-              />
-              {t('discounts.min_requirement_none')}
-            </label>
-            <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-              <input
-                type="radio"
-                name="min_requirement"
-                id="discount-min-req-amount"
-                checked={minReqType === 'amount'}
-                onChange={() => setMinReqType('amount')}
-                className="text-primary focus:ring-primary"
-              />
-              {t('discounts.min_requirement_amount')}
-            </label>
-            {minReqType === 'amount' && (
-              <div className="pt-2 max-w-xs">
-                <Field label={t('discounts.min_price_usd')}>
-                  <input
-                    id="discount-min-price-usd"
-                    min="0"
-                    step="0.01"
-                    type="number"
-                    value={values.min_price_usd}
-                    onChange={(event) => update('min_price_usd', event.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                  />
+        {/* Buy X get Y Sections */}
+        {discountType === 'buy_x_get_y' && (
+          <>
+            <Section title={t('discounts.customer_buys')}>
+              <div className="sm:col-span-2 space-y-4">
+                <div className="max-w-xs">
+                  <Field label={t('discounts.min_qty')}>
+                    <input
+                      id="discount-min-qty"
+                      min="1"
+                      type="number"
+                      required
+                      value={values.min_qty}
+                      onChange={(event) => update('min_qty', event.target.value)}
+                      className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    />
+                  </Field>
+                </div>
+                <Field label={t('discounts.applies_to')}>
+                  <select
+                    id="discount-condition-type"
+                    value={values.condition_type}
+                    onChange={(event) => update('condition_type', event.target.value as 'specific_products' | 'specific_collections')}
+                    className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="specific_products">{t('discounts.applies_to_specific_products')}</option>
+                    <option value="specific_collections">{t('discounts.applies_to_specific_collections')}</option>
+                  </select>
                 </Field>
+                {values.condition_type === 'specific_collections' && (
+                  <div className="space-y-1">
+                    <SearchableMultiSelect
+                      options={collectionOptions}
+                      value={values.condition_collection_ids ?? []}
+                      onChange={(ids) => update('condition_collection_ids', ids)}
+                      placeholder={t('discounts.search_collections')}
+                      noResultsText={t('discounts.empty')}
+                      clearAllText={t('discounts.cancel')}
+                    />
+                  </div>
+                )}
+                {values.condition_type === 'specific_products' && (
+                  <div className="space-y-1">
+                    <SearchableMultiSelect
+                      options={productOptions}
+                      value={values.condition_product_ids ?? []}
+                      onChange={(ids) => update('condition_product_ids', ids)}
+                      placeholder={t('discounts.search_products')}
+                      noResultsText={t('discounts.empty')}
+                      clearAllText={t('discounts.cancel')}
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </Section>
+            </Section>
+
+            <Section title={t('discounts.customer_gets')}>
+              <div className="sm:col-span-2 space-y-4">
+                <div className="max-w-xs">
+                  <Field label={t('discounts.reward_qty')}>
+                    <input
+                      id="discount-reward-qty"
+                      min="1"
+                      type="number"
+                      required
+                      value={values.reward_qty}
+                      onChange={(event) => update('reward_qty', event.target.value)}
+                      className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    />
+                  </Field>
+                </div>
+                <div className="space-y-1">
+                  <Field label={t('discounts.applies_to_specific_products')}>
+                    <SearchableMultiSelect
+                      options={productOptions}
+                      value={values.reward_product_ids ?? []}
+                      onChange={(ids) => update('reward_product_ids', ids)}
+                      placeholder={t('discounts.search_products')}
+                      noResultsText={t('discounts.empty')}
+                      clearAllText={t('discounts.cancel')}
+                    />
+                  </Field>
+                </div>
+                <div>
+                  <span className="block text-sm font-medium text-slate-700">{t('discounts.reward_value')}</span>
+                  <div className="mt-1 inline-flex items-center rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                    {t('discounts.reward_value_free')}
+                  </div>
+                </div>
+                <Check
+                  id="discount-has-max-reward-qty"
+                  checked={hasMaxRewardQty}
+                  onChange={(checked) => {
+                    setHasMaxRewardQty(checked);
+                    if (!checked) update('max_reward_qty', '');
+                  }}
+                  label={t('discounts.set_max_reward_qty')}
+                />
+                {hasMaxRewardQty && (
+                  <div className="pl-6 max-w-xs">
+                    <Field label={t('discounts.max_reward_qty')}>
+                      <input
+                        id="discount-max-reward-qty"
+                        min="1"
+                        type="number"
+                        value={values.max_reward_qty}
+                        onChange={(event) => update('max_reward_qty', event.target.value)}
+                        className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      />
+                    </Field>
+                  </div>
+                )}
+              </div>
+            </Section>
+          </>
+        )}
+
+        {/* Minimum Purchase Requirements */}
+        {discountType !== 'buy_x_get_y' && (
+          <Section title={t('discounts.minimum_requirements')}>
+            <div className="sm:col-span-2 space-y-3">
+              <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                <input
+                  type="radio"
+                  name="min_requirement"
+                  id="discount-min-req-none"
+                  checked={minReqType === 'none'}
+                  onChange={() => {
+                    setMinReqType('none');
+                    update('min_price_usd', '');
+                  }}
+                  className="text-primary focus:ring-primary"
+                />
+                {t('discounts.min_requirement_none')}
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                <input
+                  type="radio"
+                  name="min_requirement"
+                  id="discount-min-req-amount"
+                  checked={minReqType === 'amount'}
+                  onChange={() => setMinReqType('amount')}
+                  className="text-primary focus:ring-primary"
+                />
+                {t('discounts.min_requirement_amount')}
+              </label>
+              {minReqType === 'amount' && (
+                <div className="pt-2 max-w-xs">
+                  <Field label={t('discounts.min_price_usd')}>
+                    <input
+                      id="discount-min-price-usd"
+                      min="0"
+                      step="0.01"
+                      type="number"
+                      value={values.min_price_usd}
+                      onChange={(event) => update('min_price_usd', event.target.value)}
+                      className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    />
+                  </Field>
+                </div>
+              )}
+            </div>
+          </Section>
+        )}
 
         {/* Maximum Discount Uses */}
         <Section title={t('discounts.usage_limits')}>

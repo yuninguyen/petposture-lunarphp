@@ -82,12 +82,12 @@ Task 1 (Amount off products) has the least backend risk (extends an already-work
 
 **Files:** `DiscountController.php`, `admin/src/features/discounts/api.ts`, `DiscountFormPage.tsx`.
 
-- [ ] Register `\Lunar\DiscountTypes\BuyXGetY::class => 'Buy X get Y'` in `TYPES`/`isSupported()`.
-- [ ] Wire the already-scaffolded-but-unused `data.min_qty`/`data.reward_qty`/`data.max_reward_qty`/`data.automatically_add_rewards` validation rules into `attributes()`/`normalizedData()`/`dataForResponse()` for this type (currently validated but discarded).
-- [ ] Read the rest of `BuyXGetY.php` (only the `Product`/`ProductVariant` matching branches of `discountableConditions`/`discountableRewards` were confirmed during planning) before deciding whether collection-based conditions are supported by this vendor class at all. If not supported, ship product-only pickers for both "Customer buys" and "Customer gets" rather than building a collection picker with no backend effect.
-- [ ] Persist "Customer buys" as `discountableConditions` (type=`condition`) and "Customer gets" as `discountableRewards` (type=`reward`), scoped per the previous point's finding.
-- [ ] Frontend: two `SearchableMultiSelect` blocks (Customer buys / Customer gets) each with a quantity field; reward value UI shows **only "Free"** (per verified facts above) — do not offer Percentage/Amount off each unless the vendor class is extended first; if the user wants those, flag it as new backend work rather than building dead UI.
-- [ ] Tests: create a Buy X get Y discount, add matching lines to a cart via the checkout API, assert the reward line is discounted to 0 per `BuyXGetY::getRewardQuantity()`'s formula (`floor(linesQuantity / minQty) * rewardQty`, capped by `maxRewardQty`).
+- [x] Register `\Lunar\DiscountTypes\BuyXGetY::class => 'Buy X get Y'` in `TYPES`/`isSupported()`.
+- [x] Wire the already-scaffolded-but-unused `data.min_qty`/`data.reward_qty`/`data.max_reward_qty`/`data.automatically_add_rewards` validation rules into `attributes()`/`normalizedData()`/`dataForResponse()` for this type (currently validated but discarded).
+- [x] Read the rest of `BuyXGetY.php` (only the `Product`/`ProductVariant` matching branches of `discountableConditions`/`discountableRewards` were confirmed during planning) before deciding whether collection-based conditions are supported by this vendor class at all. If not supported, ship product-only pickers for both "Customer buys" and "Customer gets" rather than building a collection picker with no backend effect.
+- [x] Persist "Customer buys" as `discountableConditions` (type=`condition`) and "Customer gets" as `discountableRewards` (type=`reward`), scoped per the previous point's finding.
+- [x] Frontend: two `SearchableMultiSelect` blocks (Customer buys / Customer gets) each with a quantity field; reward value UI shows **only "Free"** (per verified facts above) — do not offer Percentage/Amount off each unless the vendor class is extended first; if the user wants those, flag it as new backend work rather than building dead UI.
+- [x] Tests: create a Buy X get Y discount, add matching lines to a cart via the checkout API, assert the reward line is discounted to 0 per `BuyXGetY::getRewardQuantity()`'s formula (`floor(linesQuantity / minQty) * rewardQty`, capped by `maxRewardQty`).
 
 ## Release gate (all 4 tasks)
 

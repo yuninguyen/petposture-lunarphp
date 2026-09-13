@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Lunar\DiscountTypes\AmountOff;
+use Lunar\DiscountTypes\BuyXGetY;
 use Lunar\Models\Collection as LunarCollection;
 use Lunar\Models\Product as LunarProduct;
 
@@ -22,13 +23,19 @@ class DiscountController extends Controller
     private const TYPES = [
         AmountOff::class => 'Amount off',
         FreeShipping::class => 'Free shipping',
+        BuyXGetY::class => 'Buy X get Y',
     ];
 
     public function index(Request $request): JsonResponse
     {
         $search = trim((string) $request->query('search', ''));
         $discounts = Discount::query()
-            ->with(['collections', 'discountableLimitations.discountable'])
+            ->with([
+                'collections',
+                'discountableLimitations.discountable',
+                'discountableConditions.discountable',
+                'discountableRewards.discountable',
+            ])
             ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('coupon', 'like', "%{$search}%")))
@@ -110,6 +117,19 @@ class DiscountController extends Controller
             $uniqueCoupon->ignore($discount);
         }
 
+        if (isset($input['buy_type']) && ! isset($input['condition_type'])) {
+            $input['condition_type'] = $input['buy_type'];
+        }
+        if (isset($input['buy_collection_ids']) && ! isset($input['condition_collection_ids'])) {
+            $input['condition_collection_ids'] = $input['buy_collection_ids'];
+        }
+        if (isset($input['buy_product_ids']) && ! isset($input['condition_product_ids'])) {
+            $input['condition_product_ids'] = $input['buy_product_ids'];
+        }
+        if (isset($input['get_product_ids']) && ! isset($input['reward_product_ids'])) {
+            $input['reward_product_ids'] = $input['get_product_ids'];
+        }
+
         $validator = validator($input, [
             'name' => ['required', 'string', 'max:255'],
             'handle' => ['required', 'string', 'max:255', $uniqueHandle],
@@ -128,15 +148,22 @@ class DiscountController extends Controller
             'data.percentage' => ['nullable', 'numeric', 'between:0,100'],
             'data.fixed_values' => ['nullable', 'array'],
             'data.fixed_values.USD' => ['nullable', 'numeric', 'min:0'],
-            'data.min_qty' => ['nullable', 'integer', 'min:0'],
-            'data.reward_qty' => ['nullable', 'integer', 'min:0'],
-            'data.max_reward_qty' => ['nullable', 'integer', 'min:0'],
+            'data.min_qty' => ['nullable', 'integer', 'min:1'],
+            'data.reward_qty' => ['nullable', 'integer', 'min:1'],
+            'data.max_reward_qty' => ['nullable', 'integer', 'min:1'],
             'data.automatically_add_rewards' => ['nullable', 'boolean'],
             'applies_to' => ['nullable', 'string', Rule::in(['all_products', 'specific_collections', 'specific_products'])],
             'collection_ids' => ['nullable', 'array'],
             'collection_ids.*' => ['integer', Rule::exists((new LunarCollection)->getTable(), 'id')],
             'product_ids' => ['nullable', 'array'],
             'product_ids.*' => ['integer', Rule::exists((new LunarProduct)->getTable(), 'id')],
+            'condition_type' => ['nullable', 'string', Rule::in(['specific_collections', 'specific_products'])],
+            'condition_collection_ids' => ['nullable', 'array'],
+            'condition_collection_ids.*' => ['integer', Rule::exists((new LunarCollection)->getTable(), 'id')],
+            'condition_product_ids' => ['nullable', 'array'],
+            'condition_product_ids.*' => ['integer', Rule::exists((new LunarProduct)->getTable(), 'id')],
+            'reward_product_ids' => ['nullable', 'array'],
+            'reward_product_ids.*' => ['integer', Rule::exists((new LunarProduct)->getTable(), 'id')],
         ]);
 
         $validator->after(function ($validator) use ($input): void {
@@ -151,6 +178,33 @@ class DiscountController extends Controller
 
             if ($type === AmountOff::class && ! $fixedValue && $percentage === null) {
                 $validator->errors()->add('data.percentage', 'The percentage is required.');
+            }
+
+            if ($type === BuyXGetY::class) {
+                $minQty = $input['data']['min_qty'] ?? null;
+                if ($minQty === null || ! is_numeric($minQty) || (int) $minQty < 1) {
+                    $validator->errors()->add('data.min_qty', 'The minimum quantity is required and must be at least 1.');
+                }
+
+                $rewardQty = $input['data']['reward_qty'] ?? null;
+                if ($rewardQty === null || ! is_numeric($rewardQty) || (int) $rewardQty < 1) {
+                    $validator->errors()->add('data.reward_qty', 'The reward quantity is required and must be at least 1.');
+                }
+
+                $conditionType = $input['condition_type'] ?? 'specific_products';
+                $conditionCollectionIds = $input['condition_collection_ids'] ?? [];
+                $conditionProductIds = $input['condition_product_ids'] ?? [];
+                if ($conditionType === 'specific_collections' && empty($conditionCollectionIds)) {
+                    $validator->errors()->add('condition_collection_ids', 'At least one collection is required for Customer buys.');
+                }
+                if ($conditionType === 'specific_products' && empty($conditionProductIds)) {
+                    $validator->errors()->add('condition_product_ids', 'At least one product is required for Customer buys.');
+                }
+
+                $rewardProductIds = $input['reward_product_ids'] ?? [];
+                if (empty($rewardProductIds)) {
+                    $validator->errors()->add('reward_product_ids', 'At least one product is required for Customer gets.');
+                }
             }
 
             $appliesTo = $input['applies_to'] ?? 'all_products';
@@ -195,6 +249,18 @@ class DiscountController extends Controller
             ];
         }
 
+        if ($type === BuyXGetY::class) {
+            return [
+                ...$data,
+                'min_qty' => isset($incoming['min_qty']) ? (int) $incoming['min_qty'] : 1,
+                'reward_qty' => isset($incoming['reward_qty']) ? (int) $incoming['reward_qty'] : 1,
+                'max_reward_qty' => isset($incoming['max_reward_qty']) && $incoming['max_reward_qty'] !== null && $incoming['max_reward_qty'] !== ''
+                    ? (int) $incoming['max_reward_qty']
+                    : null,
+                'automatically_add_rewards' => (bool) ($incoming['automatically_add_rewards'] ?? false),
+            ];
+        }
+
         return ($incoming['fixed_value'] ?? false)
             ? [...$data, 'fixed_value' => true, 'fixed_values' => ['USD' => $this->minor($incoming['fixed_values']['USD'] ?? null)]]
             : [...$data, 'fixed_value' => false, 'percentage' => $incoming['percentage'] ?? null];
@@ -202,6 +268,7 @@ class DiscountController extends Controller
 
     private function syncLimitations(Discount $discount, array $validated): void
     {
+        $type = $validated['type'] ?? $discount->type;
         $appliesTo = $validated['applies_to'] ?? 'all_products';
 
         $existingLimitationCollections = $discount->collections()
@@ -212,31 +279,73 @@ class DiscountController extends Controller
         }
 
         $discount->discountableLimitations()->delete();
+        $discount->discountableConditions()->delete();
+        $discount->discountableRewards()->delete();
 
-        if ($appliesTo === 'specific_collections') {
-            $collectionIds = array_unique(array_map('intval', $validated['collection_ids'] ?? []));
-            if (! empty($collectionIds)) {
-                $attachData = [];
-                foreach ($collectionIds as $id) {
-                    $attachData[$id] = ['type' => 'limitation'];
+        if ($type === AmountOff::class) {
+            if ($appliesTo === 'specific_collections') {
+                $collectionIds = array_unique(array_map('intval', $validated['collection_ids'] ?? []));
+                if (! empty($collectionIds)) {
+                    $attachData = [];
+                    foreach ($collectionIds as $id) {
+                        $attachData[$id] = ['type' => 'limitation'];
+                    }
+                    $discount->collections()->attach($attachData);
                 }
-                $discount->collections()->attach($attachData);
+            } elseif ($appliesTo === 'specific_products') {
+                $productIds = array_unique(array_map('intval', $validated['product_ids'] ?? []));
+                if (! empty($productIds)) {
+                    $morphClass = (new LunarProduct)->getMorphClass();
+                    foreach ($productIds as $productId) {
+                        $discount->discountableLimitations()->create([
+                            'discountable_type' => $morphClass,
+                            'discountable_id' => $productId,
+                            'type' => 'limitation',
+                        ]);
+                    }
+                }
             }
-        } elseif ($appliesTo === 'specific_products') {
-            $productIds = array_unique(array_map('intval', $validated['product_ids'] ?? []));
-            if (! empty($productIds)) {
+        } elseif ($type === BuyXGetY::class) {
+            $conditionType = $validated['condition_type'] ?? 'specific_products';
+            if ($conditionType === 'specific_collections') {
+                $collectionIds = array_unique(array_map('intval', $validated['condition_collection_ids'] ?? []));
+                $morphClass = (new LunarCollection)->getMorphClass();
+                foreach ($collectionIds as $collectionId) {
+                    $discount->discountableConditions()->create([
+                        'discountable_type' => $morphClass,
+                        'discountable_id' => $collectionId,
+                        'type' => 'condition',
+                    ]);
+                }
+            } else {
+                $productIds = array_unique(array_map('intval', $validated['condition_product_ids'] ?? []));
                 $morphClass = (new LunarProduct)->getMorphClass();
                 foreach ($productIds as $productId) {
-                    $discount->discountableLimitations()->create([
+                    $discount->discountableConditions()->create([
                         'discountable_type' => $morphClass,
                         'discountable_id' => $productId,
-                        'type' => 'limitation',
+                        'type' => 'condition',
                     ]);
                 }
             }
+
+            $rewardProductIds = array_unique(array_map('intval', $validated['reward_product_ids'] ?? []));
+            $morphClass = (new LunarProduct)->getMorphClass();
+            foreach ($rewardProductIds as $productId) {
+                $discount->discountableRewards()->create([
+                    'discountable_type' => $morphClass,
+                    'discountable_id' => $productId,
+                    'type' => 'reward',
+                ]);
+            }
         }
 
-        $discount->load(['collections', 'discountableLimitations.discountable']);
+        $discount->load([
+            'collections',
+            'discountableLimitations.discountable',
+            'discountableConditions.discountable',
+            'discountableRewards.discountable',
+        ]);
     }
 
     private function resource(Discount $discount): array
@@ -246,6 +355,12 @@ class DiscountController extends Controller
         }
         if (! $discount->relationLoaded('discountableLimitations')) {
             $discount->load('discountableLimitations.discountable');
+        }
+        if (! $discount->relationLoaded('discountableConditions')) {
+            $discount->load('discountableConditions.discountable');
+        }
+        if (! $discount->relationLoaded('discountableRewards')) {
+            $discount->load('discountableRewards.discountable');
         }
 
         $limitationCollections = $discount->collections->where('pivot.type', 'limitation');
@@ -284,6 +399,54 @@ class DiscountController extends Controller
             ];
         })->values()->all();
 
+        $conditionCollections = $discount->discountableConditions
+            ->filter(fn ($c) => $c->discountable_type === (new LunarCollection)->getMorphClass() || $c->discountable instanceof LunarCollection);
+        $conditionProducts = $discount->discountableConditions
+            ->filter(fn ($c) => $c->discountable_type === (new LunarProduct)->getMorphClass() || $c->discountable instanceof LunarProduct);
+        $rewardProducts = $discount->discountableRewards
+            ->filter(fn ($r) => $r->discountable_type === (new LunarProduct)->getMorphClass() || $r->discountable instanceof LunarProduct);
+
+        $conditionType = $conditionCollections->isNotEmpty() ? 'specific_collections' : 'specific_products';
+
+        $conditionCollectionIds = $conditionCollections->pluck('discountable_id')->values()->all();
+        $conditionCollectionsData = $conditionCollections->map(function ($cond) {
+            $c = $cond->discountable;
+            $name = null;
+            if ($c && method_exists($c, 'translateAttribute')) {
+                $name = $c->translateAttribute('name');
+            }
+            return [
+                'id' => $cond->discountable_id,
+                'name' => (string) ($name ?: ($c?->attribute_data['name']['value'] ?? $c?->name ?? "Collection #{$cond->discountable_id}")),
+            ];
+        })->values()->all();
+
+        $conditionProductIds = $conditionProducts->pluck('discountable_id')->values()->all();
+        $conditionProductsData = $conditionProducts->map(function ($cond) {
+            $p = $cond->discountable;
+            $name = null;
+            if ($p && method_exists($p, 'translateAttribute')) {
+                $name = $p->translateAttribute('name');
+            }
+            return [
+                'id' => $cond->discountable_id,
+                'name' => (string) ($name ?: ($p?->attribute_data['name']['value'] ?? $p?->name ?? "Product #{$cond->discountable_id}")),
+            ];
+        })->values()->all();
+
+        $rewardProductIds = $rewardProducts->pluck('discountable_id')->values()->all();
+        $rewardProductsData = $rewardProducts->map(function ($rew) {
+            $p = $rew->discountable;
+            $name = null;
+            if ($p && method_exists($p, 'translateAttribute')) {
+                $name = $p->translateAttribute('name');
+            }
+            return [
+                'id' => $rew->discountable_id,
+                'name' => (string) ($name ?: ($p?->attribute_data['name']['value'] ?? $p?->name ?? "Product #{$rew->discountable_id}")),
+            ];
+        })->values()->all();
+
         if ($discount->type === AmountOff::class) {
             $typeLabel = $appliesTo === 'all_products' ? 'Amount off order' : 'Amount off products';
         } else {
@@ -312,6 +475,13 @@ class DiscountController extends Controller
             'collections' => $collectionsData,
             'product_ids' => $productIds,
             'products' => $productsData,
+            'condition_type' => $conditionType,
+            'condition_collection_ids' => $conditionCollectionIds,
+            'condition_collections' => $conditionCollectionsData,
+            'condition_product_ids' => $conditionProductIds,
+            'condition_products' => $conditionProductsData,
+            'reward_product_ids' => $rewardProductIds,
+            'reward_products' => $rewardProductsData,
             'created_at' => $discount->created_at?->toISOString(),
             'updated_at' => $discount->updated_at?->toISOString(),
         ];
@@ -334,6 +504,16 @@ class DiscountController extends Controller
             return [
                 ...$normalized,
                 'free_shipping' => true,
+            ];
+        }
+
+        if ($discount->type === BuyXGetY::class) {
+            return [
+                ...$normalized,
+                'min_qty' => isset($data['min_qty']) ? (int) $data['min_qty'] : null,
+                'reward_qty' => isset($data['reward_qty']) ? (int) $data['reward_qty'] : 1,
+                'max_reward_qty' => isset($data['max_reward_qty']) && $data['max_reward_qty'] !== null ? (int) $data['max_reward_qty'] : null,
+                'automatically_add_rewards' => (bool) ($data['automatically_add_rewards'] ?? false),
             ];
         }
 
