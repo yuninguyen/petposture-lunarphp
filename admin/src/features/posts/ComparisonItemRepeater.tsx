@@ -38,37 +38,48 @@ function HighlightBadgeInput({ control, index }: { control: Control<PostFormValu
   );
 }
 
-// The backend stores/validates checked_at as UTC (Y-m-d\TH:i:s\Z), but a
-// native <input type="datetime-local"> both displays and edits in the
-// browser's local time with no timezone info. Convert between the two at
-// the read/write boundary so the picker still shows the right local time.
-function isoUtcToDatetimeLocal(isoUtc: string | null | undefined): string {
-  if (!isoUtc) return '';
-  const date = new Date(isoUtc);
-  if (Number.isNaN(date.getTime())) return '';
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+// Backend requires exact format Y-m-d\TH:i:s\Z (no milliseconds).
+function nowAsCheckedAt(): string {
+  return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-function datetimeLocalToIsoUtc(localValue: string): string {
-  if (!localValue) return '';
-  const date = new Date(localValue);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
+function formatCheckedAt(isoUtc: string): string {
+  const date = new Date(isoUtc);
+  if (Number.isNaN(date.getTime())) return isoUtc;
+  return date.toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
 }
 
 function CheckedAtInput({ control, index }: { control: Control<PostFormValues>; index: number }) {
+  const { t } = useTranslation();
+
   return (
     <Controller
       control={control}
       name={`comparison_items.${index}.metadata.checked_at`}
       render={({ field }) => (
-        <input
-          type="datetime-local"
-          value={isoUtcToDatetimeLocal(field.value)}
-          onChange={(e) => field.onChange(datetimeLocalToIsoUtc(e.target.value))}
-          className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm shadow-sm"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="secondary" onClick={() => field.onChange(nowAsCheckedAt())}>
+            {t('posts.comparison.mark_verified_now')}
+          </Button>
+          {field.value ? (
+            <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">
+              {formatCheckedAt(field.value)}
+              <button
+                type="button"
+                onClick={() => field.onChange('')}
+                className="text-slate-400 hover:text-slate-600"
+                aria-label={t('posts.comparison.clear_checked_at')}
+              >
+                ×
+              </button>
+            </span>
+          ) : (
+            <span className="text-sm text-slate-400">{t('posts.comparison.not_verified_yet')}</span>
+          )}
+        </div>
       )}
     />
   );
@@ -222,7 +233,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                   <p className="mt-1 text-xs text-gray-400">{t('posts.comparison.source_url_hint')}</p>
                 </div>
 
-                <div className="sm:w-1/2 sm:pr-1.5">
+                <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.checked_at')}</label>
                   <CheckedAtInput control={control} index={index} />
                   <p className="mt-1 text-xs text-gray-400">{t('posts.comparison.checked_at_hint')}</p>
