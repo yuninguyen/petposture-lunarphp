@@ -9,6 +9,10 @@ function resolveAlt(item) {
   return item.image_alt?.trim() || item.product_name;
 }
 
+function formatHighlight(value) {
+  return value.replace(/[_-]+/g, ' ').trim();
+}
+
 test('ComparisonTable type definition includes optional image_alt field', () => {
   assert.match(
     componentSource,
@@ -53,4 +57,20 @@ test('resolveAlt falls back to product_name when image_alt is null, undefined, e
   assert.equal(resolveAlt({ product_name: 'Orthopedic Bed', image_alt: '' }), 'Orthopedic Bed');
   assert.equal(resolveAlt({ product_name: 'Orthopedic Bed', image_alt: '   ' }), 'Orthopedic Bed');
   assert.equal(resolveAlt({ product_name: 'Orthopedic Bed' }), 'Orthopedic Bed');
+});
+
+test('ComparisonTable formats highlight badge text with formatHighlight helper', () => {
+  assert.match(
+    componentSource,
+    /\{formatHighlight\(item\.highlight\)\}/,
+    'Highlight badge must render formatHighlight(item.highlight)'
+  );
+});
+
+test('formatHighlight replaces underscores and hyphens with spaces', () => {
+  assert.equal(formatHighlight('best_overall'), 'best overall');
+  assert.equal(formatHighlight('BUDGET_PICK'), 'BUDGET PICK');
+  assert.equal(formatHighlight('best-value'), 'best value');
+  assert.equal(formatHighlight('editor_s-choice'), 'editor s choice');
+  assert.equal(formatHighlight('already spaced'), 'already spaced');
 });

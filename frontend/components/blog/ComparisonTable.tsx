@@ -34,6 +34,13 @@ function formatPrice(value: string | null | undefined): string {
     return trimmed.startsWith('$') ? trimmed : `$${trimmed}`;
 }
 
+// Highlight is a free-text slug like "best_overall"; the badge relies on CSS
+// `uppercase` for casing, but that alone leaves the underscore/hyphen visible
+// ("BEST_OVERALL"), so convert separators to spaces before display.
+function formatHighlight(value: string): string {
+    return value.replace(/[_-]+/g, ' ').trim();
+}
+
 function Stars({ rating }: { rating: number }) {
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating - fullStars >= 0.5;
@@ -74,7 +81,7 @@ function ComparisonCard({ item }: { item: ComparisonItem }) {
         <div className="flex flex-col rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
             {item.highlight ? (
                 <span className="mb-3 inline-block w-fit rounded-full bg-secondary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-rust">
-                    {item.highlight}
+                    {formatHighlight(item.highlight)}
                 </span>
             ) : (
                 <span className="mb-3 h-[22px]" aria-hidden="true" />
