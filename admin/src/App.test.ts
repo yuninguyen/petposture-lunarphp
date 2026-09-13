@@ -12,6 +12,9 @@ vi.mock('./features/customers/CustomersListPage', () => ({ CustomersListPage: ()
 vi.mock('./features/customers/CustomerDetailPage', () => ({ CustomerDetailPage: () => createElement('div', null, 'Customer detail route') }));
 vi.mock('./features/discounts/DiscountsListPage', () => ({ DiscountsListPage: () => createElement('div', null, 'Discounts route') }));
 vi.mock('./features/discounts/DiscountFormPage', () => ({ DiscountFormPage: () => createElement('div', null, 'Discount form route') }));
+vi.mock('./features/dashboard/SalesPage', () => ({ SalesPage: () => createElement('div', null, 'Sales dashboard route') }));
+vi.mock('./features/finance/GoalsPage', () => ({ GoalsPage: () => createElement('div', null, 'Goals route') }));
+vi.mock('./features/profile/ProfilePage', () => ({ ProfilePage: () => createElement('div', null, 'Profile route') }));
 
 import { AppRoutes, canDeleteReviews, canManageCommerce, canManageCustomers, canManageDiscounts, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute, ADMIN_HOME_CANDIDATES, HomeRouteCandidate } from './App';
 
@@ -206,9 +209,9 @@ describe('commerce admin role handling', () => {
 
 describe('admin home route resolution', () => {
   it.each([
-    ['super_admin', ['super_admin'], '/posts'],
-    ['admin', ['admin'], '/posts'],
-    ['staff', ['staff'], '/posts'],
+    ['super_admin', ['super_admin'], '/dashboard'],
+    ['admin', ['admin'], '/dashboard'],
+    ['staff', ['staff'], '/dashboard'],
     ['Product Manager', ['Product Manager'], '/products'],
     ['Order Manager', ['Order Manager'], '/orders'],
     ['Support', ['Support'], '/orders'],
@@ -232,5 +235,38 @@ describe('admin home route resolution', () => {
     expect(getAdminHomeRoute(['Product Manager'], futureCandidates)).toBe('/products');
     expect(getAdminHomeRoute(['Order Manager'], futureCandidates)).toBe('/orders');
     expect(getAdminHomeRoute(['Support'], futureCandidates)).toBe('/orders');
+  });
+
+  it('redirects /dashboard to /dashboard/sales and renders SalesPage', async () => {
+    const { host, root } = renderRoutes(['admin'], '/dashboard');
+    await act(async () => await Promise.resolve());
+    expect(host.textContent).toContain('Sales dashboard route');
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('renders GoalsPage at /goals for core admin and falls back for Product Manager', async () => {
+    const { host, root } = renderRoutes(['admin'], '/goals');
+    await act(async () => await Promise.resolve());
+    expect(host.textContent).toContain('Goals route');
+    act(() => root.unmount());
+    host.remove();
+
+    const pm = renderRoutes(['Product Manager'], '/goals');
+    await act(async () => await Promise.resolve());
+    expect(pm.host.textContent).not.toContain('Goals route');
+    expect(pm.host.textContent).toContain('Products route');
+    act(() => pm.root.unmount());
+    pm.host.remove();
+  });
+
+  it('renders ProfilePage at /profile for all authorized admin roles', async () => {
+    for (const role of ['admin', 'Product Manager', 'Order Manager', 'Support']) {
+      const { host, root } = renderRoutes([role], '/profile');
+      await act(async () => await Promise.resolve());
+      expect(host.textContent).toContain('Profile route');
+      act(() => root.unmount());
+      host.remove();
+    }
   });
 });

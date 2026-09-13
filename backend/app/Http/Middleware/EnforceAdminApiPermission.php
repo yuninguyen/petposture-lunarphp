@@ -17,6 +17,13 @@ class EnforceAdminApiPermission
             return $next($request);
         }
 
+        $path = ltrim((string) $request->route()?->uri(), '/');
+        $relativePath = preg_replace('#^api(?:/v1)?/admin/#', '', $path) ?? $path;
+
+        if ($this->isProfilePath($relativePath)) {
+            return $next($request);
+        }
+
         $ability = $this->abilityFor($request);
 
         abort_unless($ability, 403);
@@ -66,7 +73,10 @@ class EnforceAdminApiPermission
             return null;
         }
 
-        if ($request->user()?->hasAnyRole(['Order Manager', 'Support']) && $this->isOrderPath($relativePath)) {
+        if ($request->user()?->hasAnyRole(['Order Manager', 'Support']) && ($this->isOrderPath($relativePath) || $relativePath === 'dashboard/sales')) {
+            if ($relativePath === 'dashboard/sales') {
+                return 'view_any_order';
+            }
             if ($request->isMethod('get') && in_array($relativePath, [
                 'orders/product-picker',
                 'orders/product-picker/{product}/variants',
@@ -110,5 +120,10 @@ class EnforceAdminApiPermission
             || str_starts_with($path, 'return-requests/')
             || $path === 'orders'
             || str_starts_with($path, 'orders/');
+    }
+
+    private function isProfilePath(string $path): bool
+    {
+        return $path === 'profile' || $path === 'profile/password';
     }
 }

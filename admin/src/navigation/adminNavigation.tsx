@@ -36,7 +36,35 @@ export function canAccessCatalogue(roles: string[]): boolean {
   return isCoreAdminRole(roles) || roles.includes('Product Manager');
 }
 
+export function canAccessDashboard(roles: string[]): boolean {
+  return isCoreAdminRole(roles) || roles.includes('Order Manager') || roles.includes('Support');
+}
+
+export function canAccessFinance(roles: string[]): boolean {
+  return isCoreAdminRole(roles);
+}
+
 export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
+  {
+    key: 'dashboard',
+    titleKey: 'sidebar.dashboard',
+    fallbackTitle: 'DASHBOARD',
+    canAccess: canAccessDashboard,
+    items: [
+      {
+        key: 'sales',
+        labelKey: 'nav.sales',
+        fallbackLabel: 'Sales',
+        path: '/dashboard/sales',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        ),
+        canAccess: canAccessDashboard,
+      },
+    ],
+  },
   {
     key: 'sales',
     titleKey: 'sidebar.sales',
@@ -300,6 +328,26 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
           </svg>
         ),
         canAccess: canAccessCatalogue,
+      },
+    ],
+  },
+  {
+    key: 'finance',
+    titleKey: 'sidebar.finance',
+    fallbackTitle: 'FINANCE',
+    canAccess: canAccessFinance,
+    items: [
+      {
+        key: 'goals',
+        labelKey: 'nav.goals',
+        fallbackLabel: 'Goals',
+        path: '/goals',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+          </svg>
+        ),
+        canAccess: canAccessFinance,
       },
     ],
   },
