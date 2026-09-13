@@ -13,6 +13,7 @@ vi.mock('./features/customers/CustomerDetailPage', () => ({ CustomerDetailPage: 
 vi.mock('./features/discounts/DiscountsListPage', () => ({ DiscountsListPage: () => createElement('div', null, 'Discounts route') }));
 vi.mock('./features/discounts/DiscountFormPage', () => ({ DiscountFormPage: () => createElement('div', null, 'Discount form route') }));
 vi.mock('./features/dashboard/SalesPage', () => ({ SalesPage: () => createElement('div', null, 'Sales dashboard route') }));
+vi.mock('./features/dashboard/ConversionPage', () => ({ ConversionPage: () => createElement('div', null, 'Conversion dashboard route') }));
 vi.mock('./features/finance/GoalsPage', () => ({ GoalsPage: () => createElement('div', null, 'Goals route') }));
 vi.mock('./features/profile/ProfilePage', () => ({ ProfilePage: () => createElement('div', null, 'Profile route') }));
 
@@ -243,6 +244,23 @@ describe('admin home route resolution', () => {
     expect(host.textContent).toContain('Sales dashboard route');
     act(() => root.unmount());
     host.remove();
+  });
+
+  it('renders ConversionPage at /dashboard/conversion for authorized dashboard roles', async () => {
+    for (const role of ['admin', 'Order Manager', 'Support']) {
+      const { host, root } = renderRoutes([role], '/dashboard/conversion');
+      await act(async () => await Promise.resolve());
+      expect(host.textContent).toContain('Conversion dashboard route');
+      act(() => root.unmount());
+      host.remove();
+    }
+
+    const pm = renderRoutes(['Product Manager'], '/dashboard/conversion');
+    await act(async () => await Promise.resolve());
+    expect(pm.host.textContent).not.toContain('Conversion dashboard route');
+    expect(pm.host.textContent).toContain('Products route');
+    act(() => pm.root.unmount());
+    pm.host.remove();
   });
 
   it('renders GoalsPage at /goals for core admin and falls back for Product Manager', async () => {

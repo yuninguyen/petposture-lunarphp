@@ -58,7 +58,7 @@ describe('admin navigation semantic authorization', () => {
     expect(groups.map((g) => g.key)).toEqual(['dashboard', 'sales', 'content', 'catalogue', 'finance']);
 
     const dashboardItems = groups.find((g) => g.key === 'dashboard')?.items.map((i) => i.path);
-    expect(dashboardItems).toEqual(['/dashboard/sales']);
+    expect(dashboardItems).toEqual(['/dashboard/sales', '/dashboard/conversion']);
 
     const salesItems = groups.find((g) => g.key === 'sales')?.items.map((i) => i.path);
     expect(salesItems).toEqual([
@@ -99,7 +99,7 @@ describe('admin navigation semantic authorization', () => {
     const groups = getVisibleNavigation(['Order Manager']);
     expect(groups.map((g) => g.key)).toEqual(['dashboard', 'sales']);
 
-    expect(groups[0].items.map((i) => i.path)).toEqual(['/dashboard/sales']);
+    expect(groups[0].items.map((i) => i.path)).toEqual(['/dashboard/sales', '/dashboard/conversion']);
     expect(groups[1].items.map((i) => i.path)).toEqual(['/orders', '/return-requests']);
   });
 
@@ -107,7 +107,7 @@ describe('admin navigation semantic authorization', () => {
     const groups = getVisibleNavigation(['Support']);
     expect(groups.map((g) => g.key)).toEqual(['dashboard', 'sales']);
 
-    expect(groups[0].items.map((i) => i.path)).toEqual(['/dashboard/sales']);
+    expect(groups[0].items.map((i) => i.path)).toEqual(['/dashboard/sales', '/dashboard/conversion']);
     expect(groups[1].items.map((i) => i.path)).toEqual(['/orders', '/return-requests', '/reviews']);
   });
 
@@ -166,7 +166,7 @@ describe('admin navigation semantic authorization', () => {
       .filter((g) => g.items.length > 0);
 
     expect(visibleForOrderManager.map((g) => g.key)).toEqual(['dashboard', 'sales']);
-    expect(visibleForOrderManager[0].items.map((i) => i.path)).toEqual(['/dashboard/sales']);
+    expect(visibleForOrderManager[0].items.map((i) => i.path)).toEqual(['/dashboard/sales', '/dashboard/conversion']);
     expect(visibleForOrderManager[1].items.map((i) => i.path)).toEqual(['/orders', '/return-requests']);
   });
 });

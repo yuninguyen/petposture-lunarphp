@@ -40,6 +40,7 @@ const CustomerDetailPage = lazy(() => import('@/features/customers/CustomerDetai
 const DiscountsListPage = lazy(() => import('@/features/discounts/DiscountsListPage').then(m => ({ default: m.DiscountsListPage })));
 const DiscountFormPage = lazy(() => import('@/features/discounts/DiscountFormPage').then(m => ({ default: m.DiscountFormPage })));
 const SalesPage = lazy(() => import('@/features/dashboard/SalesPage').then(m => ({ default: m.SalesPage })));
+const ConversionPage = lazy(() => import('@/features/dashboard/ConversionPage').then(m => ({ default: m.ConversionPage })));
 const GoalsPage = lazy(() => import('@/features/finance/GoalsPage').then(m => ({ default: m.GoalsPage })));
 const ProfilePage = lazy(() => import('@/features/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
 
@@ -235,6 +236,7 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
       {canViewDashboard && <>
         <Route path="/dashboard" element={<Navigate to="/dashboard/sales" replace />} />
         <Route path="/dashboard/sales" element={<SalesPage />} />
+        <Route path="/dashboard/conversion" element={<ConversionPage />} />
       </>}
       <Route path="/profile" element={<ProfilePage />} />
       {isCoreAdmin && <>

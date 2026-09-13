@@ -133,3 +133,25 @@ export function useDashboardSales(range = '30') {
     queryFn: () => fetchDashboardSales(range),
   });
 }
+
+export interface ConversionData {
+  range: string;
+  carts_created: number;
+  checkouts_started: number;
+  orders_completed: number;
+  cart_abandonment_rate: number;
+  checkout_abandonment_rate: number;
+}
+
+export async function fetchConversion(range = '30'): Promise<ConversionData> {
+  const res = await fetchJson<{ data: ConversionData }>(`/admin/dashboard/conversion?range=${encodeURIComponent(range)}`);
+  return res.data;
+}
+
+export function useConversion(range = '30') {
+  return useQuery({
+    queryKey: ['dashboard-conversion', range],
+    queryFn: () => fetchConversion(range),
+  });
+}
+

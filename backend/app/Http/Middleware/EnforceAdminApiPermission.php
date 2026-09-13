@@ -73,8 +73,8 @@ class EnforceAdminApiPermission
             return null;
         }
 
-        if ($request->user()?->hasAnyRole(['Order Manager', 'Support']) && ($this->isOrderPath($relativePath) || $relativePath === 'dashboard/sales')) {
-            if ($relativePath === 'dashboard/sales') {
+        if ($request->user()?->hasAnyRole(['Order Manager', 'Support']) && ($this->isOrderPath($relativePath) || $relativePath === 'dashboard/sales' || $relativePath === 'dashboard/conversion')) {
+            if ($relativePath === 'dashboard/sales' || $relativePath === 'dashboard/conversion') {
                 return 'view_any_order';
             }
             if ($request->isMethod('get') && in_array($relativePath, [
