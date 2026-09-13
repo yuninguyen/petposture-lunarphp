@@ -7,9 +7,25 @@ use App\Models\Discount;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Lunar\Base\DiscountManagerInterface;
 use Lunar\DiscountTypes\AmountOff;
 use Lunar\DiscountTypes\BuyXGetY;
+use Lunar\FieldTypes\Text;
+use Lunar\Models\Cart;
+use Lunar\Models\Channel;
+use Lunar\Models\Collection as LunarCollection;
+use Lunar\Models\CollectionGroup;
+use Lunar\Models\Currency;
+use Lunar\Models\CustomerGroup;
+use Lunar\Models\Language;
+use Lunar\Models\Price;
+use Lunar\Models\Product as LunarProduct;
+use Lunar\Models\ProductType;
+use Lunar\Models\ProductVariant;
+use Lunar\Models\TaxClass;
+use Lunar\Models\TaxZone;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -48,7 +64,7 @@ class DiscountControllerTest extends TestCase
             ->assertJsonPath('data.supported', true)
             ->assertJsonPath('data.data.min_prices.USD', 25.0)
             ->assertJsonPath('data.data.percentage', 10.0);
-        $this->assertSame(['id', 'name', 'handle', 'coupon', 'type', 'type_label', 'supported', 'status', 'starts_at', 'ends_at', 'uses', 'max_uses', 'max_uses_per_user', 'priority', 'stop', 'data', 'created_at', 'updated_at'], array_keys($created->json('data')));
+        $this->assertSame(['id', 'name', 'handle', 'coupon', 'type', 'type_label', 'supported', 'status', 'starts_at', 'ends_at', 'uses', 'max_uses', 'max_uses_per_user', 'priority', 'stop', 'data', 'applies_to', 'collection_ids', 'collections', 'product_ids', 'products', 'created_at', 'updated_at'], array_keys($created->json('data')));
 
         $id = $created->json('data.id');
         $this->getJson('/api/admin/discounts')->assertOk()->assertJsonPath('meta.per_page', 15);
@@ -208,8 +224,310 @@ class DiscountControllerTest extends TestCase
         $this->getJson('/api/admin/discounts?search=unmatched')->assertOk()->assertJsonCount(0, 'data');
         $page = $this->getJson('/api/admin/discounts?page=2')->assertOk()->assertJsonPath('meta.per_page', 15)->assertJsonPath('meta.current_page', 2);
         $this->assertSame('Discount 2', $page->json('data.0.name'));
+    }
 
-        Carbon::setTestNow();
+    public function test_creates_discount_with_applies_to_all_products_persists_no_limitation_rows(): void
+    {
+        $this->actingAsCoreAdmin();
+
+        $response = $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'coupon' => 'ALLPROD',
+            'applies_to' => 'all_products',
+        ]))->assertCreated();
+
+        $response->assertJsonPath('data.applies_to', 'all_products')
+            ->assertJsonPath('data.collection_ids', [])
+            ->assertJsonPath('data.product_ids', []);
+
+        $discount = Discount::findOrFail($response->json('data.id'));
+        $this->assertSame(0, $discount->collections()->wherePivot('type', 'limitation')->count());
+        $this->assertSame(0, $discount->discountableLimitations()->count());
+    }
+
+    public function test_creates_discount_with_applies_to_specific_collections_persists_limitation_rows(): void
+    {
+        $this->actingAsCoreAdmin();
+        $collection = $this->createCollection('Dog Posture Harnesses');
+
+        $response = $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'coupon' => 'HARNESS20',
+            'applies_to' => 'specific_collections',
+            'collection_ids' => [$collection->id],
+        ]))->assertCreated();
+
+        $response->assertJsonPath('data.applies_to', 'specific_collections')
+            ->assertJsonPath('data.collection_ids', [$collection->id])
+            ->assertJsonPath('data.collections.0.id', $collection->id)
+            ->assertJsonPath('data.collections.0.name', 'Dog Posture Harnesses');
+
+        $discount = Discount::findOrFail($response->json('data.id'));
+        $this->assertSame([$collection->id], $discount->collections()->wherePivot('type', 'limitation')->pluck('lunar_collections.id')->all());
+        $this->assertSame(0, $discount->discountableLimitations()->count());
+    }
+
+    public function test_creates_discount_with_applies_to_specific_products_persists_limitation_rows(): void
+    {
+        $this->actingAsCoreAdmin();
+        $variant = $this->createProductWithVariant();
+        $product = $variant->product;
+
+        $response = $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'coupon' => 'SPECIFICPROD',
+            'applies_to' => 'specific_products',
+            'product_ids' => [$product->id],
+        ]))->assertCreated();
+
+        $response->assertJsonPath('data.applies_to', 'specific_products')
+            ->assertJsonPath('data.product_ids', [$product->id])
+            ->assertJsonPath('data.products.0.id', $product->id);
+
+        $discount = Discount::findOrFail($response->json('data.id'));
+        $this->assertSame(1, $discount->discountableLimitations()->count());
+        $this->assertSame($product->id, $discount->discountableLimitations()->first()->discountable_id);
+        $this->assertSame(0, $discount->collections()->wherePivot('type', 'limitation')->count());
+    }
+
+    public function test_updating_from_specific_collections_to_all_products_clears_all_limitation_rows(): void
+    {
+        $this->actingAsCoreAdmin();
+        $collection = $this->createCollection('Temporary Collection');
+
+        $created = $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'coupon' => 'CLEARLIMITS',
+            'applies_to' => 'specific_collections',
+            'collection_ids' => [$collection->id],
+        ]))->assertCreated();
+
+        $id = $created->json('data.id');
+        $discount = Discount::findOrFail($id);
+        $this->assertSame(1, $discount->collections()->wherePivot('type', 'limitation')->count());
+
+        $updated = $this->putJson("/api/admin/discounts/{$id}", $this->amountOffPayload([
+            'coupon' => 'CLEARLIMITS',
+            'applies_to' => 'all_products',
+            'collection_ids' => [],
+        ]))->assertOk();
+
+        $updated->assertJsonPath('data.applies_to', 'all_products')
+            ->assertJsonPath('data.collection_ids', [])
+            ->assertJsonPath('data.product_ids', []);
+
+        $discount->refresh();
+        $this->assertSame(0, $discount->collections()->wherePivot('type', 'limitation')->count());
+        $this->assertSame(0, $discount->discountableLimitations()->count());
+    }
+
+    public function test_validation_rejects_missing_or_invalid_collection_and_product_ids(): void
+    {
+        $this->actingAsCoreAdmin();
+
+        $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'coupon' => 'ERR1',
+            'applies_to' => 'specific_collections',
+            'collection_ids' => [],
+        ]))->assertUnprocessable()->assertJsonValidationErrors('collection_ids');
+
+        $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'coupon' => 'ERR2',
+            'applies_to' => 'specific_collections',
+            'collection_ids' => [999999],
+        ]))->assertUnprocessable()->assertJsonValidationErrors('collection_ids.0');
+
+        $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'coupon' => 'ERR3',
+            'applies_to' => 'specific_products',
+            'product_ids' => [],
+        ]))->assertUnprocessable()->assertJsonValidationErrors('product_ids');
+
+        $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'coupon' => 'ERR4',
+            'applies_to' => 'specific_products',
+            'product_ids' => [999999],
+        ]))->assertUnprocessable()->assertJsonValidationErrors('product_ids.0');
+
+        $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'coupon' => 'ERR5',
+            'applies_to' => 'invalid_scope',
+        ]))->assertUnprocessable()->assertJsonValidationErrors('applies_to');
+    }
+
+    public function test_cart_apply_with_scoped_discount_discounts_only_in_scope_product(): void
+    {
+        $this->setUpLunarPrerequisites();
+
+        $collection = $this->createCollection('Harnesses');
+
+        // Product A in collection: price 10000 minor ($100.00)
+        $variantA = $this->createProductWithVariant(10000, $collection);
+
+        // Product B NOT in collection: price 5000 minor ($50.00)
+        $variantB = $this->createProductWithVariant(5000, null);
+
+        // Admin creates 10% discount on collection
+        $this->actingAsCoreAdmin();
+        $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'name' => '10% off Harnesses',
+            'coupon' => 'HARNESS10',
+            'applies_to' => 'specific_collections',
+            'collection_ids' => [$collection->id],
+            'data' => [
+                'min_prices' => ['USD' => 0],
+                'fixed_value' => false,
+                'percentage' => 10,
+            ],
+        ]))->assertCreated();
+
+        // Create Cart and add both items
+        $currency = Currency::getDefault();
+        $channel = Channel::getDefault();
+
+        $cart = Cart::create([
+            'currency_id' => $currency->id,
+            'channel_id' => $channel->id,
+        ]);
+
+        $cart->add($variantA, 1);
+        $cart->add($variantB, 1);
+
+        $cart->coupon_code = 'HARNESS10';
+        $cart->discounts = collect();
+        $cart->discountBreakdown = collect();
+
+        $cart = app(DiscountManagerInterface::class)
+            ->resetDiscounts()
+            ->apply($cart);
+
+        // Cart::add()'s returned line's `id` is not reliable immediately after
+        // the call (both additions reported id=1 during debugging even though
+        // the persisted rows were correctly 1 and 2), so identify lines by
+        // their purchasable (variant) id instead of a captured line id.
+        $lineA = $cart->lines->firstWhere('purchasable_id', $variantA->id);
+        $lineB = $cart->lines->firstWhere('purchasable_id', $variantB->id);
+
+        // Line A (in collection) must be discounted by 10% (1000 minor = $10.00)
+        $this->assertSame(1000, $lineA->discountTotal->value);
+        $this->assertSame(9000, $lineA->subTotalDiscounted->value);
+
+        // Line B (out of collection) must NOT be discounted: Lunar's cart pipeline
+        // always populates subTotalDiscounted after totals are calculated (equal
+        // to subTotal when nothing was discounted), so assert equality rather
+        // than nullity.
+        $this->assertSame(0, $lineB->discountTotal?->value ?? 0);
+        $this->assertSame(5000, $lineB->subTotal->value);
+        $this->assertSame(5000, $lineB->subTotalDiscounted->value);
+
+        // Overall cart discount matches only in-scope product
+        $this->assertSame(1000, $cart->lines->sum(fn ($l) => $l->discountTotal?->value ?? 0));
+    }
+
+    private function createCollection(string $name = 'Test Collection'): LunarCollection
+    {
+        $group = CollectionGroup::query()->firstOrCreate(['handle' => 'main'], ['name' => 'Main']);
+        $collection = new LunarCollection([
+            'collection_group_id' => $group->id,
+            'attribute_data' => [
+                'name' => new Text($name),
+            ],
+        ]);
+        $collection->saveAsRoot();
+
+        return $collection;
+    }
+
+    private function createProductWithVariant(int $priceMinor = 10000, ?LunarCollection $collection = null): ProductVariant
+    {
+        $this->setUpLunarPrerequisites();
+
+        $productType = ProductType::firstOrCreate(['name' => 'General']);
+        $taxClass = TaxClass::firstOrCreate(['name' => 'Default'], ['default' => true]);
+        $channel = Channel::getDefault();
+        $customerGroup = CustomerGroup::query()->where('default', true)->first();
+        $currency = Currency::getDefault();
+
+        $product = LunarProduct::create([
+            'product_type_id' => $productType->id,
+            'status' => 'published',
+            'attribute_data' => [
+                'name' => new Text('Test Product ' . Str::random(5)),
+            ],
+        ]);
+
+        $product->channels()->syncWithPivotValues([$channel->id], [
+            'enabled' => true,
+            'starts_at' => now(),
+        ], false);
+
+        $product->customerGroups()->syncWithPivotValues([$customerGroup->id], [
+            'enabled' => true,
+            'starts_at' => now(),
+        ], false);
+
+        if ($collection) {
+            $product->collections()->attach($collection->id);
+        }
+
+        $variant = ProductVariant::create([
+            'product_id' => $product->id,
+            'tax_class_id' => $taxClass->id,
+            'sku' => 'SKU-' . Str::upper(Str::random(6)),
+            'stock' => 50,
+            'shippable' => true,
+        ]);
+
+        Price::create([
+            'customer_group_id' => null,
+            'currency_id' => $currency->id,
+            'priceable_type' => $variant->getMorphClass(),
+            'priceable_id' => $variant->id,
+            'price' => $priceMinor,
+            'min_quantity' => 1,
+        ]);
+
+        return $variant;
+    }
+
+    private function setUpLunarPrerequisites(): void
+    {
+        Language::firstOrCreate(
+            ['code' => 'en'],
+            ['name' => 'English', 'default' => true]
+        );
+
+        $currency = Currency::firstOrCreate(
+            ['code' => 'USD'],
+            [
+                'name' => 'US Dollar',
+                'decimal_places' => 2,
+                'default' => true,
+                'enabled' => true,
+                'exchange_rate' => 1,
+            ]
+        );
+        if (! $currency->default || ! $currency->enabled) {
+            $currency->forceFill(['default' => true, 'enabled' => true])->save();
+        }
+
+        $channel = Channel::firstOrCreate(
+            ['handle' => 'webstore'],
+            [
+                'name' => 'Webstore',
+                'default' => true,
+                'url' => 'http://localhost',
+            ]
+        );
+        if (! $channel->default) {
+            $channel->forceFill(['default' => true])->save();
+        }
+
+        CustomerGroup::firstOrCreate(
+            ['handle' => 'default'],
+            ['name' => 'Default', 'default' => true]
+        );
+
+        TaxZone::firstOrCreate(
+            ['name' => 'Default Tax Zone'],
+            ['zone_type' => 'country', 'price_display' => 'tax_exclusive', 'active' => true, 'default' => true]
+        );
     }
 
     private function amountOffPayload(array $overrides = []): array

@@ -5,6 +5,12 @@ export const AMOUNT_OFF_TYPE = 'Lunar\\DiscountTypes\\AmountOff' as const;
 
 export type DiscountType = typeof AMOUNT_OFF_TYPE;
 export type DiscountStatus = 'active' | 'expired' | 'pending' | 'scheduled';
+export type DiscountAppliesTo = 'all_products' | 'specific_collections' | 'specific_products';
+
+export interface DiscountItemSummary {
+  id: number;
+  name: string;
+}
 
 export interface DiscountData {
   min_prices: { USD: number | null };
@@ -30,6 +36,11 @@ export interface Discount {
   priority: number | null;
   stop: boolean;
   data: DiscountData;
+  applies_to?: DiscountAppliesTo;
+  collection_ids?: number[];
+  collections?: DiscountItemSummary[];
+  product_ids?: number[];
+  products?: DiscountItemSummary[];
   created_at: string;
   updated_at: string;
 }
@@ -56,9 +67,16 @@ export interface DiscountCreatePayload {
   max_uses: number | null;
   max_uses_per_user: number | null;
   data: DiscountData;
+  applies_to?: DiscountAppliesTo;
+  collection_ids?: number[];
+  product_ids?: number[];
 }
 
-export type DiscountUpdatePayload = Required<Pick<DiscountCreatePayload, 'name' | 'handle' | 'type' | 'starts_at' | 'ends_at' | 'coupon' | 'priority' | 'stop' | 'max_uses' | 'max_uses_per_user' | 'data'>>;
+export type DiscountUpdatePayload = Required<Pick<DiscountCreatePayload, 'name' | 'handle' | 'type' | 'starts_at' | 'ends_at' | 'coupon' | 'priority' | 'stop' | 'max_uses' | 'max_uses_per_user' | 'data'>> & {
+  applies_to?: DiscountAppliesTo;
+  collection_ids?: number[];
+  product_ids?: number[];
+};
 
 export interface DiscountFormValues {
   name: string;
@@ -74,6 +92,9 @@ export interface DiscountFormValues {
   fixed_value: boolean;
   percentage: string;
   fixed_value_usd: string;
+  applies_to: DiscountAppliesTo;
+  collection_ids: number[];
+  product_ids: number[];
 }
 
 function optionalNumber(value: string): number | null {
@@ -106,7 +127,7 @@ export function toLocalDateTimeValue(iso: string): string {
 export function buildDiscountPayload(values: DiscountFormValues): DiscountCreatePayload | null {
   const starts_at = toIsoUtc(values.starts_at);
   const ends_at = values.ends_at.trim() === '' ? null : toIsoUtc(values.ends_at);
-  if (starts_at === null || ends_at === null && values.ends_at.trim() !== '') return null;
+  if (starts_at === null || (ends_at === null && values.ends_at.trim() !== '')) return null;
 
   return {
     name: values.name.trim(),
@@ -120,6 +141,9 @@ export function buildDiscountPayload(values: DiscountFormValues): DiscountCreate
     max_uses: optionalNumber(values.max_uses),
     max_uses_per_user: optionalNumber(values.max_uses_per_user),
     data: discountData(values),
+    applies_to: values.applies_to ?? 'all_products',
+    collection_ids: values.applies_to === 'specific_collections' ? (values.collection_ids ?? []) : [],
+    product_ids: values.applies_to === 'specific_products' ? (values.product_ids ?? []) : [],
   };
 }
 

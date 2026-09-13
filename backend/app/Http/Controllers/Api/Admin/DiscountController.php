@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Lunar\DiscountTypes\AmountOff;
+use Lunar\Models\Collection as LunarCollection;
+use Lunar\Models\Product as LunarProduct;
 
 class DiscountController extends Controller
 {
@@ -24,6 +26,7 @@ class DiscountController extends Controller
     {
         $search = trim((string) $request->query('search', ''));
         $discounts = Discount::query()
+            ->with(['collections', 'discountableLimitations.discountable'])
             ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('coupon', 'like', "%{$search}%")))
@@ -52,6 +55,8 @@ class DiscountController extends Controller
         $discount = new Discount($this->attributes($validated));
         $discount->save();
 
+        $this->syncLimitations($discount, $validated);
+
         return response()->json(['data' => $this->resource($discount)], Response::HTTP_CREATED, options: JSON_PRESERVE_ZERO_FRACTION);
     }
 
@@ -69,6 +74,8 @@ class DiscountController extends Controller
 
         $validated = $this->validated($request->all(), $discount);
         $discount->update($this->attributes($validated));
+
+        $this->syncLimitations($discount, $validated);
 
         return response()->json(['data' => $this->resource($discount->refresh())], options: JSON_PRESERVE_ZERO_FRACTION);
     }
@@ -123,6 +130,11 @@ class DiscountController extends Controller
             'data.reward_qty' => ['nullable', 'integer', 'min:0'],
             'data.max_reward_qty' => ['nullable', 'integer', 'min:0'],
             'data.automatically_add_rewards' => ['nullable', 'boolean'],
+            'applies_to' => ['nullable', 'string', Rule::in(['all_products', 'specific_collections', 'specific_products'])],
+            'collection_ids' => ['nullable', 'array'],
+            'collection_ids.*' => ['integer', Rule::exists((new LunarCollection)->getTable(), 'id')],
+            'product_ids' => ['nullable', 'array'],
+            'product_ids.*' => ['integer', Rule::exists((new LunarProduct)->getTable(), 'id')],
         ]);
 
         $validator->after(function ($validator) use ($input): void {
@@ -138,6 +150,14 @@ class DiscountController extends Controller
             if ($type === AmountOff::class && ! $fixedValue && $percentage === null) {
                 $validator->errors()->add('data.percentage', 'The percentage is required.');
             }
+
+            $appliesTo = $input['applies_to'] ?? 'all_products';
+            if ($appliesTo === 'specific_collections' && empty($input['collection_ids'])) {
+                $validator->errors()->add('collection_ids', 'At least one collection is required when applying to specific collections.');
+            }
+            if ($appliesTo === 'specific_products' && empty($input['product_ids'])) {
+                $validator->errors()->add('product_ids', 'At least one product is required when applying to specific products.');
+            }
         });
 
         return $validator->validate();
@@ -152,7 +172,7 @@ class DiscountController extends Controller
             'type' => $validated['type'],
             'starts_at' => $validated['starts_at'],
             'ends_at' => $validated['ends_at'] ?? null,
-            'priority' => $validated['priority'] ?? null,
+            'priority' => $validated['priority'] ?? 1,
             'stop' => $validated['stop'] ?? false,
             'max_uses' => $validated['max_uses'] ?? null,
             'max_uses_per_user' => $validated['max_uses_per_user'] ?? null,
@@ -170,8 +190,90 @@ class DiscountController extends Controller
             : [...$data, 'fixed_value' => false, 'percentage' => $incoming['percentage'] ?? null];
     }
 
+    private function syncLimitations(Discount $discount, array $validated): void
+    {
+        $appliesTo = $validated['applies_to'] ?? 'all_products';
+
+        $existingLimitationCollections = $discount->collections()
+            ->wherePivot('type', 'limitation')
+            ->pluck((new LunarCollection)->getTable().'.id');
+        if ($existingLimitationCollections->isNotEmpty()) {
+            $discount->collections()->detach($existingLimitationCollections);
+        }
+
+        $discount->discountableLimitations()->delete();
+
+        if ($appliesTo === 'specific_collections') {
+            $collectionIds = array_unique(array_map('intval', $validated['collection_ids'] ?? []));
+            if (! empty($collectionIds)) {
+                $attachData = [];
+                foreach ($collectionIds as $id) {
+                    $attachData[$id] = ['type' => 'limitation'];
+                }
+                $discount->collections()->attach($attachData);
+            }
+        } elseif ($appliesTo === 'specific_products') {
+            $productIds = array_unique(array_map('intval', $validated['product_ids'] ?? []));
+            if (! empty($productIds)) {
+                $morphClass = (new LunarProduct)->getMorphClass();
+                foreach ($productIds as $productId) {
+                    $discount->discountableLimitations()->create([
+                        'discountable_type' => $morphClass,
+                        'discountable_id' => $productId,
+                        'type' => 'limitation',
+                    ]);
+                }
+            }
+        }
+
+        $discount->load(['collections', 'discountableLimitations.discountable']);
+    }
+
     private function resource(Discount $discount): array
     {
+        if (! $discount->relationLoaded('collections')) {
+            $discount->load('collections');
+        }
+        if (! $discount->relationLoaded('discountableLimitations')) {
+            $discount->load('discountableLimitations.discountable');
+        }
+
+        $limitationCollections = $discount->collections->where('pivot.type', 'limitation');
+        $limitationProducts = $discount->discountableLimitations;
+
+        if ($limitationCollections->isNotEmpty()) {
+            $appliesTo = 'specific_collections';
+        } elseif ($limitationProducts->isNotEmpty()) {
+            $appliesTo = 'specific_products';
+        } else {
+            $appliesTo = 'all_products';
+        }
+
+        $collectionIds = $limitationCollections->pluck('id')->values()->all();
+        $collectionsData = $limitationCollections->map(function ($c) {
+            $name = null;
+            if (method_exists($c, 'translateAttribute')) {
+                $name = $c->translateAttribute('name');
+            }
+            return [
+                'id' => $c->id,
+                'name' => (string) ($name ?: ($c->attribute_data['name']['value'] ?? $c->name ?? "Collection #{$c->id}")),
+            ];
+        })->values()->all();
+
+        $productIds = $limitationProducts->pluck('discountable_id')->values()->all();
+        $productsData = $limitationProducts->map(function ($lim) {
+            $p = $lim->discountable;
+            $name = null;
+            if ($p && method_exists($p, 'translateAttribute')) {
+                $name = $p->translateAttribute('name');
+            }
+            return [
+                'id' => $lim->discountable_id,
+                'name' => (string) ($name ?: ($p?->attribute_data['name']['value'] ?? $p?->name ?? "Product #{$lim->discountable_id}")),
+            ];
+        })->values()->all();
+
         return [
             'id' => $discount->id,
             'name' => $discount->name,
@@ -189,6 +291,11 @@ class DiscountController extends Controller
             'priority' => $discount->priority,
             'stop' => (bool) $discount->stop,
             'data' => $this->dataForResponse($discount),
+            'applies_to' => $appliesTo,
+            'collection_ids' => $collectionIds,
+            'collections' => $collectionsData,
+            'product_ids' => $productIds,
+            'products' => $productsData,
             'created_at' => $discount->created_at?->toISOString(),
             'updated_at' => $discount->updated_at?->toISOString(),
         ];

@@ -56,4 +56,42 @@ describe('discounts api', () => {
   it('returns a safe invalid result rather than throwing for malformed datetimes', () => {
     expect(toIsoUtc('not-a-date')).toBeNull();
   });
+
+  it('builds scoped payloads for specific_collections and specific_products', () => {
+    const collectionsPayload = buildDiscountPayload({
+      ...values,
+      applies_to: 'specific_collections',
+      collection_ids: [1, 2],
+      product_ids: [99],
+    });
+    expect(collectionsPayload).toMatchObject({
+      applies_to: 'specific_collections',
+      collection_ids: [1, 2],
+      product_ids: [],
+    });
+
+    const productsPayload = buildDiscountPayload({
+      ...values,
+      applies_to: 'specific_products',
+      collection_ids: [1, 2],
+      product_ids: [101, 102],
+    });
+    expect(productsPayload).toMatchObject({
+      applies_to: 'specific_products',
+      collection_ids: [],
+      product_ids: [101, 102],
+    });
+
+    const allProductsPayload = buildDiscountPayload({
+      ...values,
+      applies_to: 'all_products',
+      collection_ids: [1],
+      product_ids: [101],
+    });
+    expect(allProductsPayload).toMatchObject({
+      applies_to: 'all_products',
+      collection_ids: [],
+      product_ids: [],
+    });
+  });
 });
