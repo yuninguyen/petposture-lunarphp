@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\DiscountTypes\FreeShipping;
 use App\Http\Controllers\Controller;
 use App\Models\Discount;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,6 +21,7 @@ class DiscountController extends Controller
 {
     private const TYPES = [
         AmountOff::class => 'Amount off',
+        FreeShipping::class => 'Free shipping',
     ];
 
     public function index(Request $request): JsonResponse
@@ -183,7 +185,15 @@ class DiscountController extends Controller
     private function normalizedData(array $validated): array
     {
         $incoming = $validated['data'] ?? [];
+        $type = $validated['type'] ?? null;
         $data = ['min_prices' => ['USD' => $this->minor($incoming['min_prices']['USD'] ?? null)]];
+
+        if ($type === FreeShipping::class) {
+            return [
+                ...$data,
+                'free_shipping' => true,
+            ];
+        }
 
         return ($incoming['fixed_value'] ?? false)
             ? [...$data, 'fixed_value' => true, 'fixed_values' => ['USD' => $this->minor($incoming['fixed_values']['USD'] ?? null)]]
@@ -320,6 +330,13 @@ class DiscountController extends Controller
             return $normalized;
         }
 
+        if ($discount->type === FreeShipping::class) {
+            return [
+                ...$normalized,
+                'free_shipping' => true,
+            ];
+        }
+
         return ($data['fixed_value'] ?? false)
             ? [...$normalized, 'fixed_value' => true, 'fixed_values' => ['USD' => $this->decimal($data['fixed_values']['USD'] ?? null)]]
             : [...$normalized, 'fixed_value' => false, 'percentage' => isset($data['percentage']) ? (float) $data['percentage'] : null];
@@ -327,7 +344,7 @@ class DiscountController extends Controller
 
     private function isSupported(Discount $discount): bool
     {
-        return $discount->getRawOriginal('type') === AmountOff::class;
+        return in_array($discount->getRawOriginal('type'), array_keys(self::TYPES), true);
     }
 
     private function minor(float|int|null $decimal): ?int

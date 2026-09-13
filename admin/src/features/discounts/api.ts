@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/api';
 
 export const AMOUNT_OFF_TYPE = 'Lunar\\DiscountTypes\\AmountOff' as const;
+export const FREE_SHIPPING_TYPE = 'App\\DiscountTypes\\FreeShipping' as const;
 
-export type DiscountType = typeof AMOUNT_OFF_TYPE;
+export type DiscountType = typeof AMOUNT_OFF_TYPE | typeof FREE_SHIPPING_TYPE;
 export type DiscountStatus = 'active' | 'expired' | 'pending' | 'scheduled';
 export type DiscountAppliesTo = 'all_products' | 'specific_collections' | 'specific_products';
 
@@ -17,6 +18,7 @@ export interface DiscountData {
   fixed_value?: boolean;
   percentage?: number | null;
   fixed_values?: { USD: number | null };
+  free_shipping?: boolean;
 }
 
 export interface Discount {
@@ -95,6 +97,7 @@ export interface DiscountFormValues {
   applies_to: DiscountAppliesTo;
   collection_ids: number[];
   product_ids: number[];
+  type?: DiscountType;
 }
 
 function optionalNumber(value: string): number | null {
@@ -105,8 +108,15 @@ function optionalNumber(value: string): number | null {
   return Number.isFinite(number) ? number : null;
 }
 
-function discountData(values: DiscountFormValues): DiscountData {
+function discountData(values: DiscountFormValues, type: DiscountType = AMOUNT_OFF_TYPE): DiscountData {
   const min_prices = { USD: optionalNumber(values.min_price_usd) };
+
+  if (type === FREE_SHIPPING_TYPE) {
+    return {
+      min_prices,
+      free_shipping: true,
+    };
+  }
 
   return values.fixed_value
     ? { min_prices, fixed_value: true, fixed_values: { USD: optionalNumber(values.fixed_value_usd) } }
@@ -124,15 +134,17 @@ export function toLocalDateTimeValue(iso: string): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function buildDiscountPayload(values: DiscountFormValues): DiscountCreatePayload | null {
+export function buildDiscountPayload(values: DiscountFormValues, typeOverride?: DiscountType): DiscountCreatePayload | null {
   const starts_at = toIsoUtc(values.starts_at);
   const ends_at = values.ends_at.trim() === '' ? null : toIsoUtc(values.ends_at);
   if (starts_at === null || (ends_at === null && values.ends_at.trim() !== '')) return null;
 
+  const type = typeOverride ?? values.type ?? AMOUNT_OFF_TYPE;
+
   return {
     name: values.name.trim(),
     handle: values.handle.trim(),
-    type: AMOUNT_OFF_TYPE,
+    type,
     starts_at,
     ends_at,
     coupon: values.coupon.trim(),
@@ -140,15 +152,15 @@ export function buildDiscountPayload(values: DiscountFormValues): DiscountCreate
     stop: values.stop,
     max_uses: optionalNumber(values.max_uses),
     max_uses_per_user: optionalNumber(values.max_uses_per_user),
-    data: discountData(values),
+    data: discountData(values, type),
     applies_to: values.applies_to ?? 'all_products',
     collection_ids: values.applies_to === 'specific_collections' ? (values.collection_ids ?? []) : [],
     product_ids: values.applies_to === 'specific_products' ? (values.product_ids ?? []) : [],
   };
 }
 
-export function buildDiscountUpdatePayload(values: DiscountFormValues): DiscountUpdatePayload | null {
-  const payload = buildDiscountPayload(values);
+export function buildDiscountUpdatePayload(values: DiscountFormValues, typeOverride?: DiscountType): DiscountUpdatePayload | null {
+  const payload = buildDiscountPayload(values, typeOverride);
   return payload && { ...payload, handle: values.handle.trim() };
 }
 

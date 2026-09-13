@@ -2,14 +2,17 @@
 
 namespace Tests\Feature\Api\Admin;
 
+use App\DiscountTypes\FreeShipping;
 use App\Lunar\DiscountTypes\FixedAmountOffPerUnit;
 use App\Models\Discount;
+use App\Models\ShippingMethod;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Lunar\Base\DiscountManagerInterface;
+use Lunar\Base\ShippingManifestInterface;
 use Lunar\DiscountTypes\AmountOff;
 use Lunar\DiscountTypes\BuyXGetY;
 use Lunar\FieldTypes\Text;
@@ -17,14 +20,18 @@ use Lunar\Models\Cart;
 use Lunar\Models\Channel;
 use Lunar\Models\Collection as LunarCollection;
 use Lunar\Models\CollectionGroup;
+use Lunar\Models\Country;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Language;
+use Lunar\Models\Order;
 use Lunar\Models\Price;
 use Lunar\Models\Product as LunarProduct;
 use Lunar\Models\ProductType;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
+use Lunar\Models\TaxRate;
+use Lunar\Models\TaxRateAmount;
 use Lunar\Models\TaxZone;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -464,6 +471,188 @@ class DiscountControllerTest extends TestCase
         $this->assertSame(1000, $cart->lines->sum(fn ($l) => $l->discountTotal?->value ?? 0));
     }
 
+    public function test_core_admin_creates_lists_shows_updates_and_deletes_a_free_shipping_discount(): void
+    {
+        $this->actingAsCoreAdmin();
+
+        $created = $this->postJson('/api/admin/discounts', [
+            'name' => 'Free Shipping promo',
+            'coupon' => 'FREESHIP',
+            'type' => FreeShipping::class,
+            'starts_at' => '2026-08-31T12:00:00.000Z',
+            'priority' => 3,
+            'stop' => false,
+            'data' => [
+                'min_prices' => ['USD' => 30.00],
+            ],
+        ])->assertCreated();
+
+        $created->assertJsonPath('data.handle', 'free-shipping-promo')
+            ->assertJsonPath('data.type', FreeShipping::class)
+            ->assertJsonPath('data.type_label', 'Free shipping')
+            ->assertJsonPath('data.supported', true)
+            ->assertJsonPath('data.data.free_shipping', true)
+            ->assertJsonPath('data.data.min_prices.USD', 30.0);
+
+        $id = $created->json('data.id');
+        $this->assertDatabaseHas('lunar_discounts', [
+            'id' => $id,
+            'type' => FreeShipping::class,
+        ]);
+
+        $this->getJson("/api/admin/discounts/{$id}")
+            ->assertOk()
+            ->assertJsonPath('data.type_label', 'Free shipping')
+            ->assertJsonPath('data.data.free_shipping', true);
+
+        $this->putJson("/api/admin/discounts/{$id}", [
+            'name' => 'Updated Free Shipping',
+            'handle' => 'updated-free-shipping',
+            'coupon' => 'FREESHIP-2',
+            'type' => FreeShipping::class,
+            'starts_at' => '2026-08-31T12:00:00.000Z',
+            'priority' => 4,
+            'stop' => true,
+            'data' => [
+                'min_prices' => ['USD' => 0],
+            ],
+        ])->assertOk()
+            ->assertJsonPath('data.handle', 'updated-free-shipping')
+            ->assertJsonPath('data.coupon', 'FREESHIP-2')
+            ->assertJsonPath('data.data.free_shipping', true);
+
+        $this->deleteJson("/api/admin/discounts/{$id}")->assertNoContent();
+        $this->assertDatabaseMissing('lunar_discounts', ['id' => $id]);
+    }
+
+    public function test_free_shipping_discount_zeroes_shipping_rates_in_checkout_flow(): void
+    {
+        $this->setUpLunarPrerequisites();
+
+        // Ensure shipping methods exist with predictable rates
+        ShippingMethod::query()->updateOrCreate(
+            ['code' => 'standard'],
+            ['name' => 'Standard Shipping', 'price' => 15.00, 'free_over' => 50.00]
+        );
+        ShippingMethod::query()->updateOrCreate(
+            ['code' => 'express'],
+            ['name' => 'Express Shipping', 'price' => 25.00, 'free_over' => null]
+        );
+
+        // Product priced at $30 (3000 cents) - below standard shipping free_over threshold of $50
+        $variant = $this->createProductWithVariant(3000, null);
+
+        // Admin creates Free Shipping discount via API
+        $this->actingAsCoreAdmin();
+        $this->postJson('/api/admin/discounts', [
+            'name' => 'Free Express & Standard',
+            'coupon' => 'SHIPZERO',
+            'type' => FreeShipping::class,
+            'starts_at' => '2026-08-31T12:00:00.000Z',
+            'priority' => 1,
+            'stop' => false,
+            'data' => [
+                'min_prices' => ['USD' => 0],
+            ],
+        ])->assertCreated();
+
+        // 1. Verify /api/apply-coupon reports free_shipping = true
+        $this->postJson('/api/apply-coupon', [
+            'coupon_code' => 'SHIPZERO',
+            'items' => [
+                ['variantId' => $variant->id, 'quantity' => 1],
+            ],
+        ])->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('coupon.free_shipping', true)
+            ->assertJsonPath('discount_amount', 0);
+
+        // 2. Verify /api/checkout/shipping-rates returns 0 when coupon is provided
+        // Without coupon: subtotal $30 < $50, so standard is 1500, express is 2500
+        $ratesWithoutCoupon = $this->getJson('/api/checkout/shipping-rates?subtotal_minor=3000')->assertOk();
+        $this->assertSame(1500, collect($ratesWithoutCoupon->json('rates'))->firstWhere('id', 'standard')['price_minor']);
+        $this->assertSame(2500, collect($ratesWithoutCoupon->json('rates'))->firstWhere('id', 'express')['price_minor']);
+
+        // With free shipping coupon: all rates must be 0
+        $ratesWithCoupon = $this->getJson('/api/checkout/shipping-rates?subtotal_minor=3000&coupon_code=SHIPZERO')->assertOk();
+        $this->assertSame(0, collect($ratesWithCoupon->json('rates'))->firstWhere('id', 'standard')['price_minor']);
+        $this->assertSame(0, collect($ratesWithCoupon->json('rates'))->firstWhere('id', 'express')['price_minor']);
+
+        // 3. Verify Lunar Cart & ShippingManifest modifier
+        $cart = Cart::create([
+            'currency_id' => Currency::getDefault()->id,
+            'channel_id' => Channel::getDefault()->id,
+        ]);
+        $cart->add($variant, 1);
+        $cart->coupon_code = 'SHIPZERO';
+        $cart->calculate();
+
+        $shippingManifest = app(ShippingManifestInterface::class);
+        $manifestOptions = $shippingManifest->getOptions($cart);
+        $this->assertNotEmpty($manifestOptions);
+        foreach ($manifestOptions as $option) {
+            $this->assertSame(0, $option->price->value);
+        }
+
+        // 4. Verify checkout flow /api/checkout/place-order
+        // Order placed WITH coupon: express shipping is 0
+        $orderResponse = $this->postJson('/api/checkout/place-order', [
+            'items' => [
+                ['variantId' => $variant->id, 'quantity' => 1],
+            ],
+            'shipping' => [
+                'email' => 'freeship@petposture.com',
+                'first_name' => 'Jane',
+                'last_name' => 'Doe',
+                'line_one' => '123 Congress Ave',
+                'city' => 'Austin',
+                'state' => 'TX',
+                'postcode' => '78701',
+                'country' => 'United States',
+                'phone' => '5125550101',
+            ],
+            'billing_same_as_shipping' => true,
+            'shipping_method' => 'express',
+            'payment_method' => 'cod',
+            'coupon_code' => 'SHIPZERO',
+        ])->assertCreated();
+
+        $orderWithCoupon = Order::findOrFail($orderResponse->json('order.id'));
+        $this->assertSame(0, $orderWithCoupon->shipping_total->value);
+
+        // Lunar's ShippingManifest is container-scoped and de-dupes addOption()
+        // calls by identifier without ever clearing between getOptions() calls,
+        // so the zero-priced options computed for the coupon order above would
+        // otherwise leak into this second, uncoupled place-order call within the
+        // same test process. A real HTTP request gets a fresh container each
+        // time in production, so this reset only matters here.
+        app(\Lunar\Base\ShippingManifestInterface::class)->clearOptions();
+
+        // Order placed WITHOUT coupon: express shipping is 2500 cents ($25.00)
+        $orderResponseNoCoupon = $this->postJson('/api/checkout/place-order', [
+            'items' => [
+                ['variantId' => $variant->id, 'quantity' => 1],
+            ],
+            'shipping' => [
+                'email' => 'standard@petposture.com',
+                'first_name' => 'John',
+                'last_name' => 'Smith',
+                'line_one' => '456 Main St',
+                'city' => 'Austin',
+                'state' => 'TX',
+                'postcode' => '78701',
+                'country' => 'United States',
+                'phone' => '5125550102',
+            ],
+            'billing_same_as_shipping' => true,
+            'shipping_method' => 'express',
+            'payment_method' => 'cod',
+        ])->assertCreated();
+
+        $orderWithoutCoupon = Order::findOrFail($orderResponseNoCoupon->json('order.id'));
+        $this->assertSame(2500, $orderWithoutCoupon->shipping_total->value);
+    }
+
     private function createCollection(string $name = 'Test Collection'): LunarCollection
     {
         $group = CollectionGroup::query()->firstOrCreate(['handle' => 'main'], ['name' => 'Main']);
@@ -568,9 +757,49 @@ class DiscountControllerTest extends TestCase
             ['name' => 'Default', 'default' => true]
         );
 
-        TaxZone::firstOrCreate(
+        $country = Country::firstOrCreate(
+            ['iso2' => 'US'],
+            [
+                'name' => 'United States',
+                'iso3' => 'USA',
+                'phonecode' => '1',
+                'capital' => 'Washington',
+                'currency' => 'USD',
+                'native' => 'United States',
+                'emoji' => 'US',
+                'emoji_u' => 'U+1F1FA U+1F1F8',
+            ]
+        );
+
+        $taxZone = TaxZone::firstOrCreate(
             ['name' => 'Default Tax Zone'],
             ['zone_type' => 'country', 'price_display' => 'tax_exclusive', 'active' => true, 'default' => true]
+        );
+
+        if (! $taxZone->countries()->where('country_id', $country->id)->exists()) {
+            $taxZone->countries()->create([
+                'country_id' => $country->id,
+            ]);
+        }
+
+        $taxClass = TaxClass::firstOrCreate(['name' => 'Default'], ['default' => true]);
+
+        $taxRate = TaxRate::firstOrCreate(
+            ['name' => 'Default Tax Rate'],
+            [
+                'tax_zone_id' => $taxZone->id,
+                'priority' => 1,
+            ]
+        );
+
+        TaxRateAmount::firstOrCreate(
+            [
+                'tax_rate_id' => $taxRate->id,
+                'tax_class_id' => $taxClass->id,
+            ],
+            [
+                'percentage' => 0,
+            ]
         );
     }
 

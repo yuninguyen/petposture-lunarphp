@@ -31,7 +31,7 @@ vi.mock('@/features/products/api', () => ({
   useProducts: () => ({ data: { data: mocks.products }, isLoading: false }),
 }));
 
-import { AMOUNT_OFF_TYPE, type Discount } from './api';
+import { AMOUNT_OFF_TYPE, FREE_SHIPPING_TYPE, type Discount } from './api';
 import { DiscountFormPage } from './DiscountFormPage';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -375,6 +375,82 @@ describe('DiscountFormPage', () => {
         applies_to: 'all_products',
         collection_ids: [],
         product_ids: [],
+      }),
+    }), expect.any(Object));
+    act(() => root.unmount());
+  });
+
+  it('hides Discount value and Applies to sections, enables free_shipping option, and submits free_shipping payload with data.free_shipping = true on create', () => {
+    const { host, root } = renderForm();
+
+    // Select Free shipping from type selector
+    change(host.querySelector('#discount-type-selector'), 'free_shipping');
+
+    // Both Discount value section and Applies to section must be hidden
+    expect(host.querySelector('#discount-percentage')).toBeNull();
+    expect(host.querySelector('#discount-fixed-value')).toBeNull();
+    expect(host.querySelector('#discount-fixed-value-usd')).toBeNull();
+    expect(host.querySelector('#discount-applies-to')).toBeNull();
+
+    // Conditions should still be available
+    expect(host.querySelector('#discount-min-req-none')).toBeTruthy();
+    expect(host.querySelector('#discount-min-req-amount')).toBeTruthy();
+    expect(host.querySelector('#discount-has-max-uses')).toBeTruthy();
+    expect(host.querySelector('#discount-has-end-date')).toBeTruthy();
+
+    // Fill basic fields (no value fields needed!)
+    change(host.querySelector('#discount-name'), 'Free Delivery');
+    change(host.querySelector('#discount-coupon'), 'FREEDELIVERY');
+    change(host.querySelector('#discount-starts-at'), '2026-08-31T12:00');
+
+    submit(host);
+
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({
+      type: FREE_SHIPPING_TYPE,
+      name: 'Free Delivery',
+      coupon: 'FREEDELIVERY',
+      applies_to: 'all_products',
+      collection_ids: [],
+      product_ids: [],
+      data: expect.objectContaining({
+        free_shipping: true,
+      }),
+    }), expect.any(Object));
+    act(() => root.unmount());
+  });
+
+  it('displays Free shipping badge, hides Discount value and Applies to sections on edit for free shipping discount', () => {
+    const freeShippingDiscount = {
+      ...discount,
+      id: 9,
+      type: FREE_SHIPPING_TYPE,
+      type_label: 'Free shipping',
+      applies_to: 'all_products',
+      collection_ids: [],
+      collections: [],
+      data: { min_prices: { USD: null }, free_shipping: true },
+    };
+    mocks.detail = { data: freeShippingDiscount, isLoading: false, isError: false, error: undefined };
+    const { host, root } = renderForm('/discounts/9');
+
+    expect(host.querySelector('#discount-type-selector')).toBeNull();
+    expect(host.textContent).toContain('discounts.type');
+    expect(host.textContent).toContain('discounts.type_free_shipping');
+    expect(host.querySelector('#discount-percentage')).toBeNull();
+    expect(host.querySelector('#discount-fixed-value')).toBeNull();
+    expect(host.querySelector('#discount-applies-to')).toBeNull();
+
+    submit(host);
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
+      id: 9,
+      payload: expect.objectContaining({
+        type: FREE_SHIPPING_TYPE,
+        applies_to: 'all_products',
+        collection_ids: [],
+        product_ids: [],
+        data: expect.objectContaining({
+          free_shipping: true,
+        }),
       }),
     }), expect.any(Object));
     act(() => root.unmount());

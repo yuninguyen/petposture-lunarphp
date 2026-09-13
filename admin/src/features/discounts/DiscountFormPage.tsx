@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { SearchableMultiSelect } from '@/components/ui/SearchableMultiSelect';
 import { useProductLookups, useProducts } from '@/features/products/api';
 import {
+  AMOUNT_OFF_TYPE,
+  FREE_SHIPPING_TYPE,
   buildDiscountPayload,
   buildDiscountUpdatePayload,
   toIsoUtc,
@@ -142,11 +144,13 @@ export function DiscountFormPage() {
       setHasMaxUses(detailQuery.data.max_uses != null && detailQuery.data.max_uses > 0);
       setHasMaxUsesPerUser(detailQuery.data.max_uses_per_user != null && detailQuery.data.max_uses_per_user > 0);
       setMinReqType(detailQuery.data.data?.min_prices?.USD != null && Number(detailQuery.data.data.min_prices.USD) > 0 ? 'amount' : 'none');
-      setDiscountType(
-        detailQuery.data.type_label === 'Amount off order' || detailQuery.data.applies_to === 'all_products'
-          ? 'amount_off_order'
-          : 'amount_off_products'
-      );
+      if (detailQuery.data.type === FREE_SHIPPING_TYPE || detailQuery.data.type_label === 'Free shipping') {
+        setDiscountType('free_shipping');
+      } else if (detailQuery.data.type_label === 'Amount off order' || detailQuery.data.applies_to === 'all_products') {
+        setDiscountType('amount_off_order');
+      } else {
+        setDiscountType('amount_off_products');
+      }
     }
   }, [editId, detailQuery.data]);
 
@@ -173,7 +177,7 @@ export function DiscountFormPage() {
       values.max_uses,
       values.max_uses_per_user,
       values.min_price_usd,
-      values.fixed_value ? values.fixed_value_usd : values.percentage,
+      ...(discountType !== 'free_shipping' ? [values.fixed_value ? values.fixed_value_usd : values.percentage] : []),
     ];
     for (const value of numericValues) {
       if (!value.trim()) continue;
@@ -182,10 +186,12 @@ export function DiscountFormPage() {
       else if (number < 0) validationErrors.push(t('discounts.numeric_non_negative'));
     }
 
-    if (!values.fixed_value && Number(values.percentage) > 100) validationErrors.push(t('discounts.percentage_maximum'));
+    if (discountType !== 'free_shipping') {
+      if (!values.fixed_value && Number(values.percentage) > 100) validationErrors.push(t('discounts.percentage_maximum'));
+      if (!(values.fixed_value ? values.fixed_value_usd : values.percentage).trim()) validationErrors.push(t('discounts.amount_off_value_required'));
+    }
     if (values.max_uses.trim() && Number(values.max_uses) === 0) validationErrors.push(t('discounts.positive_use_limit'));
     if (values.max_uses_per_user.trim() && Number(values.max_uses_per_user) === 0) validationErrors.push(t('discounts.positive_use_limit'));
-    if (!(values.fixed_value ? values.fixed_value_usd : values.percentage).trim()) validationErrors.push(t('discounts.amount_off_value_required'));
     if (values.ends_at && values.starts_at && toIsoUtc(values.ends_at) && toIsoUtc(values.starts_at) && new Date(values.ends_at) <= new Date(values.starts_at)) {
       validationErrors.push(t('discounts.end_after_start'));
     }
@@ -204,11 +210,14 @@ export function DiscountFormPage() {
       return;
     }
 
-    const valuesToSubmit: DiscountFormValues = discountType === 'amount_off_order'
-      ? { ...values, applies_to: 'all_products', collection_ids: [], product_ids: [] }
-      : values;
+    const selectedType = discountType === 'free_shipping' ? FREE_SHIPPING_TYPE : AMOUNT_OFF_TYPE;
+    const valuesToSubmit: DiscountFormValues = {
+      ...values,
+      type: selectedType,
+      ...(discountType !== 'amount_off_products' ? { applies_to: 'all_products' as DiscountAppliesTo, collection_ids: [], product_ids: [] } : {}),
+    };
 
-    const payload = editId ? buildDiscountUpdatePayload(valuesToSubmit) : buildDiscountPayload(valuesToSubmit);
+    const payload = editId ? buildDiscountUpdatePayload(valuesToSubmit, selectedType) : buildDiscountPayload(valuesToSubmit, selectedType);
     if (!payload) {
       setErrors([t('discounts.datetime_invalid')]);
       return;
@@ -269,7 +278,7 @@ export function DiscountFormPage() {
                   onChange={(e) => {
                     const nextType = e.target.value;
                     setDiscountType(nextType);
-                    if (nextType === 'amount_off_order') {
+                    if (nextType !== 'amount_off_products') {
                       update('applies_to', 'all_products');
                       update('collection_ids', []);
                       update('product_ids', []);
@@ -280,7 +289,7 @@ export function DiscountFormPage() {
                   <option value="amount_off_products">{t('discounts.type_amount_off_products')}</option>
                   <option value="amount_off_order">{t('discounts.type_amount_off_order')}</option>
                   <option value="buy_x_get_y" disabled>{t('discounts.type_buy_x_get_y')} (Coming soon)</option>
-                  <option value="free_shipping" disabled>{t('discounts.type_free_shipping')} (Coming soon)</option>
+                  <option value="free_shipping">{t('discounts.type_free_shipping')}</option>
                 </select>
               </Field>
             </div>
@@ -289,7 +298,9 @@ export function DiscountFormPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
             <span className="text-sm font-medium text-slate-700">{t('discounts.type')}</span>
             <span className="inline-flex items-center rounded-md bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-800">
-              {detailQuery.data?.type_label === 'Amount off order'
+              {detailQuery.data?.type === FREE_SHIPPING_TYPE || detailQuery.data?.type_label === 'Free shipping'
+                ? t('discounts.type_free_shipping')
+                : detailQuery.data?.type_label === 'Amount off order'
                 ? t('discounts.type_amount_off_order')
                 : detailQuery.data?.type_label === 'Amount off products'
                 ? t('discounts.type_amount_off_products')
@@ -345,42 +356,44 @@ export function DiscountFormPage() {
         </Section>
 
         {/* Discount Value Section */}
-        <Section title={t('discounts.type_configuration')}>
-          <div className="sm:col-span-2 space-y-4">
-            <Check
-              id="discount-fixed-value"
-              checked={values.fixed_value}
-              onChange={(checked) => update('fixed_value', checked)}
-              label={t('discounts.fixed_value')}
-            />
-            {values.fixed_value ? (
-              <Field label={t('discounts.fixed_value_usd')}>
-                <input
-                  id="discount-fixed-value-usd"
-                  min="0"
-                  step="0.01"
-                  type="number"
-                  value={values.fixed_value_usd}
-                  onChange={(event) => update('fixed_value_usd', event.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                />
-              </Field>
-            ) : (
-              <Field label={t('discounts.percentage')}>
-                <input
-                  id="discount-percentage"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  type="number"
-                  value={values.percentage}
-                  onChange={(event) => update('percentage', event.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                />
-              </Field>
-            )}
-          </div>
-        </Section>
+        {discountType !== 'free_shipping' && (
+          <Section title={t('discounts.type_configuration')}>
+            <div className="sm:col-span-2 space-y-4">
+              <Check
+                id="discount-fixed-value"
+                checked={values.fixed_value}
+                onChange={(checked) => update('fixed_value', checked)}
+                label={t('discounts.fixed_value')}
+              />
+              {values.fixed_value ? (
+                <Field label={t('discounts.fixed_value_usd')}>
+                  <input
+                    id="discount-fixed-value-usd"
+                    min="0"
+                    step="0.01"
+                    type="number"
+                    value={values.fixed_value_usd}
+                    onChange={(event) => update('fixed_value_usd', event.target.value)}
+                    className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  />
+                </Field>
+              ) : (
+                <Field label={t('discounts.percentage')}>
+                  <input
+                    id="discount-percentage"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    type="number"
+                    value={values.percentage}
+                    onChange={(event) => update('percentage', event.target.value)}
+                    className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  />
+                </Field>
+              )}
+            </div>
+          </Section>
+        )}
 
         {/* Applies to Section - only for Amount off products */}
         {discountType === 'amount_off_products' && (

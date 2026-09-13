@@ -23,6 +23,7 @@ function displayDate(value: string | null): string {
 function displayTypeLabel(typeLabel: string | null | undefined, t: (key: string) => string): string {
   if (typeLabel === 'Amount off order') return t('discounts.type_amount_off_order');
   if (typeLabel === 'Amount off products') return t('discounts.type_amount_off_products');
+  if (typeLabel === 'Free shipping') return t('discounts.type_free_shipping');
   return typeLabel || '—';
 }
 
