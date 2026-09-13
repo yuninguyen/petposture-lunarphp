@@ -1,4 +1,4 @@
-import type { Control, UseFormRegister } from 'react-hook-form';
+import type { Control, FieldErrors, UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { PostFormValues } from './postSchema';
 import type { AffiliateNetwork } from './postsApi';
@@ -10,9 +10,10 @@ interface ComparisonDetailsSectionProps {
   control: Control<PostFormValues>;
   register: UseFormRegister<PostFormValues>;
   affiliateNetworks: AffiliateNetwork[];
+  errors: FieldErrors<PostFormValues>;
 }
 
-export function ComparisonDetailsSection({ control, register, affiliateNetworks }: ComparisonDetailsSectionProps) {
+export function ComparisonDetailsSection({ control, register, affiliateNetworks, errors }: ComparisonDetailsSectionProps) {
   const { t } = useTranslation();
 
   return (
@@ -33,7 +34,7 @@ export function ComparisonDetailsSection({ control, register, affiliateNetworks 
 
       <div>
         <h4 className="block text-sm font-medium text-slate-700 mb-3">{t('posts.comparison.items_title')}</h4>
-        <ComparisonItemRepeater control={control} register={register} affiliateNetworks={affiliateNetworks} />
+        <ComparisonItemRepeater control={control} register={register} affiliateNetworks={affiliateNetworks} errors={errors} />
       </div>
     </Card>
   );

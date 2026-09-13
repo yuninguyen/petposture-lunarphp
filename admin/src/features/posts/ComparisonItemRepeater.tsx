@@ -1,6 +1,6 @@
-import { Controller, useFieldArray, useWatch, type Control, type UseFormRegister } from 'react-hook-form';
+import { Controller, useFieldArray, useWatch, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { PostFormValues } from './postSchema';
 import type { AffiliateNetwork } from './postsApi';
 import { MediaPicker } from '../media/MediaPicker';
@@ -12,6 +12,12 @@ interface ComparisonItemRepeaterProps {
   control: Control<PostFormValues>;
   register: UseFormRegister<PostFormValues>;
   affiliateNetworks: AffiliateNetwork[];
+  errors: FieldErrors<PostFormValues>;
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="mt-1 text-xs text-red-600">{message}</p>;
 }
 
 function formatPriceDisplay(value: string | undefined): string {
@@ -112,17 +118,28 @@ function RowSummary({
   );
 }
 
-export function ComparisonItemRepeater({ control, register, affiliateNetworks }: ComparisonItemRepeaterProps) {
+export function ComparisonItemRepeater({ control, register, affiliateNetworks, errors }: ComparisonItemRepeaterProps) {
   const { t } = useTranslation();
   const { fields, append, remove } = useFieldArray({ control, name: 'comparison_items' });
   const [expandedIndex, setExpandedIndex] = useState<number | null>(fields.length === 0 ? null : 0);
+
+  // If validation blocks submit, whatever item failed may be collapsed and
+  // its errors invisible -- auto-open the first item with an error.
+  useEffect(() => {
+    const firstErrorIndex = errors.comparison_items?.findIndex?.((item) => Boolean(item)) ?? -1;
+    if (firstErrorIndex !== -1) {
+      setExpandedIndex(firstErrorIndex);
+    }
+  }, [errors.comparison_items]);
 
   return (
     <div className="space-y-3">
       {fields.map((field, index) => {
         const isExpanded = expandedIndex === index;
+        const itemErrors = errors.comparison_items?.[index];
+        const hasError = Boolean(itemErrors);
         return (
-          <div key={field.id} className="rounded-lg border border-gray-300">
+          <div key={field.id} className={`rounded-lg border ${hasError ? 'border-red-300' : 'border-gray-300'}`}>
             <div className="flex items-center justify-between gap-2 px-3 py-2">
               <button
                 type="button"
@@ -131,6 +148,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
               >
                 <span className="font-medium">{t('posts.comparison.item_label', { defaultValue: 'Item' })} {index + 1}</span>
                 <RowSummary control={control} index={index} affiliateNetworks={affiliateNetworks} />
+                {hasError && <span className="text-xs font-medium text-red-600">{t('posts.comparison.item_has_errors')}</span>}
               </button>
               <Button type="button" variant="danger" onClick={() => remove(index)}>
                 {t('posts.comparison.remove_item')}
@@ -143,6 +161,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.product_name')}</label>
                     <Input {...register(`comparison_items.${index}.product_name`)} />
+                    <FieldError message={itemErrors?.product_name?.message} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.retailer')}</label>
@@ -164,6 +183,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                         </svg>
                       </div>
                     </div>
+                    <FieldError message={itemErrors?.retailer?.message} />
                   </div>
                 </div>
 
@@ -232,12 +252,14 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                     <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.source_url')}</label>
                     <Input {...register(`comparison_items.${index}.metadata.source_url`)} placeholder="https://..." className="shadow-sm" />
                     <p className="mt-1 text-xs text-gray-400">{t('posts.comparison.source_url_hint')}</p>
+                    <FieldError message={itemErrors?.metadata?.source_url?.message} />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.checked_at')}</label>
                     <CheckedAtInput control={control} index={index} />
                     <p className="mt-1 text-xs text-gray-400">{t('posts.comparison.checked_at_hint')}</p>
+                    <FieldError message={itemErrors?.metadata?.checked_at?.message} />
                   </div>
                 </div>
 
@@ -245,6 +267,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.affiliate_url')}</label>
                     <Input {...register(`comparison_items.${index}.affiliate_url`)} placeholder="https://..." />
+                    <FieldError message={itemErrors?.affiliate_url?.message} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -252,6 +275,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                       <span className="font-normal text-slate-400">({t('posts.comparison.optional_suffix')})</span>
                     </label>
                     <Input {...register(`comparison_items.${index}.in_house_match_url`)} placeholder="https://..." />
+                    <FieldError message={itemErrors?.in_house_match_url?.message} />
                   </div>
                 </div>
 

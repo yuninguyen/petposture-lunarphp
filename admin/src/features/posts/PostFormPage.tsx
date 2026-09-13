@@ -548,7 +548,7 @@ export function PostFormPage() {
           </Card>
 
           {selectedType === 'comparison' && (
-            <ComparisonDetailsSection control={control} register={register} affiliateNetworks={affiliateNetworks} />
+            <ComparisonDetailsSection control={control} register={register} affiliateNetworks={affiliateNetworks} errors={errors} />
           )}
 
           <SeoSettingsSection control={control as any} register={register as any} setValue={setValue as any} getValues={getValues as any} mediaContext="blog" contentType="blog" googlePreviewImage={featuredImageUrl} googlePreviewPath={`blog/${previewSlug.trim() || 'post'}`} />

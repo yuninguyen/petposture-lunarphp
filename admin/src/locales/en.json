@@ -66,6 +66,7 @@
   "posts.comparison.untitled_item": "Untitled item",
   "posts.comparison.add_item": "Add Item",
   "posts.comparison.remove_item": "Remove",
+  "posts.comparison.item_has_errors": "Has errors",
   "posts.comparison.product_name": "Product Name",
   "posts.comparison.retailer": "Retailer",
   "posts.comparison.select_retailer": "Select a retailer",
