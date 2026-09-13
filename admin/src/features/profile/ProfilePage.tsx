@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { User, Lock, Activity, ShieldCheck, Calendar, Clock, CheckCircle2 } from 'lucide-react';
 import { PasswordInput } from '@/components/ui/password-input';
+import { Button } from '@/components/ui/button';
 import { useProfile, useUpdateProfile, useUpdatePassword } from './profileApi';
 
 export function ProfilePage() {
@@ -222,15 +223,11 @@ export function ProfilePage() {
             </div>
 
             <div className="pt-2 flex justify-end">
-              <button
-                type="submit"
-                disabled={updateProfileMutation.isPending}
-                className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50"
-              >
+              <Button type="submit" variant="primary" disabled={updateProfileMutation.isPending}>
                 {updateProfileMutation.isPending
                   ? t('profile.saving', 'Saving...')
                   : t('profile.save_profile', 'Save Profile')}
-              </button>
+              </Button>
             </div>
           </form>
         </div>
@@ -310,15 +307,11 @@ export function ProfilePage() {
             </div>
 
             <div className="pt-2 flex justify-end">
-              <button
-                type="submit"
-                disabled={updatePasswordMutation.isPending}
-                className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50"
-              >
+              <Button type="submit" variant="primary" disabled={updatePasswordMutation.isPending}>
                 {updatePasswordMutation.isPending
                   ? t('profile.updating', 'Updating...')
                   : t('profile.update_password', 'Update Password')}
-              </button>
+              </Button>
             </div>
           </form>
         </div>
