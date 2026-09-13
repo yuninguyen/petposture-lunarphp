@@ -87,10 +87,7 @@ type CheckoutFormState = {
     saveInfo: boolean;
     shippingMethod: string;
     paymentMethod: PaymentMethod;
-    cardNumber: string;
     cardName: string;
-    expiry: string;
-    securityCode: string;
     billingAddress: 'same' | 'different';
     billingCountry: string;
     billingFirstName: string;
@@ -308,10 +305,7 @@ export default function CheckoutPage() {
         saveInfo: true,
         shippingMethod: 'standard',
         paymentMethod: 'cod',
-        cardNumber: '',
         cardName: '',
-        expiry: '',
-        securityCode: '',
         billingAddress: 'same',
         billingCountry: 'United States',
         billingFirstName: '',
@@ -761,28 +755,9 @@ export default function CheckoutPage() {
         return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
     };
 
-    const formatCardNumber = (value: string) => {
-        const cleaned = value.replace(/\D/g, '').slice(0, 19);
-        return cleaned.replace(/(.{4})/g, '$1 ').trim();
-    };
-
-    const formatExpiry = (value: string) => {
-        const cleaned = value.replace(/\D/g, '').slice(0, 4);
-        if (cleaned.length <= 2) return cleaned;
-        return `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
-    };
-
     const updateField = <K extends keyof CheckoutFormState>(key: K, value: CheckoutFormState[K]) => {
         if (key === 'phone' && typeof value === 'string') {
             setForm((prev) => ({ ...prev, [key]: formatPhoneNumber(value) }));
-            return;
-        }
-        if (key === 'cardNumber' && typeof value === 'string') {
-            setForm((prev) => ({ ...prev, [key]: formatCardNumber(value) }));
-            return;
-        }
-        if (key === 'expiry' && typeof value === 'string') {
-            setForm((prev) => ({ ...prev, [key]: formatExpiry(value) }));
             return;
         }
         setForm((prev) => ({ ...prev, [key]: value }));
@@ -1664,38 +1639,31 @@ export default function CheckoutPage() {
                                                                 <HelpCircle size={15} className="ml-2 flex-shrink-0 text-[#9ca3af]" />
                                                             </div>
                                                         </div>
+                                                        <input value={form.cardName} onChange={(e) => updateField('cardName', e.target.value)} placeholder="Name on card" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
+                                                        {stripeError ? (
+                                                            <p className="text-sm font-medium text-[#b42318]">{stripeError}</p>
+                                                        ) : null}
+                                                        <div className="rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 py-3">
+                                                            <label htmlFor="billingSameAsShipping" className="flex cursor-pointer items-start gap-3 text-[14px] text-[#333333]">
+                                                                <input
+                                                                    id="billingSameAsShipping"
+                                                                    type="checkbox"
+                                                                    checked={form.billingAddress === 'same'}
+                                                                    onChange={(e) => updateField('billingAddress', e.target.checked ? 'same' : 'different')}
+                                                                    className="mt-0.5 h-4 w-4 rounded border-[#bfc6ce] text-[#197bbd] focus:ring-1 focus:ring-[#197bbd]"
+                                                                />
+                                                                <span>Use shipping address as billing address</span>
+                                                            </label>
+                                                        </div>
                                                     </>
                                                 ) : (
-                                                    <>
-                                                        <div className="relative">
-                                                            <input value={form.cardNumber} onChange={(e) => updateField('cardNumber', e.target.value)} placeholder="Card number" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 pr-10 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
-                                                            <Lock size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
-                                                        </div>
-                                                        <div className="grid gap-3 md:grid-cols-2">
-                                                            <input value={form.expiry} onChange={(e) => updateField('expiry', e.target.value)} placeholder="Expiration date (MM / YY)" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
-                                                            <div className="relative">
-                                                                <input value={form.securityCode} onChange={(e) => updateField('securityCode', e.target.value)} placeholder="Security code" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 pr-10 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
-                                                                <HelpCircle size={15} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
-                                                            </div>
-                                                        </div>
-                                                    </>
+                                                    // Never render a hand-rolled card number/CVC form: raw PAN input
+                                                    // reaching app code (even if not wired to a request today) is a
+                                                    // PCI SAQ D liability. Card payment stays selectable so its radio
+                                                    // and copy remain visible, matching the PayPal placeholder pattern
+                                                    // above, but there is nothing to submit until Stripe is configured.
+                                                    <p className="text-sm font-medium text-[#8a5a34]">Card payments are not configured yet — please choose another payment method.</p>
                                                 )}
-                                                <input value={form.cardName} onChange={(e) => updateField('cardName', e.target.value)} placeholder="Name on card" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
-                                                {stripeError ? (
-                                                    <p className="text-sm font-medium text-[#b42318]">{stripeError}</p>
-                                                ) : null}
-                                                <div className="rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 py-3">
-                                                    <label htmlFor="billingSameAsShipping" className="flex cursor-pointer items-start gap-3 text-[14px] text-[#333333]">
-                                                        <input
-                                                            id="billingSameAsShipping"
-                                                            type="checkbox"
-                                                            checked={form.billingAddress === 'same'}
-                                                            onChange={(e) => updateField('billingAddress', e.target.checked ? 'same' : 'different')}
-                                                            className="mt-0.5 h-4 w-4 rounded border-[#bfc6ce] text-[#197bbd] focus:ring-1 focus:ring-[#197bbd]"
-                                                        />
-                                                        <span>Use shipping address as billing address</span>
-                                                    </label>
-                                                </div>
 
                                                 {paymentIntentMessage ? (
                                                     <div className="rounded-[8px] border border-[#f4cdb7] bg-[#fff7f2] px-3.5 py-3 text-sm leading-5 text-[#8a5a34]">
