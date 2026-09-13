@@ -6,6 +6,14 @@ import { useBranding } from '@/context/BrandingContext';
 import { getVisibleNavigation } from '@/navigation/adminNavigation';
 import { MobileAdminNav } from '@/components/navigation/MobileAdminNav';
 
+function humanizeRole(role: string): string {
+  return role
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 export function AppShell({ children, userName, userRoles }: { children: ReactNode; userName: string; userRoles: string[] }) {
   const { t, i18n } = useTranslation();
   const branding = useBranding();
@@ -257,7 +265,7 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
                 <div className="absolute right-0 mt-2 w-48 rounded-xl border border-slate-200 bg-white py-1 shadow-lg z-50">
                   <div className="px-4 py-2 border-b border-slate-100">
                     <p className="text-sm font-semibold text-slate-900 truncate">{userName}</p>
-                    <p className="text-xs text-slate-500 truncate">{userRoles.join(', ')}</p>
+                    <p className="text-xs text-slate-500 truncate">{userRoles.map(humanizeRole).join(', ')}</p>
                   </div>
                   <Link
                     to="/profile"
