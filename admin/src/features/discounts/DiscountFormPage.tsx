@@ -45,6 +45,15 @@ function slug(value: string): string {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+function generateRandomCode(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return code;
+}
+
 function fieldErrors(error: unknown): string[] {
   if (!error || typeof error !== 'object' || !('status' in error) || error.status !== 422 || !('data' in error)) return [];
   const data = error.data;
@@ -150,7 +159,20 @@ export function DiscountFormPage() {
         <Check id="discount-stop" checked={values.stop} onChange={(checked) => update('stop', checked)} label={t('discounts.stop')} />
       </Section>
       <Section title={t('discounts.conditions')}>
-        <Field label={t('discounts.coupon')}><input id="discount-coupon" required value={values.coupon} onChange={(event) => update('coupon', event.target.value)} className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" /></Field>
+        <Field
+          label={t('discounts.coupon')}
+          action={
+            <button
+              type="button"
+              onClick={() => update('coupon', generateRandomCode())}
+              className="text-xs font-medium text-secondary hover:underline"
+            >
+              {t('discounts.generate_random_code')}
+            </button>
+          }
+        >
+          <input id="discount-coupon" required value={values.coupon} onChange={(event) => update('coupon', event.target.value)} className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+        </Field>
         <Field label={t('discounts.max_uses')}><input id="discount-max-uses" min="1" type="number" value={values.max_uses} onChange={(event) => update('max_uses', event.target.value)} className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" /></Field>
         <Field label={t('discounts.max_uses_per_user')}><input id="discount-max-uses-per-user" min="1" type="number" value={values.max_uses_per_user} onChange={(event) => update('max_uses_per_user', event.target.value)} className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" /></Field>
         <Field label={t('discounts.min_price_usd')}><input id="discount-min-price-usd" min="0" step="0.01" type="number" value={values.min_price_usd} onChange={(event) => update('min_price_usd', event.target.value)} className="mt-1 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" /></Field>
@@ -165,6 +187,16 @@ export function DiscountFormPage() {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) { return <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="mb-4 text-lg font-semibold text-slate-900">{title}</h2><div className="grid gap-4 sm:grid-cols-2">{children}</div></section>; }
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block text-sm font-medium text-slate-700">{label}<span className="mt-1 block">{children}</span></label>; }
+function Field({ label, action, children }: { label: string; action?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <label className="block text-sm font-medium text-slate-700">
+      <span className="flex items-center justify-between">
+        {label}
+        {action}
+      </span>
+      <span className="mt-1 block">{children}</span>
+    </label>
+  );
+}
 function Check({ id, checked, onChange, label }: { id: string; checked: boolean; onChange: (checked: boolean) => void; label: string }) { return <label className="flex items-center gap-2 text-sm text-slate-700"><input id={id} type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />{label}</label>; }
 function PageState({ text, error = false }: { text: string; error?: boolean }) { return <p className={`py-8 text-center text-sm ${error ? 'text-red-600' : 'text-slate-500'}`}>{text}</p>; }

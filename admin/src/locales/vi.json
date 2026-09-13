@@ -1076,6 +1076,7 @@
   "discounts.type": "Loại",
   "discounts.status": "Trạng thái",
   "discounts.coupon": "Mã giảm giá",
+  "discounts.generate_random_code": "Tạo mã ngẫu nhiên",
   "discounts.starts": "Bắt đầu",
   "discounts.ends": "Kết thúc",
   "discounts.actions": "Thao tác",

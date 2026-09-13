@@ -1076,6 +1076,7 @@
   "discounts.type": "Type",
   "discounts.status": "Status",
   "discounts.coupon": "Coupon",
+  "discounts.generate_random_code": "Generate random code",
   "discounts.starts": "Starts",
   "discounts.ends": "Ends",
   "discounts.actions": "Actions",
