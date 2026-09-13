@@ -47,4 +47,39 @@ class RichTextSanitizationTest extends TestCase
         $this->assertStringNotContainsString('javascript:', $html);
         $this->assertStringNotContainsString('<iframe', $html);
     }
+
+    public function test_cta_button_class_and_style_survive_persistence(): void
+    {
+        $html = '<p><a class="pp-cta-primary" href="/dogs" style="background:#df8448;padding:14px 32px;">Explore Breeds</a></p>';
+
+        $post = Post::query()->create([
+            'title' => 'CTA post',
+            'slug' => 'cta-post',
+            'content' => $html,
+            'type' => Post::TYPE_ARTICLE,
+            'status' => 'draft',
+        ]);
+
+        $persisted = (string) $post->fresh()->content;
+        $this->assertStringContainsString('class="pp-cta-primary"', $persisted);
+        $this->assertStringContainsString('style="background:#df8448;padding:14px 32px;"', $persisted);
+    }
+
+    public function test_table_column_width_metadata_survives_persistence(): void
+    {
+        $html = '<table width="100%"><colgroup><col style="width:180px"></colgroup><tbody><tr><th colwidth="180">Head</th></tr><tr><td colwidth="180">Cell</td></tr></tbody></table>';
+
+        $post = Post::query()->create([
+            'title' => 'Table post',
+            'slug' => 'table-post',
+            'content' => $html,
+            'type' => Post::TYPE_ARTICLE,
+            'status' => 'draft',
+        ]);
+
+        $persisted = (string) $post->fresh()->content;
+        $this->assertStringContainsString('<colgroup>', $persisted);
+        $this->assertStringContainsString('colwidth="180"', $persisted);
+        $this->assertStringContainsString('width="100%"', $persisted);
+    }
 }

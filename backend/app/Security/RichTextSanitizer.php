@@ -30,19 +30,28 @@ class RichTextSanitizer
             ->allowElement('h4')
             ->allowElement('h5')
             ->allowElement('h6')
-            ->allowElement('a', ['href', 'title', 'rel'])
+            // class/style on <a> are intentionally broad here (Symfony's
+            // sanitizer only allows/blocks whole attributes, it can't
+            // restrict to specific values like DOMPurify hooks can). The
+            // frontend's sanitizeRichHtml() is the final authority for public
+            // rendering and narrows class to only pp-cta-primary/pp-cta-pill,
+            // and style to only alongside one of those -- so anything else
+            // stored here never actually reaches a rendered page.
+            ->allowElement('a', ['href', 'title', 'rel', 'class', 'style'])
             ->allowElement('img', ['src', 'alt', 'title', 'width', 'height', 'loading'])
             ->allowElement('figure')
             ->allowElement('figcaption')
             ->allowElement('pre')
             ->allowElement('code')
             ->allowElement('hr')
-            ->allowElement('table')
+            ->allowElement('table', ['width'])
             ->allowElement('thead')
             ->allowElement('tbody')
+            ->allowElement('colgroup')
+            ->allowElement('col', ['width', 'colwidth'])
             ->allowElement('tr')
-            ->allowElement('th', ['colspan', 'rowspan', 'scope'])
-            ->allowElement('td', ['colspan', 'rowspan'])
+            ->allowElement('th', ['colspan', 'rowspan', 'scope', 'colwidth'])
+            ->allowElement('td', ['colspan', 'rowspan', 'colwidth'])
             ->allowRelativeLinks()
             ->allowRelativeMedias()
             ->allowMediaSchemes(['http', 'https'])
