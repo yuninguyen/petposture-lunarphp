@@ -30,14 +30,41 @@ test('withResponsiveTables handles empty, null, or undefined gracefully', () => 
     assert.equal(withResponsiveTables(undefined), undefined);
 });
 
-test('withResponsiveTables preserves table inner structure and does not alter table attributes', () => {
-    const tableWithAttrs = '<table width="100%" data-custom="preserved"><tbody><tr><td colwidth="150">Content</td></tr></tbody></table>';
+test('withResponsiveTables preserves unrelated table attributes untouched', () => {
+    const tableWithAttrs = '<table width="100%" data-custom="preserved"><tbody><tr><td>Content</td></tr></tbody></table>';
     const result = withResponsiveTables(tableWithAttrs);
 
-    assert.equal(
-        result,
-        '<div class="rich-table-scroll" role="region" aria-label="Scrollable data table" tabindex="0"><table width="100%" data-custom="preserved"><tbody><tr><td colwidth="150">Content</td></tr></tbody></table></div>'
+    assert.match(result, /<table width="100%" data-custom="preserved">/);
+});
+
+test('withResponsiveTables rebuilds a <colgroup> from the first row\'s colwidth (TipTap resize is not persisted as a real colgroup)', () => {
+    const singleColumn = '<table><tbody><tr><td colwidth="180">A</td></tr></tbody></table>';
+    assert.match(
+        withResponsiveTables(singleColumn),
+        /<table><colgroup><col style="width:180px"><\/colgroup><tbody>/
     );
+
+    const multiColumn = '<table><tbody><tr><th colwidth="120">A</th><th colwidth="80">B</th><th>C</th></tr></tbody></table>';
+    assert.match(
+        withResponsiveTables(multiColumn),
+        /<colgroup><col style="width:120px"><col style="width:80px"><col><\/colgroup>/
+    );
+
+    const colspanned = '<table><tbody><tr><th colspan="2" colwidth="100,140">Merged</th></tr></tbody></table>';
+    assert.match(
+        withResponsiveTables(colspanned),
+        /<colgroup><col style="width:100px"><col style="width:140px"><\/colgroup>/
+    );
+});
+
+test('withResponsiveTables skips colgroup generation when no colwidth is present or one already exists', () => {
+    const noWidths = '<table><tbody><tr><td>A</td><td>B</td></tr></tbody></table>';
+    assert.doesNotMatch(withResponsiveTables(noWidths), /<colgroup>/);
+
+    const alreadyHasColgroup = '<table><colgroup><col style="width:50%"></colgroup><tbody><tr><td colwidth="180">A</td></tr></tbody></table>';
+    const result = withResponsiveTables(alreadyHasColgroup);
+    assert.equal((result.match(/<colgroup>/g) || []).length, 1);
+    assert.match(result, /<col style="width:50%">/);
 });
 
 test('preserves existing stripHtml and withTableOfContents behavior', () => {

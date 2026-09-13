@@ -526,7 +526,6 @@ p:has(> a.pp-cta-pill) {
   text-align: center;
 }
 
-.rich-content .rich-table-scroll th:first-child,
 .rich-content .rich-table-scroll td:first-child {
   text-align: left;
 }
