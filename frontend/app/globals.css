@@ -449,6 +449,15 @@
   background-color: #fdf2ea !important;
   border-color: #c9713a !important;
 }
+/* A <p> wrapping a CTA link is meant to be centered, but any text-align the
+ * author set on that <p> itself is stripped (only the pp-cta-* <a> keeps its
+ * style). Center it unconditionally via :has() instead of depending on that
+ * inline style surviving sanitization.
+ */
+p:has(> a.pp-cta-primary),
+p:has(> a.pp-cta-pill) {
+  text-align: center;
+}
 
 /*
  * ============================================================
@@ -514,6 +523,11 @@
   padding: 0.875rem 1.25rem;
   border-bottom: 1px solid var(--color-border, #e4e4e7);
   vertical-align: middle;
+  text-align: center;
+}
+
+.rich-content .rich-table-scroll th:first-child,
+.rich-content .rich-table-scroll td:first-child {
   text-align: left;
 }
 
@@ -523,6 +537,7 @@
   font-weight: 400;
   border-bottom: 1px solid #f4f4f5;
   vertical-align: top;
+  text-align: center;
   word-break: break-word;
   overflow-wrap: anywhere;
 }
