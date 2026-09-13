@@ -21,20 +21,20 @@ export function GoogleAnalytics({ measurementId }: { measurementId: string }) {
         return () => window.removeEventListener(CONSENT_CHANGED_EVENT, check);
     }, []);
 
-    useEffect(() => {
-        if (!allowed) return;
-
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push(["js", new Date()]);
-        window.dataLayer.push(["config", measurementId]);
-    }, [allowed, measurementId]);
-
     if (!allowed) return null;
 
     return (
-        <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
-            strategy="lazyOnload"
-        />
+        <>
+            <Script
+                src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
+                strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+                {`window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${measurementId}');`}
+            </Script>
+        </>
     );
 }
