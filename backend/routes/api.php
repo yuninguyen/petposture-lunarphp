@@ -20,11 +20,14 @@ use App\Http\Controllers\Api\Admin\CollectionController;
 use App\Http\Controllers\Api\Admin\CollectionGroupController;
 use App\Http\Controllers\Api\Admin\CustomFieldController;
 use App\Http\Controllers\Api\Admin\CustomerController;
+use App\Http\Controllers\Api\Admin\DashboardSalesController;
 use App\Http\Controllers\Api\Admin\DiscountController;
+use App\Http\Controllers\Api\Admin\GoalsController;
 use App\Http\Controllers\Api\Admin\ProductAssociationController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\ProductOptionController;
 use App\Http\Controllers\Api\Admin\ProductTypeController;
+use App\Http\Controllers\Api\Admin\ProfileController;
 use App\Http\Controllers\Api\Admin\ProductVariantController as AdminProductVariantController;
 use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\Admin\ShippingMethodController;
@@ -137,6 +140,12 @@ Route::delete('/cart', [CartController::class, 'clear'])->middleware('throttle:a
 Route::prefix('/admin')
     ->middleware(['auth:sanctum', 'role:super_admin|admin|staff|Product Manager|Order Manager|Support', 'admin.permission'])
     ->group(function () {
+        Route::get('/dashboard/sales', [DashboardSalesController::class, 'index']);
+        Route::get('/goals', [GoalsController::class, 'index']);
+        Route::put('/goals', [GoalsController::class, 'update']);
+        Route::get('/profile', [ProfileController::class, 'show']);
+        Route::put('/profile', [ProfileController::class, 'update']);
+        Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
         Route::get('/brands', [AdminBrandController::class, 'index']);
         Route::post('/brands', [AdminBrandController::class, 'store']);
         Route::get('/brands/{brand}', [AdminBrandController::class, 'show']);

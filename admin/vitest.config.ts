@@ -7,6 +7,7 @@ export default mergeConfig(
     test: {
       environment: 'jsdom',
       globals: true,
+      setupFiles: ['./vitest.setup.ts'],
       // Node's built-in experimental `localStorage` global (enabled by default since
       // Node 22+) shadows jsdom's Storage implementation and is left uninitialized
       // without `--localstorage-file`, breaking every localStorage-based test.

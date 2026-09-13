@@ -6,6 +6,8 @@ import {
   canAccessOrders,
   canAccessReviews,
   canAccessCatalogue,
+  canAccessDashboard,
+  canAccessFinance,
   AdminNavGroup,
 } from './adminNavigation';
 
@@ -38,11 +40,25 @@ describe('admin navigation semantic authorization', () => {
     expect(canAccessCatalogue(['Product Manager'])).toBe(true);
     expect(canAccessCatalogue(['Order Manager'])).toBe(false);
     expect(canAccessCatalogue(['Support'])).toBe(false);
+
+    // Dashboard & Finance
+    expect(canAccessDashboard(['admin'])).toBe(true);
+    expect(canAccessDashboard(['Order Manager'])).toBe(true);
+    expect(canAccessDashboard(['Support'])).toBe(true);
+    expect(canAccessDashboard(['Product Manager'])).toBe(false);
+
+    expect(canAccessFinance(['admin'])).toBe(true);
+    expect(canAccessFinance(['staff'])).toBe(true);
+    expect(canAccessFinance(['Order Manager'])).toBe(false);
+    expect(canAccessFinance(['Product Manager'])).toBe(false);
   });
 
   it('exposes all groups and all items to core admin', () => {
     const groups = getVisibleNavigation(['admin']);
-    expect(groups.map((g) => g.key)).toEqual(['sales', 'content', 'catalogue']);
+    expect(groups.map((g) => g.key)).toEqual(['dashboard', 'sales', 'content', 'catalogue', 'finance']);
+
+    const dashboardItems = groups.find((g) => g.key === 'dashboard')?.items.map((i) => i.path);
+    expect(dashboardItems).toEqual(['/dashboard/sales']);
 
     const salesItems = groups.find((g) => g.key === 'sales')?.items.map((i) => i.path);
     expect(salesItems).toEqual([
@@ -74,22 +90,25 @@ describe('admin navigation semantic authorization', () => {
       '/breeds',
       '/solutions',
     ]);
+
+    const financeItems = groups.find((g) => g.key === 'finance')?.items.map((i) => i.path);
+    expect(financeItems).toEqual(['/goals']);
   });
 
-  it('exposes only orders and return requests to Order Manager', () => {
+  it('exposes dashboard and orders to Order Manager', () => {
     const groups = getVisibleNavigation(['Order Manager']);
-    expect(groups.map((g) => g.key)).toEqual(['sales']);
+    expect(groups.map((g) => g.key)).toEqual(['dashboard', 'sales']);
 
-    const items = groups[0].items.map((i) => i.path);
-    expect(items).toEqual(['/orders', '/return-requests']);
+    expect(groups[0].items.map((i) => i.path)).toEqual(['/dashboard/sales']);
+    expect(groups[1].items.map((i) => i.path)).toEqual(['/orders', '/return-requests']);
   });
 
-  it('exposes orders, return requests, and reviews to Support', () => {
+  it('exposes dashboard, orders, return requests, and reviews to Support', () => {
     const groups = getVisibleNavigation(['Support']);
-    expect(groups.map((g) => g.key)).toEqual(['sales']);
+    expect(groups.map((g) => g.key)).toEqual(['dashboard', 'sales']);
 
-    const items = groups[0].items.map((i) => i.path);
-    expect(items).toEqual(['/orders', '/return-requests', '/reviews']);
+    expect(groups[0].items.map((i) => i.path)).toEqual(['/dashboard/sales']);
+    expect(groups[1].items.map((i) => i.path)).toEqual(['/orders', '/return-requests', '/reviews']);
   });
 
   it('exposes reviews and full catalogue to Product Manager without content or orders', () => {
@@ -137,7 +156,7 @@ describe('admin navigation semantic authorization', () => {
 
     const reorderedGroups = [dummyNewGroup, ...ADMIN_NAV_GROUPS];
 
-    // Order Manager still only gets sales with orders & return-requests regardless of array index
+    // Order Manager still only gets dashboard & sales groups regardless of array index
     const visibleForOrderManager = reorderedGroups
       .filter((g) => !g.canAccess || g.canAccess(['Order Manager']))
       .map((g) => ({
@@ -146,7 +165,8 @@ describe('admin navigation semantic authorization', () => {
       }))
       .filter((g) => g.items.length > 0);
 
-    expect(visibleForOrderManager.map((g) => g.key)).toEqual(['sales']);
-    expect(visibleForOrderManager[0].items.map((i) => i.path)).toEqual(['/orders', '/return-requests']);
+    expect(visibleForOrderManager.map((g) => g.key)).toEqual(['dashboard', 'sales']);
+    expect(visibleForOrderManager[0].items.map((i) => i.path)).toEqual(['/dashboard/sales']);
+    expect(visibleForOrderManager[1].items.map((i) => i.path)).toEqual(['/orders', '/return-requests']);
   });
 });

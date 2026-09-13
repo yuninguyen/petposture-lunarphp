@@ -39,6 +39,9 @@ const CustomersListPage = lazy(() => import('@/features/customers/CustomersListP
 const CustomerDetailPage = lazy(() => import('@/features/customers/CustomerDetailPage').then(m => ({ default: m.CustomerDetailPage })));
 const DiscountsListPage = lazy(() => import('@/features/discounts/DiscountsListPage').then(m => ({ default: m.DiscountsListPage })));
 const DiscountFormPage = lazy(() => import('@/features/discounts/DiscountFormPage').then(m => ({ default: m.DiscountFormPage })));
+const SalesPage = lazy(() => import('@/features/dashboard/SalesPage').then(m => ({ default: m.SalesPage })));
+const GoalsPage = lazy(() => import('@/features/finance/GoalsPage').then(m => ({ default: m.GoalsPage })));
+const ProfilePage = lazy(() => import('@/features/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
 
 function PageLoader() {
   return (
@@ -187,6 +190,10 @@ export interface HomeRouteCandidate {
 
 export const ADMIN_HOME_CANDIDATES: HomeRouteCandidate[] = [
   {
+    path: '/dashboard',
+    canAccess: (roles) => isCoreAdministrator(roles),
+  },
+  {
     path: '/products',
     canAccess: (roles) => !isCoreAdministrator(roles) && roles.includes('Product Manager'),
   },
@@ -203,7 +210,7 @@ export const ADMIN_HOME_CANDIDATES: HomeRouteCandidate[] = [
 export function getAdminHomeRoute(userRoles: string[], customCandidates?: HomeRouteCandidate[]) {
   const candidates = customCandidates ?? ADMIN_HOME_CANDIDATES;
   const match = candidates.find((candidate) => candidate.canAccess(userRoles));
-  return match?.path ?? '/posts';
+  return match?.path ?? '/dashboard';
 }
 
 export function AppRoutes({ userRoles }: { userRoles: string[] }) {
@@ -211,6 +218,7 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
   const isCoreAdmin = isCoreAdministrator(userRoles);
   const canManageProducts = isCoreAdmin || userRoles.includes('Product Manager');
   const canManageSales = canManageCommerce(userRoles);
+  const canViewDashboard = isCoreAdmin || userRoles.includes('Order Manager') || userRoles.includes('Support');
   const canManageDiscountsList = canManageDiscounts(userRoles);
   const canManageShippingMethods = canManageShipping(userRoles);
   const canViewCustomers = canManageCustomers(userRoles);
@@ -224,7 +232,13 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
   return (
     <Routes>
       <Route path="/" element={<Navigate to={home} replace />} />
+      {canViewDashboard && <>
+        <Route path="/dashboard" element={<Navigate to="/dashboard/sales" replace />} />
+        <Route path="/dashboard/sales" element={<SalesPage />} />
+      </>}
+      <Route path="/profile" element={<ProfilePage />} />
       {isCoreAdmin && <>
+        <Route path="/goals" element={<GoalsPage />} />
         <Route path="/posts" element={<PostsListPage />} />
         <Route path="/posts/new" element={<PostFormPage key={location.pathname} />} />
         <Route path="/posts/:id" element={<PostFormPage key={location.pathname} />} />

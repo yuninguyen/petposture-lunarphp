@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { AdminNavGroup } from '@/navigation/adminNavigation';
 import { useBranding } from '@/context/BrandingContext';
 import { logout } from '@/lib/auth';
@@ -27,9 +27,11 @@ export function MobileAdminNav({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const [expandedNavGroups, setExpandedNavGroups] = useState<Record<string, boolean>>({
+    dashboard: true,
     sales: true,
     content: true,
     catalogue: true,
+    finance: true,
   });
 
   // Keep active group expanded
@@ -267,15 +269,21 @@ export function MobileAdminNav({
         {/* Footer with User info & logout */}
         <div className="p-4 mt-auto border-t border-white/5 flex-shrink-0">
           <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-secondary flex flex-shrink-0 items-center justify-center shadow-sm">
-              <span className="text-sm font-bold text-white">
-                {userName.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white truncate leading-tight">{userName}</p>
-              <p className="text-xs text-slate-400 truncate">Admin</p>
-            </div>
+            <Link
+              to="/profile"
+              onClick={handleLinkClick}
+              className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity"
+            >
+              <div className="h-8 w-8 rounded-full bg-secondary flex flex-shrink-0 items-center justify-center shadow-sm">
+                <span className="text-sm font-bold text-white">
+                  {userName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-white truncate leading-tight">{userName}</p>
+                <p className="text-xs text-slate-400 truncate">{t('nav.profile', 'Profile')}</p>
+              </div>
+            </Link>
             <button
               onClick={() => logout().then(() => window.location.reload())}
               className="text-slate-400 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-white/10 flex-shrink-0"
