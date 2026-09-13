@@ -20,6 +20,12 @@ function displayDate(value: string | null): string {
   return value ? new Date(value).toLocaleString() : '—';
 }
 
+function displayTypeLabel(typeLabel: string | null | undefined, t: (key: string) => string): string {
+  if (typeLabel === 'Amount off order') return t('discounts.type_amount_off_order');
+  if (typeLabel === 'Amount off products') return t('discounts.type_amount_off_products');
+  return typeLabel || '—';
+}
+
 export function DiscountsListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -73,7 +79,7 @@ export function DiscountsListPage() {
                   : discounts.length === 0 ? <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-500">{t('discounts.empty')}</td></tr>
                     : discounts.map((discount) => <tr key={discount.id} className="hover:bg-slate-50">
                       <td className="px-6 py-3 text-sm font-semibold text-slate-900">{discount.name}</td>
-                      <td className="px-6 py-3 text-sm text-slate-700">{discount.type_label || '—'}</td>
+                      <td className="px-6 py-3 text-sm text-slate-700">{displayTypeLabel(discount.type_label, t)}</td>
                       <td className="px-6 py-3 text-sm"><Badge color={statusColors[discount.status]}>{t(`discounts.status_${discount.status}`)}</Badge></td>
                       <td className="px-6 py-3 text-sm text-slate-700">{discount.coupon || '—'}</td>
                       <td className="px-6 py-3 text-sm text-slate-700">{displayDate(discount.starts_at)}</td>

@@ -38,7 +38,7 @@ import { DiscountFormPage } from './DiscountFormPage';
 
 const discount = {
   id: 7, name: 'Existing sale', handle: 'existing-sale', coupon: 'SAVE', type: AMOUNT_OFF_TYPE,
-  type_label: 'Amount off', supported: true, status: 'active', starts_at: '2026-08-31T12:34:00.000Z', ends_at: '2026-09-01T12:34:00.000Z',
+  type_label: 'Amount off products', supported: true, status: 'active', starts_at: '2026-08-31T12:34:00.000Z', ends_at: '2026-09-01T12:34:00.000Z',
   uses: 0, max_uses: 10, max_uses_per_user: 1, priority: 5, stop: true,
   data: { min_prices: { USD: 25 }, fixed_value: true, fixed_values: { USD: 4.5 } },
   applies_to: 'specific_collections',
@@ -323,6 +323,59 @@ describe('DiscountFormPage', () => {
       collection_ids: [],
       product_ids: [],
       data: { min_prices: { USD: null }, fixed_value: false, percentage: 10 },
+    }), expect.any(Object));
+    act(() => root.unmount());
+  });
+
+  it('hides Applies to section and submits all_products when Type is Amount off order on create', () => {
+    const { host, root } = renderForm();
+    fillValidPercentage(host);
+
+    // Default is amount_off_products: applies_to section is visible
+    expect(host.querySelector('#discount-applies-to')).toBeTruthy();
+
+    // Select amount_off_order
+    change(host.querySelector('#discount-type-selector'), 'amount_off_order');
+
+    // Applies to section is now hidden
+    expect(host.querySelector('#discount-applies-to')).toBeNull();
+
+    submit(host);
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({
+      type: AMOUNT_OFF_TYPE,
+      coupon: 'SAVE10',
+      applies_to: 'all_products',
+      collection_ids: [],
+      product_ids: [],
+    }), expect.any(Object));
+    act(() => root.unmount());
+  });
+
+  it('hides Applies to section and displays Amount off order badge on edit when discount has no limitations', () => {
+    const wholeOrderDiscount = {
+      ...discount,
+      id: 8,
+      type_label: 'Amount off order',
+      applies_to: 'all_products',
+      collection_ids: [],
+      collections: [],
+    };
+    mocks.detail = { data: wholeOrderDiscount, isLoading: false, isError: false, error: undefined };
+    const { host, root } = renderForm('/discounts/8');
+
+    expect(host.querySelector('#discount-type-selector')).toBeNull();
+    expect(host.textContent).toContain('discounts.type');
+    expect(host.textContent).toContain('discounts.type_amount_off_order');
+    expect(host.querySelector('#discount-applies-to')).toBeNull();
+
+    submit(host);
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
+      id: 8,
+      payload: expect.objectContaining({
+        applies_to: 'all_products',
+        collection_ids: [],
+        product_ids: [],
+      }),
     }), expect.any(Object));
     act(() => root.unmount());
   });

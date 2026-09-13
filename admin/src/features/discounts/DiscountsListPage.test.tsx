@@ -87,6 +87,21 @@ describe('DiscountsListPage', () => {
     host.remove();
   });
 
+  it('renders translated type labels for Amount off order and Amount off products', () => {
+    mocks.useDiscounts.mockReturnValue(pageWith([
+      { ...discount, id: 10, type_label: 'Amount off order' },
+      { ...discount, id: 11, type_label: 'Amount off products' },
+    ]));
+    mocks.useDeleteDiscount.mockReturnValue({ mutate: vi.fn(), isPending: false });
+    const { host, root } = renderPage();
+
+    expect(host.textContent).toContain('discounts.type_amount_off_order');
+    expect(host.textContent).toContain('discounts.type_amount_off_products');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
   it('resets search to the first page synchronously while pagination remains independent', () => {
     mocks.useDiscounts.mockImplementation((filters) => pageWith([discount], (filters as { page: number }).page, 3));
     mocks.useDeleteDiscount.mockReturnValue({ mutate: vi.fn(), isPending: false });

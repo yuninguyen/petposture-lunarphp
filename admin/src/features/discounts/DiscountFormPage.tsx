@@ -142,6 +142,11 @@ export function DiscountFormPage() {
       setHasMaxUses(detailQuery.data.max_uses != null && detailQuery.data.max_uses > 0);
       setHasMaxUsesPerUser(detailQuery.data.max_uses_per_user != null && detailQuery.data.max_uses_per_user > 0);
       setMinReqType(detailQuery.data.data?.min_prices?.USD != null && Number(detailQuery.data.data.min_prices.USD) > 0 ? 'amount' : 'none');
+      setDiscountType(
+        detailQuery.data.type_label === 'Amount off order' || detailQuery.data.applies_to === 'all_products'
+          ? 'amount_off_order'
+          : 'amount_off_products'
+      );
     }
   }, [editId, detailQuery.data]);
 
@@ -185,11 +190,13 @@ export function DiscountFormPage() {
       validationErrors.push(t('discounts.end_after_start'));
     }
 
-    if (values.applies_to === 'specific_collections' && values.collection_ids.length === 0) {
-      validationErrors.push(t('discounts.collections_required'));
-    }
-    if (values.applies_to === 'specific_products' && values.product_ids.length === 0) {
-      validationErrors.push(t('discounts.products_required'));
+    if (discountType === 'amount_off_products') {
+      if (values.applies_to === 'specific_collections' && values.collection_ids.length === 0) {
+        validationErrors.push(t('discounts.collections_required'));
+      }
+      if (values.applies_to === 'specific_products' && values.product_ids.length === 0) {
+        validationErrors.push(t('discounts.products_required'));
+      }
     }
 
     if (validationErrors.length) {
@@ -197,7 +204,11 @@ export function DiscountFormPage() {
       return;
     }
 
-    const payload = editId ? buildDiscountUpdatePayload(values) : buildDiscountPayload(values);
+    const valuesToSubmit: DiscountFormValues = discountType === 'amount_off_order'
+      ? { ...values, applies_to: 'all_products', collection_ids: [], product_ids: [] }
+      : values;
+
+    const payload = editId ? buildDiscountUpdatePayload(valuesToSubmit) : buildDiscountPayload(valuesToSubmit);
     if (!payload) {
       setErrors([t('discounts.datetime_invalid')]);
       return;
@@ -255,12 +266,20 @@ export function DiscountFormPage() {
                 <select
                   id="discount-type-selector"
                   value={discountType}
-                  onChange={(e) => setDiscountType(e.target.value)}
+                  onChange={(e) => {
+                    const nextType = e.target.value;
+                    setDiscountType(nextType);
+                    if (nextType === 'amount_off_order') {
+                      update('applies_to', 'all_products');
+                      update('collection_ids', []);
+                      update('product_ids', []);
+                    }
+                  }}
                   className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
                 >
                   <option value="amount_off_products">{t('discounts.type_amount_off_products')}</option>
+                  <option value="amount_off_order">{t('discounts.type_amount_off_order')}</option>
                   <option value="buy_x_get_y" disabled>{t('discounts.type_buy_x_get_y')} (Coming soon)</option>
-                  <option value="amount_off_order" disabled>{t('discounts.type_amount_off_order')} (Coming soon)</option>
                   <option value="free_shipping" disabled>{t('discounts.type_free_shipping')} (Coming soon)</option>
                 </select>
               </Field>
@@ -270,7 +289,9 @@ export function DiscountFormPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm flex items-center justify-between">
             <span className="text-sm font-medium text-slate-700">{t('discounts.type')}</span>
             <span className="inline-flex items-center rounded-md bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-800">
-              {detailQuery.data?.type_label === 'Amount off'
+              {detailQuery.data?.type_label === 'Amount off order'
+                ? t('discounts.type_amount_off_order')
+                : detailQuery.data?.type_label === 'Amount off products'
                 ? t('discounts.type_amount_off_products')
                 : (detailQuery.data?.type_label ?? t('discounts.type_amount_off_products'))}
             </span>
@@ -361,47 +382,49 @@ export function DiscountFormPage() {
           </div>
         </Section>
 
-        {/* Applies to Section */}
-        <Section title={t('discounts.applies_to')}>
-          <div className="sm:col-span-2 space-y-4">
-            <Field label={t('discounts.applies_to')}>
-              <select
-                id="discount-applies-to"
-                value={values.applies_to}
-                onChange={(event) => update('applies_to', event.target.value as DiscountAppliesTo)}
-                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-              >
-                <option value="all_products">{t('discounts.applies_to_all_products')}</option>
-                <option value="specific_collections">{t('discounts.applies_to_specific_collections')}</option>
-                <option value="specific_products">{t('discounts.applies_to_specific_products')}</option>
-              </select>
-            </Field>
-            {values.applies_to === 'specific_collections' && (
-              <div className="space-y-1">
-                <SearchableMultiSelect
-                  options={collectionOptions}
-                  value={values.collection_ids}
-                  onChange={(ids) => update('collection_ids', ids)}
-                  placeholder={t('discounts.search_collections')}
-                  noResultsText={t('discounts.empty')}
-                  clearAllText={t('discounts.cancel')}
-                />
-              </div>
-            )}
-            {values.applies_to === 'specific_products' && (
-              <div className="space-y-1">
-                <SearchableMultiSelect
-                  options={productOptions}
-                  value={values.product_ids}
-                  onChange={(ids) => update('product_ids', ids)}
-                  placeholder={t('discounts.search_products')}
-                  noResultsText={t('discounts.empty')}
-                  clearAllText={t('discounts.cancel')}
-                />
-              </div>
-            )}
-          </div>
-        </Section>
+        {/* Applies to Section - only for Amount off products */}
+        {discountType === 'amount_off_products' && (
+          <Section title={t('discounts.applies_to')}>
+            <div className="sm:col-span-2 space-y-4">
+              <Field label={t('discounts.applies_to')}>
+                <select
+                  id="discount-applies-to"
+                  value={values.applies_to}
+                  onChange={(event) => update('applies_to', event.target.value as DiscountAppliesTo)}
+                  className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                >
+                  <option value="all_products">{t('discounts.applies_to_all_products')}</option>
+                  <option value="specific_collections">{t('discounts.applies_to_specific_collections')}</option>
+                  <option value="specific_products">{t('discounts.applies_to_specific_products')}</option>
+                </select>
+              </Field>
+              {values.applies_to === 'specific_collections' && (
+                <div className="space-y-1">
+                  <SearchableMultiSelect
+                    options={collectionOptions}
+                    value={values.collection_ids}
+                    onChange={(ids) => update('collection_ids', ids)}
+                    placeholder={t('discounts.search_collections')}
+                    noResultsText={t('discounts.empty')}
+                    clearAllText={t('discounts.cancel')}
+                  />
+                </div>
+              )}
+              {values.applies_to === 'specific_products' && (
+                <div className="space-y-1">
+                  <SearchableMultiSelect
+                    options={productOptions}
+                    value={values.product_ids}
+                    onChange={(ids) => update('product_ids', ids)}
+                    placeholder={t('discounts.search_products')}
+                    noResultsText={t('discounts.empty')}
+                    clearAllText={t('discounts.cancel')}
+                  />
+                </div>
+              )}
+            </div>
+          </Section>
+        )}
 
         {/* Minimum Purchase Requirements */}
         <Section title={t('discounts.minimum_requirements')}>

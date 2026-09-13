@@ -274,13 +274,19 @@ class DiscountController extends Controller
             ];
         })->values()->all();
 
+        if ($discount->type === AmountOff::class) {
+            $typeLabel = $appliesTo === 'all_products' ? 'Amount off order' : 'Amount off products';
+        } else {
+            $typeLabel = self::TYPES[$discount->type] ?? 'Unsupported';
+        }
+
         return [
             'id' => $discount->id,
             'name' => $discount->name,
             'handle' => $discount->handle,
             'coupon' => $discount->coupon,
             'type' => $discount->type,
-            'type_label' => self::TYPES[$discount->type] ?? 'Unsupported',
+            'type_label' => $typeLabel,
             'supported' => $this->isSupported($discount),
             'status' => $discount->status,
             'starts_at' => $discount->starts_at?->toISOString(),

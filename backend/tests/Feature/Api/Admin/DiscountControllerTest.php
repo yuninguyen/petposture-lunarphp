@@ -123,7 +123,7 @@ class DiscountControllerTest extends TestCase
 
         $response = $this->postJson('/api/admin/discounts', $this->amountOffPayload([
             'data' => ['min_prices' => ['USD' => 1], 'fixed_value' => false, 'percentage' => 25, 'fixed_values' => ['USD' => 2]],
-        ]))->assertCreated()->assertJsonPath('data.supported', true)->assertJsonPath('data.type_label', 'Amount off');
+        ]))->assertCreated()->assertJsonPath('data.supported', true)->assertJsonPath('data.type_label', 'Amount off order');
 
         $this->assertSame(['min_prices' => ['USD' => 1.0], 'fixed_value' => false, 'percentage' => 25.0], $response->json('data.data'));
     }
@@ -236,6 +236,7 @@ class DiscountControllerTest extends TestCase
         ]))->assertCreated();
 
         $response->assertJsonPath('data.applies_to', 'all_products')
+            ->assertJsonPath('data.type_label', 'Amount off order')
             ->assertJsonPath('data.collection_ids', [])
             ->assertJsonPath('data.product_ids', []);
 
@@ -256,6 +257,7 @@ class DiscountControllerTest extends TestCase
         ]))->assertCreated();
 
         $response->assertJsonPath('data.applies_to', 'specific_collections')
+            ->assertJsonPath('data.type_label', 'Amount off products')
             ->assertJsonPath('data.collection_ids', [$collection->id])
             ->assertJsonPath('data.collections.0.id', $collection->id)
             ->assertJsonPath('data.collections.0.name', 'Dog Posture Harnesses');
@@ -278,6 +280,7 @@ class DiscountControllerTest extends TestCase
         ]))->assertCreated();
 
         $response->assertJsonPath('data.applies_to', 'specific_products')
+            ->assertJsonPath('data.type_label', 'Amount off products')
             ->assertJsonPath('data.product_ids', [$product->id])
             ->assertJsonPath('data.products.0.id', $product->id);
 
@@ -297,6 +300,7 @@ class DiscountControllerTest extends TestCase
             'applies_to' => 'specific_collections',
             'collection_ids' => [$collection->id],
         ]))->assertCreated();
+        $created->assertJsonPath('data.type_label', 'Amount off products');
 
         $id = $created->json('data.id');
         $discount = Discount::findOrFail($id);
@@ -309,12 +313,52 @@ class DiscountControllerTest extends TestCase
         ]))->assertOk();
 
         $updated->assertJsonPath('data.applies_to', 'all_products')
+            ->assertJsonPath('data.type_label', 'Amount off order')
             ->assertJsonPath('data.collection_ids', [])
             ->assertJsonPath('data.product_ids', []);
 
         $discount->refresh();
         $this->assertSame(0, $discount->collections()->wherePivot('type', 'limitation')->count());
         $this->assertSame(0, $discount->discountableLimitations()->count());
+    }
+
+    public function test_type_label_differentiates_between_amount_off_order_and_amount_off_products(): void
+    {
+        $this->actingAsCoreAdmin();
+
+        $orderDiscount = $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'name' => 'Storewide 10% Off',
+            'handle' => 'storewide-10-off',
+            'coupon' => 'ORDER10',
+            'applies_to' => 'all_products',
+        ]))->assertCreated();
+        $orderDiscount->assertJsonPath('data.type_label', 'Amount off order');
+
+        $collection = $this->createCollection('Bandanas');
+        $collectionDiscount = $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'name' => '15% Off Bandanas',
+            'handle' => 'bandanas-15-off',
+            'coupon' => 'BANDANA15',
+            'applies_to' => 'specific_collections',
+            'collection_ids' => [$collection->id],
+        ]))->assertCreated();
+        $collectionDiscount->assertJsonPath('data.type_label', 'Amount off products');
+
+        $variant = $this->createProductWithVariant();
+        $productDiscount = $this->postJson('/api/admin/discounts', $this->amountOffPayload([
+            'name' => '20% Off Harness',
+            'handle' => 'harness-20-off',
+            'coupon' => 'HARNESS20PROD',
+            'applies_to' => 'specific_products',
+            'product_ids' => [$variant->product->id],
+        ]))->assertCreated();
+        $productDiscount->assertJsonPath('data.type_label', 'Amount off products');
+
+        $list = $this->getJson('/api/admin/discounts')->assertOk();
+        $listItems = collect($list->json('data'));
+        $this->assertSame('Amount off order', $listItems->firstWhere('coupon', 'ORDER10')['type_label'] ?? null);
+        $this->assertSame('Amount off products', $listItems->firstWhere('coupon', 'BANDANA15')['type_label'] ?? null);
+        $this->assertSame('Amount off products', $listItems->firstWhere('coupon', 'HARNESS20PROD')['type_label'] ?? null);
     }
 
     public function test_validation_rejects_missing_or_invalid_collection_and_product_ids(): void
