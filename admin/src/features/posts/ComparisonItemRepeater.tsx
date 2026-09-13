@@ -227,16 +227,18 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.source_url')}</label>
-                  <Input {...register(`comparison_items.${index}.metadata.source_url`)} placeholder="https://..." className="shadow-sm" />
-                  <p className="mt-1 text-xs text-gray-400">{t('posts.comparison.source_url_hint')}</p>
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.source_url')}</label>
+                    <Input {...register(`comparison_items.${index}.metadata.source_url`)} placeholder="https://..." className="shadow-sm" />
+                    <p className="mt-1 text-xs text-gray-400">{t('posts.comparison.source_url_hint')}</p>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.checked_at')}</label>
-                  <CheckedAtInput control={control} index={index} />
-                  <p className="mt-1 text-xs text-gray-400">{t('posts.comparison.checked_at_hint')}</p>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.checked_at')}</label>
+                    <CheckedAtInput control={control} index={index} />
+                    <p className="mt-1 text-xs text-gray-400">{t('posts.comparison.checked_at_hint')}</p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
