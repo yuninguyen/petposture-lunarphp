@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { User, Lock, Activity, ShieldCheck, Calendar, Clock, CheckCircle2 } from 'lucide-react';
+import { PasswordInput } from '@/components/ui/password-input';
 import { useProfile, useUpdateProfile, useUpdatePassword } from './profileApi';
 
 export function ProfilePage() {
@@ -255,12 +256,11 @@ export function ProfilePage() {
               <label htmlFor="current_password" className="block text-sm font-medium text-slate-700 mb-1">
                 {t('profile.current_password', 'Current Password')}
               </label>
-              <input
+              <PasswordInput
                 id="current_password"
-                type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className={`block w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1 ${
+                className={`rounded-lg text-sm ${
                   passwordErrors.current_password
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50/20'
                     : 'border-slate-300 focus:border-primary focus:ring-primary'
@@ -275,12 +275,11 @@ export function ProfilePage() {
               <label htmlFor="new_password" className="block text-sm font-medium text-slate-700 mb-1">
                 {t('profile.new_password', 'New Password')}
               </label>
-              <input
+              <PasswordInput
                 id="new_password"
-                type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className={`block w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1 ${
+                className={`rounded-lg text-sm ${
                   passwordErrors.password
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50/20'
                     : 'border-slate-300 focus:border-primary focus:ring-primary'
@@ -295,12 +294,11 @@ export function ProfilePage() {
               <label htmlFor="confirm_password" className="block text-sm font-medium text-slate-700 mb-1">
                 {t('profile.confirm_password', 'Confirm New Password')}
               </label>
-              <input
+              <PasswordInput
                 id="confirm_password"
-                type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`block w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1 ${
+                className={`rounded-lg text-sm ${
                   passwordErrors.password_confirmation
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50/20'
                     : 'border-slate-300 focus:border-primary focus:ring-primary'
