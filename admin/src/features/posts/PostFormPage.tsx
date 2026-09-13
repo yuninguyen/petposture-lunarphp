@@ -85,6 +85,7 @@ interface ComparisonItemApiItem {
   pros: string[];
   cons: string[];
   in_house_match_url: string | null;
+  metadata: { source_url?: string | null; checked_at?: string | null } | null;
 }
 
 interface PostDetail {
@@ -302,6 +303,10 @@ export function PostFormPage() {
           pros: item.pros ?? [],
           cons: item.cons ?? [],
           in_house_match_url: item.in_house_match_url ?? '',
+          metadata: {
+            source_url: item.metadata?.source_url ?? '',
+            checked_at: item.metadata?.checked_at ?? '',
+          },
         })),
       });
       editor.commands.setContent(existingPost.content);
@@ -434,6 +439,16 @@ export function PostFormPage() {
       // datetime-local sends an empty string when untouched; the backend's
       // `nullable|date` rule rejects "" — send null instead.
       published_at: values.published_at || null,
+      // Same "" vs null issue as published_at: metadata.source_url/checked_at
+      // are only required_with price/rating, but an empty string still fails
+      // their `url`/date-format rules on items that don't have either.
+      comparison_items: values.comparison_items?.map((item) => ({
+        ...item,
+        metadata: {
+          source_url: item.metadata?.source_url || undefined,
+          checked_at: item.metadata?.checked_at || undefined,
+        },
+      })),
     });
   }
 

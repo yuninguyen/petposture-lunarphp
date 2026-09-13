@@ -29,6 +29,37 @@ const comparisonItemSchema = (t: TranslationFunction) =>
       (val) => (val === '' ? undefined : val),
       z.string().url(t('posts.comparison.errors.match_url_invalid')).optional()
     ),
+    metadata: z
+      .object({
+        source_url: z.preprocess(
+          (val) => (val === '' ? undefined : val),
+          z.string().url(t('posts.comparison.errors.source_url_invalid')).optional()
+        ),
+        checked_at: z.preprocess(
+          (val) => (val === '' ? undefined : val),
+          z.string().optional()
+        ),
+      })
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasPriceOrRating = Boolean(data.price_display) || data.price_cents !== undefined || data.rating !== undefined;
+    if (!hasPriceOrRating) return;
+
+    if (!data.metadata?.source_url) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['metadata', 'source_url'],
+        message: t('posts.comparison.errors.source_url_required'),
+      });
+    }
+    if (!data.metadata?.checked_at) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['metadata', 'checked_at'],
+        message: t('posts.comparison.errors.checked_at_required'),
+      });
+    }
   });
 
 export type ComparisonItemValues = z.infer<ReturnType<typeof comparisonItemSchema>>;

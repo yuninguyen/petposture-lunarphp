@@ -38,6 +38,35 @@ function HighlightBadgeInput({ control, index }: { control: Control<PostFormValu
   );
 }
 
+// Backend requires exact format Y-m-d\TH:i:s\Z (no milliseconds).
+function nowAsCheckedAt(): string {
+  return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+function CheckedAtInput({ control, index }: { control: Control<PostFormValues>; index: number }) {
+  const { t } = useTranslation();
+
+  return (
+    <Controller
+      control={control}
+      name={`comparison_items.${index}.metadata.checked_at`}
+      render={({ field }) => (
+        <div className="flex gap-2">
+          <Input
+            {...field}
+            value={field.value ?? ''}
+            placeholder="2026-09-13T10:30:00Z"
+            className="shadow-sm"
+          />
+          <Button type="button" variant="secondary" onClick={() => field.onChange(nowAsCheckedAt())}>
+            {t('posts.comparison.set_checked_now')}
+          </Button>
+        </div>
+      )}
+    />
+  );
+}
+
 function RowSummary({
   control,
   index,
@@ -182,6 +211,19 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.source_url')}</label>
+                    <Input {...register(`comparison_items.${index}.metadata.source_url`)} placeholder="https://..." className="shadow-sm" />
+                    <p className="mt-1 text-xs text-gray-400">{t('posts.comparison.source_url_hint')}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.checked_at')}</label>
+                    <CheckedAtInput control={control} index={index} />
+                    <p className="mt-1 text-xs text-gray-400">{t('posts.comparison.checked_at_hint')}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">{t('posts.comparison.affiliate_url')}</label>
                     <Input {...register(`comparison_items.${index}.affiliate_url`)} placeholder="https://..." />
                   </div>
@@ -247,6 +289,7 @@ export function ComparisonItemRepeater({ control, register, affiliateNetworks }:
             pros: [],
             cons: [],
             in_house_match_url: '',
+            metadata: { source_url: '', checked_at: '' },
           });
           setExpandedIndex(fields.length);
         }}

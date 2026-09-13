@@ -79,6 +79,7 @@ describe('getPostFormSchema — comparison fields', () => {
     pros: ['comfy'],
     cons: ['pricey'],
     in_house_match_url: '',
+    metadata: { source_url: 'https://chewy.com/p/1', checked_at: '2026-09-13T10:30:00Z' },
   };
 
   it('accepts a valid comparison payload', () => {
@@ -203,6 +204,42 @@ describe('getPostFormSchema — comparison fields', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('requires metadata.source_url and checked_at when price or rating is set', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{ ...validItem, metadata: undefined }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts metadata.source_url and checked_at when price or rating is set', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{
+        ...validItem,
+        metadata: { source_url: 'https://chewy.com/p/1', checked_at: '2026-09-13T10:30:00Z' },
+      }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('does not require metadata when price, price_cents, and rating are all absent', () => {
+    const schema = getPostFormSchema(t);
+    const result = schema.safeParse({
+      ...baseValues,
+      comparison_items: [{
+        ...validItem,
+        price_display: undefined,
+        price_cents: undefined,
+        rating: undefined,
+        metadata: undefined,
+      }],
+    });
+    expect(result.success).toBe(true);
+  });
 });
 
 const validHighlightItem = {
@@ -217,6 +254,7 @@ const validHighlightItem = {
   pros: ['comfy'],
   cons: [],
   in_house_match_url: '',
+  metadata: { source_url: 'https://chewy.com/p/1', checked_at: '2026-09-13T10:30:00Z' },
 };
 
 describe('getPostFormSchema — taxonomy, seo, published_at, highlight free-text', () => {
