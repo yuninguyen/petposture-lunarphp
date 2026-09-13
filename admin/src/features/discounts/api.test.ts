@@ -11,6 +11,7 @@ vi.mock('@tanstack/react-query', () => ({
 
 import {
   AMOUNT_OFF_TYPE,
+  BUY_X_GET_Y_TYPE,
   buildDiscountPayload,
   buildDiscountUpdatePayload,
   toIsoUtc,
@@ -55,5 +56,73 @@ describe('discounts api', () => {
 
   it('returns a safe invalid result rather than throwing for malformed datetimes', () => {
     expect(toIsoUtc('not-a-date')).toBeNull();
+  });
+
+  it('builds scoped payloads for specific_collections and specific_products', () => {
+    const collectionsPayload = buildDiscountPayload({
+      ...values,
+      applies_to: 'specific_collections',
+      collection_ids: [1, 2],
+      product_ids: [99],
+    });
+    expect(collectionsPayload).toMatchObject({
+      applies_to: 'specific_collections',
+      collection_ids: [1, 2],
+      product_ids: [],
+    });
+
+    const productsPayload = buildDiscountPayload({
+      ...values,
+      applies_to: 'specific_products',
+      collection_ids: [1, 2],
+      product_ids: [101, 102],
+    });
+    expect(productsPayload).toMatchObject({
+      applies_to: 'specific_products',
+      collection_ids: [],
+      product_ids: [101, 102],
+    });
+
+    const allProductsPayload = buildDiscountPayload({
+      ...values,
+      applies_to: 'all_products',
+      collection_ids: [1],
+      product_ids: [101],
+    });
+    expect(allProductsPayload).toMatchObject({
+      applies_to: 'all_products',
+      collection_ids: [],
+      product_ids: [],
+    });
+  });
+
+  it('builds BuyXGetY payloads with condition and reward scoped fields and quantity values', () => {
+    const bxyPayload = buildDiscountPayload(
+      {
+        ...values,
+        condition_type: 'specific_products',
+        condition_product_ids: [10, 11],
+        reward_product_ids: [20],
+        min_qty: '2',
+        reward_qty: '1',
+        max_reward_qty: '3',
+      },
+      BUY_X_GET_Y_TYPE
+    );
+
+    expect(bxyPayload).toMatchObject({
+      type: BUY_X_GET_Y_TYPE,
+      condition_type: 'specific_products',
+      condition_product_ids: [10, 11],
+      condition_collection_ids: [],
+      reward_product_ids: [20],
+      data: {
+        min_prices: { USD: 25 },
+        min_qty: 2,
+        reward_qty: 1,
+        max_reward_qty: 3,
+        automatically_add_rewards: false,
+      },
+    });
   });
 });

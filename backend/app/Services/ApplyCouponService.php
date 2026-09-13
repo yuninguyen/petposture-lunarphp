@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Lunar\DiscountTypes\FixedAmountOffPerUnit;
 use Lunar\Base\DiscountManagerInterface;
 use Lunar\DiscountTypes\AmountOff;
+use Lunar\DiscountTypes\BuyXGetY;
 use Lunar\Models\Cart;
 use Lunar\Models\Channel;
 use Lunar\Models\Currency;
@@ -95,6 +96,9 @@ class ApplyCouponService
         } elseif ($discount->type === FixedAmountOffPerUnit::class) {
             $type = 'fixed_product';
             $amount = ((float) ($data['fixed_values'][$currency->code] ?? 0)) / (float) $currency->factor;
+        } elseif ($discount->type === BuyXGetY::class) {
+            $type = 'buy_x_get_y';
+            $amount = null;
         } else {
             $amount = ((float) ($data['fixed_values'][$currency->code] ?? 0)) / (float) $currency->factor;
         }

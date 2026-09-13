@@ -87,6 +87,25 @@ describe('DiscountsListPage', () => {
     host.remove();
   });
 
+  it('renders translated type labels for Amount off order, Amount off products, Free shipping, and Buy X get Y', () => {
+    mocks.useDiscounts.mockReturnValue(pageWith([
+      { ...discount, id: 10, type_label: 'Amount off order' },
+      { ...discount, id: 11, type_label: 'Amount off products' },
+      { ...discount, id: 12, type_label: 'Free shipping' },
+      { ...discount, id: 13, type_label: 'Buy X get Y' },
+    ]));
+    mocks.useDeleteDiscount.mockReturnValue({ mutate: vi.fn(), isPending: false });
+    const { host, root } = renderPage();
+
+    expect(host.textContent).toContain('discounts.type_amount_off_order');
+    expect(host.textContent).toContain('discounts.type_amount_off_products');
+    expect(host.textContent).toContain('discounts.type_free_shipping');
+    expect(host.textContent).toContain('discounts.type_buy_x_get_y');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
   it('resets search to the first page synchronously while pagination remains independent', () => {
     mocks.useDiscounts.mockImplementation((filters) => pageWith([discount], (filters as { page: number }).page, 3));
     mocks.useDeleteDiscount.mockReturnValue({ mutate: vi.fn(), isPending: false });

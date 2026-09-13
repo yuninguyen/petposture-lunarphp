@@ -2,15 +2,28 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/api';
 
 export const AMOUNT_OFF_TYPE = 'Lunar\\DiscountTypes\\AmountOff' as const;
+export const FREE_SHIPPING_TYPE = 'App\\DiscountTypes\\FreeShipping' as const;
+export const BUY_X_GET_Y_TYPE = 'Lunar\\DiscountTypes\\BuyXGetY' as const;
 
-export type DiscountType = typeof AMOUNT_OFF_TYPE;
+export type DiscountType = typeof AMOUNT_OFF_TYPE | typeof FREE_SHIPPING_TYPE | typeof BUY_X_GET_Y_TYPE;
 export type DiscountStatus = 'active' | 'expired' | 'pending' | 'scheduled';
+export type DiscountAppliesTo = 'all_products' | 'specific_collections' | 'specific_products';
+
+export interface DiscountItemSummary {
+  id: number;
+  name: string;
+}
 
 export interface DiscountData {
   min_prices: { USD: number | null };
   fixed_value?: boolean;
   percentage?: number | null;
   fixed_values?: { USD: number | null };
+  free_shipping?: boolean;
+  min_qty?: number | null;
+  reward_qty?: number | null;
+  max_reward_qty?: number | null;
+  automatically_add_rewards?: boolean;
 }
 
 export interface Discount {
@@ -30,6 +43,18 @@ export interface Discount {
   priority: number | null;
   stop: boolean;
   data: DiscountData;
+  applies_to?: DiscountAppliesTo;
+  collection_ids?: number[];
+  collections?: DiscountItemSummary[];
+  product_ids?: number[];
+  products?: DiscountItemSummary[];
+  condition_type?: 'specific_products' | 'specific_collections';
+  condition_collection_ids?: number[];
+  condition_collections?: DiscountItemSummary[];
+  condition_product_ids?: number[];
+  condition_products?: DiscountItemSummary[];
+  reward_product_ids?: number[];
+  reward_products?: DiscountItemSummary[];
   created_at: string;
   updated_at: string;
 }
@@ -56,9 +81,24 @@ export interface DiscountCreatePayload {
   max_uses: number | null;
   max_uses_per_user: number | null;
   data: DiscountData;
+  applies_to?: DiscountAppliesTo;
+  collection_ids?: number[];
+  product_ids?: number[];
+  condition_type?: 'specific_products' | 'specific_collections';
+  condition_collection_ids?: number[];
+  condition_product_ids?: number[];
+  reward_product_ids?: number[];
 }
 
-export type DiscountUpdatePayload = Required<Pick<DiscountCreatePayload, 'name' | 'handle' | 'type' | 'starts_at' | 'ends_at' | 'coupon' | 'priority' | 'stop' | 'max_uses' | 'max_uses_per_user' | 'data'>>;
+export type DiscountUpdatePayload = Required<Pick<DiscountCreatePayload, 'name' | 'handle' | 'type' | 'starts_at' | 'ends_at' | 'coupon' | 'priority' | 'stop' | 'max_uses' | 'max_uses_per_user' | 'data'>> & {
+  applies_to?: DiscountAppliesTo;
+  collection_ids?: number[];
+  product_ids?: number[];
+  condition_type?: 'specific_products' | 'specific_collections';
+  condition_collection_ids?: number[];
+  condition_product_ids?: number[];
+  reward_product_ids?: number[];
+};
 
 export interface DiscountFormValues {
   name: string;
@@ -74,6 +114,18 @@ export interface DiscountFormValues {
   fixed_value: boolean;
   percentage: string;
   fixed_value_usd: string;
+  applies_to: DiscountAppliesTo;
+  collection_ids: number[];
+  product_ids: number[];
+  type?: DiscountType;
+  condition_type?: 'specific_products' | 'specific_collections';
+  condition_collection_ids?: number[];
+  condition_product_ids?: number[];
+  reward_product_ids?: number[];
+  min_qty?: string;
+  reward_qty?: string;
+  max_reward_qty?: string;
+  automatically_add_rewards?: boolean;
 }
 
 function optionalNumber(value: string): number | null {
@@ -84,8 +136,25 @@ function optionalNumber(value: string): number | null {
   return Number.isFinite(number) ? number : null;
 }
 
-function discountData(values: DiscountFormValues): DiscountData {
+function discountData(values: DiscountFormValues, type: DiscountType = AMOUNT_OFF_TYPE): DiscountData {
   const min_prices = { USD: optionalNumber(values.min_price_usd) };
+
+  if (type === FREE_SHIPPING_TYPE) {
+    return {
+      min_prices,
+      free_shipping: true,
+    };
+  }
+
+  if (type === BUY_X_GET_Y_TYPE) {
+    return {
+      min_prices,
+      min_qty: optionalNumber(values.min_qty ?? '1') ?? 1,
+      reward_qty: optionalNumber(values.reward_qty ?? '1') ?? 1,
+      max_reward_qty: optionalNumber(values.max_reward_qty ?? ''),
+      automatically_add_rewards: values.automatically_add_rewards ?? false,
+    };
+  }
 
   return values.fixed_value
     ? { min_prices, fixed_value: true, fixed_values: { USD: optionalNumber(values.fixed_value_usd) } }
@@ -103,15 +172,17 @@ export function toLocalDateTimeValue(iso: string): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function buildDiscountPayload(values: DiscountFormValues): DiscountCreatePayload | null {
+export function buildDiscountPayload(values: DiscountFormValues, typeOverride?: DiscountType): DiscountCreatePayload | null {
   const starts_at = toIsoUtc(values.starts_at);
   const ends_at = values.ends_at.trim() === '' ? null : toIsoUtc(values.ends_at);
-  if (starts_at === null || ends_at === null && values.ends_at.trim() !== '') return null;
+  if (starts_at === null || (ends_at === null && values.ends_at.trim() !== '')) return null;
+
+  const type = typeOverride ?? values.type ?? AMOUNT_OFF_TYPE;
 
   return {
     name: values.name.trim(),
     handle: values.handle.trim(),
-    type: AMOUNT_OFF_TYPE,
+    type,
     starts_at,
     ends_at,
     coupon: values.coupon.trim(),
@@ -119,12 +190,19 @@ export function buildDiscountPayload(values: DiscountFormValues): DiscountCreate
     stop: values.stop,
     max_uses: optionalNumber(values.max_uses),
     max_uses_per_user: optionalNumber(values.max_uses_per_user),
-    data: discountData(values),
+    data: discountData(values, type),
+    applies_to: values.applies_to ?? 'all_products',
+    collection_ids: values.applies_to === 'specific_collections' ? (values.collection_ids ?? []) : [],
+    product_ids: values.applies_to === 'specific_products' ? (values.product_ids ?? []) : [],
+    condition_type: values.condition_type ?? 'specific_products',
+    condition_collection_ids: values.condition_type === 'specific_collections' ? (values.condition_collection_ids ?? []) : [],
+    condition_product_ids: values.condition_type !== 'specific_collections' ? (values.condition_product_ids ?? []) : [],
+    reward_product_ids: values.reward_product_ids ?? [],
   };
 }
 
-export function buildDiscountUpdatePayload(values: DiscountFormValues): DiscountUpdatePayload | null {
-  const payload = buildDiscountPayload(values);
+export function buildDiscountUpdatePayload(values: DiscountFormValues, typeOverride?: DiscountType): DiscountUpdatePayload | null {
+  const payload = buildDiscountPayload(values, typeOverride);
   return payload && { ...payload, handle: values.handle.trim() };
 }
 
