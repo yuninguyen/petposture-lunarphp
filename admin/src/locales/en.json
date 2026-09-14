@@ -1302,5 +1302,19 @@
   "system_users.errors.cannot_delete_self": "You cannot delete your own account",
   "system_users.errors.cannot_deactivate_self": "You cannot deactivate your own account",
   "system_users.errors.last_super_admin": "Cannot delete the last active Super Admin",
-  "system_users.errors.last_super_admin_deactivate": "Cannot deactivate or remove Super Admin role from the last active Super Admin"
+  "system_users.errors.last_super_admin_deactivate": "Cannot deactivate or remove Super Admin role from the last active Super Admin",
+  "common.retry": "Retry",
+  "media_library.title": "Media Library",
+  "media_library.subtitle": "Browse and manage uploaded assets and attached files",
+  "media_library.filter.all": "All",
+  "media_library.filter.curator": "Curator",
+  "media_library.filter.attached": "Attached",
+  "media_library.attached_to": "Attached to {{model}}",
+  "media_library.delete_confirm_title": "Delete Media File",
+  "media_library.delete_confirm_message": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+  "media_library.delete_success": "Media file deleted successfully",
+  "media_library.errors.in_use": "Cannot delete — currently used by: {{usages}}",
+  "media_library.empty": "No media files found.",
+  "media_library.page_info": "Page {{current}} of {{total}}",
+  "media_library.total_items": "({{count}} items)"
 }
