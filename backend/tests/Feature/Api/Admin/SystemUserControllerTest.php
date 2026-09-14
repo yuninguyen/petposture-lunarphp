@@ -145,6 +145,30 @@ class SystemUserControllerTest extends TestCase
         $this->assertTrue(Hash::check('OriginalPass123!', $staff->password));
     }
 
+    public function test_update_preserves_non_admin_roles_not_offered_as_checkboxes(): void
+    {
+        $admin = $this->createUserWithRole('admin');
+        Sanctum::actingAs($admin);
+
+        $staff = $this->createUserWithRole('staff');
+        $staff->assignRole('customer');
+
+        $this->putJson("/api/admin/system/users/{$staff->id}", [
+            'name' => $staff->name,
+            'email' => $staff->email,
+            'roles' => ['admin'],
+        ])->assertOk();
+
+        $staff->refresh();
+        $this->assertTrue($staff->hasRole('customer'));
+        $this->assertTrue($staff->hasRole('admin'));
+        $this->assertFalse($staff->hasRole('staff'));
+
+        // The response and index listing must not surface the non-admin role.
+        $response = $this->getJson("/api/admin/system/users/{$staff->id}")->assertOk();
+        $this->assertNotContains('customer', $response->json('data.roles'));
+    }
+
     public function test_update_hashes_new_password_when_provided(): void
     {
         $admin = $this->createUserWithRole('admin');

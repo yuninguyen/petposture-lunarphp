@@ -22,7 +22,7 @@ import { fetchJson } from '@/lib/api';
 const mockUsers: SystemUser[] = [
   {
     id: 1,
-    name: 'Super Admin',
+    name: 'Alice Owner',
     email: 'superadmin@example.com',
     is_active: true,
     roles: ['super_admin'],
@@ -79,8 +79,8 @@ describe('SystemUsersPage', () => {
     expect(screen.getByText('john.staff@example.com')).toBeInTheDocument();
 
     // Roles
-    expect(screen.getByText('super_admin')).toBeInTheDocument();
-    expect(screen.getByText('staff')).toBeInTheDocument();
+    expect(screen.getByText('Super Admin')).toBeInTheDocument();
+    expect(screen.getByText('Staff')).toBeInTheDocument();
     expect(screen.getByText('Support')).toBeInTheDocument();
 
     // Status
@@ -117,7 +117,7 @@ describe('SystemUsersPage', () => {
     fireEvent.click(newBtn);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText('New System User')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'New User' })).toBeInTheDocument();
   });
 
   it('shows error toast with CANNOT_MODIFY_SELF message when trying to delete own account', async () => {
@@ -151,7 +151,7 @@ describe('SystemUsersPage', () => {
     fireEvent.click(deleteBtn);
 
     // Modal opens
-    expect(screen.getByText('Delete System User')).toBeInTheDocument();
+    expect(screen.getByText('Delete User')).toBeInTheDocument();
     const confirmBtn = screen.getByRole('button', { name: /^Delete$/i });
     fireEvent.click(confirmBtn);
 

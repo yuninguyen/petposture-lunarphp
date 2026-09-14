@@ -99,7 +99,12 @@ class SystemUserController extends Controller
         $user->update($data);
 
         if ($request->has('roles')) {
-            $user->syncRoles($validated['roles']);
+            // Preserve any role outside the 6 admin-panel roles (e.g. `customer`)
+            // that this account may also hold — the form only ever submits the
+            // fixed admin-role subset, and a plain syncRoles() would silently
+            // strip roles never offered as a checkbox.
+            $nonAdminRoles = $user->roles->pluck('name')->diff(User::ADMIN_PANEL_ROLES)->all();
+            $user->syncRoles([...$validated['roles'], ...$nonAdminRoles]);
         }
 
         return new SystemUserResource($user->load('roles'));
