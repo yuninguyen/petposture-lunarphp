@@ -1302,5 +1302,19 @@
   "system_users.errors.cannot_delete_self": "Bạn không thể xóa tài khoản của chính mình",
   "system_users.errors.cannot_deactivate_self": "Bạn không thể vô hiệu hóa tài khoản của chính mình",
   "system_users.errors.last_super_admin": "Không thể xóa Super Admin đang hoạt động cuối cùng",
-  "system_users.errors.last_super_admin_deactivate": "Không thể vô hiệu hóa hoặc xóa vai trò Super Admin của Super Admin đang hoạt động cuối cùng"
+  "system_users.errors.last_super_admin_deactivate": "Không thể vô hiệu hóa hoặc xóa vai trò Super Admin của Super Admin đang hoạt động cuối cùng",
+  "common.retry": "Thử lại",
+  "media_library.title": "Thư viện phương tiện",
+  "media_library.subtitle": "Duyệt và quản lý tập tin tải lên và phương tiện đính kèm",
+  "media_library.filter.all": "Tất cả",
+  "media_library.filter.curator": "Curator",
+  "media_library.filter.attached": "Đính kèm",
+  "media_library.attached_to": "Gắn với {{model}}",
+  "media_library.delete_confirm_title": "Xóa tập tin phương tiện",
+  "media_library.delete_confirm_message": "Bạn có chắc chắn muốn xóa {{name}}? Thao tác này không thể hoàn tác.",
+  "media_library.delete_success": "Xóa tập tin phương tiện thành công",
+  "media_library.errors.in_use": "Không thể xóa — đang được dùng bởi: {{usages}}",
+  "media_library.empty": "Không tìm thấy tập tin phương tiện nào.",
+  "media_library.page_info": "Trang {{current}} / {{total}}",
+  "media_library.total_items": "({{count}} tập tin)"
 }
