@@ -5,14 +5,7 @@ import { logout } from '@/lib/auth';
 import { useBranding } from '@/context/BrandingContext';
 import { getVisibleNavigation } from '@/navigation/adminNavigation';
 import { MobileAdminNav } from '@/components/navigation/MobileAdminNav';
-
-function humanizeRole(role: string): string {
-  return role
-    .replace(/_/g, ' ')
-    .split(' ')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
+import { humanizeRole } from '@/lib/humanizeRole';
 
 export function AppShell({ children, userName, userRoles }: { children: ReactNode; userName: string; userRoles: string[] }) {
   const { t, i18n } = useTranslation();

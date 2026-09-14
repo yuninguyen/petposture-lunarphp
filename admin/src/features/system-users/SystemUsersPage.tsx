@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
+import { humanizeRole } from '@/lib/humanizeRole';
 import {
   deleteSystemUser,
   fetchSystemUsers,
@@ -92,7 +93,7 @@ export function SystemUsersPage() {
       <div className="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            {t('system_users.title', 'System Users')}
+            {t('system_users.title', 'Users')}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             {t(
@@ -189,7 +190,7 @@ export function SystemUsersPage() {
                   <td colSpan={5} className="px-6 py-12 text-center text-sm text-slate-500">
                     {searchInput
                       ? t('system_users.no_search_results', 'No users found matching your search.')
-                      : t('system_users.no_users', 'No system users found.')}
+                      : t('system_users.no_users', 'No users found.')}
                   </td>
                 </tr>
               ) : (
@@ -212,7 +213,7 @@ export function SystemUsersPage() {
                               key={role}
                               className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${badgeStyle}`}
                             >
-                              {role}
+                              {humanizeRole(role)}
                             </span>
                           );
                         })}
@@ -261,7 +262,7 @@ export function SystemUsersPage() {
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
         open={deletingUser !== null}
-        title={t('system_users.delete_confirm_title', 'Delete System User')}
+        title={t('system_users.delete_confirm_title', 'Delete User')}
         message={t(
           'system_users.delete_confirm_message',
           'Are you sure you want to delete user {{name}}? This action cannot be undone.',

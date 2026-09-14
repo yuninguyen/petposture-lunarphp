@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { humanizeRole } from '@/lib/humanizeRole';
 import {
   createSystemUser,
   updateSystemUser,
@@ -132,7 +133,7 @@ export function SystemUserModal({ open, user, onClose }: SystemUserModalProps) {
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="text-lg font-semibold text-slate-900">
             {t(isEditing ? 'system_users.edit_title' : 'system_users.create_title', {
-              defaultValue: isEditing ? 'Edit System User' : 'New System User',
+              defaultValue: isEditing ? 'Edit User' : 'New User',
             })}
           </h2>
           <button
@@ -243,7 +244,7 @@ export function SystemUserModal({ open, user, onClose }: SystemUserModalProps) {
                         onChange={() => handleRoleToggle(role)}
                         className="h-4 w-4 rounded border-slate-300 text-secondary focus:ring-secondary"
                       />
-                      <span>{role}</span>
+                      <span>{humanizeRole(role)}</span>
                     </label>
                   );
                 })}
