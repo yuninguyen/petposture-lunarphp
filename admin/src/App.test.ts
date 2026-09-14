@@ -16,6 +16,7 @@ vi.mock('./features/dashboard/SalesPage', () => ({ SalesPage: () => createElemen
 vi.mock('./features/dashboard/ConversionPage', () => ({ ConversionPage: () => createElement('div', null, 'Conversion dashboard route') }));
 vi.mock('./features/finance/GoalsPage', () => ({ GoalsPage: () => createElement('div', null, 'Goals route') }));
 vi.mock('./features/profile/ProfilePage', () => ({ ProfilePage: () => createElement('div', null, 'Profile route') }));
+vi.mock('./features/system-users/SystemUsersPage', () => ({ SystemUsersPage: () => createElement('div', null, 'System users route') }));
 
 import { AppRoutes, canDeleteReviews, canManageCommerce, canManageCustomers, canManageDiscounts, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute, ADMIN_HOME_CANDIDATES, HomeRouteCandidate } from './App';
 
@@ -286,5 +287,20 @@ describe('admin home route resolution', () => {
       act(() => root.unmount());
       host.remove();
     }
+  });
+
+  it('renders SystemUsersPage at /system/users for core admin and falls back for Product Manager', async () => {
+    const { host, root } = renderRoutes(['admin'], '/system/users');
+    await act(async () => await Promise.resolve());
+    expect(host.textContent).toContain('System users route');
+    act(() => root.unmount());
+    host.remove();
+
+    const pm = renderRoutes(['Product Manager'], '/system/users');
+    await act(async () => await Promise.resolve());
+    expect(pm.host.textContent).not.toContain('System users route');
+    expect(pm.host.textContent).toContain('Products route');
+    act(() => pm.root.unmount());
+    pm.host.remove();
   });
 });

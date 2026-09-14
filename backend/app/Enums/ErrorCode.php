@@ -34,6 +34,10 @@ enum ErrorCode: string
     case UNAUTHENTICATED = 'UNAUTHENTICATED';
     case FORBIDDEN = 'FORBIDDEN';
 
+    // System users
+    case CANNOT_MODIFY_SELF = 'CANNOT_MODIFY_SELF';
+    case LAST_SUPER_ADMIN = 'LAST_SUPER_ADMIN';
+
     // Generic
     case NOT_FOUND = 'NOT_FOUND';
     case INTERNAL_ERROR = 'INTERNAL_ERROR';

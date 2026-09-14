@@ -43,6 +43,7 @@ const SalesPage = lazy(() => import('@/features/dashboard/SalesPage').then(m => 
 const ConversionPage = lazy(() => import('@/features/dashboard/ConversionPage').then(m => ({ default: m.ConversionPage })));
 const GoalsPage = lazy(() => import('@/features/finance/GoalsPage').then(m => ({ default: m.GoalsPage })));
 const ProfilePage = lazy(() => import('@/features/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const SystemUsersPage = lazy(() => import('@/features/system-users/SystemUsersPage').then(m => ({ default: m.SystemUsersPage })));
 
 function PageLoader() {
   return (
@@ -251,6 +252,7 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
         <Route path="/legal-policies" element={<PagesListPage />} />
         <Route path="/legal-policies/create" element={<PageFormPage key={location.pathname} />} />
         <Route path="/legal-policies/:id" element={<PageFormPage key={location.pathname} />} />
+        <Route path="/system/users" element={<SystemUsersPage />} />
       </>}
       {canManageSales && <>
         <Route path="/orders" element={<OrdersListPage />} />

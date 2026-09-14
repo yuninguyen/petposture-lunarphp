@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\Admin\ProfileController;
 use App\Http\Controllers\Api\Admin\ProductVariantController as AdminProductVariantController;
 use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\Admin\ShippingMethodController;
+use App\Http\Controllers\Api\Admin\SystemUserController;
 use App\Http\Controllers\Api\ReturnRequestController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SiteMediaController;
@@ -148,6 +149,7 @@ Route::prefix('/admin')
         Route::get('/profile', [ProfileController::class, 'show']);
         Route::put('/profile', [ProfileController::class, 'update']);
         Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
+        Route::apiResource('system/users', SystemUserController::class)->parameters(['users' => 'user']);
         Route::get('/brands', [AdminBrandController::class, 'index']);
         Route::post('/brands', [AdminBrandController::class, 'store']);
         Route::get('/brands/{brand}', [AdminBrandController::class, 'show']);
