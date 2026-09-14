@@ -13,7 +13,13 @@ vi.mock('@/lib/api', async (importOriginal) => {
 import { fetchJson } from '@/lib/api';
 
 const mockData: DashboardSalesData = {
-  range: '30',
+  range: {
+    preset: 'last_30_days',
+    start: '2026-08-16',
+    end: '2026-09-14',
+    label: 'Last 30 days',
+    comparison_active: true,
+  },
   currency: 'USD',
   stats: {
     sales: { raw: 125000, decimal: 1250.0, currency: 'USD', trend: 15.2 },
@@ -185,15 +191,194 @@ describe('SalesPage', () => {
     expect(screen.getByText('No target set')).toBeInTheDocument();
   });
 
-  it('switches ranges when range tabs are clicked', async () => {
+  it('initial render sends a request with preset=last_30_days&comparison=none', async () => {
     renderWithClient(<SalesPage />);
-
     await screen.findByText('$1,250.00');
-    const day7Tab = screen.getByRole('button', { name: /7 days/i });
-    fireEvent.click(day7Tab);
+
+    expect(fetchJson).toHaveBeenCalledWith(
+      expect.stringContaining('/admin/dashboard/sales?preset=last_30_days&comparison=none')
+    );
+  });
+
+  it('refetches with new preset when selecting range via DateRangePicker', async () => {
+    renderWithClient(<SalesPage />);
+    await screen.findByText('$1,250.00');
+
+    const rangeTrigger = screen.getByRole('button', { name: /last 30 days/i });
+    fireEvent.click(rangeTrigger);
+
+    const todayOption = screen.getByRole('menuitem', { name: /^today$/i });
+    fireEvent.click(todayOption);
 
     await waitFor(() => {
-      expect(fetchJson).toHaveBeenCalledWith(expect.stringContaining('range=7'));
+      expect(fetchJson).toHaveBeenCalledWith(
+        expect.stringContaining('preset=today&comparison=none')
+      );
     });
+  });
+
+  it('adds comparison query parameters when selecting comparison via ComparisonPicker', async () => {
+    renderWithClient(<SalesPage />);
+    await screen.findByText('$1,250.00');
+
+    const compareTrigger = screen.getByRole('button', { name: /no comparison/i });
+    fireEvent.click(compareTrigger);
+
+    const prevYearOption = screen.getByRole('menuitem', { name: /^previous year$/i });
+    fireEvent.click(prevYearOption);
+
+    await waitFor(() => {
+      expect(fetchJson).toHaveBeenCalledWith(
+        expect.stringContaining('comparison=previous_year')
+      );
+    });
+  });
+
+  it('adds custom compare dates when selecting custom comparison in ComparisonPicker', async () => {
+    renderWithClient(<SalesPage />);
+    await screen.findByText('$1,250.00');
+
+    const compareTrigger = screen.getByRole('button', { name: /no comparison/i });
+    fireEvent.click(compareTrigger);
+
+    const customOption = screen.getByRole('menuitem', { name: /custom/i });
+    fireEvent.click(customOption);
+
+    const startInput = screen.getByLabelText(/compare start date/i);
+    const endInput = screen.getByLabelText(/compare end date/i);
+
+    fireEvent.change(startInput, { target: { value: '2025-01-01' } });
+    fireEvent.change(endInput, { target: { value: '2025-01-31' } });
+
+    const applyBtn = screen.getByRole('button', { name: /apply/i });
+    fireEvent.click(applyBtn);
+
+    await waitFor(() => {
+      expect(fetchJson).toHaveBeenCalledWith(
+        expect.stringContaining('comparison=custom&compare_start_date=2025-01-01&compare_end_date=2025-01-31')
+      );
+    });
+  });
+
+  it('does not render TrendBadge percentages when comparison_active is false', async () => {
+    const mockWithoutComparison: DashboardSalesData = {
+      ...mockData,
+      range: {
+        preset: 'last_30_days',
+        start: '2026-08-16',
+        end: '2026-09-14',
+        label: 'Last 30 days',
+        comparison_active: false,
+      },
+    };
+    vi.mocked(fetchJson).mockResolvedValue({ data: mockWithoutComparison });
+
+    renderWithClient(<SalesPage />);
+    await screen.findByText('$1,250.00');
+
+    expect(screen.queryByText('+15.2%')).not.toBeInTheDocument();
+    expect(screen.queryByText('+8.5%')).not.toBeInTheDocument();
+    expect(screen.queryByText('+6.1%')).not.toBeInTheDocument();
+    expect(screen.queryByText('-1.5%')).not.toBeInTheDocument();
+  });
+
+  it('renders TrendBadge percentages when comparison_active is true', async () => {
+    renderWithClient(<SalesPage />);
+    await screen.findByText('$1,250.00');
+
+    expect(screen.getByText('+15.2%')).toBeInTheDocument();
+    expect(screen.getByText('+8.5%')).toBeInTheDocument();
+    expect(screen.getByText('+6.1%')).toBeInTheDocument();
+    expect(screen.getByText('-1.5%')).toBeInTheDocument();
+  });
+
+  it('renders dashed compare polylines when compare series are present, and omits them when absent', async () => {
+    // 1. Initially absent in mockData
+    const { unmount } = renderWithClient(<SalesPage />);
+    await screen.findByText('$1,250.00');
+
+    expect(screen.getByTestId('chart-revenue-primary')).toBeInTheDocument();
+    expect(screen.getByTestId('chart-orders-primary')).toBeInTheDocument();
+    expect(screen.queryByTestId('chart-revenue-compare')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('chart-orders-compare')).not.toBeInTheDocument();
+
+    unmount();
+
+    // 2. Present in mockWithCompare
+    const mockWithCompare: DashboardSalesData = {
+      ...mockData,
+      sales_over_time: {
+        ...mockData.sales_over_time,
+        series: {
+          ...mockData.sales_over_time.series,
+          revenue_compare: [400.0, 310.0, 470.0],
+          orders_compare: [8, 5, 9],
+        },
+      },
+    };
+    vi.mocked(fetchJson).mockResolvedValue({ data: mockWithCompare });
+
+    renderWithClient(<SalesPage />);
+    await screen.findByText('$1,250.00');
+
+    expect(screen.getByTestId('chart-revenue-primary')).toBeInTheDocument();
+    expect(screen.getByTestId('chart-orders-primary')).toBeInTheDocument();
+    expect(screen.getByTestId('chart-revenue-compare')).toBeInTheDocument();
+    expect(screen.getByTestId('chart-orders-compare')).toBeInTheDocument();
+  });
+
+  it('hides Yesterday option when primary range spans more than 1 day', async () => {
+    renderWithClient(<SalesPage />);
+    await screen.findByText('$1,250.00');
+
+    // Default range is last_30_days (30 days > 1 day)
+    const compareTrigger = screen.getByRole('button', { name: /no comparison/i });
+    fireEvent.click(compareTrigger);
+
+    expect(screen.queryByRole('menuitem', { name: /^yesterday$/i })).not.toBeInTheDocument();
+  });
+
+  it('auto-resets comparison from yesterday to none when primary range changes away from 1 day', async () => {
+    renderWithClient(<SalesPage />);
+    await screen.findByText('$1,250.00');
+
+    // 1. Change range to 'today' (1 day) so allowYesterday becomes true
+    const rangeTrigger = screen.getByRole('button', { name: /last 30 days/i });
+    fireEvent.click(rangeTrigger);
+    fireEvent.click(screen.getByRole('menuitem', { name: /^today$/i }));
+
+    await waitFor(() => {
+      expect(fetchJson).toHaveBeenCalledWith(
+        expect.stringContaining('preset=today&comparison=none')
+      );
+    });
+
+    // 2. Select 'yesterday' as comparison
+    const compareTrigger = await screen.findByRole('button', { name: /no comparison/i });
+    fireEvent.click(compareTrigger);
+    const yesterdayOption = screen.getByRole('menuitem', { name: /^yesterday$/i });
+    fireEvent.click(yesterdayOption);
+
+    await waitFor(() => {
+      expect(fetchJson).toHaveBeenCalledWith(
+        expect.stringContaining('preset=today&comparison=yesterday')
+      );
+    });
+
+    // 3. Switch date range back to last_30_days (span > 1 day)
+    const todayTrigger = await screen.findByRole('button', { name: /^today$/i });
+    fireEvent.click(todayTrigger);
+    fireEvent.click(screen.getByRole('menuitem', { name: /^last$/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /^last 30 days$/i }));
+
+    // 4. Assert next query resets comparison to none and does NOT contain comparison=yesterday
+    await waitFor(() => {
+      expect(fetchJson).toHaveBeenLastCalledWith(
+        expect.stringContaining('preset=last_30_days&comparison=none')
+      );
+    });
+    expect(fetchJson).not.toHaveBeenLastCalledWith(
+      expect.stringContaining('comparison=yesterday')
+    );
   });
 });
