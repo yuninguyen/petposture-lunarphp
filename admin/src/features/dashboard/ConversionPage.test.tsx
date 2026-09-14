@@ -13,7 +13,12 @@ vi.mock('@/lib/api', async (importOriginal) => {
 import { fetchJson } from '@/lib/api';
 
 const mockData: ConversionData = {
-  range: '30',
+  range: {
+    preset: 'last_30_days',
+    start: '2026-08-16',
+    end: '2026-09-14',
+    label: 'Last 30 days',
+  },
   carts_created: 120,
   checkouts_started: 80,
   orders_completed: 45,
@@ -93,7 +98,7 @@ describe('ConversionPage', () => {
     expect(screen.getByTestId('overall-conversion-rate')).toHaveTextContent('37.5%');
   });
 
-  it('provides range options (7, 30, 90, all) and strictly excludes 365/1-year', async () => {
+  it('renders DateRangePicker with default Last 30 days and refetches on preset change', async () => {
     vi.mocked(fetchJson).mockResolvedValue({ data: mockData });
 
     renderWithClient(<ConversionPage />);
@@ -102,39 +107,51 @@ describe('ConversionPage', () => {
       expect(screen.getByText('Online Store Conversion')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: '7 days' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '30 days' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '90 days' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'All time' })).toBeInTheDocument();
+    // Default fetch call
+    expect(fetchJson).toHaveBeenCalledWith('/admin/dashboard/conversion?preset=last_30_days');
 
-    // Must NOT have 365 days / 1 year button
-    expect(screen.queryByRole('button', { name: /1 year/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /365/i })).not.toBeInTheDocument();
+    // Trigger dropdown
+    const rangeButton = screen.getByRole('button', { name: /last 30 days/i });
+    fireEvent.click(rangeButton);
+
+    // Click 'Today' preset
+    const todayOption = screen.getByRole('menuitem', { name: /^today$/i });
+    fireEvent.click(todayOption);
+
+    await waitFor(() => {
+      expect(fetchJson).toHaveBeenCalledWith('/admin/dashboard/conversion?preset=today');
+    });
   });
 
-  it('refetches data when switching range pills', async () => {
+  it('refetches with quarter and custom range parameters via DateRangePicker', async () => {
     vi.mocked(fetchJson).mockResolvedValue({ data: mockData });
 
     renderWithClient(<ConversionPage />);
 
     await waitFor(() => {
-      expect(fetchJson).toHaveBeenCalledWith('/admin/dashboard/conversion?range=30');
+      expect(screen.getByText('Online Store Conversion')).toBeInTheDocument();
     });
 
-    // Click '7 days' pill
-    const sevenDaysButton = await screen.findByRole('button', { name: '7 days' });
-    fireEvent.click(sevenDaysButton);
+    // Select custom range
+    const rangeButton = screen.getByRole('button', { name: /last 30 days/i });
+    fireEvent.click(rangeButton);
+
+    const customOption = screen.getByRole('menuitem', { name: /custom range/i });
+    fireEvent.click(customOption);
+
+    const startInput = screen.getByLabelText(/start date/i);
+    const endInput = screen.getByLabelText(/end date/i);
+
+    fireEvent.change(startInput, { target: { value: '2026-09-01' } });
+    fireEvent.change(endInput, { target: { value: '2026-09-14' } });
+
+    const applyBtn = screen.getByRole('button', { name: /apply/i });
+    fireEvent.click(applyBtn);
 
     await waitFor(() => {
-      expect(fetchJson).toHaveBeenCalledWith('/admin/dashboard/conversion?range=7');
-    });
-
-    // Click 'All time' pill
-    const allTimeButton = await screen.findByRole('button', { name: 'All time' });
-    fireEvent.click(allTimeButton);
-
-    await waitFor(() => {
-      expect(fetchJson).toHaveBeenCalledWith('/admin/dashboard/conversion?range=all');
+      expect(fetchJson).toHaveBeenCalledWith(
+        '/admin/dashboard/conversion?preset=custom&start_date=2026-09-01&end_date=2026-09-14'
+      );
     });
   });
 });

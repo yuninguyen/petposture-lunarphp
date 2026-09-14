@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/api';
+import type { DateRangeValue } from './DateRangePicker';
+import type { ComparisonValue } from './ComparisonPicker';
 
 export interface DashboardMoney {
   raw: number;
@@ -45,6 +47,8 @@ export interface SalesOverTime {
   series: {
     revenue: number[];
     orders: number[];
+    revenue_compare?: number[];
+    orders_compare?: number[];
   };
 }
 
@@ -107,8 +111,16 @@ export interface GoalProgressItem {
   unit: 'currency' | 'number';
 }
 
+export interface DashboardRangeInfo {
+  preset: string;
+  start: string;
+  end: string;
+  label: string;
+  comparison_active: boolean;
+}
+
 export interface DashboardSalesData {
-  range: string;
+  range: DashboardRangeInfo;
   currency: string;
   stats: DashboardStats;
   returns_summary: ReturnsSummary;
@@ -122,20 +134,51 @@ export interface DashboardSalesData {
   goals: GoalProgressItem[];
 }
 
-export async function fetchDashboardSales(range = '30'): Promise<DashboardSalesData> {
-  const res = await fetchJson<{ data: DashboardSalesData }>(`/admin/dashboard/sales?range=${encodeURIComponent(range)}`);
+function buildSalesQuery(dateRange: DateRangeValue, comparison: ComparisonValue): string {
+  const params = new URLSearchParams();
+  params.set('preset', dateRange.preset);
+  if (dateRange.preset === 'quarter' && dateRange.quarter) params.set('quarter', dateRange.quarter);
+  if (dateRange.preset === 'custom') {
+    if (dateRange.startDate) params.set('start_date', dateRange.startDate);
+    if (dateRange.endDate) params.set('end_date', dateRange.endDate);
+  }
+  params.set('comparison', comparison.comparison);
+  if (comparison.comparison === 'custom') {
+    params.set('compare_start_date', comparison.compareStartDate);
+    params.set('compare_end_date', comparison.compareEndDate);
+  }
+  return params.toString();
+}
+
+export async function fetchDashboardSales(
+  dateRange: DateRangeValue,
+  comparison: ComparisonValue
+): Promise<DashboardSalesData> {
+  const res = await fetchJson<{ data: DashboardSalesData }>(
+    `/admin/dashboard/sales?${buildSalesQuery(dateRange, comparison)}`
+  );
   return res.data;
 }
 
-export function useDashboardSales(range = '30') {
+export function useDashboardSales(
+  dateRange: DateRangeValue,
+  comparison: ComparisonValue
+) {
   return useQuery({
-    queryKey: ['dashboard-sales', range],
-    queryFn: () => fetchDashboardSales(range),
+    queryKey: ['dashboard-sales', dateRange, comparison],
+    queryFn: () => fetchDashboardSales(dateRange, comparison),
   });
 }
 
+export interface ConversionRangeInfo {
+  preset: string;
+  start: string;
+  end: string;
+  label: string;
+}
+
 export interface ConversionData {
-  range: string;
+  range: ConversionRangeInfo;
   carts_created: number;
   checkouts_started: number;
   orders_completed: number;
@@ -143,15 +186,28 @@ export interface ConversionData {
   checkout_abandonment_rate: number;
 }
 
-export async function fetchConversion(range = '30'): Promise<ConversionData> {
-  const res = await fetchJson<{ data: ConversionData }>(`/admin/dashboard/conversion?range=${encodeURIComponent(range)}`);
+function buildConversionQuery(dateRange: DateRangeValue): string {
+  const params = new URLSearchParams();
+  params.set('preset', dateRange.preset);
+  if (dateRange.preset === 'quarter' && dateRange.quarter) params.set('quarter', dateRange.quarter);
+  if (dateRange.preset === 'custom') {
+    if (dateRange.startDate) params.set('start_date', dateRange.startDate);
+    if (dateRange.endDate) params.set('end_date', dateRange.endDate);
+  }
+  return params.toString();
+}
+
+export async function fetchConversion(dateRange: DateRangeValue): Promise<ConversionData> {
+  const res = await fetchJson<{ data: ConversionData }>(
+    `/admin/dashboard/conversion?${buildConversionQuery(dateRange)}`
+  );
   return res.data;
 }
 
-export function useConversion(range = '30') {
+export function useConversion(dateRange: DateRangeValue) {
   return useQuery({
-    queryKey: ['dashboard-conversion', range],
-    queryFn: () => fetchConversion(range),
+    queryKey: ['dashboard-conversion', dateRange],
+    queryFn: () => fetchConversion(dateRange),
   });
 }
 

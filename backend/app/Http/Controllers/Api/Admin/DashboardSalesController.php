@@ -21,20 +21,65 @@ class DashboardSalesController extends Controller
     public function index(DashboardSalesRequest $request): JsonResponse
     {
         $now = Carbon::now();
-        $range = $request->range();
-        $rangeDays = $request->rangeDays();
-
-        $periodStart = $rangeDays ? $now->copy()->subDays($rangeDays) : null;
-        $prevPeriodStart = $rangeDays ? $now->copy()->subDays($rangeDays * 2) : null;
-
         $currencyCode = Currency::getDefault()?->code ?? 'USD';
 
-        $stats = $this->calculateStats($periodStart, $prevPeriodStart, $rangeDays, $currencyCode);
-        $returnsSummary = $this->calculateReturnsSummary($periodStart, $prevPeriodStart, $rangeDays);
-        $salesOverTime = $this->calculateSalesOverTime($now, $rangeDays);
-        $orderPipeline = $this->calculateOrderPipeline($periodStart);
-        $topProducts = $this->calculateTopProducts($periodStart, $currencyCode);
-        $salesByCategory = $this->calculateSalesByCategory($periodStart, $currencyCode);
+        if ($request->usesPreset()) {
+            $primary = $request->resolveRange();
+            $periodStart = $primary['start'];
+            $periodEnd = $primary['end'];
+            $compare = $request->resolveComparison($periodStart, $periodEnd);
+            $comparisonActive = $compare !== null;
+
+            $compareStart = $compare ? $compare['start'] : null;
+            $compareEnd = $compare ? $compare['end'] : null;
+
+            $stats = $this->calculateStats(
+                $periodStart,
+                $periodEnd,
+                $compareStart,
+                $compareEnd,
+                $comparisonActive,
+                $currencyCode
+            );
+
+            $returnsSummary = $this->calculateReturnsSummaryPreset($periodStart, $periodEnd);
+            $salesOverTime = $this->calculateSalesOverTimeForRange($periodStart, $periodEnd, $compareStart);
+            $orderPipeline = $this->calculateOrderPipeline($periodStart, $periodEnd);
+            $topProducts = $this->calculateTopProducts($periodStart, $periodEnd, $currencyCode);
+            $salesByCategory = $this->calculateSalesByCategory($periodStart, $periodEnd, $currencyCode);
+
+            $rangeData = [
+                'preset' => (string) $request->validated('preset'),
+                'start' => $periodStart->toDateString(),
+                'end' => $periodEnd->toDateString(),
+                'label' => $primary['label'],
+                'comparison_active' => $comparisonActive,
+            ];
+        } else {
+            $range = $request->range();
+            $rangeDays = $request->rangeDays();
+
+            $periodStart = $rangeDays ? $now->copy()->subDays($rangeDays) : null;
+            $prevPeriodStart = $rangeDays ? $now->copy()->subDays($rangeDays * 2) : null;
+
+            $stats = $this->calculateStats(
+                $periodStart,
+                null,
+                $prevPeriodStart,
+                $periodStart,
+                $rangeDays !== null,
+                $currencyCode
+            );
+
+            $returnsSummary = $this->calculateReturnsSummaryLegacy($periodStart, $prevPeriodStart, $rangeDays);
+            $salesOverTime = $this->calculateSalesOverTime($now, $rangeDays);
+            $orderPipeline = $this->calculateOrderPipeline($periodStart);
+            $topProducts = $this->calculateTopProducts($periodStart, null, $currencyCode);
+            $salesByCategory = $this->calculateSalesByCategory($periodStart, null, $currencyCode);
+
+            $rangeData = $range;
+        }
+
         $recentOrders = $this->getRecentOrders($currencyCode);
         $recentActivity = $this->getRecentActivity();
         $trafficSources = $this->getTrafficSources();
@@ -42,7 +87,7 @@ class DashboardSalesController extends Controller
 
         return response()->json([
             'data' => [
-                'range' => $range,
+                'range' => $rangeData,
                 'currency' => $currencyCode,
                 'stats' => $stats,
                 'returns_summary' => $returnsSummary,
@@ -58,18 +103,25 @@ class DashboardSalesController extends Controller
         ]);
     }
 
-    private function calculateStats(?Carbon $periodStart, ?Carbon $prevPeriodStart, ?int $rangeDays, string $currencyCode): array
-    {
+    private function calculateStats(
+        ?Carbon $periodStart,
+        ?Carbon $periodEnd,
+        ?Carbon $prevPeriodStart,
+        ?Carbon $prevPeriodEnd,
+        bool $hasComparison,
+        string $currencyCode
+    ): array {
         // Cancelled orders are excluded from total sales, order count, and AOV
         $salesQuery = Order::whereNotIn('status', ['cancelled'])
-            ->when($periodStart, fn ($query) => $query->where('created_at', '>=', $periodStart));
+            ->when($periodStart && $periodEnd, fn ($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
+            ->when($periodStart && ! $periodEnd, fn ($query) => $query->where('created_at', '>=', $periodStart));
 
         $salesRaw = (int) $salesQuery->sum('total');
         $salesDecimal = round($salesRaw / 100, 2);
 
-        $salesPrevRaw = $rangeDays
+        $salesPrevRaw = ($hasComparison && $prevPeriodStart && $prevPeriodEnd)
             ? (int) Order::whereNotIn('status', ['cancelled'])
-                ->whereBetween('created_at', [$prevPeriodStart, $periodStart])
+                ->whereBetween('created_at', [$prevPeriodStart, $prevPeriodEnd])
                 ->sum('total')
             : 0;
 
@@ -78,12 +130,13 @@ class DashboardSalesController extends Controller
             : 0.0;
 
         $totalOrders = Order::whereNotIn('status', ['cancelled'])
-            ->when($periodStart, fn ($query) => $query->where('created_at', '>=', $periodStart))
+            ->when($periodStart && $periodEnd, fn ($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
+            ->when($periodStart && ! $periodEnd, fn ($query) => $query->where('created_at', '>=', $periodStart))
             ->count();
 
-        $ordersPrev = $rangeDays
+        $ordersPrev = ($hasComparison && $prevPeriodStart && $prevPeriodEnd)
             ? Order::whereNotIn('status', ['cancelled'])
-                ->whereBetween('created_at', [$prevPeriodStart, $periodStart])
+                ->whereBetween('created_at', [$prevPeriodStart, $prevPeriodEnd])
                 ->count()
             : 0;
 
@@ -124,15 +177,47 @@ class DashboardSalesController extends Controller
         ];
     }
 
-    private function calculateReturnsSummary(?Carbon $periodStart, ?Carbon $prevPeriodStart, ?int $rangeDays): array
+    private function calculateReturnsSummaryLegacy(?Carbon $periodStart, ?Carbon $prevPeriodStart, ?int $rangeDays): array
     {
+        return $this->calculateReturnsSummaryForBounds(
+            $periodStart,
+            null,
+            $prevPeriodStart,
+            $periodStart,
+            $rangeDays !== null
+        );
+    }
+
+    private function calculateReturnsSummaryPreset(Carbon $periodStart, Carbon $periodEnd): array
+    {
+        $spanDays = (int) $periodStart->diffInDays($periodEnd) + 1;
+        $prevPeriodStart = $periodStart->copy()->subDays($spanDays);
+        $prevPeriodEnd = $periodStart;
+
+        return $this->calculateReturnsSummaryForBounds(
+            $periodStart,
+            $periodEnd,
+            $prevPeriodStart,
+            $prevPeriodEnd,
+            true
+        );
+    }
+
+    private function calculateReturnsSummaryForBounds(
+        ?Carbon $periodStart,
+        ?Carbon $periodEnd,
+        ?Carbon $prevPeriodStart,
+        ?Carbon $prevPeriodEnd,
+        bool $hasPreviousPeriod
+    ): array {
         $totalOrders = Order::whereNotIn('status', ['cancelled'])
-            ->when($periodStart, fn ($query) => $query->where('created_at', '>=', $periodStart))
+            ->when($periodStart && $periodEnd, fn ($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
+            ->when($periodStart && ! $periodEnd, fn ($query) => $query->where('created_at', '>=', $periodStart))
             ->count();
 
-        $ordersPrev = $rangeDays
+        $ordersPrev = ($hasPreviousPeriod && $prevPeriodStart && $prevPeriodEnd)
             ? Order::whereNotIn('status', ['cancelled'])
-                ->whereBetween('created_at', [$prevPeriodStart, $periodStart])
+                ->whereBetween('created_at', [$prevPeriodStart, $prevPeriodEnd])
                 ->count()
             : 0;
 
@@ -140,17 +225,18 @@ class DashboardSalesController extends Controller
             OrderReturnRequest::STATUS_APPROVED,
             OrderReturnRequest::STATUS_COMPLETED,
         ])
-            ->when($periodStart, fn ($query) => $query->where('requested_at', '>=', $periodStart))
+            ->when($periodStart && $periodEnd, fn ($query) => $query->whereBetween('requested_at', [$periodStart, $periodEnd]))
+            ->when($periodStart && ! $periodEnd, fn ($query) => $query->where('requested_at', '>=', $periodStart))
             ->count();
 
         $refundRate = $totalOrders > 0 ? round(($refundedCount / $totalOrders) * 100, 1) : 0.0;
 
-        $refundedCountPrev = $rangeDays
+        $refundedCountPrev = ($hasPreviousPeriod && $prevPeriodStart && $prevPeriodEnd)
             ? OrderReturnRequest::whereIn('status', [
                 OrderReturnRequest::STATUS_APPROVED,
                 OrderReturnRequest::STATUS_COMPLETED,
             ])
-                ->whereBetween('requested_at', [$prevPeriodStart, $periodStart])
+                ->whereBetween('requested_at', [$prevPeriodStart, $prevPeriodEnd])
                 ->count()
             : 0;
 
@@ -174,6 +260,81 @@ class DashboardSalesController extends Controller
             'overdue' => $overdue,
             'awaiting_completion' => $awaitingCompletion,
         ];
+    }
+
+    private function calculateSalesOverTimeForRange(Carbon $periodStart, Carbon $periodEnd, ?Carbon $compareStart = null): array
+    {
+        $categories = [];
+        $revenueSeries = [];
+        $ordersSeries = [];
+        $revenueCompareSeries = $compareStart ? [] : null;
+        $ordersCompareSeries = $compareStart ? [] : null;
+
+        $spanDays = (int) $periodStart->copy()->startOfDay()->diffInDays($periodEnd->copy()->startOfDay()) + 1;
+
+        if ($spanDays <= 90) {
+            $granularity = 'day';
+            $current = $periodStart->copy()->startOfDay();
+            $endLimit = $periodEnd->copy()->startOfDay();
+            $compareCurrent = $compareStart?->copy()->startOfDay();
+
+            while ($current->lte($endLimit)) {
+                $dayStart = $current->copy()->startOfDay();
+                $dayEnd = $current->copy()->endOfDay();
+                $categories[] = $dayStart->format('M j');
+
+                $query = Order::whereNotIn('status', ['cancelled'])->whereBetween('created_at', [$dayStart, $dayEnd]);
+                $revenueSeries[] = round(((int) (clone $query)->sum('total')) / 100, 2);
+                $ordersSeries[] = (clone $query)->count();
+
+                if ($compareCurrent) {
+                    $compareDayStart = $compareCurrent->copy()->startOfDay();
+                    $compareDayEnd = $compareCurrent->copy()->endOfDay();
+                    $compareQuery = Order::whereNotIn('status', ['cancelled'])->whereBetween('created_at', [$compareDayStart, $compareDayEnd]);
+                    $revenueCompareSeries[] = round(((int) (clone $compareQuery)->sum('total')) / 100, 2);
+                    $ordersCompareSeries[] = (clone $compareQuery)->count();
+                    $compareCurrent->addDay();
+                }
+
+                $current->addDay();
+            }
+        } else {
+            $granularity = 'month';
+            $currentMonth = $periodStart->copy()->startOfMonth();
+            $endMonth = $periodEnd->copy()->startOfMonth();
+            $compareCurrentMonth = $compareStart?->copy()->startOfMonth();
+
+            while ($currentMonth->lte($endMonth)) {
+                $monthStart = $currentMonth->copy()->startOfMonth();
+                $monthEnd = $currentMonth->copy()->endOfMonth();
+                $categories[] = $monthStart->format('M Y');
+
+                $queryStart = $monthStart->lt($periodStart) ? $periodStart : $monthStart;
+                $queryEnd = $monthEnd->gt($periodEnd) ? $periodEnd : $monthEnd;
+                $query = Order::whereNotIn('status', ['cancelled'])->whereBetween('created_at', [$queryStart, $queryEnd]);
+                $revenueSeries[] = round(((int) (clone $query)->sum('total')) / 100, 2);
+                $ordersSeries[] = (clone $query)->count();
+
+                if ($compareCurrentMonth) {
+                    $compareMonthStart = $compareCurrentMonth->copy()->startOfMonth();
+                    $compareMonthEnd = $compareCurrentMonth->copy()->endOfMonth();
+                    $compareQuery = Order::whereNotIn('status', ['cancelled'])->whereBetween('created_at', [$compareMonthStart, $compareMonthEnd]);
+                    $revenueCompareSeries[] = round(((int) (clone $compareQuery)->sum('total')) / 100, 2);
+                    $ordersCompareSeries[] = (clone $compareQuery)->count();
+                    $compareCurrentMonth->addMonthNoOverflow()->startOfMonth();
+                }
+
+                $currentMonth->addMonthNoOverflow()->startOfMonth();
+            }
+        }
+
+        $series = ['revenue' => $revenueSeries, 'orders' => $ordersSeries];
+        if ($revenueCompareSeries !== null) {
+            $series['revenue_compare'] = $revenueCompareSeries;
+            $series['orders_compare'] = $ordersCompareSeries;
+        }
+
+        return ['granularity' => $granularity, 'categories' => $categories, 'series' => $series];
     }
 
     private function calculateSalesOverTime(Carbon $now, ?int $rangeDays): array
@@ -236,7 +397,7 @@ class DashboardSalesController extends Controller
         ];
     }
 
-    private function calculateOrderPipeline(?Carbon $periodStart): array
+    private function calculateOrderPipeline(?Carbon $periodStart, ?Carbon $periodEnd = null): array
     {
         $statuses = ['awaiting-payment', 'processing', 'shipped', 'delivered'];
         $counts = [];
@@ -244,20 +405,22 @@ class DashboardSalesController extends Controller
         foreach ($statuses as $status) {
             $key = str_replace('-', '_', $status);
             $counts[$key] = Order::where('status', $status)
-                ->when($periodStart, fn ($query) => $query->where('created_at', '>=', $periodStart))
+                ->when($periodStart && $periodEnd, fn ($query) => $query->whereBetween('created_at', [$periodStart, $periodEnd]))
+                ->when($periodStart && ! $periodEnd, fn ($query) => $query->where('created_at', '>=', $periodStart))
                 ->count();
         }
 
         return $counts;
     }
 
-    private function calculateTopProducts(?Carbon $periodStart, string $currencyCode): array
+    private function calculateTopProducts(?Carbon $periodStart, ?Carbon $periodEnd, string $currencyCode): array
     {
         $lines = OrderLine::query()
             ->where('type', 'physical')
-            ->whereHas('order', function ($query) use ($periodStart) {
+            ->whereHas('order', function ($query) use ($periodStart, $periodEnd) {
                 $query->whereNotIn('status', ['cancelled'])
-                    ->when($periodStart, fn ($q) => $q->where('created_at', '>=', $periodStart));
+                    ->when($periodStart && $periodEnd, fn ($q) => $q->whereBetween('created_at', [$periodStart, $periodEnd]))
+                    ->when($periodStart && ! $periodEnd, fn ($q) => $q->where('created_at', '>=', $periodStart));
             })
             ->select(
                 DB::raw('MAX(id) as id'),
@@ -288,13 +451,14 @@ class DashboardSalesController extends Controller
         })->values()->all();
     }
 
-    private function calculateSalesByCategory(?Carbon $periodStart, string $currencyCode): array
+    private function calculateSalesByCategory(?Carbon $periodStart, ?Carbon $periodEnd, string $currencyCode): array
     {
         $lines = OrderLine::query()
             ->where('type', 'physical')
-            ->whereHas('order', function ($query) use ($periodStart) {
+            ->whereHas('order', function ($query) use ($periodStart, $periodEnd) {
                 $query->whereNotIn('status', ['cancelled'])
-                    ->when($periodStart, fn ($q) => $q->where('created_at', '>=', $periodStart));
+                    ->when($periodStart && $periodEnd, fn ($q) => $q->whereBetween('created_at', [$periodStart, $periodEnd]))
+                    ->when($periodStart && ! $periodEnd, fn ($q) => $q->where('created_at', '>=', $periodStart));
             })
             ->with(['purchasable.product.collections'])
             ->get();

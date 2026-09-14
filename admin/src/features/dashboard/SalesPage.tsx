@@ -1,21 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useDashboardSales } from './api';
 import { formatOrderAmount } from '@/features/orders/orderPresentation';
+import { DateRangePicker, type DateRangeValue } from './DateRangePicker';
+import {
+  ComparisonPicker,
+  formatComparisonLabel,
+  type ComparisonValue,
+} from './ComparisonPicker';
 
 export function SalesPage() {
   const { t } = useTranslation();
-  const [range, setRange] = useState('30');
-  const { data, isLoading, error } = useDashboardSales(range);
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: 'last_30_days' });
+  const [comparison, setComparison] = useState<ComparisonValue>({ comparison: 'none' });
 
-  const ranges = [
-    { key: '7', label: t('dashboard.ranges.7_days', '7 days') },
-    { key: '30', label: t('dashboard.ranges.30_days', '30 days') },
-    { key: '90', label: t('dashboard.ranges.90_days', '90 days') },
-    { key: '365', label: t('dashboard.ranges.365_days', '1 year') },
-    { key: 'all', label: t('dashboard.ranges.all_time', 'All time') },
-  ];
+  const allowYesterday =
+    dateRange.preset === 'today' ||
+    (dateRange.preset === 'custom' &&
+      !!dateRange.startDate &&
+      dateRange.startDate === dateRange.endDate);
+
+  useEffect(() => {
+    if (comparison.comparison === 'yesterday' && !allowYesterday) {
+      setComparison({ comparison: 'none' });
+    }
+  }, [allowYesterday, comparison]);
+
+  const { data, isLoading, error } = useDashboardSales(dateRange, comparison);
 
   if (isLoading) {
     return (
@@ -46,22 +58,14 @@ export function SalesPage() {
           <p className="mt-1 text-sm text-slate-500">{t('dashboard.subtitle', 'Real-time performance and financial analytics')}</p>
         </div>
 
-        {/* Range Selector Pills */}
-        <div className="inline-flex rounded-xl bg-slate-200/80 p-1 text-xs font-semibold shadow-inner overflow-x-auto">
-          {ranges.map((r) => (
-            <button
-              key={r.key}
-              type="button"
-              onClick={() => setRange(r.key)}
-              className={`rounded-lg px-3 py-1.5 transition-all whitespace-nowrap ${
-                range === r.key
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
+        {/* Range and Comparison Pickers */}
+        <div className="flex flex-wrap items-center gap-2">
+          <DateRangePicker value={dateRange} onChange={setDateRange} />
+          <ComparisonPicker
+            value={comparison}
+            onChange={setComparison}
+            allowYesterday={allowYesterday}
+          />
         </div>
       </div>
 
@@ -81,7 +85,7 @@ export function SalesPage() {
             <span className="text-2xl font-bold tracking-tight text-slate-900">
               {formatOrderAmount(stats.sales.decimal, stats.sales.currency, false)}
             </span>
-            <TrendBadge trend={stats.sales.trend} rangeDays={range !== 'all'} />
+            <TrendBadge trend={stats.sales.trend} comparisonActive={data.range.comparison_active} />
           </div>
         </div>
 
@@ -99,7 +103,7 @@ export function SalesPage() {
             <span className="text-2xl font-bold tracking-tight text-slate-900">
               {formatOrderAmount(stats.aov.decimal, stats.aov.currency, false)}
             </span>
-            <TrendBadge trend={stats.aov.trend} rangeDays={range !== 'all'} />
+            <TrendBadge trend={stats.aov.trend} comparisonActive={data.range.comparison_active} />
           </div>
         </div>
 
@@ -140,7 +144,7 @@ export function SalesPage() {
             <span className="text-2xl font-bold tracking-tight text-slate-900">
               {stats.orders.count}
             </span>
-            <TrendBadge trend={stats.orders.trend} rangeDays={range !== 'all'} />
+            <TrendBadge trend={stats.orders.trend} comparisonActive={data.range.comparison_active} />
           </div>
         </div>
       </div>
@@ -155,7 +159,7 @@ export function SalesPage() {
               <span className={`text-xl font-bold ${returns_summary.refund_rate > 10 ? 'text-red-600' : 'text-amber-600'}`}>
                 {returns_summary.refund_rate}%
               </span>
-              <TrendBadge trend={returns_summary.refund_trend} rangeDays={range !== 'all'} />
+              <TrendBadge trend={returns_summary.refund_trend} comparisonActive={data.range.comparison_active} />
             </div>
           </div>
           <div className="border-r border-slate-100 last:border-0 pr-4">
@@ -185,23 +189,37 @@ export function SalesPage() {
         <div className="space-y-6 lg:col-span-2">
           {/* Sales & Orders Over Time SVG Chart */}
           <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
               <h2 className="text-base font-bold text-slate-900">{t('dashboard.sales_overview', 'Sales Overview')}</h2>
-              <div className="flex items-center gap-4 text-xs">
+              <div className="flex flex-wrap items-center gap-4 text-xs">
                 <span className="flex items-center gap-1.5 font-medium text-slate-600">
                   <span className="h-2.5 w-2.5 rounded-full bg-[#df8448]" />
                   {t('dashboard.revenue', 'Revenue')}
                 </span>
+                {data.range.comparison_active && (
+                  <span className="flex items-center gap-1.5 font-medium text-slate-600 opacity-75">
+                    <span className="h-1.5 w-3 border-t-2 border-dashed border-[#df8448]" />
+                    {`${t('dashboard.revenue', 'Revenue')} (vs ${formatComparisonLabel(comparison, t)})`}
+                  </span>
+                )}
                 <span className="flex items-center gap-1.5 font-medium text-slate-600">
                   <span className="h-2.5 w-2.5 rounded-full bg-[#3e4c57]" />
                   {t('dashboard.orders', 'Orders')}
                 </span>
+                {data.range.comparison_active && (
+                  <span className="flex items-center gap-1.5 font-medium text-slate-600 opacity-75">
+                    <span className="h-1.5 w-3 border-t-2 border-dashed border-[#3e4c57]" />
+                    {`${t('dashboard.orders', 'Orders')} (vs ${formatComparisonLabel(comparison, t)})`}
+                  </span>
+                )}
               </div>
             </div>
             <SalesSvgChart
               categories={sales_over_time.categories}
               revenue={sales_over_time.series.revenue}
               orders={sales_over_time.series.orders}
+              revenueCompare={sales_over_time.series.revenue_compare}
+              ordersCompare={sales_over_time.series.orders_compare}
             />
           </div>
 
@@ -447,11 +465,8 @@ export function SalesPage() {
   );
 }
 
-function TrendBadge({ trend, rangeDays }: { trend: number; rangeDays: boolean }) {
-  if (!rangeDays) {
-    return <span className="text-xs text-slate-400">All time</span>;
-  }
-
+function TrendBadge({ trend, comparisonActive }: { trend: number; comparisonActive: boolean }) {
+  if (!comparisonActive) return null;
   const isPositive = trend >= 0;
   return (
     <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -485,7 +500,19 @@ function PipelineCard({ label, count, color, icon }: { label: string; count: num
   );
 }
 
-function SalesSvgChart({ categories, revenue, orders }: { categories: string[]; revenue: number[]; orders: number[] }) {
+function SalesSvgChart({
+  categories,
+  revenue,
+  orders,
+  revenueCompare,
+  ordersCompare,
+}: {
+  categories: string[];
+  revenue: number[];
+  orders: number[];
+  revenueCompare?: number[];
+  ordersCompare?: number[];
+}) {
   if (categories.length === 0) {
     return <div className="h-64 flex items-center justify-center text-slate-400 text-sm">No data available</div>;
   }
@@ -494,8 +521,8 @@ function SalesSvgChart({ categories, revenue, orders }: { categories: string[]; 
   const height = 240;
   const padding = 40;
 
-  const maxRevenue = Math.max(...revenue, 100);
-  const maxOrders = Math.max(...orders, 10);
+  const maxRevenue = Math.max(...revenue, ...(revenueCompare ?? []), 100);
+  const maxOrders = Math.max(...orders, ...(ordersCompare ?? []), 10);
 
   const getX = (index: number) => padding + (index * (width - 2 * padding)) / Math.max(categories.length - 1, 1);
   const getYRevenue = (val: number) => height - padding - (val / maxRevenue) * (height - 2 * padding);
@@ -503,6 +530,16 @@ function SalesSvgChart({ categories, revenue, orders }: { categories: string[]; 
 
   const revenuePoints = revenue.map((val, i) => `${getX(i)},${getYRevenue(val)}`).join(' ');
   const ordersPoints = orders.map((val, i) => `${getX(i)},${getYOrders(val)}`).join(' ');
+
+  const hasRevenueCompare = !!revenueCompare && revenueCompare.length > 0;
+  const hasOrdersCompare = !!ordersCompare && ordersCompare.length > 0;
+
+  const revenueComparePoints = hasRevenueCompare
+    ? revenueCompare.map((val, i) => `${getX(i)},${getYRevenue(val)}`).join(' ')
+    : '';
+  const ordersComparePoints = hasOrdersCompare
+    ? ordersCompare.map((val, i) => `${getX(i)},${getYOrders(val)}`).join(' ')
+    : '';
 
   return (
     <div className="w-full overflow-x-auto">
@@ -512,11 +549,39 @@ function SalesSvgChart({ categories, revenue, orders }: { categories: string[]; 
         <line x1={padding} y1={height / 2} x2={width - padding} y2={height / 2} stroke="#f1f5f9" strokeWidth="1" />
         <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#cbd5e1" strokeWidth="1" />
 
-        {/* Revenue Line */}
-        <polyline fill="none" stroke="#df8448" strokeWidth="3" strokeLinecap="round" points={revenuePoints} />
+        {/* Primary Revenue Line */}
+        <polyline fill="none" stroke="#df8448" strokeWidth="3" strokeLinecap="round" points={revenuePoints} data-testid="chart-revenue-primary" />
 
-        {/* Orders Line */}
-        <polyline fill="none" stroke="#3e4c57" strokeWidth="2" strokeDasharray="4 4" strokeLinecap="round" points={ordersPoints} />
+        {/* Primary Orders Line */}
+        <polyline fill="none" stroke="#3e4c57" strokeWidth="2" strokeDasharray="4 4" strokeLinecap="round" points={ordersPoints} data-testid="chart-orders-primary" />
+
+        {/* Compare Revenue Line */}
+        {hasRevenueCompare && (
+          <polyline
+            fill="none"
+            stroke="#df8448"
+            strokeWidth="2"
+            strokeDasharray="4 4"
+            opacity="0.5"
+            strokeLinecap="round"
+            points={revenueComparePoints}
+            data-testid="chart-revenue-compare"
+          />
+        )}
+
+        {/* Compare Orders Line */}
+        {hasOrdersCompare && (
+          <polyline
+            fill="none"
+            stroke="#3e4c57"
+            strokeWidth="2"
+            strokeDasharray="4 4"
+            opacity="0.5"
+            strokeLinecap="round"
+            points={ordersComparePoints}
+            data-testid="chart-orders-compare"
+          />
+        )}
 
         {/* Categories X axis labels */}
         {categories.map((cat, i) => {

@@ -14,25 +14,54 @@ class DashboardConversionController extends Controller
 {
     public function index(DashboardConversionRequest $request): JsonResponse
     {
-        $now = Carbon::now();
-        $range = $request->range();
-        $rangeDays = $request->rangeDays();
+        if ($request->usesPreset()) {
+            $primary = $request->resolveRange();
+            $periodStart = $primary['start'];
+            $periodEnd = $primary['end'];
 
-        $periodStart = $rangeDays ? $now->copy()->subDays($rangeDays) : null;
+            $cartsCreated = Cart::query()
+                ->whereBetween('created_at', [$periodStart, $periodEnd])
+                ->count();
 
-        $cartsCreated = Cart::query()
-            ->when($periodStart, fn ($query) => $query->where('created_at', '>=', $periodStart))
-            ->count();
+            $checkoutsStarted = CheckoutSession::query()
+                ->where('status', '!=', 'cart')
+                ->whereBetween('created_at', [$periodStart, $periodEnd])
+                ->count();
 
-        $checkoutsStarted = CheckoutSession::query()
-            ->where('status', '!=', 'cart')
-            ->when($periodStart, fn ($query) => $query->where('created_at', '>=', $periodStart))
-            ->count();
+            $ordersCompleted = Order::query()
+                ->whereNotIn('status', ['cancelled'])
+                ->whereBetween('created_at', [$periodStart, $periodEnd])
+                ->count();
 
-        $ordersCompleted = Order::query()
-            ->whereNotIn('status', ['cancelled'])
-            ->when($periodStart, fn ($query) => $query->where('created_at', '>=', $periodStart))
-            ->count();
+            $rangeData = [
+                'preset' => (string) $request->validated('preset'),
+                'start' => $periodStart->toDateString(),
+                'end' => $periodEnd->toDateString(),
+                'label' => $primary['label'],
+            ];
+        } else {
+            $now = Carbon::now();
+            $range = $request->range();
+            $rangeDays = $request->rangeDays();
+
+            $periodStart = $rangeDays ? $now->copy()->subDays($rangeDays) : null;
+
+            $cartsCreated = Cart::query()
+                ->when($periodStart, fn ($query) => $query->where('created_at', '>=', $periodStart))
+                ->count();
+
+            $checkoutsStarted = CheckoutSession::query()
+                ->where('status', '!=', 'cart')
+                ->when($periodStart, fn ($query) => $query->where('created_at', '>=', $periodStart))
+                ->count();
+
+            $ordersCompleted = Order::query()
+                ->whereNotIn('status', ['cancelled'])
+                ->when($periodStart, fn ($query) => $query->where('created_at', '>=', $periodStart))
+                ->count();
+
+            $rangeData = $range;
+        }
 
         $cartAbandonmentRate = $cartsCreated > 0
             ? round(max(0, $cartsCreated - $checkoutsStarted) / $cartsCreated, 4)
@@ -44,7 +73,7 @@ class DashboardConversionController extends Controller
 
         return response()->json([
             'data' => [
-                'range' => $range,
+                'range' => $rangeData,
                 'carts_created' => $cartsCreated,
                 'checkouts_started' => $checkoutsStarted,
                 'orders_completed' => $ordersCompleted,

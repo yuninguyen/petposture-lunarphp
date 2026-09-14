@@ -1,18 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConversion } from './api';
+import { DateRangePicker, type DateRangeValue } from './DateRangePicker';
 
 export function ConversionPage() {
   const { t } = useTranslation();
-  const [range, setRange] = useState('30');
-  const { data, isLoading, error } = useConversion(range);
-
-  const ranges = [
-    { key: '7', label: t('dashboard.ranges.7_days', '7 days') },
-    { key: '30', label: t('dashboard.ranges.30_days', '30 days') },
-    { key: '90', label: t('dashboard.ranges.90_days', '90 days') },
-    { key: 'all', label: t('dashboard.ranges.all_time', 'All time') },
-  ];
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: 'last_30_days' });
+  const { data, isLoading, error } = useConversion(dateRange);
 
   if (isLoading) {
     return (
@@ -71,22 +65,9 @@ export function ConversionPage() {
           </p>
         </div>
 
-        {/* Range Selector Pills (strictly 7, 30, 90, all) */}
-        <div className="inline-flex rounded-xl bg-slate-200/80 p-1 text-xs font-semibold shadow-inner overflow-x-auto">
-          {ranges.map((r) => (
-            <button
-              key={r.key}
-              type="button"
-              onClick={() => setRange(r.key)}
-              className={`rounded-lg px-3 py-1.5 transition-all whitespace-nowrap ${
-                range === r.key
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
+        {/* Date Range Picker */}
+        <div>
+          <DateRangePicker value={dateRange} onChange={setDateRange} />
         </div>
       </div>
 
