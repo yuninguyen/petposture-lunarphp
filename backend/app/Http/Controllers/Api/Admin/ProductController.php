@@ -384,6 +384,8 @@ class ProductController extends Controller
             'slug' => $product->defaultUrl?->slug,
         ];
 
+        $product->delete();
+
         activity()
             ->causedBy($request->user())
             ->performedOn($product)
@@ -392,8 +394,6 @@ class ProductController extends Controller
                 'before' => $before,
             ])
             ->log('deleted');
-
-        $product->delete();
 
         return response()->noContent();
     }

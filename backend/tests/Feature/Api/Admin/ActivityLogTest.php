@@ -650,4 +650,121 @@ class ActivityLogTest extends TestCase
     {
         $this->getJson('/api/admin/system/activity-logs')->assertUnauthorized();
     }
+
+    public function test_failed_order_return_does_not_create_activity_log(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $orderMorphClass = (new Order())->getMorphClass();
+
+        // Orders with status 'awaiting-payment' fail returnOrder() validation
+        $order = Order::factory()->create([
+            'status' => 'awaiting-payment',
+            'user_id' => $this->admin->id,
+            'total' => 5000,
+        ]);
+
+        $response = $this->postJson("/api/admin/orders/{$order->id}/return");
+        $response->assertStatus(422);
+
+        $activity = Activity::where('subject_type', $orderMorphClass)
+            ->where('subject_id', $order->id)
+            ->where('description', 'returned')
+            ->where('log_name', 'default')
+            ->first();
+
+        $this->assertNull($activity);
+    }
+
+    public function test_failed_product_destroy_does_not_create_activity_log(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $productMorphClass = (new Product())->getMorphClass();
+
+        $product = Product::create([
+            'product_type_id' => $this->productType->id,
+            'status' => 'draft',
+            'attribute_data' => [],
+        ]);
+
+        Product::deleting(function () {
+            throw new \RuntimeException('Simulated product deletion failure');
+        });
+
+        try {
+            $this->deleteJson("/api/admin/products/{$product->id}");
+        } catch (\RuntimeException $e) {
+            // Simulated failure caught
+        }
+
+        Product::flushEventListeners();
+
+        $activity = Activity::where('subject_type', $productMorphClass)
+            ->where('subject_id', $product->id)
+            ->where('description', 'deleted')
+            ->where('log_name', 'default')
+            ->first();
+
+        $this->assertNull($activity);
+        $this->assertDatabaseHas('lunar_products', ['id' => $product->id]);
+    }
+
+    public function test_failed_post_destroy_does_not_create_activity_log(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $category = BlogCategory::create([
+            'name' => 'Failsafe Category',
+            'slug' => 'failsafe-category',
+        ]);
+
+        $post = Post::create([
+            'title' => 'Undeletable Post',
+            'slug' => 'undeletable-post',
+            'content' => 'Content',
+            'status' => 'draft',
+            'blog_category_id' => $category->id,
+            'author_id' => $this->admin->id,
+        ]);
+
+        Post::deleting(function () {
+            throw new \RuntimeException('Simulated post deletion failure');
+        });
+
+        try {
+            $this->deleteJson("/api/admin/posts/{$post->id}");
+        } catch (\RuntimeException $e) {
+            // Simulated failure caught
+        }
+
+        Post::flushEventListeners();
+
+        $activity = Activity::where('subject_type', Post::class)
+            ->where('subject_id', $post->id)
+            ->where('description', 'deleted')
+            ->where('log_name', 'default')
+            ->first();
+
+        $this->assertNull($activity);
+        $this->assertDatabaseHas('posts', ['id' => $post->id]);
+    }
+
+    public function test_failed_system_user_destroy_does_not_create_activity_log(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        // Deleting own account fails with 409 Conflict guard
+        $response = $this->deleteJson("/api/admin/system/users/{$this->admin->id}");
+        $response->assertStatus(409);
+
+        $activity = Activity::where('subject_type', User::class)
+            ->where('subject_id', $this->admin->id)
+            ->where('description', 'deleted')
+            ->where('log_name', 'default')
+            ->first();
+
+        $this->assertNull($activity);
+        $this->assertDatabaseHas('users', ['id' => $this->admin->id]);
+    }
 }

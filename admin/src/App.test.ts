@@ -19,6 +19,7 @@ vi.mock('./features/profile/ProfilePage', () => ({ ProfilePage: () => createElem
 vi.mock('./features/system-users/SystemUsersPage', () => ({ SystemUsersPage: () => createElement('div', null, 'System users route') }));
 vi.mock('./features/system-media/MediaLibraryPage', () => ({ MediaLibraryPage: () => createElement('div', null, 'Media library route') }));
 vi.mock('./features/system-roles/RolesPage', () => ({ RolesPage: () => createElement('div', null, 'Roles route') }));
+vi.mock('./features/system-activity-logs/ActivityLogsPage', () => ({ ActivityLogsPage: () => createElement('div', null, 'Activity logs route') }));
 
 import { AppRoutes, canDeleteReviews, canManageCommerce, canManageCustomers, canManageDiscounts, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute, ADMIN_HOME_CANDIDATES, HomeRouteCandidate } from './App';
 
@@ -331,6 +332,21 @@ describe('admin home route resolution', () => {
     const pm = renderRoutes(['Product Manager'], '/system/roles');
     await act(async () => await Promise.resolve());
     expect(pm.host.textContent).not.toContain('Roles route');
+    expect(pm.host.textContent).toContain('Products route');
+    act(() => pm.root.unmount());
+    pm.host.remove();
+  });
+
+  it('renders ActivityLogsPage at /system/activity-logs for core admin and falls back for Product Manager', async () => {
+    const { host, root } = renderRoutes(['admin'], '/system/activity-logs');
+    await act(async () => await Promise.resolve());
+    expect(host.textContent).toContain('Activity logs route');
+    act(() => root.unmount());
+    host.remove();
+
+    const pm = renderRoutes(['Product Manager'], '/system/activity-logs');
+    await act(async () => await Promise.resolve());
+    expect(pm.host.textContent).not.toContain('Activity logs route');
     expect(pm.host.textContent).toContain('Products route');
     act(() => pm.root.unmount());
     pm.host.remove();

@@ -459,17 +459,18 @@ class OrderController extends Controller
             return response()->json(['message' => 'Order not found'], 404);
         }
 
+        $beforeFulfillmentStatus = $order->meta['fulfillment_status'] ?? null;
+        $returnedOrder = $this->orderOperationsService->returnOrder($order);
+
         activity()
             ->causedBy($request->user())
             ->performedOn($order)
             ->event('returned')
             ->withProperties([
-                'before' => ['fulfillment_status' => $order->meta['fulfillment_status'] ?? null],
+                'before' => ['fulfillment_status' => $beforeFulfillmentStatus],
                 'after' => ['fulfillment_status' => 'returned'],
             ])
             ->log('returned');
-
-        $returnedOrder = $this->orderOperationsService->returnOrder($order);
 
         return new OrderResource($returnedOrder);
     }

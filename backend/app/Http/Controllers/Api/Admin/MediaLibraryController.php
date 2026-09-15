@@ -97,21 +97,23 @@ class MediaLibraryController extends Controller
         if ($source === 'spatie') {
             $media = Media::findOrFail($id);
 
+            $before = [
+                'source' => 'spatie',
+                'id' => (int) $media->id,
+                'name' => $media->name,
+                'attached_to' => class_basename($media->model_type),
+                'model_id' => $media->model_id,
+            ];
+
+            $media->delete();
+
             activity()
                 ->causedBy($request->user())
                 ->performedOn($media)
                 ->withProperties([
-                    'before' => [
-                        'source' => 'spatie',
-                        'id' => (int) $media->id,
-                        'name' => $media->name,
-                        'attached_to' => class_basename($media->model_type),
-                        'model_id' => $media->model_id,
-                    ],
+                    'before' => $before,
                 ])
                 ->log('deleted');
-
-            $media->delete();
 
             return response()->noContent();
         }
@@ -175,23 +177,25 @@ class MediaLibraryController extends Controller
                 ], Response::HTTP_CONFLICT);
             }
 
-            activity()
-                ->causedBy($request->user())
-                ->performedOn($curatorMedia)
-                ->withProperties([
-                    'before' => [
-                        'source' => 'curator',
-                        'id' => (int) $curatorMedia->id,
-                        'name' => $curatorMedia->name,
-                        'folder' => $curatorMedia->folder,
-                    ],
-                ])
-                ->log('deleted');
+            $before = [
+                'source' => 'curator',
+                'id' => (int) $curatorMedia->id,
+                'name' => $curatorMedia->name,
+                'folder' => $curatorMedia->folder,
+            ];
 
             if ($curatorMedia->disk && $curatorMedia->path) {
                 Storage::disk($curatorMedia->disk)->delete($curatorMedia->path);
             }
             $curatorMedia->delete();
+
+            activity()
+                ->causedBy($request->user())
+                ->performedOn($curatorMedia)
+                ->withProperties([
+                    'before' => $before,
+                ])
+                ->log('deleted');
 
             return response()->noContent();
         }

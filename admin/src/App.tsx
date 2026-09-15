@@ -46,6 +46,7 @@ const ProfilePage = lazy(() => import('@/features/profile/ProfilePage').then(m =
 const SystemUsersPage = lazy(() => import('@/features/system-users/SystemUsersPage').then(m => ({ default: m.SystemUsersPage })));
 const MediaLibraryPage = lazy(() => import('@/features/system-media/MediaLibraryPage').then(m => ({ default: m.MediaLibraryPage })));
 const RolesPage = lazy(() => import('@/features/system-roles/RolesPage').then(m => ({ default: m.RolesPage })));
+const ActivityLogsPage = lazy(() => import('@/features/system-activity-logs/ActivityLogsPage').then(m => ({ default: m.ActivityLogsPage })));
 
 function PageLoader() {
   return (
@@ -257,6 +258,7 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
         <Route path="/system/users" element={<SystemUsersPage />} />
         <Route path="/system/media" element={<MediaLibraryPage />} />
         <Route path="/system/roles" element={<RolesPage />} />
+        <Route path="/system/activity-logs" element={<ActivityLogsPage />} />
       </>}
       {canManageSales && <>
         <Route path="/orders" element={<OrdersListPage />} />

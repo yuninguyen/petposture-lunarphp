@@ -249,20 +249,22 @@ class PostController extends Controller
     {
         $this->authorizeAdmin('delete_post');
 
+        $before = [
+            'title' => $post->title,
+            'slug' => $post->slug,
+            'status' => $post->status,
+        ];
+
+        $post->delete();
+
         activity()
             ->causedBy($request->user())
             ->performedOn($post)
             ->event('deleted')
             ->withProperties([
-                'before' => [
-                    'title' => $post->title,
-                    'slug' => $post->slug,
-                    'status' => $post->status,
-                ],
+                'before' => $before,
             ])
             ->log('deleted');
-
-        $post->delete();
 
         return response()->json(null, 204);
     }

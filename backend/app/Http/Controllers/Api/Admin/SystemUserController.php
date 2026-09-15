@@ -188,6 +188,9 @@ class SystemUserController extends Controller
             'is_active' => (bool) $user->is_active,
         ];
 
+        $user->syncRoles([]);
+        $user->delete();
+
         activity()
             ->causedBy($request->user())
             ->performedOn($user)
@@ -195,9 +198,6 @@ class SystemUserController extends Controller
                 'before' => $userSnapshot,
             ])
             ->log('deleted');
-
-        $user->syncRoles([]);
-        $user->delete();
 
         return response()->noContent();
     }
