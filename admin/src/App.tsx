@@ -47,6 +47,8 @@ const SystemUsersPage = lazy(() => import('@/features/system-users/SystemUsersPa
 const MediaLibraryPage = lazy(() => import('@/features/system-media/MediaLibraryPage').then(m => ({ default: m.MediaLibraryPage })));
 const RolesPage = lazy(() => import('@/features/system-roles/RolesPage').then(m => ({ default: m.RolesPage })));
 const ActivityLogsPage = lazy(() => import('@/features/system-activity-logs/ActivityLogsPage').then(m => ({ default: m.ActivityLogsPage })));
+const AffiliateReportsPage = lazy(() => import('@/features/affiliate-reports/AffiliateReportsPage').then(m => ({ default: m.AffiliateReportsPage })));
+const AffiliateNetworksPage = lazy(() => import('@/features/affiliate-networks/AffiliateNetworksPage').then(m => ({ default: m.AffiliateNetworksPage })));
 
 function PageLoader() {
   return (
@@ -259,6 +261,8 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
         <Route path="/system/media" element={<MediaLibraryPage />} />
         <Route path="/system/roles" element={<RolesPage />} />
         <Route path="/system/activity-logs" element={<ActivityLogsPage />} />
+        <Route path="/affiliate/reports" element={<AffiliateReportsPage />} />
+        <Route path="/affiliate/networks" element={<AffiliateNetworksPage />} />
       </>}
       {canManageSales && <>
         <Route path="/orders" element={<OrdersListPage />} />

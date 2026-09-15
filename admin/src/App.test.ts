@@ -20,6 +20,8 @@ vi.mock('./features/system-users/SystemUsersPage', () => ({ SystemUsersPage: () 
 vi.mock('./features/system-media/MediaLibraryPage', () => ({ MediaLibraryPage: () => createElement('div', null, 'Media library route') }));
 vi.mock('./features/system-roles/RolesPage', () => ({ RolesPage: () => createElement('div', null, 'Roles route') }));
 vi.mock('./features/system-activity-logs/ActivityLogsPage', () => ({ ActivityLogsPage: () => createElement('div', null, 'Activity logs route') }));
+vi.mock('./features/affiliate-reports/AffiliateReportsPage', () => ({ AffiliateReportsPage: () => createElement('div', null, 'Affiliate reports route') }));
+vi.mock('./features/affiliate-networks/AffiliateNetworksPage', () => ({ AffiliateNetworksPage: () => createElement('div', null, 'Affiliate networks route') }));
 
 import { AppRoutes, canDeleteReviews, canManageCommerce, canManageCustomers, canManageDiscounts, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute, ADMIN_HOME_CANDIDATES, HomeRouteCandidate } from './App';
 

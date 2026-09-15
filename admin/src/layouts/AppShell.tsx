@@ -22,6 +22,8 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
     content: true,
     catalogue: true,
     finance: true,
+    affiliate: true,
+    system: true,
   });
 
   const visibleNavGroups = getVisibleNavigation(userRoles);
