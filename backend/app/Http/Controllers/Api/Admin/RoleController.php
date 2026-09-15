@@ -54,7 +54,21 @@ class RoleController extends Controller
             'permissions.*' => [Rule::in(AdminPermissionMatrix::allPermissions())],
         ]);
 
+        $beforePermissions = $role->permissions()->pluck('name')->sort()->values()->all();
+        $targetPermissions = collect($validated['permissions'] ?? [])->sort()->values()->all();
+
         $role->syncPermissions($validated['permissions'] ?? []);
+
+        if ($beforePermissions !== $targetPermissions) {
+            activity()
+                ->causedBy($request->user())
+                ->performedOn($role)
+                ->withProperties([
+                    'before' => ['permissions' => $beforePermissions],
+                    'after' => ['permissions' => $targetPermissions],
+                ])
+                ->log('permissions_updated');
+        }
 
         return response()->json([
             'data' => [

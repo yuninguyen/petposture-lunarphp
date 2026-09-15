@@ -212,6 +212,20 @@ class ProductController extends Controller
             return $product;
         });
 
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($product)
+            ->event('created')
+            ->withProperties([
+                'after' => [
+                    'name' => $validated['name'],
+                    'sku' => $validated['sku'],
+                    'base_price' => $validated['base_price'],
+                    'status' => 'draft',
+                ],
+            ])
+            ->log('created');
+
         return (new ProductResource($this->loadProduct($product)))
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
@@ -239,6 +253,12 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product): ProductResource
     {
         $validated = $request->validated();
+        $product->loadMissing('defaultUrl');
+        $before = [
+            'status' => $product->status,
+            'slug' => $product->defaultUrl?->slug,
+            'brand_id' => $product->brand_id,
+        ];
 
         DB::transaction(function () use ($validated, $product): void {
             $locked = Product::query()->lockForUpdate()->findOrFail($product->id);
@@ -298,7 +318,35 @@ class ProductController extends Controller
             }
         });
 
-        return new ProductResource($this->loadProduct($product->fresh()));
+        $afterProduct = $product->fresh(['defaultUrl']);
+        $after = [
+            'status' => $afterProduct->status,
+            'slug' => $afterProduct->defaultUrl?->slug,
+            'brand_id' => $afterProduct->brand_id,
+        ];
+
+        $diffBefore = [];
+        $diffAfter = [];
+        foreach ($before as $key => $val) {
+            if ($val !== $after[$key]) {
+                $diffBefore[$key] = $val;
+                $diffAfter[$key] = $after[$key];
+            }
+        }
+
+        if (! empty($diffBefore)) {
+            activity()
+                ->causedBy($request->user())
+                ->performedOn($product)
+                ->event('updated')
+                ->withProperties([
+                    'before' => $diffBefore,
+                    'after' => $diffAfter,
+                ])
+                ->log('updated');
+        }
+
+        return new ProductResource($this->loadProduct($afterProduct));
     }
 
     public function bulkDestroy(Request $request): Response
@@ -328,8 +376,23 @@ class ProductController extends Controller
         return response()->json(['updated' => $updated]);
     }
 
-    public function destroy(Product $product): Response
+    public function destroy(Request $request, Product $product): Response
     {
+        $product->loadMissing('defaultUrl');
+        $before = [
+            'status' => $product->status,
+            'slug' => $product->defaultUrl?->slug,
+        ];
+
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($product)
+            ->event('deleted')
+            ->withProperties([
+                'before' => $before,
+            ])
+            ->log('deleted');
+
         $product->delete();
 
         return response()->noContent();

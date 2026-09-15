@@ -349,7 +349,22 @@ class OrderController extends Controller
             return response()->json(['message' => 'Order not found'], 404);
         }
 
-        return new OrderResource($this->orderOperationsService->update($order, $validated));
+        $beforeStatus = $order->status;
+        $updatedOrder = $this->orderOperationsService->update($order, $validated);
+
+        if ($beforeStatus !== $updatedOrder->status) {
+            activity()
+                ->causedBy($request->user())
+                ->performedOn($order)
+                ->event('updated')
+                ->withProperties([
+                    'before' => ['status' => $beforeStatus],
+                    'after' => ['status' => $updatedOrder->status],
+                ])
+                ->log('updated');
+        }
+
+        return new OrderResource($updatedOrder);
     }
 
     public function performAction(Request $request, $id, string $action)
@@ -417,7 +432,19 @@ class OrderController extends Controller
 
         $amountMinor = isset($validated['amount']) ? (int) round((float) $validated['amount'] * 100) : null;
 
-        return new OrderResource($this->orderOperationsService->refundOrder($order, $amountMinor, $validated['reason']));
+        $refundedOrder = $this->orderOperationsService->refundOrder($order, $amountMinor, $validated['reason']);
+
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($order)
+            ->event('refunded')
+            ->withProperties([
+                'amount' => isset($validated['amount']) ? (float) $validated['amount'] : null,
+                'reason' => $validated['reason'],
+            ])
+            ->log('refunded');
+
+        return new OrderResource($refundedOrder);
     }
 
     public function return(Request $request, $id)
@@ -432,7 +459,19 @@ class OrderController extends Controller
             return response()->json(['message' => 'Order not found'], 404);
         }
 
-        return new OrderResource($this->orderOperationsService->returnOrder($order));
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($order)
+            ->event('returned')
+            ->withProperties([
+                'before' => ['fulfillment_status' => $order->meta['fulfillment_status'] ?? null],
+                'after' => ['fulfillment_status' => 'returned'],
+            ])
+            ->log('returned');
+
+        $returnedOrder = $this->orderOperationsService->returnOrder($order);
+
+        return new OrderResource($returnedOrder);
     }
 
     private function baseOrderQuery(Request $request)

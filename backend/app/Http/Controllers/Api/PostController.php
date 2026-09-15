@@ -109,6 +109,19 @@ class PostController extends Controller
             $post->seo()->updateOrCreate([], $seoData);
         }
 
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($post)
+            ->event('created')
+            ->withProperties([
+                'after' => [
+                    'title' => $post->title,
+                    'slug' => $post->slug,
+                    'status' => $post->status,
+                ],
+            ])
+            ->log('created');
+
         return (new PostResource($post->fresh()))->response()->setStatusCode(201);
     }
 
@@ -139,6 +152,12 @@ class PostController extends Controller
             $validated['published_at'] = now();
         }
 
+        $before = [
+            'title' => $post->title,
+            'slug' => $post->slug,
+            'status' => $post->status,
+        ];
+
         $post->update($validated);
 
         if ($post->type === Post::TYPE_COMPARISON) {
@@ -151,7 +170,35 @@ class PostController extends Controller
             $post->seo()->updateOrCreate([], $seoData);
         }
 
-        return new PostResource($post->fresh());
+        $fresh = $post->fresh();
+        $after = [
+            'title' => $fresh->title,
+            'slug' => $fresh->slug,
+            'status' => $fresh->status,
+        ];
+
+        $diffBefore = [];
+        $diffAfter = [];
+        foreach ($before as $key => $val) {
+            if ($val !== $after[$key]) {
+                $diffBefore[$key] = $val;
+                $diffAfter[$key] = $after[$key];
+            }
+        }
+
+        if (! empty($diffBefore)) {
+            activity()
+                ->causedBy($request->user())
+                ->performedOn($post)
+                ->event('updated')
+                ->withProperties([
+                    'before' => $diffBefore,
+                    'after' => $diffAfter,
+                ])
+                ->log('updated');
+        }
+
+        return new PostResource($fresh);
     }
 
     public function duplicate(Post $post): JsonResponse
@@ -198,9 +245,22 @@ class PostController extends Controller
         return response()->json(null, 204);
     }
 
-    public function destroy(Post $post)
+    public function destroy(Request $request, Post $post)
     {
         $this->authorizeAdmin('delete_post');
+
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($post)
+            ->event('deleted')
+            ->withProperties([
+                'before' => [
+                    'title' => $post->title,
+                    'slug' => $post->slug,
+                    'status' => $post->status,
+                ],
+            ])
+            ->log('deleted');
 
         $post->delete();
 

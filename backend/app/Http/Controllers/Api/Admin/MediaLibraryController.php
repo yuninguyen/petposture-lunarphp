@@ -92,10 +92,25 @@ class MediaLibraryController extends Controller
         ]);
     }
 
-    public function destroy(string $source, int|string $id): Response|JsonResponse
+    public function destroy(Request $request, string $source, int|string $id): Response|JsonResponse
     {
         if ($source === 'spatie') {
             $media = Media::findOrFail($id);
+
+            activity()
+                ->causedBy($request->user())
+                ->performedOn($media)
+                ->withProperties([
+                    'before' => [
+                        'source' => 'spatie',
+                        'id' => (int) $media->id,
+                        'name' => $media->name,
+                        'attached_to' => class_basename($media->model_type),
+                        'model_id' => $media->model_id,
+                    ],
+                ])
+                ->log('deleted');
+
             $media->delete();
 
             return response()->noContent();
@@ -159,6 +174,19 @@ class MediaLibraryController extends Controller
                     'details' => ['usages' => $usages],
                 ], Response::HTTP_CONFLICT);
             }
+
+            activity()
+                ->causedBy($request->user())
+                ->performedOn($curatorMedia)
+                ->withProperties([
+                    'before' => [
+                        'source' => 'curator',
+                        'id' => (int) $curatorMedia->id,
+                        'name' => $curatorMedia->name,
+                        'folder' => $curatorMedia->folder,
+                    ],
+                ])
+                ->log('deleted');
 
             if ($curatorMedia->disk && $curatorMedia->path) {
                 Storage::disk($curatorMedia->disk)->delete($curatorMedia->path);
