@@ -18,15 +18,6 @@ interface ApiError extends Error {
   };
 }
 
-const ROLE_BADGE_STYLES: Record<string, string> = {
-  super_admin: 'bg-purple-50 text-purple-700 border-purple-200',
-  admin: 'bg-slate-100 text-slate-800 border-slate-200',
-  staff: 'bg-sky-50 text-sky-700 border-sky-200',
-  'Product Manager': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'Order Manager': 'bg-amber-50 text-amber-700 border-amber-200',
-  Support: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-};
-
 function formatGroupName(groupKey: string): string {
   const map: Record<string, string> = {
     PRODUCT: 'Product',
@@ -177,8 +168,6 @@ export function RolesPage() {
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
           {roles.map((role) => {
             const isCoreRole = !role.editable;
-            const badgeStyle =
-              ROLE_BADGE_STYLES[role.name] || 'bg-slate-100 text-slate-800 border-slate-200';
 
             return (
               <div
@@ -191,11 +180,6 @@ export function RolesPage() {
                       <h2 className="text-lg font-bold text-slate-900">
                         {humanizeRole(role.name)}
                       </h2>
-                      <span
-                        className={`mt-1.5 inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold ${badgeStyle}`}
-                      >
-                        {role.name}
-                      </span>
                     </div>
 
                     {isCoreRole ? (
