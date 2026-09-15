@@ -6,6 +6,7 @@ import { useBranding } from '@/context/BrandingContext';
 import { getVisibleNavigation } from '@/navigation/adminNavigation';
 import { MobileAdminNav } from '@/components/navigation/MobileAdminNav';
 import { humanizeRole } from '@/lib/humanizeRole';
+import { NotificationBell } from '@/features/system-notifications/NotificationBell';
 
 export function AppShell({ children, userName, userRoles }: { children: ReactNode; userName: string; userRoles: string[] }) {
   const { t, i18n } = useTranslation();
@@ -214,7 +215,9 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
           </div>
 
           <div className="flex items-center gap-4 sm:gap-6 ml-auto">
-            
+            {/* Notification Bell */}
+            <NotificationBell />
+
             {/* Language Selector */}
             <div className="relative">
               <select

@@ -7,6 +7,10 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en', changeLanguage: vi.fn() } }),
 }));
 
+vi.mock('@/features/system-notifications/NotificationBell', () => ({
+  NotificationBell: () => createElement('div', { 'data-testid': 'notification-bell' }),
+}));
+
 import { AppShell } from './AppShell';
 import { BrandingContext } from '@/context/BrandingContext';
 

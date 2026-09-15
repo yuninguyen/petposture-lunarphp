@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\Admin\ShippingMethodController;
 use App\Http\Controllers\Api\Admin\SystemUserController;
 use App\Http\Controllers\Api\Admin\ActivityLogController;
 use App\Http\Controllers\Api\Admin\MediaLibraryController;
+use App\Http\Controllers\Api\Admin\NotificationController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\ReturnRequestController;
 use App\Http\Controllers\Api\SettingsController;
@@ -159,6 +160,9 @@ Route::prefix('/admin')
         Route::get('/system/roles', [RoleController::class, 'index']);
         Route::put('/system/roles/{role}', [RoleController::class, 'updatePermissions']);
         Route::get('/system/activity-logs', [ActivityLogController::class, 'index']);
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
         Route::get('/brands', [AdminBrandController::class, 'index']);
         Route::post('/brands', [AdminBrandController::class, 'store']);
         Route::get('/brands/{brand}', [AdminBrandController::class, 'show']);

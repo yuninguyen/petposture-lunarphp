@@ -20,7 +20,7 @@ class EnforceAdminApiPermission
         $path = ltrim((string) $request->route()?->uri(), '/');
         $relativePath = preg_replace('#^api(?:/v1)?/admin/#', '', $path) ?? $path;
 
-        if ($this->isProfilePath($relativePath)) {
+        if ($this->isProfilePath($relativePath) || $this->isNotificationPath($relativePath)) {
             return $next($request);
         }
 
@@ -125,5 +125,10 @@ class EnforceAdminApiPermission
     private function isProfilePath(string $path): bool
     {
         return $path === 'profile' || $path === 'profile/password';
+    }
+
+    private function isNotificationPath(string $path): bool
+    {
+        return $path === 'notifications' || str_starts_with($path, 'notifications/');
     }
 }

@@ -1363,5 +1363,18 @@
   "system_activity_logs.loading": "Loading activity logs...",
   "system_activity_logs.error_loading": "Failed to load activity logs. Please try again.",
   "system_activity_logs.page_info": "Page {{current}} of {{total}}",
-  "system_activity_logs.total_items": "({{count}} items)"
+  "system_activity_logs.total_items": "({{count}} items)",
+  "system_notifications.title": "Notifications",
+  "system_notifications.bell_label": "Notifications",
+  "system_notifications.mark_all_read": "Mark all as read",
+  "system_notifications.marking_all_read": "Marking...",
+  "system_notifications.empty": "No notifications yet",
+  "system_notifications.unread_badge": "{{count}} unread",
+  "system_notifications.just_now": "Just now",
+  "system_notifications.minutes_ago": "{{count}}m ago",
+  "system_notifications.hours_ago": "{{count}}h ago",
+  "system_notifications.days_ago": "{{count}}d ago",
+  "system_notifications.view_resource": "View details",
+  "system_notifications.mark_as_read": "Mark as read",
+  "system_notifications.error_loading": "Failed to load notifications"
 }
