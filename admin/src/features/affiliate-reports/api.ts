@@ -32,13 +32,39 @@ export interface PostReportItem {
 
 export interface AffiliateReportsResponse {
   range: string;
+  date_from?: string | null;
+  date_to?: string | null;
   overview: ReportOverview;
   by_network: NetworkReportItem[];
   by_post: PostReportItem[];
 }
 
+export interface FetchAffiliateReportsParams {
+  range?: string | null;
+  date_from?: string | null;
+  date_to?: string | null;
+}
+
 export async function fetchAffiliateReports(
-  range: '7' | '30' | '90' | 'all' = '30'
+  params: FetchAffiliateReportsParams | string = '30'
 ): Promise<AffiliateReportsResponse> {
-  return fetchJson<AffiliateReportsResponse>(`/admin/affiliate/reports?range=${range}`);
+  const normalized: FetchAffiliateReportsParams =
+    typeof params === 'string' ? { range: params } : params;
+
+  const query = new URLSearchParams();
+
+  if (normalized.range && normalized.range.trim() !== '') {
+    query.set('range', normalized.range.trim());
+  }
+
+  if (normalized.date_from && normalized.date_from.trim() !== '') {
+    query.set('date_from', normalized.date_from.trim());
+  }
+
+  if (normalized.date_to && normalized.date_to.trim() !== '') {
+    query.set('date_to', normalized.date_to.trim());
+  }
+
+  const qs = query.toString();
+  return fetchJson<AffiliateReportsResponse>(`/admin/affiliate/reports${qs ? `?${qs}` : ''}`);
 }

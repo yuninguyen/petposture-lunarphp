@@ -174,4 +174,54 @@ describe('AffiliateReportsPage', () => {
 
     expect(screen.getByText(/No clicks recorded for any post in this period/i)).toBeInTheDocument();
   });
+
+  it('handles custom date range selection and requires both dates before fetching', async () => {
+    vi.mocked(fetchJson).mockResolvedValueOnce(mockReportsResponse);
+    vi.mocked(fetchJson).mockResolvedValueOnce({
+      ...mockReportsResponse,
+      range: 'custom',
+      date_from: '2026-09-01',
+      date_to: '2026-09-10',
+    });
+
+    renderPage();
+
+    // Initial load with default range 30
+    await waitFor(() => {
+      expect(fetchJson).toHaveBeenCalledWith('/admin/affiliate/reports?range=30');
+    });
+
+    // Click Custom button
+    const customBtn = screen.getByRole('button', { name: /custom/i });
+    fireEvent.click(customBtn);
+
+    // Prompt is displayed when dates are missing
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Please select both start and end dates to view reports/i)
+      ).toBeInTheDocument();
+    });
+
+    // fetchJson should not have been called again yet (only the initial 1 call)
+    expect(fetchJson).toHaveBeenCalledTimes(1);
+
+    // Enter From Date
+    const fromInput = screen.getByLabelText(/from date/i);
+    fireEvent.change(fromInput, { target: { value: '2026-09-01' } });
+
+    // Still missing To Date, should still not fetch
+    expect(fetchJson).toHaveBeenCalledTimes(1);
+
+    // Enter To Date
+    const toInput = screen.getByLabelText(/to date/i);
+    fireEvent.change(toInput, { target: { value: '2026-09-10' } });
+
+    // Now both dates are provided, API is called with custom range query string
+    await waitFor(() => {
+      expect(fetchJson).toHaveBeenCalledWith(
+        '/admin/affiliate/reports?range=custom&date_from=2026-09-01&date_to=2026-09-10'
+      );
+    });
+  });
 });
+

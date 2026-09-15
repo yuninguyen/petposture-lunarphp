@@ -55,7 +55,7 @@ describe('admin navigation semantic authorization', () => {
 
   it('exposes all groups and all items to core admin', () => {
     const groups = getVisibleNavigation(['admin']);
-    expect(groups.map((g) => g.key)).toEqual(['dashboard', 'sales', 'content', 'catalogue', 'finance', 'affiliate', 'system']);
+    expect(groups.map((g) => g.key)).toEqual(['dashboard', 'sales', 'finance', 'catalogue', 'content', 'affiliate', 'system']);
 
     const dashboardItems = groups.find((g) => g.key === 'dashboard')?.items.map((i) => i.path);
     expect(dashboardItems).toEqual(['/dashboard/sales', '/dashboard/conversion']);
@@ -98,7 +98,7 @@ describe('admin navigation semantic authorization', () => {
     expect(affiliateItems).toEqual(['/affiliate/reports', '/affiliate/networks']);
 
     const systemItems = groups.find((g) => g.key === 'system')?.items.map((i) => i.path);
-    expect(systemItems).toEqual(['/system/users', '/system/media', '/system/roles', '/system/activity-logs']);
+    expect(systemItems).toEqual(['/system/users', '/system/roles', '/system/media', '/system/activity-logs']);
   });
 
   it('exposes dashboard and orders to Order Manager', () => {

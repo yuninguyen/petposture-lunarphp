@@ -13,15 +13,27 @@ import {
 } from 'lucide-react';
 import { fetchAffiliateReports, type NetworkReportItem, type PostReportItem } from './api';
 
-type RangeOption = '7' | '30' | '90' | 'all';
+type RangeOption = '7' | '30' | '90' | 'all' | 'custom';
 
 export function AffiliateReportsPage() {
   const { t } = useTranslation();
   const [range, setRange] = useState<RangeOption>('30');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  const isCustomRange = range === 'custom';
+  const isCustomComplete = Boolean(dateFrom && dateTo);
+  const isQueryEnabled = !isCustomRange || isCustomComplete;
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['admin', 'affiliate-reports', range],
-    queryFn: () => fetchAffiliateReports(range),
+    queryKey: ['admin', 'affiliate-reports', range, isCustomRange ? dateFrom : '', isCustomRange ? dateTo : ''],
+    queryFn: () =>
+      fetchAffiliateReports({
+        range,
+        date_from: isCustomRange ? dateFrom : undefined,
+        date_to: isCustomRange ? dateTo : undefined,
+      }),
+    enabled: isQueryEnabled,
   });
 
   const overview = data?.overview;
@@ -33,6 +45,7 @@ export function AffiliateReportsPage() {
     { value: '30', label: t('affiliate_reports.range_30', 'Last 30 days') },
     { value: '90', label: t('affiliate_reports.range_90', 'Last 90 days') },
     { value: 'all', label: t('affiliate_reports.range_all', 'All time') },
+    { value: 'custom', label: t('affiliate_reports.range_custom', 'Custom') },
   ];
 
   return (
@@ -73,7 +86,54 @@ export function AffiliateReportsPage() {
         </div>
       </div>
 
-      {isLoading && (
+      {/* Custom Date Inputs */}
+      {isCustomRange && (
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+            <div>
+              <label
+                htmlFor="filter-date-from"
+                className="block text-xs font-medium text-slate-700 mb-1"
+              >
+                {t('affiliate_reports.date_from', 'From Date')}
+              </label>
+              <input
+                id="filter-date-from"
+                aria-label={t('affiliate_reports.date_from', 'From Date')}
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="filter-date-to"
+                className="block text-xs font-medium text-slate-700 mb-1"
+              >
+                {t('affiliate_reports.date_to', 'To Date')}
+              </label>
+              <input
+                id="filter-date-to"
+                aria-label={t('affiliate_reports.date_to', 'To Date')}
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isCustomRange && !isCustomComplete && (
+        <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-sm text-slate-500 shadow-sm">
+          <Calendar className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+          <p>{t('affiliate_reports.custom_range_prompt', 'Please select both start and end dates to view reports.')}</p>
+        </div>
+      )}
+
+      {isLoading && isQueryEnabled && (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-sm text-slate-500 shadow-sm">
           <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-primary mb-2" />
           <p>{t('affiliate_reports.loading', 'Loading affiliate reports...')}</p>
@@ -86,7 +146,7 @@ export function AffiliateReportsPage() {
         </div>
       )}
 
-      {!isLoading && !isError && overview && (
+      {!isLoading && !isError && overview && (!isCustomRange || isCustomComplete) && (
         <>
           {/* 4 Overview Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -13,17 +13,32 @@ class AffiliateReportController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $request->validate([
+            'range' => ['nullable', 'string', 'in:7,30,90,all,custom'],
+            'date_from' => ['required_if:range,custom', 'nullable', 'date'],
+            'date_to' => ['required_if:range,custom', 'nullable', 'date', 'after_or_equal:date_from'],
+        ]);
+
         $range = $request->input('range', '30');
-        if (! in_array($range, ['7', '30', '90', 'all'], true)) {
+        if (! in_array($range, ['7', '30', '90', 'all', 'custom'], true)) {
             $range = '30';
         }
 
-        $startDate = match ($range) {
-            '7' => Carbon::now()->subDays(7),
-            '30' => Carbon::now()->subDays(30),
-            '90' => Carbon::now()->subDays(90),
-            default => null,
-        };
+        if ($range === 'custom') {
+            $startDate = Carbon::parse($request->input('date_from'))->startOfDay();
+            $endDate = Carbon::parse($request->input('date_to'))->endOfDay();
+        } else {
+            $startDate = match ($range) {
+                '7' => Carbon::now()->subDays(7),
+                '30' => Carbon::now()->subDays(30),
+                '90' => Carbon::now()->subDays(90),
+                default => null,
+            };
+            $endDate = $range === 'all' ? null : Carbon::now();
+        }
+
+        $dateFrom = $startDate?->toDateString();
+        $dateTo = $endDate?->toDateString();
 
         // 1. Overview stats
         $now = Carbon::now();
@@ -41,7 +56,8 @@ class AffiliateReportController extends Controller
             ->first();
 
         $reportQuery = AffiliateReport::query()
-            ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate->toDateString()));
+            ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate->toDateString()))
+            ->when($endDate, fn ($q) => $q->where('date', '<=', $endDate->toDateString()));
 
         $hasSyncedData = (clone $reportQuery)->exists();
         $conversionsSynced = $hasSyncedData ? (int) (clone $reportQuery)->sum('conversions') : null;
@@ -51,17 +67,19 @@ class AffiliateReportController extends Controller
         $byNetwork = AffiliateClick::query()
             ->selectRaw('affiliate_network_id, count(*) as total')
             ->when($startDate, fn ($q) => $q->where('created_at', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->where('created_at', '<=', $endDate))
             ->groupBy('affiliate_network_id')
             ->orderByDesc('total')
             ->with('network')
             ->limit(10)
             ->get()
-            ->map(function ($item) use ($startDate) {
+            ->map(function ($item) use ($startDate, $endDate) {
                 $network = $item->network;
 
                 $netReportQuery = AffiliateReport::query()
                     ->where('affiliate_network_id', $item->affiliate_network_id)
-                    ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate->toDateString()));
+                    ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate->toDateString()))
+                    ->when($endDate, fn ($q) => $q->where('date', '<=', $endDate->toDateString()));
 
                 $hasNetworkSynced = $netReportQuery->exists();
 
@@ -81,6 +99,7 @@ class AffiliateReportController extends Controller
         $byPost = AffiliateClick::query()
             ->selectRaw('max(id) as id, post_id, count(*) as total')
             ->when($startDate, fn ($q) => $q->where('created_at', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->where('created_at', '<=', $endDate))
             ->groupBy('post_id')
             ->orderByDesc('total')
             ->with('post:id,title,slug')
@@ -94,6 +113,8 @@ class AffiliateReportController extends Controller
 
         return response()->json([
             'range' => $range,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
             'overview' => [
                 'clicks_7d' => $clicks7d,
                 'clicks_30d' => $clicks30d,

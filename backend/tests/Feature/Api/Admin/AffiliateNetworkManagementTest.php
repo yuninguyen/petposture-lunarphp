@@ -376,4 +376,137 @@ class AffiliateNetworkManagementTest extends TestCase
         $this->assertSame(4, $responseWithSync->json('by_network.0.synced_conversions'));
         $this->assertSame(52.5, (float) $responseWithSync->json('by_network.0.synced_commission'));
     }
+
+    public function test_reports_with_custom_date_range_filters_clicks_and_synced_reports(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $network = AffiliateNetwork::create([
+            'name' => 'QA Custom Network',
+            'slug' => 'qa-custom-net',
+            'active' => true,
+        ]);
+
+        $category = BlogCategory::create(['name' => 'QA Cat', 'slug' => 'qa-cat']);
+        $post = Post::create([
+            'title' => 'QA Post',
+            'slug' => 'qa-post',
+            'content' => 'QA Content',
+            'blog_category_id' => $category->id,
+            'status' => 'draft',
+        ]);
+
+        // Click 1: 15 days ago (outside custom range)
+        $click1 = new AffiliateClick([
+            'affiliate_network_id' => $network->id,
+            'post_id' => $post->id,
+            'target_url' => 'https://example.com/item-1',
+        ]);
+        $click1->created_at = now()->subDays(15);
+        $click1->save();
+
+        // Click 2: 8 days ago (inside custom range 10d..5d)
+        $click2 = new AffiliateClick([
+            'affiliate_network_id' => $network->id,
+            'post_id' => $post->id,
+            'target_url' => 'https://example.com/item-2',
+        ]);
+        $click2->created_at = now()->subDays(8);
+        $click2->save();
+
+        // Click 3: 2 days ago (outside custom range)
+        $click3 = new AffiliateClick([
+            'affiliate_network_id' => $network->id,
+            'post_id' => $post->id,
+            'target_url' => 'https://example.com/item-3',
+        ]);
+        $click3->created_at = now()->subDays(2);
+        $click3->save();
+
+        // AffiliateReport 1: 15 days ago
+        AffiliateReport::create([
+            'affiliate_network_id' => $network->id,
+            'date' => now()->subDays(15)->toDateString(),
+            'clicks' => 1,
+            'conversions' => 1,
+            'commission_amount' => 10.00,
+            'synced_at' => now(),
+        ]);
+
+        // AffiliateReport 2: 8 days ago (inside custom range)
+        AffiliateReport::create([
+            'affiliate_network_id' => $network->id,
+            'date' => now()->subDays(8)->toDateString(),
+            'clicks' => 1,
+            'conversions' => 5,
+            'commission_amount' => 50.00,
+            'synced_at' => now(),
+        ]);
+
+        // AffiliateReport 3: 2 days ago
+        AffiliateReport::create([
+            'affiliate_network_id' => $network->id,
+            'date' => now()->subDays(2)->toDateString(),
+            'clicks' => 1,
+            'conversions' => 2,
+            'commission_amount' => 20.00,
+            'synced_at' => now(),
+        ]);
+
+        $dateFrom = now()->subDays(10)->toDateString();
+        $dateTo = now()->subDays(5)->toDateString();
+
+        $response = $this->getJson("/api/admin/affiliate/reports?range=custom&date_from={$dateFrom}&date_to={$dateTo}")
+            ->assertOk();
+
+        $this->assertSame('custom', $response->json('range'));
+        $this->assertSame($dateFrom, $response->json('date_from'));
+        $this->assertSame($dateTo, $response->json('date_to'));
+
+        // Fixed overview stats remain intact (all-time = 3, 7d = 1, 30d = 3)
+        $this->assertSame(3, $response->json('overview.clicks_all_time'));
+        $this->assertSame(1, $response->json('overview.clicks_7d'));
+        $this->assertSame(3, $response->json('overview.clicks_30d'));
+
+        // Synced metrics in range (only row 2: 5 conversions, 50.00 commission)
+        $this->assertTrue($response->json('overview.has_synced_data'));
+        $this->assertSame(5, $response->json('overview.conversions_synced'));
+        $this->assertSame(50.0, (float) $response->json('overview.commission_amount_synced'));
+
+        // by_network only counts click 2
+        $this->assertCount(1, $response->json('by_network'));
+        $this->assertSame(1, $response->json('by_network.0.clicks'));
+        $this->assertSame(5, $response->json('by_network.0.synced_conversions'));
+        $this->assertSame(50.0, (float) $response->json('by_network.0.synced_commission'));
+
+        // by_post only counts click 2
+        $this->assertCount(1, $response->json('by_post'));
+        $this->assertSame(1, $response->json('by_post.0.clicks'));
+    }
+
+    public function test_reports_with_custom_range_requires_valid_date_from_and_date_to(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        // Missing both
+        $this->getJson('/api/admin/affiliate/reports?range=custom')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['date_from', 'date_to']);
+
+        // Missing date_to
+        $this->getJson('/api/admin/affiliate/reports?range=custom&date_from=2026-01-01')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['date_to']);
+
+        // Missing date_from
+        $this->getJson('/api/admin/affiliate/reports?range=custom&date_to=2026-01-01')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['date_from']);
+
+        // date_to before date_from
+        $this->getJson('/api/admin/affiliate/reports?range=custom&date_from=2026-01-10&date_to=2026-01-05')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['date_to']);
+    }
 }
+

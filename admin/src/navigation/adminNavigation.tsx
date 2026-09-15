@@ -158,6 +158,132 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     ],
   },
   {
+    key: 'finance',
+    titleKey: 'sidebar.finance',
+    fallbackTitle: 'FINANCE',
+    canAccess: canAccessFinance,
+    items: [
+      {
+        key: 'goals',
+        labelKey: 'nav.goals',
+        fallbackLabel: 'Goals',
+        path: '/goals',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+          </svg>
+        ),
+        canAccess: canAccessFinance,
+      },
+    ],
+  },
+  {
+    key: 'catalogue',
+    titleKey: 'sidebar.catalogue',
+    fallbackTitle: 'CATALOGUE',
+    canAccess: canAccessCatalogue,
+    items: [
+      {
+        key: 'products',
+        labelKey: 'products.title',
+        fallbackLabel: 'Products',
+        path: '/products',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+        ),
+        canAccess: canAccessCatalogue,
+      },
+      {
+        key: 'product-types',
+        labelKey: 'product_types.title',
+        fallbackLabel: 'Product Types',
+        path: '/product-types',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+        ),
+        canAccess: canAccessCatalogue,
+      },
+      {
+        key: 'custom-fields',
+        labelKey: 'custom_fields.title',
+        fallbackLabel: 'Custom Fields',
+        path: '/custom-fields',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+        ),
+        canAccess: canAccessCatalogue,
+      },
+      {
+        key: 'brands',
+        labelKey: 'brands.title',
+        fallbackLabel: 'Brands',
+        path: '/brands',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        ),
+        canAccess: canAccessCatalogue,
+      },
+      {
+        key: 'collection-groups',
+        labelKey: 'collection_groups.title',
+        fallbackLabel: 'Collection Groups',
+        path: '/collection-groups',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        ),
+        canAccess: canAccessCatalogue,
+        children: [
+          {
+            key: 'collections',
+            labelKey: 'collections.title',
+            fallbackLabel: 'Collections',
+            path: '/collections',
+            icon: (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v4m0 0H6a2 2 0 00-2 2v2m8-4h6a2 2 0 012 2v2m-8-4v4M2 15h4v4H2v-4zm8 0h4v4h-4v-4zm8 0h4v4h-4v-4z" />
+              </svg>
+            ),
+            canAccess: canAccessCatalogue,
+          },
+        ],
+      },
+      {
+        key: 'breeds',
+        labelKey: 'breeds.title',
+        fallbackLabel: 'Breeds',
+        path: '/breeds',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+          </svg>
+        ),
+        canAccess: canAccessCatalogue,
+      },
+      {
+        key: 'solutions',
+        labelKey: 'solutions.title',
+        fallbackLabel: 'Solutions',
+        path: '/solutions',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+          </svg>
+        ),
+        canAccess: canAccessCatalogue,
+      },
+    ],
+  },
+  {
     key: 'content',
     titleKey: 'sidebar.content',
     fallbackTitle: 'CONTENT',
@@ -238,132 +364,6 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     ],
   },
   {
-    key: 'catalogue',
-    titleKey: 'sidebar.catalogue',
-    fallbackTitle: 'CATALOGUE',
-    canAccess: canAccessCatalogue,
-    items: [
-      {
-        key: 'products',
-        labelKey: 'products.title',
-        fallbackLabel: 'Products',
-        path: '/products',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
-        ),
-        canAccess: canAccessCatalogue,
-      },
-      {
-        key: 'product-types',
-        labelKey: 'product_types.title',
-        fallbackLabel: 'Product Types',
-        path: '/product-types',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0-8 5-8-5m16 0-8 5m-8-5 8 5m0 0v3" />
-          </svg>
-        ),
-        canAccess: canAccessCatalogue,
-      },
-      {
-        key: 'custom-fields',
-        labelKey: 'custom_fields.title',
-        fallbackLabel: 'Custom Fields',
-        path: '/custom-fields',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h10M4 18h7m6-8v8m-4-4h8" />
-          </svg>
-        ),
-        canAccess: canAccessCatalogue,
-      },
-      {
-        key: 'brands',
-        labelKey: 'brands.title',
-        fallbackLabel: 'Brands',
-        path: '/brands',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h10v10H7zM4 4h16v16H4z" />
-          </svg>
-        ),
-        canAccess: canAccessCatalogue,
-      },
-      {
-        key: 'collection-groups',
-        labelKey: 'collection_groups.title',
-        fallbackLabel: 'Collection Groups',
-        path: '/collection-groups',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h10" />
-          </svg>
-        ),
-        canAccess: canAccessCatalogue,
-        children: [
-          {
-            key: 'collections',
-            labelKey: 'collections.title',
-            fallbackLabel: 'Collections',
-            path: '/collections',
-            icon: (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v4m0 0H6a2 2 0 00-2 2v2m8-4h6a2 2 0 012 2v2m-8-4v4M2 15h4v4H2v-4zm8 0h4v4h-4v-4zm8 0h4v4h-4v-4z" />
-              </svg>
-            ),
-            canAccess: canAccessCatalogue,
-          },
-        ],
-      },
-      {
-        key: 'breeds',
-        labelKey: 'breeds.title',
-        fallbackLabel: 'Breeds',
-        path: '/breeds',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
-          </svg>
-        ),
-        canAccess: canAccessCatalogue,
-      },
-      {
-        key: 'solutions',
-        labelKey: 'solutions.title',
-        fallbackLabel: 'Solutions',
-        path: '/solutions',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-          </svg>
-        ),
-        canAccess: canAccessCatalogue,
-      },
-    ],
-  },
-  {
-    key: 'finance',
-    titleKey: 'sidebar.finance',
-    fallbackTitle: 'FINANCE',
-    canAccess: canAccessFinance,
-    items: [
-      {
-        key: 'goals',
-        labelKey: 'nav.goals',
-        fallbackLabel: 'Goals',
-        path: '/goals',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-          </svg>
-        ),
-        canAccess: canAccessFinance,
-      },
-    ],
-  },
-  {
     key: 'affiliate',
     titleKey: 'sidebar.affiliate',
     fallbackTitle: 'AFFILIATE',
@@ -414,18 +414,6 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         canAccess: isCoreAdminRole,
       },
       {
-        key: 'media',
-        labelKey: 'media_library.title',
-        fallbackLabel: 'Media Library',
-        path: '/system/media',
-        icon: (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        ),
-        canAccess: isCoreAdminRole,
-      },
-      {
         key: 'roles',
         labelKey: 'system_roles.title',
         fallbackLabel: 'Roles & Permissions',
@@ -433,6 +421,18 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         icon: (
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        ),
+        canAccess: isCoreAdminRole,
+      },
+      {
+        key: 'media',
+        labelKey: 'media_library.title',
+        fallbackLabel: 'Media Library',
+        path: '/system/media',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         ),
         canAccess: isCoreAdminRole,
