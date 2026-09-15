@@ -196,10 +196,26 @@ describe('orderPresentation helpers', () => {
       expect(cod.label).toBe('Cash on Delivery');
       expect(cod.details).toBeNull();
     });
+
+    it('maps supported payment gateways to proper display names', () => {
+      expect(getOrderPaymentPresentation({ payment_method: 'card', payment_gateway: 'stripe' }).gatewayLabel).toBe('Stripe');
+      expect(getOrderPaymentPresentation({ payment_method: 'paypal', payment_gateway: 'paypal' }).gatewayLabel).toBe('PayPal');
+      expect(getOrderPaymentPresentation({ payment_method: 'card', payment_gateway: 'airwallex' }).gatewayLabel).toBe('Airwallex');
+      expect(getOrderPaymentPresentation({ payment_method: 'card', payment_gateway: 'pingpong' }).gatewayLabel).toBe('PingPong');
+      expect(getOrderPaymentPresentation({ payment_method: 'card', payment_gateway: 'payoneer' }).gatewayLabel).toBe('Payoneer');
+    });
+
+    it('maps null, empty, or unknown gateway to null', () => {
+      expect(getOrderPaymentPresentation({ payment_method: 'card', payment_gateway: null }).gatewayLabel).toBeNull();
+      expect(getOrderPaymentPresentation({ payment_method: 'card', payment_gateway: '' }).gatewayLabel).toBeNull();
+      expect(getOrderPaymentPresentation({ payment_method: 'cod', payment_gateway: 'manual' }).gatewayLabel).toBeNull();
+      expect(getOrderPaymentPresentation({ payment_method: 'cod', payment_gateway: 'cod' }).gatewayLabel).toBeNull();
+      expect(getOrderPaymentPresentation({ payment_method: 'card', payment_gateway: 'unknown_gateway' }).gatewayLabel).toBeNull();
+    });
   });
 
   describe('OrderPaymentDisplay component', () => {
-    it('renders debit card presentation with icon and details', () => {
+    it('renders debit card presentation with details and no icon', () => {
       const host = document.createElement('div');
       document.body.appendChild(host);
       const root = createRoot(host);
@@ -220,8 +236,7 @@ describe('orderPresentation helpers', () => {
       expect(host.textContent).toContain('Debit Card');
       expect(host.textContent).toContain('Mastercard •••• 4444');
       const svg = host.querySelector('svg');
-      expect(svg).not.toBeNull();
-      expect(svg?.getAttribute('aria-hidden')).toBe('true');
+      expect(svg).toBeNull();
 
       act(() => root.unmount());
       host.remove();
@@ -246,6 +261,7 @@ describe('orderPresentation helpers', () => {
       });
       expect(host.textContent).toContain('PayPal');
       expect(host.textContent).not.toContain('payer@example.com');
+      expect(host.querySelector('svg')).toBeNull();
 
       // With showPayerEmail
       act(() => {
@@ -261,9 +277,97 @@ describe('orderPresentation helpers', () => {
       });
       expect(host.textContent).toContain('PayPal');
       expect(host.textContent).toContain('payer@example.com');
+      expect(host.querySelector('svg')).toBeNull();
 
       act(() => root.unmount());
       host.remove();
+    });
+
+    it('renders gateway label for card payments with supported gateways (stripe, airwallex, pingpong, payoneer)', () => {
+      const cases = [
+        { slug: 'stripe', expected: 'Stripe' },
+        { slug: 'airwallex', expected: 'Airwallex' },
+        { slug: 'pingpong', expected: 'PingPong' },
+        { slug: 'payoneer', expected: 'Payoneer' },
+      ];
+
+      for (const { slug, expected } of cases) {
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        const root = createRoot(host);
+
+        act(() => {
+          root.render(
+            createElement(OrderPaymentDisplay, {
+              order: {
+                payment_method: 'card',
+                payment_gateway: slug,
+                card_funding: 'credit',
+                card_brand: 'visa',
+                card_last4: '4242',
+              },
+            })
+          );
+        });
+
+        expect(host.textContent).toContain('Credit Card');
+        expect(host.textContent).toContain('Visa •••• 4242');
+        expect(host.textContent).toContain(expected);
+
+        act(() => root.unmount());
+        host.remove();
+      }
+    });
+
+    it('does not display redundant gateway label for paypal', () => {
+      const host = document.createElement('div');
+      document.body.appendChild(host);
+      const root = createRoot(host);
+
+      act(() => {
+        root.render(
+          createElement(OrderPaymentDisplay, {
+            order: {
+              payment_method: 'paypal',
+              payment_gateway: 'paypal',
+            },
+          })
+        );
+      });
+
+      expect(host.textContent).toBe('PayPal');
+
+      act(() => root.unmount());
+      host.remove();
+    });
+
+    it('does not display gateway label when payment_gateway is null, cod, manual, or unknown', () => {
+      for (const gateway of [null, 'cod', 'manual', 'unknown_gw', undefined]) {
+        const host = document.createElement('div');
+        document.body.appendChild(host);
+        const root = createRoot(host);
+
+        act(() => {
+          root.render(
+            createElement(OrderPaymentDisplay, {
+              order: {
+                payment_method: 'card',
+                payment_gateway: gateway,
+                card_last4: '1234',
+              },
+            })
+          );
+        });
+
+        expect(host.textContent).toContain('Card');
+        expect(host.textContent).toContain('•••• 1234');
+        expect(host.textContent).not.toContain('cod');
+        expect(host.textContent).not.toContain('manual');
+        expect(host.textContent).not.toContain('unknown_gw');
+
+        act(() => root.unmount());
+        host.remove();
+      }
     });
   });
 });

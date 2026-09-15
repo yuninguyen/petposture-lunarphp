@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { CardIcon, PayPalIcon } from '@/components/ui/icons';
 
 export type CardFunding = 'credit' | 'debit' | 'prepaid' | 'unknown';
 
@@ -23,6 +22,7 @@ export interface OrderPresentationLineSource {
 export interface OrderPresentationPaymentSource {
   payment_method?: string | null;
   payment_label?: string | null;
+  payment_gateway?: string | null;
   card_funding?: CardFunding | string | null;
   card_brand?: string | null;
   card_last4?: string | null;
@@ -37,6 +37,7 @@ export interface PaymentPresentation {
   brand?: string | null;
   last4?: string | null;
   paypalPayerEmail?: string | null;
+  gatewayLabel?: string | null;
 }
 
 /**
@@ -112,6 +113,22 @@ export function formatOrderAmount(value?: number | null, currency?: string | nul
   }
 }
 
+const GATEWAY_NAMES: Record<string, string> = {
+  stripe: 'Stripe',
+  paypal: 'PayPal',
+  airwallex: 'Airwallex',
+  pingpong: 'PingPong',
+  payoneer: 'Payoneer',
+};
+
+export function formatPaymentGatewayLabel(gateway?: string | null): string | null {
+  if (!gateway) {
+    return null;
+  }
+  const normalized = gateway.toLowerCase().trim();
+  return GATEWAY_NAMES[normalized] ?? null;
+}
+
 /**
  * Resolve payment presentation metadata.
  * Generic fallback is "Card"; specific funding ("Credit Card", "Debit Card", "Prepaid Card")
@@ -123,6 +140,7 @@ export function getOrderPaymentPresentation(order?: OrderPresentationPaymentSour
       method: 'unknown',
       label: '—',
       details: null,
+      gatewayLabel: null,
     };
   }
 
@@ -131,6 +149,7 @@ export function getOrderPaymentPresentation(order?: OrderPresentationPaymentSour
   const brand = order.card_brand?.trim() || null;
   const last4 = order.card_last4?.trim() || null;
   const paypalEmail = order.paypal_payer_email?.trim() || null;
+  const gatewayLabel = formatPaymentGatewayLabel(order.payment_gateway);
 
   // Determine if this is a card payment
   const isCard = rawMethod === 'card' || Boolean(rawFunding || brand || last4);
@@ -170,6 +189,7 @@ export function getOrderPaymentPresentation(order?: OrderPresentationPaymentSour
       funding,
       brand: formattedBrand,
       last4,
+      gatewayLabel,
     };
   }
 
@@ -179,6 +199,7 @@ export function getOrderPaymentPresentation(order?: OrderPresentationPaymentSour
       label: 'PayPal',
       details: paypalEmail,
       paypalPayerEmail: paypalEmail,
+      gatewayLabel,
     };
   }
 
@@ -187,6 +208,7 @@ export function getOrderPaymentPresentation(order?: OrderPresentationPaymentSour
       method: 'cod',
       label: 'Cash on Delivery',
       details: null,
+      gatewayLabel,
     };
   }
 
@@ -194,6 +216,7 @@ export function getOrderPaymentPresentation(order?: OrderPresentationPaymentSour
     method: rawMethod || 'unknown',
     label: order.payment_label || (rawMethod ? rawMethod.toUpperCase() : '—'),
     details: null,
+    gatewayLabel,
   };
 }
 
@@ -241,16 +264,19 @@ export function OrderPaymentDisplay({
   }
 
   const label = localizedPaymentLabel(t, presentation);
+  const showGateway =
+    presentation.method === 'card' &&
+    Boolean(presentation.gatewayLabel) &&
+    presentation.gatewayLabel?.toLowerCase() !== label.toLowerCase();
 
   return (
     <div className={`inline-flex flex-col gap-0.5 ${className}`}>
-      <span className="inline-flex items-center gap-1.5 font-medium text-slate-900">
-        {presentation.method === 'card' && <CardIcon className="h-4 w-4 text-slate-500 shrink-0" />}
-        {presentation.method === 'paypal' && <PayPalIcon className="h-4 w-4 text-[#003087] shrink-0" />}
-        <span>{label}</span>
-      </span>
+      <span className="font-medium text-slate-900">{label}</span>
       {presentation.method === 'card' && presentation.details && (
         <span className="text-xs text-slate-500">{presentation.details}</span>
+      )}
+      {showGateway && (
+        <span className="text-xs text-slate-500">{presentation.gatewayLabel}</span>
       )}
       {presentation.method === 'paypal' && showPayerEmail && presentation.paypalPayerEmail && (
         <span className="text-xs text-slate-500">{presentation.paypalPayerEmail}</span>
