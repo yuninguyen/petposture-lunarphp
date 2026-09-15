@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\Admin\ProductVariantController as AdminProductVaria
 use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\Admin\ShippingMethodController;
 use App\Http\Controllers\Api\Admin\SystemUserController;
+use App\Http\Controllers\Api\Admin\ActivityLogController;
 use App\Http\Controllers\Api\Admin\MediaLibraryController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\ReturnRequestController;
@@ -157,6 +158,7 @@ Route::prefix('/admin')
             ->where('source', 'curator|spatie');
         Route::get('/system/roles', [RoleController::class, 'index']);
         Route::put('/system/roles/{role}', [RoleController::class, 'updatePermissions']);
+        Route::get('/system/activity-logs', [ActivityLogController::class, 'index']);
         Route::get('/brands', [AdminBrandController::class, 'index']);
         Route::post('/brands', [AdminBrandController::class, 'store']);
         Route::get('/brands/{brand}', [AdminBrandController::class, 'show']);

@@ -40,6 +40,19 @@ class SystemUserController extends Controller
 
         $user->syncRoles($validated['roles']);
 
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($user)
+            ->withProperties([
+                'after' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'roles' => $user->roles()->pluck('name')->sort()->values()->all(),
+                    'is_active' => (bool) $user->is_active,
+                ],
+            ])
+            ->log('created');
+
         return (new SystemUserResource($user->load('roles')))
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
@@ -82,6 +95,13 @@ class SystemUserController extends Controller
             }
         }
 
+        $before = [
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => $user->roles->pluck('name')->sort()->values()->all(),
+            'is_active' => (bool) $user->is_active,
+        ];
+
         $validated = $request->validated();
         $data = [
             'name' => $validated['name'],
@@ -105,6 +125,34 @@ class SystemUserController extends Controller
             // strip roles never offered as a checkbox.
             $nonAdminRoles = $user->roles->pluck('name')->diff(User::ADMIN_PANEL_ROLES)->all();
             $user->syncRoles([...$validated['roles'], ...$nonAdminRoles]);
+        }
+
+        $afterUser = $user->fresh(['roles']);
+        $after = [
+            'name' => $afterUser->name,
+            'email' => $afterUser->email,
+            'roles' => $afterUser->roles->pluck('name')->sort()->values()->all(),
+            'is_active' => (bool) $afterUser->is_active,
+        ];
+
+        $diffBefore = [];
+        $diffAfter = [];
+        foreach ($before as $key => $val) {
+            if ($val !== $after[$key]) {
+                $diffBefore[$key] = $val;
+                $diffAfter[$key] = $after[$key];
+            }
+        }
+
+        if (! empty($diffBefore)) {
+            activity()
+                ->causedBy($request->user())
+                ->performedOn($user)
+                ->withProperties([
+                    'before' => $diffBefore,
+                    'after' => $diffAfter,
+                ])
+                ->log('updated');
         }
 
         return new SystemUserResource($user->load('roles'));
@@ -132,6 +180,21 @@ class SystemUserController extends Controller
                 ], Response::HTTP_CONFLICT);
             }
         }
+
+        $userSnapshot = [
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => $user->roles->pluck('name')->sort()->values()->all(),
+            'is_active' => (bool) $user->is_active,
+        ];
+
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($user)
+            ->withProperties([
+                'before' => $userSnapshot,
+            ])
+            ->log('deleted');
 
         $user->syncRoles([]);
         $user->delete();
