@@ -28,14 +28,23 @@ class RoleSeeder extends Seeder
                 'guard_name' => 'web',
             ]);
 
-            $role->syncPermissions(
-                in_array($roleName, ['super_admin', 'admin', 'staff'], true)
-                    ? Permission::query()->where('guard_name', 'web')->get()
-                    : collect(AdminPermissionMatrix::permissionsForRole($roleName))
+            if (in_array($roleName, ['super_admin', 'admin', 'staff'], true)) {
+                $role->syncPermissions(Permission::query()->where('guard_name', 'web')->get());
+                continue;
+            }
+
+            // Business roles: only seed on first run (role has zero permissions yet).
+            // Once an admin has customized permissions via the Roles & Permissions UI
+            // (built in a later phase), the DB is the source of truth — re-running
+            // this seeder must never silently overwrite those edits.
+            if ($role->permissions()->count() === 0) {
+                $role->syncPermissions(
+                    collect(AdminPermissionMatrix::permissionsForRole($roleName))
                         ->map(fn (string $permission) => $permissions->get($permission))
                         ->filter()
                         ->values(),
-            );
+                );
+            }
         }
 
         Role::query()->firstOrCreate([

@@ -8,6 +8,7 @@ use App\Models\Post;
 use App\Models\Review;
 use App\Models\User;
 use App\Policies\ReviewPolicy;
+use App\Security\AdminPermissionMatrix;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -200,6 +201,54 @@ class AdminPermissionMatrixTest extends TestCase
                 $user->can('create_order'),
                 "{$role} must have create_order exactly when it has update_order.",
             );
+        }
+    }
+
+    public function test_reseeding_does_not_overwrite_already_customized_business_role_permissions(): void
+    {
+        $productManager = Role::findByName('Product Manager');
+        $this->assertFalse($productManager->hasPermissionTo('view_any_order'));
+
+        $productManager->givePermissionTo('view_any_order');
+        $this->assertTrue($productManager->hasPermissionTo('view_any_order'));
+
+        (new RoleSeeder)->run();
+
+        $productManager->refresh();
+        $this->assertTrue($productManager->hasPermissionTo('view_any_order'));
+        $this->assertTrue($productManager->hasPermissionTo('publish_product'));
+        $this->assertTrue($productManager->hasPermissionTo('update_review'));
+    }
+
+    public function test_reseeding_does_not_remove_permission_manually_revoked_from_business_role(): void
+    {
+        $orderManager = Role::findByName('Order Manager');
+        $this->assertTrue($orderManager->hasPermissionTo('refund_order'));
+
+        $orderManager->revokePermissionTo('refund_order');
+        $this->assertFalse($orderManager->hasPermissionTo('refund_order'));
+
+        (new RoleSeeder)->run();
+
+        $orderManager->refresh();
+        $this->assertFalse($orderManager->hasPermissionTo('refund_order'));
+        $this->assertTrue($orderManager->hasPermissionTo('view_any_order'));
+    }
+
+    public function test_fresh_role_with_zero_permissions_still_gets_seeded_from_matrix(): void
+    {
+        Role::findByName('Order Manager')->delete();
+        $orderManager = Role::query()->create(['name' => 'Order Manager', 'guard_name' => 'web']);
+        $this->assertSame(0, $orderManager->permissions()->count());
+
+        (new RoleSeeder)->run();
+
+        $orderManager->refresh();
+        $expectedPermissions = AdminPermissionMatrix::permissionsForRole('Order Manager');
+        $this->assertNotEmpty($expectedPermissions);
+        $this->assertCount(count($expectedPermissions), $orderManager->permissions);
+        foreach ($expectedPermissions as $permission) {
+            $this->assertTrue($orderManager->hasPermissionTo($permission));
         }
     }
 

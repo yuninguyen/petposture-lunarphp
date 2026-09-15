@@ -95,7 +95,7 @@ describe('admin navigation semantic authorization', () => {
     expect(financeItems).toEqual(['/goals']);
 
     const systemItems = groups.find((g) => g.key === 'system')?.items.map((i) => i.path);
-    expect(systemItems).toEqual(['/system/users', '/system/media']);
+    expect(systemItems).toEqual(['/system/users', '/system/media', '/system/roles']);
   });
 
   it('exposes dashboard and orders to Order Manager', () => {

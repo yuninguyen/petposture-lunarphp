@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\Admin\ShippingMethodController;
 use App\Http\Controllers\Api\Admin\SystemUserController;
 use App\Http\Controllers\Api\Admin\MediaLibraryController;
+use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\ReturnRequestController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SiteMediaController;
@@ -154,6 +155,8 @@ Route::prefix('/admin')
         Route::get('/system/media', [MediaLibraryController::class, 'index']);
         Route::delete('/system/media/{source}/{id}', [MediaLibraryController::class, 'destroy'])
             ->where('source', 'curator|spatie');
+        Route::get('/system/roles', [RoleController::class, 'index']);
+        Route::put('/system/roles/{role}', [RoleController::class, 'updatePermissions']);
         Route::get('/brands', [AdminBrandController::class, 'index']);
         Route::post('/brands', [AdminBrandController::class, 'store']);
         Route::get('/brands/{brand}', [AdminBrandController::class, 'show']);
