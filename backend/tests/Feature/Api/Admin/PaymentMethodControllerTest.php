@@ -4,10 +4,15 @@ namespace Tests\Feature\Api\Admin;
 
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\AirwallexService;
+use App\Services\PayoneerService;
+use App\Services\PayPalService;
+use App\Services\StripePaymentIntentService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
+use ReflectionMethod;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -196,6 +201,9 @@ class PaymentMethodControllerTest extends TestCase
         $response = $this->putJson('/api/admin/finance/payment-methods/stripe', [
             'fields' => ['stripe_secret' => ''],
         ])->assertOk();
+        $this->putJson('/api/admin/finance/payment-methods/stripe', [
+            'fields' => ['stripe_secret' => '   '],
+        ])->assertOk();
 
         $this->assertSame('pk_existing', Setting::where('key', 'stripe_key')->value('value'));
         $this->assertSame('sk_existing_must_not_leak', Setting::where('key', 'stripe_secret')->value('value'));
@@ -301,6 +309,63 @@ class PaymentMethodControllerTest extends TestCase
                 $this->assertFalse(Cache::has($key), "Expected {$key} to be evicted.");
             }
         }
+    }
+
+    public function test_update_refreshes_checkout_service_credential_and_mode_resolvers(): void
+    {
+        config()->set('services.stripe.secret', 'stripe_environment_old');
+        config()->set('services.paypal.client_id', 'paypal_environment_old');
+        config()->set('services.paypal.mode', 'sandbox');
+        config()->set('services.airwallex.client_id', 'airwallex_environment_old');
+        config()->set('services.airwallex.mode', 'sandbox');
+        config()->set('services.payoneer.merchant_code', 'payoneer_environment_old');
+        config()->set('services.payoneer.mode', 'sandbox');
+
+        $stripe = app(StripePaymentIntentService::class);
+        $paypal = app(PayPalService::class);
+        $airwallex = app(AirwallexService::class);
+        $payoneer = app(PayoneerService::class);
+
+        $this->assertSame('stripe_environment_old', $this->invokeResolver($stripe, 'stripeSecret'));
+        $this->assertSame('paypal_environment_old', $this->invokeResolver($paypal, 'clientId'));
+        $this->assertSame('sandbox', $this->invokeResolver($paypal, 'mode'));
+        $this->assertSame('airwallex_environment_old', $this->invokeResolver($airwallex, 'clientId'));
+        $this->assertSame('sandbox', $this->invokeResolver($airwallex, 'mode'));
+        $this->assertSame('payoneer_environment_old', $this->invokeResolver($payoneer, 'merchantCode'));
+        $this->assertSame('sandbox', $this->invokeResolver($payoneer, 'mode'));
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $this->putJson('/api/admin/finance/payment-methods/stripe', [
+            'fields' => ['stripe_secret' => 'stripe_database_new'],
+        ])->assertOk();
+        $this->putJson('/api/admin/finance/payment-methods/paypal', [
+            'mode' => 'live',
+            'fields' => ['paypal_client_id' => 'paypal_database_new'],
+        ])->assertOk();
+        $this->putJson('/api/admin/finance/payment-methods/airwallex', [
+            'mode' => 'live',
+            'fields' => ['airwallex_client_id' => 'airwallex_database_new'],
+        ])->assertOk();
+        $this->putJson('/api/admin/finance/payment-methods/payoneer', [
+            'mode' => 'live',
+            'fields' => ['payoneer_merchant_code' => 'payoneer_database_new'],
+        ])->assertOk();
+
+        $this->assertSame('stripe_database_new', $this->invokeResolver($stripe, 'stripeSecret'));
+        $this->assertSame('paypal_database_new', $this->invokeResolver($paypal, 'clientId'));
+        $this->assertSame('live', $this->invokeResolver($paypal, 'mode'));
+        $this->assertSame('airwallex_database_new', $this->invokeResolver($airwallex, 'clientId'));
+        $this->assertSame('live', $this->invokeResolver($airwallex, 'mode'));
+        $this->assertSame('payoneer_database_new', $this->invokeResolver($payoneer, 'merchantCode'));
+        $this->assertSame('live', $this->invokeResolver($payoneer, 'mode'));
+    }
+
+    private function invokeResolver(object $service, string $method): mixed
+    {
+        $reflection = new ReflectionMethod($service, $method);
+        $reflection->setAccessible(true);
+
+        return $reflection->invoke($service);
     }
 
     private function userWithRole(string $role): User
