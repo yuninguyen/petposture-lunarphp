@@ -10,7 +10,11 @@ use App\Services\PayPalService;
 use App\Services\StripePaymentIntentService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use ReflectionMethod;
 use Spatie\Permission\Models\Role;
@@ -358,6 +362,362 @@ class PaymentMethodControllerTest extends TestCase
         $this->assertSame('live', $this->invokeResolver($airwallex, 'mode'));
         $this->assertSame('payoneer_database_new', $this->invokeResolver($payoneer, 'merchantCode'));
         $this->assertSame('live', $this->invokeResolver($payoneer, 'mode'));
+    }
+
+    public function test_payment_method_test_requires_authentication_denies_business_user_allows_admin_and_rejects_unknown_gateway(): void
+    {
+        $this->postJson('/api/admin/finance/payment-methods/stripe/test')->assertUnauthorized();
+
+        Role::firstOrCreate(['name' => 'business_user', 'guard_name' => 'web']);
+        Sanctum::actingAs($this->userWithRole('business_user'));
+        $this->postJson('/api/admin/finance/payment-methods/stripe/test')->assertForbidden();
+
+        config()->set('services.stripe.secret', 'sk_test_payment_method_connection');
+        Http::fake([
+            'api.stripe.com/*' => Http::response(['available' => [], 'pending' => []]),
+        ]);
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $this->postJson('/api/admin/finance/payment-methods/stripe/test')->assertOk();
+        $this->postJson('/api/admin/finance/payment-methods/pingpong/test')->assertNotFound();
+    }
+
+    public function test_stripe_connection_test_uses_candidate_secret_without_persisting_or_exposing_it(): void
+    {
+        $candidateSecret = 'sk_test_candidate_must_not_leak';
+        Http::fake([
+            'https://api.stripe.com/v1/account' => Http::response(['id' => 'acct_test'], 200),
+        ]);
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $response = $this->postJson('/api/admin/finance/payment-methods/stripe/test', [
+            'fields' => ['stripe_secret' => $candidateSecret],
+        ])->assertOk()
+            ->assertJsonPath('data.gateway', 'stripe')
+            ->assertJsonPath('data.status', 'connected');
+
+        Http::assertSent(fn ($request): bool => $request->method() === 'GET'
+            && $request->url() === 'https://api.stripe.com/v1/account'
+            && $request->hasHeader('Authorization', 'Basic '.base64_encode($candidateSecret.':'))
+        );
+        $this->assertDatabaseMissing('settings', [
+            'key' => 'stripe_secret',
+            'value' => $candidateSecret,
+        ]);
+        $this->assertStringNotContainsString($candidateSecret, $response->getContent());
+    }
+
+    public function test_paypal_sandbox_connection_uses_candidate_credentials_without_persisting_or_exposing_them(): void
+    {
+        $candidateClientId = 'paypal_candidate_client_must_not_leak';
+        $candidateSecret = 'paypal_candidate_secret_must_not_leak';
+
+        Http::fake([
+            'https://api-m.sandbox.paypal.com/v1/oauth2/token' => Http::response([
+                'access_token' => 'provider_token_must_not_leak',
+            ], 200),
+        ]);
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $response = $this->postJson('/api/admin/finance/payment-methods/paypal/test', [
+            'mode' => 'sandbox',
+            'fields' => [
+                'paypal_client_id' => $candidateClientId,
+                'paypal_client_secret' => $candidateSecret,
+            ],
+        ])->assertOk()
+            ->assertJsonPath('data.gateway', 'paypal')
+            ->assertJsonPath('data.status', 'connected')
+            ->assertJsonPath('data.mode', 'sandbox');
+
+        Http::assertSent(fn ($request): bool => $request->method() === 'POST'
+            && $request->url() === 'https://api-m.sandbox.paypal.com/v1/oauth2/token'
+            && $request->hasHeader('Authorization', 'Basic '.base64_encode($candidateClientId.':'.$candidateSecret))
+            && $request->hasHeader('Content-Type', 'application/x-www-form-urlencoded')
+            && $request['grant_type'] === 'client_credentials'
+        );
+
+        $this->assertDatabaseMissing('settings', [
+            'key' => 'paypal_client_id',
+            'value' => $candidateClientId,
+        ]);
+        $this->assertDatabaseMissing('settings', [
+            'key' => 'paypal_client_secret',
+            'value' => $candidateSecret,
+        ]);
+        $this->assertStringNotContainsString($candidateClientId, $response->getContent());
+        $this->assertStringNotContainsString($candidateSecret, $response->getContent());
+    }
+
+    public function test_airwallex_sandbox_connection_uses_candidate_credentials_without_persisting_or_exposing_them(): void
+    {
+        $candidateClientId = 'airwallex_candidate_client_must_not_leak';
+        $candidateApiKey = 'airwallex_candidate_key_must_not_leak';
+
+        Http::fake([
+            'https://api-demo.airwallex.com/api/v1/authentication/login' => Http::response([
+                'token' => 'provider_token_must_not_leak',
+            ], 200),
+        ]);
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $response = $this->postJson('/api/admin/finance/payment-methods/airwallex/test', [
+            'mode' => 'sandbox',
+            'fields' => [
+                'airwallex_client_id' => $candidateClientId,
+                'airwallex_api_key' => $candidateApiKey,
+            ],
+        ])->assertOk()
+            ->assertJsonPath('data.gateway', 'airwallex')
+            ->assertJsonPath('data.status', 'connected')
+            ->assertJsonPath('data.mode', 'sandbox');
+
+        Http::assertSent(fn ($request): bool => $request->method() === 'POST'
+            && $request->url() === 'https://api-demo.airwallex.com/api/v1/authentication/login'
+            && $request->hasHeader('x-client-id', $candidateClientId)
+            && $request->hasHeader('x-api-key', $candidateApiKey)
+        );
+
+        $this->assertDatabaseMissing('settings', [
+            'key' => 'airwallex_client_id',
+            'value' => $candidateClientId,
+        ]);
+        $this->assertDatabaseMissing('settings', [
+            'key' => 'airwallex_api_key',
+            'value' => $candidateApiKey,
+        ]);
+        $this->assertStringNotContainsString($candidateClientId, $response->getContent());
+        $this->assertStringNotContainsString($candidateApiKey, $response->getContent());
+    }
+
+    public function test_payoneer_connection_uses_candidate_credentials_without_http_persistence_or_exposure(): void
+    {
+        $candidateMerchantCode = 'payoneer_candidate_merchant_must_not_leak';
+        $candidateApiKey = 'payoneer_candidate_key_must_not_leak';
+        $candidateApiSecret = 'payoneer_candidate_secret_must_not_leak';
+
+        Http::fake();
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $response = $this->postJson('/api/admin/finance/payment-methods/payoneer/test', [
+            'mode' => 'live',
+            'fields' => [
+                'payoneer_merchant_code' => $candidateMerchantCode,
+                'payoneer_api_key' => $candidateApiKey,
+                'payoneer_api_secret' => $candidateApiSecret,
+            ],
+        ])->assertOk()
+            ->assertJsonPath('data.gateway', 'payoneer')
+            ->assertJsonPath('data.status', 'credentials_present')
+            ->assertJsonPath('data.mode', 'live');
+
+        Http::assertNothingSent();
+
+        foreach ([
+            'payoneer_merchant_code' => $candidateMerchantCode,
+            'payoneer_api_key' => $candidateApiKey,
+            'payoneer_api_secret' => $candidateApiSecret,
+        ] as $key => $value) {
+            $this->assertDatabaseMissing('settings', [
+                'key' => $key,
+                'value' => $value,
+            ]);
+            $this->assertStringNotContainsString($value, $response->getContent());
+        }
+    }
+
+    public function test_stripe_connection_test_resolves_candidate_then_database_then_config_without_leaking_or_persisting_secrets(): void
+    {
+        $candidateSecret = 'sk_candidate_resolution_must_not_leak';
+        $databaseSecret = 'sk_database_resolution_must_not_leak';
+        $configSecret = 'sk_config_resolution_must_not_leak';
+
+        config()->set('services.stripe.secret', $configSecret);
+        Setting::set('stripe_secret', $databaseSecret, 'string', 'payment');
+        Http::fake([
+            'https://api.stripe.com/v1/account' => Http::response(['id' => 'acct_resolution'], 200),
+        ]);
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $candidateResponse = $this->postJson('/api/admin/finance/payment-methods/stripe/test', [
+            'fields' => ['stripe_secret' => $candidateSecret],
+        ])->assertOk();
+        $this->assertSame($databaseSecret, Setting::where('key', 'stripe_secret')->value('value'));
+
+        $databaseResponse = $this->postJson('/api/admin/finance/payment-methods/stripe/test', [
+            'fields' => ['stripe_secret' => ''],
+        ])->assertOk();
+        $this->assertSame($databaseSecret, Setting::where('key', 'stripe_secret')->value('value'));
+
+        Setting::query()->where('key', 'stripe_secret')->firstOrFail()->delete();
+        $configResponse = $this->postJson('/api/admin/finance/payment-methods/stripe/test', [
+            'fields' => ['stripe_secret' => '   '],
+        ])->assertOk();
+        $this->assertDatabaseMissing('settings', ['key' => 'stripe_secret']);
+
+        foreach ([$candidateSecret, $databaseSecret, $configSecret] as $secret) {
+            Http::assertSent(fn ($request): bool => $request->hasHeader('Authorization', 'Basic '.base64_encode($secret.':'))
+            );
+
+            foreach ([$candidateResponse, $databaseResponse, $configResponse] as $response) {
+                $this->assertStringNotContainsString($secret, $response->getContent());
+            }
+        }
+
+        foreach ([$candidateResponse, $databaseResponse, $configResponse] as $response) {
+            $response->assertJsonMissingPath('verification_token')
+                ->assertJsonMissingPath('data.verification_token')
+                ->assertJsonMissingPath('data.test_token')
+                ->assertJsonMissingPath('data.token');
+        }
+    }
+
+    public function test_connection_test_sanitizes_provider_rejection_and_transport_failure(): void
+    {
+        $rejectedSecret = 'sk_rejected_secret_must_not_leak';
+        $providerDetail = 'provider_detail_must_not_leak';
+        Http::fake([
+            'https://api.stripe.com/v1/account' => Http::response([
+                'error' => ['message' => $providerDetail],
+            ], 401),
+        ]);
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $rejectedResponse = $this->postJson('/api/admin/finance/payment-methods/stripe/test', [
+            'fields' => ['stripe_secret' => $rejectedSecret],
+        ])->assertUnprocessable()
+            ->assertJsonPath('data.status', 'rejected')
+            ->assertJsonPath('data.message', 'The payment provider rejected the credentials.')
+            ->assertJsonMissingPath('verification_token')
+            ->assertJsonMissingPath('data.verification_token')
+            ->assertJsonMissingPath('data.test_token')
+            ->assertJsonMissingPath('data.token');
+
+        $this->assertStringNotContainsString($rejectedSecret, $rejectedResponse->getContent());
+        $this->assertStringNotContainsString($providerDetail, $rejectedResponse->getContent());
+
+        $transportSecret = 'sk_transport_secret_must_not_leak';
+        $transportDetail = 'transport_detail_must_not_leak';
+        Http::fake(fn () => throw new ConnectionException($transportDetail));
+
+        $transportResponse = $this->postJson('/api/admin/finance/payment-methods/stripe/test', [
+            'fields' => ['stripe_secret' => $transportSecret],
+        ])->assertStatus(502)
+            ->assertJsonPath('data.status', 'connection_error')
+            ->assertJsonPath('data.message', 'Unable to connect to the payment provider.')
+            ->assertJsonMissingPath('verification_token')
+            ->assertJsonMissingPath('data.verification_token')
+            ->assertJsonMissingPath('data.test_token')
+            ->assertJsonMissingPath('data.token');
+
+        $this->assertStringNotContainsString($transportSecret, $transportResponse->getContent());
+        $this->assertStringNotContainsString($transportDetail, $transportResponse->getContent());
+        $this->assertDatabaseMissing('settings', ['key' => 'stripe_secret']);
+    }
+
+    public function test_live_mode_uses_paypal_and_airwallex_live_endpoints_with_expected_authentication(): void
+    {
+        $paypalClientId = 'paypal_live_client';
+        $paypalClientSecret = 'paypal_live_secret';
+        $airwallexClientId = 'airwallex_live_client';
+        $airwallexApiKey = 'airwallex_live_key';
+
+        Http::fake([
+            'https://api-m.paypal.com/v1/oauth2/token' => Http::response(['access_token' => 'paypal_token'], 200),
+            'https://api.airwallex.com/api/v1/authentication/login' => Http::response(['token' => 'airwallex_token'], 200),
+        ]);
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $this->postJson('/api/admin/finance/payment-methods/paypal/test', [
+            'mode' => 'live',
+            'fields' => [
+                'paypal_client_id' => $paypalClientId,
+                'paypal_client_secret' => $paypalClientSecret,
+            ],
+        ])->assertOk()->assertJsonPath('data.mode', 'live');
+
+        $this->postJson('/api/admin/finance/payment-methods/airwallex/test', [
+            'mode' => 'live',
+            'fields' => [
+                'airwallex_client_id' => $airwallexClientId,
+                'airwallex_api_key' => $airwallexApiKey,
+            ],
+        ])->assertOk()->assertJsonPath('data.mode', 'live');
+
+        Http::assertSent(fn ($request): bool => $request->method() === 'POST'
+            && $request->url() === 'https://api-m.paypal.com/v1/oauth2/token'
+            && $request->hasHeader('Authorization', 'Basic '.base64_encode($paypalClientId.':'.$paypalClientSecret))
+            && $request->hasHeader('Content-Type', 'application/x-www-form-urlencoded')
+            && $request['grant_type'] === 'client_credentials'
+        );
+
+        Http::assertSent(fn ($request): bool => $request->method() === 'POST'
+            && $request->url() === 'https://api.airwallex.com/api/v1/authentication/login'
+            && $request->hasHeader('x-client-id', $airwallexClientId)
+            && $request->hasHeader('x-api-key', $airwallexApiKey)
+        );
+    }
+
+    public function test_candidate_credentials_never_leak_outside_the_provider_request(): void
+    {
+        $candidateClientId = 'paypal_security_client_'.uniqid();
+        $candidateSecret = 'paypal_security_secret_'.uniqid();
+        $loggedPayloads = [];
+
+        Event::listen(MessageLogged::class, function (MessageLogged $event) use (&$loggedPayloads): void {
+            $loggedPayloads[] = $event->message;
+            $loggedPayloads[] = json_encode($event->context, JSON_THROW_ON_ERROR);
+        });
+
+        Http::fake([
+            'https://api-m.sandbox.paypal.com/v1/oauth2/token' => Http::response([
+                'access_token' => 'provider_access_token',
+            ], 200),
+        ]);
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $response = $this->postJson('/api/admin/finance/payment-methods/paypal/test', [
+            'mode' => 'sandbox',
+            'fields' => [
+                'paypal_client_id' => $candidateClientId,
+                'paypal_client_secret' => $candidateSecret,
+            ],
+        ])->assertOk()
+            ->assertJsonMissingPath('verification_token')
+            ->assertJsonMissingPath('data.verification_token')
+            ->assertJsonMissingPath('data.test_token')
+            ->assertJsonMissingPath('data.token');
+
+        foreach ([$candidateClientId, $candidateSecret] as $candidate) {
+            $this->assertStringNotContainsString($candidate, implode('\n', $loggedPayloads));
+            $this->assertDatabaseMissing('settings', ['value' => $candidate]);
+            $this->assertStringNotContainsString($candidate, $response->getContent());
+        }
+
+        foreach ([
+            'paypal_client_id',
+            'paypal_client_secret',
+            'paypal_mode',
+            'paypal_webhook_id',
+            'paypal_access_token_sandbox',
+            'paypal_access_token_live',
+        ] as $cacheKey) {
+            $cached = Cache::get($cacheKey);
+            $serialized = is_scalar($cached) || $cached === null ? (string) $cached : json_encode($cached, JSON_THROW_ON_ERROR);
+
+            $this->assertStringNotContainsString($candidateClientId, $serialized, "Candidate client ID leaked through cache key {$cacheKey}.");
+            $this->assertStringNotContainsString($candidateSecret, $serialized, "Candidate secret leaked through cache key {$cacheKey}.");
+        }
+
+        Http::assertSent(function ($request) use ($candidateClientId, $candidateSecret): bool {
+            $url = $request->url();
+
+            $this->assertStringNotContainsString($candidateClientId, $url);
+            $this->assertStringNotContainsString($candidateSecret, $url);
+
+            return true;
+        });
     }
 
     private function invokeResolver(object $service, string $method): mixed
