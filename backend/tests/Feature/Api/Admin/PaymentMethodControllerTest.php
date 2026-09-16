@@ -104,6 +104,39 @@ class PaymentMethodControllerTest extends TestCase
         $this->assertFalse($gateways['payoneer']['configured']);
     }
 
+    public function test_database_zero_values_fall_back_like_live_checkout(): void
+    {
+        config()->set('services.payoneer.merchant_code', 'environment_merchant');
+        config()->set('services.payoneer.api_key', 'environment_api_key');
+        config()->set('services.payoneer.api_secret', 'environment_api_secret');
+
+        Setting::set('payoneer_merchant_code', '0', 'string', 'payment');
+        Setting::set('payoneer_api_key', 0, 'int', 'payment');
+        Setting::set('payoneer_api_secret', false, 'bool', 'payment');
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $response = $this->getJson('/api/admin/finance/payment-methods')->assertOk();
+        $payoneer = collect($response->json('data'))->firstWhere('gateway', 'payoneer');
+
+        $this->assertSame('environment', $payoneer['source']);
+        $this->assertSame('environment_merchant', $payoneer['fields']['payoneer_merchant_code']['value']);
+        $this->assertSame('environment', $payoneer['fields']['payoneer_api_key']['source']);
+        $this->assertSame('environment', $payoneer['fields']['payoneer_api_secret']['source']);
+    }
+
+    public function test_database_whitespace_remains_effective_like_live_checkout(): void
+    {
+        config()->set('services.payoneer.merchant_code', 'environment_merchant');
+        Setting::set('payoneer_merchant_code', '   ', 'string', 'payment');
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $response = $this->getJson('/api/admin/finance/payment-methods')->assertOk();
+        $payoneer = collect($response->json('data'))->firstWhere('gateway', 'payoneer');
+
+        $this->assertSame('database', $payoneer['fields']['payoneer_merchant_code']['source']);
+        $this->assertSame('   ', $payoneer['fields']['payoneer_merchant_code']['value']);
+    }
+
     public function test_index_returns_modes_and_webhook_urls_without_aggregating_mode_source(): void
     {
         config()->set('services.stripe.secret', 'stripe_environment_secret');

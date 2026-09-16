@@ -182,6 +182,6 @@ class PaymentMethodService
 
     private function hasValue(mixed $value): bool
     {
-        return $value !== null && (! is_string($value) || trim($value) !== '');
+        return (bool) $value;
     }
 }
