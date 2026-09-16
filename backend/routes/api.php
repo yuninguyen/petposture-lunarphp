@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\Admin\SystemUserController;
 use App\Http\Controllers\Api\Admin\ActivityLogController;
 use App\Http\Controllers\Api\Admin\MediaLibraryController;
 use App\Http\Controllers\Api\Admin\NotificationController;
+use App\Http\Controllers\Api\Admin\PaymentMethodController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\AffiliateNetworkManagementController;
 use App\Http\Controllers\Api\Admin\AffiliateReportController;
@@ -321,6 +322,8 @@ Route::prefix('/admin')
             Route::delete('/customers/{customer}/addresses/{address}', [CustomerController::class, 'destroyAddress']);
             Route::get('/customers/{customer}', [CustomerController::class, 'show']);
             Route::match(['put', 'patch'], '/customers/{customer}', [CustomerController::class, 'update']);
+
+            Route::get('/finance/payment-methods', [PaymentMethodController::class, 'index']);
 
             Route::get('/shipping-methods', [ShippingMethodController::class, 'index']);
             Route::post('/shipping-methods', [ShippingMethodController::class, 'store']);
