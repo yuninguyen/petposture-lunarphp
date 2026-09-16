@@ -15,6 +15,7 @@ vi.mock('./features/discounts/DiscountFormPage', () => ({ DiscountFormPage: () =
 vi.mock('./features/dashboard/SalesPage', () => ({ SalesPage: () => createElement('div', null, 'Sales dashboard route') }));
 vi.mock('./features/dashboard/ConversionPage', () => ({ ConversionPage: () => createElement('div', null, 'Conversion dashboard route') }));
 vi.mock('./features/finance/GoalsPage', () => ({ GoalsPage: () => createElement('div', null, 'Goals route') }));
+vi.mock('./features/payment-methods/PaymentMethodsPage', () => ({ PaymentMethodsPage: () => createElement('div', null, 'Payment methods route') }));
 vi.mock('./features/profile/ProfilePage', () => ({ ProfilePage: () => createElement('div', null, 'Profile route') }));
 vi.mock('./features/system-users/SystemUsersPage', () => ({ SystemUsersPage: () => createElement('div', null, 'System users route') }));
 vi.mock('./features/system-media/MediaLibraryPage', () => ({ MediaLibraryPage: () => createElement('div', null, 'Media library route') }));
@@ -282,6 +283,31 @@ describe('admin home route resolution', () => {
     expect(pm.host.textContent).toContain('Products route');
     act(() => pm.root.unmount());
     pm.host.remove();
+  });
+
+  it.each(['super_admin', 'admin', 'staff'])('renders PaymentMethodsPage for core role %s', async (role) => {
+    const { host, root } = renderRoutes([role], '/finance/payment-methods');
+    await act(async () => await Promise.resolve());
+
+    expect(host.textContent).toContain('Payment methods route');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it.each([
+    ['Product Manager', ['Product Manager'], 'Products route'],
+    ['Order Manager', ['Order Manager'], 'Orders route'],
+    ['Support', ['Support'], 'Orders route'],
+  ])('uses the safe home fallback rather than Payment Methods for %s', async (_role, userRoles, expectedRoute) => {
+    const { host, root } = renderRoutes(userRoles, '/finance/payment-methods');
+    await act(async () => await Promise.resolve());
+
+    expect(host.textContent).toContain(expectedRoute);
+    expect(host.textContent).not.toContain('Payment methods route');
+
+    act(() => root.unmount());
+    host.remove();
   });
 
   it('renders ProfilePage at /profile for all authorized admin roles', async () => {

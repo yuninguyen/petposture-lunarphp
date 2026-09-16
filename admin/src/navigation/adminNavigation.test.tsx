@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import en from '../locales/en.json';
+import vi from '../locales/vi.json';
 import {
   ADMIN_NAV_GROUPS,
   getVisibleNavigation,
@@ -92,7 +94,7 @@ describe('admin navigation semantic authorization', () => {
     ]);
 
     const financeItems = groups.find((g) => g.key === 'finance')?.items.map((i) => i.path);
-    expect(financeItems).toEqual(['/goals']);
+    expect(financeItems).toEqual(['/goals', '/finance/payment-methods']);
 
     const affiliateItems = groups.find((g) => g.key === 'affiliate')?.items.map((i) => i.path);
     expect(affiliateItems).toEqual(['/affiliate/reports', '/affiliate/networks']);
@@ -139,6 +141,72 @@ describe('admin navigation semantic authorization', () => {
   it('returns empty array for unknown or unauthorized roles', () => {
     expect(getVisibleNavigation(['guest'])).toEqual([]);
     expect(getVisibleNavigation([])).toEqual([]);
+  });
+
+  it('provides complete bilingual Payment Methods copy', () => {
+    const requiredKeys = [
+      'nav.payment_methods',
+      'payment_methods.title',
+      'payment_methods.subtitle',
+      'payment_methods.gateway',
+      'payment_methods.gateways.stripe',
+      'payment_methods.gateways.paypal',
+      'payment_methods.gateways.airwallex',
+      'payment_methods.gateways.payoneer',
+      'payment_methods.fields.stripe_key',
+      'payment_methods.fields.stripe_secret',
+      'payment_methods.fields.stripe_webhook_secret',
+      'payment_methods.fields.paypal_client_id',
+      'payment_methods.fields.paypal_client_secret',
+      'payment_methods.fields.paypal_webhook_id',
+      'payment_methods.fields.airwallex_client_id',
+      'payment_methods.fields.airwallex_api_key',
+      'payment_methods.fields.airwallex_webhook_secret',
+      'payment_methods.fields.payoneer_merchant_code',
+      'payment_methods.fields.payoneer_api_key',
+      'payment_methods.fields.payoneer_api_secret',
+      'payment_methods.fields.payoneer_webhook_secret',
+      'payment_methods.mode',
+      'payment_methods.modes.test',
+      'payment_methods.modes.sandbox',
+      'payment_methods.modes.live',
+      'payment_methods.configured',
+      'payment_methods.not_configured',
+      'payment_methods.source.database',
+      'payment_methods.source.environment',
+      'payment_methods.source.mixed',
+      'payment_methods.source.none',
+      'payment_methods.hints.configured_database',
+      'payment_methods.hints.configured_environment',
+      'payment_methods.hints.not_configured',
+      'payment_methods.webhook_url',
+      'payment_methods.copy_webhook_url',
+      'payment_methods.webhook_copied',
+      'payment_methods.webhook_copy_error',
+      'payment_methods.test',
+      'payment_methods.testing',
+      'payment_methods.test_success',
+      'payment_methods.save',
+      'payment_methods.saving',
+      'payment_methods.save_success',
+      'payment_methods.remove_override',
+      'payment_methods.undo_remove_override',
+      'payment_methods.override_marked_for_removal',
+      'payment_methods.clear_confirmation',
+      'payment_methods.loading',
+      'payment_methods.error',
+      'payment_methods.empty',
+      'payment_methods.errors.test_failed',
+      'payment_methods.errors.save_failed',
+      'payment_methods.errors.provider_rejected',
+      'payment_methods.errors.provider_unavailable',
+      'payment_methods.payoneer_test_limitation',
+    ];
+
+    for (const locale of [en, vi]) {
+      for (const key of requiredKeys) expect(locale[key as keyof typeof locale]).toBeTruthy();
+    }
+    expect(vi['payment_methods.clear_confirmation']).toBe('Xóa giá trị ghi đè trong cơ sở dữ liệu — trường này sẽ quay về cấu hình môi trường nếu có. Thao tác này không xóa hoặc vô hiệu hóa giá trị môi trường.');
   });
 
   it('proves inserting or reordering groups does not alter role permissions', () => {

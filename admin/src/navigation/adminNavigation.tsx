@@ -175,6 +175,18 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         ),
         canAccess: canAccessFinance,
       },
+      {
+        key: 'payment-methods',
+        labelKey: 'nav.payment_methods',
+        fallbackLabel: 'Payment Methods',
+        path: '/finance/payment-methods',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h2m4 0h4M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        ),
+        canAccess: canAccessFinance,
+      },
     ],
   },
   {
