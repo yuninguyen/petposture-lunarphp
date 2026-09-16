@@ -4,6 +4,7 @@ namespace App\Services\Admin;
 
 use App\Models\Setting;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use InvalidArgumentException;
 
 class PaymentMethodService
@@ -84,6 +85,43 @@ class PaymentMethodService
             'webhook_url' => url("/api/webhooks/{$gateway}"),
             'fields' => $fields,
         ];
+    }
+
+    public function fieldNames(string $gateway): array
+    {
+        return array_keys($this->definition($gateway)['fields']);
+    }
+
+    public function modeValues(string $gateway): array
+    {
+        return $this->definition($gateway)['mode']['values'];
+    }
+
+    public function update(string $gateway, array $payload): array
+    {
+        $definition = $this->definition($gateway);
+
+        foreach (($payload['fields'] ?? []) as $key => $value) {
+            if (array_key_exists($key, $definition['fields']) && is_string($value) && trim($value) !== '') {
+                Setting::set($key, $value, 'string', 'payment');
+            }
+        }
+
+        if (array_key_exists('mode', $payload) && in_array($payload['mode'], $definition['mode']['values'], true)) {
+            Setting::set($definition['mode']['key'], $payload['mode'], 'string', 'payment');
+        }
+
+        foreach (($payload['clear_fields'] ?? []) as $key) {
+            if (array_key_exists($key, $definition['fields'])) {
+                Setting::query()->where('key', $key)->first()?->delete();
+            }
+        }
+
+        foreach ($definition['cache_keys'] as $cacheKey) {
+            Cache::forget($cacheKey);
+        }
+
+        return $this->describe($gateway);
     }
 
     public function hasGateway(string $gateway): bool

@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -162,6 +163,143 @@ class PaymentMethodControllerTest extends TestCase
         foreach (['stripe', 'paypal', 'airwallex', 'payoneer'] as $gateway) {
             $this->assertStringEndsWith("/api/webhooks/{$gateway}", $gateways[$gateway]['webhook_url']);
             $this->assertArrayNotHasKey($gateway.'_mode', $gateways[$gateway]['fields']);
+        }
+    }
+
+    public function test_payment_method_update_requires_authentication_and_core_admin_role(): void
+    {
+        $this->putJson('/api/admin/finance/payment-methods/stripe', [])->assertUnauthorized();
+
+        foreach (['customer', 'Product Manager', 'Order Manager', 'Support'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+            $this->putJson('/api/admin/finance/payment-methods/stripe', [])->assertForbidden();
+        }
+
+        foreach (['super_admin', 'admin', 'staff'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+            $this->putJson('/api/admin/finance/payment-methods/stripe', [])->assertOk();
+        }
+    }
+
+    public function test_unknown_payment_gateway_update_returns_not_found(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $this->putJson('/api/admin/finance/payment-methods/pingpong', [])->assertNotFound();
+    }
+
+    public function test_update_omission_and_empty_secret_preserve_existing_values(): void
+    {
+        Setting::set('stripe_key', 'pk_existing', 'string', 'payment');
+        Setting::set('stripe_secret', 'sk_existing_must_not_leak', 'string', 'payment');
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $response = $this->putJson('/api/admin/finance/payment-methods/stripe', [
+            'fields' => ['stripe_secret' => ''],
+        ])->assertOk();
+
+        $this->assertSame('pk_existing', Setting::where('key', 'stripe_key')->value('value'));
+        $this->assertSame('sk_existing_must_not_leak', Setting::where('key', 'stripe_secret')->value('value'));
+        $this->assertStringNotContainsString('sk_existing_must_not_leak', $response->getContent());
+    }
+
+    public function test_update_replaces_only_allowlisted_fields_and_returns_no_secret(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $response = $this->putJson('/api/admin/finance/payment-methods/stripe', [
+            'mode' => 'test',
+            'fields' => [
+                'stripe_key' => 'pk_replacement',
+                'stripe_secret' => 'sk_replacement_must_not_leak',
+            ],
+        ])->assertOk()
+            ->assertJsonPath('data.mode', 'test')
+            ->assertJsonPath('data.fields.stripe_key.value', 'pk_replacement')
+            ->assertJsonMissingPath('data.fields.stripe_secret.value');
+
+        $this->assertSame('pk_replacement', Setting::where('key', 'stripe_key')->value('value'));
+        $this->assertSame('sk_replacement_must_not_leak', Setting::where('key', 'stripe_secret')->value('value'));
+        $this->assertStringNotContainsString('sk_replacement_must_not_leak', $response->getContent());
+    }
+
+    public function test_clear_fields_deletes_database_override_and_restores_environment_fallback(): void
+    {
+        config()->set('services.stripe.secret', 'sk_environment_must_not_leak');
+        Setting::set('stripe_secret', 'sk_database_must_not_leak', 'string', 'payment');
+        $this->assertSame('sk_database_must_not_leak', Setting::get('stripe_secret'));
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $response = $this->putJson('/api/admin/finance/payment-methods/stripe', [
+            'clear_fields' => ['stripe_secret'],
+        ])->assertOk()
+            ->assertJsonPath('data.fields.stripe_secret.source', 'environment');
+
+        $this->assertDatabaseMissing('settings', ['key' => 'stripe_secret']);
+        $this->assertNull(Setting::get('stripe_secret'));
+        $this->assertStringNotContainsString('sk_database_must_not_leak', $response->getContent());
+        $this->assertStringNotContainsString('sk_environment_must_not_leak', $response->getContent());
+    }
+
+    public function test_update_rejects_arbitrary_fields_and_replace_clear_conflicts(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        foreach ([
+            ['fields' => ['paypal_client_id' => 'not-allowed']],
+            ['fields' => ['arbitrary_setting' => 'not-allowed']],
+            ['clear_fields' => ['paypal_client_secret']],
+            ['clear_fields' => ['stripe_secret', 'stripe_secret']],
+            ['clear_fields' => 'stripe_secret'],
+            ['fields' => ['stripe_secret' => ['invalid']]],
+            ['mode' => 'sandbox'],
+            ['mode' => null],
+        ] as $payload) {
+            $this->putJson('/api/admin/finance/payment-methods/stripe', $payload)->assertUnprocessable();
+        }
+
+        foreach (['paypal', 'airwallex', 'payoneer'] as $gateway) {
+            $this->putJson("/api/admin/finance/payment-methods/{$gateway}", ['mode' => 'test'])
+                ->assertUnprocessable();
+        }
+
+        $this->assertDatabaseMissing('settings', ['key' => 'arbitrary_setting']);
+        $this->assertDatabaseMissing('settings', ['key' => 'paypal_client_id']);
+
+        $this->putJson('/api/admin/finance/payment-methods/stripe', [
+            'fields' => ['stripe_secret' => 'replacement'],
+            'clear_fields' => ['stripe_secret'],
+        ])->assertUnprocessable();
+    }
+
+    public function test_unauthorized_update_does_not_change_settings(): void
+    {
+        Setting::set('stripe_secret', 'unchanged_secret', 'string', 'payment');
+        Sanctum::actingAs($this->userWithRole('Support'));
+
+        $this->putJson('/api/admin/finance/payment-methods/stripe', [
+            'fields' => ['stripe_secret' => 'forbidden_replacement'],
+        ])->assertForbidden();
+
+        $this->assertSame('unchanged_secret', Setting::where('key', 'stripe_secret')->value('value'));
+    }
+
+    public function test_update_evicts_every_raw_gateway_cache_key(): void
+    {
+        $keysByGateway = [
+            'stripe' => ['stripe_key', 'stripe_secret', 'stripe_webhook_secret'],
+            'paypal' => ['paypal_client_id', 'paypal_client_secret', 'paypal_mode', 'paypal_webhook_id', 'paypal_access_token_sandbox', 'paypal_access_token_live'],
+            'airwallex' => ['airwallex_client_id', 'airwallex_api_key', 'airwallex_webhook_secret', 'airwallex_mode', 'airwallex_access_token_sandbox', 'airwallex_access_token_live'],
+            'payoneer' => ['payoneer_merchant_code', 'payoneer_api_key', 'payoneer_api_secret', 'payoneer_webhook_secret', 'payoneer_mode'],
+        ];
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        foreach ($keysByGateway as $gateway => $keys) {
+            foreach ($keys as $key) {
+                Cache::put($key, 'stale');
+            }
+            $this->putJson("/api/admin/finance/payment-methods/{$gateway}", [])->assertOk();
+            foreach ($keys as $key) {
+                $this->assertFalse(Cache::has($key), "Expected {$key} to be evicted.");
+            }
         }
     }
 
