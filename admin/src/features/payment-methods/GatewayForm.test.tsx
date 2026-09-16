@@ -154,7 +154,9 @@ describe('GatewayForm', () => {
 
   it('allows confirmed clear-only saves, removes replacements from clear, and omits blank secrets', async () => {
     const rendered = renderForm(gatewayState('stripe'));
-    const clear = rendered.host.querySelector<HTMLButtonElement>('[data-action="remove-override"]')!;
+    const clear = Array.from(rendered.host.querySelectorAll<HTMLButtonElement>('[data-action="remove-override"]')).find(
+      (button) => button.closest('div')?.querySelector('label')?.textContent === 'Secret key',
+    )!;
     await click(clear);
     expect(saveButton(rendered.host).disabled).toBe(false);
 
@@ -163,7 +165,9 @@ describe('GatewayForm', () => {
     expect(mocks.updatePaymentMethod).toHaveBeenLastCalledWith('stripe', { clear_fields: ['stripe_secret'] });
 
     const replacement = renderForm(gatewayState('stripe'));
-    await click(replacement.host.querySelector<HTMLButtonElement>('[data-action="remove-override"]')!);
+    await click(Array.from(replacement.host.querySelectorAll<HTMLButtonElement>('[data-action="remove-override"]')).find(
+      (button) => button.closest('div')?.querySelector('label')?.textContent === 'Secret key',
+    )!);
     setInput(replacement.host, 'stripe-stripe_secret', 'replacement-after-clear');
     mocks.testPaymentMethod.mockResolvedValueOnce({ data: { gateway: 'stripe', status: 'connected', message: 'ok', mode: 'test' } });
     await click(testButton(replacement.host));
@@ -226,6 +230,75 @@ describe('GatewayForm', () => {
     expect(rendered.host.textContent).not.toContain(sentinel);
     expect(mocks.testPaymentMethod).toHaveBeenCalledWith('stripe', { mode: 'test', fields: { stripe_secret: sentinel } });
     queryClient.clear();
+    cleanup(rendered);
+  });
+
+  it('clears a non-secret database override with the approved warning and payload', async () => {
+    const rendered = renderForm(gatewayState('paypal'));
+    const clientIdClear = rendered.host.querySelector<HTMLButtonElement>('[data-action="remove-override"][data-field="paypal_client_id"]')!;
+
+    await click(clientIdClear);
+
+    expect(window.confirm).toHaveBeenCalledWith('Remove database override — this field will fall back to environment configuration if available. This does not remove or disable the environment value.');
+    expect(rendered.host.querySelector<HTMLInputElement>('#paypal-paypal_client_id')?.disabled).toBe(true);
+    expect(rendered.host.textContent).toContain('This does not remove or disable the environment value.');
+    expect(saveButton(rendered.host).disabled).toBe(false);
+
+    mocks.updatePaymentMethod.mockResolvedValueOnce({ data: rendered.gateway });
+    await click(saveButton(rendered.host));
+    expect(mocks.updatePaymentMethod).toHaveBeenLastCalledWith('paypal', { clear_fields: ['paypal_client_id'] });
+    cleanup(rendered);
+  });
+
+  it('allows a connection candidate converted to clear to save without an obsolete test', async () => {
+    const rendered = renderForm(gatewayState('stripe'));
+    setInput(rendered.host, 'stripe-stripe_secret', 'temporary-candidate');
+    expect(saveButton(rendered.host).disabled).toBe(true);
+
+    await click(Array.from(rendered.host.querySelectorAll<HTMLButtonElement>('[data-action="remove-override"]')).find(
+      (button) => button.closest('div')?.querySelector('label')?.textContent === 'Secret key',
+    )!);
+    expect(saveButton(rendered.host).disabled).toBe(false);
+
+    mocks.updatePaymentMethod.mockResolvedValueOnce({ data: rendered.gateway });
+    await click(saveButton(rendered.host));
+    expect(mocks.updatePaymentMethod).toHaveBeenLastCalledWith('stripe', { clear_fields: ['stripe_secret'] });
+    cleanup(rendered);
+  });
+
+  it('allows webhook-only save after reverting a connection value to its stored value', async () => {
+    const rendered = renderForm(gatewayState('paypal'));
+    setInput(rendered.host, 'paypal-paypal_client_id', 'temporary-client');
+    expect(saveButton(rendered.host).disabled).toBe(true);
+    setInput(rendered.host, 'paypal-paypal_client_id', 'paypal_client_id-stored');
+    setInput(rendered.host, 'paypal-paypal_webhook_id', 'webhook-after-revert');
+    expect(saveButton(rendered.host).disabled).toBe(false);
+
+    mocks.updatePaymentMethod.mockResolvedValueOnce({ data: rendered.gateway });
+    await click(saveButton(rendered.host));
+    expect(mocks.updatePaymentMethod).toHaveBeenLastCalledWith('paypal', { fields: { paypal_webhook_id: 'webhook-after-revert' } });
+    cleanup(rendered);
+  });
+
+  it('directly invalidates mode changes and removes the test requirement after mode revert', async () => {
+    const rendered = renderForm(gatewayState('paypal'));
+    const mode = rendered.host.querySelector<HTMLSelectElement>('#paypal-mode')!;
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(mode, 'live');
+      mode.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    expect(saveButton(rendered.host).disabled).toBe(true);
+
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(mode, 'sandbox');
+      mode.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    setInput(rendered.host, 'paypal-paypal_webhook_id', 'webhook-after-mode-revert');
+    expect(saveButton(rendered.host).disabled).toBe(false);
+
+    mocks.updatePaymentMethod.mockResolvedValueOnce({ data: rendered.gateway });
+    await click(saveButton(rendered.host));
+    expect(mocks.updatePaymentMethod).toHaveBeenLastCalledWith('paypal', { fields: { paypal_webhook_id: 'webhook-after-mode-revert' } });
     cleanup(rendered);
   });
 

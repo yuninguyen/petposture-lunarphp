@@ -105,8 +105,11 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
   }, [candidates, clearFields, definition, gateway.fields]);
 
   const modeChanged = mode !== gateway.mode;
+  const hasConnectionChanges = modeChanged || definition.fields.some(
+    (field) => field.connectionField && Object.prototype.hasOwnProperty.call(changedFields, field.key),
+  );
   const hasAnyChanges = modeChanged || Object.keys(changedFields).length > 0 || clearFields.size > 0;
-  const hasUntestedConnectionChanges = connectionRevision > 0 && testedRevision !== connectionRevision;
+  const hasUntestedConnectionChanges = hasConnectionChanges && testedRevision !== connectionRevision;
   const canSave = hasAnyChanges && !hasUntestedConnectionChanges && !isTesting && !isSaving;
 
   function changeMode(nextMode: string) {
@@ -222,15 +225,29 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
             />
           );
         }
+        const markedForClear = clearFields.has(field.key);
         return (
           <div key={field.key} className="space-y-2">
             <label htmlFor={`${gateway.gateway}-${field.key}`} className="text-sm font-medium text-ink">{label}</label>
             <Input
               id={`${gateway.gateway}-${field.key}`}
               value={candidates[field.key] ?? ''}
-              disabled={isTesting || isSaving}
+              disabled={isTesting || isSaving || markedForClear}
               onChange={(event) => changeCandidate(field, event.target.value)}
             />
+            {fieldState.source === 'database' && (
+              <Button
+                type="button"
+                variant="secondary"
+                data-action="remove-override"
+                data-field={field.key}
+                disabled={isTesting || isSaving || markedForClear}
+                onClick={() => requestClear(field)}
+              >
+                {markedForClear ? 'Database override marked for removal' : 'Remove database override'}
+              </Button>
+            )}
+            {markedForClear && <p role="alert" className="text-sm text-amber-700">{CLEAR_WARNING}</p>}
           </div>
         );
       })}
