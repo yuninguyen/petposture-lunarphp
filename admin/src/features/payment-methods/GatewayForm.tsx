@@ -141,6 +141,18 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
     setClearFields((current) => new Set(current).add(field.key));
   }
 
+  function undoClear(field: GatewayFieldDefinition) {
+    setCandidates((current) => ({
+      ...current,
+      [field.key]: field.secret ? '' : gateway.fields[field.key]?.value ?? '',
+    }));
+    setClearFields((current) => {
+      const next = new Set(current);
+      next.delete(field.key);
+      return next;
+    });
+  }
+
   async function testConnection() {
     setIsTesting(true);
     setError(null);
@@ -239,12 +251,12 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
               <Button
                 type="button"
                 variant="secondary"
-                data-action="remove-override"
+                data-action={markedForClear ? 'undo-remove-override' : 'remove-override'}
                 data-field={field.key}
-                disabled={isTesting || isSaving || markedForClear}
-                onClick={() => requestClear(field)}
+                disabled={isTesting || isSaving}
+                onClick={() => markedForClear ? undoClear(field) : requestClear(field)}
               >
-                {markedForClear ? 'Database override marked for removal' : 'Remove database override'}
+                {markedForClear ? 'Undo removal' : 'Remove database override'}
               </Button>
             )}
             {markedForClear && <p role="alert" className="text-sm text-amber-700">{CLEAR_WARNING}</p>}

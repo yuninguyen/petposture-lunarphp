@@ -250,6 +250,27 @@ describe('GatewayForm', () => {
     cleanup(rendered);
   });
 
+  it('undoes a non-secret clear and requires a current test for its replacement', async () => {
+    const rendered = renderForm(gatewayState('paypal'));
+    await click(rendered.host.querySelector<HTMLButtonElement>('[data-action="remove-override"][data-field="paypal_client_id"]')!);
+
+    const undo = rendered.host.querySelector<HTMLButtonElement>('[data-action="undo-remove-override"][data-field="paypal_client_id"]')!;
+    await click(undo);
+    expect(rendered.host.querySelector<HTMLInputElement>('#paypal-paypal_client_id')?.disabled).toBe(false);
+    expect(rendered.host.textContent).not.toContain('This does not remove or disable the environment value.');
+
+    setInput(rendered.host, 'paypal-paypal_client_id', 'replacement-client');
+    expect(saveButton(rendered.host).disabled).toBe(true);
+    mocks.testPaymentMethod.mockResolvedValueOnce({ data: { gateway: 'paypal', status: 'connected', message: 'Connected.', mode: 'sandbox' } });
+    await click(testButton(rendered.host));
+    expect(saveButton(rendered.host).disabled).toBe(false);
+
+    mocks.updatePaymentMethod.mockResolvedValueOnce({ data: rendered.gateway });
+    await click(saveButton(rendered.host));
+    expect(mocks.updatePaymentMethod).toHaveBeenLastCalledWith('paypal', { fields: { paypal_client_id: 'replacement-client' } });
+    cleanup(rendered);
+  });
+
   it('allows a connection candidate converted to clear to save without an obsolete test', async () => {
     const rendered = renderForm(gatewayState('stripe'));
     setInput(rendered.host, 'stripe-stripe_secret', 'temporary-candidate');
