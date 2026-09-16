@@ -163,6 +163,7 @@
   "payment_methods.errors.save_failed": "Không thể lưu phương thức thanh toán.",
   "payment_methods.errors.provider_rejected": "Nhà cung cấp đã từ chối thông tin xác thực.",
   "payment_methods.errors.provider_unavailable": "Không thể kết nối với nhà cung cấp. Vui lòng thử lại.",
+  "payment_methods.payoneer_credentials_present": "Đã có đủ thông tin xác thực bắt buộc. Kết nối Payoneer đầy đủ chưa được xác minh.",
   "payment_methods.payoneer_test_limitation": "Payoneer chỉ có thể xác nhận thông tin xác thực đã được cung cấp, nhưng không thể kiểm tra kết nối.",
   "profile.title": "Hồ sơ cá nhân",
   "profile.subtitle": "Quản lý thông tin tài khoản quản trị viên và xem hoạt động hệ thống",

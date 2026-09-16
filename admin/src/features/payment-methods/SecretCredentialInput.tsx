@@ -13,6 +13,7 @@ export interface SecretCredentialInputProps {
   markedForClear: boolean;
   onChange(value: string): void;
   onRequestClear(): void;
+  onUndoClear(): void;
 }
 
 export function SecretCredentialInput({
@@ -24,6 +25,7 @@ export function SecretCredentialInput({
   markedForClear,
   onChange,
   onRequestClear,
+  onUndoClear,
 }: SecretCredentialInputProps) {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
@@ -40,13 +42,13 @@ export function SecretCredentialInput({
         {field.source === 'database' && (
           <button
             type="button"
-            data-action="remove-override"
-            disabled={disabled || markedForClear}
-            onClick={onRequestClear}
+            data-action={markedForClear ? 'undo-remove-override' : 'remove-override'}
+            disabled={disabled}
+            onClick={markedForClear ? onUndoClear : onRequestClear}
             className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
           >
             {markedForClear
-              ? t('payment_methods.override_marked_for_removal', { defaultValue: 'Database override marked for removal' })
+              ? t('payment_methods.undo_remove_override', { defaultValue: 'Undo removal' })
               : t('payment_methods.remove_override', { defaultValue: 'Remove database override' })}
           </button>
         )}

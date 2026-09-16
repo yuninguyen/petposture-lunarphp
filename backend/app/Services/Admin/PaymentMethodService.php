@@ -260,7 +260,7 @@ class PaymentMethodService
             'data' => [
                 'gateway' => 'payoneer',
                 'status' => 'credentials_present',
-                'message' => 'Payoneer credentials are present. Full connectivity is not verified.',
+                'message' => 'Required credentials are present. Full Payoneer connectivity is not verified.',
                 'mode' => $mode,
             ],
         ];

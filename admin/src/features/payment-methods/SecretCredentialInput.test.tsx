@@ -31,6 +31,7 @@ function renderInput(field: PaymentFieldState, overrides: Partial<Parameters<typ
     markedForClear: false,
     onChange: vi.fn(),
     onRequestClear: vi.fn(),
+    onUndoClear: vi.fn(),
     ...overrides,
   };
   act(() => root.render(createElement(SecretCredentialInput, props)));
@@ -50,7 +51,7 @@ describe('SecretCredentialInput', () => {
       { markedForClear: true },
     );
 
-    expect(host.textContent).toContain(viLocale['payment_methods.override_marked_for_removal']);
+    expect(host.textContent).toContain(viLocale['payment_methods.undo_remove_override']);
     expect(host.textContent).toContain(viLocale['payment_methods.hints.configured_database']);
     expect(host.querySelector('[data-action="toggle-secret"]')?.getAttribute('aria-label')).toBe(viLocale['payment_methods.show_candidate_credential']);
     expect(host.querySelector('[role="alert"]')?.textContent).toBe('Xóa giá trị ghi đè trong cơ sở dữ liệu — trường này sẽ quay về cấu hình môi trường nếu có. Thao tác này không xóa hoặc vô hiệu hóa giá trị môi trường.');

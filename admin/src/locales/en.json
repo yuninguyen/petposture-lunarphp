@@ -163,6 +163,7 @@
   "payment_methods.errors.save_failed": "Payment method could not be saved.",
   "payment_methods.errors.provider_rejected": "The provider rejected the credentials.",
   "payment_methods.errors.provider_unavailable": "The provider could not be reached. Try again.",
+  "payment_methods.payoneer_credentials_present": "Required credentials are present. Full Payoneer connectivity is not verified.",
   "payment_methods.payoneer_test_limitation": "Payoneer can confirm that credentials are present, but cannot verify connectivity.",
   "profile.title": "Profile",
   "profile.subtitle": "Manage your administrator account credentials and view system activity",

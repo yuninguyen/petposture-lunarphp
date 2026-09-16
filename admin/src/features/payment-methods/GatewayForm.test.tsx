@@ -101,6 +101,44 @@ beforeEach(() => {
 });
 
 describe('GatewayForm', () => {
+  it.each(['en', 'vi'] as const)('sanitizes test and save failures in %s', async (locale) => {
+    language = locale;
+    const dictionary = locale === 'vi' ? viLocale : en;
+    const sentinel = 'SECRET-ERROR-SENTINEL-never-render';
+    for (const status of [422, 502, 500, undefined]) {
+      const rendered = renderForm();
+      const error = Object.assign(new Error(sentinel), { status, data: { message: sentinel } });
+      mocks.testPaymentMethod.mockRejectedValueOnce(error);
+      await click(Array.from(rendered.host.querySelectorAll<HTMLButtonElement>('button')).find(
+        (button) => button.textContent === dictionary['payment_methods.test'],
+      )!);
+      expect(rendered.host.querySelector('[role="alert"]')?.textContent).toBe(dictionary[
+        status === 422 ? 'payment_methods.errors.provider_rejected' : 'payment_methods.errors.provider_unavailable'
+      ]);
+      expect(rendered.host.innerHTML).not.toContain(sentinel);
+      setInput(rendered.host, 'stripe-stripe_webhook_secret', 'candidate');
+      mocks.updatePaymentMethod.mockRejectedValueOnce(error);
+      await click(rendered.host.querySelector<HTMLButtonElement>('button[type="submit"]')!);
+      expect(rendered.host.querySelector('[role="alert"]')?.textContent).toBe(dictionary['payment_methods.errors.save_failed']);
+      expect(rendered.host.innerHTML).not.toContain(sentinel);
+      cleanup(rendered);
+    }
+  });
+
+  it.each(['en', 'vi'] as const)('localizes the Payoneer success limitation in %s', async (locale) => {
+    language = locale;
+    const dictionary = locale === 'vi' ? viLocale : en;
+    const rendered = renderForm(gatewayState('payoneer'));
+    mocks.testPaymentMethod.mockResolvedValueOnce({ data: {
+      gateway: 'payoneer', status: 'credentials_present', mode: 'sandbox',
+      message: 'Required credentials are present. Full Payoneer connectivity is not verified.',
+    } });
+    await click(Array.from(rendered.host.querySelectorAll<HTMLButtonElement>('button')).find(
+      (button) => button.textContent === dictionary['payment_methods.test'],
+    )!);
+    expect(rendered.host.querySelector('[role="status"]')?.textContent).toBe(dictionary['payment_methods.payoneer_credentials_present' as keyof typeof en]);
+    cleanup(rendered);
+  });
   it('renders modes and override controls in Vietnamese and confirms with the exact warning', async () => {
     language = 'vi';
     const rendered = renderForm(gatewayState('paypal'));
@@ -192,7 +230,16 @@ describe('GatewayForm', () => {
     await click(Array.from(replacement.host.querySelectorAll<HTMLButtonElement>('[data-action="remove-override"]')).find(
       (button) => button.closest('div')?.querySelector('label')?.textContent === 'Secret key',
     )!);
+    expect(replacement.host.querySelector<HTMLInputElement>('#stripe-stripe_secret')?.disabled).toBe(true);
+    const undo = replacement.host.querySelector<HTMLButtonElement>('[data-action="undo-remove-override"]');
+    expect(undo).not.toBeNull();
+    await click(undo!);
+    expect(replacement.host.querySelector<HTMLInputElement>('#stripe-stripe_secret')?.value).toBe('');
+    expect(replacement.host.querySelector<HTMLInputElement>('#stripe-stripe_secret')?.disabled).toBe(false);
+    expect(replacement.host.querySelector('[role="alert"]')).toBeNull();
+    expect(saveButton(replacement.host).disabled).toBe(true);
     setInput(replacement.host, 'stripe-stripe_secret', 'replacement-after-clear');
+    expect(saveButton(replacement.host).disabled).toBe(true);
     mocks.testPaymentMethod.mockResolvedValueOnce({ data: { gateway: 'stripe', status: 'connected', message: 'ok', mode: 'test' } });
     await click(testButton(replacement.host));
     mocks.updatePaymentMethod.mockResolvedValueOnce({ data: replacement.gateway });

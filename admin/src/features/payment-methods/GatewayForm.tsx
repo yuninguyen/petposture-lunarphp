@@ -172,7 +172,10 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
     } catch (caught) {
       setTestResult(null);
       setTestedRevision(null);
-      setError(caught instanceof Error ? caught.message : t('payment_methods.errors.test_failed', { defaultValue: 'Connection test failed.' }));
+      const rejected = caught instanceof Error && 'status' in caught && caught.status === 422;
+      setError(rejected
+        ? t('payment_methods.errors.provider_rejected', { defaultValue: 'The provider rejected the credentials.' })
+        : t('payment_methods.errors.provider_unavailable', { defaultValue: 'The provider could not be reached. Try again.' }));
     } finally {
       setIsTesting(false);
     }
@@ -194,8 +197,8 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
       setTestedRevision(null);
       setTestResult(null);
       onSaved(response.data);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t('payment_methods.errors.save_failed', { defaultValue: 'Payment method could not be saved.' }));
+    } catch {
+      setError(t('payment_methods.errors.save_failed', { defaultValue: 'Payment method could not be saved.' }));
     } finally {
       setIsSaving(false);
     }
@@ -237,6 +240,7 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
               markedForClear={clearFields.has(field.key)}
               onChange={(value) => changeCandidate(field, value)}
               onRequestClear={() => requestClear(field)}
+              onUndoClear={() => undoClear(field)}
             />
           );
         }
@@ -274,7 +278,9 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
           {t('payment_methods.payoneer_test_limitation', { defaultValue: 'Payoneer can confirm that credentials are present, but cannot verify connectivity.' })}
         </p>
       )}
-      {testResult && <p role="status" className="text-sm text-green-700">{testResult.message}</p>}
+      {testResult && <p role="status" className="text-sm text-green-700">{testResult.status === 'credentials_present'
+        ? t('payment_methods.payoneer_credentials_present', { defaultValue: 'Required credentials are present. Full Payoneer connectivity is not verified.' })
+        : testResult.message}</p>}
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
       <div className="flex gap-3">

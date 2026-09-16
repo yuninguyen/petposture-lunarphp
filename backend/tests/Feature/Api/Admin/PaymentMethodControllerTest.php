@@ -509,6 +509,7 @@ class PaymentMethodControllerTest extends TestCase
         ])->assertOk()
             ->assertJsonPath('data.gateway', 'payoneer')
             ->assertJsonPath('data.status', 'credentials_present')
+            ->assertJsonPath('data.message', 'Required credentials are present. Full Payoneer connectivity is not verified.')
             ->assertJsonPath('data.mode', 'live');
 
         Http::assertNothingSent();
