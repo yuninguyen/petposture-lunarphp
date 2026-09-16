@@ -26,6 +26,9 @@ interface GatewayFormDefinition {
 
 export interface GatewayFormProps {
   gateway: PaymentMethodState;
+  webhookUrl: string;
+  copyStatus: 'copied' | 'error' | null;
+  onCopyWebhookUrl(): void;
   onSaved(next: PaymentMethodState): void;
 }
 
@@ -69,7 +72,7 @@ function initialCandidates(gateway: PaymentMethodState, definition: GatewayFormD
   return Object.fromEntries(definition.fields.map((field) => [field.key, field.secret ? '' : gateway.fields[field.key]?.value ?? '']));
 }
 
-export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
+export function GatewayForm({ gateway, webhookUrl, copyStatus, onCopyWebhookUrl, onSaved }: GatewayFormProps) {
   const { t } = useTranslation();
   const definition = GATEWAY_FORMS[gateway.gateway];
   const clearWarning = t('payment_methods.clear_confirmation', { defaultValue: 'Remove database override — this field will fall back to environment configuration if available. This does not remove or disable the environment value.' });
@@ -206,23 +209,49 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
 
   return (
     <form className="space-y-6" onSubmit={(event) => { event.preventDefault(); void save(); }}>
-      <div className="space-y-2">
-        <label htmlFor={`${gateway.gateway}-mode`} className="text-sm font-medium text-ink">
-          {t('payment_methods.mode', { defaultValue: 'Mode' })}
-        </label>
-        <select
-          id={`${gateway.gateway}-mode`}
-          value={mode}
-          disabled={isTesting || isSaving}
-          onChange={(event) => changeMode(event.target.value)}
-          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-ink"
-        >
-          {definition.modes.map((option) => (
-            <option key={option} value={option}>
-              {t(`payment_methods.modes.${option}`, { defaultValue: option })}
-            </option>
-          ))}
-        </select>
+      <div data-testid="mode-webhook-row" className="flex flex-col gap-4 sm:flex-row sm:items-end">
+        <div className="space-y-2 sm:w-48">
+          <label htmlFor={`${gateway.gateway}-mode`} className="text-sm font-medium text-ink">
+            {t('payment_methods.mode', { defaultValue: 'Mode' })}
+          </label>
+          <select
+            id={`${gateway.gateway}-mode`}
+            value={mode}
+            disabled={isTesting || isSaving}
+            onChange={(event) => changeMode(event.target.value)}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            {definition.modes.map((option) => (
+              <option key={option} value={option}>
+                {t(`payment_methods.modes.${option}`, { defaultValue: option })}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="min-w-0 flex-1 space-y-2">
+          <label htmlFor={`${gateway.gateway}-webhook-url`} className="text-sm font-medium text-slate-700">
+            {t('payment_methods.webhook_url', { defaultValue: 'Webhook URL' })}
+          </label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              id={`${gateway.gateway}-webhook-url`}
+              type="text"
+              readOnly
+              value={webhookUrl}
+              className="min-w-0 flex-1 rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+            />
+            <button
+              type="button"
+              onClick={onCopyWebhookUrl}
+              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              {t('payment_methods.copy_webhook_url', { defaultValue: 'Copy webhook URL' })}
+            </button>
+          </div>
+          {copyStatus === 'copied' && <p role="status" className="text-sm text-green-700">{t('payment_methods.webhook_copied', { defaultValue: 'Webhook URL copied.' })}</p>}
+          {copyStatus === 'error' && <p role="alert" className="text-sm text-red-600">{t('payment_methods.webhook_copy_error', { defaultValue: 'Webhook URL could not be copied.' })}</p>}
+        </div>
       </div>
 
       {definition.fields.map((field) => {

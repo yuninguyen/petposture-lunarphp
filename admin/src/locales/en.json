@@ -128,7 +128,7 @@
   "payment_methods.fields.payoneer_api_secret": "API secret",
   "payment_methods.fields.payoneer_webhook_secret": "Webhook secret",
   "payment_methods.mode": "Mode",
-  "payment_methods.modes.test": "Test",
+  "payment_methods.modes.test": "Sandbox",
   "payment_methods.modes.sandbox": "Sandbox",
   "payment_methods.modes.live": "Live",
   "payment_methods.configured": "Configured",

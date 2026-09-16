@@ -65,8 +65,16 @@ function renderForm(gateway = gatewayState('stripe')) {
   document.body.appendChild(host);
   const root = createRoot(host);
   const onSaved = vi.fn();
-  act(() => root.render(createElement(GatewayForm, { gateway, onSaved })));
-  return { host, root, onSaved, gateway };
+  const onCopyWebhookUrl = vi.fn();
+  const props = {
+    gateway,
+    webhookUrl: gateway.webhook_url,
+    copyStatus: null,
+    onCopyWebhookUrl,
+    onSaved,
+  } as const;
+  act(() => root.render(createElement(GatewayForm, props)));
+  return { host, root, onSaved, onCopyWebhookUrl, gateway, props };
 }
 
 function setInput(host: HTMLElement, id: string, value: string) {
@@ -101,6 +109,30 @@ beforeEach(() => {
 });
 
 describe('GatewayForm', () => {
+  it('renders Stripe test mode as Sandbox beside the webhook URL and delegates copying', async () => {
+    const rendered = renderForm(gatewayState('stripe'));
+
+    expect(Array.from(rendered.host.querySelectorAll('option')).map((option) => option.textContent)).toEqual(['Sandbox', 'Live']);
+    expect(rendered.host.querySelector<HTMLSelectElement>('#stripe-mode')).toHaveClass('rounded-lg', 'border-slate-300', 'text-slate-700', 'focus:ring-1', 'focus:ring-primary');
+    expect(rendered.host.querySelector<HTMLInputElement>('#stripe-webhook-url')).toHaveValue('https://example.test/stripe');
+    expect(rendered.host.querySelector<HTMLInputElement>('#stripe-webhook-url')).toHaveAttribute('readonly');
+
+    const modeRow = rendered.host.querySelector('[data-testid="mode-webhook-row"]');
+    expect(modeRow).toContainElement(rendered.host.querySelector('#stripe-mode'));
+    expect(modeRow).toContainElement(rendered.host.querySelector('#stripe-webhook-url'));
+
+    await click(Array.from(rendered.host.querySelectorAll<HTMLButtonElement>('button')).find((button) => button.textContent === 'Copy webhook URL')!);
+    expect(rendered.onCopyWebhookUrl).toHaveBeenCalledTimes(1);
+    cleanup(rendered);
+  });
+
+  it.each(['copied', 'error'] as const)('renders webhook copy status %s inside the form', (copyStatus) => {
+    const rendered = renderForm();
+    act(() => rendered.root.render(createElement(GatewayForm, { ...rendered.props, copyStatus })));
+    expect(rendered.host.querySelector(copyStatus === 'copied' ? '[role="status"]' : '[role="alert"]')).not.toBeNull();
+    cleanup(rendered);
+  });
+
   it.each(['en', 'vi'] as const)('sanitizes test and save failures in %s', async (locale) => {
     language = locale;
     const dictionary = locale === 'vi' ? viLocale : en;
@@ -276,7 +308,11 @@ describe('GatewayForm', () => {
     next.fields.stripe_secret = { configured: true, source: 'environment', hint: 'Configured by environment.' };
     mocks.updatePaymentMethod.mockResolvedValueOnce({ data: next });
     await click(saveButton(rendered.host));
-    act(() => rendered.root.render(createElement(GatewayForm, { gateway: next, onSaved: rendered.onSaved })));
+    act(() => rendered.root.render(createElement(GatewayForm, {
+      ...rendered.props,
+      gateway: next,
+      webhookUrl: next.webhook_url,
+    })));
 
     expect(rendered.onSaved).toHaveBeenCalledWith(next);
     expect(rendered.host.querySelector<HTMLInputElement>('#stripe-stripe_secret')?.value).toBe('');
