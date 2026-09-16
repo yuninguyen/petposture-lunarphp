@@ -4,8 +4,11 @@ namespace App\Services\Admin;
 
 use App\Models\Setting;
 use Illuminate\Support\Collection;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
+use Throwable;
 
 class PaymentMethodService
 {
@@ -97,6 +100,56 @@ class PaymentMethodService
         return $this->definition($gateway)['mode']['values'];
     }
 
+    public function connectionFieldNames(string $gateway): array
+    {
+        return collect($this->definition($gateway)['fields'])
+            ->filter(fn (array $field): bool => $field['test'])
+            ->keys()
+            ->all();
+    }
+
+    public function testConnection(string $gateway, array $payload): array
+    {
+        $definition = $this->definition($gateway);
+        $database = $this->databaseValues([
+            ...$this->connectionFieldNames($gateway),
+            $definition['mode']['key'],
+        ]);
+        $credentials = [];
+
+        foreach ($this->connectionFieldNames($gateway) as $key) {
+            $credentials[$key] = $this->candidateValue($payload, $key, $definition['fields'][$key], $database);
+        }
+
+        $mode = $this->testMode($payload, $definition, $database);
+        $missing = $this->missingRequiredTestFields($gateway, $credentials);
+
+        if ($missing !== []) {
+            return [
+                'status_code' => 422,
+                'data' => [
+                    'gateway' => $gateway,
+                    'status' => 'missing_credentials',
+                    'message' => 'Required credentials are not configured.',
+                    'mode' => $mode,
+                ],
+            ];
+        }
+
+        try {
+            return match ($gateway) {
+                'stripe' => $this->testStripe($credentials, $mode),
+                'paypal' => $this->testPayPal($credentials, $mode),
+                'airwallex' => $this->testAirwallex($credentials, $mode),
+                'payoneer' => $this->testPayoneer($credentials, $mode),
+            };
+        } catch (ConnectionException) {
+            return $this->connectionError($gateway, $mode);
+        } catch (Throwable) {
+            return $this->connectionError($gateway, $mode);
+        }
+    }
+
     public function update(string $gateway, array $payload): array
     {
         $definition = $this->definition($gateway);
@@ -127,6 +180,124 @@ class PaymentMethodService
     public function hasGateway(string $gateway): bool
     {
         return array_key_exists($gateway, self::GATEWAYS);
+    }
+
+    private function candidateValue(array $payload, string $key, array $field, Collection $database): string
+    {
+        $candidate = $payload['fields'][$key] ?? null;
+
+        if (is_string($candidate) && trim($candidate) !== '') {
+            return $candidate;
+        }
+
+        $databaseValue = $database->get($key);
+        if ($this->hasValue($databaseValue)) {
+            return (string) $databaseValue;
+        }
+
+        $environmentValue = config($field['config']);
+
+        return $this->hasValue($environmentValue) ? (string) $environmentValue : '';
+    }
+
+    private function testMode(array $payload, array $definition, Collection $database): string
+    {
+        $candidate = $payload['mode'] ?? null;
+        if (is_string($candidate) && in_array($candidate, $definition['mode']['values'], true)) {
+            return $candidate;
+        }
+
+        return $this->effectiveMode($definition, $database);
+    }
+
+    private function missingRequiredTestFields(string $gateway, array $resolved): array
+    {
+        return collect($this->definition($gateway)['required'])
+            ->filter(fn (string $key): bool => ! $this->hasValue($resolved[$key] ?? null))
+            ->values()
+            ->all();
+    }
+
+    private function testStripe(array $credentials, string $mode): array
+    {
+        $response = Http::withBasicAuth($credentials['stripe_secret'], '')
+            ->get('https://api.stripe.com/v1/account');
+
+        return $response->successful()
+            ? $this->connected('stripe', 'Stripe connection verified.', $mode)
+            : $this->rejected('stripe', $mode);
+    }
+
+    private function testPayPal(array $credentials, string $mode): array
+    {
+        $baseUrl = $mode === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+        $response = Http::asForm()
+            ->withBasicAuth($credentials['paypal_client_id'], $credentials['paypal_client_secret'])
+            ->post($baseUrl.'/v1/oauth2/token', ['grant_type' => 'client_credentials']);
+
+        return $response->successful()
+            ? $this->connected('paypal', 'PayPal connection verified.', $mode)
+            : $this->rejected('paypal', $mode);
+    }
+
+    private function testAirwallex(array $credentials, string $mode): array
+    {
+        $baseUrl = $mode === 'live' ? 'https://api.airwallex.com' : 'https://api-demo.airwallex.com';
+        $response = Http::withHeaders([
+            'x-client-id' => $credentials['airwallex_client_id'],
+            'x-api-key' => $credentials['airwallex_api_key'],
+        ])->post($baseUrl.'/api/v1/authentication/login');
+
+        return $response->successful()
+            ? $this->connected('airwallex', 'Airwallex connection verified.', $mode)
+            : $this->rejected('airwallex', $mode);
+    }
+
+    private function testPayoneer(array $credentials, string $mode): array
+    {
+        return [
+            'status_code' => 200,
+            'data' => [
+                'gateway' => 'payoneer',
+                'status' => 'credentials_present',
+                'message' => 'Payoneer credentials are present. Full connectivity is not verified.',
+                'mode' => $mode,
+            ],
+        ];
+    }
+
+    private function connected(string $gateway, string $message, string $mode): array
+    {
+        return [
+            'status_code' => 200,
+            'data' => compact('gateway', 'message', 'mode') + ['status' => 'connected'],
+        ];
+    }
+
+    private function rejected(string $gateway, string $mode): array
+    {
+        return [
+            'status_code' => 422,
+            'data' => [
+                'gateway' => $gateway,
+                'status' => 'rejected',
+                'message' => 'The payment provider rejected the credentials.',
+                'mode' => $mode,
+            ],
+        ];
+    }
+
+    private function connectionError(string $gateway, string $mode): array
+    {
+        return [
+            'status_code' => 502,
+            'data' => [
+                'gateway' => $gateway,
+                'status' => 'connection_error',
+                'message' => 'Unable to connect to the payment provider.',
+                'mode' => $mode,
+            ],
+        ];
     }
 
     private function definition(string $gateway): array

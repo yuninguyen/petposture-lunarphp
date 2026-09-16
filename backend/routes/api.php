@@ -326,6 +326,8 @@ Route::prefix('/admin')
             Route::get('/finance/payment-methods', [PaymentMethodController::class, 'index']);
             Route::put('/finance/payment-methods/{gateway}', [PaymentMethodController::class, 'update'])
                 ->where('gateway', 'stripe|paypal|airwallex|payoneer');
+            Route::post('/finance/payment-methods/{gateway}/test', [PaymentMethodController::class, 'test'])
+                ->where('gateway', 'stripe|paypal|airwallex|payoneer');
 
             Route::get('/shipping-methods', [ShippingMethodController::class, 'index']);
             Route::post('/shipping-methods', [ShippingMethodController::class, 'store']);
