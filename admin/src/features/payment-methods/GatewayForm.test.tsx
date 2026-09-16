@@ -2,6 +2,10 @@ import { act, createElement } from 'react';
 import { QueryClient } from '@tanstack/react-query';
 import { createRoot } from 'react-dom/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import en from '../../locales/en.json';
+import viLocale from '../../locales/vi.json';
+
+let language: 'en' | 'vi' = 'en';
 
 const mocks = vi.hoisted(() => ({
   testPaymentMethod: vi.fn(),
@@ -9,7 +13,11 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (_key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? _key }),
+  useTranslation: () => ({
+    t: (key: string, options?: { defaultValue?: string }) => (
+      (language === 'vi' ? viLocale : en)[key as keyof typeof en] ?? options?.defaultValue ?? key
+    ),
+  }),
 }));
 vi.mock('./api', async (importOriginal) => ({
   ...await importOriginal<typeof import('./api')>(),
@@ -87,11 +95,27 @@ function cleanup(rendered: ReturnType<typeof renderForm>) {
 }
 
 beforeEach(() => {
+  language = 'en';
   vi.clearAllMocks();
   vi.spyOn(window, 'confirm').mockReturnValue(true);
 });
 
 describe('GatewayForm', () => {
+  it('renders modes and override controls in Vietnamese and confirms with the exact warning', async () => {
+    language = 'vi';
+    const rendered = renderForm(gatewayState('paypal'));
+
+    expect(Array.from(rendered.host.querySelectorAll('option')).map((option) => option.textContent)).toEqual([
+      viLocale['payment_methods.modes.sandbox'],
+      viLocale['payment_methods.modes.live'],
+    ]);
+    await click(rendered.host.querySelector<HTMLButtonElement>('[data-action="remove-override"][data-field="paypal_client_id"]')!);
+    expect(window.confirm).toHaveBeenCalledWith('Xóa giá trị ghi đè trong cơ sở dữ liệu — trường này sẽ quay về cấu hình môi trường nếu có. Thao tác này không xóa hoặc vô hiệu hóa giá trị môi trường.');
+    expect(rendered.host.textContent).toContain(viLocale['payment_methods.undo_remove_override']);
+
+    cleanup(rendered);
+  });
+
   it('prefills non-secret fields, keeps secrets blank, and starts with Save disabled', () => {
     const rendered = renderForm(gatewayState('paypal'));
     expect(rendered.host.querySelector<HTMLInputElement>('#paypal-paypal_client_id')?.value).toBe('paypal_client_id-stored');

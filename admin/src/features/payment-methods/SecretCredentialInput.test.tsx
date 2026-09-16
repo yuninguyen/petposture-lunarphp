@@ -1,6 +1,18 @@
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
+import en from '../../locales/en.json';
+import viLocale from '../../locales/vi.json';
+
+let language: 'en' | 'vi' = 'en';
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { defaultValue?: string }) => (
+      (language === 'vi' ? viLocale : en)[key as keyof typeof en] ?? options?.defaultValue ?? key
+    ),
+  }),
+}));
 
 import { SecretCredentialInput } from './SecretCredentialInput';
 import type { PaymentFieldState } from './api';
@@ -31,6 +43,22 @@ function cleanup(host: HTMLElement, root: ReturnType<typeof createRoot>) {
 }
 
 describe('SecretCredentialInput', () => {
+  it('renders translated actions, status, reveal label, and exact Vietnamese clear warning', () => {
+    language = 'vi';
+    const { host, root } = renderInput(
+      { configured: true, source: 'database' },
+      { markedForClear: true },
+    );
+
+    expect(host.textContent).toContain(viLocale['payment_methods.override_marked_for_removal']);
+    expect(host.textContent).toContain(viLocale['payment_methods.hints.configured_database']);
+    expect(host.querySelector('[data-action="toggle-secret"]')?.getAttribute('aria-label')).toBe(viLocale['payment_methods.show_candidate_credential']);
+    expect(host.querySelector('[role="alert"]')?.textContent).toBe('Xóa giá trị ghi đè trong cơ sở dữ liệu — trường này sẽ quay về cấu hình môi trường nếu có. Thao tác này không xóa hoặc vô hiệu hóa giá trị môi trường.');
+
+    cleanup(host, root);
+    language = 'en';
+  });
+
   it('starts blank and renders only safe configured status without fake masks', () => {
     const { host, root } = renderInput({ configured: true, source: 'database', hint: 'Configured in database.' });
     const input = host.querySelector<HTMLInputElement>('#gateway-secret')!;

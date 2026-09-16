@@ -192,6 +192,8 @@ describe('admin navigation semantic authorization', () => {
       'payment_methods.remove_override',
       'payment_methods.undo_remove_override',
       'payment_methods.override_marked_for_removal',
+      'payment_methods.show_candidate_credential',
+      'payment_methods.hide_candidate_credential',
       'payment_methods.clear_confirmation',
       'payment_methods.loading',
       'payment_methods.error',

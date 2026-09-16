@@ -25,6 +25,7 @@ vi.mock('./features/affiliate-reports/AffiliateReportsPage', () => ({ AffiliateR
 vi.mock('./features/affiliate-networks/AffiliateNetworksPage', () => ({ AffiliateNetworksPage: () => createElement('div', null, 'Affiliate networks route') }));
 
 import { AppRoutes, canDeleteReviews, canManageCommerce, canManageCustomers, canManageDiscounts, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute, ADMIN_HOME_CANDIDATES, HomeRouteCandidate } from './App';
+import { canAccessFinance } from './navigation/adminNavigation';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -304,6 +305,21 @@ describe('admin home route resolution', () => {
     await act(async () => await Promise.resolve());
 
     expect(host.textContent).toContain(expectedRoute);
+    expect(host.textContent).not.toContain('Payment methods route');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it.each([
+    ['customer', ['customer']],
+    ['unknown role', ['guest']],
+    ['empty roles', []],
+  ])('fails closed for Payment Methods when finance access is denied to %s', async (_case, userRoles) => {
+    expect(canAccessFinance(userRoles)).toBe(false);
+    const { host, root } = renderRoutes(userRoles, '/finance/payment-methods');
+    await act(async () => await Promise.resolve());
+
     expect(host.textContent).not.toContain('Payment methods route');
 
     act(() => root.unmount());

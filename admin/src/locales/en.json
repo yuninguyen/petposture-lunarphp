@@ -153,6 +153,8 @@
   "payment_methods.remove_override": "Remove database override",
   "payment_methods.undo_remove_override": "Undo removal",
   "payment_methods.override_marked_for_removal": "Database override marked for removal",
+  "payment_methods.show_candidate_credential": "Show candidate credential",
+  "payment_methods.hide_candidate_credential": "Hide candidate credential",
   "payment_methods.clear_confirmation": "Remove database override — this field will fall back to environment configuration if available. This does not remove or disable the environment value.",
   "payment_methods.loading": "Loading payment methods…",
   "payment_methods.error": "Payment methods could not be loaded.",

@@ -29,8 +29,6 @@ export interface GatewayFormProps {
   onSaved(next: PaymentMethodState): void;
 }
 
-const CLEAR_WARNING = 'Remove database override — this field will fall back to environment configuration if available. This does not remove or disable the environment value.';
-
 const GATEWAY_FORMS: Record<PaymentGateway, GatewayFormDefinition> = {
   stripe: {
     modes: ['test', 'live'],
@@ -74,6 +72,7 @@ function initialCandidates(gateway: PaymentMethodState, definition: GatewayFormD
 export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
   const { t } = useTranslation();
   const definition = GATEWAY_FORMS[gateway.gateway];
+  const clearWarning = t('payment_methods.clear_confirmation', { defaultValue: 'Remove database override — this field will fall back to environment configuration if available. This does not remove or disable the environment value.' });
   const [mode, setMode] = useState(gateway.mode);
   const [candidates, setCandidates] = useState<Record<string, string>>(() => initialCandidates(gateway, definition));
   const [clearFields, setClearFields] = useState<Set<string>>(new Set());
@@ -136,7 +135,7 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
   }
 
   function requestClear(field: GatewayFieldDefinition) {
-    if (!window.confirm(CLEAR_WARNING)) return;
+    if (!window.confirm(clearWarning)) return;
     setCandidates((current) => ({ ...current, [field.key]: '' }));
     setClearFields((current) => new Set(current).add(field.key));
   }
@@ -173,7 +172,7 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
     } catch (caught) {
       setTestResult(null);
       setTestedRevision(null);
-      setError(caught instanceof Error ? caught.message : 'Connection test failed.');
+      setError(caught instanceof Error ? caught.message : t('payment_methods.errors.test_failed', { defaultValue: 'Connection test failed.' }));
     } finally {
       setIsTesting(false);
     }
@@ -196,7 +195,7 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
       setTestResult(null);
       onSaved(response.data);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Payment method could not be saved.');
+      setError(caught instanceof Error ? caught.message : t('payment_methods.errors.save_failed', { defaultValue: 'Payment method could not be saved.' }));
     } finally {
       setIsSaving(false);
     }
@@ -215,7 +214,11 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
           onChange={(event) => changeMode(event.target.value)}
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-ink"
         >
-          {definition.modes.map((option) => <option key={option} value={option}>{option}</option>)}
+          {definition.modes.map((option) => (
+            <option key={option} value={option}>
+              {t(`payment_methods.modes.${option}`, { defaultValue: option })}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -256,10 +259,12 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
                 disabled={isTesting || isSaving}
                 onClick={() => markedForClear ? undoClear(field) : requestClear(field)}
               >
-                {markedForClear ? 'Undo removal' : 'Remove database override'}
+                {markedForClear
+                  ? t('payment_methods.undo_remove_override', { defaultValue: 'Undo removal' })
+                  : t('payment_methods.remove_override', { defaultValue: 'Remove database override' })}
               </Button>
             )}
-            {markedForClear && <p role="alert" className="text-sm text-amber-700">{CLEAR_WARNING}</p>}
+            {markedForClear && <p role="alert" className="text-sm text-amber-700">{clearWarning}</p>}
           </div>
         );
       })}
@@ -277,7 +282,7 @@ export function GatewayForm({ gateway, onSaved }: GatewayFormProps) {
           {isTesting ? t('payment_methods.testing', { defaultValue: 'Testing…' }) : t('payment_methods.test', { defaultValue: 'Test connection' })}
         </Button>
         <Button type="submit" disabled={!canSave}>
-          {isSaving ? t('payment_methods.saving', { defaultValue: 'Saving…' }) : t('common.save', { defaultValue: 'Save' })}
+          {isSaving ? t('payment_methods.saving', { defaultValue: 'Saving…' }) : t('payment_methods.save', { defaultValue: 'Save' })}
         </Button>
       </div>
     </form>

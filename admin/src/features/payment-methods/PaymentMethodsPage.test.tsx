@@ -2,13 +2,21 @@ import { useState } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import en from '../../locales/en.json';
+import viLocale from '../../locales/vi.json';
 import type { PaymentMethodState } from './api';
+
+let language: 'en' | 'vi' = 'en';
 
 const mocks = vi.hoisted(() => ({ fetchJson: vi.fn(), writeText: vi.fn() }));
 
 vi.mock('@/lib/api', () => ({ fetchJson: mocks.fetchJson }));
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (_key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? _key }),
+  useTranslation: () => ({
+    t: (key: string, options?: { defaultValue?: string }) => (
+      (language === 'vi' ? viLocale : en)[key as keyof typeof en] ?? options?.defaultValue ?? key
+    ),
+  }),
 }));
 vi.mock('./GatewayForm', () => ({
   GatewayForm: ({ gateway, onSaved }: { gateway: PaymentMethodState; onSaved(next: PaymentMethodState): void }) => {
@@ -61,6 +69,7 @@ function renderPage() {
 
 describe('PaymentMethodsPage', () => {
   beforeEach(() => {
+    language = 'en';
     mocks.fetchJson.mockReset();
     mocks.writeText.mockReset();
     mocks.writeText.mockResolvedValue(undefined);
@@ -71,6 +80,21 @@ describe('PaymentMethodsPage', () => {
   });
 
   afterEach(() => cleanup());
+
+  it('uses translated gateway names instead of hardcoded API labels', async () => {
+    language = 'vi';
+    mocks.fetchJson.mockResolvedValue({ data: gateways.map((item) => ({ ...item, label: `API ${item.label}` })) });
+    renderPage();
+
+    await screen.findByTestId('gateway-form');
+    expect(screen.getAllByTestId('gateway-selector').map((selector) => selector.querySelector('span')?.textContent)).toEqual([
+      viLocale['payment_methods.gateways.stripe'],
+      viLocale['payment_methods.gateways.paypal'],
+      viLocale['payment_methods.gateways.airwallex'],
+      viLocale['payment_methods.gateways.payoneer'],
+    ]);
+    expect(screen.getByRole('combobox', { name: viLocale['payment_methods.gateway'] })).toHaveDisplayValue(viLocale['payment_methods.gateways.stripe']);
+  });
 
   it('renders the approved gateways once in fixed order despite shuffled duplicates and unknown gateways', async () => {
     const pingPong = { ...gateway('stripe', 'PingPong'), gateway: 'pingpong' } as unknown as PaymentMethodState;

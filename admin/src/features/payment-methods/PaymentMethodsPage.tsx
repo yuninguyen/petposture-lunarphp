@@ -60,6 +60,7 @@ export function PaymentMethodsPage() {
   }
 
   const selected = gateways.find((gateway) => gateway.gateway === selectedGateway) ?? gateways[0];
+  const gatewayLabel = (gateway: PaymentGateway) => t(`payment_methods.gateways.${gateway}`, { defaultValue: gateway });
   const sourceLabel = (source: PaymentMethodState['source']) => ({
     database: t('payment_methods.source.database', { defaultValue: 'Database' }),
     environment: t('payment_methods.source.environment', { defaultValue: 'Environment' }),
@@ -98,7 +99,7 @@ export function PaymentMethodsPage() {
           onChange={(event) => setSelectedGateway(event.target.value as PaymentGateway)}
           className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
         >
-          {gateways.map((gateway) => <option key={gateway.gateway} value={gateway.gateway}>{gateway.label}</option>)}
+          {gateways.map((gateway) => <option key={gateway.gateway} value={gateway.gateway}>{gatewayLabel(gateway.gateway)}</option>)}
         </select>
       </label>
 
@@ -112,7 +113,7 @@ export function PaymentMethodsPage() {
             onClick={() => setSelectedGateway(gateway.gateway)}
             className={`rounded-xl border p-4 text-left transition-colors ${gateway.gateway === selected.gateway ? 'border-secondary bg-secondary/5' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
           >
-            <span className="block font-semibold text-slate-900">{gateway.label}</span>
+            <span className="block font-semibold text-slate-900">{gatewayLabel(gateway.gateway)}</span>
             <span className="mt-2 flex flex-wrap gap-2 text-xs">
               <span className={`rounded-full px-2 py-0.5 font-medium ${gateway.configured ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
                 {gateway.configured ? t('payment_methods.configured', { defaultValue: 'Configured' }) : t('payment_methods.not_configured', { defaultValue: 'Not configured' })}

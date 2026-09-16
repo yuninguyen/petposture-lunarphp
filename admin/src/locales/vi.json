@@ -153,6 +153,8 @@
   "payment_methods.remove_override": "Xóa giá trị ghi đè trong cơ sở dữ liệu",
   "payment_methods.undo_remove_override": "Hoàn tác xóa",
   "payment_methods.override_marked_for_removal": "Giá trị ghi đè trong cơ sở dữ liệu đã được đánh dấu để xóa",
+  "payment_methods.show_candidate_credential": "Hiện thông tin xác thực mới",
+  "payment_methods.hide_candidate_credential": "Ẩn thông tin xác thực mới",
   "payment_methods.clear_confirmation": "Xóa giá trị ghi đè trong cơ sở dữ liệu — trường này sẽ quay về cấu hình môi trường nếu có. Thao tác này không xóa hoặc vô hiệu hóa giá trị môi trường.",
   "payment_methods.loading": "Đang tải phương thức thanh toán…",
   "payment_methods.error": "Không thể tải các phương thức thanh toán.",
