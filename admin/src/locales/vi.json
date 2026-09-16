@@ -128,7 +128,7 @@
   "payment_methods.fields.payoneer_api_secret": "Khóa bí mật API",
   "payment_methods.fields.payoneer_webhook_secret": "Khóa bí mật webhook",
   "payment_methods.mode": "Chế độ",
-  "payment_methods.modes.test": "Kiểm thử",
+  "payment_methods.modes.test": "Sandbox",
   "payment_methods.modes.sandbox": "Sandbox",
   "payment_methods.modes.live": "Thực tế",
   "payment_methods.configured": "Đã cấu hình",

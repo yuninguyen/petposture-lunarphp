@@ -19,13 +19,21 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 vi.mock('./GatewayForm', () => ({
-  GatewayForm: ({ gateway, onSaved }: { gateway: PaymentMethodState; onSaved(next: PaymentMethodState): void }) => {
+  GatewayForm: ({ gateway, webhookUrl, copyStatus, onCopyWebhookUrl, onSaved }: {
+    gateway: PaymentMethodState;
+    webhookUrl: string;
+    copyStatus: 'copied' | 'error' | null;
+    onCopyWebhookUrl(): void;
+    onSaved(next: PaymentMethodState): void;
+  }) => {
     const [candidate, setCandidate] = useState('');
     return (
-      <div data-testid="gateway-form" data-gateway={gateway.gateway}>
+      <div data-testid="gateway-form" data-gateway={gateway.gateway} data-copy-status={copyStatus ?? ''}>
         <label htmlFor="candidate">Candidate</label>
         <input id="candidate" value={candidate} onChange={(event) => setCandidate(event.target.value)} />
+        <input aria-label="Mock webhook URL" readOnly value={webhookUrl} />
         <span>{gateway.label}</span>
+        <button type="button" onClick={onCopyWebhookUrl}>Mock copy webhook URL</button>
         <button type="button" onClick={() => onSaved({ ...gateway, label: `${gateway.label} updated` })}>Mock save</button>
       </div>
     );
@@ -148,20 +156,20 @@ describe('PaymentMethodsPage', () => {
     expect(screen.getByRole('button', { name: /Payoneer Not configured None/ })).toBeInTheDocument();
   });
 
-  it('renders a read-only webhook URL and copies the selected gateway URL', async () => {
+  it('passes the selected webhook URL and copy state through GatewayForm', async () => {
     mocks.fetchJson.mockResolvedValue({ data: gateways });
     renderPage();
 
-    const webhook = await screen.findByRole('textbox', { name: 'Webhook URL' });
-    expect(webhook).toHaveValue('https://app.example.test/webhooks/stripe');
-    expect(webhook).toHaveAttribute('readonly');
+    const form = await screen.findByTestId('gateway-form');
+    expect(screen.getByRole('textbox', { name: 'Mock webhook URL' })).toHaveValue('https://app.example.test/webhooks/stripe');
+    expect(screen.queryByRole('textbox', { name: 'Webhook URL' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Copy webhook URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mock copy webhook URL' }));
     await waitFor(() => expect(mocks.writeText).toHaveBeenCalledWith('https://app.example.test/webhooks/stripe'));
-    expect(screen.getByRole('status')).toHaveTextContent('Webhook URL copied.');
+    await waitFor(() => expect(form).toHaveAttribute('data-copy-status', 'copied'));
 
     fireEvent.click(screen.getByRole('button', { name: /PayPal/ }));
-    expect(screen.getByRole('textbox', { name: 'Webhook URL' })).toHaveValue('https://app.example.test/webhooks/paypal');
+    expect(screen.getByRole('textbox', { name: 'Mock webhook URL' })).toHaveValue('https://app.example.test/webhooks/paypal');
   });
 
   it('switches gateways through desktop or mobile selectors and remounts candidate state', async () => {

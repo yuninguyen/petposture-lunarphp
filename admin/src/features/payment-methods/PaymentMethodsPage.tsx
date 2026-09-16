@@ -125,32 +125,12 @@ export function PaymentMethodsPage() {
       </div>
 
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="mb-6 space-y-2">
-          <label htmlFor={`${selected.gateway}-webhook-url`} className="text-sm font-medium text-slate-700">
-            {t('payment_methods.webhook_url', { defaultValue: 'Webhook URL' })}
-          </label>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <input
-              id={`${selected.gateway}-webhook-url`}
-              type="text"
-              readOnly
-              value={selected.webhook_url}
-              className="min-w-0 flex-1 rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-            />
-            <button
-              type="button"
-              onClick={() => void copyWebhookUrl()}
-              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              {t('payment_methods.copy_webhook_url', { defaultValue: 'Copy webhook URL' })}
-            </button>
-          </div>
-          {copyStatus === 'copied' && <p role="status" className="text-sm text-green-700">{t('payment_methods.webhook_copied', { defaultValue: 'Webhook URL copied.' })}</p>}
-          {copyStatus === 'error' && <p role="alert" className="text-sm text-red-600">{t('payment_methods.webhook_copy_error', { defaultValue: 'Webhook URL could not be copied.' })}</p>}
-        </div>
         <GatewayForm
           key={selected.gateway}
           gateway={selected}
+          webhookUrl={selected.webhook_url}
+          copyStatus={copyStatus}
+          onCopyWebhookUrl={() => void copyWebhookUrl()}
           onSaved={(next) => queryClient.setQueryData<PaymentMethodState[]>(QUERY_KEY, (current) => replaceGateway(current, next))}
         />
       </section>
