@@ -7,6 +7,7 @@ import { LoginPage } from '@/features/auth/LoginPage';
 import { AdminUser, fetchCurrentUser, isAdminRole } from '@/lib/auth';
 import toast, { Toaster } from 'react-hot-toast';
 import { BrandingProvider } from '@/context/BrandingContext';
+import { canAccessFinance } from '@/navigation/adminNavigation';
 
 // Lazy-load all page components → Vite creates separate chunks per route
 const PostsListPage   = lazy(() => import('@/features/posts/PostsListPage').then(m => ({ default: m.PostsListPage })));
@@ -42,6 +43,9 @@ const DiscountFormPage = lazy(() => import('@/features/discounts/DiscountFormPag
 const SalesPage = lazy(() => import('@/features/dashboard/SalesPage').then(m => ({ default: m.SalesPage })));
 const ConversionPage = lazy(() => import('@/features/dashboard/ConversionPage').then(m => ({ default: m.ConversionPage })));
 const GoalsPage = lazy(() => import('@/features/finance/GoalsPage').then(m => ({ default: m.GoalsPage })));
+const PaymentMethodsPage = lazy(() =>
+  import('@/features/payment-methods/PaymentMethodsPage').then((m) => ({ default: m.PaymentMethodsPage }))
+);
 const ProfilePage = lazy(() => import('@/features/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const SystemUsersPage = lazy(() => import('@/features/system-users/SystemUsersPage').then(m => ({ default: m.SystemUsersPage })));
 const MediaLibraryPage = lazy(() => import('@/features/system-media/MediaLibraryPage').then(m => ({ default: m.MediaLibraryPage })));
@@ -228,6 +232,7 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
   const canViewDashboard = isCoreAdmin || userRoles.includes('Order Manager') || userRoles.includes('Support');
   const canManageDiscountsList = canManageDiscounts(userRoles);
   const canManageShippingMethods = canManageShipping(userRoles);
+  const canViewFinance = canAccessFinance(userRoles);
   const canViewCustomers = canManageCustomers(userRoles);
   const canModerateReviews = canManageReviews(userRoles);
   const home = getAdminHomeRoute(userRoles);
@@ -245,8 +250,11 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
         <Route path="/dashboard/conversion" element={<ConversionPage />} />
       </>}
       <Route path="/profile" element={<ProfilePage />} />
-      {isCoreAdmin && <>
+      {canViewFinance && <>
         <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/finance/payment-methods" element={<PaymentMethodsPage />} />
+      </>}
+      {isCoreAdmin && <>
         <Route path="/posts" element={<PostsListPage />} />
         <Route path="/posts/new" element={<PostFormPage key={location.pathname} />} />
         <Route path="/posts/:id" element={<PostFormPage key={location.pathname} />} />
