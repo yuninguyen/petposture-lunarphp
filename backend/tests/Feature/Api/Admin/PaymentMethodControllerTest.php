@@ -659,6 +659,88 @@ class PaymentMethodControllerTest extends TestCase
         );
     }
 
+    public function test_connection_test_rejects_webhook_arbitrary_cross_gateway_fields_and_invalid_modes(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        foreach ([
+            ['stripe', ['fields' => ['stripe_webhook_secret' => 'forbidden']]],
+            ['stripe', ['fields' => ['arbitrary_field' => 'forbidden']]],
+            ['stripe', ['fields' => ['paypal_client_id' => 'forbidden']]],
+            ['stripe', ['mode' => 'sandbox']],
+            ['paypal', ['mode' => 'test']],
+        ] as [$gateway, $payload]) {
+            $this->postJson("/api/admin/finance/payment-methods/{$gateway}/test", $payload)
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors(array_key_exists('mode', $payload) ? ['mode'] : ['fields']);
+        }
+    }
+
+    public function test_connection_test_returns_sanitized_missing_credentials_and_payoneer_never_sends_http(): void
+    {
+        config()->set('services.stripe.secret', null);
+        Http::fake();
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $stripeResponse = $this->postJson('/api/admin/finance/payment-methods/stripe/test')
+            ->assertUnprocessable()
+            ->assertJsonPath('data.status', 'missing_credentials')
+            ->assertJsonPath('data.message', 'Required credentials are not configured.');
+        $this->assertStringNotContainsString('stripe_secret', $stripeResponse->getContent());
+
+        $required = [
+            'payoneer_merchant_code' => 'merchant_present',
+            'payoneer_api_key' => 'api_key_present',
+            'payoneer_api_secret' => 'api_secret_present',
+        ];
+
+        foreach (array_keys($required) as $missingKey) {
+            $fields = $required;
+            unset($fields[$missingKey]);
+
+            $response = $this->postJson('/api/admin/finance/payment-methods/payoneer/test', [
+                'fields' => $fields,
+            ])->assertUnprocessable()
+                ->assertJsonPath('data.status', 'missing_credentials')
+                ->assertJsonPath('data.message', 'Required credentials are not configured.');
+
+            $this->assertStringNotContainsString($missingKey, $response->getContent());
+        }
+
+        Http::assertNothingSent();
+    }
+
+    public function test_connection_failure_sentinels_never_reach_captured_logs(): void
+    {
+        $candidateSentinel = 'candidate_log_sentinel_must_not_leak';
+        $providerSentinel = 'provider_log_sentinel_must_not_leak';
+        $transportSentinel = 'transport_log_sentinel_must_not_leak';
+        $loggedPayloads = [];
+
+        Event::listen(MessageLogged::class, function (MessageLogged $event) use (&$loggedPayloads): void {
+            $loggedPayloads[] = $event->message;
+            $loggedPayloads[] = json_encode($event->context, JSON_THROW_ON_ERROR);
+        });
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        Http::fake([
+            'https://api.stripe.com/v1/account' => Http::response(['error' => ['message' => $providerSentinel]], 401),
+        ]);
+        $this->postJson('/api/admin/finance/payment-methods/stripe/test', [
+            'fields' => ['stripe_secret' => $candidateSentinel],
+        ])->assertUnprocessable();
+
+        Http::fake(fn () => throw new ConnectionException($transportSentinel));
+        $this->postJson('/api/admin/finance/payment-methods/stripe/test', [
+            'fields' => ['stripe_secret' => $candidateSentinel],
+        ])->assertStatus(502);
+
+        $serializedLogs = implode("\n", $loggedPayloads);
+        foreach ([$candidateSentinel, $providerSentinel, $transportSentinel] as $sentinel) {
+            $this->assertStringNotContainsString($sentinel, $serializedLogs);
+        }
+    }
+
     public function test_candidate_credentials_never_leak_outside_the_provider_request(): void
     {
         $candidateClientId = 'paypal_security_client_'.uniqid();
