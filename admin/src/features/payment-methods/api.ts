@@ -20,13 +20,13 @@ export interface PaymentMethodState {
   fields: Record<string, PaymentFieldState>;
 }
 
-export interface PaymentMethodUpdatePayload extends Record<string, unknown> {
+export interface PaymentMethodUpdatePayload {
   mode?: string;
   fields?: Record<string, string>;
   clear_fields?: string[];
 }
 
-export interface PaymentMethodTestPayload extends Record<string, unknown> {
+export interface PaymentMethodTestPayload {
   mode?: string;
   fields?: Record<string, string>;
 }
@@ -46,12 +46,18 @@ export function updatePaymentMethod(
   gateway: PaymentGateway,
   payload: PaymentMethodUpdatePayload,
 ): Promise<{ data: PaymentMethodState }> {
-  return fetchJson(`/admin/finance/payment-methods/${gateway}`, { method: 'PUT', body: payload });
+  return fetchJson(`/admin/finance/payment-methods/${gateway}`, {
+    method: 'PUT',
+    body: { ...payload },
+  });
 }
 
 export function testPaymentMethod(
   gateway: PaymentGateway,
   payload: PaymentMethodTestPayload,
 ): Promise<{ data: PaymentMethodTestResult }> {
-  return fetchJson(`/admin/finance/payment-methods/${gateway}/test`, { method: 'POST', body: payload });
+  return fetchJson(`/admin/finance/payment-methods/${gateway}/test`, {
+    method: 'POST',
+    body: { ...payload },
+  });
 }

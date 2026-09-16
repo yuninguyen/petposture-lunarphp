@@ -38,7 +38,7 @@ describe('SecretCredentialInput', () => {
     expect(input.value).toBe('');
     expect(input.type).toBe('password');
     expect(host.textContent).toContain('Configured in database.');
-    expect(host.textContent).not.toMatch(/[•●]{2,}/);
+    expect(host.textContent).not.toMatch(/(?:[•●*?]|&#(?:8226|9679);){2,}/);
     expect(host.innerHTML).not.toContain('stored-secret');
 
     cleanup(host, root);
@@ -82,6 +82,7 @@ describe('SecretCredentialInput', () => {
     const database = renderInput({ configured: true, source: 'database' }, { onRequestClear });
     const remove = database.host.querySelector<HTMLButtonElement>('[data-action="remove-override"]');
     expect(remove).not.toBeNull();
+    expect(database.host.textContent).not.toContain('This does not remove or disable the environment value.');
     act(() => remove!.click());
     expect(onRequestClear).toHaveBeenCalledOnce();
     cleanup(database.host, database.root);
@@ -91,5 +92,41 @@ describe('SecretCredentialInput', () => {
       expect(rendered.host.querySelector('[data-action="remove-override"]')).toBeNull();
       cleanup(rendered.host, rendered.root);
     }
+  });
+
+  it('shows the exact environment fallback warning only while marked for clear', () => {
+    const warning = 'Remove database override — this field will fall back to environment configuration if available. This does not remove or disable the environment value.';
+    const { host, root } = renderInput(
+      { configured: true, source: 'database' },
+      { markedForClear: true },
+    );
+
+    expect(host.textContent).toContain(warning);
+    expect(host.querySelector('[role="alert"]')?.textContent).toBe(warning);
+
+    cleanup(host, root);
+  });
+
+  it('resets candidate and clear state when the parent rerenders controlled props', () => {
+    const field = { configured: true, source: 'database' } as const;
+    const { host, root, props } = renderInput(field, {
+      value: 'replacement-candidate',
+      markedForClear: true,
+    });
+
+    expect(host.querySelector<HTMLInputElement>('input')?.value).toBe('replacement-candidate');
+    expect(host.textContent).toContain('This does not remove or disable the environment value.');
+
+    act(() => root.render(createElement(SecretCredentialInput, {
+      ...props,
+      value: '',
+      markedForClear: false,
+    })));
+
+    expect(host.querySelector<HTMLInputElement>('input')?.value).toBe('');
+    expect(host.querySelector<HTMLInputElement>('input')?.disabled).toBe(false);
+    expect(host.textContent).not.toContain('This does not remove or disable the environment value.');
+
+    cleanup(host, root);
   });
 });

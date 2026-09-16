@@ -65,12 +65,18 @@ export function SecretCredentialInput({
           disabled={disabled || markedForClear}
           onClick={() => setVisible((current) => !current)}
           aria-label={visible ? 'Hide candidate credential' : 'Show candidate credential'}
+          aria-pressed={visible}
           className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 disabled:opacity-50"
         >
           {visible ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
         </button>
       </div>
       <p className="text-xs text-gray-500">{safeStatus(field)}</p>
+      {markedForClear && (
+        <p role="alert" className="text-xs text-amber-700">
+          Remove database override — this field will fall back to environment configuration if available. This does not remove or disable the environment value.
+        </p>
+      )}
     </div>
   );
 }
