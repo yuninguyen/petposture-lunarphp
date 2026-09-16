@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PaymentMethodState } from './api';
 
-const mocks = vi.hoisted(() => ({ fetchJson: vi.fn() }));
+const mocks = vi.hoisted(() => ({ fetchJson: vi.fn(), writeText: vi.fn() }));
 
 vi.mock('@/lib/api', () => ({ fetchJson: mocks.fetchJson }));
 vi.mock('react-i18next', () => ({
@@ -62,21 +62,41 @@ function renderPage() {
 describe('PaymentMethodsPage', () => {
   beforeEach(() => {
     mocks.fetchJson.mockReset();
+    mocks.writeText.mockReset();
+    mocks.writeText.mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: mocks.writeText },
+    });
   });
 
   afterEach(() => cleanup());
 
-  it('renders exactly the four approved gateway selectors without credentials or provider requests', async () => {
-    mocks.fetchJson.mockResolvedValue({ data: gateways });
+  it('renders the approved gateways once in fixed order despite shuffled duplicates and unknown gateways', async () => {
+    const pingPong = { ...gateway('stripe', 'PingPong'), gateway: 'pingpong' } as unknown as PaymentMethodState;
+    mocks.fetchJson.mockResolvedValue({
+      data: [
+        gateways[2],
+        gateways[1],
+        gateways[0],
+        { ...gateways[1], label: 'Duplicate PayPal' },
+        pingPong,
+        gateways[3],
+        { ...gateways[0], label: 'Duplicate Stripe' },
+      ],
+    });
     const { container } = renderPage();
 
     await screen.findByTestId('gateway-form');
     expect(screen.getAllByTestId('gateway-selector')).toHaveLength(4);
-    expect(screen.getByRole('button', { name: /Stripe/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /PayPal/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Airwallex/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Payoneer/ })).toBeInTheDocument();
-    expect(screen.queryByText(/pingpong/i)).not.toBeInTheDocument();
+    expect(screen.getAllByTestId('gateway-selector').map((selector) => selector.querySelector('span')?.textContent)).toEqual([
+      'Stripe',
+      'PayPal',
+      'Airwallex',
+      'Payoneer',
+    ]);
+    expect(screen.getByRole('combobox', { name: 'Payment gateway' })).toHaveDisplayValue('Stripe');
+    expect(screen.queryByText(/pingpong|duplicate/i)).not.toBeInTheDocument();
     expect(container.innerHTML).not.toContain(SECRET_SENTINEL);
 
     expect(mocks.fetchJson).toHaveBeenCalledWith('/admin/finance/payment-methods');
@@ -84,6 +104,40 @@ describe('PaymentMethodsPage', () => {
       expect(url).toMatch(/^\/admin\/finance\/payment-methods/);
       expect(url).not.toMatch(/stripe\.com|paypal\.com|airwallex\.com|payoneer\.com/i);
     }
+  });
+
+  it('shows configuration and source badges for every approved gateway', async () => {
+    mocks.fetchJson.mockResolvedValue({
+      data: [
+        gateways[0],
+        { ...gateways[1], configured: false, source: 'environment' },
+        { ...gateways[2], source: 'mixed' },
+        { ...gateways[3], configured: false, source: 'none' },
+      ],
+    });
+    renderPage();
+
+    await screen.findByTestId('gateway-form');
+    expect(screen.getByRole('button', { name: /Stripe Configured Database/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /PayPal Not configured Environment/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Airwallex Configured Mixed/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Payoneer Not configured None/ })).toBeInTheDocument();
+  });
+
+  it('renders a read-only webhook URL and copies the selected gateway URL', async () => {
+    mocks.fetchJson.mockResolvedValue({ data: gateways });
+    renderPage();
+
+    const webhook = await screen.findByRole('textbox', { name: 'Webhook URL' });
+    expect(webhook).toHaveValue('https://app.example.test/webhooks/stripe');
+    expect(webhook).toHaveAttribute('readonly');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy webhook URL' }));
+    await waitFor(() => expect(mocks.writeText).toHaveBeenCalledWith('https://app.example.test/webhooks/stripe'));
+    expect(screen.getByRole('status')).toHaveTextContent('Webhook URL copied.');
+
+    fireEvent.click(screen.getByRole('button', { name: /PayPal/ }));
+    expect(screen.getByRole('textbox', { name: 'Webhook URL' })).toHaveValue('https://app.example.test/webhooks/paypal');
   });
 
   it('switches gateways through desktop or mobile selectors and remounts candidate state', async () => {
@@ -111,9 +165,10 @@ describe('PaymentMethodsPage', () => {
     await screen.findByTestId('gateway-form');
     loading.unmount();
 
-    mocks.fetchJson.mockRejectedValueOnce(new Error('Safe loading failure'));
+    mocks.fetchJson.mockRejectedValueOnce(new Error('Database host and token leaked'));
     const error = renderPage();
-    expect(await screen.findByRole('alert')).toHaveTextContent('Safe loading failure');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Payment methods could not be loaded.');
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Database host and token leaked');
     error.unmount();
 
     mocks.fetchJson.mockResolvedValueOnce({ data: [] });
