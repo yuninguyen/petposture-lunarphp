@@ -148,18 +148,39 @@ describe('AiSettingsForm', () => {
     cleanup(rendered);
   });
 
-  it('sends clear intent to fetch, requires retest, and undo removes obsolete changes', async () => {
+  it.each(['openai_api_key', 'openai_base_url', 'openai_model'])('sends %s clear intent to the server and treats a successful fetch as validation', async (key) => {
     const rendered = await renderForm();
-    const key = field(rendered.host, 'openai_api_key');
-    await click(key.closest('.space-y-2')!.querySelector<HTMLElement>('[data-action="remove-override"]')!);
-    expect(key).toBeDisabled();
+    const input = field(rendered.host, key);
+    await click(input.closest('.space-y-2')!.querySelector<HTMLElement>('[data-action="remove-override"]')!);
+    expect(input).toBeDisabled();
     expect(button(rendered.host, 'Save')).toBeDisabled();
     await click(button(rendered.host, 'Fetch models'));
-    expect(mocks.fetchAiModels).toHaveBeenCalledWith({ clear_fields: ['openai_api_key'] });
+    expect(mocks.fetchAiModels).toHaveBeenCalledWith({ clear_fields: [key] });
     expect(button(rendered.host, 'Save')).toBeEnabled();
-    await click(key.closest('.space-y-2')!.querySelector<HTMLElement>('[data-action="undo-remove-override"]')!);
+    cleanup(rendered);
+  });
+
+  it.each(['openai_api_key', 'openai_base_url', 'openai_model'])('undoing an OpenAI %s clear removes the obsolete change and authorization', async (key) => {
+    const rendered = await renderForm();
+    const input = field(rendered.host, key);
+    await click(input.closest('.space-y-2')!.querySelector<HTMLElement>('[data-action="remove-override"]')!);
+    await click(button(rendered.host, 'Fetch models'));
+    await click(input.closest('.space-y-2')!.querySelector<HTMLElement>('[data-action="undo-remove-override"]')!);
     expect(button(rendered.host, 'Save')).toBeDisabled();
-    expect(key).toBeEnabled();
+    expect(input).toBeEnabled();
+    cleanup(rendered);
+  });
+
+  it.each([
+    ['openai_base_url', 'https://changed.test/v1', 'https://openai.stored/v1'],
+    ['openai_model', 'gpt-a', 'gpt-stored'],
+  ])('ordinary %s edits reverted to baseline remove the obsolete gate', async (key, changed, original) => {
+    const rendered = await renderForm();
+    setValue(field(rendered.host, key), changed);
+    expect(button(rendered.host, 'Save')).toBeDisabled();
+    setValue(field(rendered.host, key), original);
+    expect(button(rendered.host, 'Save')).toBeDisabled();
+    expect(mocks.fetchAiModels).not.toHaveBeenCalled();
     cleanup(rendered);
   });
 

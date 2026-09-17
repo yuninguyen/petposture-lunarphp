@@ -964,6 +964,49 @@ class SettingsTest extends TestCase
         $this->assertSame('keep', Cache::get('openai-fetch-unrelated'));
     }
 
+    public function test_open_ai_model_fetch_validates_the_clear_aware_effective_model(): void
+    {
+        config([
+            'services.openai.key' => 'ENV-OPENAI-KEY',
+            'services.openai.base_url' => 'https://api.openai.com/v1',
+            'services.openai.model' => null,
+        ]);
+        Setting::set('openai_model', 'gpt-database', 'string', 'ai');
+        Http::preventStrayRequests();
+        Http::fake(['https://api.openai.com/v1/models' => Http::response(['data' => [['id' => 'gpt-returned']]])]);
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $this->postJson('/api/admin/settings/ai/fetch-models', [
+            'clear_fields' => ['openai_model'],
+        ])->assertOk()->assertExactJson(['data' => [
+            'status' => 'loaded',
+            'models' => ['gpt-returned'],
+        ]]);
+
+        config(['services.openai.model' => 'gpt-returned']);
+        $this->postJson('/api/admin/settings/ai/fetch-models', [
+            'clear_fields' => ['openai_model'],
+        ])->assertOk()->assertExactJson(['data' => [
+            'status' => 'loaded',
+            'models' => ['gpt-returned'],
+        ]]);
+
+        config(['services.openai.model' => 'gpt-environment-missing']);
+        $this->postJson('/api/admin/settings/ai/fetch-models', [
+            'clear_fields' => ['openai_model'],
+        ])->assertStatus(422)->assertExactJson(['data' => [
+            'status' => 'invalid',
+            'models' => [],
+        ]]);
+
+        $this->postJson('/api/admin/settings/ai/fetch-models', [
+            'fields' => ['openai_model' => 'gpt-candidate-missing'],
+        ])->assertStatus(422)->assertExactJson(['data' => [
+            'status' => 'invalid',
+            'models' => [],
+        ]]);
+    }
+
     public function test_open_ai_model_fetch_defaults_base_url_and_strictly_rejects_unknown_fields_and_clear_conflicts(): void
     {
         config(['services.openai.key' => 'ENV-OPENAI-KEY', 'services.openai.base_url' => null]);

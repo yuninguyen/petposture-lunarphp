@@ -176,6 +176,11 @@ class SecureSettingsService
             return $this->openAiInvalidResponse();
         }
 
+        $model = $this->resolveCandidateField('openai_model', $payload, self::AI_FIELDS['openai_model']);
+        if (is_string($model) && $this->hasValue($model) && ! in_array(trim($model), $models, true)) {
+            return $this->openAiInvalidResponse();
+        }
+
         return [
             'status_code' => 200,
             'data' => [
