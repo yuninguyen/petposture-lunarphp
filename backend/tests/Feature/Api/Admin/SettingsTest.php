@@ -5,6 +5,7 @@ namespace Tests\Feature\Api\Admin;
 use App\Models\CuratorMedia;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\Admin\SecureSettingsService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Log\Events\MessageLogged;
@@ -505,6 +506,210 @@ class SettingsTest extends TestCase
         foreach (Cache::get('setting:openai_api_key', []) as $cached) {
             $this->assertNotSame($aiSecret, $cached);
         }
+    }
+
+    public function test_smtp_test_requires_authentication_and_core_admin_role(): void
+    {
+        $this->postJson('/api/admin/settings/smtp/test', [])->assertUnauthorized();
+
+        foreach (['customer', 'Product Manager', 'Order Manager', 'Support', 'unknown'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+            $this->postJson('/api/admin/settings/smtp/test', [])->assertForbidden();
+        }
+
+        Sanctum::actingAs(User::factory()->create());
+        $this->postJson('/api/admin/settings/smtp/test', [])->assertForbidden();
+    }
+
+    public function test_smtp_test_resolves_candidates_then_database_then_stable_environment_and_uses_authenticated_recipient(): void
+    {
+        config([
+            'mail.environment.smtp.host' => 'env.smtp.test',
+            'mail.environment.smtp.port' => 2525,
+            'mail.environment.smtp.username' => 'env-user',
+            'mail.environment.smtp.password' => 'ENV-SMTP-SECRET',
+            'mail.environment.smtp.scheme' => 'tls',
+            'mail.environment.from.address' => 'env@example.test',
+            'mail.mailers.smtp.host' => 'mutated-live.smtp.test',
+            'mail.from.address' => 'mutated-live@example.test',
+        ]);
+        Setting::set('smtp_port', 587, 'int', 'email');
+        Setting::set('smtp_user', 'db-user', 'string', 'email');
+        Setting::set('smtp_pass', 'DB-SMTP-SECRET', 'string', 'email');
+        Setting::set('smtp_encryption', 'ssl', 'string', 'email');
+
+        $sent = [];
+        $this->capturingSmtpService($sent);
+        $admin = $this->userWithRole('admin');
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson('/api/admin/settings/smtp/test', [
+            'fields' => [
+                'smtp_host' => 'candidate.smtp.test',
+                'smtp_user' => '   ',
+                'smtp_pass' => 'CANDIDATE-SMTP-SECRET',
+                'mail_from_address' => 'candidate@example.test',
+            ],
+        ])->assertOk()
+            ->assertExactJson(['data' => [
+                'status' => 'sent',
+                'message' => 'SMTP test email sent.',
+            ]]);
+
+        $this->assertSame([
+            'smtp_host' => 'candidate.smtp.test',
+            'smtp_port' => 587,
+            'smtp_user' => 'db-user',
+            'smtp_pass' => 'CANDIDATE-SMTP-SECRET',
+            'smtp_encryption' => 'ssl',
+            'mail_from_address' => 'candidate@example.test',
+        ], $sent['configuration']);
+        $this->assertSame($admin->email, $sent['recipient']);
+
+        foreach (['CANDIDATE-SMTP-SECRET', 'DB-SMTP-SECRET', 'ENV-SMTP-SECRET'] as $secret) {
+            $this->assertStringNotContainsString($secret, $response->getContent());
+        }
+    }
+
+    public function test_smtp_test_clear_fields_skip_database_and_fall_back_to_stable_environment_without_persisting(): void
+    {
+        config([
+            'mail.environment.smtp.host' => 'env.smtp.test',
+            'mail.environment.smtp.port' => 2525,
+            'mail.environment.smtp.username' => 'env-user',
+            'mail.environment.smtp.password' => 'ENV-SMTP-SECRET',
+            'mail.environment.smtp.scheme' => 'none',
+            'mail.environment.from.address' => 'env@example.test',
+        ]);
+        foreach ([
+            'smtp_host' => 'db.smtp.test',
+            'smtp_port' => 465,
+            'smtp_user' => 'db-user',
+            'smtp_pass' => 'DB-SMTP-SECRET',
+            'smtp_encryption' => 'ssl',
+            'mail_from_address' => 'db@example.test',
+        ] as $key => $value) {
+            Setting::set($key, $value, $key === 'smtp_port' ? 'int' : 'string', 'email');
+        }
+        Cache::put('smtp-test-unrelated', 'keep');
+
+        $before = Setting::query()->whereIn('key', (new SecureSettingsService)->smtpFieldNames())
+            ->pluck('value', 'key')->all();
+        $sent = [];
+        $this->capturingSmtpService($sent);
+        Sanctum::actingAs($this->userWithRole('staff'));
+
+        $this->postJson('/api/admin/settings/smtp/test', [
+            'clear_fields' => (new SecureSettingsService)->smtpFieldNames(),
+        ])->assertOk();
+
+        $this->assertSame([
+            'smtp_host' => 'env.smtp.test',
+            'smtp_port' => 2525,
+            'smtp_user' => 'env-user',
+            'smtp_pass' => 'ENV-SMTP-SECRET',
+            'smtp_encryption' => 'none',
+            'mail_from_address' => 'env@example.test',
+        ], $sent['configuration']);
+        $this->assertSame($before, Setting::query()->whereIn('key', (new SecureSettingsService)->smtpFieldNames())
+            ->pluck('value', 'key')->all());
+        $this->assertSame('keep', Cache::get('smtp-test-unrelated'));
+    }
+
+    public function test_smtp_test_strictly_rejects_recipient_abuse_unknown_fields_and_clear_conflicts(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $this->postJson('/api/admin/settings/smtp/test', [
+            'recipient' => 'attacker@example.test',
+        ])->assertUnprocessable()->assertJsonValidationErrors('recipient');
+
+        $this->postJson('/api/admin/settings/smtp/test', [
+            'fields' => ['recipient' => 'attacker@example.test'],
+        ])->assertUnprocessable()->assertJsonValidationErrors('fields');
+
+        $this->postJson('/api/admin/settings/smtp/test', [
+            'fields' => ['smtp_pass' => 'replacement'],
+            'clear_fields' => ['smtp_pass'],
+        ])->assertUnprocessable()->assertJsonValidationErrors('fields.smtp_pass');
+
+        $this->postJson('/api/admin/settings/smtp/test', [
+            'clear_fields' => ['openai_api_key'],
+        ])->assertUnprocessable()->assertJsonValidationErrors('clear_fields.0');
+    }
+
+    public function test_smtp_test_returns_sanitized_422_when_effective_configuration_is_incomplete(): void
+    {
+        config([
+            'mail.environment.smtp.host' => null,
+            'mail.environment.from.address' => null,
+        ]);
+        Setting::query()->whereIn('key', ['smtp_host', 'mail_from_address'])->get()->each->delete();
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $this->postJson('/api/admin/settings/smtp/test', [
+            'clear_fields' => ['smtp_host', 'mail_from_address'],
+        ])->assertStatus(422)->assertExactJson(['data' => [
+            'status' => 'invalid',
+            'message' => 'SMTP host and from address are required.',
+        ]]);
+    }
+
+    public function test_smtp_test_returns_sanitized_502_without_leaking_exception_candidate_logs_or_cache(): void
+    {
+        config([
+            'mail.environment.smtp.port' => 2525,
+            'mail.environment.smtp.username' => null,
+            'mail.environment.smtp.password' => null,
+            'mail.environment.smtp.scheme' => 'tls',
+        ]);
+        $candidate = 'SMTP-CANDIDATE-LEAK-SENTINEL';
+        $messages = [];
+        Log::listen(function (MessageLogged $event) use (&$messages): void {
+            $messages[] = $event->message.' '.json_encode($event->context);
+        });
+        $sent = [];
+        $this->capturingSmtpService($sent, new \RuntimeException('transport failed '.$candidate));
+        $admin = $this->userWithRole('admin');
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson('/api/admin/settings/smtp/test', [
+            'fields' => [
+                'smtp_host' => 'candidate.smtp.test',
+                'smtp_pass' => $candidate,
+                'mail_from_address' => 'candidate@example.test',
+            ],
+        ])->assertStatus(502)->assertExactJson(['data' => [
+            'status' => 'unavailable',
+            'message' => 'Unable to send the SMTP test email.',
+        ]]);
+
+        $this->assertStringNotContainsString($candidate, $response->getContent());
+        $this->assertStringNotContainsString($candidate, implode("\n", $messages));
+        $this->assertDatabaseMissing('settings', ['value' => $candidate]);
+        $this->assertFalse(Cache::has('setting:smtp_pass'));
+        $this->assertSame($admin->email, $sent['recipient']);
+    }
+
+    private function capturingSmtpService(array &$sent, ?\Throwable $failure = null): void
+    {
+        $service = new class($sent, $failure) extends SecureSettingsService
+        {
+            public function __construct(
+                private array &$sent,
+                private readonly ?\Throwable $failure,
+            ) {}
+
+            protected function sendSmtpTest(array $configuration, string $recipient): void
+            {
+                $this->sent = compact('configuration', 'recipient');
+
+                if ($this->failure !== null) {
+                    throw $this->failure;
+                }
+            }
+        };
+        $this->app->instance(SecureSettingsService::class, $service);
     }
 
     private function createMedia(string $path): CuratorMedia

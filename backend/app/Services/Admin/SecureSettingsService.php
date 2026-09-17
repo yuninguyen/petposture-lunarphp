@@ -4,6 +4,10 @@ namespace App\Services\Admin;
 
 use App\Models\Setting;
 use Illuminate\Support\Collection;
+use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
+use Symfony\Component\Mime\Email;
+use Throwable;
 
 class SecureSettingsService
 {
@@ -41,6 +45,49 @@ class SecureSettingsService
         $this->update($payload, self::SMTP_FIELDS, 'email');
 
         return $this->smtp();
+    }
+
+    public function testSmtp(array $payload, string $recipient): array
+    {
+        $configuration = [];
+        foreach (self::SMTP_FIELDS as $field => $definition) {
+            $configuration[$field] = $this->resolveCandidateField($field, $payload, $definition);
+        }
+
+        if (! $this->hasValue($configuration['smtp_host']) || ! $this->hasValue($configuration['mail_from_address'])) {
+            return [
+                'status_code' => 422,
+                'data' => [
+                    'status' => 'invalid',
+                    'message' => 'SMTP host and from address are required.',
+                ],
+            ];
+        }
+
+        $configuration['smtp_port'] = (int) ($configuration['smtp_port'] ?: 587);
+        $configuration['smtp_encryption'] = in_array($configuration['smtp_encryption'], ['tls', 'ssl', 'none'], true)
+            ? $configuration['smtp_encryption']
+            : 'tls';
+
+        try {
+            $this->sendSmtpTest($configuration, $recipient);
+        } catch (Throwable) {
+            return [
+                'status_code' => 502,
+                'data' => [
+                    'status' => 'unavailable',
+                    'message' => 'Unable to send the SMTP test email.',
+                ],
+            ];
+        }
+
+        return [
+            'status_code' => 200,
+            'data' => [
+                'status' => 'sent',
+                'message' => 'SMTP test email sent.',
+            ],
+        ];
     }
 
     public function ai(): array
@@ -104,6 +151,52 @@ class SecureSettingsService
             $definition = $definitions[$key];
             Setting::set($key, $value, $definition['type'], $group);
         }
+    }
+
+    private function resolveCandidateField(string $field, array $payload, array $definition): mixed
+    {
+        $candidate = $payload['fields'][$field] ?? null;
+        if ($this->hasValue($candidate)) {
+            return $candidate;
+        }
+
+        if (! in_array($field, $payload['clear_fields'] ?? [], true)) {
+            $databaseValue = Setting::query()->where('key', $field)->first()?->cast_value;
+            if ($this->hasValue($databaseValue)) {
+                return $databaseValue;
+            }
+        }
+
+        $environmentValue = $definition['config'] === null ? null : config($definition['config']);
+
+        return $this->hasValue($environmentValue) ? $environmentValue : ($definition['default'] ?? null);
+    }
+
+    protected function sendSmtpTest(array $configuration, string $recipient): void
+    {
+        $tlsMode = match ($configuration['smtp_encryption']) {
+            'ssl' => true,
+            'tls' => null,
+            default => false,
+        };
+        $transport = new EsmtpTransport(
+            $configuration['smtp_host'],
+            $configuration['smtp_port'],
+            $tlsMode
+        );
+
+        if ($this->hasValue($configuration['smtp_user'])) {
+            $transport->setUsername((string) $configuration['smtp_user']);
+            $transport->setPassword((string) ($configuration['smtp_pass'] ?? ''));
+        }
+
+        $email = (new Email)
+            ->from((string) $configuration['mail_from_address'])
+            ->to($recipient)
+            ->subject('[PetPosture] Test Email — SMTP Working ✓')
+            ->text('This is a test email from PetPosture Admin. Your SMTP settings are working correctly.');
+
+        (new Mailer($transport))->send($email);
     }
 
     private function databaseValues(array $keys): Collection

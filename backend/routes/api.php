@@ -333,6 +333,7 @@ Route::prefix('/admin')
             Route::put('/settings/analytics', [AdminSettingsController::class, 'updateAnalytics']);
             Route::get('/settings/smtp', [SecureSettingsController::class, 'smtp']);
             Route::put('/settings/smtp', [SecureSettingsController::class, 'updateSmtp']);
+            Route::post('/settings/smtp/test', [SecureSettingsController::class, 'testSmtp']);
             Route::get('/settings/ai', [SecureSettingsController::class, 'ai']);
             Route::put('/settings/ai', [SecureSettingsController::class, 'updateAi']);
 
