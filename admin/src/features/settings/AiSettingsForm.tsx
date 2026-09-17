@@ -146,7 +146,7 @@ export function AiSettingsForm() {
     setIsFetching(false);
   };
 
-  const changeValue = (field: AiField, value: string) => {
+  const changeValue = (field: AiField, value: string, options?: { skipInvalidate?: boolean }) => {
     if (!values || values[field] === value) return;
     setValues({ ...values, [field]: value });
     setClearFields((current) => {
@@ -155,7 +155,7 @@ export function AiSettingsForm() {
       next.delete(field);
       return next;
     });
-    if (OPENAI_FIELDS.has(field)) invalidateOpenAiFetch();
+    if (OPENAI_FIELDS.has(field) && !options?.skipInvalidate) invalidateOpenAiFetch();
     setSaveError(false);
     setSaved(false);
   };
@@ -249,43 +249,79 @@ export function AiSettingsForm() {
     return <p role="alert" className="text-sm text-red-600">{t('settings_ai.load_error')}</p>;
   }
 
+  const renderField = (key: AiField) => {
+    const definition = FIELD_DEFINITIONS.find((field) => field.key === key)!;
+    const { labelKey, type } = definition;
+    const state = baseline.fields[key];
+    const markedForClear = clearFields.has(key);
+    const label = t(labelKey);
+    if (type === 'secret') {
+      return <SecretSettingInput key={key} id={`ai-${key}`} label={label} value={values[key]} field={state} disabled={pending} markedForClear={markedForClear} onChange={(value) => changeValue(key, value)} onRequestClear={() => requestClear(key)} onUndoClear={() => undoClear(key)} />;
+    }
+    return (
+      <div key={key} className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor={`ai-${key}`} className="text-sm font-medium text-ink">{label}</label>
+          {state.source === 'database' && (
+            <button type="button" data-action={markedForClear ? 'undo-remove-override' : 'remove-override'} data-field={key} disabled={pending} onClick={() => markedForClear ? undoClear(key) : requestClear(key)} className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50">
+              {markedForClear ? t('settings.secrets.undo_remove_override') : t('settings.secrets.remove_override')}
+            </button>
+          )}
+        </div>
+        {type === 'provider' ? (
+          <select id={`ai-${key}`} value={markedForClear ? '' : values[key]} disabled={pending || markedForClear} onChange={(event) => changeValue(key, event.target.value as AiProvider)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+            {(['auto', 'anthropic', 'openai', 'grok', 'gemini'] as AiProvider[]).map((provider) => <option key={provider} value={provider}>{t(`settings_ai.providers.${provider}`)}</option>)}
+          </select>
+        ) : type === 'model' ? (
+          <select id={`ai-${key}`} value={markedForClear ? '' : values[key]} disabled={pending || markedForClear} onChange={(event) => {
+            const value = event.target.value;
+            changeValue(key, value, { skipInvalidate: models.includes(value) });
+          }} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+            {!effectiveModel && <option value="">{t('settings_ai.openai_model_empty')}</option>}
+            {modelOptions.map((model) => <option key={model} value={model}>{model}</option>)}
+          </select>
+        ) : (
+          <Input id={`ai-${key}`} value={markedForClear ? '' : values[key]} disabled={pending || markedForClear} onChange={(event) => changeValue(key, event.target.value)} />
+        )}
+        <p className="text-xs text-gray-500">{t(`settings.secrets.hints.${state.source}`)}</p>
+        {markedForClear && <p role="alert" className="text-xs text-amber-700">{clearWarning}</p>}
+      </div>
+    );
+  };
+
   return (
     <form className="space-y-6" onSubmit={(event) => { event.preventDefault(); void save(); }}>
-      <div className="grid gap-6 md:grid-cols-2">
-        {FIELD_DEFINITIONS.map(({ key, labelKey, type }) => {
-          const state = baseline.fields[key];
-          const markedForClear = clearFields.has(key);
-          const label = t(labelKey);
-          if (type === 'secret') {
-            return <SecretSettingInput key={key} id={`ai-${key}`} label={label} value={values[key]} field={state} disabled={pending} markedForClear={markedForClear} onChange={(value) => changeValue(key, value)} onRequestClear={() => requestClear(key)} onUndoClear={() => undoClear(key)} />;
-          }
-          return (
-            <div key={key} className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <label htmlFor={`ai-${key}`} className="text-sm font-medium text-ink">{label}</label>
-                {state.source === 'database' && (
-                  <button type="button" data-action={markedForClear ? 'undo-remove-override' : 'remove-override'} data-field={key} disabled={pending} onClick={() => markedForClear ? undoClear(key) : requestClear(key)} className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50">
-                    {markedForClear ? t('settings.secrets.undo_remove_override') : t('settings.secrets.remove_override')}
-                  </button>
-                )}
-              </div>
-              {type === 'provider' ? (
-                <select id={`ai-${key}`} value={markedForClear ? '' : values[key]} disabled={pending || markedForClear} onChange={(event) => changeValue(key, event.target.value as AiProvider)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                  {(['auto', 'anthropic', 'openai', 'grok', 'gemini'] as AiProvider[]).map((provider) => <option key={provider} value={provider}>{t(`settings_ai.providers.${provider}`)}</option>)}
-                </select>
-              ) : type === 'model' ? (
-                <select id={`ai-${key}`} value={markedForClear ? '' : values[key]} disabled={pending || markedForClear} onChange={(event) => changeValue(key, event.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                  {!effectiveModel && <option value="">{t('settings_ai.openai_model_empty')}</option>}
-                  {modelOptions.map((model) => <option key={model} value={model}>{model}</option>)}
-                </select>
-              ) : (
-                <Input id={`ai-${key}`} value={markedForClear ? '' : values[key]} disabled={pending || markedForClear} onChange={(event) => changeValue(key, event.target.value)} />
-              )}
-              <p className="text-xs text-gray-500">{t(`settings.secrets.hints.${state.source}`)}</p>
-              {markedForClear && <p role="alert" className="text-xs text-amber-700">{clearWarning}</p>}
-            </div>
-          );
-        })}
+      {renderField('ai_seo_provider')}
+      <div className="space-y-6">
+        <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+          <h2 className="text-base font-semibold text-ink">{t('settings_ai.sections.anthropic')}</h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            {renderField('anthropic_api_key')}
+            {renderField('anthropic_model')}
+          </div>
+        </section>
+        <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+          <h2 className="text-base font-semibold text-ink">{t('settings_ai.sections.openai')}</h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            {renderField('openai_api_key')}
+            {renderField('openai_model')}
+            {renderField('openai_base_url')}
+          </div>
+        </section>
+        <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+          <h2 className="text-base font-semibold text-ink">{t('settings_ai.sections.xai')}</h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            {renderField('xai_api_key')}
+            {renderField('xai_model')}
+          </div>
+        </section>
+        <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+          <h2 className="text-base font-semibold text-ink">{t('settings_ai.sections.gemini')}</h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            {renderField('gemini_api_key')}
+            {renderField('gemini_model')}
+          </div>
+        </section>
       </div>
 
       {modelError && <p role="alert" className="text-sm text-red-600">{t('settings_ai.errors.model_not_found')}</p>}

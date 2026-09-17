@@ -200,8 +200,18 @@ describe('AiSettingsForm', () => {
     expect(button(rendered.host, 'Save')).toBeDisabled();
     expect(Array.from((field(rendered.host, 'openai_model') as HTMLSelectElement).options).map((option) => option.value)).toEqual(['gpt-a', 'gpt-stored', 'gpt-z']);
     setValue(field(rendered.host, 'openai_model'), 'gpt-a');
-    expect(button(rendered.host, 'Save')).toBeDisabled();
+    expect(button(rendered.host, 'Save')).toBeEnabled();
+    cleanup(rendered);
+  });
+
+  it('keeps Save enabled when selecting a model from a successful fetch', async () => {
+    const rendered = await renderForm();
+    setValue(field(rendered.host, 'openai_base_url'), 'https://changed.test/v1');
     await click(button(rendered.host, 'Fetch models'));
+    expect(button(rendered.host, 'Save')).toBeEnabled();
+
+    setValue(field(rendered.host, 'openai_model'), 'gpt-a');
+
     expect(button(rendered.host, 'Save')).toBeEnabled();
     cleanup(rendered);
   });
