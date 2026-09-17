@@ -18,12 +18,30 @@ import {
   updateSmtpSettings,
   type AiModelFetchPayload,
   type AiSettingsPayload,
+  type GeneralSettingsUpdatePayload,
   type SmtpSettingsPayload,
 } from './api';
+
+type IsExact<Actual, Expected> =
+  [Actual] extends [Expected]
+    ? [Expected] extends [Actual]
+      ? true
+      : false
+    : false;
+type Assert<Condition extends true> = Condition;
+type GeneralShopNameRejectsNull = Assert<
+  IsExact<GeneralSettingsUpdatePayload['shop_name'], string | undefined>
+>;
+
+const generalShopNameRejectsNull: GeneralShopNameRejectsNull = true;
 
 describe('system settings API', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+  });
+
+  it('keeps the required shop name update type non-nullable', () => {
+    expect(generalShopNameRejectsNull).toBe(true);
   });
 
   it('uses the five dedicated Laravel read endpoints', async () => {

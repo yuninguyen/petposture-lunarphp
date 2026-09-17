@@ -36,7 +36,7 @@ export interface AnalyticsSettingsState {
 }
 
 export interface GeneralSettingsUpdatePayload {
-  shop_name?: string | null;
+  shop_name?: string;
   shop_logo?: { media_id: string } | null;
   shop_favicon?: { media_id: string } | null;
   shop_description?: string | null;
