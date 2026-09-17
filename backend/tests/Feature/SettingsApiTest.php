@@ -31,6 +31,25 @@ class SettingsApiTest extends TestCase
             ->assertJsonPath('data.admin_favicon', 'https://api.petposture.com/storage/settings/admin-favicon.png');
     }
 
+    public function test_public_settings_response_preserves_the_complete_structure(): void
+    {
+        $this->getJson('/api/settings')
+            ->assertOk()
+            ->assertJsonStructure(['data' => [
+                'shop_name',
+                'shop_logo',
+                'shop_favicon',
+                'admin_logo',
+                'admin_favicon',
+                'description',
+                'frontend_url',
+                'localization' => ['currency', 'symbol'],
+                'social' => ['facebook', 'instagram', 'twitter', 'tiktok', 'pinterest', 'youtube'],
+                'contact' => ['phone', 'address'],
+                'analytics' => ['google_analytics_id'],
+            ]]);
+    }
+
     public function test_settings_expose_frontend_url(): void
     {
         config(['app.frontend_url' => 'https://petposture.com']);

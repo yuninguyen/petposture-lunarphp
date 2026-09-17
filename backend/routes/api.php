@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\Admin\ShippingMethodController;
 use App\Http\Controllers\Api\Admin\SystemUserController;
 use App\Http\Controllers\Api\Admin\ActivityLogController;
+use App\Http\Controllers\Api\Admin\AdminSettingsController;
 use App\Http\Controllers\Api\Admin\MediaLibraryController;
 use App\Http\Controllers\Api\Admin\NotificationController;
 use App\Http\Controllers\Api\Admin\PaymentMethodController;
@@ -322,6 +323,13 @@ Route::prefix('/admin')
             Route::delete('/customers/{customer}/addresses/{address}', [CustomerController::class, 'destroyAddress']);
             Route::get('/customers/{customer}', [CustomerController::class, 'show']);
             Route::match(['put', 'patch'], '/customers/{customer}', [CustomerController::class, 'update']);
+
+            Route::get('/settings/general', [AdminSettingsController::class, 'general']);
+            Route::put('/settings/general', [AdminSettingsController::class, 'updateGeneral']);
+            Route::get('/settings/branding', [AdminSettingsController::class, 'branding']);
+            Route::put('/settings/branding', [AdminSettingsController::class, 'updateBranding']);
+            Route::get('/settings/analytics', [AdminSettingsController::class, 'analytics']);
+            Route::put('/settings/analytics', [AdminSettingsController::class, 'updateAnalytics']);
 
             Route::get('/finance/payment-methods', [PaymentMethodController::class, 'index']);
             Route::put('/finance/payment-methods/{gateway}', [PaymentMethodController::class, 'update'])
