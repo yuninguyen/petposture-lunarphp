@@ -28,51 +28,65 @@ export function BrandingSettingsForm() {
     queryKey: QUERY_KEY,
     queryFn: async () => (await fetchBrandingSettings()).data,
   });
+  const [baseline, setBaseline] = useState<BrandingSettingsState | null>(null);
   const [logo, setLogo] = useState<MediaSettingValue | null>(null);
   const [favicon, setFavicon] = useState<MediaSettingValue | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const adoptServerState = (data: BrandingSettingsState) => {
+    setBaseline(data);
+    setLogo(data.admin_logo);
+    setFavicon(data.admin_favicon);
+  };
 
   useEffect(() => {
-    if (!query.data) return;
-    setLogo(query.data.admin_logo);
-    setFavicon(query.data.admin_favicon);
-  }, [query.data]);
+    if (query.data && !baseline) adoptServerState(query.data);
+  }, [baseline, query.data]);
 
   const payload = useMemo<BrandingSettingsUpdatePayload>(() => {
-    if (!query.data) return {};
+    if (!baseline) return {};
     const next: BrandingSettingsUpdatePayload = {};
-    if (!sameMedia(logo, query.data.admin_logo)) next.admin_logo = mediaPayload(logo);
-    if (!sameMedia(favicon, query.data.admin_favicon)) next.admin_favicon = mediaPayload(favicon);
+    if (!sameMedia(logo, baseline.admin_logo)) next.admin_logo = mediaPayload(logo);
+    if (!sameMedia(favicon, baseline.admin_favicon)) next.admin_favicon = mediaPayload(favicon);
     return next;
-  }, [favicon, logo, query.data]);
+  }, [baseline, favicon, logo]);
 
   const mutation = useMutation({
     mutationFn: (next: BrandingSettingsUpdatePayload) => updateBrandingSettings(next),
     onSuccess: ({ data }) => {
       queryClient.setQueryData<BrandingSettingsState>(QUERY_KEY, data);
+      adoptServerState(data);
+      setSaved(true);
     },
   });
   const hasChanges = Object.keys(payload).length > 0;
+  const changeMedia = (setter: (value: MediaSettingValue | null) => void, value: MediaSettingValue | null) => {
+    setSaved(false);
+    mutation.reset();
+    setter(value);
+  };
 
-  if (query.isLoading) {
+  if (query.isLoading || (query.data && !baseline)) {
     return <p role="status" className="text-sm text-slate-500">{t('settings_branding.loading', { defaultValue: 'Loading branding settings…' })}</p>;
   }
-  if (query.isError || !query.data) {
+  if (query.isError || !query.data || !baseline) {
     return <p role="alert" className="text-sm text-red-600">{t('settings_branding.load_error', { defaultValue: 'Branding settings could not be loaded.' })}</p>;
   }
 
   return (
-    <form className="space-y-6" onSubmit={(event) => { event.preventDefault(); if (hasChanges) mutation.mutate(payload); }}>
+    <form className="space-y-6" onSubmit={(event) => { event.preventDefault(); setSaved(false); mutation.reset(); if (hasChanges) mutation.mutate(payload); }}>
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-ink">{t('settings_branding.admin_logo', { defaultValue: 'Admin logo' })}</p>
-          <MediaPicker value={logo} onChange={setLogo} context="general" />
-        </div>
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-ink">{t('settings_branding.admin_favicon', { defaultValue: 'Admin favicon' })}</p>
-          <MediaPicker value={favicon} onChange={setFavicon} context="general" />
-        </div>
+        <fieldset className="space-y-2" aria-labelledby="admin-logo-label">
+          <legend id="admin-logo-label" className="text-sm font-medium text-ink">{t('settings_branding.admin_logo', { defaultValue: 'Admin logo' })}</legend>
+          <MediaPicker value={logo} disabled={mutation.isPending} onChange={(value) => changeMedia(setLogo, value)} context="general" />
+        </fieldset>
+        <fieldset className="space-y-2" aria-labelledby="admin-favicon-label">
+          <legend id="admin-favicon-label" className="text-sm font-medium text-ink">{t('settings_branding.admin_favicon', { defaultValue: 'Admin favicon' })}</legend>
+          <MediaPicker value={favicon} disabled={mutation.isPending} onChange={(value) => changeMedia(setFavicon, value)} context="general" />
+        </fieldset>
       </div>
       {mutation.isError && <p role="alert" className="text-sm text-red-600">{t('settings_branding.save_error', { defaultValue: 'Branding settings could not be saved.' })}</p>}
+      {saved && <p role="status" className="text-sm text-green-700">{t('settings_branding.save_success', { defaultValue: 'Branding settings saved.' })}</p>}
       <Button type="submit" disabled={!hasChanges || mutation.isPending}>
         {mutation.isPending ? t('settings_branding.saving', { defaultValue: 'Saving…' }) : t('settings_branding.save', { defaultValue: 'Save' })}
       </Button>

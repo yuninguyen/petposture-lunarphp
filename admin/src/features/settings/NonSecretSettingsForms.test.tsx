@@ -24,14 +24,15 @@ vi.mock('./api', async (importOriginal) => ({
 }));
 
 vi.mock('@/features/media/MediaPicker', () => ({
-  MediaPicker: ({ value, onChange, context }: {
+  MediaPicker: ({ value, onChange, context, disabled }: {
     value: { id: string | null; url: string } | null;
     onChange(value: { id: string | null; url: string } | null): void;
     context: string;
+    disabled?: boolean;
   }) => (
-    <div data-testid="media-picker" data-context={context} data-id={value?.id ?? 'null'} data-url={value?.url ?? ''}>
-      <button type="button" data-action="select-media" onClick={() => onChange({ id: '123', url: 'https://cdn.example/new.png' })}>Select media</button>
-      <button type="button" data-action="remove-media" onClick={() => onChange(null)}>Remove media</button>
+    <div data-testid="media-picker" data-context={context} data-id={value?.id ?? 'null'} data-url={value?.url ?? ''} data-disabled={String(Boolean(disabled))}>
+      <button type="button" disabled={disabled} data-action="select-media" onClick={() => onChange({ id: '123', url: 'https://cdn.example/new.png' })}>Select media</button>
+      <button type="button" disabled={disabled} data-action="remove-media" onClick={() => onChange(null)}>Remove media</button>
     </div>
   ),
 }));
@@ -195,6 +196,97 @@ describe('non-secret settings forms', () => {
     expect(mocks.updateAnalyticsSettings).toHaveBeenCalledWith({ google_analytics_id: 'G-NEW' });
     expect(rendered.queryClient.getQueryData(['admin', 'settings', 'analytics'])).toEqual(saved);
     expect(button(rendered.host)).toBeDisabled();
+    cleanup(rendered);
+  });
+
+  it('trims the shop name, rejects a blank value accessibly, and submits only the normalized change', async () => {
+    mocks.updateGeneralSettings.mockResolvedValueOnce({ data: { ...general, shop_name: 'New Shop' } });
+    const rendered = await renderForm(<GeneralSettingsForm />);
+    const input = rendered.host.querySelector<HTMLInputElement>('#shop_name')!;
+
+    setValue(input, '   ');
+    await click(button(rendered.host));
+    expect(mocks.updateGeneralSettings).not.toHaveBeenCalled();
+    expect(rendered.host.querySelector('[role="alert"]')).toHaveTextContent('Shop name is required.');
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+
+    setValue(input, '  New Shop  ');
+    expect(rendered.host.querySelector('[role="alert"]')).toBeNull();
+    await click(button(rendered.host));
+
+    expect(mocks.updateGeneralSettings).toHaveBeenCalledWith({ shop_name: 'New Shop' });
+    cleanup(rendered);
+  });
+
+  it('disables General media controls while saving and shows an accessible success status after save', async () => {
+    const saved = { ...general, shop_logo: { id: '123', url: 'https://cdn.example/new.png' } };
+    const pending = deferred<{ data: GeneralSettingsState }>();
+    mocks.updateGeneralSettings.mockReturnValueOnce(pending.promise);
+    const rendered = await renderForm(<GeneralSettingsForm />);
+
+    await click(rendered.host.querySelector<HTMLElement>('[data-action="select-media"]')!);
+    await click(button(rendered.host));
+    expect(Array.from(rendered.host.querySelectorAll('[data-testid="media-picker"]')).every((picker) => picker.getAttribute('data-disabled') === 'true')).toBe(true);
+
+    await act(async () => pending.resolve({ data: saved }));
+    expect(rendered.host.querySelector('[role="status"]')).toHaveTextContent('General settings saved.');
+    setValue(rendered.host.querySelector<HTMLInputElement>('#shop_name')!, 'Edited again');
+    expect(rendered.host.querySelector('[role="status"]')).toBeNull();
+    cleanup(rendered);
+  });
+
+  it('preserves dirty General edits when cached query data refreshes', async () => {
+    const rendered = await renderForm(<GeneralSettingsForm />);
+    const input = rendered.host.querySelector<HTMLInputElement>('#shop_name')!;
+    setValue(input, 'Local draft');
+
+    await act(async () => {
+      rendered.queryClient.setQueryData(['admin', 'settings', 'general'], { ...general, shop_name: 'Server refresh' });
+    });
+
+    expect(input).toHaveValue('Local draft');
+    cleanup(rendered);
+  });
+
+  it('labels every media group accessibly', async () => {
+    const generalRendered = await renderForm(<GeneralSettingsForm />);
+    expect(generalRendered.host.querySelector('fieldset[aria-labelledby="shop-logo-label"]')).not.toBeNull();
+    expect(generalRendered.host.querySelector('fieldset[aria-labelledby="shop-favicon-label"]')).not.toBeNull();
+    cleanup(generalRendered);
+
+    const brandingRendered = await renderForm(<BrandingSettingsForm />);
+    expect(brandingRendered.host.querySelector('fieldset[aria-labelledby="admin-logo-label"]')).not.toBeNull();
+    expect(brandingRendered.host.querySelector('fieldset[aria-labelledby="admin-favicon-label"]')).not.toBeNull();
+    cleanup(brandingRendered);
+  });
+
+  it('sends explicit null when Analytics is cleared and reports controlled failure', async () => {
+    mocks.updateAnalyticsSettings.mockRejectedValueOnce(new Error('raw provider detail'));
+    const rendered = await renderForm(<AnalyticsSettingsForm />);
+    const input = rendered.host.querySelector<HTMLInputElement>('#google_analytics_id')!;
+
+    setValue(input, '');
+    await click(button(rendered.host));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+
+    expect(mocks.updateAnalyticsSettings).toHaveBeenCalledWith({ google_analytics_id: null });
+    expect(rendered.host.querySelector('[role="alert"]')).toHaveTextContent('Analytics settings could not be saved.');
+    expect(rendered.host.textContent).not.toContain('raw provider detail');
+    cleanup(rendered);
+  });
+
+  it('does not let refreshed Branding query data overwrite a dirty media selection', async () => {
+    const rendered = await renderForm(<BrandingSettingsForm />);
+    await click(rendered.host.querySelector<HTMLElement>('[data-action="select-media"]')!);
+
+    await act(async () => {
+      rendered.queryClient.setQueryData(['admin', 'settings', 'branding'], {
+        ...branding,
+        admin_logo: { id: '99', url: 'https://cdn.example/refreshed.png' },
+      });
+    });
+
+    expect(rendered.host.querySelector('[data-testid="media-picker"]')).toHaveAttribute('data-id', '123');
     cleanup(rendered);
   });
 });
