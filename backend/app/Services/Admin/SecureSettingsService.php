@@ -80,7 +80,11 @@ class SecureSettingsService
         try {
             $this->sendSmtpTest($configuration, $recipient);
         } catch (UnexpectedResponseException $exception) {
-            return $this->smtpRejectionResponse();
+            if (in_array($exception->getCode(), [450, 451, 452, 500, 501, 502, 503, 504, 530, 534, 535, 538, 550, 551, 552, 553, 554, 555], true)) {
+                return $this->smtpRejectionResponse();
+            }
+
+            return $this->smtpUnavailableResponse();
         } catch (TransportException $exception) {
             if (in_array($exception->getCode(), [450, 451, 452, 500, 501, 502, 503, 504, 530, 534, 535, 538, 550, 551, 552, 553, 554, 555], true)) {
                 return $this->smtpRejectionResponse();
