@@ -4,6 +4,9 @@ namespace App\Services\Admin;
 
 use App\Models\Setting;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Validator;
+use Symfony\Component\Mailer\Exception\TransportException;
+use Symfony\Component\Mailer\Exception\UnexpectedResponseException;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Symfony\Component\Mime\Email;
@@ -54,31 +57,38 @@ class SecureSettingsService
             $configuration[$field] = $this->resolveCandidateField($field, $payload, $definition);
         }
 
-        if (! $this->hasValue($configuration['smtp_host']) || ! $this->hasValue($configuration['mail_from_address'])) {
+        $configuration['smtp_port'] ??= 587;
+        $configuration['smtp_encryption'] ??= 'tls';
+
+        if (Validator::make($configuration, [
+            'smtp_host' => ['required', 'string', 'max:255'],
+            'smtp_port' => ['required', 'integer', 'between:1,65535'],
+            'smtp_user' => ['nullable', 'string', 'max:255'],
+            'smtp_pass' => ['nullable', 'string', 'max:4096'],
+            'smtp_encryption' => ['required', 'string', 'in:tls,ssl,none'],
+            'mail_from_address' => ['required', 'string', 'email:rfc', 'max:255'],
+        ])->fails()) {
             return [
                 'status_code' => 422,
                 'data' => [
                     'status' => 'invalid',
-                    'message' => 'SMTP host and from address are required.',
+                    'message' => 'The effective SMTP configuration is invalid.',
                 ],
             ];
         }
 
-        $configuration['smtp_port'] = (int) ($configuration['smtp_port'] ?: 587);
-        $configuration['smtp_encryption'] = in_array($configuration['smtp_encryption'], ['tls', 'ssl', 'none'], true)
-            ? $configuration['smtp_encryption']
-            : 'tls';
-
         try {
             $this->sendSmtpTest($configuration, $recipient);
+        } catch (UnexpectedResponseException $exception) {
+            return $this->smtpRejectionResponse();
+        } catch (TransportException $exception) {
+            if (in_array($exception->getCode(), [450, 451, 452, 500, 501, 502, 503, 504, 530, 534, 535, 538, 550, 551, 552, 553, 554, 555], true)) {
+                return $this->smtpRejectionResponse();
+            }
+
+            return $this->smtpUnavailableResponse();
         } catch (Throwable) {
-            return [
-                'status_code' => 502,
-                'data' => [
-                    'status' => 'unavailable',
-                    'message' => 'Unable to send the SMTP test email.',
-                ],
-            ];
+            return $this->smtpUnavailableResponse();
         }
 
         return [
@@ -86,6 +96,28 @@ class SecureSettingsService
             'data' => [
                 'status' => 'sent',
                 'message' => 'SMTP test email sent.',
+            ],
+        ];
+    }
+
+    private function smtpRejectionResponse(): array
+    {
+        return [
+            'status_code' => 422,
+            'data' => [
+                'status' => 'rejected',
+                'message' => 'The SMTP server rejected the test email.',
+            ],
+        ];
+    }
+
+    private function smtpUnavailableResponse(): array
+    {
+        return [
+            'status_code' => 502,
+            'data' => [
+                'status' => 'unavailable',
+                'message' => 'Unable to send the SMTP test email.',
             ],
         ];
     }

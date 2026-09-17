@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
+use Symfony\Component\Mailer\Exception\TransportException;
+use Symfony\Component\Mailer\Exception\UnexpectedResponseException;
 use Tests\TestCase;
 
 class SettingsTest extends TestCase
@@ -519,6 +521,18 @@ class SettingsTest extends TestCase
 
         Sanctum::actingAs(User::factory()->create());
         $this->postJson('/api/admin/settings/smtp/test', [])->assertForbidden();
+
+        $sent = [];
+        $this->capturingSmtpService($sent);
+        Sanctum::actingAs($this->userWithRole('super_admin'));
+        $this->postJson('/api/admin/settings/smtp/test', [
+            'fields' => [
+                'smtp_host' => 'super-admin.smtp.test',
+                'smtp_port' => 2525,
+                'smtp_encryption' => 'tls',
+                'mail_from_address' => 'super-admin@example.test',
+            ],
+        ])->assertOk();
     }
 
     public function test_smtp_test_resolves_candidates_then_database_then_stable_environment_and_uses_authenticated_recipient(): void
@@ -651,7 +665,94 @@ class SettingsTest extends TestCase
             'clear_fields' => ['smtp_host', 'mail_from_address'],
         ])->assertStatus(422)->assertExactJson(['data' => [
             'status' => 'invalid',
-            'message' => 'SMTP host and from address are required.',
+            'message' => 'The effective SMTP configuration is invalid.',
+        ]]);
+    }
+
+    public function test_smtp_test_rejects_invalid_resolved_database_and_environment_configuration_before_transport(): void
+    {
+        $invalidConfigurations = [
+            'blank host' => ['smtp_host', '   ', 'string'],
+            'oversized host' => ['smtp_host', str_repeat('h', 256), 'string'],
+            'lossy decimal port' => ['smtp_port', '25.5', 'string'],
+            'out of range port' => ['smtp_port', '65536', 'string'],
+            'non string username' => ['smtp_user', ['unexpected'], 'json'],
+            'oversized password' => ['smtp_pass', str_repeat('s', 4097), 'string'],
+            'invalid encryption' => ['smtp_encryption', 'starttls', 'string'],
+            'invalid from address' => ['mail_from_address', 'not-an-email', 'string'],
+            'oversized from address' => ['mail_from_address', str_repeat('a', 244).'@example.test', 'string'],
+        ];
+
+        foreach ($invalidConfigurations as $case => [$field, $value, $type]) {
+            Setting::query()->whereIn('key', (new SecureSettingsService)->smtpFieldNames())->get()->each->delete();
+            config([
+                'mail.environment.smtp.host' => 'env.smtp.test',
+                'mail.environment.smtp.port' => 2525,
+                'mail.environment.smtp.username' => null,
+                'mail.environment.smtp.password' => null,
+                'mail.environment.smtp.scheme' => 'tls',
+                'mail.environment.from.address' => 'env@example.test',
+            ]);
+            Setting::set($field, $value, $type, 'email');
+
+            $sent = [];
+            $this->capturingSmtpService($sent);
+            Sanctum::actingAs($this->userWithRole('admin'));
+
+            $this->postJson('/api/admin/settings/smtp/test', [])
+                ->assertStatus(422)
+                ->assertExactJson(['data' => [
+                    'status' => 'invalid',
+                    'message' => 'The effective SMTP configuration is invalid.',
+                ]]);
+
+            $this->assertSame([], $sent, $case);
+        }
+    }
+
+    public function test_smtp_test_classifies_protocol_rejection_as_sanitized_422(): void
+    {
+        $candidate = 'SMTP-PROTOCOL-REJECTION-SENTINEL';
+        $messages = [];
+        Log::listen(function (MessageLogged $event) use (&$messages): void {
+            $messages[] = $event->message.' '.json_encode($event->context);
+        });
+        $sent = [];
+        $this->capturingSmtpService($sent, new UnexpectedResponseException('535 auth rejected '.$candidate, 535));
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $response = $this->postJson('/api/admin/settings/smtp/test', [
+            'fields' => [
+                'smtp_host' => 'candidate.smtp.test',
+                'smtp_port' => 2525,
+                'smtp_encryption' => 'tls',
+                'mail_from_address' => 'candidate@example.test',
+            ],
+        ])->assertStatus(422)->assertExactJson(['data' => [
+            'status' => 'rejected',
+            'message' => 'The SMTP server rejected the test email.',
+        ]]);
+
+        $this->assertStringNotContainsString($candidate, $response->getContent());
+        $this->assertStringNotContainsString($candidate, implode("\n", $messages));
+    }
+
+    public function test_smtp_test_classifies_authentication_transport_response_code_as_sanitized_422(): void
+    {
+        $sent = [];
+        $this->capturingSmtpService($sent, new TransportException('authentication failed SECRET', 535));
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $this->postJson('/api/admin/settings/smtp/test', [
+            'fields' => [
+                'smtp_host' => 'candidate.smtp.test',
+                'smtp_port' => 2525,
+                'smtp_encryption' => 'tls',
+                'mail_from_address' => 'candidate@example.test',
+            ],
+        ])->assertStatus(422)->assertExactJson(['data' => [
+            'status' => 'rejected',
+            'message' => 'The SMTP server rejected the test email.',
         ]]);
     }
 
@@ -669,7 +770,7 @@ class SettingsTest extends TestCase
             $messages[] = $event->message.' '.json_encode($event->context);
         });
         $sent = [];
-        $this->capturingSmtpService($sent, new \RuntimeException('transport failed '.$candidate));
+        $this->capturingSmtpService($sent, new TransportException('connection timed out '.$candidate));
         $admin = $this->userWithRole('admin');
         Sanctum::actingAs($admin);
 
