@@ -102,7 +102,8 @@ describe('SettingsPage', () => {
     const requiredKeys = [
       'nav.settings', 'settings.title', 'settings.subtitle',
       'settings.tabs.general', 'settings.tabs.branding', 'settings.tabs.analytics', 'settings.tabs.smtp', 'settings.tabs.ai',
-      'settings.secrets.hints.database', 'settings.secrets.hints.environment', 'settings.secrets.hints.none',
+      'settings.secrets.hints.database', 'settings.secrets.hints.environment', 'settings.secrets.hints.mixed', 'settings.secrets.hints.none',
+      'settings.media_legacy_preview',
       'settings.secrets.remove_override', 'settings.secrets.undo_remove_override', 'settings.secrets.show_candidate',
       'settings.secrets.hide_candidate', 'settings.secrets.clear_confirmation',
       'settings_general.loading', 'settings_general.load_error', 'settings_general.shop_name',

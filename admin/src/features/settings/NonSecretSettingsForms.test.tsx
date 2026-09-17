@@ -116,6 +116,8 @@ describe('non-secret settings forms', () => {
     expect(rendered.host.querySelectorAll('[data-testid="media-picker"]')).toHaveLength(2);
     expect(Array.from(rendered.host.querySelectorAll('[data-testid="media-picker"]')).every((picker) => picker.getAttribute('data-context') === 'general')).toBe(true);
     expect(rendered.host.querySelector('[data-url="https://cdn.example/legacy-logo.png"]')).toHaveAttribute('data-id', 'null');
+    expect(rendered.host.textContent).toContain('Select an image from the general media library.');
+    expect(rendered.host.querySelector('[role="note"]')).toHaveTextContent('This legacy image has no media library ID. Select a new image to replace it.');
     expect(button(rendered.host)).toBeDisabled();
 
     cleanup(rendered);
@@ -168,6 +170,8 @@ describe('non-secret settings forms', () => {
     expect(pickers).toHaveLength(2);
     expect(Array.from(pickers).every((picker) => picker.dataset.context === 'general')).toBe(true);
     expect(pickers[0]).toHaveAttribute('data-id', 'null');
+    expect(rendered.host.textContent).toContain('Select an image from the general media library.');
+    expect(rendered.host.querySelector('[role="note"]')).toHaveTextContent('This legacy image has no media library ID. Select a new image to replace it.');
     await click(pickers[0].querySelector<HTMLElement>('[data-action="select-media"]')!);
     await click(pickers[1].querySelector<HTMLElement>('[data-action="remove-media"]')!);
     await click(button(rendered.host));

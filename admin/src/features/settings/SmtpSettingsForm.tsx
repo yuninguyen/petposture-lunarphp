@@ -292,7 +292,7 @@ export function SmtpSettingsForm() {
                   onChange={(event) => changeValue(key, event.target.value)}
                 />
               )}
-              <p className="text-xs text-gray-500">{state.hint}</p>
+              <p className="text-xs text-gray-500">{t(`settings.secrets.hints.${state.source}`)}</p>
               {markedForClear && <p role="alert" className="text-xs text-amber-700">{clearWarning}</p>}
             </div>
           );

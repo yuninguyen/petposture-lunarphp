@@ -1,6 +1,6 @@
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('./features/orders/OrdersListPage', () => ({ OrdersListPage: () => createElement('div', null, 'Orders route') }));
@@ -30,11 +30,15 @@ import { canAccessFinance } from './navigation/adminNavigation';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
+function RouteProbe() {
+  return createElement('output', { 'data-testid': 'route-path' }, useLocation().pathname);
+}
+
 function renderRoutes(userRoles: string[], path = '/shipping') {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const root = createRoot(host);
-  act(() => root.render(createElement(MemoryRouter, { initialEntries: [path] }, createElement(AppRoutes, { userRoles }))));
+  act(() => root.render(createElement(MemoryRouter, { initialEntries: [path] }, createElement(RouteProbe), createElement(AppRoutes, { userRoles }))));
   return { host, root };
 }
 
@@ -419,12 +423,13 @@ describe('admin home route resolution', () => {
   });
 
   it.each([
-    ['customer', ['customer']],
-    ['unknown role', ['guest']],
-    ['empty roles', []],
-  ])('fails closed for Settings when core-admin access is denied to %s', async (_case, roles) => {
+    ['customer', ['customer'], '/dashboard'],
+    ['unknown role', ['guest'], '/dashboard'],
+    ['empty roles', [], '/dashboard'],
+  ])('redirects %s from Settings through the wildcard safe-home route', async (_case, roles, expectedPath) => {
     const { host, root } = renderRoutes(roles, '/system/settings');
     await act(async () => await Promise.resolve());
+    expect(host.querySelector('[data-testid="route-path"]')).toHaveTextContent(expectedPath);
     expect(host.textContent).not.toContain('System settings route');
     act(() => root.unmount());
     host.remove();

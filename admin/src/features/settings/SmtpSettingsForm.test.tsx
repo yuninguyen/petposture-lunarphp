@@ -111,6 +111,12 @@ describe('SmtpSettingsForm', () => {
     expect(field(rendered.host, 'smtp_encryption')).toHaveValue('tls');
     expect(field(rendered.host, 'mail_from_address')).toHaveValue('mail@stored.test');
     expect(rendered.host.textContent).toContain('The test email is sent only to your signed-in administrator email address.');
+    expect(rendered.host.textContent).toContain('Configured in database.');
+    expect(rendered.host.textContent).not.toContain('Stored host');
+    expect(rendered.host.textContent).not.toContain('Stored port');
+    expect(rendered.host.textContent).not.toContain('Stored user');
+    expect(rendered.host.textContent).not.toContain('Stored encryption');
+    expect(rendered.host.textContent).not.toContain('Stored sender');
     expect(rendered.host.querySelector('input[name="recipient"]')).toBeNull();
     expect(button(rendered.host, 'Save')).toBeDisabled();
 

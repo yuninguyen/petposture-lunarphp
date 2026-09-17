@@ -99,8 +99,10 @@ describe('admin navigation semantic authorization', () => {
     const affiliateItems = groups.find((g) => g.key === 'affiliate')?.items.map((i) => i.path);
     expect(affiliateItems).toEqual(['/affiliate/reports', '/affiliate/networks']);
 
-    const systemItems = groups.find((g) => g.key === 'system')?.items.map((i) => i.path);
+    const system = groups.find((g) => g.key === 'system');
+    const systemItems = system?.items.map((i) => i.path);
     expect(systemItems).toEqual(['/system/users', '/system/roles', '/system/media', '/system/activity-logs', '/system/settings']);
+    expect(system?.items.find((item) => item.path === '/system/settings')?.fallbackLabel).toBe('');
   });
 
   it('exposes dashboard and orders to Order Manager', () => {

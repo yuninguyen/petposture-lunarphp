@@ -113,6 +113,12 @@ describe('AiSettingsForm', () => {
     expect(field(rendered.host, 'anthropic_model')).toHaveValue('claude-stored');
     expect(Array.from((field(rendered.host, 'ai_seo_provider') as HTMLSelectElement).options).map((option) => option.value)).toEqual(['auto', 'anthropic', 'openai', 'grok', 'gemini']);
     expect(rendered.host.textContent).toContain('Configured in database.');
+    expect(rendered.host.textContent).not.toContain('Stored provider');
+    expect(rendered.host.textContent).not.toContain('Stored Anthropic model');
+    expect(rendered.host.textContent).not.toContain('Stored OpenAI model');
+    expect(rendered.host.textContent).not.toContain('Stored OpenAI URL');
+    expect(rendered.host.textContent).not.toContain('Stored xAI model');
+    expect(rendered.host.textContent).not.toContain('Stored Gemini model');
     expect(rendered.host.textContent).not.toMatch(/\*{3,}|•{3,}/);
     cleanup(rendered);
   });

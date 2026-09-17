@@ -238,7 +238,7 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
   const canModerateReviews = canManageReviews(userRoles);
   const home = getAdminHomeRoute(userRoles);
 
-  if (!isCoreAdmin && !canManageProducts && !canManageSales) {
+  if (!isCoreAdmin && !canManageProducts && !canManageSales && location.pathname !== '/system/settings') {
     return <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">Use the Filament admin panel for order and support workflows.</div>;
   }
 
