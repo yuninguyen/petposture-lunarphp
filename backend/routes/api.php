@@ -336,6 +336,7 @@ Route::prefix('/admin')
             Route::post('/settings/smtp/test', [SecureSettingsController::class, 'testSmtp']);
             Route::get('/settings/ai', [SecureSettingsController::class, 'ai']);
             Route::put('/settings/ai', [SecureSettingsController::class, 'updateAi']);
+            Route::post('/settings/ai/fetch-models', [SecureSettingsController::class, 'fetchAiModels']);
 
             Route::get('/finance/payment-methods', [PaymentMethodController::class, 'index']);
             Route::put('/finance/payment-methods/{gateway}', [PaymentMethodController::class, 'update'])

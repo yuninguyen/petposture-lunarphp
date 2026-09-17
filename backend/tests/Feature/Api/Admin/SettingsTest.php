@@ -8,8 +8,10 @@ use App\Models\User;
 use App\Services\Admin\SecureSettingsService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
@@ -863,6 +865,191 @@ class SettingsTest extends TestCase
         $this->assertDatabaseMissing('settings', ['value' => $candidate]);
         $this->assertFalse(Cache::has('setting:smtp_pass'));
         $this->assertSame($admin->email, $sent['recipient']);
+    }
+
+    public function test_open_ai_model_fetch_requires_authentication_and_core_admin_role(): void
+    {
+        $this->postJson('/api/admin/settings/ai/fetch-models', [])->assertUnauthorized();
+
+        foreach (['customer', 'Product Manager', 'Order Manager', 'Support', 'unknown'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+            $this->postJson('/api/admin/settings/ai/fetch-models', [])->assertForbidden();
+        }
+
+        Sanctum::actingAs(User::factory()->create());
+        $this->postJson('/api/admin/settings/ai/fetch-models', [])->assertForbidden();
+
+        Http::preventStrayRequests();
+        Http::fake(['https://api.openai.com/v1/models' => Http::response(['data' => [['id' => 'gpt-test']]])]);
+
+        foreach (['super_admin', 'admin', 'staff'] as $role) {
+            config(['services.openai.key' => 'environment-openai-key']);
+            Sanctum::actingAs($this->userWithRole($role));
+            $this->postJson('/api/admin/settings/ai/fetch-models', [])->assertOk();
+        }
+    }
+
+    public function test_open_ai_model_fetch_uses_candidate_url_bearer_timeout_and_returns_sorted_unique_non_empty_ids(): void
+    {
+        $candidate = 'OPENAI-CANDIDATE-KEY-SENTINEL';
+        Http::preventStrayRequests();
+        Http::fake(function ($request, array $options) use ($candidate) {
+            $this->assertSame('https://proxy.example/v1/models', $request->url());
+            $this->assertSame(['Bearer '.$candidate], $request->header('Authorization'));
+            $this->assertSame(15, $options['timeout']);
+
+            return Http::response(['data' => [
+                ['id' => 'gpt-z'],
+                ['id' => ''],
+                ['id' => 'gpt-a'],
+                ['id' => 'gpt-z'],
+                ['id' => '   '],
+                ['id' => 123],
+                ['missing' => 'ignored'],
+            ]]);
+        });
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $response = $this->postJson('/api/admin/settings/ai/fetch-models', [
+            'fields' => [
+                'openai_api_key' => $candidate,
+                'openai_base_url' => 'https://proxy.example/v1/',
+                'openai_model' => 'gpt-a',
+            ],
+        ])->assertOk()->assertExactJson(['data' => [
+            'status' => 'loaded',
+            'models' => ['gpt-a', 'gpt-z'],
+        ]]);
+
+        $this->assertStringNotContainsString($candidate, $response->getContent());
+        Http::assertSentCount(1);
+    }
+
+    public function test_open_ai_model_fetch_resolves_candidate_then_database_then_environment_and_clear_skips_database_without_side_effects(): void
+    {
+        config([
+            'services.openai.key' => 'ENV-OPENAI-KEY',
+            'services.openai.base_url' => 'https://environment.openai.test/v1',
+        ]);
+        Setting::set('openai_api_key', 'DB-OPENAI-KEY', 'string', 'ai');
+        Setting::set('openai_base_url', 'https://database.openai.test/v1', 'string', 'ai');
+        Cache::put('openai-fetch-unrelated', 'keep');
+        $before = Setting::query()->whereIn('key', ['openai_api_key', 'openai_base_url', 'openai_model'])
+            ->pluck('value', 'key')->all();
+        $seen = [];
+        Http::preventStrayRequests();
+        Http::fake(function ($request) use (&$seen) {
+            $seen[] = [$request->url(), $request->header('Authorization')[0] ?? null];
+
+            return Http::response(['data' => [['id' => 'gpt-test']]]);
+        });
+        Sanctum::actingAs($this->userWithRole('staff'));
+
+        $this->postJson('/api/admin/settings/ai/fetch-models', [])->assertOk();
+        $this->postJson('/api/admin/settings/ai/fetch-models', [
+            'fields' => ['openai_api_key' => 'CANDIDATE-OPENAI-KEY'],
+            'clear_fields' => ['openai_base_url'],
+        ])->assertOk();
+        $this->postJson('/api/admin/settings/ai/fetch-models', [
+            'clear_fields' => ['openai_api_key', 'openai_base_url'],
+        ])->assertOk();
+
+        $this->assertSame([
+            ['https://database.openai.test/v1/models', 'Bearer DB-OPENAI-KEY'],
+            ['https://environment.openai.test/v1/models', 'Bearer CANDIDATE-OPENAI-KEY'],
+            ['https://environment.openai.test/v1/models', 'Bearer ENV-OPENAI-KEY'],
+        ], $seen);
+        $this->assertSame($before, Setting::query()->whereIn('key', ['openai_api_key', 'openai_base_url', 'openai_model'])
+            ->pluck('value', 'key')->all());
+        $this->assertSame('keep', Cache::get('openai-fetch-unrelated'));
+    }
+
+    public function test_open_ai_model_fetch_defaults_base_url_and_strictly_rejects_unknown_fields_and_clear_conflicts(): void
+    {
+        config(['services.openai.key' => 'ENV-OPENAI-KEY', 'services.openai.base_url' => null]);
+        Http::preventStrayRequests();
+        Http::fake(['https://api.openai.com/v1/models' => Http::response(['data' => [['id' => 'gpt-test']]])]);
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $this->postJson('/api/admin/settings/ai/fetch-models', [])->assertOk();
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://api.openai.com/v1/models');
+
+        $this->postJson('/api/admin/settings/ai/fetch-models', [
+            'unexpected' => 'forbidden',
+        ])->assertUnprocessable()->assertJsonValidationErrors('unexpected');
+        $this->postJson('/api/admin/settings/ai/fetch-models', [
+            'fields' => ['anthropic_api_key' => 'forbidden'],
+        ])->assertUnprocessable()->assertJsonValidationErrors('fields');
+        $this->postJson('/api/admin/settings/ai/fetch-models', [
+            'clear_fields' => ['xai_api_key'],
+        ])->assertUnprocessable()->assertJsonValidationErrors('clear_fields.0');
+        $this->postJson('/api/admin/settings/ai/fetch-models', [
+            'fields' => ['openai_api_key' => 'replacement'],
+            'clear_fields' => ['openai_api_key'],
+        ])->assertUnprocessable()->assertJsonValidationErrors('fields.openai_api_key');
+    }
+
+    public function test_open_ai_model_fetch_maps_missing_key_provider_rejection_and_invalid_lists_to_sanitized_422(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+        config(['services.openai.key' => null, 'services.openai.base_url' => null]);
+        Setting::query()->whereIn('key', ['openai_api_key', 'openai_base_url'])->get()->each->delete();
+
+        $this->postJson('/api/admin/settings/ai/fetch-models', [])
+            ->assertStatus(422)
+            ->assertExactJson(['data' => [
+                'status' => 'invalid',
+                'models' => [],
+            ]]);
+
+        foreach ([
+            Http::response(['error' => ['message' => 'RAW-PROVIDER-SECRET']], 401),
+            Http::response(['data' => []]),
+            Http::response(['data' => [['id' => ''], ['id' => 17]]]),
+            Http::response(['unexpected' => 'shape']),
+        ] as $fakeResponse) {
+            config(['services.openai.key' => 'ENV-OPENAI-KEY']);
+            Http::fake(fn () => $fakeResponse);
+
+            $response = $this->postJson('/api/admin/settings/ai/fetch-models', [])
+                ->assertStatus(422)
+                ->assertExactJson(['data' => [
+                    'status' => 'invalid',
+                    'models' => [],
+                ]]);
+            $this->assertStringNotContainsString('RAW-PROVIDER-SECRET', $response->getContent());
+            Http::fake();
+        }
+    }
+
+    public function test_open_ai_model_fetch_maps_connection_and_unexpected_failures_to_sanitized_502_without_leaks_or_persistence(): void
+    {
+        foreach ([
+            new ConnectionException('timeout OPENAI-TRANSPORT-SENTINEL'),
+            new \RuntimeException('unexpected OPENAI-TRANSPORT-SENTINEL'),
+        ] as $failure) {
+            $candidate = 'OPENAI-CANDIDATE-LEAK-SENTINEL';
+            $messages = [];
+            Log::listen(function (MessageLogged $event) use (&$messages): void {
+                $messages[] = $event->message.' '.json_encode($event->context);
+            });
+            Http::fake(fn () => throw $failure);
+            Sanctum::actingAs($this->userWithRole('admin'));
+
+            $response = $this->postJson('/api/admin/settings/ai/fetch-models', [
+                'fields' => ['openai_api_key' => $candidate],
+            ])->assertStatus(502)->assertExactJson(['data' => [
+                'status' => 'unavailable',
+                'models' => [],
+            ]]);
+
+            foreach ([$candidate, 'OPENAI-TRANSPORT-SENTINEL'] as $forbidden) {
+                $this->assertStringNotContainsString($forbidden, $response->getContent());
+                $this->assertStringNotContainsString($forbidden, implode("\n", $messages));
+            }
+            $this->assertDatabaseMissing('settings', ['value' => $candidate]);
+            $this->assertFalse(Cache::has('setting:openai_api_key'));
+        }
     }
 
     private function capturingSmtpService(array &$sent, ?\Throwable $failure = null): void

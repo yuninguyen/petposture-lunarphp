@@ -4,6 +4,7 @@ namespace App\Services\Admin;
 
 use App\Models\Setting;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\Mailer\Exception\TransportException;
 use Symfony\Component\Mailer\Exception\UnexpectedResponseException;
@@ -136,6 +137,74 @@ class SecureSettingsService
         $this->update($payload, self::AI_FIELDS, 'ai');
 
         return $this->ai();
+    }
+
+    public function fetchOpenAiModels(array $payload): array
+    {
+        $apiKey = $this->resolveCandidateField('openai_api_key', $payload, self::AI_FIELDS['openai_api_key']);
+        if (! is_string($apiKey) || ! $this->hasValue($apiKey)) {
+            return $this->openAiInvalidResponse();
+        }
+
+        $baseUrl = $this->resolveCandidateField('openai_base_url', $payload, self::AI_FIELDS['openai_base_url']);
+        if (! is_string($baseUrl) || ! $this->hasValue($baseUrl)) {
+            $baseUrl = 'https://api.openai.com/v1';
+        }
+
+        try {
+            $response = Http::withToken($apiKey)
+                ->timeout(15)
+                ->get(rtrim($baseUrl, '/').'/models');
+        } catch (Throwable) {
+            return $this->openAiUnavailableResponse();
+        }
+
+        if (! $response->successful()) {
+            return $this->openAiInvalidResponse();
+        }
+
+        $models = collect($response->json('data'))
+            ->pluck('id')
+            ->filter(fn (mixed $id): bool => is_string($id) && trim($id) !== '')
+            ->map(fn (string $id): string => trim($id))
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        if ($models === []) {
+            return $this->openAiInvalidResponse();
+        }
+
+        return [
+            'status_code' => 200,
+            'data' => [
+                'status' => 'loaded',
+                'models' => $models,
+            ],
+        ];
+    }
+
+    private function openAiInvalidResponse(): array
+    {
+        return [
+            'status_code' => 422,
+            'data' => [
+                'status' => 'invalid',
+                'models' => [],
+            ],
+        ];
+    }
+
+    private function openAiUnavailableResponse(): array
+    {
+        return [
+            'status_code' => 502,
+            'data' => [
+                'status' => 'unavailable',
+                'models' => [],
+            ],
+        ];
     }
 
     public function smtpFieldNames(): array

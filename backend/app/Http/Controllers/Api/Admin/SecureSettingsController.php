@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\FetchAiModelsRequest;
 use App\Http\Requests\Admin\TestSmtpSettingsRequest;
 use App\Http\Requests\Admin\UpdateAiSettingsRequest;
 use App\Http\Requests\Admin\UpdateSmtpSettingsRequest;
@@ -36,5 +37,12 @@ class SecureSettingsController extends Controller
     public function updateAi(UpdateAiSettingsRequest $request, SecureSettingsService $settings): JsonResponse
     {
         return response()->json(['data' => $settings->updateAi($request->validated())]);
+    }
+
+    public function fetchAiModels(FetchAiModelsRequest $request, SecureSettingsService $settings): JsonResponse
+    {
+        $result = $settings->fetchOpenAiModels($request->validated());
+
+        return response()->json(['data' => $result['data']], $result['status_code']);
     }
 }
