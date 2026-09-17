@@ -39,6 +39,7 @@ use App\Http\Controllers\Api\Admin\MediaLibraryController;
 use App\Http\Controllers\Api\Admin\NotificationController;
 use App\Http\Controllers\Api\Admin\PaymentMethodController;
 use App\Http\Controllers\Api\Admin\RoleController;
+use App\Http\Controllers\Api\Admin\SecureSettingsController;
 use App\Http\Controllers\Api\Admin\AffiliateNetworkManagementController;
 use App\Http\Controllers\Api\Admin\AffiliateReportController;
 use App\Http\Controllers\Api\ReturnRequestController;
@@ -330,6 +331,10 @@ Route::prefix('/admin')
             Route::put('/settings/branding', [AdminSettingsController::class, 'updateBranding']);
             Route::get('/settings/analytics', [AdminSettingsController::class, 'analytics']);
             Route::put('/settings/analytics', [AdminSettingsController::class, 'updateAnalytics']);
+            Route::get('/settings/smtp', [SecureSettingsController::class, 'smtp']);
+            Route::put('/settings/smtp', [SecureSettingsController::class, 'updateSmtp']);
+            Route::get('/settings/ai', [SecureSettingsController::class, 'ai']);
+            Route::put('/settings/ai', [SecureSettingsController::class, 'updateAi']);
 
             Route::get('/finance/payment-methods', [PaymentMethodController::class, 'index']);
             Route::put('/finance/payment-methods/{gateway}', [PaymentMethodController::class, 'update'])
