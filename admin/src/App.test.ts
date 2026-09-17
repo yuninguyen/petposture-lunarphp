@@ -1,6 +1,6 @@
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('./features/orders/OrdersListPage', () => ({ OrdersListPage: () => createElement('div', null, 'Orders route') }));
@@ -21,6 +21,7 @@ vi.mock('./features/system-users/SystemUsersPage', () => ({ SystemUsersPage: () 
 vi.mock('./features/system-media/MediaLibraryPage', () => ({ MediaLibraryPage: () => createElement('div', null, 'Media library route') }));
 vi.mock('./features/system-roles/RolesPage', () => ({ RolesPage: () => createElement('div', null, 'Roles route') }));
 vi.mock('./features/system-activity-logs/ActivityLogsPage', () => ({ ActivityLogsPage: () => createElement('div', null, 'Activity logs route') }));
+vi.mock('./features/settings/SettingsPage', () => ({ SettingsPage: () => createElement('div', null, 'System settings route') }));
 vi.mock('./features/affiliate-reports/AffiliateReportsPage', () => ({ AffiliateReportsPage: () => createElement('div', null, 'Affiliate reports route') }));
 vi.mock('./features/affiliate-networks/AffiliateNetworksPage', () => ({ AffiliateNetworksPage: () => createElement('div', null, 'Affiliate networks route') }));
 
@@ -29,11 +30,15 @@ import { canAccessFinance } from './navigation/adminNavigation';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
+function RouteProbe() {
+  return createElement('output', { 'data-testid': 'route-path' }, useLocation().pathname);
+}
+
 function renderRoutes(userRoles: string[], path = '/shipping') {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const root = createRoot(host);
-  act(() => root.render(createElement(MemoryRouter, { initialEntries: [path] }, createElement(AppRoutes, { userRoles }))));
+  act(() => root.render(createElement(MemoryRouter, { initialEntries: [path] }, createElement(RouteProbe), createElement(AppRoutes, { userRoles }))));
   return { host, root };
 }
 
@@ -394,5 +399,39 @@ describe('admin home route resolution', () => {
     expect(pm.host.textContent).toContain('Products route');
     act(() => pm.root.unmount());
     pm.host.remove();
+  });
+
+  it.each(['super_admin', 'admin', 'staff'])('renders SettingsPage for core role %s', async (role) => {
+    const { host, root } = renderRoutes([role], '/system/settings');
+    await act(async () => await Promise.resolve());
+    expect(host.textContent).toContain('System settings route');
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it.each([
+    ['Product Manager', ['Product Manager'], 'Products route'],
+    ['Order Manager', ['Order Manager'], 'Orders route'],
+    ['Support', ['Support'], 'Orders route'],
+  ])('uses the safe home fallback rather than Settings for %s', async (_role, roles, expectedRoute) => {
+    const { host, root } = renderRoutes(roles, '/system/settings');
+    await act(async () => await Promise.resolve());
+    expect(host.textContent).toContain(expectedRoute);
+    expect(host.textContent).not.toContain('System settings route');
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it.each([
+    ['customer', ['customer'], '/dashboard'],
+    ['unknown role', ['guest'], '/dashboard'],
+    ['empty roles', [], '/dashboard'],
+  ])('redirects %s from Settings through the wildcard safe-home route', async (_case, roles, expectedPath) => {
+    const { host, root } = renderRoutes(roles, '/system/settings');
+    await act(async () => await Promise.resolve());
+    expect(host.querySelector('[data-testid="route-path"]')).toHaveTextContent(expectedPath);
+    expect(host.textContent).not.toContain('System settings route');
+    act(() => root.unmount());
+    host.remove();
   });
 });

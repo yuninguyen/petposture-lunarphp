@@ -31,6 +31,31 @@ class SettingsApiTest extends TestCase
             ->assertJsonPath('data.admin_favicon', 'https://api.petposture.com/storage/settings/admin-favicon.png');
     }
 
+    public function test_public_settings_response_preserves_the_complete_structure(): void
+    {
+        $data = $this->getJson('/api/settings')
+            ->assertOk()
+            ->json('data');
+
+        $this->assertSame([
+            'admin_favicon',
+            'admin_logo',
+            'analytics',
+            'contact',
+            'description',
+            'frontend_url',
+            'localization',
+            'shop_favicon',
+            'shop_logo',
+            'shop_name',
+            'social',
+        ], $this->sortedKeys($data));
+        $this->assertSame(['currency', 'symbol'], $this->sortedKeys($data['localization']));
+        $this->assertSame(['facebook', 'instagram', 'pinterest', 'tiktok', 'twitter', 'youtube'], $this->sortedKeys($data['social']));
+        $this->assertSame(['address', 'phone'], $this->sortedKeys($data['contact']));
+        $this->assertSame(['google_analytics_id'], $this->sortedKeys($data['analytics']));
+    }
+
     public function test_settings_expose_frontend_url(): void
     {
         config(['app.frontend_url' => 'https://petposture.com']);
@@ -76,5 +101,13 @@ class SettingsApiTest extends TestCase
 
         $this->assertFalse(Cache::has('setting:shop_name'));
         $this->assertSame('Fallback', Setting::get('shop_name', 'Fallback'));
+    }
+
+    private function sortedKeys(array $value): array
+    {
+        $keys = array_keys($value);
+        sort($keys);
+
+        return $keys;
     }
 }

@@ -51,6 +51,7 @@ const SystemUsersPage = lazy(() => import('@/features/system-users/SystemUsersPa
 const MediaLibraryPage = lazy(() => import('@/features/system-media/MediaLibraryPage').then(m => ({ default: m.MediaLibraryPage })));
 const RolesPage = lazy(() => import('@/features/system-roles/RolesPage').then(m => ({ default: m.RolesPage })));
 const ActivityLogsPage = lazy(() => import('@/features/system-activity-logs/ActivityLogsPage').then(m => ({ default: m.ActivityLogsPage })));
+const SettingsPage = lazy(() => import('@/features/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const AffiliateReportsPage = lazy(() => import('@/features/affiliate-reports/AffiliateReportsPage').then(m => ({ default: m.AffiliateReportsPage })));
 const AffiliateNetworksPage = lazy(() => import('@/features/affiliate-networks/AffiliateNetworksPage').then(m => ({ default: m.AffiliateNetworksPage })));
 
@@ -237,7 +238,7 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
   const canModerateReviews = canManageReviews(userRoles);
   const home = getAdminHomeRoute(userRoles);
 
-  if (!isCoreAdmin && !canManageProducts && !canManageSales) {
+  if (!isCoreAdmin && !canManageProducts && !canManageSales && location.pathname !== '/system/settings') {
     return <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">Use the Filament admin panel for order and support workflows.</div>;
   }
 
@@ -269,6 +270,7 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
         <Route path="/system/media" element={<MediaLibraryPage />} />
         <Route path="/system/roles" element={<RolesPage />} />
         <Route path="/system/activity-logs" element={<ActivityLogsPage />} />
+        <Route path="/system/settings" element={<SettingsPage />} />
         <Route path="/affiliate/reports" element={<AffiliateReportsPage />} />
         <Route path="/affiliate/networks" element={<AffiliateNetworksPage />} />
       </>}
