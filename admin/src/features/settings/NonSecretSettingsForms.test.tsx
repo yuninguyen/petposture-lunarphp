@@ -1,0 +1,200 @@
+import { act, createElement } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createRoot } from 'react-dom/client';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  fetchGeneralSettings: vi.fn(),
+  updateGeneralSettings: vi.fn(),
+  fetchBrandingSettings: vi.fn(),
+  updateBrandingSettings: vi.fn(),
+  fetchAnalyticsSettings: vi.fn(),
+  updateAnalyticsSettings: vi.fn(),
+}));
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (_key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? _key,
+  }),
+}));
+
+vi.mock('./api', async (importOriginal) => ({
+  ...await importOriginal<typeof import('./api')>(),
+  ...mocks,
+}));
+
+vi.mock('@/features/media/MediaPicker', () => ({
+  MediaPicker: ({ value, onChange, context }: {
+    value: { id: string | null; url: string } | null;
+    onChange(value: { id: string | null; url: string } | null): void;
+    context: string;
+  }) => (
+    <div data-testid="media-picker" data-context={context} data-id={value?.id ?? 'null'} data-url={value?.url ?? ''}>
+      <button type="button" data-action="select-media" onClick={() => onChange({ id: '123', url: 'https://cdn.example/new.png' })}>Select media</button>
+      <button type="button" data-action="remove-media" onClick={() => onChange(null)}>Remove media</button>
+    </div>
+  ),
+}));
+
+import { AnalyticsSettingsForm } from './AnalyticsSettingsForm';
+import { BrandingSettingsForm } from './BrandingSettingsForm';
+import { GeneralSettingsForm } from './GeneralSettingsForm';
+import type { AnalyticsSettingsState, BrandingSettingsState, GeneralSettingsState } from './api';
+
+(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+const general: GeneralSettingsState = {
+  shop_name: 'PetPosture',
+  shop_description: 'Stored description',
+  shop_logo: { id: null, url: 'https://cdn.example/legacy-logo.png' },
+  shop_favicon: { id: '22', url: 'https://cdn.example/favicon.png' },
+};
+const branding: BrandingSettingsState = {
+  admin_logo: { id: null, url: 'https://cdn.example/legacy-admin.png' },
+  admin_favicon: { id: '44', url: 'https://cdn.example/admin-favicon.png' },
+};
+const analytics: AnalyticsSettingsState = { google_analytics_id: 'G-STORED' };
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((next) => { resolve = next; });
+  return { promise, resolve };
+}
+
+async function renderForm(element: React.ReactElement, queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+})) {
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const root = createRoot(host);
+  await act(async () => {
+    root.render(createElement(QueryClientProvider, { client: queryClient }, element));
+  });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  return { host, root, queryClient };
+}
+
+function setValue(element: HTMLInputElement | HTMLTextAreaElement, value: string) {
+  act(() => {
+    const prototype = element instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    Object.getOwnPropertyDescriptor(prototype, 'value')?.set?.call(element, value);
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
+
+async function click(element: HTMLElement) {
+  await act(async () => element.click());
+}
+
+function button(host: HTMLElement, text = 'Save') {
+  return Array.from(host.querySelectorAll<HTMLButtonElement>('button')).find((candidate) => candidate.textContent === text)!;
+}
+
+function cleanup(rendered: Awaited<ReturnType<typeof renderForm>>) {
+  act(() => rendered.root.unmount());
+  rendered.host.remove();
+  rendered.queryClient.clear();
+}
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  mocks.fetchGeneralSettings.mockResolvedValue({ data: general });
+  mocks.fetchBrandingSettings.mockResolvedValue({ data: branding });
+  mocks.fetchAnalyticsSettings.mockResolvedValue({ data: analytics });
+});
+
+describe('non-secret settings forms', () => {
+  it('renders General fields, previews legacy media, and uses the general media context', async () => {
+    const rendered = await renderForm(<GeneralSettingsForm />);
+
+    expect(rendered.host.querySelector<HTMLInputElement>('#shop_name')).toHaveValue('PetPosture');
+    expect(rendered.host.querySelector<HTMLTextAreaElement>('#shop_description')).toHaveValue('Stored description');
+    expect(rendered.host.querySelectorAll('[data-testid="media-picker"]')).toHaveLength(2);
+    expect(Array.from(rendered.host.querySelectorAll('[data-testid="media-picker"]')).every((picker) => picker.getAttribute('data-context') === 'general')).toBe(true);
+    expect(rendered.host.querySelector('[data-url="https://cdn.example/legacy-logo.png"]')).toHaveAttribute('data-id', 'null');
+    expect(button(rendered.host)).toBeDisabled();
+
+    cleanup(rendered);
+  });
+
+  it('sends only changed General media, replaces query data with the server response, and resets local state', async () => {
+    const saved: GeneralSettingsState = {
+      ...general,
+      shop_logo: { id: '123', url: 'https://cdn.example/new.png' },
+    };
+    const pending = deferred<{ data: GeneralSettingsState }>();
+    mocks.updateGeneralSettings.mockReturnValueOnce(pending.promise);
+    const rendered = await renderForm(<GeneralSettingsForm />);
+
+    await click(rendered.host.querySelector<HTMLElement>('[data-testid="media-picker"] [data-action="select-media"]')!);
+    const save = button(rendered.host);
+    await act(async () => save.click());
+
+    expect(mocks.updateGeneralSettings).toHaveBeenCalledWith({ shop_logo: { media_id: '123' } });
+    expect(rendered.queryClient.getQueryData(['admin', 'settings', 'general'])).toEqual(general);
+
+    await act(async () => pending.resolve({ data: saved }));
+    expect(rendered.queryClient.getQueryData(['admin', 'settings', 'general'])).toEqual(saved);
+    expect(rendered.host.querySelector('[data-url="https://cdn.example/new.png"]')).toHaveAttribute('data-id', '123');
+    expect(rendered.host.querySelector<HTMLButtonElement>('button[type="submit"]')).toBeDisabled();
+
+    cleanup(rendered);
+  });
+
+  it('sends explicit null when General media is removed and omits unchanged text fields', async () => {
+    mocks.updateGeneralSettings.mockResolvedValueOnce({ data: { ...general, shop_logo: null } });
+    const rendered = await renderForm(<GeneralSettingsForm />);
+
+    await click(rendered.host.querySelector<HTMLElement>('[data-testid="media-picker"] [data-action="remove-media"]')!);
+    await click(button(rendered.host));
+
+    expect(mocks.updateGeneralSettings).toHaveBeenCalledWith({ shop_logo: null });
+    cleanup(rendered);
+  });
+
+  it('renders Branding media with general context and submits new and removed media minimally', async () => {
+    const saved: BrandingSettingsState = {
+      admin_logo: { id: '123', url: 'https://cdn.example/new.png' },
+      admin_favicon: null,
+    };
+    mocks.updateBrandingSettings.mockResolvedValueOnce({ data: saved });
+    const rendered = await renderForm(<BrandingSettingsForm />);
+    const pickers = rendered.host.querySelectorAll<HTMLElement>('[data-testid="media-picker"]');
+
+    expect(pickers).toHaveLength(2);
+    expect(Array.from(pickers).every((picker) => picker.dataset.context === 'general')).toBe(true);
+    expect(pickers[0]).toHaveAttribute('data-id', 'null');
+    await click(pickers[0].querySelector<HTMLElement>('[data-action="select-media"]')!);
+    await click(pickers[1].querySelector<HTMLElement>('[data-action="remove-media"]')!);
+    await click(button(rendered.host));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+
+    expect(mocks.updateBrandingSettings).toHaveBeenCalledWith({
+      admin_logo: { media_id: '123' },
+      admin_favicon: null,
+    });
+    expect(rendered.queryClient.getQueryData(['admin', 'settings', 'branding'])).toEqual(saved);
+    expect(button(rendered.host)).toBeDisabled();
+    cleanup(rendered);
+  });
+
+  it('renders Analytics, submits only a changed GA ID, and replaces query data', async () => {
+    const saved = { google_analytics_id: 'G-NEW' };
+    mocks.updateAnalyticsSettings.mockResolvedValueOnce({ data: saved });
+    const rendered = await renderForm(<AnalyticsSettingsForm />);
+    const input = rendered.host.querySelector<HTMLInputElement>('#google_analytics_id')!;
+
+    expect(input).toHaveValue('G-STORED');
+    expect(button(rendered.host)).toBeDisabled();
+    setValue(input, 'G-NEW');
+    await click(button(rendered.host));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+
+    expect(mocks.updateAnalyticsSettings).toHaveBeenCalledWith({ google_analytics_id: 'G-NEW' });
+    expect(rendered.queryClient.getQueryData(['admin', 'settings', 'analytics'])).toEqual(saved);
+    expect(button(rendered.host)).toBeDisabled();
+    cleanup(rendered);
+  });
+});
