@@ -270,7 +270,7 @@ describe('SmtpSettingsForm', () => {
     cleanup(rendered);
   });
 
-  it('keeps a password candidate request-local and never leaks it to cache, storage, URL, or status/error DOM', async () => {
+  it('keeps password candidates out of both QueryCache and MutationCache during successful test and save', async () => {
     const sentinel = 'SMTP-SUPER-SECRET-SENTINEL';
     const saved: SmtpSettingsState = { ...smtp, source: 'environment' };
     mocks.updateSmtpSettings.mockResolvedValueOnce({ data: saved });
@@ -280,6 +280,7 @@ describe('SmtpSettingsForm', () => {
     await click(button(rendered.host, 'Send test email'));
     expect(mocks.testSmtpSettings).toHaveBeenCalledWith({ fields: { smtp_pass: sentinel } });
     expect(JSON.stringify(rendered.queryClient.getQueryCache().getAll().map((query) => query.state.data))).not.toContain(sentinel);
+    expect(JSON.stringify(rendered.queryClient.getMutationCache().getAll().map((mutation) => mutation.state.variables))).not.toContain(sentinel);
     expect(JSON.stringify(localStorage)).not.toContain(sentinel);
     expect(JSON.stringify(sessionStorage)).not.toContain(sentinel);
     expect(window.location.href).not.toContain(sentinel);
@@ -290,22 +291,99 @@ describe('SmtpSettingsForm', () => {
     expect(mocks.updateSmtpSettings).toHaveBeenCalledWith({ fields: { smtp_pass: sentinel } });
     expect(field(rendered.host, 'smtp_pass')).toHaveValue('');
     expect(JSON.stringify(rendered.queryClient.getQueryCache().getAll().map((query) => query.state.data))).not.toContain(sentinel);
+    expect(JSON.stringify(rendered.queryClient.getMutationCache().getAll().map((mutation) => mutation.state.variables))).not.toContain(sentinel);
     expect(rendered.host.textContent).not.toContain(sentinel);
     cleanup(rendered);
   });
 
-  it('preserves dirty local edits when cached SMTP metadata refreshes', async () => {
+  it('keeps password candidates out of MutationCache when test and save fail', async () => {
+    const sentinel = 'SMTP-FAILED-SECRET-SENTINEL';
+    mocks.testSmtpSettings.mockRejectedValueOnce(Object.assign(new Error(sentinel), { status: 422 }));
+    mocks.updateSmtpSettings.mockRejectedValueOnce(new Error(sentinel));
     const rendered = await renderForm();
-    setValue(field(rendered.host, 'smtp_host'), 'local-draft.test');
+    setValue(field(rendered.host, 'smtp_pass'), sentinel);
 
+    await click(button(rendered.host, 'Send test email'));
+    await flush();
+    expect(JSON.stringify(rendered.queryClient.getMutationCache().getAll().map((mutation) => mutation.state.variables))).not.toContain(sentinel);
+
+    mocks.testSmtpSettings.mockResolvedValueOnce({ data: { status: 'sent', message: 'safe' } });
+    await click(button(rendered.host, 'Send test email'));
+    await click(button(rendered.host, 'Save'));
+    await flush();
+    expect(JSON.stringify(rendered.queryClient.getMutationCache().getAll().map((mutation) => mutation.state.variables))).not.toContain(sentinel);
+    expect(rendered.host.textContent).not.toContain(sentinel);
+    cleanup(rendered);
+  });
+
+  it('uses the latest test response and ignores an older success that resolves last', async () => {
+    const first = deferred<{ data: { status: 'sent'; message: string } }>();
+    const second = deferred<{ data: { status: 'sent'; message: string } }>();
+    mocks.testSmtpSettings.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    const rendered = await renderForm();
+    setValue(field(rendered.host, 'smtp_host'), 'first.test');
+
+    await click(button(rendered.host, 'Send test email'));
+    setValue(field(rendered.host, 'smtp_host'), 'second.test');
+    await click(button(rendered.host, 'Send test email'));
+    expect(mocks.testSmtpSettings).toHaveBeenCalledTimes(2);
+
+    await act(async () => second.resolve({ data: { status: 'sent', message: 'second' } }));
+    await flush();
+    expect(button(rendered.host, 'Save')).toBeEnabled();
+    await act(async () => first.resolve({ data: { status: 'sent', message: 'first' } }));
+    await flush();
+    expect(button(rendered.host, 'Save')).toBeEnabled();
+    cleanup(rendered);
+  });
+
+  it('locks duplicate synchronous save submissions and adopts only the latest accepted save', async () => {
+    const pendingSave = deferred<{ data: SmtpSettingsState }>();
+    mocks.updateSmtpSettings.mockReturnValueOnce(pendingSave.promise);
+    const rendered = await renderForm();
+    setValue(field(rendered.host, 'smtp_host'), 'smtp.changed.test');
+    await click(button(rendered.host, 'Send test email'));
+
+    const save = button(rendered.host, 'Save');
     await act(async () => {
-      rendered.queryClient.setQueryData(['admin', 'settings', 'smtp'], {
-        ...smtp,
-        fields: { ...smtp.fields, smtp_host: { ...smtp.fields.smtp_host, value: 'server-refresh.test' } },
-      });
+      save.click();
+      save.click();
     });
+    expect(mocks.updateSmtpSettings).toHaveBeenCalledTimes(1);
 
+    const saved: SmtpSettingsState = {
+      ...smtp,
+      fields: { ...smtp.fields, smtp_host: { ...smtp.fields.smtp_host, value: 'smtp.changed.test' } },
+    };
+    await act(async () => pendingSave.resolve({ data: saved }));
+    await flush();
+    expect(field(rendered.host, 'smtp_host')).toHaveValue('smtp.changed.test');
+    cleanup(rendered);
+  });
+
+  it('adopts a clean cached refresh but preserves dirty local edits and ignores refresh while pending', async () => {
+    const rendered = await renderForm();
+    const cleanRefresh: SmtpSettingsState = {
+      ...smtp,
+      fields: { ...smtp.fields, smtp_host: { ...smtp.fields.smtp_host, value: 'clean-refresh.test' } },
+    };
+    await act(async () => rendered.queryClient.setQueryData(['admin', 'settings', 'smtp'], cleanRefresh));
+    await flush();
+    expect(field(rendered.host, 'smtp_host')).toHaveValue('clean-refresh.test');
+
+    setValue(field(rendered.host, 'smtp_host'), 'local-draft.test');
+    await act(async () => rendered.queryClient.setQueryData(['admin', 'settings', 'smtp'], {
+      ...smtp,
+      fields: { ...smtp.fields, smtp_host: { ...smtp.fields.smtp_host, value: 'dirty-refresh.test' } },
+    }));
     expect(field(rendered.host, 'smtp_host')).toHaveValue('local-draft.test');
+
+    const pendingTest = deferred<{ data: { status: 'sent'; message: string } }>();
+    mocks.testSmtpSettings.mockReturnValueOnce(pendingTest.promise);
+    await click(button(rendered.host, 'Send test email'));
+    await act(async () => rendered.queryClient.setQueryData(['admin', 'settings', 'smtp'], cleanRefresh));
+    expect(field(rendered.host, 'smtp_host')).toHaveValue('local-draft.test');
+    await act(async () => pendingTest.resolve({ data: { status: 'sent', message: 'safe' } }));
     cleanup(rendered);
   });
 });

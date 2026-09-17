@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,6 +73,13 @@ export function SmtpSettingsForm() {
   const [testSucceeded, setTestSucceeded] = useState(false);
   const [saved, setSaved] = useState(false);
   const [testError, setTestError] = useState<'rejected' | 'unavailable' | null>(null);
+  const [saveError, setSaveError] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const testRequestRef = useRef(0);
+  const saveRequestRef = useRef(0);
+  const testLockRef = useRef(false);
+  const saveLockRef = useRef(false);
 
   const adoptServerState = (state: SmtpSettingsState) => {
     setBaseline(state);
@@ -82,11 +89,8 @@ export function SmtpSettingsForm() {
     setTestedRevision(null);
     setTestSucceeded(false);
     setTestError(null);
+    setSaveError(false);
   };
-
-  useEffect(() => {
-    if (query.data && !baseline) adoptServerState(query.data);
-  }, [baseline, query.data]);
 
   const payload = useMemo<SmtpSettingsPayload>(() => {
     if (!baseline || !values) return {};
@@ -108,34 +112,62 @@ export function SmtpSettingsForm() {
   const hasChanges = Boolean(payload.fields && Object.keys(payload.fields).length > 0)
     || Boolean(payload.clear_fields?.length);
   const currentRevisionTested = hasChanges && testedRevision === connectionRevision && testSucceeded;
+  const pending = isTesting || isSaving;
 
-  const testMutation = useMutation({
-    mutationFn: ({ payload: next }: { payload: SmtpSettingsPayload; revision: number }) => testSmtpSettings(next),
-    onMutate: () => {
-      setTestError(null);
-      setTestSucceeded(false);
-    },
-    onSuccess: (_response, variables) => {
-      setTestedRevision(variables.revision);
+  useEffect(() => {
+    if (!query.data || pending) return;
+    if (!baseline || (!hasChanges && query.data !== baseline)) adoptServerState(query.data);
+  }, [baseline, hasChanges, pending, query.data]);
+
+  async function testConnection() {
+    if (testLockRef.current || isSaving) return;
+    const requestId = testRequestRef.current + 1;
+    testRequestRef.current = requestId;
+    testLockRef.current = true;
+    const revision = connectionRevision;
+    setIsTesting(true);
+    setTestError(null);
+    setTestSucceeded(false);
+    try {
+      await testSmtpSettings(payload);
+      if (requestId !== testRequestRef.current) return;
+      setTestedRevision(revision);
       setTestSucceeded(true);
-    },
-    onError: (error) => {
+    } catch (error) {
+      if (requestId !== testRequestRef.current) return;
       setTestedRevision(null);
       setTestSucceeded(false);
       setTestError(statusOf(error) === 422 ? 'rejected' : 'unavailable');
-    },
-  });
+    } finally {
+      if (requestId === testRequestRef.current) {
+        testLockRef.current = false;
+        setIsTesting(false);
+      }
+    }
+  }
 
-  const saveMutation = useMutation({
-    mutationFn: (next: SmtpSettingsPayload) => updateSmtpSettings(next),
-    onSuccess: ({ data }) => {
+  async function save() {
+    if (saveLockRef.current || !hasChanges || !currentRevisionTested || pending) return;
+    const requestId = saveRequestRef.current + 1;
+    saveRequestRef.current = requestId;
+    saveLockRef.current = true;
+    setIsSaving(true);
+    setSaveError(false);
+    try {
+      const { data } = await updateSmtpSettings(payload);
+      if (requestId !== saveRequestRef.current) return;
       queryClient.setQueryData<SmtpSettingsState>(QUERY_KEY, data);
       adoptServerState(data);
       setSaved(true);
-    },
-  });
-
-  const pending = testMutation.isPending || saveMutation.isPending;
+    } catch {
+      if (requestId === saveRequestRef.current) setSaveError(true);
+    } finally {
+      if (requestId === saveRequestRef.current) {
+        saveLockRef.current = false;
+        setIsSaving(false);
+      }
+    }
+  }
   const clearWarning = t('settings.secrets.clear_confirmation', {
     defaultValue: 'Remove database override — this field will fall back to environment configuration if available. This does not remove or disable the environment value.',
   });
@@ -144,9 +176,12 @@ export function SmtpSettingsForm() {
     setConnectionRevision((revision) => revision + 1);
     setTestedRevision(null);
     setTestSucceeded(false);
+    testRequestRef.current += 1;
+    testLockRef.current = false;
+    setIsTesting(false);
     setTestError(null);
+    setSaveError(false);
     setSaved(false);
-    saveMutation.reset();
   };
 
   const changeValue = (field: SmtpField, value: string) => {
@@ -189,7 +224,7 @@ export function SmtpSettingsForm() {
   return (
     <form className="space-y-6" onSubmit={(event) => {
       event.preventDefault();
-      if (hasChanges && currentRevisionTested && !pending) saveMutation.mutate(payload);
+      void save();
     }}>
       <p className="text-sm text-slate-600">
         {t('settings_smtp.test_recipient', { defaultValue: 'The test email is sent only to your signed-in administrator email address.' })}
@@ -270,7 +305,7 @@ export function SmtpSettingsForm() {
       {currentRevisionTested && <p role="status" className="text-sm text-green-700">{t('settings_smtp.test_success', { defaultValue: 'SMTP test email sent successfully.' })}</p>}
       {testError === 'rejected' && <p role="alert" className="text-sm text-red-600">{t('settings_smtp.errors.rejected', { defaultValue: 'The SMTP server rejected these settings.' })}</p>}
       {testError === 'unavailable' && <p role="alert" className="text-sm text-red-600">{t('settings_smtp.errors.unavailable', { defaultValue: 'The SMTP server could not be reached. Try again.' })}</p>}
-      {saveMutation.isError && <p role="alert" className="text-sm text-red-600">{t('settings_smtp.errors.save_failed', { defaultValue: 'SMTP settings could not be saved.' })}</p>}
+      {saveError && <p role="alert" className="text-sm text-red-600">{t('settings_smtp.errors.save_failed', { defaultValue: 'SMTP settings could not be saved.' })}</p>}
       {saved && <p role="status" className="text-sm text-green-700">{t('settings_smtp.save_success', { defaultValue: 'SMTP settings saved.' })}</p>}
 
       <div className="flex gap-3">
@@ -278,12 +313,12 @@ export function SmtpSettingsForm() {
           type="button"
           variant="secondary"
           disabled={pending}
-          onClick={() => testMutation.mutate({ payload, revision: connectionRevision })}
+          onClick={() => void testConnection()}
         >
-          {testMutation.isPending ? t('settings_smtp.testing', { defaultValue: 'Testing…' }) : t('settings_smtp.test', { defaultValue: 'Send test email' })}
+          {isTesting ? t('settings_smtp.testing', { defaultValue: 'Testing…' }) : t('settings_smtp.test', { defaultValue: 'Send test email' })}
         </Button>
         <Button type="submit" disabled={!hasChanges || !currentRevisionTested || pending}>
-          {saveMutation.isPending ? t('settings_smtp.saving', { defaultValue: 'Saving…' }) : t('settings_smtp.save', { defaultValue: 'Save' })}
+          {isSaving ? t('settings_smtp.saving', { defaultValue: 'Saving…' }) : t('settings_smtp.save', { defaultValue: 'Save' })}
         </Button>
       </div>
     </form>
