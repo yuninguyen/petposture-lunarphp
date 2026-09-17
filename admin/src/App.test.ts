@@ -21,6 +21,7 @@ vi.mock('./features/system-users/SystemUsersPage', () => ({ SystemUsersPage: () 
 vi.mock('./features/system-media/MediaLibraryPage', () => ({ MediaLibraryPage: () => createElement('div', null, 'Media library route') }));
 vi.mock('./features/system-roles/RolesPage', () => ({ RolesPage: () => createElement('div', null, 'Roles route') }));
 vi.mock('./features/system-activity-logs/ActivityLogsPage', () => ({ ActivityLogsPage: () => createElement('div', null, 'Activity logs route') }));
+vi.mock('./features/settings/SettingsPage', () => ({ SettingsPage: () => createElement('div', null, 'System settings route') }));
 vi.mock('./features/affiliate-reports/AffiliateReportsPage', () => ({ AffiliateReportsPage: () => createElement('div', null, 'Affiliate reports route') }));
 vi.mock('./features/affiliate-networks/AffiliateNetworksPage', () => ({ AffiliateNetworksPage: () => createElement('div', null, 'Affiliate networks route') }));
 
@@ -394,5 +395,38 @@ describe('admin home route resolution', () => {
     expect(pm.host.textContent).toContain('Products route');
     act(() => pm.root.unmount());
     pm.host.remove();
+  });
+
+  it.each(['super_admin', 'admin', 'staff'])('renders SettingsPage for core role %s', async (role) => {
+    const { host, root } = renderRoutes([role], '/system/settings');
+    await act(async () => await Promise.resolve());
+    expect(host.textContent).toContain('System settings route');
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it.each([
+    ['Product Manager', ['Product Manager'], 'Products route'],
+    ['Order Manager', ['Order Manager'], 'Orders route'],
+    ['Support', ['Support'], 'Orders route'],
+  ])('uses the safe home fallback rather than Settings for %s', async (_role, roles, expectedRoute) => {
+    const { host, root } = renderRoutes(roles, '/system/settings');
+    await act(async () => await Promise.resolve());
+    expect(host.textContent).toContain(expectedRoute);
+    expect(host.textContent).not.toContain('System settings route');
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it.each([
+    ['customer', ['customer']],
+    ['unknown role', ['guest']],
+    ['empty roles', []],
+  ])('fails closed for Settings when core-admin access is denied to %s', async (_case, roles) => {
+    const { host, root } = renderRoutes(roles, '/system/settings');
+    await act(async () => await Promise.resolve());
+    expect(host.textContent).not.toContain('System settings route');
+    act(() => root.unmount());
+    host.remove();
   });
 });

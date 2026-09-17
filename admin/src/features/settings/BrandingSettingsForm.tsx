@@ -67,28 +67,28 @@ export function BrandingSettingsForm() {
   };
 
   if (query.isLoading || (query.data && !baseline)) {
-    return <p role="status" className="text-sm text-slate-500">{t('settings_branding.loading', { defaultValue: 'Loading branding settings…' })}</p>;
+    return <p role="status" className="text-sm text-slate-500">{t('settings_branding.loading')}</p>;
   }
   if (query.isError || !query.data || !baseline) {
-    return <p role="alert" className="text-sm text-red-600">{t('settings_branding.load_error', { defaultValue: 'Branding settings could not be loaded.' })}</p>;
+    return <p role="alert" className="text-sm text-red-600">{t('settings_branding.load_error')}</p>;
   }
 
   return (
     <form className="space-y-6" onSubmit={(event) => { event.preventDefault(); setSaved(false); mutation.reset(); if (hasChanges) mutation.mutate(payload); }}>
       <div className="grid gap-6 md:grid-cols-2">
         <fieldset className="space-y-2" aria-labelledby="admin-logo-label">
-          <legend id="admin-logo-label" className="text-sm font-medium text-ink">{t('settings_branding.admin_logo', { defaultValue: 'Admin logo' })}</legend>
+          <legend id="admin-logo-label" className="text-sm font-medium text-ink">{t('settings_branding.admin_logo')}</legend>
           <MediaPicker value={logo} disabled={mutation.isPending} onChange={(value) => changeMedia(setLogo, value)} context="general" />
         </fieldset>
         <fieldset className="space-y-2" aria-labelledby="admin-favicon-label">
-          <legend id="admin-favicon-label" className="text-sm font-medium text-ink">{t('settings_branding.admin_favicon', { defaultValue: 'Admin favicon' })}</legend>
+          <legend id="admin-favicon-label" className="text-sm font-medium text-ink">{t('settings_branding.admin_favicon')}</legend>
           <MediaPicker value={favicon} disabled={mutation.isPending} onChange={(value) => changeMedia(setFavicon, value)} context="general" />
         </fieldset>
       </div>
-      {mutation.isError && <p role="alert" className="text-sm text-red-600">{t('settings_branding.save_error', { defaultValue: 'Branding settings could not be saved.' })}</p>}
-      {saved && <p role="status" className="text-sm text-green-700">{t('settings_branding.save_success', { defaultValue: 'Branding settings saved.' })}</p>}
+      {mutation.isError && <p role="alert" className="text-sm text-red-600">{t('settings_branding.save_error')}</p>}
+      {saved && <p role="status" className="text-sm text-green-700">{t('settings_branding.save_success')}</p>}
       <Button type="submit" disabled={!hasChanges || mutation.isPending}>
-        {mutation.isPending ? t('settings_branding.saving', { defaultValue: 'Saving…' }) : t('settings_branding.save', { defaultValue: 'Save' })}
+        {mutation.isPending ? t('settings_branding.saving') : t('settings_branding.save')}
       </Button>
     </form>
   );

@@ -21,15 +21,14 @@ type EditableValues = Record<Exclude<SmtpField, 'smtp_pass'>, string> & { smtp_p
 const FIELD_DEFINITIONS: Array<{
   key: SmtpField;
   labelKey: string;
-  fallbackLabel: string;
   type: 'text' | 'number' | 'select' | 'secret';
 }> = [
-  { key: 'smtp_host', labelKey: 'settings_smtp.smtp_host', fallbackLabel: 'SMTP host', type: 'text' },
-  { key: 'smtp_port', labelKey: 'settings_smtp.smtp_port', fallbackLabel: 'SMTP port', type: 'number' },
-  { key: 'smtp_user', labelKey: 'settings_smtp.smtp_user', fallbackLabel: 'SMTP username', type: 'text' },
-  { key: 'smtp_pass', labelKey: 'settings_smtp.smtp_pass', fallbackLabel: 'SMTP password', type: 'secret' },
-  { key: 'smtp_encryption', labelKey: 'settings_smtp.smtp_encryption', fallbackLabel: 'Encryption', type: 'select' },
-  { key: 'mail_from_address', labelKey: 'settings_smtp.mail_from_address', fallbackLabel: 'From address', type: 'text' },
+  { key: 'smtp_host', labelKey: 'settings_smtp.smtp_host', type: 'text' },
+  { key: 'smtp_port', labelKey: 'settings_smtp.smtp_port', type: 'number' },
+  { key: 'smtp_user', labelKey: 'settings_smtp.smtp_user', type: 'text' },
+  { key: 'smtp_pass', labelKey: 'settings_smtp.smtp_pass', type: 'secret' },
+  { key: 'smtp_encryption', labelKey: 'settings_smtp.smtp_encryption', type: 'select' },
+  { key: 'mail_from_address', labelKey: 'settings_smtp.mail_from_address', type: 'text' },
 ];
 
 function initialValues(state: SmtpSettingsState): EditableValues {
@@ -168,9 +167,7 @@ export function SmtpSettingsForm() {
       }
     }
   }
-  const clearWarning = t('settings.secrets.clear_confirmation', {
-    defaultValue: 'Remove database override — this field will fall back to environment configuration if available. This does not remove or disable the environment value.',
-  });
+  const clearWarning = t('settings.secrets.clear_confirmation');
 
   const invalidateTest = () => {
     setConnectionRevision((revision) => revision + 1);
@@ -215,10 +212,10 @@ export function SmtpSettingsForm() {
   };
 
   if (query.isLoading || (query.data && (!baseline || !values))) {
-    return <p role="status" className="text-sm text-slate-500">{t('settings_smtp.loading', { defaultValue: 'Loading SMTP settings…' })}</p>;
+    return <p role="status" className="text-sm text-slate-500">{t('settings_smtp.loading')}</p>;
   }
   if (query.isError || !query.data || !baseline || !values) {
-    return <p role="alert" className="text-sm text-red-600">{t('settings_smtp.load_error', { defaultValue: 'SMTP settings could not be loaded.' })}</p>;
+    return <p role="alert" className="text-sm text-red-600">{t('settings_smtp.load_error')}</p>;
   }
 
   return (
@@ -227,7 +224,7 @@ export function SmtpSettingsForm() {
       void save();
     }}>
       <p className="text-sm text-slate-600">
-        {t('settings_smtp.test_recipient', { defaultValue: 'The test email is sent only to your signed-in administrator email address.' })}
+        {t('settings_smtp.test_recipient')}
       </p>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -235,7 +232,7 @@ export function SmtpSettingsForm() {
           const { key } = definition;
           const state = baseline.fields[key];
           const markedForClear = clearFields.has(key);
-          const label = t(definition.labelKey, { defaultValue: definition.fallbackLabel });
+          const label = t(definition.labelKey);
           if (definition.type === 'secret') {
             return (
               <SecretSettingInput
@@ -266,8 +263,8 @@ export function SmtpSettingsForm() {
                     className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
                   >
                     {markedForClear
-                      ? t('settings.secrets.undo_remove_override', { defaultValue: 'Undo removal' })
-                      : t('settings.secrets.remove_override', { defaultValue: 'Remove database override' })}
+                      ? t('settings.secrets.undo_remove_override')
+                      : t('settings.secrets.remove_override')}
                   </button>
                 )}
               </div>
@@ -279,10 +276,10 @@ export function SmtpSettingsForm() {
                   onChange={(event) => changeValue(key, event.target.value)}
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                  <option value="">{t('settings_smtp.encryption.none_selected', { defaultValue: 'Select encryption' })}</option>
-                  <option value="tls">TLS</option>
-                  <option value="ssl">SSL</option>
-                  <option value="none">{t('settings_smtp.encryption.none', { defaultValue: 'None' })}</option>
+                  <option value="">{t('settings_smtp.encryption.none_selected')}</option>
+                  <option value="tls">{t('settings_smtp.encryption.tls')}</option>
+                  <option value="ssl">{t('settings_smtp.encryption.ssl')}</option>
+                  <option value="none">{t('settings_smtp.encryption.none')}</option>
                 </select>
               ) : (
                 <Input
@@ -302,11 +299,11 @@ export function SmtpSettingsForm() {
         })}
       </div>
 
-      {currentRevisionTested && <p role="status" className="text-sm text-green-700">{t('settings_smtp.test_success', { defaultValue: 'SMTP test email sent successfully.' })}</p>}
-      {testError === 'rejected' && <p role="alert" className="text-sm text-red-600">{t('settings_smtp.errors.rejected', { defaultValue: 'The SMTP server rejected these settings.' })}</p>}
-      {testError === 'unavailable' && <p role="alert" className="text-sm text-red-600">{t('settings_smtp.errors.unavailable', { defaultValue: 'The SMTP server could not be reached. Try again.' })}</p>}
-      {saveError && <p role="alert" className="text-sm text-red-600">{t('settings_smtp.errors.save_failed', { defaultValue: 'SMTP settings could not be saved.' })}</p>}
-      {saved && <p role="status" className="text-sm text-green-700">{t('settings_smtp.save_success', { defaultValue: 'SMTP settings saved.' })}</p>}
+      {currentRevisionTested && <p role="status" className="text-sm text-green-700">{t('settings_smtp.test_success')}</p>}
+      {testError === 'rejected' && <p role="alert" className="text-sm text-red-600">{t('settings_smtp.errors.rejected')}</p>}
+      {testError === 'unavailable' && <p role="alert" className="text-sm text-red-600">{t('settings_smtp.errors.unavailable')}</p>}
+      {saveError && <p role="alert" className="text-sm text-red-600">{t('settings_smtp.errors.save_failed')}</p>}
+      {saved && <p role="status" className="text-sm text-green-700">{t('settings_smtp.save_success')}</p>}
 
       <div className="flex gap-3">
         <Button
@@ -315,10 +312,10 @@ export function SmtpSettingsForm() {
           disabled={pending}
           onClick={() => void testConnection()}
         >
-          {isTesting ? t('settings_smtp.testing', { defaultValue: 'Testing…' }) : t('settings_smtp.test', { defaultValue: 'Send test email' })}
+          {isTesting ? t('settings_smtp.testing') : t('settings_smtp.test')}
         </Button>
         <Button type="submit" disabled={!hasChanges || !currentRevisionTested || pending}>
-          {isSaving ? t('settings_smtp.saving', { defaultValue: 'Saving…' }) : t('settings_smtp.save', { defaultValue: 'Save' })}
+          {isSaving ? t('settings_smtp.saving') : t('settings_smtp.save')}
         </Button>
       </div>
     </form>

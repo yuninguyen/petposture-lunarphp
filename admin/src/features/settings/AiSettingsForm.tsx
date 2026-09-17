@@ -26,19 +26,18 @@ const OPENAI_FIELDS = new Set<AiField>(['openai_api_key', 'openai_base_url', 'op
 const FIELD_DEFINITIONS: Array<{
   key: AiField;
   labelKey: string;
-  fallbackLabel: string;
   type: 'text' | 'secret' | 'provider' | 'model';
 }> = [
-  { key: 'ai_seo_provider', labelKey: 'settings_ai.ai_seo_provider', fallbackLabel: 'AI SEO provider', type: 'provider' },
-  { key: 'anthropic_api_key', labelKey: 'settings_ai.anthropic_api_key', fallbackLabel: 'Anthropic API key', type: 'secret' },
-  { key: 'anthropic_model', labelKey: 'settings_ai.anthropic_model', fallbackLabel: 'Anthropic model', type: 'text' },
-  { key: 'openai_api_key', labelKey: 'settings_ai.openai_api_key', fallbackLabel: 'OpenAI API key', type: 'secret' },
-  { key: 'openai_model', labelKey: 'settings_ai.openai_model', fallbackLabel: 'OpenAI model', type: 'model' },
-  { key: 'openai_base_url', labelKey: 'settings_ai.openai_base_url', fallbackLabel: 'OpenAI base URL', type: 'text' },
-  { key: 'xai_api_key', labelKey: 'settings_ai.xai_api_key', fallbackLabel: 'xAI API key', type: 'secret' },
-  { key: 'xai_model', labelKey: 'settings_ai.xai_model', fallbackLabel: 'xAI model', type: 'text' },
-  { key: 'gemini_api_key', labelKey: 'settings_ai.gemini_api_key', fallbackLabel: 'Gemini API key', type: 'secret' },
-  { key: 'gemini_model', labelKey: 'settings_ai.gemini_model', fallbackLabel: 'Gemini model', type: 'text' },
+  { key: 'ai_seo_provider', labelKey: 'settings_ai.ai_seo_provider', type: 'provider' },
+  { key: 'anthropic_api_key', labelKey: 'settings_ai.anthropic_api_key', type: 'secret' },
+  { key: 'anthropic_model', labelKey: 'settings_ai.anthropic_model', type: 'text' },
+  { key: 'openai_api_key', labelKey: 'settings_ai.openai_api_key', type: 'secret' },
+  { key: 'openai_model', labelKey: 'settings_ai.openai_model', type: 'model' },
+  { key: 'openai_base_url', labelKey: 'settings_ai.openai_base_url', type: 'text' },
+  { key: 'xai_api_key', labelKey: 'settings_ai.xai_api_key', type: 'secret' },
+  { key: 'xai_model', labelKey: 'settings_ai.xai_model', type: 'text' },
+  { key: 'gemini_api_key', labelKey: 'settings_ai.gemini_api_key', type: 'secret' },
+  { key: 'gemini_model', labelKey: 'settings_ai.gemini_model', type: 'text' },
 ];
 
 function baselineValue(state: AiSettingsState, field: AiField): string {
@@ -152,9 +151,7 @@ export function AiSettingsForm() {
     setSaved(false);
   };
 
-  const clearWarning = t('settings.secrets.clear_confirmation', {
-    defaultValue: 'Remove database override — this field will fall back to environment configuration if available. This does not remove or disable the environment value.',
-  });
+  const clearWarning = t('settings.secrets.clear_confirmation');
 
   const requestClear = (field: AiField) => {
     if (!window.confirm(clearWarning) || !values) return;
@@ -231,19 +228,19 @@ export function AiSettingsForm() {
   }
 
   if (query.isLoading || (query.data && (!baseline || !values))) {
-    return <p role="status" className="text-sm text-slate-500">{t('settings_ai.loading', { defaultValue: 'Loading AI settings…' })}</p>;
+    return <p role="status" className="text-sm text-slate-500">{t('settings_ai.loading')}</p>;
   }
   if (query.isError || !query.data || !baseline || !values) {
-    return <p role="alert" className="text-sm text-red-600">{t('settings_ai.load_error', { defaultValue: 'AI settings could not be loaded.' })}</p>;
+    return <p role="alert" className="text-sm text-red-600">{t('settings_ai.load_error')}</p>;
   }
 
   return (
     <form className="space-y-6" onSubmit={(event) => { event.preventDefault(); void save(); }}>
       <div className="grid gap-6 md:grid-cols-2">
-        {FIELD_DEFINITIONS.map(({ key, labelKey, fallbackLabel, type }) => {
+        {FIELD_DEFINITIONS.map(({ key, labelKey, type }) => {
           const state = baseline.fields[key];
           const markedForClear = clearFields.has(key);
-          const label = t(labelKey, { defaultValue: fallbackLabel });
+          const label = t(labelKey);
           if (type === 'secret') {
             return <SecretSettingInput key={key} id={`ai-${key}`} label={label} value={values[key]} field={state} disabled={pending} markedForClear={markedForClear} onChange={(value) => changeValue(key, value)} onRequestClear={() => requestClear(key)} onUndoClear={() => undoClear(key)} />;
           }
@@ -253,17 +250,17 @@ export function AiSettingsForm() {
                 <label htmlFor={`ai-${key}`} className="text-sm font-medium text-ink">{label}</label>
                 {state.source === 'database' && (
                   <button type="button" data-action={markedForClear ? 'undo-remove-override' : 'remove-override'} data-field={key} disabled={pending} onClick={() => markedForClear ? undoClear(key) : requestClear(key)} className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50">
-                    {markedForClear ? t('settings.secrets.undo_remove_override', { defaultValue: 'Undo removal' }) : t('settings.secrets.remove_override', { defaultValue: 'Remove database override' })}
+                    {markedForClear ? t('settings.secrets.undo_remove_override') : t('settings.secrets.remove_override')}
                   </button>
                 )}
               </div>
               {type === 'provider' ? (
                 <select id={`ai-${key}`} value={markedForClear ? '' : values[key]} disabled={pending || markedForClear} onChange={(event) => changeValue(key, event.target.value as AiProvider)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                  {(['auto', 'anthropic', 'openai', 'grok', 'gemini'] as AiProvider[]).map((provider) => <option key={provider} value={provider}>{provider}</option>)}
+                  {(['auto', 'anthropic', 'openai', 'grok', 'gemini'] as AiProvider[]).map((provider) => <option key={provider} value={provider}>{t(`settings_ai.providers.${provider}`)}</option>)}
                 </select>
               ) : type === 'model' ? (
                 <select id={`ai-${key}`} value={markedForClear ? '' : values[key]} disabled={pending || markedForClear} onChange={(event) => changeValue(key, event.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                  {!effectiveModel && <option value="">{t('settings_ai.openai_model_empty', { defaultValue: 'Select a model' })}</option>}
+                  {!effectiveModel && <option value="">{t('settings_ai.openai_model_empty')}</option>}
                   {modelOptions.map((model) => <option key={model} value={model}>{model}</option>)}
                 </select>
               ) : (
@@ -276,19 +273,19 @@ export function AiSettingsForm() {
         })}
       </div>
 
-      {modelError && <p role="alert" className="text-sm text-red-600">{t('settings_ai.errors.model_not_found', { defaultValue: 'Choose an OpenAI model returned by the latest fetch.' })}</p>}
-      {fetchError === 'rejected' && <p role="alert" className="text-sm text-red-600">{t('settings_ai.errors.rejected', { defaultValue: 'OpenAI rejected these settings.' })}</p>}
-      {fetchError === 'unavailable' && <p role="alert" className="text-sm text-red-600">{t('settings_ai.errors.unavailable', { defaultValue: 'OpenAI models could not be loaded. Try again.' })}</p>}
-      {currentFetchSucceeded && <p role="status" className="text-sm text-green-700">{t('settings_ai.fetch_success', { defaultValue: 'OpenAI models loaded.' })}</p>}
-      {saveError && <p role="alert" className="text-sm text-red-600">{t('settings_ai.errors.save_failed', { defaultValue: 'AI settings could not be saved.' })}</p>}
-      {saved && <p role="status" className="text-sm text-green-700">{t('settings_ai.save_success', { defaultValue: 'AI settings saved.' })}</p>}
+      {modelError && <p role="alert" className="text-sm text-red-600">{t('settings_ai.errors.model_not_found')}</p>}
+      {fetchError === 'rejected' && <p role="alert" className="text-sm text-red-600">{t('settings_ai.errors.rejected')}</p>}
+      {fetchError === 'unavailable' && <p role="alert" className="text-sm text-red-600">{t('settings_ai.errors.unavailable')}</p>}
+      {currentFetchSucceeded && <p role="status" className="text-sm text-green-700">{t('settings_ai.fetch_success')}</p>}
+      {saveError && <p role="alert" className="text-sm text-red-600">{t('settings_ai.errors.save_failed')}</p>}
+      {saved && <p role="status" className="text-sm text-green-700">{t('settings_ai.save_success')}</p>}
 
       <div className="flex gap-3">
         <Button type="button" variant="secondary" disabled={pending} onClick={() => void loadModels()}>
-          {isFetching ? t('settings_ai.fetching', { defaultValue: 'Fetching…' }) : t('settings_ai.fetch_models', { defaultValue: 'Fetch models' })}
+          {isFetching ? t('settings_ai.fetching') : t('settings_ai.fetch_models')}
         </Button>
         <Button type="submit" disabled={!maySave || pending}>
-          {isSaving ? t('settings_ai.saving', { defaultValue: 'Saving…' }) : t('settings_ai.save', { defaultValue: 'Save' })}
+          {isSaving ? t('settings_ai.saving') : t('settings_ai.save')}
         </Button>
       </div>
     </form>

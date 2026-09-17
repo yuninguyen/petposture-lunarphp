@@ -100,7 +100,7 @@ describe('admin navigation semantic authorization', () => {
     expect(affiliateItems).toEqual(['/affiliate/reports', '/affiliate/networks']);
 
     const systemItems = groups.find((g) => g.key === 'system')?.items.map((i) => i.path);
-    expect(systemItems).toEqual(['/system/users', '/system/roles', '/system/media', '/system/activity-logs']);
+    expect(systemItems).toEqual(['/system/users', '/system/roles', '/system/media', '/system/activity-logs', '/system/settings']);
   });
 
   it('exposes dashboard and orders to Order Manager', () => {

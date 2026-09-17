@@ -30,10 +30,10 @@ export function SecretSettingInput({
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const status = field.source === 'database'
-    ? t('settings.secrets.hints.database', { defaultValue: 'Configured in database.' })
+    ? t('settings.secrets.hints.database')
     : field.source === 'environment'
-      ? t('settings.secrets.hints.environment', { defaultValue: 'Configured by environment.' })
-      : t('settings.secrets.hints.none', { defaultValue: 'Not configured.' });
+      ? t('settings.secrets.hints.environment')
+      : t('settings.secrets.hints.none');
 
   return (
     <div className="space-y-2">
@@ -48,8 +48,8 @@ export function SecretSettingInput({
             className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
           >
             {markedForClear
-              ? t('settings.secrets.undo_remove_override', { defaultValue: 'Undo removal' })
-              : t('settings.secrets.remove_override', { defaultValue: 'Remove database override' })}
+              ? t('settings.secrets.undo_remove_override')
+              : t('settings.secrets.remove_override')}
           </button>
         )}
       </div>
@@ -69,8 +69,8 @@ export function SecretSettingInput({
           disabled={disabled || markedForClear}
           onClick={() => setVisible((current) => !current)}
           aria-label={visible
-            ? t('settings.secrets.hide_candidate', { defaultValue: 'Hide candidate credential' })
-            : t('settings.secrets.show_candidate', { defaultValue: 'Show candidate credential' })}
+            ? t('settings.secrets.hide_candidate')
+            : t('settings.secrets.show_candidate')}
           aria-pressed={visible}
           className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 disabled:opacity-50"
         >
@@ -80,9 +80,7 @@ export function SecretSettingInput({
       <p className="text-xs text-gray-500">{status}</p>
       {markedForClear && (
         <p role="alert" className="text-xs text-amber-700">
-          {t('settings.secrets.clear_confirmation', {
-            defaultValue: 'Remove database override — this field will fall back to environment configuration if available. This does not remove or disable the environment value.',
-          })}
+          {t('settings.secrets.clear_confirmation')}
         </p>
       )}
     </div>

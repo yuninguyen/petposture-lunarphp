@@ -82,10 +82,10 @@ export function GeneralSettingsForm() {
   };
 
   if (query.isLoading || (query.data && !baseline)) {
-    return <p role="status" className="text-sm text-slate-500">{t('settings_general.loading', { defaultValue: 'Loading general settings…' })}</p>;
+    return <p role="status" className="text-sm text-slate-500">{t('settings_general.loading')}</p>;
   }
   if (query.isError || !query.data || !baseline) {
-    return <p role="alert" className="text-sm text-red-600">{t('settings_general.load_error', { defaultValue: 'General settings could not be loaded.' })}</p>;
+    return <p role="alert" className="text-sm text-red-600">{t('settings_general.load_error')}</p>;
   }
 
   return (
@@ -101,7 +101,7 @@ export function GeneralSettingsForm() {
       if (Object.keys(payload).length > 0) mutation.mutate(payload);
     }}>
       <div className="space-y-2">
-        <label htmlFor="shop_name" className="text-sm font-medium text-ink">{t('settings_general.shop_name', { defaultValue: 'Shop name' })}</label>
+        <label htmlFor="shop_name" className="text-sm font-medium text-ink">{t('settings_general.shop_name')}</label>
         <Input
           id="shop_name"
           value={shopName}
@@ -110,26 +110,26 @@ export function GeneralSettingsForm() {
           aria-describedby={nameError ? 'shop-name-error' : undefined}
           onChange={(event) => { clearFeedback(); setShopName(event.target.value); }}
         />
-        {nameError && <p id="shop-name-error" role="alert" className="text-sm text-red-600">{t('settings_general.shop_name_required', { defaultValue: 'Shop name is required.' })}</p>}
+        {nameError && <p id="shop-name-error" role="alert" className="text-sm text-red-600">{t('settings_general.shop_name_required')}</p>}
       </div>
       <div className="space-y-2">
-        <label htmlFor="shop_description" className="text-sm font-medium text-ink">{t('settings_general.shop_description', { defaultValue: 'Shop description' })}</label>
+        <label htmlFor="shop_description" className="text-sm font-medium text-ink">{t('settings_general.shop_description')}</label>
         <Textarea id="shop_description" value={description} disabled={mutation.isPending} onChange={(event) => { clearFeedback(); setDescription(event.target.value); }} />
       </div>
       <div className="grid gap-6 md:grid-cols-2">
         <fieldset className="space-y-2" aria-labelledby="shop-logo-label">
-          <legend id="shop-logo-label" className="text-sm font-medium text-ink">{t('settings_general.shop_logo', { defaultValue: 'Shop logo' })}</legend>
+          <legend id="shop-logo-label" className="text-sm font-medium text-ink">{t('settings_general.shop_logo')}</legend>
           <MediaPicker value={logo} disabled={mutation.isPending} onChange={(value) => { clearFeedback(); setLogo(value); }} context="general" />
         </fieldset>
         <fieldset className="space-y-2" aria-labelledby="shop-favicon-label">
-          <legend id="shop-favicon-label" className="text-sm font-medium text-ink">{t('settings_general.shop_favicon', { defaultValue: 'Shop favicon' })}</legend>
+          <legend id="shop-favicon-label" className="text-sm font-medium text-ink">{t('settings_general.shop_favicon')}</legend>
           <MediaPicker value={favicon} disabled={mutation.isPending} onChange={(value) => { clearFeedback(); setFavicon(value); }} context="general" />
         </fieldset>
       </div>
-      {mutation.isError && <p role="alert" className="text-sm text-red-600">{t('settings_general.save_error', { defaultValue: 'General settings could not be saved.' })}</p>}
-      {saved && <p role="status" className="text-sm text-green-700">{t('settings_general.save_success', { defaultValue: 'General settings saved.' })}</p>}
+      {mutation.isError && <p role="alert" className="text-sm text-red-600">{t('settings_general.save_error')}</p>}
+      {saved && <p role="status" className="text-sm text-green-700">{t('settings_general.save_success')}</p>}
       <Button type="submit" disabled={!hasRawChanges || mutation.isPending}>
-        {mutation.isPending ? t('settings_general.saving', { defaultValue: 'Saving…' }) : t('settings_general.save', { defaultValue: 'Save' })}
+        {mutation.isPending ? t('settings_general.saving') : t('settings_general.save')}
       </Button>
     </form>
   );

@@ -46,22 +46,22 @@ export function AnalyticsSettingsForm() {
   });
 
   if (query.isLoading || (query.data && !baseline)) {
-    return <p role="status" className="text-sm text-slate-500">{t('settings_analytics.loading', { defaultValue: 'Loading analytics settings…' })}</p>;
+    return <p role="status" className="text-sm text-slate-500">{t('settings_analytics.loading')}</p>;
   }
   if (query.isError || !query.data || !baseline) {
-    return <p role="alert" className="text-sm text-red-600">{t('settings_analytics.load_error', { defaultValue: 'Analytics settings could not be loaded.' })}</p>;
+    return <p role="alert" className="text-sm text-red-600">{t('settings_analytics.load_error')}</p>;
   }
 
   return (
     <form className="space-y-6" onSubmit={(event) => { event.preventDefault(); setSaved(false); mutation.reset(); if (changed) mutation.mutate(payload); }}>
       <div className="space-y-2">
-        <label htmlFor="google_analytics_id" className="text-sm font-medium text-ink">{t('settings_analytics.google_analytics_id', { defaultValue: 'Google Analytics ID' })}</label>
+        <label htmlFor="google_analytics_id" className="text-sm font-medium text-ink">{t('settings_analytics.google_analytics_id')}</label>
         <Input id="google_analytics_id" value={analyticsId} disabled={mutation.isPending} onChange={(event) => { setSaved(false); mutation.reset(); setAnalyticsId(event.target.value); }} />
       </div>
-      {mutation.isError && <p role="alert" className="text-sm text-red-600">{t('settings_analytics.save_error', { defaultValue: 'Analytics settings could not be saved.' })}</p>}
-      {saved && <p role="status" className="text-sm text-green-700">{t('settings_analytics.save_success', { defaultValue: 'Analytics settings saved.' })}</p>}
+      {mutation.isError && <p role="alert" className="text-sm text-red-600">{t('settings_analytics.save_error')}</p>}
+      {saved && <p role="status" className="text-sm text-green-700">{t('settings_analytics.save_success')}</p>}
       <Button type="submit" disabled={!changed || mutation.isPending}>
-        {mutation.isPending ? t('settings_analytics.saving', { defaultValue: 'Saving…' }) : t('settings_analytics.save', { defaultValue: 'Save' })}
+        {mutation.isPending ? t('settings_analytics.saving') : t('settings_analytics.save')}
       </Button>
     </form>
   );
