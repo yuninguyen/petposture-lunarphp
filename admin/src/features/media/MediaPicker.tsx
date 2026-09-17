@@ -3,14 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { ImageIcon } from '@/components/ui/icons';
 import { MediaLibraryModal, type MediaContext } from '@/components/ui/media-library-modal';
 
+type MediaPickerValue = { id: string | null; url: string } | null;
+type MediaPickerChangeHandler = { bivarianceHack(media: MediaPickerValue): void }['bivarianceHack'];
+
 export function MediaPicker({
   value,
   onChange,
   fill,
   context,
 }: {
-  value: { id: string; url: string } | null;
-  onChange: (media: { id: string; url: string } | null) => void;
+  value: MediaPickerValue;
+  onChange: MediaPickerChangeHandler;
   fill?: boolean;
   context: MediaContext;
 }) {
