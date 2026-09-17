@@ -39,10 +39,12 @@ class SettingsTest extends TestCase
         foreach (['customer', 'Product Manager', 'Order Manager', 'Support', 'unknown'] as $role) {
             Sanctum::actingAs($this->userWithRole($role));
             $this->getJson('/api/admin/settings/general')->assertForbidden();
+            $this->putJson('/api/admin/settings/general', ['shop_name' => 'Blocked'])->assertForbidden();
         }
 
         Sanctum::actingAs(User::factory()->create());
         $this->getJson('/api/admin/settings/general')->assertForbidden();
+        $this->putJson('/api/admin/settings/general', ['shop_name' => 'Blocked'])->assertForbidden();
 
         foreach (['super_admin', 'admin', 'staff'] as $role) {
             Sanctum::actingAs($this->userWithRole($role));
@@ -173,6 +175,33 @@ class SettingsTest extends TestCase
         $this->putJson('/api/admin/settings/branding', [
             'admin_logo' => ['media_id' => '999999'],
         ])->assertUnprocessable()->assertJsonValidationErrors('admin_logo.media_id');
+    }
+
+    public function test_present_non_null_media_requires_a_non_null_media_id_for_all_media_fields(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        foreach ([
+            ['/api/admin/settings/general', 'shop_logo'],
+            ['/api/admin/settings/general', 'shop_favicon'],
+            ['/api/admin/settings/branding', 'admin_logo'],
+            ['/api/admin/settings/branding', 'admin_favicon'],
+        ] as [$endpoint, $field]) {
+            foreach ([[], ['media_id' => null]] as $malformedMedia) {
+                $this->putJson($endpoint, [$field => $malformedMedia])
+                    ->assertUnprocessable()
+                    ->assertJsonValidationErrors("{$field}.media_id");
+            }
+        }
+    }
+
+    public function test_shop_name_cannot_be_null(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $this->putJson('/api/admin/settings/general', ['shop_name' => null])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('shop_name');
     }
 
     private function createMedia(string $path): CuratorMedia

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class UpdateBrandingSettingsRequest extends FormRequest
@@ -16,9 +17,9 @@ class UpdateBrandingSettingsRequest extends FormRequest
     {
         return [
             'admin_logo' => ['sometimes', 'nullable', 'array:media_id'],
-            'admin_logo.media_id' => ['required_with:admin_logo', 'string', 'exists:curator_media,id'],
+            'admin_logo.media_id' => [Rule::excludeIf(! $this->has('admin_logo') || $this->input('admin_logo') === null), 'required', 'string', 'exists:curator_media,id'],
             'admin_favicon' => ['sometimes', 'nullable', 'array:media_id'],
-            'admin_favicon.media_id' => ['required_with:admin_favicon', 'string', 'exists:curator_media,id'],
+            'admin_favicon.media_id' => [Rule::excludeIf(! $this->has('admin_favicon') || $this->input('admin_favicon') === null), 'required', 'string', 'exists:curator_media,id'],
         ];
     }
 
