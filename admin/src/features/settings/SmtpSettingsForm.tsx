@@ -15,6 +15,7 @@ import {
 import { SecretSettingInput } from './SecretSettingInput';
 
 const QUERY_KEY = ['admin', 'settings', 'smtp'] as const;
+let saveGeneration = 0;
 type SmtpField = keyof SmtpSettingsFields;
 type EditableValues = Record<Exclude<SmtpField, 'smtp_pass'>, string> & { smtp_pass: string };
 
@@ -77,10 +78,11 @@ export function SmtpSettingsForm() {
   const [isSaving, setIsSaving] = useState(false);
   const testRequestRef = useRef(0);
   const saveRequestRef = useRef(0);
+  const ownSaveStateRef = useRef<SmtpSettingsState | null>(null);
   const testLockRef = useRef(false);
   const saveLockRef = useRef(false);
 
-  const adoptServerState = (state: SmtpSettingsState) => {
+  const adoptServerState = (state: SmtpSettingsState, showSaved = false) => {
     setBaseline(state);
     setValues(initialValues(state));
     setClearFields(new Set());
@@ -89,6 +91,7 @@ export function SmtpSettingsForm() {
     setTestSucceeded(false);
     setTestError(null);
     setSaveError(false);
+    setSaved(showSaved);
   };
 
   const payload = useMemo<SmtpSettingsPayload>(() => {
@@ -115,6 +118,10 @@ export function SmtpSettingsForm() {
 
   useEffect(() => {
     if (!query.data || pending) return;
+    if (ownSaveStateRef.current) {
+      if (query.data === ownSaveStateRef.current) ownSaveStateRef.current = null;
+      return;
+    }
     if (!baseline || (!hasChanges && query.data !== baseline)) adoptServerState(query.data);
   }, [baseline, hasChanges, pending, query.data]);
 
@@ -149,15 +156,16 @@ export function SmtpSettingsForm() {
     if (saveLockRef.current || !hasChanges || !currentRevisionTested || pending) return;
     const requestId = saveRequestRef.current + 1;
     saveRequestRef.current = requestId;
+    const generation = ++saveGeneration;
     saveLockRef.current = true;
     setIsSaving(true);
     setSaveError(false);
     try {
       const { data } = await updateSmtpSettings(payload);
-      if (requestId !== saveRequestRef.current) return;
+      if (requestId !== saveRequestRef.current || generation !== saveGeneration) return;
+      adoptServerState(data, true);
+      ownSaveStateRef.current = data;
       queryClient.setQueryData<SmtpSettingsState>(QUERY_KEY, data);
-      adoptServerState(data);
-      setSaved(true);
     } catch {
       if (requestId === saveRequestRef.current) setSaveError(true);
     } finally {

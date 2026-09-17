@@ -377,6 +377,7 @@ describe('SmtpSettingsForm', () => {
     await act(async () => rendered.queryClient.setQueryData(['admin', 'settings', 'smtp'], cleanRefresh));
     await flush();
     expect(field(rendered.host, 'smtp_host')).toHaveValue('clean-refresh.test');
+    expect(rendered.host.textContent).not.toContain('SMTP settings saved.');
 
     setValue(field(rendered.host, 'smtp_host'), 'local-draft.test');
     await act(async () => rendered.queryClient.setQueryData(['admin', 'settings', 'smtp'], {

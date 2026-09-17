@@ -996,14 +996,14 @@ class SettingsTest extends TestCase
             'clear_fields' => ['openai_model'],
         ])->assertStatus(422)->assertExactJson(['data' => [
             'status' => 'invalid',
-            'models' => [],
+            'models' => ['gpt-returned'],
         ]]);
 
         $this->postJson('/api/admin/settings/ai/fetch-models', [
             'fields' => ['openai_model' => 'gpt-candidate-missing'],
         ])->assertStatus(422)->assertExactJson(['data' => [
             'status' => 'invalid',
-            'models' => [],
+            'models' => ['gpt-returned'],
         ]]);
     }
 

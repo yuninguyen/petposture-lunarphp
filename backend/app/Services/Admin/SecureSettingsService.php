@@ -178,7 +178,7 @@ class SecureSettingsService
 
         $model = $this->resolveCandidateField('openai_model', $payload, self::AI_FIELDS['openai_model']);
         if (is_string($model) && $this->hasValue($model) && ! in_array(trim($model), $models, true)) {
-            return $this->openAiInvalidResponse();
+            return $this->openAiInvalidResponse($models);
         }
 
         return [
@@ -190,13 +190,13 @@ class SecureSettingsService
         ];
     }
 
-    private function openAiInvalidResponse(): array
+    private function openAiInvalidResponse(array $models = []): array
     {
         return [
             'status_code' => 422,
             'data' => [
                 'status' => 'invalid',
-                'models' => [],
+                'models' => $models,
             ],
         ];
     }

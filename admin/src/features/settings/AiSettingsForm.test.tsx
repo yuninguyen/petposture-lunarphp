@@ -226,6 +226,29 @@ describe('AiSettingsForm', () => {
     cleanup(rendered);
   });
 
+  it('uses sanitized models from a 422 response to recover from a stale effective model', async () => {
+    mocks.fetchAiModels.mockRejectedValueOnce(Object.assign(new Error('RAW-PROVIDER-SECRET'), {
+      status: 422,
+      data: { data: { status: 'invalid', models: ['gpt-z', 'gpt-a'] } },
+    }));
+    const rendered = await renderForm();
+    setValue(field(rendered.host, 'openai_base_url'), 'https://changed.test/v1');
+
+    await click(button(rendered.host, 'Fetch models'));
+    await flush();
+
+    expect(Array.from((field(rendered.host, 'openai_model') as HTMLSelectElement).options).map((option) => option.value)).toEqual(['gpt-a', 'gpt-stored', 'gpt-z']);
+    expect(rendered.host.textContent).toContain('Choose an OpenAI model returned by the latest fetch.');
+    expect(rendered.host.textContent).not.toContain('RAW-PROVIDER-SECRET');
+    expect(button(rendered.host, 'Save')).toBeDisabled();
+
+    setValue(field(rendered.host, 'openai_model'), 'gpt-a');
+    expect(button(rendered.host, 'Save')).toBeDisabled();
+    await click(button(rendered.host, 'Fetch models'));
+    expect(button(rendered.host, 'Save')).toBeEnabled();
+    cleanup(rendered);
+  });
+
   it.each([
     [422, 'OpenAI rejected these settings.'],
     [502, 'OpenAI models could not be loaded. Try again.'],
@@ -273,6 +296,7 @@ describe('AiSettingsForm', () => {
     await act(async () => rendered.queryClient.setQueryData(['admin', 'settings', 'ai'], refreshed));
     await flush();
     expect(field(rendered.host, 'anthropic_model')).toHaveValue('claude-refreshed');
+    expect(rendered.host.textContent).not.toContain('AI settings saved.');
 
     setValue(field(rendered.host, 'anthropic_model'), 'local-draft');
     await act(async () => rendered.queryClient.setQueryData(['admin', 'settings', 'ai'], ai));

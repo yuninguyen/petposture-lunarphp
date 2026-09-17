@@ -4,11 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+  apiErrorData,
   fetchAiModels,
   fetchAiSettings,
   updateAiSettings,
   type AiCandidateFields,
   type AiModelFetchPayload,
+  type AiModelFetchResult,
   type AiProvider,
   type AiSettingsFields,
   type AiSettingsPayload,
@@ -17,6 +19,7 @@ import {
 import { SecretSettingInput } from './SecretSettingInput';
 
 const QUERY_KEY = ['admin', 'settings', 'ai'] as const;
+let saveGeneration = 0;
 type AiField = keyof AiSettingsFields;
 type EditableValues = Record<AiField, string>;
 type FetchError = 'rejected' | 'unavailable' | null;
@@ -73,10 +76,11 @@ export function AiSettingsForm() {
   const [isSaving, setIsSaving] = useState(false);
   const fetchRequestRef = useRef(0);
   const saveRequestRef = useRef(0);
+  const ownSaveStateRef = useRef<AiSettingsState | null>(null);
   const fetchLockRef = useRef(false);
   const saveLockRef = useRef(false);
 
-  const adoptServerState = (state: AiSettingsState) => {
+  const adoptServerState = (state: AiSettingsState, showSaved = false) => {
     setBaseline(state);
     setValues(initialValues(state));
     setClearFields(new Set());
@@ -86,6 +90,7 @@ export function AiSettingsForm() {
     setFetchError(null);
     setModelError(false);
     setSaveError(false);
+    setSaved(showSaved);
   };
 
   const payload = useMemo<AiSettingsPayload>(() => {
@@ -124,6 +129,10 @@ export function AiSettingsForm() {
 
   useEffect(() => {
     if (!query.data || pending) return;
+    if (ownSaveStateRef.current) {
+      if (query.data === ownSaveStateRef.current) ownSaveStateRef.current = null;
+      return;
+    }
     if (!baseline || (!hasChanges && query.data !== baseline)) adoptServerState(query.data);
   }, [baseline, hasChanges, pending, query.data]);
 
@@ -194,7 +203,12 @@ export function AiSettingsForm() {
     } catch (error) {
       if (requestId !== fetchRequestRef.current) return;
       setFetchedRevision(null);
-      setModels([]);
+      const safeResult = apiErrorData<{ data?: AiModelFetchResult }>(error)?.data;
+      const nextModels = statusOf(error) === 422 && safeResult?.status === 'invalid'
+        ? Array.from(new Set(safeResult.models.filter((model) => typeof model === 'string' && model.trim() !== ''))).sort()
+        : [];
+      setModels(nextModels);
+      setModelError(nextModels.length > 0 && effectiveModel !== '' && !nextModels.includes(effectiveModel));
       setFetchError(statusOf(error) === 422 ? 'rejected' : 'unavailable');
     } finally {
       if (requestId === fetchRequestRef.current) {
@@ -208,15 +222,16 @@ export function AiSettingsForm() {
     if (saveLockRef.current || !maySave || pending) return;
     const requestId = saveRequestRef.current + 1;
     saveRequestRef.current = requestId;
+    const generation = ++saveGeneration;
     saveLockRef.current = true;
     setIsSaving(true);
     setSaveError(false);
     try {
       const { data } = await updateAiSettings(payload);
-      if (requestId !== saveRequestRef.current) return;
+      if (requestId !== saveRequestRef.current || generation !== saveGeneration) return;
+      adoptServerState(data, true);
+      ownSaveStateRef.current = data;
       queryClient.setQueryData<AiSettingsState>(QUERY_KEY, data);
-      adoptServerState(data);
-      setSaved(true);
     } catch {
       if (requestId === saveRequestRef.current) setSaveError(true);
     } finally {

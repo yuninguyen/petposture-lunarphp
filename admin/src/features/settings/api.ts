@@ -130,6 +130,16 @@ export interface AiModelFetchResult {
   models: string[];
 }
 
+export interface ApiError<T = unknown> extends Error {
+  status?: number;
+  data?: T;
+}
+
+export function apiErrorData<T>(error: unknown): T | null {
+  if (typeof error !== 'object' || error === null || !('data' in error)) return null;
+  return (error as ApiError<T>).data ?? null;
+}
+
 export function fetchGeneralSettings(): Promise<{ data: GeneralSettingsState }> {
   return fetchJson('/admin/settings/general');
 }
