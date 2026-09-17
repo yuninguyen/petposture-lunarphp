@@ -8,18 +8,18 @@ use Illuminate\Support\Collection;
 class SecureSettingsService
 {
     private const SMTP_FIELDS = [
-        'smtp_host' => ['secret' => false, 'config' => 'mail.mailers.smtp.host', 'type' => 'string'],
-        'smtp_port' => ['secret' => false, 'config' => 'mail.mailers.smtp.port', 'type' => 'int'],
-        'smtp_user' => ['secret' => false, 'config' => 'mail.mailers.smtp.username', 'type' => 'string'],
-        'smtp_pass' => ['secret' => true, 'config' => 'mail.mailers.smtp.password', 'type' => 'string'],
-        'smtp_encryption' => ['secret' => false, 'config' => 'mail.mailers.smtp.scheme', 'type' => 'string'],
-        'mail_from_address' => ['secret' => false, 'config' => 'mail.from.address', 'type' => 'string'],
+        'smtp_host' => ['secret' => false, 'config' => 'mail.environment.smtp.host', 'type' => 'string'],
+        'smtp_port' => ['secret' => false, 'config' => 'mail.environment.smtp.port', 'type' => 'int'],
+        'smtp_user' => ['secret' => false, 'config' => 'mail.environment.smtp.username', 'type' => 'string'],
+        'smtp_pass' => ['secret' => true, 'config' => 'mail.environment.smtp.password', 'type' => 'string'],
+        'smtp_encryption' => ['secret' => false, 'config' => 'mail.environment.smtp.scheme', 'type' => 'string'],
+        'mail_from_address' => ['secret' => false, 'config' => 'mail.environment.from.address', 'type' => 'string'],
     ];
 
     private const AI_FIELDS = [
         'ai_seo_provider' => ['secret' => false, 'config' => null, 'default' => 'auto', 'type' => 'string'],
         'anthropic_api_key' => ['secret' => true, 'config' => 'services.anthropic.key', 'type' => 'string'],
-        'anthropic_model' => ['secret' => false, 'config' => 'services.anthropic.model', 'type' => 'string'],
+        'anthropic_model' => ['secret' => false, 'config' => 'services.anthropic.model', 'default' => 'claude-sonnet-5', 'type' => 'string'],
         'openai_api_key' => ['secret' => true, 'config' => 'services.openai.key', 'type' => 'string'],
         'openai_model' => ['secret' => false, 'config' => 'services.openai.model', 'type' => 'string'],
         'openai_base_url' => ['secret' => false, 'config' => 'services.openai.base_url', 'type' => 'string'],

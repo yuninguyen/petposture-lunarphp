@@ -31,18 +31,22 @@ class UpdateSmtpSettingsRequest extends FormRequest
 
     public function after(): array
     {
-        return [$this->rejectReplacementClearConflicts(...)];
+        return [$this->rejectUnexpectedAndConflictingFields(...)];
     }
 
-    private function rejectReplacementClearConflicts(Validator $validator): void
+    private function rejectUnexpectedAndConflictingFields(Validator $validator): void
     {
+        foreach (array_diff(array_keys($this->all()), ['fields', 'clear_fields']) as $field) {
+            $validator->errors()->add($field, 'This field is not allowed.');
+        }
+
         if ($validator->errors()->isNotEmpty()) {
             return;
         }
 
         foreach ($this->input('clear_fields', []) as $field) {
             $replacement = $this->input("fields.{$field}");
-            if (is_string($replacement) && trim($replacement) !== '') {
+            if ((is_string($replacement) && trim($replacement) !== '') || (! is_string($replacement) && $replacement !== null)) {
                 $validator->errors()->add("fields.{$field}", 'A field cannot be replaced and cleared together.');
             }
         }

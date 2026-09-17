@@ -7,6 +7,9 @@ use App\Models\Setting;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -204,33 +207,80 @@ class SettingsTest extends TestCase
             ->assertJsonValidationErrors('shop_name');
     }
 
-    public function test_secure_settings_require_authentication_and_core_admin_roles(): void
+    public function test_secure_settings_require_authentication_and_full_core_admin_role_matrix(): void
     {
         foreach (['smtp', 'ai'] as $domain) {
             $this->getJson("/api/admin/settings/{$domain}")->assertUnauthorized();
             $this->putJson("/api/admin/settings/{$domain}", [])->assertUnauthorized();
         }
 
-        Sanctum::actingAs($this->userWithRole('Support'));
-        $this->getJson('/api/admin/settings/smtp')->assertForbidden();
-        $this->putJson('/api/admin/settings/ai', [])->assertForbidden();
+        foreach (['customer', 'Product Manager', 'Order Manager', 'Support', 'unknown'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+            foreach (['smtp', 'ai'] as $domain) {
+                $this->getJson("/api/admin/settings/{$domain}")->assertForbidden();
+                $this->putJson("/api/admin/settings/{$domain}", [])->assertForbidden();
+            }
+        }
+
+        Sanctum::actingAs(User::factory()->create());
+        foreach (['smtp', 'ai'] as $domain) {
+            $this->getJson("/api/admin/settings/{$domain}")->assertForbidden();
+            $this->putJson("/api/admin/settings/{$domain}", [])->assertForbidden();
+        }
 
         foreach (['super_admin', 'admin', 'staff'] as $role) {
             Sanctum::actingAs($this->userWithRole($role));
-            $this->getJson('/api/admin/settings/smtp')->assertOk();
-            $this->getJson('/api/admin/settings/ai')->assertOk();
+            foreach (['smtp', 'ai'] as $domain) {
+                $this->getJson("/api/admin/settings/{$domain}")->assertOk();
+                $this->putJson("/api/admin/settings/{$domain}", [])->assertOk();
+            }
+        }
+    }
+
+    public function test_smtp_get_uses_stable_bootstrap_fallbacks_after_live_mail_config_is_mutated(): void
+    {
+        config([
+            'mail.environment.smtp.host' => 'env.smtp.test',
+            'mail.environment.smtp.port' => 2525,
+            'mail.environment.smtp.username' => 'env-user',
+            'mail.environment.smtp.password' => 'ENV-SMTP-SECRET-STABLE',
+            'mail.environment.smtp.scheme' => 'tls',
+            'mail.environment.from.address' => 'env@example.test',
+            'mail.mailers.smtp.host' => 'database-mutated.smtp.test',
+            'mail.mailers.smtp.port' => 587,
+            'mail.mailers.smtp.username' => 'database-mutated-user',
+            'mail.mailers.smtp.password' => 'DATABASE-MUTATED-SECRET',
+            'mail.mailers.smtp.scheme' => 'ssl',
+            'mail.from.address' => 'database-mutated@example.test',
+        ]);
+        Setting::query()->whereIn('key', [
+            'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_encryption', 'mail_from_address',
+        ])->delete();
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $response = $this->getJson('/api/admin/settings/smtp')
+            ->assertOk()
+            ->assertJsonPath('data.fields.smtp_host.value', 'env.smtp.test')
+            ->assertJsonPath('data.fields.smtp_port.value', 2525)
+            ->assertJsonPath('data.fields.smtp_user.value', 'env-user')
+            ->assertJsonPath('data.fields.smtp_encryption.value', 'tls')
+            ->assertJsonPath('data.fields.mail_from_address.value', 'env@example.test')
+            ->assertJsonPath('data.fields.smtp_pass.source', 'environment');
+
+        foreach (['ENV-SMTP-SECRET-STABLE', 'DATABASE-MUTATED-SECRET'] as $secret) {
+            $this->assertStringNotContainsString($secret, $response->getContent());
         }
     }
 
     public function test_smtp_get_exposes_only_safe_metadata_and_effective_non_secret_values(): void
     {
         config([
-            'mail.mailers.smtp.host' => 'env.smtp.test',
-            'mail.mailers.smtp.port' => 2525,
-            'mail.mailers.smtp.username' => 'env-user',
-            'mail.mailers.smtp.password' => 'ENV-SMTP-SECRET-7391',
-            'mail.mailers.smtp.scheme' => 'tls',
-            'mail.from.address' => 'env@example.test',
+            'mail.environment.smtp.host' => 'env.smtp.test',
+            'mail.environment.smtp.port' => 2525,
+            'mail.environment.smtp.username' => 'env-user',
+            'mail.environment.smtp.password' => 'ENV-SMTP-SECRET-7391',
+            'mail.environment.smtp.scheme' => 'tls',
+            'mail.environment.from.address' => 'env@example.test',
         ]);
         Setting::query()
             ->whereIn('key', ['smtp_port', 'smtp_user', 'smtp_encryption', 'mail_from_address'])
@@ -246,7 +296,7 @@ class SettingsTest extends TestCase
             ->assertJsonPath('data.source', 'mixed')
             ->assertJsonPath('data.fields.smtp_host.value', 'db.smtp.test')
             ->assertJsonPath('data.fields.smtp_host.source', 'database')
-            ->assertJsonPath('data.fields.smtp_port.value', 587)
+            ->assertJsonPath('data.fields.smtp_port.value', 2525)
             ->assertJsonPath('data.fields.smtp_port.source', 'environment')
             ->assertJsonPath('data.fields.smtp_pass.configured', true)
             ->assertJsonPath('data.fields.smtp_pass.source', 'database')
@@ -337,7 +387,7 @@ class SettingsTest extends TestCase
     public function test_secure_update_clear_removes_database_override_and_reveals_environment_source(): void
     {
         config([
-            'mail.mailers.smtp.password' => 'environment-smtp-secret',
+            'mail.environment.smtp.password' => 'environment-smtp-secret',
             'services.openai.key' => 'environment-openai-secret',
         ]);
         Setting::set('smtp_pass', 'database-smtp-secret', 'string', 'email');
@@ -371,12 +421,25 @@ class SettingsTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('fields.smtp_pass');
 
         $this->putJson('/api/admin/settings/smtp', [
+            'fields' => ['smtp_port' => 2525],
+            'clear_fields' => ['smtp_port'],
+        ])->assertUnprocessable()->assertJsonValidationErrors('fields.smtp_port');
+
+        $this->putJson('/api/admin/settings/smtp', [
             'fields' => ['openai_api_key' => 'cross-domain'],
         ])->assertUnprocessable()->assertJsonValidationErrors('fields');
 
         $this->putJson('/api/admin/settings/ai', [
             'fields' => ['smtp_pass' => 'cross-domain'],
         ])->assertUnprocessable()->assertJsonValidationErrors('fields');
+
+        foreach (['smtp', 'ai'] as $domain) {
+            $this->putJson("/api/admin/settings/{$domain}", [
+                'fields' => [],
+                'clear_fields' => [],
+                'unexpected' => 'strictly-rejected',
+            ])->assertUnprocessable()->assertJsonValidationErrors('unexpected');
+        }
 
         $this->putJson('/api/admin/settings/ai', [
             'fields' => ['ai_seo_provider' => 'xai'],
@@ -389,7 +452,7 @@ class SettingsTest extends TestCase
         }
     }
 
-    public function test_secure_metadata_reports_none_when_no_database_or_environment_values_exist(): void
+    public function test_secure_metadata_reports_default_anthropic_model_without_marking_it_configured(): void
     {
         config([
             'services.anthropic.key' => null,
@@ -407,9 +470,41 @@ class SettingsTest extends TestCase
         $this->getJson('/api/admin/settings/ai')
             ->assertOk()
             ->assertJsonPath('data.fields.ai_seo_provider.value', 'auto')
+            ->assertJsonPath('data.fields.anthropic_model.value', 'claude-sonnet-5')
+            ->assertJsonPath('data.fields.anthropic_model.configured', false)
+            ->assertJsonPath('data.fields.anthropic_model.source', 'none')
             ->assertJsonPath('data.fields.openai_api_key.configured', false)
             ->assertJsonPath('data.fields.openai_api_key.source', 'none')
             ->assertJsonPath('data.fields.openai_api_key.hint', 'Not configured');
+    }
+
+    public function test_secure_secret_candidates_are_absent_from_captured_logs_and_cache(): void
+    {
+        $smtpSecret = 'SMTP-CANDIDATE-LOG-CACHE-SENTINEL';
+        $aiSecret = 'AI-CANDIDATE-LOG-CACHE-SENTINEL';
+        $messages = [];
+        Log::listen(function (MessageLogged $event) use (&$messages): void {
+            $messages[] = $event->message.' '.json_encode($event->context);
+        });
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $this->putJson('/api/admin/settings/smtp', [
+            'fields' => ['smtp_pass' => $smtpSecret],
+        ])->assertOk();
+        $this->putJson('/api/admin/settings/ai', [
+            'fields' => ['openai_api_key' => $aiSecret],
+        ])->assertOk();
+
+        $logged = implode("\n", $messages);
+        $this->assertStringNotContainsString($smtpSecret, $logged);
+        $this->assertStringNotContainsString($aiSecret, $logged);
+
+        foreach (Cache::get('setting:smtp_pass', []) as $cached) {
+            $this->assertNotSame($smtpSecret, $cached);
+        }
+        foreach (Cache::get('setting:openai_api_key', []) as $cached) {
+            $this->assertNotSame($aiSecret, $cached);
+        }
     }
 
     private function createMedia(string $path): CuratorMedia
