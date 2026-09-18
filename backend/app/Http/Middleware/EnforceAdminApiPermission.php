@@ -41,6 +41,10 @@ class EnforceAdminApiPermission
             return $this->brandAbilityFor($request, $relativePath);
         }
 
+        if ($this->isBreedPath($relativePath)) {
+            return $this->breedAbilityFor($request, $relativePath);
+        }
+
         if ($request->user()?->hasRole('Product Manager') && $this->isProductPath($relativePath)) {
             if ($request->isMethod('get')) {
                 return 'view_any_product';
@@ -128,9 +132,39 @@ class EnforceAdminApiPermission
         return null;
     }
 
+    private function isBreedPath(string $path): bool
+    {
+        return $path === 'breeds' || str_starts_with($path, 'breeds/');
+    }
+
+    private function breedAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return $relativePath === 'breeds' ? 'view_any_breed' : 'view_breed';
+        }
+
+        if ($request->isMethod('post')) {
+            if ($relativePath === 'breeds/bulk-delete' || str_contains($relativePath, 'bulk-delete')) {
+                return 'delete_any_breed';
+            }
+
+            return $relativePath === 'breeds' ? 'create_breed' : null;
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_breed';
+        }
+
+        if ($request->isMethod('delete')) {
+            return str_contains($relativePath, 'bulk-delete') ? 'delete_any_breed' : 'delete_breed';
+        }
+
+        return null;
+    }
+
     private function isProductPath(string $path): bool
     {
-        foreach (['breeds', 'collection-groups', 'collections', 'products', 'product-types', 'custom-fields', 'solutions'] as $prefix) {
+        foreach (['collection-groups', 'collections', 'products', 'product-types', 'custom-fields', 'solutions'] as $prefix) {
             if ($path === $prefix || str_starts_with($path, $prefix.'/')) {
                 return true;
             }

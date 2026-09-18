@@ -18,6 +18,7 @@ class RoleSeeder extends Seeder
         $allPermissions = array_unique([
             ...AdminPermissionMatrix::allPermissions(),
             ...AdminAbilityRegistry::BRANDS,
+            ...AdminAbilityRegistry::BREEDS,
         ]);
 
         $permissions = collect($allPermissions)
@@ -46,7 +47,11 @@ class RoleSeeder extends Seeder
             if ($role->permissions()->count() === 0) {
                 $rolePermissions = AdminPermissionMatrix::permissionsForRole($roleName);
                 if ($roleName === 'Product Manager') {
-                    $rolePermissions = array_unique([...$rolePermissions, ...AdminAbilityRegistry::BRANDS]);
+                    $rolePermissions = array_unique([
+                        ...$rolePermissions,
+                        ...AdminAbilityRegistry::BRANDS,
+                        ...AdminAbilityRegistry::BREEDS,
+                    ]);
                 }
 
                 $role->syncPermissions(
@@ -58,6 +63,7 @@ class RoleSeeder extends Seeder
             } else {
                 if ($roleName === 'Product Manager') {
                     $role->givePermissionTo(AdminAbilityRegistry::BRANDS);
+                    $role->givePermissionTo(AdminAbilityRegistry::BREEDS);
                 }
             }
         }
