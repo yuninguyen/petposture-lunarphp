@@ -1,0 +1,63 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Security\AdminAbilityRegistry;
+use Illuminate\Database\Migrations\Migration;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * Seeds brand abilities idempotently for production and development.
+     * Ensures Product Manager and core roles receive brand permissions even
+     * if RoleSeeder already executed in earlier deployments.
+     */
+    public function up(): void
+    {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        foreach (AdminAbilityRegistry::BRANDS as $name) {
+            Permission::query()->firstOrCreate([
+                'name' => $name,
+                'guard_name' => 'web',
+            ]);
+        }
+
+        // Grant brand abilities to Product Manager
+        $productManager = Role::query()
+            ->where('name', 'Product Manager')
+            ->where('guard_name', 'web')
+            ->first();
+
+        if ($productManager) {
+            $productManager->givePermissionTo(AdminAbilityRegistry::BRANDS);
+        }
+
+        // Core admin roles (super_admin, admin, staff)
+        foreach (AdminAbilityRegistry::coreRoles() as $coreRole) {
+            $role = Role::query()
+                ->where('name', $coreRole)
+                ->where('guard_name', 'web')
+                ->first();
+
+            if ($role) {
+                $role->givePermissionTo(AdminAbilityRegistry::BRANDS);
+            }
+        }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        // Non-destructive rollback to preserve potential manual operator customizations.
+    }
+};

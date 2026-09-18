@@ -37,6 +37,10 @@ class EnforceAdminApiPermission
         $path = ltrim((string) $request->route()?->uri(), '/');
         $relativePath = preg_replace('#^api(?:/v1)?/admin/#', '', $path) ?? $path;
 
+        if ($this->isBrandPath($relativePath)) {
+            return $this->brandAbilityFor($request, $relativePath);
+        }
+
         if ($request->user()?->hasRole('Product Manager') && $this->isProductPath($relativePath)) {
             if ($request->isMethod('get')) {
                 return 'view_any_product';
@@ -98,9 +102,35 @@ class EnforceAdminApiPermission
         return null;
     }
 
+    private function isBrandPath(string $path): bool
+    {
+        return $path === 'brands' || str_starts_with($path, 'brands/');
+    }
+
+    private function brandAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return $relativePath === 'brands' ? 'view_any_brand' : 'view_brand';
+        }
+
+        if ($request->isMethod('post') && $relativePath === 'brands') {
+            return 'create_brand';
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_brand';
+        }
+
+        if ($request->isMethod('delete')) {
+            return str_contains($relativePath, 'bulk-delete') ? 'delete_any_brand' : 'delete_brand';
+        }
+
+        return null;
+    }
+
     private function isProductPath(string $path): bool
     {
-        foreach (['brands', 'breeds', 'collection-groups', 'collections', 'products', 'product-types', 'custom-fields', 'solutions'] as $prefix) {
+        foreach (['breeds', 'collection-groups', 'collections', 'products', 'product-types', 'custom-fields', 'solutions'] as $prefix) {
             if ($path === $prefix || str_starts_with($path, $prefix.'/')) {
                 return true;
             }

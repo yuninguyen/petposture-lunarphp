@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Security\AdminAbilityRegistry;
 use App\Security\AdminPermissionMatrix;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
@@ -14,7 +15,12 @@ class RoleSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $permissions = collect(AdminPermissionMatrix::allPermissions())
+        $allPermissions = array_unique([
+            ...AdminPermissionMatrix::allPermissions(),
+            ...AdminAbilityRegistry::BRANDS,
+        ]);
+
+        $permissions = collect($allPermissions)
             ->mapWithKeys(fn (string $name) => [
                 $name => Permission::query()->firstOrCreate([
                     'name' => $name,
@@ -38,12 +44,21 @@ class RoleSeeder extends Seeder
             // (built in a later phase), the DB is the source of truth — re-running
             // this seeder must never silently overwrite those edits.
             if ($role->permissions()->count() === 0) {
+                $rolePermissions = AdminPermissionMatrix::permissionsForRole($roleName);
+                if ($roleName === 'Product Manager') {
+                    $rolePermissions = array_unique([...$rolePermissions, ...AdminAbilityRegistry::BRANDS]);
+                }
+
                 $role->syncPermissions(
-                    collect(AdminPermissionMatrix::permissionsForRole($roleName))
+                    collect($rolePermissions)
                         ->map(fn (string $permission) => $permissions->get($permission))
                         ->filter()
                         ->values(),
                 );
+            } else {
+                if ($roleName === 'Product Manager') {
+                    $role->givePermissionTo(AdminAbilityRegistry::BRANDS);
+                }
             }
         }
 

@@ -30,15 +30,18 @@ class AdminPermissionMatrixTest extends TestCase
 
     public function test_role_seeding_preserves_existing_filament_permissions_for_core_admins(): void
     {
+        // A permission name unrelated to any registered matrix/registry entry,
+        // simulating one added manually outside of RoleSeeder (e.g. via
+        // Filament Shield UI). Must not collide with a real permission name.
         $permission = Permission::query()->create([
-            'name' => 'view_any_brand',
+            'name' => 'view_any_legacy_filament_only_widget',
             'guard_name' => 'web',
         ]);
         Role::findByName('admin')->givePermissionTo($permission);
 
         $this->seed(RoleSeeder::class);
 
-        $this->assertTrue(Role::findByName('admin')->hasPermissionTo('view_any_brand'));
+        $this->assertTrue(Role::findByName('admin')->hasPermissionTo('view_any_legacy_filament_only_widget'));
     }
 
     public function test_role_seeding_does_not_rewrite_customer_permissions(): void
