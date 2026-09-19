@@ -42,6 +42,7 @@ class RoleSeeder extends Seeder
             ...AdminAbilityRegistry::DASHBOARD_CONVERSION,
             ...AdminAbilityRegistry::REVIEWS,
             ...AdminAbilityRegistry::RETURN_REQUESTS,
+            ...AdminAbilityRegistry::ORDERS,
         ]);
 
         $permissions = collect($allPermissions)
@@ -57,6 +58,21 @@ class RoleSeeder extends Seeder
             'view_review',
             'update_review',
             'delete_review',
+        ];
+
+        $orderManagerOrderAbilities = [
+            'view_any_order',
+            'view_order',
+            'create_order',
+            'update_order',
+            'refund_order',
+        ];
+
+        $supportOrderAbilities = [
+            'view_any_order',
+            'view_order',
+            'create_order',
+            'update_order',
         ];
 
         foreach (AdminPermissionMatrix::adminRoles() as $roleName) {
@@ -96,6 +112,7 @@ class RoleSeeder extends Seeder
                         ...AdminAbilityRegistry::DASHBOARD_SALES,
                         ...AdminAbilityRegistry::DASHBOARD_CONVERSION,
                         ...AdminAbilityRegistry::RETURN_REQUESTS,
+                        ...($roleName === 'Order Manager' ? $orderManagerOrderAbilities : $supportOrderAbilities),
                     ]);
                 }
 
@@ -128,6 +145,10 @@ class RoleSeeder extends Seeder
                     $role->givePermissionTo(AdminAbilityRegistry::DASHBOARD_SALES);
                     $role->givePermissionTo(AdminAbilityRegistry::DASHBOARD_CONVERSION);
                     $role->givePermissionTo(AdminAbilityRegistry::RETURN_REQUESTS);
+                    // Orders abilities (including refund_order) are backfilled once by the
+                    // 2026_09_23_000001 migration, not re-granted here on every reseed —
+                    // refund_order predates this registry and an admin may have manually
+                    // revoked it via the Roles & Permissions UI; reseeding must not restore it.
                 }
 
                 if ($roleName === 'Support') {

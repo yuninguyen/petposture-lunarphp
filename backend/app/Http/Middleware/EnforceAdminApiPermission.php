@@ -137,6 +137,10 @@ class EnforceAdminApiPermission
             return $this->returnRequestAbilityFor($request, $relativePath);
         }
 
+        if ($this->isOrderPath($relativePath)) {
+            return $this->orderAbilityFor($request, $relativePath);
+        }
+
         if ($request->user()?->hasRole('Product Manager') && $this->isProductPath($relativePath)) {
             if ($request->isMethod('get')) {
                 return 'view_any_product';
@@ -157,7 +161,12 @@ class EnforceAdminApiPermission
             return 'update_product';
         }
 
-        if ($request->user()?->hasAnyRole(['Order Manager', 'Support']) && $this->isOrderPath($relativePath)) {
+        return null;
+    }
+
+    private function orderAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
             if ($request->isMethod('get') && in_array($relativePath, [
                 'orders/product-picker',
                 'orders/product-picker/{product}/variants',
@@ -165,14 +174,18 @@ class EnforceAdminApiPermission
                 return 'update_order';
             }
 
-            if ($request->isMethod('get')) {
-                return 'view_any_order';
-            }
+            return 'view_any_order';
+        }
 
-            if (str_ends_with($relativePath, '/refund')) {
-                return 'refund_order';
-            }
+        if ($request->isMethod('post') && $relativePath === 'orders') {
+            return 'create_order';
+        }
 
+        if ($request->isMethod('post') && str_ends_with($relativePath, '/refund')) {
+            return 'refund_order';
+        }
+
+        if ($request->isMethod('post') && str_ends_with($relativePath, '/return')) {
             return 'update_order';
         }
 
