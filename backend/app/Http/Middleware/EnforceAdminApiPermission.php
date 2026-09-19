@@ -129,6 +129,14 @@ class EnforceAdminApiPermission
             return $this->dashboardConversionAbilityFor($request, $relativePath);
         }
 
+        if ($this->isReviewPath($relativePath)) {
+            return $this->reviewAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isReturnRequestPath($relativePath)) {
+            return $this->returnRequestAbilityFor($request, $relativePath);
+        }
+
         if ($request->user()?->hasRole('Product Manager') && $this->isProductPath($relativePath)) {
             if ($request->isMethod('get')) {
                 return 'view_any_product';
@@ -147,22 +155,6 @@ class EnforceAdminApiPermission
             }
 
             return 'update_product';
-        }
-
-        if ($request->user()?->hasAnyRole(['Product Manager', 'Support']) && $this->isReviewPath($relativePath)) {
-            if ($request->isMethod('get')) {
-                return 'view_any_review';
-            }
-
-            if ($request->isMethod('put') || $request->isMethod('patch')) {
-                return 'update_review';
-            }
-
-            if ($request->isMethod('delete')) {
-                return 'delete_review';
-            }
-
-            return null;
         }
 
         if ($request->user()?->hasAnyRole(['Order Manager', 'Support']) && $this->isOrderPath($relativePath)) {
@@ -745,12 +737,66 @@ class EnforceAdminApiPermission
         return $path === 'reviews' || str_starts_with($path, 'reviews/');
     }
 
+    private function reviewAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return 'view_any_review';
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_review';
+        }
+
+        if ($request->isMethod('delete')) {
+            return 'delete_review';
+        }
+
+        return null;
+    }
+
+    private function isReturnRequestPath(string $path): bool
+    {
+        return $path === 'return-requests' || str_starts_with($path, 'return-requests/');
+    }
+
+    private function returnRequestAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return $relativePath === 'return-requests' ? 'view_any_return_request' : 'view_return_request';
+        }
+
+        if ($request->isMethod('post')) {
+            if (str_ends_with($relativePath, '/approve')) {
+                return 'approve_return_request';
+            }
+
+            if (str_ends_with($relativePath, '/reject')) {
+                return 'reject_return_request';
+            }
+
+            if (str_ends_with($relativePath, '/complete')) {
+                return 'complete_return_request';
+            }
+
+            if (str_ends_with($relativePath, '/tracking')) {
+                return 'update_return_request';
+            }
+
+            if (str_ends_with($relativePath, '/approve-low-value-waiver')) {
+                return 'approve_return_request';
+            }
+
+            if (str_ends_with($relativePath, '/preview')) {
+                return 'view_return_request';
+            }
+        }
+
+        return null;
+    }
+
     private function isOrderPath(string $path): bool
     {
-        return $path === 'return-requests'
-            || str_starts_with($path, 'return-requests/')
-            || $path === 'orders'
-            || str_starts_with($path, 'orders/');
+        return $path === 'orders' || str_starts_with($path, 'orders/');
     }
 
     private function isProfilePath(string $path): bool

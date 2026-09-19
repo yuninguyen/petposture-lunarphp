@@ -40,6 +40,8 @@ class RoleSeeder extends Seeder
             ...AdminAbilityRegistry::AFFILIATE_NETWORKS,
             ...AdminAbilityRegistry::DASHBOARD_SALES,
             ...AdminAbilityRegistry::DASHBOARD_CONVERSION,
+            ...AdminAbilityRegistry::REVIEWS,
+            ...AdminAbilityRegistry::RETURN_REQUESTS,
         ]);
 
         $permissions = collect($allPermissions)
@@ -49,6 +51,13 @@ class RoleSeeder extends Seeder
                     'guard_name' => 'web',
                 ]),
             ]);
+
+        $reviewAbilities = [
+            'view_any_review',
+            'view_review',
+            'update_review',
+            'delete_review',
+        ];
 
         foreach (AdminPermissionMatrix::adminRoles() as $roleName) {
             $role = Role::query()->firstOrCreate([
@@ -77,6 +86,7 @@ class RoleSeeder extends Seeder
                         ...AdminAbilityRegistry::PRODUCT_TYPES,
                         ...AdminAbilityRegistry::CUSTOM_FIELDS,
                         ...AdminAbilityRegistry::SOLUTIONS,
+                        ...$reviewAbilities,
                     ]);
                 }
 
@@ -85,6 +95,14 @@ class RoleSeeder extends Seeder
                         ...$rolePermissions,
                         ...AdminAbilityRegistry::DASHBOARD_SALES,
                         ...AdminAbilityRegistry::DASHBOARD_CONVERSION,
+                        ...AdminAbilityRegistry::RETURN_REQUESTS,
+                    ]);
+                }
+
+                if ($roleName === 'Support') {
+                    $rolePermissions = array_unique([
+                        ...$rolePermissions,
+                        ...$reviewAbilities,
                     ]);
                 }
 
@@ -103,11 +121,17 @@ class RoleSeeder extends Seeder
                     $role->givePermissionTo(AdminAbilityRegistry::PRODUCT_TYPES);
                     $role->givePermissionTo(AdminAbilityRegistry::CUSTOM_FIELDS);
                     $role->givePermissionTo(AdminAbilityRegistry::SOLUTIONS);
+                    $role->givePermissionTo($reviewAbilities);
                 }
 
                 if (in_array($roleName, ['Order Manager', 'Support'], true)) {
                     $role->givePermissionTo(AdminAbilityRegistry::DASHBOARD_SALES);
                     $role->givePermissionTo(AdminAbilityRegistry::DASHBOARD_CONVERSION);
+                    $role->givePermissionTo(AdminAbilityRegistry::RETURN_REQUESTS);
+                }
+
+                if ($roleName === 'Support') {
+                    $role->givePermissionTo($reviewAbilities);
                 }
             }
         }

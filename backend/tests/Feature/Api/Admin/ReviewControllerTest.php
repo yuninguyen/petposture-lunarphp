@@ -114,30 +114,27 @@ class ReviewControllerTest extends TestCase
         ]);
     }
 
-    public function test_review_routes_grant_read_and_update_but_not_delete_to_support_and_product_manager_only(): void
+    public function test_review_routes_grant_read_update_and_delete_to_support_and_product_manager_only(): void
     {
-        $review = $this->review($this->product('Permission Product'));
-        $requests = [
-            'get' => fn () => $this->getJson('/api/admin/reviews'),
-            'lookup' => fn () => $this->getJson('/api/admin/reviews/products'),
-            'show' => fn () => $this->getJson('/api/admin/reviews/'.$review->id),
-            'update' => fn () => $this->patchJson('/api/admin/reviews/'.$review->id, ['status' => 'approved']),
-            'delete' => fn () => $this->deleteJson('/api/admin/reviews/'.$review->id),
-        ];
+        $product = $this->product('Permission Product');
 
         foreach (['Support', 'Product Manager'] as $role) {
+            $roleReview = $this->review($product, ['customer_email' => "user-{$role}@example.com"]);
             Sanctum::actingAs($this->userWithRole($role));
-            $requests['get']()->assertOk();
-            $requests['lookup']()->assertOk();
-            $requests['show']()->assertOk();
-            $requests['update']()->assertOk();
-            $requests['delete']()->assertForbidden();
+            $this->getJson('/api/admin/reviews')->assertOk();
+            $this->getJson('/api/admin/reviews/products')->assertOk();
+            $this->getJson('/api/admin/reviews/'.$roleReview->id)->assertOk();
+            $this->patchJson('/api/admin/reviews/'.$roleReview->id, ['status' => 'approved'])->assertOk();
+            $this->deleteJson('/api/admin/reviews/'.$roleReview->id)->assertNoContent();
         }
 
+        $blockedReview = $this->review($product, ['customer_email' => 'blocked@example.com']);
         Sanctum::actingAs($this->userWithRole('Order Manager'));
-        foreach ($requests as $request) {
-            $request()->assertForbidden();
-        }
+        $this->getJson('/api/admin/reviews')->assertForbidden();
+        $this->getJson('/api/admin/reviews/products')->assertForbidden();
+        $this->getJson('/api/admin/reviews/'.$blockedReview->id)->assertForbidden();
+        $this->patchJson('/api/admin/reviews/'.$blockedReview->id, ['status' => 'approved'])->assertForbidden();
+        $this->deleteJson('/api/admin/reviews/'.$blockedReview->id)->assertForbidden();
     }
 
     private function actingAsCoreAdmin(): User
