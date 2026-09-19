@@ -141,27 +141,32 @@ class EnforceAdminApiPermission
             return $this->orderAbilityFor($request, $relativePath);
         }
 
-        if ($request->user()?->hasRole('Product Manager') && $this->isProductPath($relativePath)) {
-            if ($request->isMethod('get')) {
-                return 'view_any_product';
-            }
-
-            if (str_contains($relativePath, 'bulk-status')) {
-                return 'publish_product';
-            }
-
-            if ($request->isMethod('delete') || str_contains($relativePath, 'bulk-delete')) {
-                return 'delete_product';
-            }
-
-            if ($request->isMethod('post') && $relativePath === 'products') {
-                return 'create_product';
-            }
-
-            return 'update_product';
+        if ($this->isProductPath($relativePath)) {
+            return $this->productAbilityFor($request, $relativePath);
         }
 
         return null;
+    }
+
+    private function productAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return 'view_any_product';
+        }
+
+        if (str_contains($relativePath, 'bulk-status')) {
+            return 'publish_product';
+        }
+
+        if ($request->isMethod('delete') || str_contains($relativePath, 'bulk-delete')) {
+            return 'delete_product';
+        }
+
+        if ($request->isMethod('post') && $relativePath === 'products') {
+            return 'create_product';
+        }
+
+        return 'update_product';
     }
 
     private function orderAbilityFor(Request $request, string $relativePath): ?string
