@@ -73,6 +73,14 @@ class EnforceAdminApiPermission
             return $this->blogTagAbilityFor($request, $relativePath);
         }
 
+        if ($this->isPostPath($relativePath)) {
+            return $this->postAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isBlogCategoryPath($relativePath)) {
+            return $this->blogCategoryAbilityFor($request, $relativePath);
+        }
+
         if ($this->isPagePath($relativePath)) {
             return $this->pageAbilityFor($request, $relativePath);
         }
@@ -442,6 +450,74 @@ class EnforceAdminApiPermission
     private function isBlogTagPath(string $path): bool
     {
         return $path === 'blog/tags' || str_starts_with($path, 'blog/tags/');
+    }
+
+    private function isPostPath(string $path): bool
+    {
+        return $path === 'posts' || str_starts_with($path, 'posts/');
+    }
+
+    private function postAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('post')) {
+            if ($relativePath === 'posts/bulk-delete') {
+                return 'delete_any_post';
+            }
+
+            if ($relativePath === 'posts/generate-seo') {
+                return 'generate_post_seo';
+            }
+
+            if (str_ends_with($relativePath, '/duplicate')) {
+                return 'duplicate_post';
+            }
+
+            return $relativePath === 'posts' ? 'create_post' : null;
+        }
+
+        if ($request->isMethod('get')) {
+            return $relativePath === 'posts' ? 'view_any_post' : 'view_post';
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_post';
+        }
+
+        if ($request->isMethod('delete')) {
+            return 'delete_post';
+        }
+
+        return null;
+    }
+
+    private function isBlogCategoryPath(string $path): bool
+    {
+        return $path === 'blog/categories' || str_starts_with($path, 'blog/categories/');
+    }
+
+    private function blogCategoryAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return $relativePath === 'blog/categories' ? 'view_any_blog_category' : 'view_blog_category';
+        }
+
+        if ($request->isMethod('post')) {
+            if ($relativePath === 'blog/categories/bulk-delete') {
+                return 'delete_any_blog_category';
+            }
+
+            return $relativePath === 'blog/categories' ? 'create_blog_category' : null;
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_blog_category';
+        }
+
+        if ($request->isMethod('delete')) {
+            return 'delete_blog_category';
+        }
+
+        return null;
     }
 
     private function blogTagAbilityFor(Request $request, string $relativePath): ?string

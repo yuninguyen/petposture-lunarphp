@@ -43,6 +43,13 @@ class RoleSeeder extends Seeder
             ...AdminAbilityRegistry::REVIEWS,
             ...AdminAbilityRegistry::RETURN_REQUESTS,
             ...AdminAbilityRegistry::ORDERS,
+            ...AdminAbilityRegistry::POSTS,
+            'view_any_blog_category',
+            'view_blog_category',
+            'create_blog_category',
+            'update_blog_category',
+            'delete_blog_category',
+            'delete_any_blog_category',
         ]);
 
         $permissions = collect($allPermissions)
