@@ -249,8 +249,16 @@ class AdminPermissionMatrixTest extends TestCase
         $orderManager->refresh();
         $expectedPermissions = AdminPermissionMatrix::permissionsForRole('Order Manager');
         $this->assertNotEmpty($expectedPermissions);
-        $this->assertCount(count($expectedPermissions), $orderManager->permissions);
+        // Phase 6b also grants Order Manager the dashboard registry abilities on fresh seed.
+        $expectedRegistryPermissions = [
+            ...\App\Security\AdminAbilityRegistry::DASHBOARD_SALES,
+            ...\App\Security\AdminAbilityRegistry::DASHBOARD_CONVERSION,
+        ];
+        $this->assertCount(count($expectedPermissions) + count($expectedRegistryPermissions), $orderManager->permissions);
         foreach ($expectedPermissions as $permission) {
+            $this->assertTrue($orderManager->hasPermissionTo($permission));
+        }
+        foreach ($expectedRegistryPermissions as $permission) {
             $this->assertTrue($orderManager->hasPermissionTo($permission));
         }
     }

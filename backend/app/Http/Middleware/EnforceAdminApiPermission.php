@@ -93,6 +93,42 @@ class EnforceAdminApiPermission
             return $this->usersAbilityFor($request, $relativePath);
         }
 
+        if ($this->isGoalsPath($relativePath)) {
+            return $this->goalsAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isSystemMediaPath($relativePath)) {
+            return $this->systemMediaAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isSystemActivityLogPath($relativePath)) {
+            return $this->systemActivityLogAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isAffiliateReportPath($relativePath)) {
+            return $this->affiliateReportAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isSystemRolePath($relativePath)) {
+            return $this->systemRoleAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isSystemUserPath($relativePath)) {
+            return $this->systemUserAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isAffiliateNetworkPath($relativePath)) {
+            return $this->affiliateNetworkAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isDashboardSalesPath($relativePath)) {
+            return $this->dashboardSalesAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isDashboardConversionPath($relativePath)) {
+            return $this->dashboardConversionAbilityFor($request, $relativePath);
+        }
+
         if ($request->user()?->hasRole('Product Manager') && $this->isProductPath($relativePath)) {
             if ($request->isMethod('get')) {
                 return 'view_any_product';
@@ -129,10 +165,7 @@ class EnforceAdminApiPermission
             return null;
         }
 
-        if ($request->user()?->hasAnyRole(['Order Manager', 'Support']) && ($this->isOrderPath($relativePath) || $relativePath === 'dashboard/sales' || $relativePath === 'dashboard/conversion')) {
-            if ($relativePath === 'dashboard/sales' || $relativePath === 'dashboard/conversion') {
-                return 'view_any_order';
-            }
+        if ($request->user()?->hasAnyRole(['Order Manager', 'Support']) && $this->isOrderPath($relativePath)) {
             if ($request->isMethod('get') && in_array($relativePath, [
                 'orders/product-picker',
                 'orders/product-picker/{product}/variants',
@@ -523,6 +556,180 @@ class EnforceAdminApiPermission
     {
         if ($request->isMethod('get')) {
             return $relativePath === 'users' ? 'view_any_user' : 'view_user';
+        }
+
+        return null;
+    }
+
+    private function isGoalsPath(string $path): bool
+    {
+        return $path === 'goals' || str_starts_with($path, 'goals/');
+    }
+
+    private function goalsAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return 'view_any_goal';
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_goal';
+        }
+
+        return null;
+    }
+
+    private function isSystemMediaPath(string $path): bool
+    {
+        return $path === 'system/media' || str_starts_with($path, 'system/media/');
+    }
+
+    private function systemMediaAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return 'view_any_system_media';
+        }
+
+        if ($request->isMethod('delete')) {
+            return 'delete_system_media';
+        }
+
+        return null;
+    }
+
+    private function isSystemActivityLogPath(string $path): bool
+    {
+        return $path === 'system/activity-logs' || str_starts_with($path, 'system/activity-logs/');
+    }
+
+    private function systemActivityLogAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return $relativePath === 'system/activity-logs' ? 'view_any_activity_log' : 'view_activity_log';
+        }
+
+        return null;
+    }
+
+    private function isAffiliateReportPath(string $path): bool
+    {
+        return $path === 'affiliate/reports' || str_starts_with($path, 'affiliate/reports/');
+    }
+
+    private function affiliateReportAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return $relativePath === 'affiliate/reports' ? 'view_any_affiliate_report' : 'view_affiliate_report';
+        }
+
+        return null;
+    }
+
+    private function isSystemRolePath(string $path): bool
+    {
+        return $path === 'system/roles' || str_starts_with($path, 'system/roles/');
+    }
+
+    private function systemRoleAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return $relativePath === 'system/roles' ? 'view_any_role' : 'view_role';
+        }
+
+        if ($request->isMethod('post') && $relativePath === 'system/roles') {
+            return 'create_role';
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_role';
+        }
+
+        if ($request->isMethod('delete')) {
+            return str_contains($relativePath, 'bulk-delete') ? 'delete_any_role' : 'delete_role';
+        }
+
+        return null;
+    }
+
+    private function isSystemUserPath(string $path): bool
+    {
+        return $path === 'system/users' || str_starts_with($path, 'system/users/');
+    }
+
+    private function systemUserAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return $relativePath === 'system/users' ? 'view_any_system_user' : 'view_system_user';
+        }
+
+        if ($request->isMethod('post') && $relativePath === 'system/users') {
+            return 'create_system_user';
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_system_user';
+        }
+
+        if ($request->isMethod('delete')) {
+            return 'delete_system_user';
+        }
+
+        return null;
+    }
+
+    private function isAffiliateNetworkPath(string $path): bool
+    {
+        return $path === 'affiliate/networks' || str_starts_with($path, 'affiliate/networks/');
+    }
+
+    private function affiliateNetworkAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if (str_ends_with($relativePath, '/sync')) {
+            return $request->isMethod('post') ? 'sync_affiliate_network' : null;
+        }
+
+        if ($request->isMethod('get')) {
+            return $relativePath === 'affiliate/networks' ? 'view_any_affiliate_network' : 'view_affiliate_network';
+        }
+
+        if ($request->isMethod('post') && $relativePath === 'affiliate/networks') {
+            return 'create_affiliate_network';
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_affiliate_network';
+        }
+
+        if ($request->isMethod('delete')) {
+            return 'delete_affiliate_network';
+        }
+
+        return null;
+    }
+
+    private function isDashboardSalesPath(string $path): bool
+    {
+        return $path === 'dashboard/sales' || str_starts_with($path, 'dashboard/sales/');
+    }
+
+    private function dashboardSalesAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return 'view_dashboard_sales';
+        }
+
+        return null;
+    }
+
+    private function isDashboardConversionPath(string $path): bool
+    {
+        return $path === 'dashboard/conversion' || str_starts_with($path, 'dashboard/conversion/');
+    }
+
+    private function dashboardConversionAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return 'view_dashboard_conversion';
         }
 
         return null;

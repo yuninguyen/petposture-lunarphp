@@ -31,6 +31,15 @@ class RoleSeeder extends Seeder
             ...AdminAbilityRegistry::SEO_SOCIAL,
             ...AdminAbilityRegistry::AFFILIATE_NETWORKS_SELECTOR,
             ...AdminAbilityRegistry::USERS,
+            ...AdminAbilityRegistry::GOALS,
+            ...AdminAbilityRegistry::SYSTEM_MEDIA,
+            ...AdminAbilityRegistry::SYSTEM_ACTIVITY_LOGS,
+            ...AdminAbilityRegistry::AFFILIATE_REPORTS,
+            ...AdminAbilityRegistry::SYSTEM_ROLES,
+            ...AdminAbilityRegistry::SYSTEM_USERS,
+            ...AdminAbilityRegistry::AFFILIATE_NETWORKS,
+            ...AdminAbilityRegistry::DASHBOARD_SALES,
+            ...AdminAbilityRegistry::DASHBOARD_CONVERSION,
         ]);
 
         $permissions = collect($allPermissions)
@@ -71,6 +80,14 @@ class RoleSeeder extends Seeder
                     ]);
                 }
 
+                if (in_array($roleName, ['Order Manager', 'Support'], true)) {
+                    $rolePermissions = array_unique([
+                        ...$rolePermissions,
+                        ...AdminAbilityRegistry::DASHBOARD_SALES,
+                        ...AdminAbilityRegistry::DASHBOARD_CONVERSION,
+                    ]);
+                }
+
                 $role->syncPermissions(
                     collect($rolePermissions)
                         ->map(fn (string $permission) => $permissions->get($permission))
@@ -86,6 +103,11 @@ class RoleSeeder extends Seeder
                     $role->givePermissionTo(AdminAbilityRegistry::PRODUCT_TYPES);
                     $role->givePermissionTo(AdminAbilityRegistry::CUSTOM_FIELDS);
                     $role->givePermissionTo(AdminAbilityRegistry::SOLUTIONS);
+                }
+
+                if (in_array($roleName, ['Order Manager', 'Support'], true)) {
+                    $role->givePermissionTo(AdminAbilityRegistry::DASHBOARD_SALES);
+                    $role->givePermissionTo(AdminAbilityRegistry::DASHBOARD_CONVERSION);
                 }
             }
         }
