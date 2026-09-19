@@ -24,6 +24,13 @@ class RoleSeeder extends Seeder
             ...AdminAbilityRegistry::PRODUCT_TYPES,
             ...AdminAbilityRegistry::CUSTOM_FIELDS,
             ...AdminAbilityRegistry::SOLUTIONS,
+            ...AdminAbilityRegistry::COMMENTS,
+            ...AdminAbilityRegistry::BLOG_TAGS,
+            ...AdminAbilityRegistry::PAGES,
+            ...AdminAbilityRegistry::MEDIA,
+            ...AdminAbilityRegistry::SEO_SOCIAL,
+            ...AdminAbilityRegistry::AFFILIATE_NETWORKS_SELECTOR,
+            ...AdminAbilityRegistry::USERS,
         ]);
 
         $permissions = collect($allPermissions)

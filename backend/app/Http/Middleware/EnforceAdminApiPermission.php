@@ -65,6 +65,34 @@ class EnforceAdminApiPermission
             return $this->solutionAbilityFor($request, $relativePath);
         }
 
+        if ($this->isCommentPath($relativePath)) {
+            return $this->commentAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isBlogTagPath($relativePath)) {
+            return $this->blogTagAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isPagePath($relativePath)) {
+            return $this->pageAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isMediaPath($relativePath)) {
+            return $this->mediaAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isSeoSocialPath($relativePath)) {
+            return $this->seoSocialAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isAffiliateNetworkSelectorPath($relativePath)) {
+            return $this->affiliateNetworkSelectorAbilityFor($request, $relativePath);
+        }
+
+        if ($this->isUsersPath($relativePath)) {
+            return $this->usersAbilityFor($request, $relativePath);
+        }
+
         if ($request->user()?->hasRole('Product Manager') && $this->isProductPath($relativePath)) {
             if ($request->isMethod('get')) {
                 return 'view_any_product';
@@ -329,6 +357,172 @@ class EnforceAdminApiPermission
 
         if ($request->isMethod('delete')) {
             return str_contains($relativePath, 'bulk-delete') ? 'delete_any_solution' : 'delete_solution';
+        }
+
+        return null;
+    }
+
+    private function isCommentPath(string $path): bool
+    {
+        return $path === 'comments' || str_starts_with($path, 'comments/');
+    }
+
+    private function commentAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if (str_ends_with($relativePath, '/approve')) {
+            return $request->isMethod('post') ? 'approve_comment' : null;
+        }
+
+        if ($request->isMethod('get')) {
+            return $relativePath === 'comments' ? 'view_any_comment' : 'view_comment';
+        }
+
+        if ($request->isMethod('post')) {
+            if ($relativePath === 'comments/bulk-delete' || str_contains($relativePath, 'bulk-delete')) {
+                return 'delete_any_comment';
+            }
+
+            return $relativePath === 'comments' ? 'create_comment' : null;
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_comment';
+        }
+
+        if ($request->isMethod('delete')) {
+            return str_contains($relativePath, 'bulk-delete') ? 'delete_any_comment' : 'delete_comment';
+        }
+
+        return null;
+    }
+
+    private function isBlogTagPath(string $path): bool
+    {
+        return $path === 'blog/tags' || str_starts_with($path, 'blog/tags/');
+    }
+
+    private function blogTagAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return $relativePath === 'blog/tags' ? 'view_any_blog_tag' : 'view_blog_tag';
+        }
+
+        if ($request->isMethod('post')) {
+            if ($relativePath === 'blog/tags/bulk-delete' || str_contains($relativePath, 'bulk-delete')) {
+                return 'delete_any_blog_tag';
+            }
+
+            return $relativePath === 'blog/tags' ? 'create_blog_tag' : null;
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_blog_tag';
+        }
+
+        if ($request->isMethod('delete')) {
+            return str_contains($relativePath, 'bulk-delete') ? 'delete_any_blog_tag' : 'delete_blog_tag';
+        }
+
+        return null;
+    }
+
+    private function isPagePath(string $path): bool
+    {
+        return $path === 'pages' || str_starts_with($path, 'pages/');
+    }
+
+    private function pageAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return $relativePath === 'pages' ? 'view_any_page' : 'view_page';
+        }
+
+        if ($request->isMethod('post')) {
+            if ($relativePath === 'pages/bulk-delete' || str_contains($relativePath, 'bulk-delete')) {
+                return 'delete_any_page';
+            }
+
+            return $relativePath === 'pages' ? 'create_page' : null;
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_page';
+        }
+
+        if ($request->isMethod('delete')) {
+            return str_contains($relativePath, 'bulk-delete') ? 'delete_any_page' : 'delete_page';
+        }
+
+        return null;
+    }
+
+    private function isMediaPath(string $path): bool
+    {
+        return $path === 'media' || str_starts_with($path, 'media/');
+    }
+
+    private function mediaAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return $relativePath === 'media' ? 'view_any_media' : 'view_media';
+        }
+
+        if ($request->isMethod('post') && $relativePath === 'media') {
+            return 'create_media';
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_media';
+        }
+
+        if ($request->isMethod('delete')) {
+            return str_contains($relativePath, 'bulk-delete') ? 'delete_any_media' : 'delete_media';
+        }
+
+        return null;
+    }
+
+    private function isSeoSocialPath(string $path): bool
+    {
+        return $path === 'seo-social' || str_starts_with($path, 'seo-social/');
+    }
+
+    private function seoSocialAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return 'view_seo_social';
+        }
+
+        if ($request->isMethod('post') || $request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_seo_social';
+        }
+
+        return null;
+    }
+
+    private function isAffiliateNetworkSelectorPath(string $path): bool
+    {
+        return $path === 'affiliate-networks' || str_starts_with($path, 'affiliate-networks/');
+    }
+
+    private function affiliateNetworkSelectorAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return 'view_affiliate_network_selector';
+        }
+
+        return null;
+    }
+
+    private function isUsersPath(string $path): bool
+    {
+        return $path === 'users' || str_starts_with($path, 'users/');
+    }
+
+    private function usersAbilityFor(Request $request, string $relativePath): ?string
+    {
+        if ($request->isMethod('get')) {
+            return $relativePath === 'users' ? 'view_any_user' : 'view_user';
         }
 
         return null;
