@@ -19,6 +19,11 @@ class RoleSeeder extends Seeder
             ...AdminPermissionMatrix::allPermissions(),
             ...AdminAbilityRegistry::BRANDS,
             ...AdminAbilityRegistry::BREEDS,
+            ...AdminAbilityRegistry::COLLECTION_GROUPS,
+            ...AdminAbilityRegistry::COLLECTIONS,
+            ...AdminAbilityRegistry::PRODUCT_TYPES,
+            ...AdminAbilityRegistry::CUSTOM_FIELDS,
+            ...AdminAbilityRegistry::SOLUTIONS,
         ]);
 
         $permissions = collect($allPermissions)
@@ -51,6 +56,11 @@ class RoleSeeder extends Seeder
                         ...$rolePermissions,
                         ...AdminAbilityRegistry::BRANDS,
                         ...AdminAbilityRegistry::BREEDS,
+                        ...AdminAbilityRegistry::COLLECTION_GROUPS,
+                        ...AdminAbilityRegistry::COLLECTIONS,
+                        ...AdminAbilityRegistry::PRODUCT_TYPES,
+                        ...AdminAbilityRegistry::CUSTOM_FIELDS,
+                        ...AdminAbilityRegistry::SOLUTIONS,
                     ]);
                 }
 
@@ -64,6 +74,11 @@ class RoleSeeder extends Seeder
                 if ($roleName === 'Product Manager') {
                     $role->givePermissionTo(AdminAbilityRegistry::BRANDS);
                     $role->givePermissionTo(AdminAbilityRegistry::BREEDS);
+                    $role->givePermissionTo(AdminAbilityRegistry::COLLECTION_GROUPS);
+                    $role->givePermissionTo(AdminAbilityRegistry::COLLECTIONS);
+                    $role->givePermissionTo(AdminAbilityRegistry::PRODUCT_TYPES);
+                    $role->givePermissionTo(AdminAbilityRegistry::CUSTOM_FIELDS);
+                    $role->givePermissionTo(AdminAbilityRegistry::SOLUTIONS);
                 }
             }
         }
