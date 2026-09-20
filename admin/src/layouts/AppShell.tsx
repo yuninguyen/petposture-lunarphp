@@ -8,7 +8,7 @@ import { MobileAdminNav } from '@/components/navigation/MobileAdminNav';
 import { humanizeRole } from '@/lib/humanizeRole';
 import { NotificationBell } from '@/features/system-notifications/NotificationBell';
 
-export function AppShell({ children, userName, userRoles }: { children: ReactNode; userName: string; userRoles: string[] }) {
+export function AppShell({ children, userName, userRoles, userAbilities = [] }: { children: ReactNode; userName: string; userRoles: string[]; userAbilities?: string[] }) {
   const { t, i18n } = useTranslation();
   const branding = useBranding();
   const location = useLocation();
@@ -26,7 +26,7 @@ export function AppShell({ children, userName, userRoles }: { children: ReactNod
     system: true,
   });
 
-  const visibleNavGroups = getVisibleNavigation(userRoles);
+  const visibleNavGroups = getVisibleNavigation(userRoles, userAbilities);
 
   const activeNavGroupKey = visibleNavGroups.find((group) => (
     group.items.some((item) => (

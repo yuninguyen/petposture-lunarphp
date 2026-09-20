@@ -13,6 +13,7 @@ vi.mock('@/features/system-notifications/NotificationBell', () => ({
 
 import { AppShell } from './AppShell';
 import { BrandingContext } from '@/context/BrandingContext';
+import { abilitiesFor } from '@/test-fixtures/roleAbilities';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -39,7 +40,7 @@ function renderShell(userRoles: string[], logoUrl = '/logo.png') {
   const host = document.createElement('div');
   document.body.appendChild(host);
   const root = createRoot(host);
-  act(() => root.render(createElement(MemoryRouter, null, createElement(BrandingContext.Provider, { value: { name: 'PetPosture', logoUrl, faviconUrl: '/favicon.png' } }, createElement(AppShell, { userName: 'Admin', userRoles, children: createElement('div') })))));
+  act(() => root.render(createElement(MemoryRouter, null, createElement(BrandingContext.Provider, { value: { name: 'PetPosture', logoUrl, faviconUrl: '/favicon.png' } }, createElement(AppShell, { userName: 'Admin', userRoles, userAbilities: abilitiesFor(userRoles), children: createElement('div') })))));
   return { host, root };
 }
 

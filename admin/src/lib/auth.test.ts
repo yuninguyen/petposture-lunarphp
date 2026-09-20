@@ -17,11 +17,12 @@ describe('session authentication', () => {
     const navSource = readFileSync('src/navigation/adminNavigation.tsx', 'utf8');
 
     expect(appSource).toContain('userRoles={user?.roles ?? []}');
-    // Role-scoping moved from ad-hoc hasRole() checks in AppShell into named
-    // capability predicates in the single shared navigation source.
-    expect(shellSource).toContain('getVisibleNavigation(userRoles)');
+    // Phase 6d: role-scoping moved from ad-hoc hasRole() checks, through named
+    // role predicates (Phase 6b/6c), to ability-based checks backed by the
+    // real backend permission set returned by GET /api/admin/session.
+    expect(shellSource).toContain('getVisibleNavigation(userRoles, userAbilities)');
     expect(shellSource).toContain('visibleNavGroups');
-    expect(navSource).toContain("'Product Manager'");
+    expect(navSource).toContain("can(abilities, 'view_any_product')");
   });
 
   it('recognizes every backend admin-panel role', () => {

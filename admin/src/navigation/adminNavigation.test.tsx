@@ -12,6 +12,7 @@ import {
   canAccessFinance,
   AdminNavGroup,
 } from './adminNavigation';
+import { abilitiesFor } from '../test-fixtures/roleAbilities';
 
 describe('admin navigation semantic authorization', () => {
   it('correctly identifies core admin roles', () => {
@@ -24,39 +25,39 @@ describe('admin navigation semantic authorization', () => {
     expect(isCoreAdminRole([])).toBe(false);
   });
 
-  it('correctly checks role capability predicates', () => {
+  it('correctly checks ability capability predicates', () => {
     // Orders / Return Requests
-    expect(canAccessOrders(['admin'])).toBe(true);
-    expect(canAccessOrders(['Order Manager'])).toBe(true);
-    expect(canAccessOrders(['Support'])).toBe(true);
-    expect(canAccessOrders(['Product Manager'])).toBe(false);
+    expect(canAccessOrders([], abilitiesFor(['admin']))).toBe(true);
+    expect(canAccessOrders([], abilitiesFor(['Order Manager']))).toBe(true);
+    expect(canAccessOrders([], abilitiesFor(['Support']))).toBe(true);
+    expect(canAccessOrders([], abilitiesFor(['Product Manager']))).toBe(false);
 
     // Reviews
-    expect(canAccessReviews(['admin'])).toBe(true);
-    expect(canAccessReviews(['Support'])).toBe(true);
-    expect(canAccessReviews(['Product Manager'])).toBe(true);
-    expect(canAccessReviews(['Order Manager'])).toBe(false);
+    expect(canAccessReviews([], abilitiesFor(['admin']))).toBe(true);
+    expect(canAccessReviews([], abilitiesFor(['Support']))).toBe(true);
+    expect(canAccessReviews([], abilitiesFor(['Product Manager']))).toBe(true);
+    expect(canAccessReviews([], abilitiesFor(['Order Manager']))).toBe(false);
 
     // Catalogue
-    expect(canAccessCatalogue(['admin'])).toBe(true);
-    expect(canAccessCatalogue(['Product Manager'])).toBe(true);
-    expect(canAccessCatalogue(['Order Manager'])).toBe(false);
-    expect(canAccessCatalogue(['Support'])).toBe(false);
+    expect(canAccessCatalogue([], abilitiesFor(['admin']))).toBe(true);
+    expect(canAccessCatalogue([], abilitiesFor(['Product Manager']))).toBe(true);
+    expect(canAccessCatalogue([], abilitiesFor(['Order Manager']))).toBe(false);
+    expect(canAccessCatalogue([], abilitiesFor(['Support']))).toBe(false);
 
     // Dashboard & Finance
-    expect(canAccessDashboard(['admin'])).toBe(true);
-    expect(canAccessDashboard(['Order Manager'])).toBe(true);
-    expect(canAccessDashboard(['Support'])).toBe(true);
-    expect(canAccessDashboard(['Product Manager'])).toBe(false);
+    expect(canAccessDashboard([], abilitiesFor(['admin']))).toBe(true);
+    expect(canAccessDashboard([], abilitiesFor(['Order Manager']))).toBe(true);
+    expect(canAccessDashboard([], abilitiesFor(['Support']))).toBe(true);
+    expect(canAccessDashboard([], abilitiesFor(['Product Manager']))).toBe(false);
 
-    expect(canAccessFinance(['admin'])).toBe(true);
-    expect(canAccessFinance(['staff'])).toBe(true);
-    expect(canAccessFinance(['Order Manager'])).toBe(false);
-    expect(canAccessFinance(['Product Manager'])).toBe(false);
+    expect(canAccessFinance([], abilitiesFor(['admin']))).toBe(true);
+    expect(canAccessFinance([], abilitiesFor(['staff']))).toBe(true);
+    expect(canAccessFinance([], abilitiesFor(['Order Manager']))).toBe(false);
+    expect(canAccessFinance([], abilitiesFor(['Product Manager']))).toBe(false);
   });
 
   it('exposes all groups and all items to core admin', () => {
-    const groups = getVisibleNavigation(['admin']);
+    const groups = getVisibleNavigation(['admin'], abilitiesFor(['admin']));
     expect(groups.map((g) => g.key)).toEqual(['dashboard', 'sales', 'finance', 'catalogue', 'content', 'affiliate', 'system']);
 
     const dashboardItems = groups.find((g) => g.key === 'dashboard')?.items.map((i) => i.path);
@@ -106,7 +107,7 @@ describe('admin navigation semantic authorization', () => {
   });
 
   it('exposes dashboard and orders to Order Manager', () => {
-    const groups = getVisibleNavigation(['Order Manager']);
+    const groups = getVisibleNavigation(['Order Manager'], abilitiesFor(['Order Manager']));
     expect(groups.map((g) => g.key)).toEqual(['dashboard', 'sales']);
 
     expect(groups[0].items.map((i) => i.path)).toEqual(['/dashboard/sales', '/dashboard/conversion']);
@@ -114,7 +115,7 @@ describe('admin navigation semantic authorization', () => {
   });
 
   it('exposes dashboard, orders, return requests, and reviews to Support', () => {
-    const groups = getVisibleNavigation(['Support']);
+    const groups = getVisibleNavigation(['Support'], abilitiesFor(['Support']));
     expect(groups.map((g) => g.key)).toEqual(['dashboard', 'sales']);
 
     expect(groups[0].items.map((i) => i.path)).toEqual(['/dashboard/sales', '/dashboard/conversion']);
@@ -122,7 +123,7 @@ describe('admin navigation semantic authorization', () => {
   });
 
   it('exposes reviews and full catalogue to Product Manager without content or orders', () => {
-    const groups = getVisibleNavigation(['Product Manager']);
+    const groups = getVisibleNavigation(['Product Manager'], abilitiesFor(['Product Manager']));
     expect(groups.map((g) => g.key)).toEqual(['sales', 'catalogue']);
 
     const salesItems = groups.find((g) => g.key === 'sales')?.items.map((i) => i.path);
@@ -141,8 +142,8 @@ describe('admin navigation semantic authorization', () => {
   });
 
   it('returns empty array for unknown or unauthorized roles', () => {
-    expect(getVisibleNavigation(['guest'])).toEqual([]);
-    expect(getVisibleNavigation([])).toEqual([]);
+    expect(getVisibleNavigation(['guest'], abilitiesFor(['guest']))).toEqual([]);
+    expect(getVisibleNavigation([], abilitiesFor([]))).toEqual([]);
   });
 
   it('provides complete bilingual Payment Methods copy', () => {
@@ -233,13 +234,14 @@ describe('admin navigation semantic authorization', () => {
     };
 
     const reorderedGroups = [dummyNewGroup, ...ADMIN_NAV_GROUPS];
+    const orderManagerAbilities = abilitiesFor(['Order Manager']);
 
     // Order Manager still only gets dashboard & sales groups regardless of array index
     const visibleForOrderManager = reorderedGroups
-      .filter((g) => !g.canAccess || g.canAccess(['Order Manager']))
+      .filter((g) => !g.canAccess || g.canAccess(['Order Manager'], orderManagerAbilities))
       .map((g) => ({
         ...g,
-        items: g.items.filter((i) => i.canAccess(['Order Manager'])),
+        items: g.items.filter((i) => i.canAccess(['Order Manager'], orderManagerAbilities)),
       }))
       .filter((g) => g.items.length > 0);
 

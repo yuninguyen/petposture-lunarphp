@@ -5,6 +5,7 @@ import { queryClient } from '@/lib/queryClient';
 import { AppShell } from '@/layouts/AppShell';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { AdminUser, fetchCurrentUser, isAdminRole } from '@/lib/auth';
+import { fetchAbilities, can } from '@/lib/permissions';
 import toast, { Toaster } from 'react-hot-toast';
 import { BrandingProvider } from '@/context/BrandingContext';
 import { canAccessFinance } from '@/navigation/adminNavigation';
@@ -93,15 +94,19 @@ export default function App() {
 
 function AdminApp() {
   const [user, setUser] = useState<AdminUser | null>(null);
+  const [abilities, setAbilities] = useState<string[]>([]);
   const [authFailed, setAuthFailed] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
     fetchCurrentUser()
-      .then((u) => {
+      .then(async (u) => {
         if (isAdminRole(u.roles)) {
           setUser(u);
+          // fetchAbilities() called here (not via the useAbilities() React Query
+          // hook) because this effect runs before QueryClientProvider mounts below.
+          setAbilities(await fetchAbilities());
           setLoggedIn(true);
         } else {
           setAuthFailed(true);
@@ -122,6 +127,7 @@ function AdminApp() {
           setUser(loggedInUser);
           setAuthFailed(false);
           setLoggedIn(true);
+          fetchAbilities().then(setAbilities).catch(() => setAbilities([]));
         }}
       />
     );
@@ -153,9 +159,9 @@ function AdminApp() {
         }}
       />
       <BrowserRouter>
-        <AppShell userName={user?.name ?? ''} userRoles={user?.roles ?? []}>
+        <AppShell userName={user?.name ?? ''} userRoles={user?.roles ?? []} userAbilities={abilities}>
           <Suspense fallback={<PageLoader />}>
-            <AppRoutes userRoles={user?.roles ?? []} />
+            <AppRoutes userRoles={user?.roles ?? []} userAbilities={abilities} />
           </Suspense>
         </AppShell>
       </BrowserRouter>
@@ -167,39 +173,47 @@ function isCoreAdministrator(userRoles: string[]) {
   return userRoles.some((role) => ['super_admin', 'admin', 'staff'].includes(role));
 }
 
-export function canManageCommerce(userRoles: string[]) {
-  return isCoreAdministrator(userRoles) || userRoles.includes('Order Manager') || userRoles.includes('Support');
+export function canManageCommerce(_userRoles: string[], abilities: string[] = []) {
+  return can(abilities, 'view_any_order');
 }
 
-export function canManageDiscounts(userRoles: string[]) {
-  return isCoreAdministrator(userRoles);
+export function canManageDiscounts(_userRoles: string[], abilities: string[] = []) {
+  return can(abilities, 'view_any_discount');
 }
 
-export function canManageShipping(userRoles: string[]) {
-  return isCoreAdministrator(userRoles);
+export function canManageShipping(_userRoles: string[], abilities: string[] = []) {
+  return can(abilities, 'view_any_shipping_method');
 }
 
-export function canManageCustomers(userRoles: string[]) {
-  return isCoreAdministrator(userRoles);
+export function canManageCustomers(_userRoles: string[], abilities: string[] = []) {
+  return can(abilities, 'view_any_customer');
 }
 
-export function canManageReviews(userRoles: string[]) {
-  return isCoreAdministrator(userRoles) || userRoles.includes('Support') || userRoles.includes('Product Manager');
+export function canManageReviews(_userRoles: string[], abilities: string[] = []) {
+  return can(abilities, 'view_any_review');
 }
 
+// Kept role-based intentionally: the UI has always restricted review deletion to
+// core admins only, even though Support/Product Manager hold delete_review on the
+// backend (Phase 6b, commit a7ac753). Do not widen this without explicit sign-off.
 export function canDeleteReviews(userRoles: string[]) {
   return isCoreAdministrator(userRoles);
 }
 
-export function canRefundOrders(userRoles: string[]) {
-  return isCoreAdministrator(userRoles) || userRoles.includes('Order Manager');
+export function canRefundOrders(_userRoles: string[], abilities: string[] = []) {
+  return can(abilities, 'refund_order');
 }
 
 export interface HomeRouteCandidate {
   path: string;
-  canAccess: (roles: string[]) => boolean;
+  canAccess: (roles: string[], abilities: string[]) => boolean;
 }
 
+// Landing-page PREFERENCE, not an access-control decision (the routes themselves
+// are still gated elsewhere by ability). Kept role-based intentionally: Order
+// Manager and Support can view the dashboard once inside the app, but their
+// default landing page has always been /orders, not /dashboard — only core
+// admins land on /dashboard by default. Do not switch this to an ability check.
 export const ADMIN_HOME_CANDIDATES: HomeRouteCandidate[] = [
   {
     path: '/dashboard',
@@ -207,36 +221,48 @@ export const ADMIN_HOME_CANDIDATES: HomeRouteCandidate[] = [
   },
   {
     path: '/products',
-    canAccess: (roles) => !isCoreAdministrator(roles) && roles.includes('Product Manager'),
+    canAccess: (roles, abilities) => !isCoreAdministrator(roles) && can(abilities, 'view_any_product'),
   },
   {
     path: '/orders',
-    canAccess: (roles) => !isCoreAdministrator(roles) && (roles.includes('Order Manager') || roles.includes('Support')),
+    canAccess: (roles, abilities) => !isCoreAdministrator(roles) && can(abilities, 'view_any_order'),
   },
   {
     path: '/posts',
-    canAccess: (roles) => isCoreAdministrator(roles),
+    canAccess: (roles, abilities) => isCoreAdministrator(roles) && can(abilities, 'view_any_post'),
   },
 ];
 
-export function getAdminHomeRoute(userRoles: string[], customCandidates?: HomeRouteCandidate[]) {
+export function getAdminHomeRoute(userRoles: string[], abilities: string[] = [], customCandidates?: HomeRouteCandidate[]) {
   const candidates = customCandidates ?? ADMIN_HOME_CANDIDATES;
-  const match = candidates.find((candidate) => candidate.canAccess(userRoles));
+  const match = candidates.find((candidate) => candidate.canAccess(userRoles, abilities));
   return match?.path ?? '/dashboard';
 }
 
-export function AppRoutes({ userRoles }: { userRoles: string[] }) {
+export function AppRoutes({ userRoles, userAbilities = [] }: { userRoles: string[]; userAbilities?: string[] }) {
   const location = useLocation();
   const isCoreAdmin = isCoreAdministrator(userRoles);
-  const canManageProducts = isCoreAdmin || userRoles.includes('Product Manager');
-  const canManageSales = canManageCommerce(userRoles);
-  const canViewDashboard = isCoreAdmin || userRoles.includes('Order Manager') || userRoles.includes('Support');
-  const canManageDiscountsList = canManageDiscounts(userRoles);
-  const canManageShippingMethods = canManageShipping(userRoles);
-  const canViewFinance = canAccessFinance(userRoles);
-  const canViewCustomers = canManageCustomers(userRoles);
-  const canModerateReviews = canManageReviews(userRoles);
-  const home = getAdminHomeRoute(userRoles);
+  const canManageProducts = can(userAbilities, 'view_any_product');
+  const canManageSales = canManageCommerce(userRoles, userAbilities);
+  const canViewDashboard = can(userAbilities, 'view_dashboard_sales') || can(userAbilities, 'view_dashboard_conversion');
+  const canManageDiscountsList = canManageDiscounts(userRoles, userAbilities);
+  const canManageShippingMethods = canManageShipping(userRoles, userAbilities);
+  const canViewFinance = canAccessFinance(userRoles, userAbilities);
+  const canViewCustomers = canManageCustomers(userRoles, userAbilities);
+  const canModerateReviews = canManageReviews(userRoles, userAbilities);
+  const canViewContent = can(userAbilities, 'view_any_blog_category')
+    || can(userAbilities, 'view_any_post')
+    || can(userAbilities, 'view_any_comment')
+    || can(userAbilities, 'view_any_blog_tag')
+    || can(userAbilities, 'view_seo_social')
+    || can(userAbilities, 'view_any_page');
+  const canViewAffiliate = can(userAbilities, 'view_any_affiliate_report') || can(userAbilities, 'view_any_affiliate_network');
+  const canViewSystem = can(userAbilities, 'view_any_system_user')
+    || can(userAbilities, 'view_any_role')
+    || can(userAbilities, 'view_any_system_media')
+    || can(userAbilities, 'view_any_activity_log')
+    || can(userAbilities, 'view_general_settings');
+  const home = getAdminHomeRoute(userRoles, userAbilities);
 
   if (!isCoreAdmin && !canManageProducts && !canManageSales && location.pathname !== '/system/settings') {
     return <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">Use the Filament admin panel for order and support workflows.</div>;
@@ -255,7 +281,7 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/finance/payment-methods" element={<PaymentMethodsPage />} />
       </>}
-      {isCoreAdmin && <>
+      {canViewContent && <>
         <Route path="/posts" element={<PostsListPage />} />
         <Route path="/posts/new" element={<PostFormPage key={location.pathname} />} />
         <Route path="/posts/:id" element={<PostFormPage key={location.pathname} />} />
@@ -266,18 +292,22 @@ export function AppRoutes({ userRoles }: { userRoles: string[] }) {
         <Route path="/legal-policies" element={<PagesListPage />} />
         <Route path="/legal-policies/create" element={<PageFormPage key={location.pathname} />} />
         <Route path="/legal-policies/:id" element={<PageFormPage key={location.pathname} />} />
+      </>}
+      {canViewSystem && <>
         <Route path="/system/users" element={<SystemUsersPage />} />
         <Route path="/system/media" element={<MediaLibraryPage />} />
         <Route path="/system/roles" element={<RolesPage />} />
         <Route path="/system/activity-logs" element={<ActivityLogsPage />} />
         <Route path="/system/settings" element={<SettingsPage />} />
+      </>}
+      {canViewAffiliate && <>
         <Route path="/affiliate/reports" element={<AffiliateReportsPage />} />
         <Route path="/affiliate/networks" element={<AffiliateNetworksPage />} />
       </>}
       {canManageSales && <>
         <Route path="/orders" element={<OrdersListPage />} />
         <Route path="/orders/new" element={<OrderFormPage />} />
-        <Route path="/orders/:id" element={<OrderDetailPage canRefund={canRefundOrders(userRoles)} />} />
+        <Route path="/orders/:id" element={<OrderDetailPage canRefund={canRefundOrders(userRoles, userAbilities)} />} />
         <Route path="/return-requests" element={<ReturnRequestsListPage />} />
         <Route path="/return-requests/:id" element={<ReturnRequestDetailPage />} />
       </>}
