@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\Admin\ProductOptionController;
 use App\Http\Controllers\Api\Admin\ProductTypeController;
 use App\Http\Controllers\Api\Admin\ProductVariantController as AdminProductVariantController;
 use App\Http\Controllers\Api\Admin\ProfileController;
+use App\Http\Controllers\Api\Admin\SessionController;
 use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\SecureSettingsController;
@@ -163,6 +164,7 @@ Route::prefix('/admin')
         Route::get('/dashboard/conversion', [DashboardConversionController::class, 'index']);
         Route::get('/goals', [GoalsController::class, 'index']);
         Route::put('/goals', [GoalsController::class, 'update']);
+        Route::get('/session', [SessionController::class, 'show']);
         Route::get('/profile', [ProfileController::class, 'show']);
         Route::put('/profile', [ProfileController::class, 'update']);
         Route::put('/profile/password', [ProfileController::class, 'updatePassword']);

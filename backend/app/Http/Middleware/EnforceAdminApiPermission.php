@@ -20,7 +20,7 @@ class EnforceAdminApiPermission
         $path = ltrim((string) $request->route()?->uri(), '/');
         $relativePath = preg_replace('#^api(?:/v1)?/admin/#', '', $path) ?? $path;
 
-        if ($this->isProfilePath($relativePath) || $this->isNotificationPath($relativePath)) {
+        if ($this->isProfilePath($relativePath) || $this->isNotificationPath($relativePath) || $relativePath === 'session') {
             return $next($request);
         }
 
