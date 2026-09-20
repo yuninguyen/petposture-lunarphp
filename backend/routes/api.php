@@ -322,7 +322,6 @@ Route::prefix('/admin')
         Route::patch('/pages/{page}', [PageController::class, 'update']);
         Route::delete('/pages/{page}', [PageController::class, 'destroy']);
 
-        Route::middleware('role:super_admin|admin|staff')->group(function () {
             Route::get('/customers', [CustomerController::class, 'index']);
             Route::get('/customers/{customer}/orders', [CustomerController::class, 'orders']);
             Route::get('/customers/{customer}/addresses', [CustomerController::class, 'addresses']);
@@ -365,7 +364,6 @@ Route::prefix('/admin')
             Route::put('/discounts/{discount}', [DiscountController::class, 'update']);
             Route::patch('/discounts/{discount}', [DiscountController::class, 'update']);
             Route::delete('/discounts/{discount}', [DiscountController::class, 'destroy']);
-        });
     });
 
 // Session-status check — intentionally outside auth:sanctum so anonymous

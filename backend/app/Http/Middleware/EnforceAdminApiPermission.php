@@ -153,7 +153,69 @@ class EnforceAdminApiPermission
             return $this->productAbilityFor($request, $relativePath);
         }
 
+        if ($this->isCustomerPath($relativePath)) return $this->customerAbilityFor($request, $relativePath);
+        if ($this->isSettingsPath($relativePath)) return $this->settingsAbilityFor($request, $relativePath);
+        if ($this->isPaymentMethodPath($relativePath)) return $this->paymentMethodAbilityFor($request, $relativePath);
+        if ($this->isShippingMethodPath($relativePath)) return $this->shippingMethodAbilityFor($request, $relativePath);
+        if ($this->isDiscountPath($relativePath)) return $this->discountAbilityFor($request, $relativePath);
+
         return null;
+    }
+
+    private function isCustomerPath(string $path): bool
+    {
+        return $path === 'customers' || str_starts_with($path, 'customers/');
+    }
+
+    private function customerAbilityFor(Request $request, string $path): ?string
+    {
+        if ($request->isMethod('get')) return $path === 'customers' ? 'view_any_customer' : 'view_customer';
+        return ($request->isMethod('put') || $request->isMethod('patch') || $request->isMethod('delete')) ? 'update_customer' : null;
+    }
+
+    private function isSettingsPath(string $path): bool
+    {
+        return in_array($path, ['settings/general', 'settings/branding', 'settings/analytics', 'settings/smtp', 'settings/smtp/test', 'settings/ai', 'settings/ai/fetch-models'], true);
+    }
+
+    private function settingsAbilityFor(Request $request, string $path): ?string
+    {
+        $abilities = [
+            'settings/general' => ['get' => 'view_general_settings', 'put' => 'update_general_settings'],
+            'settings/branding' => ['get' => 'view_branding_settings', 'put' => 'update_branding_settings'],
+            'settings/analytics' => ['get' => 'view_analytics_settings', 'put' => 'update_analytics_settings'],
+            'settings/smtp' => ['get' => 'view_smtp_settings', 'put' => 'update_smtp_settings'],
+            'settings/smtp/test' => ['post' => 'test_smtp_settings'],
+            'settings/ai' => ['get' => 'view_ai_settings', 'put' => 'update_ai_settings'],
+            'settings/ai/fetch-models' => ['post' => 'test_ai_settings'],
+        ];
+        return $abilities[$path][strtolower($request->method())] ?? null;
+    }
+
+    private function isPaymentMethodPath(string $path): bool { return $path === 'finance/payment-methods' || str_starts_with($path, 'finance/payment-methods/'); }
+    private function paymentMethodAbilityFor(Request $request, string $path): ?string
+    {
+        if ($request->isMethod('get') && $path === 'finance/payment-methods') return 'view_any_payment_method';
+        if ($request->isMethod('post') && str_ends_with($path, '/test')) return 'test_payment_method';
+        return $request->isMethod('put') ? 'update_payment_method' : null;
+    }
+
+    private function isShippingMethodPath(string $path): bool { return $path === 'shipping-methods' || str_starts_with($path, 'shipping-methods/'); }
+    private function shippingMethodAbilityFor(Request $request, string $path): ?string
+    {
+        if ($request->isMethod('get')) return $path === 'shipping-methods' ? 'view_any_shipping_method' : 'view_shipping_method';
+        if ($request->isMethod('post')) return 'create_shipping_method';
+        if ($request->isMethod('delete')) return 'delete_shipping_method';
+        return ($request->isMethod('put') || $request->isMethod('patch')) ? 'update_shipping_method' : null;
+    }
+
+    private function isDiscountPath(string $path): bool { return $path === 'discounts' || str_starts_with($path, 'discounts/'); }
+    private function discountAbilityFor(Request $request, string $path): ?string
+    {
+        if ($request->isMethod('get')) return $path === 'discounts' ? 'view_any_discount' : 'view_discount';
+        if ($request->isMethod('post')) return 'create_discount';
+        if ($request->isMethod('delete')) return 'delete_discount';
+        return ($request->isMethod('put') || $request->isMethod('patch')) ? 'update_discount' : null;
     }
 
     private function productAbilityFor(Request $request, string $relativePath): ?string
