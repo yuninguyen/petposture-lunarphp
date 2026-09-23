@@ -9,7 +9,7 @@ export default function Hero({ heroImage }: { heroImage?: string | null }) {
   const resolvedHeroImage = heroImage || DEFAULT_HERO_IMAGE;
 
   return (
-    <section className="relative w-full overflow-hidden bg-white" style={{ minHeight: "400px", maxHeight: "680px" }}>
+    <section className="relative min-h-[390px] w-full overflow-hidden bg-white sm:min-h-[400px]" style={{ maxHeight: "680px" }}>
       {/* Background Image Layer */}
       <div className="absolute inset-0">
         <Image
@@ -26,31 +26,31 @@ export default function Hero({ heroImage }: { heroImage?: string | null }) {
       </div>
 
       {/* Content Layer */}
-      <div className="relative z-10 flex items-start lg:items-center h-full min-h-[400px] pt-12 pb-8 lg:py-12">
-        <div className="max-w-[1200px] w-full mx-auto px-6 flex justify-center lg:justify-start">
-          <div className="max-w-fit flex flex-col items-center lg:items-start text-center lg:text-left">
+      <div className="relative z-10 flex min-h-[390px] items-start pt-10 pb-8 sm:min-h-[400px] sm:pt-12 lg:items-center lg:py-12">
+        <div className="mx-auto flex w-full max-w-[1200px] justify-center px-4 sm:px-6 lg:justify-start">
+          <div className="flex w-full max-w-[440px] flex-col items-center text-center lg:items-start lg:text-left">
             {/* Obsidian Glass Box */}
-            <div className="bg-black/20 backdrop-blur-[4px] border border-white/20 rounded-2xl p-6 lg:px-10 lg:py-8 shadow-2xl">
-              <h1 className="text-white text-[24px] md:text-[30px] font-black uppercase tracking-[0.08em] leading-[1.3] mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" style={{ fontFamily: 'var(--font-hanken)' }}>
+            <div className="w-full max-w-[440px] rounded-2xl border border-white/20 bg-black/20 p-5 shadow-2xl backdrop-blur-[4px] sm:p-6 lg:px-10 lg:py-8">
+              <h1 className="mb-4 text-[22px] font-black uppercase leading-[1.3] tracking-[0.06em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] sm:text-[24px] md:text-[30px] md:tracking-[0.08em]" style={{ fontFamily: 'var(--font-hanken)' }}>
                 Better Products for the<br />
                 Way Your Dog Is Built.
               </h1>
 
-              <p className="text-white text-[14px] md:text-[15px] mb-6 max-w-[420px] leading-relaxed tracking-[0.02em] mx-auto lg:mx-0 drop-shadow-sm">
+              <p className="mx-auto mb-6 max-w-[420px] text-[14px] leading-relaxed tracking-[0.02em] text-white drop-shadow-sm lg:mx-0 md:text-[15px]">
                 Breed-focused guides and thoughtfully selected products for feeding, comfort, mobility and walking.
               </p>
 
-              <div className="flex flex-row w-full justify-center lg:justify-start gap-2 md:gap-4">
+              <div className="flex w-full flex-col justify-center gap-2 min-[360px]:flex-row md:gap-4 lg:justify-start">
                 <Link
                   href="/dogs"
-                  className="flex-1 bg-secondary hover:bg-secondary-dark text-ink px-3 lg:px-7 py-3.5 font-bold text-sm uppercase tracking-[0.02em] lg:tracking-[0.04em] transition-colors rounded-sm shadow-md text-center"
+                  className="w-full bg-secondary px-3 py-3.5 text-center text-sm font-bold uppercase tracking-[0.02em] text-ink shadow-md transition-colors hover:bg-secondary-dark min-[360px]:flex-1 lg:px-7 lg:tracking-[0.04em]"
                   style={{ fontFamily: 'var(--font-lato)', whiteSpace: 'nowrap' }}
                 >
                   Find Your Breed
                 </Link>
                 <Link
                   href="/shop/solutions"
-                  className="flex-1 bg-white hover:bg-gray-100 text-primary px-3 lg:px-7 py-3.5 font-bold text-sm uppercase tracking-[0.02em] lg:tracking-[0.04em] transition-colors rounded-sm shadow-md text-center"
+                  className="w-full bg-white px-3 py-3.5 text-center text-sm font-bold uppercase tracking-[0.02em] text-primary shadow-md transition-colors hover:bg-gray-100 min-[360px]:flex-1 lg:px-7 lg:tracking-[0.04em]"
                   style={{ fontFamily: 'var(--font-lato)', whiteSpace: 'nowrap' }}
                 >
                   Explore Solutions

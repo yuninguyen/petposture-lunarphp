@@ -85,7 +85,7 @@ function SectionTitle({
   align?: 'center' | 'left';
 }) {
   return (
-    <div style={{ textAlign: align, marginBottom: 56 }}>
+    <div className="mb-10 sm:mb-14" style={{ textAlign: align }}>
       <h2 style={{
         fontFamily: F.heading, fontSize: 'clamp(26px, 3.2vw, 36px)',
         fontWeight: 700, letterSpacing: '0.01em',
@@ -145,19 +145,18 @@ function SocialProofStrip() {
   ];
 
   return (
-    <div style={{ background: C.white, padding: '32px 24px', borderBottom: `1px solid ${C.border}` }}>
-      <div className="max-w-[1200px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-6">
+    <div className="px-4 py-6 sm:px-6 sm:py-8" style={{ background: C.white, borderBottom: `1px solid ${C.border}` }}>
+      <div className="max-w-[1200px] mx-auto grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-x-6 sm:gap-y-8 lg:grid-cols-4">
         {stats.map((s, i) => (
           <div
             key={i}
-            className="flex items-center text-left gap-3"
+            className="flex items-start gap-2.5 text-left sm:items-center sm:gap-3"
           >
             <div style={{
-              position: 'relative',
-              width: 48, height: 48, flexShrink: 0, borderRadius: '50%',
+              borderRadius: '50%',
               background: `${s.accent}26`,
-            }}>
-              <Image src={s.img} alt={s.value} fill sizes="48px" className="object-contain p-1.5" />
+            }} className="relative h-10 w-10 flex-shrink-0 sm:h-12 sm:w-12">
+              <Image src={s.img} alt={s.value} fill sizes="(max-width: 639px) 40px, 48px" className="object-contain p-1.5" />
             </div>
             <div>
               <div style={{
@@ -213,14 +212,14 @@ function ShopCategories() {
   ];
 
   return (
-    <section style={{ background: C.grayLight, padding: '40px 24px' }}>
+    <section className="px-4 py-8 sm:px-6 sm:py-10" style={{ background: C.grayLight }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <SectionTitle sub="Start with your dog's breed or the everyday challenge you're trying to solve.">
           Find What Fits Your Dog
         </SectionTitle>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Shop by Breed */}
-          <div style={{ background: '#f6faff', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column' }}>
+          <div className="p-5 sm:p-8" style={{ background: '#f6faff', borderRadius: 16, display: 'flex', flexDirection: 'column' }}>
             <div className="flex items-start gap-4 mb-6">
               <div style={{
                 position: 'relative',
@@ -238,8 +237,9 @@ function ShopCategories() {
                 </p>
               </div>
             </div>
+            <p className="mb-3 text-center text-[11px] font-semibold text-zinc-500 sm:hidden">Swipe to see more breeds</p>
             <div
-              className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-5 gap-3 mb-4 sm:mb-6"
+              className="flex flex-row overflow-x-auto snap-x snap-mandatory scroll-px-4 scrollbar-hide sm:grid sm:grid-cols-5 gap-3 mb-4 sm:mb-6"
               style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
               onScroll={makeScrollHandler(breeds.length, setActiveBreedSlide)}
             >
@@ -247,7 +247,7 @@ function ShopCategories() {
                 <Link
                   key={b.slug}
                   href={`/dogs/${b.slug}`}
-                  className="text-center shrink-0 basis-[30%] sm:basis-auto snap-start"
+                  className="text-center shrink-0 basis-[42%] sm:basis-auto snap-start"
                   onMouseEnter={() => setHoveredBreed(b.slug)}
                   onMouseLeave={() => setHoveredBreed(null)}
                 >
@@ -295,7 +295,7 @@ function ShopCategories() {
           </div>
 
           {/* Shop by Solutions */}
-          <div style={{ background: '#fdf7f0', borderRadius: 16, padding: '32px', display: 'flex', flexDirection: 'column' }}>
+          <div className="p-5 sm:p-8" style={{ background: '#fdf7f0', borderRadius: 16, display: 'flex', flexDirection: 'column' }}>
             <div className="flex items-start gap-4 mb-6">
               <div style={{
                 position: 'relative',
@@ -313,8 +313,9 @@ function ShopCategories() {
                 </p>
               </div>
             </div>
+            <p className="mb-3 text-center text-[11px] font-semibold text-zinc-500 sm:hidden">Swipe to see more solutions</p>
             <div
-              className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-4 gap-3 mb-4 sm:mb-6"
+              className="flex flex-row overflow-x-auto snap-x snap-mandatory scroll-px-4 scrollbar-hide sm:grid sm:grid-cols-4 gap-3 mb-4 sm:mb-6"
               style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
               onScroll={makeScrollHandler(solutions.length, setActiveSolutionSlide)}
             >
@@ -322,7 +323,7 @@ function ShopCategories() {
                 <Link
                   key={s.slug}
                   href={`/solutions/${s.slug}`}
-                  className="flex flex-col items-center gap-2 shrink-0 basis-[30%] sm:basis-auto snap-start"
+                  className="flex flex-col items-center gap-2 shrink-0 basis-[42%] sm:basis-auto snap-start"
                   onMouseEnter={() => setHoveredSolution(s.slug)}
                   onMouseLeave={() => setHoveredSolution(null)}
                 >
@@ -405,23 +406,22 @@ function WhyChoose() {
   ];
 
   return (
-    <section className="hidden sm:block" style={{ background: C.white, padding: '40px 24px' }}>
+    <section className="px-4 py-8 sm:px-6 sm:py-10" style={{ background: C.white }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <SectionTitle sub="Every product engineered with a specific body type in mind.">
           Why Choose PetPosture
         </SectionTitle>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-0">
+        <div className="grid grid-cols-2 gap-4 sm:gap-x-0 sm:gap-y-8 lg:grid-cols-4">
           {features.map((f, i) => (
             <div
               key={f.title}
-              className={`flex items-start text-left gap-3 ${i % 2 !== 0 ? 'border-l' : 'border-l-0'} ${i % 4 !== 0 ? 'lg:border-l' : 'lg:border-l-0'} border-zinc-200`}
+              className={`flex items-start gap-2.5 text-left sm:gap-3 ${i % 2 !== 0 ? 'border-l' : 'border-l-0'} ${i % 4 !== 0 ? 'lg:border-l' : 'lg:border-l-0'} border-zinc-200 p-3 sm:px-5 sm:py-2`}
               style={{
-                padding: '8px 20px',
                 cursor: 'default',
               }}
             >
-              <div style={{ position: 'relative', width: 58, height: 58, flexShrink: 0, marginTop: 2 }}>
-                <Image src={f.img} alt={f.title} fill sizes="58px" className="object-contain" />
+              <div className="relative mt-0.5 h-11 w-11 flex-shrink-0 sm:h-[58px] sm:w-[58px]">
+                <Image src={f.img} alt={f.title} fill sizes="(max-width: 639px) 44px, 58px" className="object-contain" />
               </div>
 
               <div>
@@ -473,7 +473,7 @@ function BestSellers() {
 
   if (loading) {
     return (
-      <section style={{ background: C.white, padding: '40px 24px' }}>
+      <section className="px-4 py-8 sm:px-6 sm:py-10" style={{ background: C.white }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <SectionTitle sub="Loading our most-loved products...">
             PetPosture Picks
@@ -486,7 +486,7 @@ function BestSellers() {
 
   if (error) {
     return (
-      <section style={{ background: C.white, padding: '40px 24px' }}>
+      <section className="px-4 py-8 sm:px-6 sm:py-10" style={{ background: C.white }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <SectionTitle sub="Failed to load products.">
             PetPosture Picks
@@ -500,7 +500,7 @@ function BestSellers() {
 
   if (products.length === 0) {
     return (
-      <section style={{ background: C.white, padding: '40px 24px' }}>
+      <section className="px-4 py-8 sm:px-6 sm:py-10" style={{ background: C.white }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <SectionTitle sub="No products available at the moment.">
             PetPosture Picks
@@ -512,17 +512,18 @@ function BestSellers() {
   }
 
   return (
-    <section style={{ background: C.white, padding: '40px 24px' }}>
+    <section className="px-4 py-8 sm:px-6 sm:py-10" style={{ background: C.white }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <SectionTitle sub="A curated selection chosen around the dogs and everyday needs we focus on.">
           PetPosture Picks
         </SectionTitle>
+        <p className="mb-3 text-center text-[11px] font-semibold text-zinc-500 sm:hidden">Swipe to see more products</p>
         <div
-          className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 md:gap-8"
+          className="flex flex-row overflow-x-auto snap-x snap-mandatory scroll-px-4 scrollbar-hide gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 md:gap-8"
           style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
         >
           {products.map((p) => (
-            <div key={p.variantId} className="w-[72%] shrink-0 snap-start sm:w-auto">
+            <div key={p.variantId} className="w-[78%] shrink-0 snap-start sm:w-auto">
               <ProductCard product={p} sizes="(max-width: 640px) 72vw, (max-width: 1024px) 50vw, 25vw" />
             </div>
           ))}
@@ -563,7 +564,7 @@ function MealtimeDiff() {
   ];
 
   return (
-    <section style={{ background: C.grayLight, padding: '56px 24px' }}>
+    <section className="px-4 py-10 sm:px-6 sm:py-14" style={{ background: C.grayLight }}>
       <div className="max-w-[1200px] mx-auto">
         <div className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-x-20 lg:items-start">
 
@@ -615,9 +616,8 @@ function MealtimeDiff() {
           <div className="order-3 lg:col-start-2 lg:row-start-2">
             <div className="grid grid-cols-1 gap-6 w-full text-left mb-10">
               {points.map(item => (
-                <div key={item.bold} style={{
+                <div key={item.bold} className="p-5 sm:p-6" style={{
                   display: 'flex', gap: 16,
-                  padding: '24px',
                   background: C.white,
                   border: `1px solid ${C.border}`,
                   borderRadius: 12,
@@ -667,7 +667,7 @@ function BreedBanners() {
   ];
 
   return (
-    <section style={{ background: C.white, padding: '56px 24px' }}>
+    <section className="px-4 py-10 sm:px-6 sm:py-14" style={{ background: C.white }}>
       <div style={{ maxWidth: 1210, margin: '0 auto' }}>
         <SectionTitle sub="Body shape can influence which products are more comfortable and practical.">
           Explore by Body Type
@@ -677,7 +677,7 @@ function BreedBanners() {
             <Link
               key={breed.slug}
               href={`/shop/breeds/${breed.slug}`}
-              className="flex items-stretch"
+              className="flex flex-col items-stretch sm:flex-row"
               style={{
                 borderRadius: 8, overflow: 'hidden',
                 background: C.grayLight,
@@ -687,20 +687,19 @@ function BreedBanners() {
               onMouseEnter={() => setHovered(idx)}
               onMouseLeave={() => setHovered(null)}
             >
-              <div style={{ position: 'relative', width: '38%', flexShrink: 0 }}>
+              <div className="relative aspect-[16/9] w-full flex-shrink-0 sm:aspect-auto sm:w-[38%]" style={{ position: 'relative' }}>
                 <Image
                   src={breed.img}
                   alt={breed.title}
                   fill
-                  sizes="(max-width: 768px) 40vw, 20vw"
+                  sizes="(max-width: 639px) 100vw, (max-width: 768px) 40vw, 20vw"
                   className="object-cover"
                 />
               </div>
-              <div style={{
+              <div className="p-5 sm:p-7 md:px-8" style={{
                 flex: 1,
                 display: 'flex', flexDirection: 'column',
                 justifyContent: 'center',
-                padding: '28px 32px',
               }}>
                 <h3 style={{
                   fontFamily: F.heading, fontSize: 'clamp(18px, 2vw, 22px)',
@@ -882,13 +881,14 @@ function Insights() {
   }
 
   return (
-    <section style={{ background: C.white, padding: '40px 24px' }}>
+    <section className="px-4 py-8 sm:px-6 sm:py-10" style={{ background: C.white }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <SectionTitle sub="Expert guides, breed-specific tips, and health insights for pet parents.">
           Latest PetPosture Guides
         </SectionTitle>
+        <p className="mb-3 text-center text-[11px] font-semibold text-zinc-500 sm:hidden">Swipe to see more guides</p>
         <div
-          className="flex flex-row overflow-x-auto snap-x snap-mandatory scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"
+          className="flex flex-row overflow-x-auto snap-x snap-mandatory scroll-px-4 scrollbar-hide sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"
           style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
           onScroll={handleScroll}
         >

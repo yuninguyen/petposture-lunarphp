@@ -80,11 +80,11 @@ export default function Header() {
 
       {/* Top Bar - White */}
       <div className="bg-white h-[70px] md:h-[80px] border-b border-zinc-100 relative z-30">
-        <div className="max-w-[1200px] mx-auto w-full px-6 flex items-center justify-between h-full gap-4 md:gap-8">
+        <div className="max-w-[1200px] mx-auto w-full px-4 md:px-6 flex items-center justify-between h-full gap-4 md:gap-8">
 
           {/* Mobile Menu Toggle */}
           <button
-            className="md:hidden text-primary hover:text-rust transition-colors p-1"
+            className="md:hidden flex h-10 w-10 items-center justify-center text-primary hover:text-rust transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Menu"
           >
@@ -92,7 +92,7 @@ export default function Header() {
           </button>
 
           {/* Left: Logo */}
-          <Link href="/" className="flex-shrink-0 flex items-center">
+          <Link href="/" className="absolute left-1/2 flex -translate-x-1/2 flex-shrink-0 items-center md:static md:translate-x-0">
             <Image
               src={logoSrc}
               alt={`${shop_name} Logo`}
@@ -100,7 +100,7 @@ export default function Header() {
               height={140}
               sizes="150px"
               priority
-              className="h-[45px] w-auto object-contain"
+              className="h-[46px] w-auto object-contain md:h-[45px]"
             />
           </Link>
 
@@ -127,15 +127,17 @@ export default function Header() {
 
           {/* Right: Icons */}
           <div className="flex items-center gap-4 md:gap-6 text-primary flex-shrink-0">
-            <button
-              className="md:hidden hover:text-rust transition-colors"
-              onClick={handleSearchIconClick}
-              aria-label="Search"
-              aria-expanded={mobileSearchOpen}
-            >
-              <Search size={22} strokeWidth={2} />
-            </button>
-            <Link href="/wishlist" className="relative hover:text-rust transition-colors hidden sm:block" aria-label="Wishlist">
+            {pathname !== "/" && (
+              <button
+                className="md:hidden flex h-10 w-10 items-center justify-center hover:text-rust transition-colors"
+                onClick={handleSearchIconClick}
+                aria-label="Search"
+                aria-expanded={mobileSearchOpen}
+              >
+                <Search size={22} strokeWidth={2} />
+              </button>
+            )}
+            <Link href="/wishlist" className="relative hover:text-rust transition-colors hidden md:block" aria-label="Wishlist">
               <Heart size={22} strokeWidth={2} />
               {wishlistItems.length > 0 && (
                 <span className="absolute -top-1 -right-1.5 bg-secondary text-ink text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
@@ -144,7 +146,7 @@ export default function Header() {
               )}
             </Link>
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-3">
                 <Link href="/account" className="text-sm font-bold text-rust hidden lg:block hover:underline">
                   Hi, {user.name.split(' ')[0]}
                 </Link>
@@ -156,13 +158,13 @@ export default function Header() {
                 </button>
               </div>
             ) : (
-              <Link href="/sign-in" className="hover:text-rust transition-colors" title="Login / Register" aria-label="Login or register">
+              <Link href="/sign-in" className="hidden md:block hover:text-rust transition-colors" title="Login / Register" aria-label="Login or register">
                 <User size={22} strokeWidth={2} aria-hidden="true" />
               </Link>
             )}
             <button
               onClick={() => setCartOpen(true)}
-              className="relative group p-1 hover:text-rust transition-colors outline-none"
+              className="relative group flex h-10 w-10 items-center justify-center hover:text-rust transition-colors outline-none md:h-auto md:w-auto md:p-1"
               aria-label="Shopping cart"
             >
               <ShoppingBag size={22} strokeWidth={2} />
@@ -236,9 +238,34 @@ export default function Header() {
         </div>
       </nav>
 
+      {/* The homepage keeps search visible, while other storefront pages retain the on-demand search. */}
+      {pathname === "/" && (
+        <div className="md:hidden border-b border-zinc-100 bg-white">
+          <form onSubmit={handleSearchSubmit} className="px-4 py-3">
+            <div className="group flex h-[44px] w-full items-center rounded-xl border border-zinc-200 bg-zinc-50 transition-colors focus-within:border-secondary focus-within:bg-white focus-within:shadow-focus">
+              <Search size={15} strokeWidth={1.6} className="ml-3.5 flex-shrink-0 text-zinc-400 transition-colors group-focus-within:text-secondary" />
+              <input
+                type="text"
+                placeholder="Search products, breeds and guides"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-full flex-1 border-none bg-transparent px-3 text-sm outline-none"
+              />
+              <button
+                type="submit"
+                aria-label="Search"
+                className={`mr-1.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-ink transition-all duration-200 hover:bg-secondary-dark ${searchTerm ? "scale-100 opacity-100" : "scale-75 opacity-0 group-focus-within:scale-100 group-focus-within:opacity-100"}`}
+              >
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Mobile Search Bar - opens on demand via the header search icon */}
       <AnimatePresence>
-        {mobileSearchOpen && (
+        {pathname !== "/" && mobileSearchOpen && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
@@ -337,6 +364,32 @@ export default function Header() {
                     </Link>
                   ))}
                 </nav>
+
+                <div className="mt-8 border-t border-zinc-100 pt-6">
+                  <Link
+                    href={user ? "/account" : "/sign-in"}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-between rounded-xl bg-zinc-50 px-4 py-4 text-primary transition-colors hover:bg-zinc-100"
+                  >
+                    <span className="flex items-center gap-3 text-[14px] font-bold uppercase tracking-widest">
+                      <User size={18} aria-hidden="true" />
+                      {user ? "My Account" : "Login / Register"}
+                    </span>
+                    <ChevronRight size={18} aria-hidden="true" />
+                  </Link>
+                  {user && (
+                    <button
+                      onClick={() => {
+                        logout();
+                        setMobileOpen(false);
+                      }}
+                      className="mt-3 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[13px] font-bold uppercase tracking-widest text-rust transition-colors hover:bg-rust/5"
+                    >
+                      <LogOut size={18} aria-hidden="true" />
+                      Log Out
+                    </button>
+                  )}
+                </div>
 
                 {/* Secondary Info */}
                 <div className="mt-10 pt-8 border-t border-zinc-100 space-y-6">
