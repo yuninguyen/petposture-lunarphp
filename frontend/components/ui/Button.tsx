@@ -45,7 +45,7 @@ export function buttonClasses({
     .join(" ");
 }
 
-export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
   ButtonClassOptions;
 
 export function Button({
@@ -64,7 +64,7 @@ export function Button({
   );
 }
 
-export type ButtonLinkProps = LinkProps &
+type ButtonLinkProps = LinkProps &
   Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps | "className"> &
   ButtonClassOptions & { children: ReactNode };
 
