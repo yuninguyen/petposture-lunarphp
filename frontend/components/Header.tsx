@@ -13,33 +13,18 @@ import { useSettings } from "@/context/SettingsContext";
 import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
 
 export default function Header() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const router = useRouter();
-  const pathname = usePathname();
+const [mobileOpen, setMobileOpen] = useState(false);
+const [searchTerm, setSearchTerm] = useState("");
+const router = useRouter();
+const pathname = usePathname();
+const isBlogRoute = pathname?.startsWith("/blog") ?? false;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const term = searchTerm.trim();
     if (!term) return;
-    router.push(`/shop?q=${encodeURIComponent(term)}`);
-    setMobileSearchOpen(false);
-  };
-
-  const handleSearchIconClick = () => {
-    // Blog already has its own inline article search right below the header;
-    // opening the product search dropdown there stacked two search bars.
-    if (pathname?.startsWith("/blog")) {
-      const blogSearchInput = document.getElementById("blog-search-input");
-      if (blogSearchInput) {
-        blogSearchInput.scrollIntoView({ behavior: "smooth", block: "center" });
-        (blogSearchInput as HTMLInputElement).focus();
-        return;
-      }
-    }
-    setMobileSearchOpen((open) => !open);
-  };
+router.push(`/shop?q=${encodeURIComponent(term)}`);
+};
   const { items, setCartOpen } = useCart();
   const { items: wishlistItems } = useWishlist();
   const { user, logout } = useAuth();
@@ -127,16 +112,6 @@ export default function Header() {
 
           {/* Right: Icons */}
           <div className="flex items-center gap-4 md:gap-6 text-primary flex-shrink-0">
-            {pathname !== "/" && (
-              <button
-                className="md:hidden flex h-10 w-10 items-center justify-center hover:text-rust transition-colors"
-                onClick={handleSearchIconClick}
-                aria-label="Search"
-                aria-expanded={mobileSearchOpen}
-              >
-                <Search size={22} strokeWidth={2} />
-              </button>
-            )}
             <Link href="/wishlist" className="relative hover:text-rust transition-colors hidden md:block" aria-label="Wishlist">
               <Heart size={22} strokeWidth={2} />
               {wishlistItems.length > 0 && (
@@ -238,8 +213,8 @@ export default function Header() {
         </div>
       </nav>
 
-      {/* The homepage keeps search visible, while other storefront pages retain the on-demand search. */}
-      {pathname === "/" && (
+      {/* Product search stays visible on mobile outside the blog reading flow. */}
+      {!isBlogRoute && (
         <div className="md:hidden border-b border-zinc-100 bg-white">
           <form onSubmit={handleSearchSubmit} className="px-4 py-3">
             <div className="group flex h-[44px] w-full items-center rounded-xl border border-zinc-200 bg-zinc-50 transition-colors focus-within:border-secondary focus-within:bg-white focus-within:shadow-focus">
@@ -262,40 +237,6 @@ export default function Header() {
           </form>
         </div>
       )}
-
-      {/* Mobile Search Bar - opens on demand via the header search icon */}
-      <AnimatePresence>
-        {pathname !== "/" && mobileSearchOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden overflow-hidden bg-white border-b border-zinc-100"
-          >
-            <form onSubmit={handleSearchSubmit} className="p-4">
-              <div className="group flex h-[44px] w-full items-center rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-secondary focus-within:shadow-focus">
-                <Search size={15} strokeWidth={1.6} className="ml-3.5 flex-shrink-0 text-zinc-400 transition-colors group-focus-within:text-secondary" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  autoFocus
-                  className="h-full flex-1 border-none bg-transparent px-3 text-sm outline-none"
-                />
-                <button
-                  type="submit"
-                  aria-label="Search"
-                  className={`mr-1.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-ink transition-all duration-200 hover:bg-secondary-dark ${searchTerm ? "scale-100 opacity-100" : "scale-75 opacity-0 group-focus-within:scale-100 group-focus-within:opacity-100"}`}
-                >
-                  <ArrowRight size={15} />
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Mobile Drawer Overlay - Professional Redesign */}
       <AnimatePresence>

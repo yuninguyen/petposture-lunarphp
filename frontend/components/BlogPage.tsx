@@ -193,17 +193,17 @@ export default function BlogPage() {
         <main className="min-h-screen overflow-x-hidden bg-white font-hanken">
             <Header />
 
-            <nav className="sticky top-0 z-40 border-y border-zinc-100 bg-white">
+            <nav className="sticky top-0 z-40 border-b border-zinc-100 bg-white">
                 <div className="relative mx-auto flex max-w-[1200px] flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between md:px-8">
                     <div className="relative w-full md:max-w-[380px]">
-                        <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                        <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
                         <input
                             id="blog-search-input"
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search articles..."
-                            className="w-full rounded-xl border border-zinc-200 py-2 pl-9 pr-4 text-sm outline-none focus:border-secondary"
+                            placeholder="Search articles & guides"
+                            className="h-[44px] w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-10 pr-4 text-sm outline-none transition-colors focus:border-secondary focus:bg-white focus:shadow-focus"
                         />
                     </div>
                     <div
