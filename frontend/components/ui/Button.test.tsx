@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Button, buttonClasses } from "./Button";
@@ -30,4 +31,28 @@ it("defaults a native action to type button and preserves disabled semantics", (
   const markup = renderToStaticMarkup(<Button disabled>Save</Button>);
   expect(markup).toContain('type="button"');
   expect(markup).toContain("disabled");
+});
+
+it("migrates hero and product conversion controls to the shared primitive", () => {
+  const heroSource = readFileSync(new URL("../Hero.tsx", import.meta.url), "utf8");
+  const detailsSource = readFileSync(
+    new URL("../product/ProductDetails.tsx", import.meta.url),
+    "utf8",
+  );
+  const cardSource = readFileSync(
+    new URL("../shop/ProductCard.tsx", import.meta.url),
+    "utf8",
+  );
+
+  expect(heroSource).toMatch(/import\s+\{\s*ButtonLink\s*\}\s+from\s+["']@\/components\/ui\/Button["']/);
+  expect(heroSource).toMatch(/href="\/dogs"[\s\S]*variant="primary"/);
+  expect(heroSource).toMatch(/href="\/shop\/solutions"[\s\S]*variant="secondary"/);
+
+  expect(detailsSource).toMatch(/<Button\s+type="button"\s+variant="primary"/);
+  expect(detailsSource).toMatch(/aria-label="Decrease quantity"/);
+  expect(detailsSource).toMatch(/aria-label="Increase quantity"/);
+
+  expect(cardSource).toMatch(/<ButtonLink[\s\S]*variant="quiet"/);
+  expect(cardSource).toMatch(/<Button\s+type="button"\s+variant="primary"/);
+  expect(cardSource).toMatch(/<Button[\s\S]*size="icon"[\s\S]*aria-label=\{wishlisted/);
 });

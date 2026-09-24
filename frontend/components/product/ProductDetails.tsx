@@ -7,6 +7,7 @@ import { Star, ShieldCheck, Truck, RotateCcw, Plus, Minus } from 'lucide-react';
 import { Product } from '@/types/shop';
 import { useCart } from '@/context/CartContext';
 import { sanitizeRichHtml } from '@/lib/sanitize-rich-html';
+import { Button } from '@/components/ui/Button';
 import { Breadcrumbs } from './Breadcrumbs';
 
 interface ProductDetailsProps {
@@ -198,19 +199,27 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                             <div className="flex flex-col gap-5">
                                 <div className="flex items-center gap-6">
                                     <div className="flex h-[54px] items-center rounded-[4px] border-2 border-white bg-white shadow-sm">
-                                        <button
+                                        <Button
+                                            type="button"
+                                            variant="quiet"
+                                            size="icon"
                                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                            className="flex h-full items-center px-3 text-zinc-400 transition-colors hover:text-primary"
+                                            aria-label="Decrease quantity"
+                                            className="h-full w-12 rounded-none px-3 text-zinc-400 hover:text-primary"
                                         >
                                             -
-                                        </button>
+                                        </Button>
                                         <span className="w-10 text-center font-bold text-primary">{quantity}</span>
-                                        <button
+                                        <Button
+                                            type="button"
+                                            variant="quiet"
+                                            size="icon"
                                             onClick={() => setQuantity(quantity + 1)}
-                                            className="flex h-full items-center px-3 text-zinc-400 transition-colors hover:text-primary"
+                                            aria-label="Increase quantity"
+                                            className="h-full w-12 rounded-none px-3 text-zinc-400 hover:text-primary"
                                         >
                                             +
-                                        </button>
+                                        </Button>
                                     </div>
                                     <div className="flex flex-col">
                                         <div className={`flex items-center gap-2 text-sm font-bold capitalize tracking-wider ${isAvailable ? 'text-green-600' : 'text-zinc-400'}`}>
@@ -219,7 +228,9 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                         <p className="mt-1 text-xs text-zinc-500">Free shipping on orders over $50</p>
                                     </div>
                                 </div>
-                                <button
+                                <Button
+                                    type="button"
+                                    variant="primary"
                                     onClick={() => {
                                         const itemToAdd = selectedVariant
                                             ? {
@@ -233,10 +244,10 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                         for (let i = 0; i < quantity; i++) addItem(itemToAdd);
                                     }}
                                     disabled={!isAvailable}
-                                    className="h-[54px] w-full rounded-[4px] bg-secondary text-base font-black uppercase tracking-[0.12em] text-ink shadow-xl shadow-orange-500/20 transition-all duration-500 hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-40"
+                                    className="w-full shadow-xl shadow-orange-500/20"
                                 >
                                     {isAvailable ? 'Add to cart' : 'Out of stock'}
-                                </button>
+                                </Button>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

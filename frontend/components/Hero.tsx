@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { ButtonLink } from "@/components/ui/Button";
 
 const DEFAULT_HERO_IMAGE = "/assets/banner/hero-banner-homepage.webp";
 
@@ -41,20 +41,22 @@ export default function Hero({ heroImage }: { heroImage?: string | null }) {
               </p>
 
               <div className="flex w-full flex-col justify-center gap-2 min-[400px]:flex-row md:gap-4 lg:justify-start">
-                <Link
+                <ButtonLink
                   href="/dogs"
-                  className="w-full bg-secondary px-3 py-3.5 text-center text-sm font-bold uppercase tracking-[0.02em] text-ink shadow-md transition-colors hover:bg-secondary-dark min-[360px]:flex-1 lg:px-7 lg:tracking-[0.04em]"
+                  variant="primary"
+                  className="w-full px-3 shadow-md min-[400px]:flex-1 lg:px-7"
                   style={{ fontFamily: 'var(--font-lato)', whiteSpace: 'nowrap' }}
                 >
                   Find Your Breed
-                </Link>
-                <Link
+                </ButtonLink>
+                <ButtonLink
                   href="/shop/solutions"
-                  className="w-full bg-white px-3 py-3.5 text-center text-sm font-bold uppercase tracking-[0.02em] text-primary shadow-md transition-colors hover:bg-gray-100 min-[360px]:flex-1 lg:px-7 lg:tracking-[0.04em]"
+                  variant="secondary"
+                  className="w-full px-3 shadow-md min-[400px]:flex-1 lg:px-7"
                   style={{ fontFamily: 'var(--font-lato)', whiteSpace: 'nowrap' }}
                 >
                   Explore Solutions
-                </Link>
+                </ButtonLink>
               </div>
             </div>
           </div>
