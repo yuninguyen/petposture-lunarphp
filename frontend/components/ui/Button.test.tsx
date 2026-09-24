@@ -56,3 +56,17 @@ it("migrates hero and product conversion controls to the shared primitive", () =
   expect(cardSource).toMatch(/<Button\s+type="button"\s+variant="primary"/);
   expect(cardSource).toMatch(/<Button[\s\S]*size="icon"[\s\S]*aria-label=\{wishlisted/);
 });
+
+it("keeps secondary hover neutral and constrains Hero CTAs at the horizontal breakpoint", () => {
+  const secondaryClasses = buttonClasses({ variant: "secondary" });
+  const heroSource = readFileSync(new URL("../Hero.tsx", import.meta.url), "utf8");
+
+  expect(secondaryClasses).toContain("hover:bg-zinc-100");
+  expect(secondaryClasses).not.toContain("hover:bg-primary");
+  expect(secondaryClasses).not.toContain("hover:text-white");
+  expect(
+    heroSource.match(
+      /className="w-full rounded-\[3px\] px-3 shadow-md min-\[400px\]:w-auto min-\[400px\]:min-w-0 min-\[400px\]:flex-1 lg:px-7"/g,
+    ),
+  ).toHaveLength(2);
+});

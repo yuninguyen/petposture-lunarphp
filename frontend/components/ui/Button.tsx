@@ -17,7 +17,7 @@ type ButtonClassOptions = {
 const variantClasses: Record<ButtonVariant, string> = {
   primary: "bg-secondary text-ink hover:bg-secondary-dark",
   secondary:
-    "border border-primary bg-white text-primary hover:bg-primary hover:text-white",
+    "border border-primary bg-white text-primary hover:bg-zinc-100",
   quiet: "bg-transparent text-primary hover:bg-zinc-100",
   dark: "bg-primary text-white hover:bg-[#2c363e]",
 };

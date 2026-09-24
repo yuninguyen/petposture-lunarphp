@@ -44,7 +44,7 @@ export default function Hero({ heroImage }: { heroImage?: string | null }) {
                 <ButtonLink
                   href="/dogs"
                   variant="primary"
-                  className="w-full px-3 shadow-md min-[400px]:flex-1 lg:px-7"
+                  className="w-full rounded-[3px] px-3 shadow-md min-[400px]:w-auto min-[400px]:min-w-0 min-[400px]:flex-1 lg:px-7"
                   style={{ fontFamily: 'var(--font-lato)', whiteSpace: 'nowrap' }}
                 >
                   Find Your Breed
@@ -52,7 +52,7 @@ export default function Hero({ heroImage }: { heroImage?: string | null }) {
                 <ButtonLink
                   href="/shop/solutions"
                   variant="secondary"
-                  className="w-full px-3 shadow-md min-[400px]:flex-1 lg:px-7"
+                  className="w-full rounded-[3px] px-3 shadow-md min-[400px]:w-auto min-[400px]:min-w-0 min-[400px]:flex-1 lg:px-7"
                   style={{ fontFamily: 'var(--font-lato)', whiteSpace: 'nowrap' }}
                 >
                   Explore Solutions
