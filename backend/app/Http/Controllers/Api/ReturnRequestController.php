@@ -127,10 +127,6 @@ class ReturnRequestController extends Controller
      */
     public function index(Request $request)
     {
-        if (! $this->canManageOrders($request)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
         $query = OrderReturnRequest::with(['order', 'items.orderLine']);
 
         if ($status = $request->query('status')) {
@@ -144,10 +140,6 @@ class ReturnRequestController extends Controller
 
     public function show(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
         $returnRequest = OrderReturnRequest::with(['order', 'items.orderLine'])->find($id);
 
         if (! $returnRequest) {
@@ -159,10 +151,6 @@ class ReturnRequestController extends Controller
 
     public function approve(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
         $validated = Validator::make($request->all(), [
             'rma_address' => 'required|string|max:2000',
             'fee_waived' => 'nullable|boolean',
@@ -197,10 +185,6 @@ class ReturnRequestController extends Controller
 
     public function reject(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
         $validated = Validator::make($request->all(), [
             'admin_note' => 'nullable|string|max:2000',
         ])->validate();
@@ -222,10 +206,6 @@ class ReturnRequestController extends Controller
 
     public function complete(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
         $returnRequest = OrderReturnRequest::with(['order', 'items.orderLine'])->find($id);
 
         if (! $returnRequest) {
@@ -243,10 +223,6 @@ class ReturnRequestController extends Controller
 
     public function addTracking(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
         $validated = Validator::make($request->all(), [
             'tracking_number' => 'required|string|max:255',
             'carrier' => 'nullable|string|in:manual,ups,usps,fedex,dhl',
@@ -274,10 +250,6 @@ class ReturnRequestController extends Controller
 
     public function approveLowValueWaiver(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
         $validated = Validator::make($request->all(), [
             'admin_note' => 'nullable|string|max:2000',
         ])->validate();
@@ -304,10 +276,6 @@ class ReturnRequestController extends Controller
 
     public function adminPreview(Request $request, $id)
     {
-        if (! $this->canManageOrders($request)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
         $validated = Validator::make($request->all(), [
             'fee_waived' => 'nullable|boolean',
         ])->validate();
@@ -328,17 +296,6 @@ class ReturnRequestController extends Controller
             'tax' => $estimate['tax_minor'] / 100,
             'restocking_fee' => $estimate['restocking_fee_minor'] / 100,
             'estimated_refund' => $estimate['refund_amount_minor'] / 100,
-        ]);
-    }
-
-    private function canManageOrders(Request $request): bool
-    {
-        return (bool) $request->user()?->hasAnyRole([
-            'super_admin',
-            'admin',
-            'staff',
-            'Order Manager',
-            'Support',
         ]);
     }
 }
