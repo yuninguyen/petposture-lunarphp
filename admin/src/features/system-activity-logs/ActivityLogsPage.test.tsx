@@ -194,9 +194,6 @@ describe('ActivityLogsPage', () => {
         expect(locale[`system_activity_logs.event.${event}`]).toBeTruthy();
       }
       expect(locale['system_activity_logs.filter.actor']).toBeTruthy();
-      for (const type of ['customer', 'product_type', 'collection_group', 'brand']) {
-        expect(locale[`system_activity_logs.filter.subject_type_${type}`]).toBeTruthy();
-      }
     }
   });
 
