@@ -567,6 +567,41 @@ class ActivityLogTest extends TestCase
         }
     }
 
+    public function test_activity_logs_index_filters_by_customer_without_matching_customer_group(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $customer = \Lunar\Models\Customer::create(['first_name' => 'Casey', 'last_name' => 'Buyer']);
+        $group = \Lunar\Models\CustomerGroup::create(['name' => 'VIP', 'handle' => 'vip-'.uniqid()]);
+
+        activity()->performedOn($customer)->log('customer_event');
+        activity()->performedOn($group)->log('group_event');
+
+        $response = $this->getJson('/api/admin/system/activity-logs?subject_type=customer');
+
+        $response->assertOk();
+        $this->assertSame(['customer_event'], collect($response->json('data'))->pluck('description')->all());
+    }
+
+    public function test_activity_logs_index_filters_by_product_type_collection_group_and_brand(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $type = \Lunar\Models\ProductType::first() ?? \Lunar\Models\ProductType::create(['name' => 'Gear']);
+        $collectionGroup = \Lunar\Models\CollectionGroup::create(['name' => 'Main', 'handle' => 'main-'.uniqid()]);
+        $brand = \Lunar\Models\Brand::create(['name' => 'Acme '.uniqid()]);
+
+        activity()->performedOn($type)->log('type_event');
+        activity()->performedOn($collectionGroup)->log('cg_event');
+        activity()->performedOn($brand)->log('brand_event');
+
+        foreach (['product_type' => 'type_event', 'collection_group' => 'cg_event', 'brand' => 'brand_event'] as $key => $expected) {
+            $response = $this->getJson("/api/admin/system/activity-logs?subject_type={$key}");
+            $response->assertOk();
+            $this->assertSame([$expected], collect($response->json('data'))->pluck('description')->all(), $key);
+        }
+    }
+
     public function test_activity_logs_index_filters_by_actor_name_or_email(): void
     {
         Sanctum::actingAs($this->admin);

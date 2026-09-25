@@ -12,6 +12,10 @@ const SUBJECT_TYPES = [
   { value: 'User', labelKey: 'system_activity_logs.filter.subject_type_user', fallback: 'User' },
   { value: 'Role', labelKey: 'system_activity_logs.filter.subject_type_role', fallback: 'Role' },
   { value: 'Media', labelKey: 'system_activity_logs.filter.subject_type_media', fallback: 'Media' },
+  { value: 'customer', labelKey: 'system_activity_logs.filter.subject_type_customer', fallback: 'Customer' },
+  { value: 'product_type', labelKey: 'system_activity_logs.filter.subject_type_product_type', fallback: 'Product Type' },
+  { value: 'collection_group', labelKey: 'system_activity_logs.filter.subject_type_collection_group', fallback: 'Collection Group' },
+  { value: 'brand', labelKey: 'system_activity_logs.filter.subject_type_brand', fallback: 'Brand' },
 ];
 
 function formatDate(isoString?: string | null): string {

@@ -9,8 +9,12 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Lunar\Models\Brand;
+use Lunar\Models\CollectionGroup;
+use Lunar\Models\Customer;
 use Lunar\Models\Order;
 use Lunar\Models\Product;
+use Lunar\Models\ProductType;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Permission\Models\Role;
@@ -26,6 +30,10 @@ class ActivityLogController extends Controller
             'user' => [User::class],
             'role' => [Role::class],
             'media' => [CuratorMedia::class, Media::class],
+            'customer' => [(new Customer())->getMorphClass(), Customer::class],
+            'product_type' => [(new ProductType())->getMorphClass(), ProductType::class],
+            'collection_group' => [(new CollectionGroup())->getMorphClass(), CollectionGroup::class],
+            'brand' => [(new Brand())->getMorphClass(), Brand::class],
         ];
     }
 
