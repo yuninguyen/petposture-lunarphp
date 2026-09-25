@@ -185,10 +185,10 @@ export function SalesPage() {
 
       {/* Main Content Layout: 2 Columns */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left 2 Columns */}
-        <div className="space-y-6 lg:col-span-2">
+        {/* Sales cards use a shared grid so paired cards align by row. */}
+        <div className="contents">
           {/* Sales & Orders Over Time SVG Chart */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <div className="order-1 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
               <h2 className="text-base font-bold text-slate-900">{t('dashboard.sales_overview', 'Sales Overview')}</h2>
               <div className="flex flex-wrap items-center gap-4 text-xs">
@@ -224,7 +224,7 @@ export function SalesPage() {
           </div>
 
           {/* Order Pipeline */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <div className="order-3 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-2">
             <h2 className="text-base font-bold text-slate-900 mb-4">{t('dashboard.order_pipeline', 'Order Pipeline')}</h2>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <PipelineCard
@@ -255,7 +255,7 @@ export function SalesPage() {
           </div>
 
           {/* Top Products Table */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <div className="order-5 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-2">
             <h2 className="text-base font-bold text-slate-900 mb-4">{t('dashboard.top_products', 'Top Products')}</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -292,7 +292,7 @@ export function SalesPage() {
           </div>
 
           {/* Recent Orders Table */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <div className="order-7 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold text-slate-900">{t('dashboard.recent_orders', 'Recent Orders')}</h2>
               <Link to="/orders" className="text-xs font-semibold text-[#df8448] hover:underline">
@@ -342,10 +342,9 @@ export function SalesPage() {
           </div>
         </div>
 
-        {/* Right 1 Column */}
-        <div className="space-y-6">
+        <div className="contents">
           {/* Goals Progress Card */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <div className="order-2 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold text-slate-900">{t('dashboard.monthly_goals', 'Monthly Goals')}</h2>
               <Link to="/goals" className="text-xs font-semibold text-[#df8448] hover:underline">
@@ -385,7 +384,7 @@ export function SalesPage() {
           </div>
 
           {/* Sales By Category Bars */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <div className="order-6 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
             <h2 className="text-base font-bold text-slate-900 mb-4">{t('dashboard.sales_by_category', 'Sales By Category')}</h2>
             {sales_by_category.length === 0 ? (
               <p className="text-sm text-slate-400">{t('dashboard.no_categories', 'No category sales')}</p>
@@ -414,7 +413,7 @@ export function SalesPage() {
           </div>
 
           {/* Traffic Sources (Honest placeholder) */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <div className="order-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold text-slate-900">{t('dashboard.traffic_sources', 'Traffic Sources')}</h2>
               <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
@@ -435,7 +434,7 @@ export function SalesPage() {
           </div>
 
           {/* Recent System Activity */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <div className="order-8 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
             <h2 className="text-base font-bold text-slate-900 mb-1">{t('dashboard.system_activity', 'Recent system activity')}</h2>
             <p className="text-xs text-slate-500 mb-4">{t('dashboard.system_activity_help', 'System-wide audit trail across operations')}</p>
             {recent_activity.length === 0 ? (

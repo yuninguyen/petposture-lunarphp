@@ -86,7 +86,7 @@ export function AppShell({ children, userName, userRoles, userAbilities = [] }: 
   }, []);
 
   return (
-    <div className="min-h-screen flex bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
       {/* Mobile Navigation Drawer */}
       <MobileAdminNav
         open={mobileNavOpen}
@@ -105,7 +105,7 @@ export function AppShell({ children, userName, userRoles, userAbilities = [] }: 
         </div>
         
         {/* Navigation */}
-        <nav className="flex-1 py-6 flex flex-col gap-6 overflow-y-auto px-3">
+        <nav className="scrollbar-none flex-1 py-6 flex flex-col gap-6 overflow-y-auto px-3">
           {visibleNavGroups.map((group) => {
             const groupKey = group.key;
             const expanded = expandedNavGroups[groupKey] ?? true;
