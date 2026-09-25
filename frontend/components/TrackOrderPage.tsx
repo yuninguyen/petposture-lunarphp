@@ -145,7 +145,7 @@ export default function TrackOrderPage() {
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full bg-secondary text-ink py-5 rounded-xl font-bold text-[15px] hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                        className="w-full bg-secondary text-ink py-5 rounded-[3px] font-bold text-[15px] uppercase tracking-[0.08em] hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                     >
                                         {isLoading ? 'Sending...' : 'Send my tracking link'}
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />

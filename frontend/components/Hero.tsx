@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { ButtonLink } from "@/components/ui/Button";
 
 const DEFAULT_HERO_IMAGE = "/assets/banner/hero-banner-homepage.webp";
 
@@ -28,33 +28,54 @@ export default function Hero({ heroImage }: { heroImage?: string | null }) {
       {/* Content Layer */}
       <div className="relative z-10 flex min-h-[352px] items-start py-5 sm:min-h-[400px] sm:pt-12 sm:pb-8 lg:items-center lg:py-12">
         <div className="mx-auto flex w-full max-w-[1200px] justify-center px-4 sm:px-6 lg:justify-start">
-          <div className="flex w-full max-w-[440px] flex-col items-center text-center lg:items-start lg:text-left">
+          <div className="flex w-full max-w-[440px] flex-col items-center text-center sm:max-w-[540px] lg:max-w-fit lg:items-start lg:text-left">
             {/* Obsidian Glass Box */}
-            <div className="w-full max-w-[440px] rounded-2xl border border-white/20 bg-black/20 p-5 shadow-2xl backdrop-blur-[4px] sm:p-6 lg:px-10 lg:py-8">
+            <div className="w-full max-w-[440px] rounded-2xl border border-white/20 bg-black/20 p-5 shadow-2xl backdrop-blur-[4px] sm:max-w-[540px] sm:p-6 lg:max-w-none lg:px-10 lg:py-8">
               <h1 className="mb-4 text-[20px] font-black uppercase leading-[1.3] tracking-[0.045em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] min-[360px]:text-[22px] sm:text-[24px] md:text-[30px] md:tracking-[0.08em]" style={{ fontFamily: 'var(--font-hanken)' }}>
-                Better Products for the<br />
-                Way Your Dog Is Built.
+                <span className="lg:hidden">Better Products for the Way Your Dog Is Built.</span>
+                <span className="hidden lg:inline">Better Products for the<br />Way Your Dog Is Built.</span>
               </h1>
 
               <p className="mx-auto mb-6 max-w-[420px] text-[13px] leading-relaxed tracking-[0.02em] text-white drop-shadow-sm lg:mx-0 sm:text-[14px] md:text-[15px]">
                 Breed-focused guides and thoughtfully selected products for feeding, comfort, mobility and walking.
               </p>
 
-              <div className="flex w-full flex-col justify-center gap-2 min-[400px]:flex-row md:gap-4 lg:justify-start">
-                <Link
+              <div className="flex w-full flex-col justify-center gap-3 sm:flex-row sm:justify-start md:gap-4">
+                <ButtonLink
                   href="/dogs"
-                  className="w-full bg-secondary px-3 py-3.5 text-center text-sm font-bold uppercase tracking-[0.02em] text-ink shadow-md transition-colors hover:bg-secondary-dark min-[360px]:flex-1 lg:px-7 lg:tracking-[0.04em]"
-                  style={{ fontFamily: 'var(--font-lato)', whiteSpace: 'nowrap' }}
+                  variant="primary"
+                  className="w-full shadow-none sm:w-auto"
+                  style={{
+                    fontFamily: 'var(--font-lato)',
+                    whiteSpace: 'nowrap',
+                    height: 'auto',
+                    padding: '16px 40px',
+                    borderRadius: 3,
+                    fontSize: 14,
+                    letterSpacing: '0.03em',
+                    lineHeight: 1,
+                  }}
                 >
                   Find Your Breed
-                </Link>
-                <Link
+                </ButtonLink>
+                <ButtonLink
                   href="/shop/solutions"
-                  className="w-full bg-white px-3 py-3.5 text-center text-sm font-bold uppercase tracking-[0.02em] text-primary shadow-md transition-colors hover:bg-gray-100 min-[360px]:flex-1 lg:px-7 lg:tracking-[0.04em]"
-                  style={{ fontFamily: 'var(--font-lato)', whiteSpace: 'nowrap' }}
+                  variant="secondary"
+                  className="w-full shadow-none hover:bg-zinc-200 sm:w-auto"
+                  style={{
+                    fontFamily: 'var(--font-lato)',
+                    whiteSpace: 'nowrap',
+                    height: 'auto',
+                    padding: '16px 40px',
+                    borderRadius: 3,
+                    fontSize: 14,
+                    letterSpacing: '0.03em',
+                    lineHeight: 1,
+                    borderWidth: 0,
+                  }}
                 >
                   Explore Solutions
-                </Link>
+                </ButtonLink>
               </div>
             </div>
           </div>

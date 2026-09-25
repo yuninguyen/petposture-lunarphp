@@ -4,6 +4,7 @@ import React from 'react';
 import { Star, ArrowUpRight, Heart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import type { Product } from '@/types/shop';
@@ -31,8 +32,10 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
                         </span>
                     </div>
 
-                    <button
+                    <Button
                         type="button"
+                        variant="quiet"
+                        size="icon"
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -40,10 +43,10 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
                         }}
                         aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                         aria-pressed={wishlisted}
-                        className="absolute right-3 bottom-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-[#56616a] shadow-sm transition hover:text-rust"
+                        className="absolute right-3 bottom-3 z-10 h-11 w-11 rounded-full bg-white/92 text-[#56616a] shadow-sm hover:text-rust"
                     >
                         <Heart size={16} className={wishlisted ? 'fill-secondary text-rust' : ''} />
-                    </button>
+                    </Button>
 
                     <div className="absolute right-2 top-2 flex max-w-[52%] flex-col items-end gap-1.5 sm:right-3 sm:top-3 sm:gap-2">
                         {product.badge && (
@@ -98,20 +101,23 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
                         )}
                     </div>
 
-                    <Link
+                    <ButtonLink
                         href={`/shop/${product.categorySlug}/${product.slug}`}
-                        className="inline-flex items-center gap-1 text-xs font-semibold capitalize text-[#1a2128b8] transition-colors hover:text-rust"
+                        variant="quiet"
+                        className="h-auto gap-1 rounded-none px-0 text-xs normal-case tracking-normal text-[#1a2128b8] hover:text-rust"
                     >
                         View <ArrowUpRight size={12} />
-                    </Link>
+                    </ButtonLink>
                 </div>
 
-                <button
+                <Button
+                    type="button"
+                    variant="primary"
                     onClick={() => addItem(product)}
-                    className="mt-4 inline-flex h-[46px] w-full items-center justify-center whitespace-nowrap rounded-[14px] border-2 border-secondary bg-white px-2 text-xs font-bold tracking-[0.02em] text-rust transition-colors hover:bg-secondary hover:text-ink sm:px-4 sm:text-sm sm:tracking-[0.05em]"
+                    className="mt-4 w-full"
                 >
                     Add to Cart
-                </button>
+                </Button>
             </div>
         </article>
     );

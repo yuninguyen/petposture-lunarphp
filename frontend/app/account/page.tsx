@@ -277,14 +277,14 @@ export default function AccountPage() {
                                     <button
                                         key={t.id}
                                         onClick={() => setTab(t.id)}
-                                        className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-sm font-bold transition-colors ${tab === t.id ? 'bg-secondary text-ink' : 'bg-white text-primary hover:bg-zinc-50'}`}
+                                        className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-[3px] text-sm font-bold transition-colors ${tab === t.id ? 'bg-secondary text-ink' : 'bg-white text-primary hover:bg-zinc-50'}`}
                                     >
                                         {t.icon} {t.label}
                                     </button>
                                 ))}
                                 <button
                                     onClick={handleLogout}
-                                    className="flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-xl text-sm font-bold text-red-500 bg-white hover:bg-red-50 transition-colors"
+                                    className="flex items-center gap-2 whitespace-nowrap px-4 py-3 rounded-[3px] text-sm font-bold text-red-500 bg-white hover:bg-red-50 transition-colors"
                                 >
                                     <LogOut size={16} /> Log Out
                                 </button>
@@ -425,7 +425,7 @@ export default function AccountPage() {
                                                                         type="button"
                                                                         onClick={() => void handleRequestReturn(order)}
                                                                         disabled={returnAccessOrderId === order.id}
-                                                                        className="inline-flex items-center rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-rust shadow-sm transition-colors hover:border-rust hover:bg-zinc-50 hover:shadow-md disabled:cursor-wait disabled:opacity-60"
+                                                                        className="inline-flex items-center rounded-[3px] border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-rust shadow-sm transition-colors hover:border-rust hover:bg-zinc-50 hover:shadow-md disabled:cursor-wait disabled:opacity-60"
                                                                     >
                                                                         {returnAccessOrderId === order.id ? 'Preparing secure access…' : 'Request a Return'}
                                                                     </button>
@@ -436,7 +436,7 @@ export default function AccountPage() {
                                                                     <button
                                                                         type="button"
                                                                         disabled
-                                                                        className="inline-flex items-center rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-300 cursor-not-allowed opacity-60"
+                                                                        className="inline-flex items-center rounded-[3px] border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-300 cursor-not-allowed opacity-60"
                                                                     >
                                                                         Request a Return
                                                                     </button>
@@ -515,7 +515,7 @@ export default function AccountPage() {
                                             <button
                                                 type="submit"
                                                 disabled={savingAddress}
-                                                className="bg-secondary text-ink px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wide hover:bg-secondary-dark disabled:opacity-50 transition-colors"
+                                                className="bg-secondary text-ink px-6 py-2.5 rounded-[3px] text-sm font-bold uppercase tracking-wide hover:bg-secondary-dark disabled:opacity-50 transition-colors"
                                             >
                                                 {savingAddress ? 'Saving...' : editingAddressId ? 'Update Address' : 'Save Address'}
                                             </button>

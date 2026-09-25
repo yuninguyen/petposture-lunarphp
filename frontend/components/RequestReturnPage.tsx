@@ -361,7 +361,7 @@ function RequestReturnContent() {
                                             <button
                                                 type="submit"
                                                 disabled={isRequestingLink}
-                                                className="w-full bg-secondary text-ink py-5 rounded-xl font-bold text-[15px] hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                                className="w-full bg-secondary text-ink py-5 rounded-[3px] font-bold text-[15px] uppercase tracking-[0.08em] hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                             >
                                                 {isRequestingLink ? "Sending..." : "Send my return link"}
                                                 <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -480,7 +480,7 @@ function RequestReturnContent() {
                                     <button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="w-full bg-secondary text-ink py-5 rounded-xl font-bold text-[15px] hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
+                                        className="w-full bg-secondary text-ink py-5 rounded-[3px] font-bold text-[15px] hover:bg-secondary-dark disabled:opacity-50 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3 group"
                                     >
                                         {isSubmitting ? "Submitting..." : "Submit return request"}
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />

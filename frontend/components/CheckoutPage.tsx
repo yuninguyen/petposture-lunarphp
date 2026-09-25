@@ -24,6 +24,7 @@ import { OrderSummary } from '@/components/checkout/OrderSummary';
 import { ShippingMethodSelector } from '@/components/checkout/ShippingMethodSelector';
 import { getShippingAmount } from '@/lib/pricing';
 import { getAttributionData } from '@/lib/attribution';
+import { Button } from '@/components/ui/Button';
 
 declare global {
     interface Window {
@@ -1369,10 +1370,10 @@ export default function CheckoutPage() {
                             Your order reference is <span className="font-semibold text-[#1c1c1f]">{successRef}</span>. We&apos;ll email shipping updates as soon as your items are on the way.
                         </p>
                         <div className="flex flex-col gap-3 sm:flex-row">
-                            <Link href="/shop" className="inline-flex items-center justify-center rounded-[14px] bg-[#111827] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#1f2937]">
+                            <Link href="/shop" className="inline-flex items-center justify-center rounded-[3px] bg-[#111827] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#1f2937]">
                                 Continue shopping
                             </Link>
-                            <Link href="/track-order" className="inline-flex items-center justify-center rounded-[14px] border border-[#d6d6db] px-6 py-4 text-sm font-semibold text-[#1c1c1f] transition hover:bg-[#f6f6f7]">
+                            <Link href="/track-order" className="inline-flex items-center justify-center rounded-[3px] border border-[#d6d6db] px-6 py-4 text-sm font-semibold text-[#1c1c1f] transition hover:bg-[#f6f6f7]">
                                 Track order
                             </Link>
                         </div>
@@ -1798,9 +1799,12 @@ export default function CheckoutPage() {
                         </section>
 
                         <div className="pt-6">
-                            <button
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                size="lg"
                                 disabled={isLoading || items.length === 0 || paypalPopupWaiting}
-                                className="flex h-[54px] w-full items-center justify-center gap-2 rounded-[8px] bg-secondary px-6 text-[15px] font-bold text-ink shadow-[0_14px_30px_rgba(223,132,72,0.22)] transition hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                                className="w-full gap-2 shadow-[0_14px_30px_rgba(223,132,72,0.22)]"
                             >
                                 {paypalPopupWaiting ? (
                                     'Waiting for PayPal…'
@@ -1812,7 +1816,7 @@ export default function CheckoutPage() {
                                         Complete order
                                     </>
                                 )}
-                            </button>
+                            </Button>
                         </div>
                     </form>
 
