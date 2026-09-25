@@ -78,7 +78,7 @@ export default function Newsletter() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="whitespace-nowrap rounded-[2px] bg-secondary px-6 py-3 text-[13px] font-bold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-secondary-dark disabled:opacity-60 sm:py-0"
+                  className="whitespace-nowrap rounded-[3px] bg-secondary px-6 py-3 text-[13px] font-bold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-secondary-dark disabled:opacity-60 sm:py-0"
                 >
                   {isSubmitting ? "Subscribing…" : "Join & Get 10% Off"}
                 </button>

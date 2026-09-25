@@ -72,7 +72,7 @@ export default function ProductGrid() {
                 )}
                 {/* Cart Icon / Action Overlay */}
                 <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                  <button className="w-full bg-primary hover:bg-secondary text-ink text-sm font-black py-4 uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95">
+                  <button className="w-full rounded-[3px] bg-primary hover:bg-secondary text-ink text-sm font-black py-4 uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95">
                     Select Options
                   </button>
                 </div>

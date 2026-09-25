@@ -1370,10 +1370,10 @@ export default function CheckoutPage() {
                             Your order reference is <span className="font-semibold text-[#1c1c1f]">{successRef}</span>. We&apos;ll email shipping updates as soon as your items are on the way.
                         </p>
                         <div className="flex flex-col gap-3 sm:flex-row">
-                            <Link href="/shop" className="inline-flex items-center justify-center rounded-[14px] bg-[#111827] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#1f2937]">
+                            <Link href="/shop" className="inline-flex items-center justify-center rounded-[3px] bg-[#111827] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#1f2937]">
                                 Continue shopping
                             </Link>
-                            <Link href="/track-order" className="inline-flex items-center justify-center rounded-[14px] border border-[#d6d6db] px-6 py-4 text-sm font-semibold text-[#1c1c1f] transition hover:bg-[#f6f6f7]">
+                            <Link href="/track-order" className="inline-flex items-center justify-center rounded-[3px] border border-[#d6d6db] px-6 py-4 text-sm font-semibold text-[#1c1c1f] transition hover:bg-[#f6f6f7]">
                                 Track order
                             </Link>
                         </div>

@@ -341,7 +341,7 @@ function OrderSuccessContent() {
                     <Package className="mx-auto mb-5 text-rust" size={38} />
                     <h1 className="text-2xl font-semibold text-[#1a1a1a]">Order confirmation unavailable</h1>
                     <p className="mt-3 text-sm leading-6 text-[#6b6b70]">{error || "Unable to access this order."}</p>
-                    <Link href="/track-order" className="mt-7 inline-flex rounded-lg bg-rust px-5 py-3 text-sm font-semibold text-white">
+                    <Link href="/track-order" className="mt-7 inline-flex rounded-[3px] bg-rust px-5 py-3 text-sm font-semibold text-white">
                         Open order tracking
                     </Link>
                 </div>
@@ -429,7 +429,7 @@ function OrderSuccessContent() {
                                                                 <p className="mt-0.5 text-[12px] leading-[1.6] text-[#707070]">Tracking number: {order.tracking_number}</p>
                                                             ) : null}
                                                         </div>
-                                                        <a href={order.tracking_url} target="_blank" rel="noreferrer" className="ml-auto inline-flex h-9 items-center justify-center gap-2 rounded-[6px] border border-[#df8448] px-3.5 text-[12px] font-semibold text-[#df8448] transition hover:bg-[#fff4ec]">
+                                                    <a href={order.tracking_url} target="_blank" rel="noreferrer" className="ml-auto inline-flex h-9 items-center justify-center gap-2 rounded-[3px] border border-[#df8448] px-3.5 text-[12px] font-semibold text-[#df8448] transition hover:bg-[#fff4ec]">
                                                             <Truck size={14} /> Open tracking
                                                         </a>
                                                     </div>

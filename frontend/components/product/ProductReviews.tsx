@@ -105,7 +105,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
 
                             <button
                                 onClick={() => setIsFormOpen(!isFormOpen)}
-                                className="w-full mt-10 bg-secondary text-ink py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.1em] shadow-xl hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-40"
+                                className="w-full mt-10 bg-secondary text-ink py-4 rounded-[3px] text-sm font-black uppercase tracking-[0.1em] shadow-xl hover:bg-secondary-dark disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 {isFormOpen ? 'Cancel Review' : 'Write a Review'}
                             </button>
@@ -153,7 +153,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                                         key={star}
                                                         type="button"
                                                         onClick={() => setFormData({ ...formData, rating: star })}
-                                                        className={`p-2 rounded-lg transition-colors ${formData.rating >= star ? 'text-rust' : 'text-zinc-200'}`}
+                                                        className={`p-2 rounded-[3px] transition-colors ${formData.rating >= star ? 'text-rust' : 'text-zinc-200'}`}
                                                     >
                                                         <Star size={24} fill={formData.rating >= star ? 'currentColor' : 'none'} />
                                                     </button>
@@ -198,7 +198,7 @@ export function ProductReviews({ product }: ProductReviewsProps) {
                                     <button
                                         disabled={isSubmitting}
                                         type="submit"
-                                        className="bg-secondary text-ink px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-secondary-dark transition-all flex items-center gap-3 disabled:opacity-50"
+                                        className="bg-secondary text-ink px-10 py-5 rounded-[3px] text-sm font-black uppercase tracking-[0.2em] shadow-xl hover:bg-secondary-dark transition-all flex items-center gap-3 disabled:opacity-50"
                                     >
                                         {isSubmitting ? 'Transmitting...' : (
                                             <>Submit for Verification <Send size={14} /></>

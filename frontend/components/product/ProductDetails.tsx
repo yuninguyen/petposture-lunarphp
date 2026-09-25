@@ -92,7 +92,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                             key={img.id ?? idx}
                                             type="button"
                                             onClick={() => setActiveImageIndex(idx)}
-                                            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-white transition-colors ${displayImage === img.src ? 'border-secondary' : 'border-zinc-100 hover:border-zinc-300'
+                                            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-[3px] border-2 bg-white transition-colors ${displayImage === img.src ? 'border-secondary' : 'border-zinc-100 hover:border-zinc-300'
                                                 }`}
                                         >
                                             <Image
@@ -180,7 +180,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                         onClick={() =>
                                                             setSelectedValues((prev) => ({ ...prev, [option.name]: value.id }))
                                                         }
-                                                        className={`rounded-[4px] border-2 px-4 py-2 text-sm font-bold uppercase tracking-wide transition-colors ${isSelected
+                                                        className={`rounded-[3px] border-2 px-4 py-2 text-sm font-bold uppercase tracking-wide transition-colors ${isSelected
                                                             ? 'border-secondary bg-secondary text-ink'
                                                             : 'border-zinc-200 bg-white text-primary hover:border-secondary'
                                                             }`}
@@ -198,7 +198,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                         <div className="mb-12 space-y-6 rounded-2xl border border-zinc-100 bg-zinc-50 p-8 shadow-sm shadow-zinc-200/20">
                             <div className="flex flex-col gap-5">
                                 <div className="flex items-center gap-6">
-                                    <div className="flex h-[54px] items-center rounded-[4px] border-2 border-white bg-white shadow-sm">
+                                    <div className="flex h-[54px] items-center rounded-[3px] border-2 border-white bg-white shadow-sm">
                                         <Button
                                             type="button"
                                             variant="quiet"

@@ -24,6 +24,9 @@ describe("buttonClasses", () => {
     expect(buttonClasses({ size: "lg" })).toContain("h-14");
     expect(buttonClasses({ size: "icon" })).toContain("h-11");
     expect(buttonClasses({ size: "icon" })).toContain("w-11");
+    expect(buttonClasses({ size: "md" })).toContain("rounded-[3px]");
+    expect(buttonClasses({ size: "lg" })).toContain("rounded-[3px]");
+    expect(buttonClasses({ size: "icon" })).toContain("rounded-[3px]");
   });
 });
 
@@ -57,18 +60,19 @@ it("migrates hero and product conversion controls to the shared primitive", () =
   expect(cardSource).toMatch(/<Button[\s\S]*size="icon"[\s\S]*aria-label=\{wishlisted/);
 });
 
-it("keeps secondary hover neutral and constrains Hero CTAs at the horizontal breakpoint", () => {
+it("keeps secondary hover neutral and preserves the Hero CTA reference treatment", () => {
   const secondaryClasses = buttonClasses({ variant: "secondary" });
   const heroSource = readFileSync(new URL("../Hero.tsx", import.meta.url), "utf8");
 
   expect(secondaryClasses).toContain("hover:bg-zinc-100");
   expect(secondaryClasses).not.toContain("hover:bg-primary");
   expect(secondaryClasses).not.toContain("hover:text-white");
-  expect(
-    heroSource.match(
-      /className="w-full rounded-\[3px\] px-3 shadow-md min-\[400px\]:w-auto min-\[400px\]:min-w-0 min-\[400px\]:flex-1 lg:px-7"/g,
-    ),
-  ).toHaveLength(2);
+  expect(heroSource).toContain('className="w-full shadow-none hover:bg-zinc-200 sm:w-auto"');
+  expect(heroSource).toContain("padding: '16px 40px'");
+  expect(heroSource).toContain("borderRadius: 3");
+  expect(heroSource).toContain("borderWidth: 0");
+  expect(heroSource).toContain("sm:flex-row");
+  expect(heroSource).toContain("<span className=\"lg:hidden\">Better Products for the Way Your Dog Is Built.</span>");
 });
 
 it("migrates cart page and drawer actions to the shared primitive", () => {

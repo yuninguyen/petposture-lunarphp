@@ -96,13 +96,13 @@ export function CookieConsentModal({ open, initialAnalytics, onClose, onSave }: 
                         <div className="flex flex-col sm:flex-row gap-3 mt-8">
                             <button
                                 onClick={() => onSave(false)}
-                                className="flex-1 border border-zinc-200 text-primary text-[14px] font-bold uppercase tracking-wider px-6 py-3 rounded-lg hover:bg-zinc-50 transition-colors"
+                                className="flex-1 border border-zinc-200 text-primary text-[14px] font-bold uppercase tracking-wider px-6 py-3 rounded-[3px] hover:bg-zinc-50 transition-colors"
                             >
                                 Reject Non-Essential
                             </button>
                             <button
                                 onClick={() => onSave(analytics)}
-                                className="flex-1 bg-secondary hover:bg-secondary-dark text-ink text-[14px] font-bold uppercase tracking-wider px-6 py-3 rounded-lg transition-colors"
+                                className="flex-1 bg-secondary hover:bg-secondary-dark text-ink text-[14px] font-bold uppercase tracking-wider px-6 py-3 rounded-[3px] transition-colors"
                             >
                                 Save Preferences
                             </button>

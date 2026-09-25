@@ -229,7 +229,7 @@ export default function RetryPaymentPanel({
                         type="button"
                         onClick={handlePrepareRetry}
                         disabled={isPreparing}
-                        className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-secondary px-5 text-sm font-semibold text-ink transition hover:bg-secondary-dark disabled:opacity-60"
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-[3px] bg-secondary px-5 text-sm font-semibold text-ink transition hover:bg-secondary-dark disabled:opacity-60"
                     >
                         {isPreparing ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}
                         {isPreparing ? "Preparing..." : "Retry card payment"}
@@ -245,7 +245,7 @@ export default function RetryPaymentPanel({
                             type="button"
                             onClick={handleConfirmRetry}
                             disabled={!stripeReady || isConfirming}
-                            className="inline-flex h-11 items-center justify-center gap-2 rounded-[8px] bg-[#111827] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-60"
+                            className="inline-flex h-11 items-center justify-center gap-2 rounded-[3px] bg-[#111827] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-60"
                         >
                             {isConfirming ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}
                             {isConfirming ? "Confirming..." : "Confirm payment"}
