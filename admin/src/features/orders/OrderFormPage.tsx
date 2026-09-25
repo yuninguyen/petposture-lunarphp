@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SearchableMultiSelect } from '@/components/ui/SearchableMultiSelect';
-import { fetchOrderProductVariants, useCreateOrder, useOrderProductPicker, type CreateOrderPayload, type OrderAddress, type OrderProductPickerItem, type OrderVariantPickerItem } from './api';
+import { fetchOrderProductVariants, useCreateOrder, useOrderProductPicker, useOrderShippingMethods, type CreateOrderPayload, type OrderAddress, type OrderProductPickerItem, type OrderVariantPickerItem } from './api';
 
 type AddressField = keyof OrderAddress;
 type FormAddress = Record<AddressField, string>;
@@ -34,13 +34,17 @@ export function OrderFormPage() {
   const [billing, setBilling] = useState<FormAddress>(emptyAddress);
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card'>('cod');
-  const [shippingMethod, setShippingMethod] = useState<'standard' | 'express'>('standard');
+  const [shippingMethod, setShippingMethod] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [customerNote, setCustomerNote] = useState('');
   const [internalNote, setInternalNote] = useState('');
   const [shippingFee, setShippingFee] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const productsQuery = useOrderProductPicker(search);
+  const shippingMethods = useOrderShippingMethods().data ?? [];
+  const selectedShippingMethod = shippingMethods.some((method) => method.code === shippingMethod)
+    ? shippingMethod
+    : (shippingMethods.find((method) => method.code === 'standard') ?? shippingMethods[0])?.code ?? '';
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSearch(searchInput), 300);
@@ -95,7 +99,7 @@ export function OrderFormPage() {
     event.preventDefault();
     setErrorMessage('');
     const items = selectedRows.map((variant) => ({ variant_id: variant.id, quantity: Number(quantities[variant.id]) }));
-    if (!items.length || items.some((item) => !Number.isInteger(item.quantity) || item.quantity <= 0) || !email.trim() || !shipping.first_name.trim() || !shipping.line_one.trim() || !shipping.city.trim()) {
+    if (!items.length || items.some((item) => !Number.isInteger(item.quantity) || item.quantity <= 0) || !email.trim() || !shipping.first_name.trim() || !shipping.line_one.trim() || !shipping.city.trim() || !selectedShippingMethod) {
       setErrorMessage(t('orders.validation_required'));
       return;
     }
@@ -106,7 +110,7 @@ export function OrderFormPage() {
       billing_same_as_shipping: billingSameAsShipping,
       ...(billingSameAsShipping ? {} : { billing: omitBlankAddress(billing) }),
       payment_method: paymentMethod,
-      shipping_method: shippingMethod,
+      shipping_method: selectedShippingMethod,
       ...(couponCode.trim() ? { coupon_code: couponCode.trim() } : {}),
       ...(customerNote.trim() ? { customer_note: customerNote.trim() } : {}),
       ...(internalNote.trim() ? { internal_note: internalNote.trim() } : {}),
@@ -149,7 +153,7 @@ export function OrderFormPage() {
     </Section>
     <Section title={t('orders.shipping_address')}><AddressFields kind="shipping" address={shipping} onChange={updateAddress} t={t} /></Section>
     <Section title={t('orders.billing_address')}><label className="flex items-center gap-2 text-sm"><input name="billing_same_as_shipping" type="checkbox" checked={billingSameAsShipping} onChange={(event) => setBillingSameAsShipping(event.target.checked)} />{t('orders.billing_same_as_shipping')}</label>{!billingSameAsShipping && <div className="mt-4"><AddressFields kind="billing" address={billing} onChange={updateAddress} t={t} /></div>}</Section>
-    <Section title={t('orders.settings')}><div className="grid gap-4 sm:grid-cols-2"><Field label={t('orders.payment_method')}><select name="payment_method" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as 'cod' | 'card')} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"><option value="cod">{t('orders.payment_cod')}</option><option value="card">{t('orders.payment_card')}</option></select></Field><Field label={t('orders.shipping_method')}><select name="shipping_method" value={shippingMethod} onChange={(event) => setShippingMethod(event.target.value as 'standard' | 'express')} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"><option value="standard">{t('orders.shipping_standard')}</option><option value="express">{t('orders.shipping_express')}</option></select></Field><Field label={t('orders.coupon_code')}><Input value={couponCode} onChange={(event) => setCouponCode(event.target.value)} /></Field><Field label={t('orders.shipping_fee_override')}><Input name="shipping_fee_override" type="number" min="0" step="0.01" value={shippingFee} onChange={(event) => setShippingFee(event.target.value)} /><p className="mt-1 text-xs text-slate-500">{t('orders.shipping_fee_help')}</p></Field></div></Section>
+    <Section title={t('orders.settings')}><div className="grid gap-4 sm:grid-cols-2"><Field label={t('orders.payment_method')}><select name="payment_method" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as 'cod' | 'card')} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm"><option value="cod">{t('orders.payment_cod')}</option><option value="card">{t('orders.payment_card')}</option></select></Field><Field label={t('orders.shipping_method')}><select name="shipping_method" value={selectedShippingMethod} onChange={(event) => setShippingMethod(event.target.value)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm">{shippingMethods.length === 0 && <option value="">{t('orders.shipping_method_select')}</option>}{shippingMethods.map((method) => <option key={method.code} value={method.code}>{method.name}</option>)}</select></Field><Field label={t('orders.coupon_code')}><Input value={couponCode} onChange={(event) => setCouponCode(event.target.value)} /></Field><Field label={t('orders.shipping_fee_override')}><Input name="shipping_fee_override" type="number" min="0" step="0.01" value={shippingFee} onChange={(event) => setShippingFee(event.target.value)} /><p className="mt-1 text-xs text-slate-500">{t('orders.shipping_fee_help')}</p></Field></div></Section>
     <Section title={t('orders.notes')}><Field label={t('orders.customer_note')}><textarea value={customerNote} onChange={(event) => setCustomerNote(event.target.value)} className="min-h-24 w-full rounded-lg border border-slate-200 p-3 text-sm" /></Field><Field label={t('orders.internal_note')}><textarea value={internalNote} onChange={(event) => setInternalNote(event.target.value)} className="min-h-24 w-full rounded-lg border border-slate-200 p-3 text-sm" /></Field></Section>
     <Button type="submit" variant="primary" disabled={createMutation.isPending}>{createMutation.isPending ? t('orders.saving') : t('orders.create')}</Button>
   </form>;

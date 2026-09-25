@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import en from '@/locales/en.json';
 import viLocale from '@/locales/vi.json';
 
-const mocks = vi.hoisted(() => ({ navigate: vi.fn(), mutateAsync: vi.fn(), fetchVariants: vi.fn(), useOrderProductPicker: vi.fn(), toastError: vi.fn(), isPending: false }));
+const mocks = vi.hoisted(() => ({ navigate: vi.fn(), mutateAsync: vi.fn(), fetchVariants: vi.fn(), useOrderProductPicker: vi.fn(), useOrderShippingMethods: vi.fn(), toastError: vi.fn(), isPending: false }));
 
 vi.mock('react-router-dom', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-router-dom')>()),
@@ -13,7 +13,7 @@ vi.mock('react-router-dom', async (importOriginal) => ({
 }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-hot-toast', () => ({ default: { error: mocks.toastError } }));
-vi.mock('./api', () => ({ useCreateOrder: () => ({ mutateAsync: mocks.mutateAsync, isPending: mocks.isPending }), fetchOrderProductVariants: mocks.fetchVariants, useOrderProductPicker: mocks.useOrderProductPicker }));
+vi.mock('./api', () => ({ useCreateOrder: () => ({ mutateAsync: mocks.mutateAsync, isPending: mocks.isPending }), fetchOrderProductVariants: mocks.fetchVariants, useOrderProductPicker: mocks.useOrderProductPicker, useOrderShippingMethods: mocks.useOrderShippingMethods }));
 
 import { OrderFormPage } from './OrderFormPage';
 
@@ -48,6 +48,39 @@ describe('OrderFormPage', () => {
     mocks.isPending = false;
     vi.useRealTimers();
     mocks.useOrderProductPicker.mockReturnValue({ data: [{ id: 1, name: 'Harness' }, { id: 2, name: 'Leash' }], isLoading: false });
+    mocks.useOrderShippingMethods.mockReturnValue({ data: [{ code: 'standard', name: 'Standard Shipping', eta: null, price: '5.00', free_over: null }, { code: 'express', name: 'Express Shipping', eta: null, price: '15.00', free_over: null }] });
+  });
+
+  it('lists shipping methods from the API, defaults to standard, and submits the chosen code', async () => {
+    mocks.useOrderShippingMethods.mockReturnValue({ data: [{ code: 'overnight', name: 'Overnight', eta: null, price: '30.00', free_over: null }, { code: 'standard', name: 'Standard Shipping', eta: null, price: '5.00', free_over: null }] });
+    mocks.fetchVariants.mockResolvedValue([{ id: 10, sku: 'HARNESS-S', label: 'Harness / Small', price: 2000, formatted_price: '$20.00', stock: 5, purchasable: 'always' }]);
+    mocks.mutateAsync.mockResolvedValue({ id: 'order-ship' });
+    const { host, root } = renderPage();
+    const select = host.querySelector<HTMLSelectElement>('[name="shipping_method"]')!;
+    expect(Array.from(select.options).map((option) => option.value)).toEqual(['overnight', 'standard']);
+    expect(select.value).toBe('standard');
+    setValue(select, 'overnight');
+    act(() => Array.from(host.querySelectorAll('button')).find((button) => button.textContent?.includes('Harness'))!.click());
+    await act(async () => { await Promise.resolve(); });
+    act(() => host.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+    fillRequiredFields(host);
+    await act(async () => { host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
+    expect(mocks.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ shipping_method: 'overnight' }));
+    act(() => root.unmount()); host.remove();
+  });
+
+  it('blocks submission when no shipping method exists', async () => {
+    mocks.useOrderShippingMethods.mockReturnValue({ data: [] });
+    mocks.fetchVariants.mockResolvedValue([{ id: 10, sku: 'HARNESS-S', label: 'Harness / Small', price: 2000, formatted_price: '$20.00', stock: 5, purchasable: 'always' }]);
+    const { host, root } = renderPage();
+    expect(host.querySelector<HTMLSelectElement>('[name="shipping_method"]')!.value).toBe('');
+    act(() => Array.from(host.querySelectorAll('button')).find((button) => button.textContent?.includes('Harness'))!.click());
+    await act(async () => { await Promise.resolve(); });
+    act(() => host.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+    fillRequiredFields(host);
+    await act(async () => { host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
+    expect(mocks.mutateAsync).not.toHaveBeenCalled();
+    act(() => root.unmount()); host.remove();
   });
 
   it('renders required sections with approved defaults and hides billing fields', () => {

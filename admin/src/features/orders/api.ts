@@ -23,13 +23,14 @@ export interface CreateOrderPayload {
   billing_same_as_shipping: boolean;
   billing?: OrderAddress;
   payment_method: 'cod' | 'card';
-  shipping_method: 'standard' | 'express';
+  shipping_method: string;
   coupon_code?: string;
   customer_note?: string;
   internal_note?: string;
   shipping_fee_override?: number;
 }
 export interface OrderProductPickerItem { id: number; name: string; }
+export interface OrderShippingMethodOption { code: string; name: string; eta: string | null; price: string | number; free_over: string | number | null }
 export interface OrderVariantPickerItem {
   id: number; sku: string; label: string; price: number | null;
   formatted_price: string | null; stock: number; purchasable: string;
@@ -51,6 +52,7 @@ export async function fetchOrderProducts(search: string): Promise<OrderProductPi
   const query = new URLSearchParams({ search: search.trim() }).toString();
   return unwrap(await fetchJson<OrderProductPickerItem[] | { data: OrderProductPickerItem[] }>(`/admin/orders/product-picker${query ? `?${query}` : ''}`));
 }
+export async function fetchOrderShippingMethods(): Promise<OrderShippingMethodOption[]> { return unwrap(await fetchJson<OrderShippingMethodOption[] | { data: OrderShippingMethodOption[] }>('/admin/orders/shipping-methods')); }
 export async function fetchOrderProductVariants(productId: number): Promise<OrderVariantPickerItem[]> { return unwrap(await fetchJson<OrderVariantPickerItem[] | { data: OrderVariantPickerItem[] }>(`/admin/orders/product-picker/${productId}/variants`)); }
 export async function performOrderAction(id: string, action: string): Promise<Order> { return unwrap(await fetchJson<Order | { data: Order }>(`/orders/${id}/actions/${action}`, { method: 'POST' })); }
 export async function createShipment(id: string, payload: CreateShipmentPayload): Promise<Order> { return unwrap(await fetchJson<Order | { data: Order }>(`/orders/${id}/shipments`, { method: 'POST', body: payload as unknown as Record<string, unknown> })); }
@@ -59,6 +61,7 @@ export async function returnOrder(id: string): Promise<Order> { return unwrap(aw
 
 export function useOrders(filters: OrderFilters) { return useQuery({ queryKey: ['orders', filters], queryFn: () => fetchOrders(filters) }); }
 export function useOrderProductPicker(search: string) { return useQuery({ queryKey: ['orders', 'product-picker', search], queryFn: () => fetchOrderProducts(search) }); }
+export function useOrderShippingMethods() { return useQuery({ queryKey: ['orders', 'shipping-methods'], queryFn: fetchOrderShippingMethods }); }
 export function useOrder(id?: string) { return useQuery({ queryKey: ['orders', id], queryFn: () => fetchOrder(id!), enabled: Boolean(id) }); }
 export function useCreateOrder(): UseMutationResult<Order, Error, CreateOrderPayload> {
   const queryClient = useQueryClient();

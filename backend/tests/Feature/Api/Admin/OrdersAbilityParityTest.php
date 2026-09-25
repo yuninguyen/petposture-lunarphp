@@ -105,6 +105,31 @@ class OrdersAbilityParityTest extends TestCase
         }
     }
 
+    public function test_shipping_method_picker_follows_the_same_ability_as_the_product_picker(): void
+    {
+        \App\Models\ShippingMethod::query()->firstOrCreate(
+            ['code' => 'standard'],
+            ['name' => 'Standard Shipping', 'price' => 5]
+        );
+
+        foreach (self::ALLOWED_ROLES as $role) {
+            $this->actingAsRole($role);
+
+            $response = $this->getJson('/api/admin/orders/shipping-methods')->assertOk();
+            $this->assertSame(
+                ['code', 'eta', 'free_over', 'name', 'price'],
+                collect(array_keys($response->json('data.0') ?? []))->sort()->values()->all(),
+                $role
+            );
+        }
+
+        foreach (self::BLOCKED_ROLES as $role) {
+            $this->actingAsRole($role);
+
+            $this->getJson('/api/admin/orders/shipping-methods')->assertForbidden();
+        }
+    }
+
     public function test_refund_remains_exclusive_to_order_manager(): void
     {
         foreach (['super_admin', 'admin', 'staff', 'Order Manager'] as $role) {

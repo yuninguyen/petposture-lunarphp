@@ -22,6 +22,15 @@ class ShippingMethodController extends Controller
         ]);
     }
 
+    public function picker(): JsonResponse
+    {
+        return response()->json([
+            'data' => ShippingMethod::query()
+                ->orderBy('id')
+                ->get(['code', 'name', 'eta', 'price', 'free_over']),
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $shippingMethod = ShippingMethod::query()->create($this->validatedStore($request));

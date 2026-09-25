@@ -245,6 +245,7 @@ class EnforceAdminApiPermission
             if ($request->isMethod('get') && in_array($relativePath, [
                 'orders/product-picker',
                 'orders/product-picker/{product}/variants',
+                'orders/shipping-methods',
             ], true)) {
                 return 'update_order';
             }
