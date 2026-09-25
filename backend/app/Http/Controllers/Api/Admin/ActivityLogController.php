@@ -33,6 +33,7 @@ class ActivityLogController extends Controller
     {
         $validated = $request->validate([
             'causer_id' => ['nullable', 'integer'],
+            'actor' => ['nullable', 'string', 'max:255'],
             'subject_type' => ['nullable', 'string', 'max:255'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
@@ -47,6 +48,15 @@ class ActivityLogController extends Controller
 
         if (! empty($validated['causer_id'])) {
             $query->where('causer_id', (int) $validated['causer_id']);
+        }
+
+        if (! empty($validated['actor'])) {
+            $needle = '%'.addcslashes(trim($validated['actor']), '%_\\').'%';
+            $query->whereHasMorph('causer', [User::class], function ($q) use ($needle) {
+                $q->where(function ($q) use ($needle) {
+                    $q->where('name', 'like', $needle)->orWhere('email', 'like', $needle);
+                });
+            });
         }
 
         if (! empty($validated['subject_type'])) {

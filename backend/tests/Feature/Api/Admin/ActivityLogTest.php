@@ -567,6 +567,32 @@ class ActivityLogTest extends TestCase
         }
     }
 
+    public function test_activity_logs_index_filters_by_actor_name_or_email(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        $jane = User::factory()->create(['name' => 'Jane Quokka', 'email' => 'jane@example.test']);
+        $jane->assignRole('admin');
+        $bob = User::factory()->create(['name' => 'Bob Emu', 'email' => 'bob.zebra@example.test']);
+        $bob->assignRole('admin');
+
+        activity()->causedBy($jane)->log('by_jane');
+        activity()->causedBy($bob)->log('by_bob');
+        activity()->log('by_system');
+
+        $byName = $this->getJson('/api/admin/system/activity-logs?actor=quokka');
+        $byName->assertOk();
+        $this->assertSame(['by_jane'], collect($byName->json('data'))->pluck('description')->all());
+
+        $byEmail = $this->getJson('/api/admin/system/activity-logs?actor=zebra');
+        $byEmail->assertOk();
+        $this->assertSame(['by_bob'], collect($byEmail->json('data'))->pluck('description')->all());
+
+        $wildcard = $this->getJson('/api/admin/system/activity-logs?actor=%25');
+        $wildcard->assertOk();
+        $this->assertCount(0, $wildcard->json('data'));
+    }
+
     public function test_activity_logs_index_filters_by_subject_type(): void
     {
         Sanctum::actingAs($this->admin);

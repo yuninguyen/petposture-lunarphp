@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -58,18 +58,27 @@ export function ActivityLogsPage() {
   const { t } = useTranslation();
 
   const [subjectType, setSubjectType] = useState<string>('all');
-  const [causerId, setCauserId] = useState<string>('');
+  const [actor, setActor] = useState<string>('');
+  const [debouncedActor, setDebouncedActor] = useState<string>('');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [page, setPage] = useState<number>(1);
   const [expandedLogs, setExpandedLogs] = useState<Record<number, boolean>>({});
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedActor(actor.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [actor]);
+
   const { data: response, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['activity-logs', { subjectType, causerId, dateFrom, dateTo, page }],
+    queryKey: ['activity-logs', { subjectType, actor: debouncedActor, dateFrom, dateTo, page }],
     queryFn: () =>
       fetchActivityLogs({
         subject_type: subjectType === 'all' ? undefined : subjectType,
-        causer_id: causerId.trim() === '' ? undefined : causerId.trim(),
+        actor: debouncedActor === '' ? undefined : debouncedActor,
         date_from: dateFrom.trim() === '' ? undefined : dateFrom.trim(),
         date_to: dateTo.trim() === '' ? undefined : dateTo.trim(),
         page,
@@ -88,14 +97,15 @@ export function ActivityLogsPage() {
 
   const handleResetFilters = () => {
     setSubjectType('all');
-    setCauserId('');
+    setActor('');
+    setDebouncedActor('');
     setDateFrom('');
     setDateTo('');
     setPage(1);
   };
 
   const hasActiveFilters =
-    subjectType !== 'all' || causerId !== '' || dateFrom !== '' || dateTo !== '';
+    subjectType !== 'all' || actor !== '' || dateFrom !== '' || dateTo !== '';
 
   const renderCompactProperties = (entry: ActivityLogEntry) => {
     const props = entry.properties ?? {};
@@ -199,26 +209,22 @@ export function ActivityLogsPage() {
             </select>
           </div>
 
-          {/* Causer ID Filter */}
+          {/* Actor Filter */}
           <div>
             <label
-              htmlFor="filter-causer-id"
+              htmlFor="filter-actor"
               className="block text-xs font-medium text-slate-700 mb-1"
             >
-              {t('system_activity_logs.filter.causer_id', 'Causer ID')}
+              {t('system_activity_logs.filter.actor', 'Actor')}
             </label>
             <input
-              id="filter-causer-id"
-              aria-label={t('system_activity_logs.filter.causer_id', 'Causer ID')}
-              type="number"
-              min="1"
-              step="1"
-              placeholder="e.g. 2"
-              value={causerId}
-              onChange={(e) => {
-                setCauserId(e.target.value);
-                setPage(1);
-              }}
+              id="filter-actor"
+              aria-label={t('system_activity_logs.filter.actor', 'Actor')}
+              type="search"
+              maxLength={255}
+              placeholder={t('system_activity_logs.filter.actor_placeholder', 'Name or email')}
+              value={actor}
+              onChange={(e) => setActor(e.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
@@ -362,7 +368,7 @@ export function ActivityLogsPage() {
                               entry.event
                             )}`}
                           >
-                            {entry.event}
+                            {t(`system_activity_logs.event.${entry.event}`, entry.event)}
                           </span>
                         </td>
 

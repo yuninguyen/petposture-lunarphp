@@ -30,7 +30,7 @@ export interface ActivityLogResponse {
 }
 
 export interface ActivityLogParams {
-  causer_id?: number | string | null;
+  actor?: string | null;
   subject_type?: string | null;
   date_from?: string | null;
   date_to?: string | null;
@@ -43,11 +43,8 @@ export async function fetchActivityLogs(
 ): Promise<ActivityLogResponse> {
   const query = new URLSearchParams();
 
-  if (params.causer_id !== undefined && params.causer_id !== null && String(params.causer_id).trim() !== '') {
-    const parsed = Number(params.causer_id);
-    if (!Number.isNaN(parsed) && Number.isInteger(parsed) && parsed > 0) {
-      query.set('causer_id', String(parsed));
-    }
+  if (params.actor && params.actor.trim() !== '') {
+    query.set('actor', params.actor.trim());
   }
 
   if (params.subject_type && params.subject_type.trim() !== '' && params.subject_type.toLowerCase() !== 'all') {

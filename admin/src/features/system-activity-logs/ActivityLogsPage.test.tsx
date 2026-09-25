@@ -1,6 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import enLocale from '../../locales/en.json';
+import viLocale from '../../locales/vi.json';
 import { ActivityLogsPage } from './ActivityLogsPage';
 import type { ActivityLogResponse } from './api';
 
@@ -166,7 +168,7 @@ describe('ActivityLogsPage', () => {
     });
   });
 
-  it('filters by causer_id and calls fetchJson with causer_id param', async () => {
+  it('filters by actor name and calls fetchJson with the actor param', async () => {
     vi.mocked(fetchJson).mockResolvedValue(mockActivityLogsResponse);
 
     renderPage();
@@ -175,14 +177,24 @@ describe('ActivityLogsPage', () => {
       expect(screen.getByText('Jane Admin')).toBeInTheDocument();
     });
 
-    const causerInput = screen.getByLabelText(/^Causer ID$/i);
-    fireEvent.change(causerInput, { target: { value: '5' } });
+    const actorInput = screen.getByLabelText(/^Actor$/i);
+    fireEvent.change(actorInput, { target: { value: 'jane' } });
 
     await waitFor(() => {
       expect(fetchJson).toHaveBeenCalledWith(
-        expect.stringContaining('causer_id=5')
+        expect.stringContaining('actor=jane')
       );
     });
+  });
+
+  it('has EN and VI labels for every logged event', () => {
+    const events = ['created', 'updated', 'deleted', 'refunded', 'returned', 'permissions_updated'];
+    for (const locale of [enLocale, viLocale] as Record<string, string>[]) {
+      for (const event of events) {
+        expect(locale[`system_activity_logs.event.${event}`]).toBeTruthy();
+      }
+      expect(locale['system_activity_logs.filter.actor']).toBeTruthy();
+    }
   });
 
   it('handles pagination next and previous controls correctly', async () => {
