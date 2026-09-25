@@ -326,6 +326,22 @@ class OrderController extends Controller
 
         $order = $this->checkoutService->placeOrder($payload, $request->user()->id, $request->ip());
 
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($order)
+            ->event('created')
+            ->withProperties([
+                'source' => 'manual',
+                'reference' => $order->reference,
+                'payment_method' => $validated['payment_method'],
+                'marked_paid' => $validated['payment_method'] === 'card',
+                'shipping_method' => $validated['shipping_method'],
+                'item_count' => count($validated['items']),
+                'coupon_code' => $validated['coupon_code'] ?? null,
+                'shipping_fee_override' => $validated['shipping_fee_override'] ?? null,
+            ])
+            ->log('created');
+
         return (new OrderResource($order))->response()->setStatusCode(201);
     }
 

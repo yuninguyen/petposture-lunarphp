@@ -1553,6 +1553,57 @@ class CheckoutApiTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_manual_order_creation_writes_an_audit_log_without_customer_data(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $admin = $this->makeAdmin();
+        Sanctum::actingAs($admin);
+
+        $payload = $this->manualOrderPayload($variant);
+        $payload['payment_method'] = 'card';
+
+        $orderId = $this->postJson('/api/admin/orders', $payload)
+            ->assertCreated()
+            ->json('data.id');
+
+        $activity = \Spatie\Activitylog\Models\Activity::query()
+            ->where('log_name', 'default')
+            ->where('subject_type', (new Order())->getMorphClass())
+            ->where('subject_id', $orderId)
+            ->where('description', 'created')
+            ->where('properties->source', 'manual')
+            ->first();
+
+        $this->assertNotNull($activity);
+        $this->assertSame($admin->id, $activity->causer_id);
+        $this->assertSame('manual', $activity->properties['source']);
+        $this->assertSame('card', $activity->properties['payment_method']);
+        $this->assertTrue($activity->properties['marked_paid']);
+        $this->assertSame(count($payload['items']), $activity->properties['item_count']);
+        $this->assertStringNotContainsString($payload['email'], json_encode($activity->properties));
+    }
+
+    public function test_manual_cod_order_audit_log_is_not_marked_paid(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        Sanctum::actingAs($this->makeAdmin());
+
+        $payload = $this->manualOrderPayload($variant);
+        $payload['payment_method'] = 'cod';
+
+        $orderId = $this->postJson('/api/admin/orders', $payload)->assertCreated()->json('data.id');
+
+        $activity = \Spatie\Activitylog\Models\Activity::query()
+            ->where('log_name', 'default')
+            ->where('subject_id', $orderId)
+            ->where('description', 'created')
+            ->where('properties->source', 'manual')
+            ->first();
+
+        $this->assertNotNull($activity);
+        $this->assertFalse($activity->properties['marked_paid']);
+    }
+
     public function test_manual_order_requires_the_filament_parity_fields_and_valid_choices(): void
     {
         $variant = $this->createPurchasableVariant();
