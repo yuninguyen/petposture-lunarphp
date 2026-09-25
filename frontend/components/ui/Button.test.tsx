@@ -88,3 +88,21 @@ it("migrates cart page and drawer actions to the shared primitive", () => {
   expect(drawerSource).toMatch(/variant="primary"[\s\S]*Checkout/);
   expect(drawerSource).toMatch(/size="icon"[\s\S]*aria-label="Remove item"/);
 });
+
+it("migrates checkout completion and success navigation to the shared primitive", () => {
+  const checkoutSource = readFileSync(
+    new URL("../CheckoutPage.tsx", import.meta.url),
+    "utf8",
+  );
+  const successSource = readFileSync(
+    new URL("../CheckoutSuccessPage.tsx", import.meta.url),
+    "utf8",
+  );
+
+  expect(checkoutSource).toMatch(/<Button\s+type="submit"\s+variant="primary"\s+size="lg"/);
+  expect(checkoutSource).toMatch(/disabled=\{isLoading \|\| items\.length === 0 \|\| paypalPopupWaiting\}/);
+  expect(successSource).toMatch(/href="\/shop"[\s\S]*variant="primary"/);
+  expect(successSource).toMatch(/returns\?token=/);
+  expect(successSource).toMatch(/variant="secondary"/);
+  expect(successSource).not.toMatch(/bg-\[#df8448\][^"]*text-white/);
+});

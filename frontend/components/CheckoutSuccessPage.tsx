@@ -9,6 +9,7 @@ import { getApiBaseUrl } from "@/lib/api";
 import { fetchApi } from "@/lib/fetchApi";
 import { useCart } from "@/context/CartContext";
 import RetryPaymentPanel from "@/components/orders/RetryPaymentPanel";
+import { ButtonLink } from "@/components/ui/Button";
 
 type TrackingOrder = {
     reference: string;
@@ -415,7 +416,7 @@ function OrderSuccessContent() {
                                             {index < timeline.length - 1 ? (
                                                 <span className={`absolute left-[11px] top-6 h-[calc(100%+8px)] w-px ${step.done ? "bg-[#df8448]" : "bg-[#e5e7eb]"}`} />
                                             ) : null}
-                                            <span className={`relative z-10 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border ${step.done ? "border-[#df8448] bg-[#df8448] text-white" : "border-[#d1d5db] bg-white text-[#9ca3af]"}`}>
+                                            <span className={`relative z-10 mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border ${step.done ? "border-secondary bg-secondary text-ink" : "border-[#d1d5db] bg-white text-[#9ca3af]"}`}>
                                                 {step.done ? <CheckCircle size={14} /> : <span className="h-2 w-2 rounded-full bg-current" />}
                                             </span>
                                             <div className="pb-1">
@@ -497,13 +498,13 @@ function OrderSuccessContent() {
                                 Need help? <Link href="/contact" className="font-semibold text-[#1a1a1a] underline underline-offset-2 hover:text-[#df8448]">Contact us</Link>
                             </p>
                             <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
-                                <Link href="/shop" className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#df8448] px-8 text-[14px] font-semibold text-white transition-all hover:bg-[#c9713a] hover:shadow-md sm:w-auto">
+                                <ButtonLink href="/shop" variant="primary" className="w-full sm:w-auto">
                                     Continue shopping
-                                </Link>
+                                </ButtonLink>
                                 {deliveredDone ? (
-                                    <Link href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} className="flex h-11 w-full items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white px-8 text-[14px] font-semibold text-[#555555] transition-all hover:bg-[#faf9f8] hover:shadow-sm sm:w-auto">
+                                    <ButtonLink href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} variant="secondary" className="w-full sm:w-auto">
                                         Request a return
-                                    </Link>
+                                    </ButtonLink>
                                 ) : null}
                             </div>
                         </div>
@@ -524,13 +525,13 @@ function OrderSuccessContent() {
                             Need help? <Link href="/contact" className="font-semibold text-[#1a1a1a] underline underline-offset-2 hover:text-[#df8448]">Contact us</Link>
                         </p>
                         <div className="flex w-full flex-col items-center gap-3 sm:flex-row">
-                            <Link href="/shop" className="flex h-11 w-full items-center justify-center rounded-[6px] bg-[#df8448] px-8 text-[14px] font-semibold text-white transition-all hover:bg-[#c9713a] hover:shadow-md sm:w-auto">
+                            <ButtonLink href="/shop" variant="primary" className="w-full sm:w-auto">
                                 Continue shopping
-                            </Link>
+                            </ButtonLink>
                             {deliveredDone ? (
-                                <Link href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} className="flex h-11 w-full items-center justify-center rounded-[6px] border border-[#e5e7eb] bg-white px-8 text-[14px] font-semibold text-[#555555] transition-all hover:bg-[#faf9f8] hover:shadow-sm sm:w-auto">
+                                <ButtonLink href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} variant="secondary" className="w-full sm:w-auto">
                                     Request a return
-                                </Link>
+                                </ButtonLink>
                             ) : null}
                         </div>
                     </div>
