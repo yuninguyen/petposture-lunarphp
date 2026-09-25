@@ -261,7 +261,7 @@ function ShopCategories() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 30 }}>
                     <span style={{
-                      fontFamily: F.body, fontSize: 11.5, fontWeight: 700, lineHeight: 1.25,
+                      fontFamily: F.body, fontSize: 11.5, lineHeight: 1.25,
                       color: hoveredBreed === b.slug ? C.primaryHover : C.primary,
                       fontWeight: hoveredBreed === b.slug ? 800 : 700,
                       transform: hoveredBreed === b.slug ? 'translateY(-2px)' : 'translateY(0)',
@@ -340,7 +340,7 @@ function ShopCategories() {
                     <Image src={s.img} alt={s.name} fill sizes="88px" className="object-contain p-1.5" />
                   </div>
                   <span style={{
-                    fontFamily: F.body, fontSize: 12.5, fontWeight: 600, textAlign: 'center',
+                    fontFamily: F.body, fontSize: 12.5, textAlign: 'center',
                     color: hoveredSolution === s.slug ? s.accent : C.primary,
                     fontWeight: hoveredSolution === s.slug ? 700 : 600,
                     transform: hoveredSolution === s.slug ? 'translateY(-2px)' : 'translateY(0)',
