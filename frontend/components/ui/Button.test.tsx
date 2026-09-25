@@ -70,3 +70,21 @@ it("keeps secondary hover neutral and constrains Hero CTAs at the horizontal bre
     ),
   ).toHaveLength(2);
 });
+
+it("migrates cart page and drawer actions to the shared primitive", () => {
+  const cartPageSource = readFileSync(
+    new URL("../../app/cart/page.tsx", import.meta.url),
+    "utf8",
+  );
+  const drawerSource = readFileSync(
+    new URL("../shop/CartDrawer.tsx", import.meta.url),
+    "utf8",
+  );
+
+  expect(cartPageSource).toMatch(/href="\/shop"[\s\S]*variant="secondary"/);
+  expect(cartPageSource).toMatch(/variant="primary"[\s\S]*router\.push\(["']\/checkout["']\)/);
+  expect(cartPageSource).toMatch(/size="icon"[\s\S]*aria-label="Decrease quantity"/);
+  expect(drawerSource).toMatch(/variant="secondary"[\s\S]*Continue Shopping/);
+  expect(drawerSource).toMatch(/variant="primary"[\s\S]*Checkout/);
+  expect(drawerSource).toMatch(/size="icon"[\s\S]*aria-label="Remove item"/);
+});

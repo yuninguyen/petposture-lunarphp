@@ -8,10 +8,10 @@ const Footer = dynamic(() => import('@/components/Footer'));
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, X, ChevronRight, ArrowLeft, Tag } from 'lucide-react';
-import Link from 'next/link';
 import { getApiBaseUrl } from '@/lib/api';
 import { fetchApi } from '@/lib/fetchApi';
 import { getShippingAmount } from '@/lib/pricing';
+import { Button, ButtonLink } from '@/components/ui/Button';
 
 export default function CartPage() {
     const { items, updateQuantity, removeItem, totalAmount, coupon, setCoupon } = useCart();
@@ -164,9 +164,9 @@ export default function CartPage() {
                         </div>
                         <h2 className="text-[24px] font-bold text-primary mb-4 uppercase tracking-wider">Your Cart is Empty</h2>
                         <p className="text-zinc-400 mb-8 max-w-md mx-auto">Looks like you haven&apos;t added anything to your cart yet. Explore our shop to find the best for your pet.</p>
-                        <Link href="/shop" className="bg-secondary text-ink px-10 py-5 rounded-[4px] text-sm font-black uppercase tracking-wider hover:bg-secondary-dark transition-all shadow-xl shadow-orange-500/10">
+                        <ButtonLink href="/shop" variant="secondary" className="shadow-xl shadow-orange-500/10">
                             Return to Shop
-                        </Link>
+                        </ButtonLink>
                     </div>
                 ) : (
                     <div className="flex flex-col lg:flex-row gap-16">
@@ -187,13 +187,15 @@ export default function CartPage() {
                                         <div key={item.variantId} className="py-6 flex flex-col md:flex-row md:items-center relative group">
                                             {/* Remove Button */}
                                             <div className="absolute top-6 right-0 md:relative md:top-0 md:w-10 md:flex-shrink-0 z-10 flex md:items-center md:justify-start">
-                                                <button
+                                                <Button
+                                                    type="button"
+                                                    size="icon"
+                                                    variant="quiet"
                                                     onClick={() => removeItem(item.variantId)}
                                                     aria-label="Remove item"
-                                                    className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-100 bg-white md:bg-transparent"
                                                 >
                                                     <X size={16} strokeWidth={2.5} aria-hidden="true" />
-                                                </button>
+                                                </Button>
                                             </div>
                                             
                                             {/* Product Info (Image + Name) */}
@@ -213,21 +215,25 @@ export default function CartPage() {
                                                     {/* Mobile Quantity & Total */}
                                                     <div className="md:hidden flex items-center justify-between mt-3">
                                                         <div className="inline-flex items-center bg-white border border-zinc-200 rounded-[4px] overflow-hidden shadow-sm">
-                                                            <button
+                                                            <Button
+                                                                type="button"
+                                                                size="icon"
+                                                                variant="quiet"
                                                                 onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
                                                                 aria-label="Decrease quantity"
-                                                                className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-primary transition-colors"
                                                             >
                                                                 <Minus size={12} strokeWidth={2.5} aria-hidden="true" />
-                                                            </button>
+                                                            </Button>
                                                             <span className="w-6 text-center text-[13px] font-bold text-primary" aria-label={`Quantity: ${item.quantity}`}>{item.quantity}</span>
-                                                            <button
+                                                            <Button
+                                                                type="button"
+                                                                size="icon"
+                                                                variant="quiet"
                                                                 onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
                                                                 aria-label="Increase quantity"
-                                                                className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-primary transition-colors"
                                                             >
                                                                 <Plus size={12} strokeWidth={2.5} aria-hidden="true" />
-                                                            </button>
+                                                            </Button>
                                                         </div>
                                                         <div className="text-[15px] font-black text-rust">
                                                             ${(item.price * item.quantity).toFixed(2)}
@@ -244,21 +250,25 @@ export default function CartPage() {
                                             {/* Desktop Quantity */}
                                             <div className="hidden md:flex items-center justify-center w-[20%]">
                                                 <div className="inline-flex items-center bg-white border border-zinc-200 rounded-[4px] overflow-hidden shadow-sm">
-                                                    <button
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="quiet"
                                                         onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
                                                         aria-label="Decrease quantity"
-                                                        className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-primary transition-colors"
                                                     >
                                                         <Minus size={12} strokeWidth={2.5} aria-hidden="true" />
-                                                    </button>
+                                                    </Button>
                                                     <span className="w-6 text-center text-[13px] font-bold text-primary" aria-label={`Quantity: ${item.quantity}`}>{item.quantity}</span>
-                                                    <button
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="quiet"
                                                         onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
                                                         aria-label="Increase quantity"
-                                                        className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 hover:text-primary transition-colors"
                                                     >
                                                         <Plus size={12} strokeWidth={2.5} aria-hidden="true" />
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             </div>
                                             
@@ -272,10 +282,10 @@ export default function CartPage() {
                             </div>
 
                             <div className="mt-12 flex justify-between items-center">
-                                <Link href="/shop" className="inline-flex items-center gap-2 group text-sm font-black uppercase tracking-wider text-primary border-2 border-zinc-100 px-8 py-4 rounded-[4px] hover:bg-zinc-50 transition-all">
+                                <ButtonLink href="/shop" variant="secondary" className="group gap-2">
                                     <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
                                     Continue Shopping
-                                </Link>
+                                </ButtonLink>
                             </div>
                         </div>
 
@@ -311,12 +321,14 @@ export default function CartPage() {
                                     </div>
                                 </div>
 
-                                <button
+                                <Button
+                                    type="button"
+                                    variant="primary"
                                     onClick={() => router.push('/checkout')}
-                                    className="w-full bg-secondary text-ink py-5 rounded-[4px] font-black uppercase tracking-[0.05em] text-sm shadow-2xl shadow-orange-500/20 hover:bg-secondary-dark transition-all"
+                                    className="w-full shadow-2xl shadow-orange-500/20"
                                 >
                                     Proceed to Checkout
-                                </button>
+                                </Button>
 
                                 {/* Coupon Section */}
                                 <div className="mt-12 pt-10 border-t border-zinc-200">
@@ -332,13 +344,15 @@ export default function CartPage() {
                                             placeholder="Coupon code"
                                             className="w-full bg-white border border-zinc-200 rounded-[4px] px-6 py-4 text-sm outline-none focus:border-secondary transition-colors"
                                         />
-                                        <button
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
                                             onClick={handleApplyCoupon}
                                             disabled={isApplying}
-                                            className="w-full bg-zinc-100 text-primary py-4 rounded-[4px] text-sm font-black uppercase tracking-wider hover:bg-zinc-200 transition-all disabled:opacity-50"
+                                            className="w-full"
                                         >
                                             {isApplying ? 'Applying...' : 'Apply Coupon'}
-                                        </button>
+                                        </Button>
                                         {coupon.message && (
                                             <p className={`text-sm mt-2 font-bold ${coupon.isError ? 'text-red-500' : 'text-green-600'}`}>
                                                 {coupon.message}

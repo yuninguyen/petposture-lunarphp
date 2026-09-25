@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, X, Minus, Plus } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/Button';
 
 export function CartDrawer() {
     const { items, isCartOpen, setCartOpen, updateQuantity, removeItem, totalAmount } = useCart();
@@ -37,12 +38,16 @@ export function CartDrawer() {
                             <h2 className="text-[16px] font-black text-primary uppercase tracking-[0.08em] ml-4">
                                 Cart
                             </h2>
-                            <button
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="quiet"
                                 onClick={() => setCartOpen(false)}
-                                className="absolute right-6 p-2 text-zinc-400 hover:text-primary transition-all hover:rotate-90 duration-300"
+                                aria-label="Close cart"
+                                className="absolute right-6"
                             >
-                                <X size={20} strokeWidth={2.5} />
-                            </button>
+                                <X size={20} strokeWidth={2.5} aria-hidden="true" />
+                            </Button>
                         </div>
 
                         {/* Cart Items */}
@@ -54,12 +59,14 @@ export function CartDrawer() {
                                     </div>
                                     <p className="text-[14px] font-bold text-primary uppercase tracking-widest mb-2">Your cart is empty</p>
                                     <p className="text-sm text-zinc-400 mb-8">Add items to get started</p>
-                                    <button
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
                                         onClick={() => setCartOpen(false)}
-                                        className="bg-primary text-white px-8 py-4 rounded-[4px] text-sm font-black uppercase tracking-widest hover:bg-[#2c363e] transition-all shadow-lg shadow-zinc-200"
+                                        className="shadow-lg shadow-zinc-200"
                                     >
                                         Continue Shopping
-                                    </button>
+                                    </Button>
                                 </div>
                             ) : (
                                 items.map(item => (
@@ -80,21 +87,25 @@ export function CartDrawer() {
 
                                             <div className="flex justify-between items-center mt-2">
                                                 <div className="flex items-center bg-zinc-50 rounded-[4px] w-fit border border-zinc-100">
-                                                    <button
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="quiet"
                                                         onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
                                                         aria-label="Decrease quantity"
-                                                        className="px-2.5 py-1 text-zinc-400 hover:text-primary transition-colors"
                                                     >
                                                         <Minus size={10} strokeWidth={3} aria-hidden="true" />
-                                                    </button>
+                                                    </Button>
                                                     <span className="px-2 text-sm font-black text-primary min-w-[20px] text-center" aria-label="Quantity">{item.quantity}</span>
-                                                    <button
+                                                    <Button
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="quiet"
                                                         onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
                                                         aria-label="Increase quantity"
-                                                        className="px-2.5 py-1 text-zinc-400 hover:text-primary transition-colors"
                                                     >
                                                         <Plus size={10} strokeWidth={3} aria-hidden="true" />
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                                 <span className="text-sm font-black text-rust">
                                                     ${(item.price * item.quantity).toFixed(2)}
@@ -103,13 +114,16 @@ export function CartDrawer() {
                                         </div>
 
                                         {/* Remove Button - Circular logic */}
-                                        <button
+                                        <Button
+                                            type="button"
+                                            size="icon"
+                                            variant="quiet"
                                             onClick={() => removeItem(item.variantId)}
                                             aria-label="Remove item"
-                                            className="w-6 h-6 mt-0.5 rounded-full bg-zinc-50 flex flex-shrink-0 items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 hover:border-red-100 border border-transparent transition-all"
+                                            className="mt-0.5 flex-shrink-0"
                                         >
                                             <X size={12} strokeWidth={3} aria-hidden="true" />
-                                        </button>
+                                        </Button>
                                     </div>
                                 ))
                             )}
@@ -125,18 +139,22 @@ export function CartDrawer() {
                                 <div className="h-[1px] bg-zinc-100 w-full mb-2" />
 
                                 <div className="flex flex-col gap-3">
-                                    <button
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
                                         onClick={() => { setCartOpen(false); router.push('/cart'); }}
-                                        className="w-full bg-primary text-white py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.15em] hover:bg-[#2c363e] transition-all flex items-center justify-center"
+                                        className="w-full"
                                     >
                                         View Cart
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="primary"
                                         onClick={() => { setCartOpen(false); router.push('/checkout'); }}
-                                        className="w-full bg-secondary text-ink py-4 rounded-[4px] text-sm font-black uppercase tracking-[0.15em] shadow-xl shadow-orange-500/10 hover:bg-secondary-dark transition-all flex items-center justify-center"
+                                        className="w-full shadow-xl shadow-orange-500/10"
                                     >
                                         Checkout
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                         )}
