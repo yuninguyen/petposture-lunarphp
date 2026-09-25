@@ -997,8 +997,14 @@ export default function CheckoutPage() {
         return null;
     };
 
-    const paymentRowClasses = (method: PaymentMethod, index: number) =>
-        `flex cursor-pointer items-center justify-between px-4 py-[15px] text-[14px] transition ${form.paymentMethod === method ? 'bg-[#f7faff] ring-1 ring-inset ring-[#cfe2f3]' : 'bg-white hover:bg-[#fbfbfc]'} ${index < availablePaymentMethods.length - 1 || form.paymentMethod === method ? 'border-b border-[#d9d9d9]' : ''}`;
+    const paymentRowClasses = (method: PaymentMethod, index: number) => {
+        const isSelected = form.paymentMethod === method;
+        const expandsCardDetails = isSelected && method === 'card';
+        const isFirst = index === 0;
+        const isLast = index === availablePaymentMethods.length - 1;
+
+        return `flex cursor-pointer items-center justify-between px-4 py-[15px] text-[14px] transition ${isSelected ? 'bg-[#f7faff] ring-1 ring-inset ring-[#cfe2f3]' : 'bg-white hover:bg-[#fbfbfc]'} ${isFirst ? 'rounded-tl-[8px] rounded-tr-[8px]' : ''} ${isLast && !expandsCardDetails ? 'rounded-bl-[8px] rounded-br-[8px]' : ''} ${index < availablePaymentMethods.length - 1 || expandsCardDetails ? 'border-b border-[#d9d9d9]' : ''}`;
+    };
 
     const prepareCardPaymentIntent = async () => {
         const response = await fetchApi('/api/checkout/payment-intent', {
@@ -1624,7 +1630,7 @@ export default function CheckoutPage() {
                                         </label>
 
                                         {method.method === 'card' && form.paymentMethod === 'card' && (
-                                            <div className="grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3">
+                                            <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
                                                 {stripeLiveMode ? (
                                                     <>
                                                         <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5">
