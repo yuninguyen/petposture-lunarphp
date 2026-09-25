@@ -12,6 +12,9 @@ type FormAddress = Record<AddressField, string>;
 
 const emptyAddress = (): FormAddress => ({ first_name: '', last_name: '', line_one: '', line_two: '', city: '', state: '', postcode: '', country: 'US', phone: '' });
 
+const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const formatCents = (cents: number) => usd.format(cents / 100);
+
 function omitBlankAddress(address: FormAddress): OrderAddress {
   return Object.fromEntries(Object.entries(address).filter(([, value]) => value.trim())) as OrderAddress;
 }
@@ -46,6 +49,12 @@ export function OrderFormPage() {
 
   const selectedIdsForProduct = useMemo(() => availableVariants.filter((variant) => selectedVariants[variant.id]).map((variant) => variant.id), [availableVariants, selectedVariants]);
   const selectedRows = Object.values(selectedVariants);
+  const lineCents = (variant: OrderVariantPickerItem) => {
+    const quantity = Number(quantities[variant.id]);
+    return variant.price !== null && Number.isInteger(quantity) && quantity > 0 ? variant.price * quantity : null;
+  };
+  const lineTotals = selectedRows.map(lineCents);
+  const subtotalCents = lineTotals.some((cents) => cents === null) ? null : lineTotals.reduce<number>((sum, cents) => sum + (cents ?? 0), 0);
 
   async function selectProduct(product: OrderProductPickerItem) {
     setSelectedProduct(product);
@@ -124,7 +133,19 @@ export function OrderFormPage() {
       <Field label={t('orders.search_products')}><Input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder={t('orders.search_products')} /></Field>
       <div className="mt-2 space-y-1">{(productsQuery.data ?? []).map((product) => <button key={product.id} type="button" onClick={() => selectProduct(product)} className="block w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-sm hover:bg-slate-50">{product.name}</button>)}</div>
       {selectedProduct && <div className="mt-4"><p className="mb-2 text-sm font-medium">{t('orders.select_variants')}</p><SearchableMultiSelect options={availableVariants.map((variant) => ({ id: variant.id, label: variant.label }))} value={selectedIdsForProduct} onChange={changeSelectedVariants} placeholder={t('orders.search_variants')} noResultsText={t('orders.no_variants')} selectedCountText={(count) => t('orders.variants_selected', { count })} clearAllText={t('orders.clear_variants')} /></div>}
-      {selectedRows.length > 0 && <div className="mt-4 space-y-2">{selectedRows.map((variant) => <div key={variant.id} className="flex items-center gap-3 rounded-lg border border-slate-200 p-3"><span className="flex-1 text-sm">{variant.label}</span><label className="text-sm">{t('orders.qty')}<Input name={`quantity.${variant.id}`} type="number" min="1" step="1" value={quantities[variant.id] ?? '1'} onChange={(event) => setQuantities((current) => ({ ...current, [variant.id]: event.target.value }))} className="ml-2 inline-block w-20" /></label></div>)}</div>}
+      {selectedRows.length > 0 && <div className="mt-4 space-y-2">{selectedRows.map((variant, index) => {
+        const quantity = Number(quantities[variant.id]);
+        const overStock = variant.purchasable === 'in_stock' && Number.isInteger(quantity) && quantity > variant.stock;
+        const lineTotal = lineTotals[index];
+        return <div key={variant.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 p-3">
+          <div className="min-w-0 flex-1"><span className="block text-sm">{variant.label}</span><span className="block text-xs text-slate-500">{variant.formatted_price ?? t('orders.no_price')} · {t('orders.stock_count', { count: variant.stock })}</span>{overStock && <span data-testid={`stock-warning.${variant.id}`} className="block text-xs text-amber-700">{t('orders.stock_exceeded', { count: variant.stock })}</span>}</div>
+          <label className="text-sm">{t('orders.qty')}<Input name={`quantity.${variant.id}`} type="number" min="1" step="1" value={quantities[variant.id] ?? '1'} onChange={(event) => setQuantities((current) => ({ ...current, [variant.id]: event.target.value }))} className="ml-2 inline-block w-20" /></label>
+          <span className="w-24 text-right text-sm font-medium">{lineTotal === null ? '—' : formatCents(lineTotal)}</span>
+        </div>;
+      })}
+        <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-sm"><span className="font-medium">{t('orders.items_subtotal')}</span><span data-testid="items-subtotal" className="font-semibold">{subtotalCents === null ? '—' : formatCents(subtotalCents)}</span></div>
+        <p className="text-xs text-slate-500">{t('orders.subtotal_estimate_note')}</p>
+      </div>}
     </Section>
     <Section title={t('orders.shipping_address')}><AddressFields kind="shipping" address={shipping} onChange={updateAddress} t={t} /></Section>
     <Section title={t('orders.billing_address')}><label className="flex items-center gap-2 text-sm"><input name="billing_same_as_shipping" type="checkbox" checked={billingSameAsShipping} onChange={(event) => setBillingSameAsShipping(event.target.checked)} />{t('orders.billing_same_as_shipping')}</label>{!billingSameAsShipping && <div className="mt-4"><AddressFields kind="billing" address={billing} onChange={updateAddress} t={t} /></div>}</Section>

@@ -90,6 +90,44 @@ describe('OrderFormPage', () => {
     act(() => root.unmount()); host.remove();
   });
 
+  it('shows price, stock, line totals and a subtotal estimate in cents-based USD', async () => {
+    mocks.fetchVariants.mockResolvedValue([{ id: 10, sku: 'HARNESS-S', label: 'Harness / Small', price: 2000, formatted_price: '$20.00', stock: 5, purchasable: 'in_stock' }]);
+    const { host, root } = renderPage();
+    act(() => Array.from(host.querySelectorAll('button')).find((button) => button.textContent?.includes('Harness'))!.click());
+    await act(async () => { await Promise.resolve(); });
+    act(() => host.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+    expect(host.textContent).toContain('$20.00');
+    expect(host.textContent).toContain('orders.stock_count');
+    expect(host.querySelector('[data-testid="items-subtotal"]')!.textContent).toBe('$20.00');
+    expect(host.querySelector('[data-testid="stock-warning.10"]')).toBeNull();
+    const quantity = host.querySelector<HTMLInputElement>('[name="quantity.10"]')!;
+    setValue(quantity, '3');
+    expect(host.querySelector('[data-testid="items-subtotal"]')!.textContent).toBe('$60.00');
+    setValue(quantity, '9');
+    expect(host.querySelector('[data-testid="stock-warning.10"]')).not.toBeNull();
+    expect(host.querySelector('[data-testid="items-subtotal"]')!.textContent).toBe('$180.00');
+    act(() => root.unmount()); host.remove();
+  });
+
+  it('does not warn about stock for always-purchasable variants and shows a dash when a price is missing', async () => {
+    mocks.fetchVariants.mockResolvedValue([{ id: 11, sku: 'NOPRICE', label: 'Leash / Long', price: null, formatted_price: null, stock: 0, purchasable: 'always' }]);
+    const { host, root } = renderPage();
+    act(() => Array.from(host.querySelectorAll('button')).find((button) => button.textContent?.includes('Harness'))!.click());
+    await act(async () => { await Promise.resolve(); });
+    act(() => host.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+    setValue(host.querySelector<HTMLInputElement>('[name="quantity.11"]')!, '4');
+    expect(host.querySelector('[data-testid="stock-warning.11"]')).toBeNull();
+    expect(host.textContent).toContain('orders.no_price');
+    expect(host.querySelector('[data-testid="items-subtotal"]')!.textContent).toBe('—');
+    act(() => root.unmount()); host.remove();
+  });
+
+  it('has EN and VI copy for the price and stock hints', () => {
+    for (const locale of [en, viLocale] as Record<string, string>[]) {
+      for (const key of ['orders.stock_count', 'orders.stock_exceeded', 'orders.no_price', 'orders.subtotal_estimate_note']) expect(locale[key]).toBeTruthy();
+    }
+  });
+
   it('shows billing fields and submits their distinct payload when billing differs', async () => {
     mocks.fetchVariants.mockResolvedValue([{ id: 10, sku: 'HARNESS-S', label: 'Harness / Small', price: 20, formatted_price: '$20.00', stock: 5, purchasable: 'always' }]);
     mocks.mutateAsync.mockResolvedValue({ id: 'order-billing' });
