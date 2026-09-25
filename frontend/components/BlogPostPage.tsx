@@ -154,12 +154,12 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                         animate="animate"
                         variants={fadeUp}
                     >
-                        <Link href="/blog" className="inline-flex items-center gap-2 text-rust font-bold uppercase tracking-widest text-sm mb-8 hover:translate-x-[-4px] transition-transform">
+                        <Link href="/blog" className="inline-flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-sm mb-8 transition-all hover:-translate-x-1 hover:text-[#2c3840]">
                             <ArrowLeft size={14} /> Back to Blog
                         </Link>
 
                         <div className="flex justify-center mb-6">
-                            <span className="bg-secondary/10 text-rust text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-[3px]">
+                            <span className="bg-secondary/10 text-[#5a5f63] text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-[3px]">
                                 {post.category}
                             </span>
                         </div>
@@ -433,7 +433,7 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                                 />
                                             </div>
                                             <div>
-                                                <h5 className="text-[14px] font-bold text-primary leading-tight group-hover:text-rust transition-colors mb-2 line-clamp-2">
+                                                <h5 className="text-[14px] font-bold text-primary leading-tight group-hover:text-[#2c3840] transition-colors mb-2 line-clamp-2">
                                                     {rPost.title}
                                                 </h5>
                                                 <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">{rPost.date}</span>
@@ -502,17 +502,17 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                         className="object-cover transition-transform duration-500 group-hover:scale-110"
                                     />
                                     <div className="absolute top-4 left-4">
-                                        <span className="bg-white/90 backdrop-blur-sm text-rust text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-[3px]">
+                                        <span className="bg-white/90 backdrop-blur-sm text-[#5a5f63] text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-[3px]">
                                             {rPost.category}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="p-8">
-                                    <h3 className="text-[18px] font-bold text-primary leading-tight mb-4 hover:text-rust transition-colors cursor-pointer">
+                                    <h3 className="text-[18px] font-bold text-primary leading-tight mb-4 hover:text-[#2c3840] transition-colors cursor-pointer">
                                         {rPost.title}
                                     </h3>
-                                    <Link href={`/blog/${rPost.slug}`} className="text-rust font-bold capitalize tracking-[0.05em] text-sm flex items-center gap-2 transition-colors hover:text-rust">
-                                        Read Story <ChevronRight size={14} />
+                                    <Link href={`/blog/${rPost.slug}`} className="group text-primary font-bold capitalize tracking-[0.05em] text-sm flex items-center gap-2 transition-colors hover:text-[#2c3840]">
+                                        Read Story <ChevronRight size={14} className="transition-transform group-hover:translate-x-1" />
                                     </Link>
                                 </div>
                             </article>
@@ -522,17 +522,17 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                     <div className="max-w-[800px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
                         <Link href="/dogs" className="bg-white rounded-2xl p-10 border border-zinc-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group text-center">
                             <PawPrint size={32} className="text-secondary mx-auto mb-4" />
-                            <h3 className="text-[20px] font-bold text-primary mb-2 group-hover:text-rust transition-colors">Explore by Breed</h3>
+                            <h3 className="text-[20px] font-bold text-primary mb-2 group-hover:text-[#2c3840] transition-colors">Explore by Breed</h3>
                             <p className="text-zinc-500 text-sm mb-6">Find products matched to your dog&apos;s body type and needs.</p>
-                            <span className="text-primary font-bold uppercase tracking-[0.1em] text-sm inline-flex items-center gap-2 group-hover:text-rust transition-colors">
+                            <span className="text-primary font-bold uppercase tracking-[0.1em] text-sm inline-flex items-center gap-2 group-hover:text-[#2c3840] transition-colors">
                                 Browse Breeds <ChevronRight size={14} />
                             </span>
                         </Link>
                         <Link href="/solutions" className="bg-white rounded-2xl p-10 border border-zinc-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group text-center">
                             <HeartHandshake size={32} className="text-secondary mx-auto mb-4" />
-                            <h3 className="text-[20px] font-bold text-primary mb-2 group-hover:text-rust transition-colors">Explore by Need</h3>
+                            <h3 className="text-[20px] font-bold text-primary mb-2 group-hover:text-[#2c3840] transition-colors">Explore by Need</h3>
                             <p className="text-zinc-500 text-sm mb-6">Feeding, comfort, mobility and walking — find what your dog needs.</p>
-                            <span className="text-primary font-bold uppercase tracking-[0.1em] text-sm inline-flex items-center gap-2 group-hover:text-rust transition-colors">
+                            <span className="text-primary font-bold uppercase tracking-[0.1em] text-sm inline-flex items-center gap-2 group-hover:text-[#2c3840] transition-colors">
                                 Browse Needs <ChevronRight size={14} />
                             </span>
                         </Link>

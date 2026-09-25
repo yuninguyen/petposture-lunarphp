@@ -91,7 +91,7 @@ export default function ProductGrid() {
                     />
                   ))}
                 </div>
-                <h3 className="text-sm font-bold uppercase tracking-[0.05em] text-primary mb-3 leading-tight group-hover:text-rust transition-colors">
+                <h3 className="text-sm font-bold uppercase tracking-[0.05em] text-primary mb-3 leading-tight group-hover:text-[#2c3840] transition-colors">
                   {p.name}
                 </h3>
                 <div className="flex items-center justify-center gap-2">

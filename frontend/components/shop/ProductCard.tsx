@@ -88,7 +88,7 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
                 </div>
 
                 <Link href={`/shop/${product.categorySlug}/${product.slug}`} className="block">
-                    <h3 className="line-clamp-2 min-h-[48px] text-[16px] font-semibold leading-6 text-[#2d3a43] transition-colors group-hover:text-rust">
+                    <h3 className="line-clamp-2 min-h-[48px] text-[16px] font-semibold leading-6 text-[#2d3a43] transition-colors group-hover:text-[#2c3840]">
                         {product.name}
                     </h3>
                 </Link>
@@ -104,7 +104,7 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
                     <ButtonLink
                         href={`/shop/${product.categorySlug}/${product.slug}`}
                         variant="quiet"
-                        className="h-auto gap-1 rounded-none px-0 text-xs normal-case tracking-normal text-[#1a2128b8] hover:text-rust"
+                        className="h-auto gap-1 rounded-none px-0 text-xs normal-case tracking-normal text-[#1a2128b8] hover:text-[#2c3840]"
                     >
                         View <ArrowUpRight size={12} />
                     </ButtonLink>
