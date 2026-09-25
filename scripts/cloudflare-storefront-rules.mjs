@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 export const HTML_RULE_DESCRIPTION = 'Cache HTML pages';
 export const API_RULE_DESCRIPTION = 'Cache safe public catalog/content API GET endpoints (5 min edge TTL)';
 export const HOME_RULE_DESCRIPTION = 'Cache anonymous petposture.com homepage';
+export const NEXT_IMAGE_RULE_DESCRIPTION = 'Cache Next.js optimized images';
 
 const PHASE = 'http_request_cache_settings';
 const ARTIFACT_SCHEMA = 'petposture-cloudflare-cache-ruleset-export-v1';
@@ -40,6 +41,8 @@ export const HOME_EXPRESSION = [
 export const HOME_BYPASS_DESCRIPTION = 'Bypass excluded petposture.com homepage requests';
 export const HOME_BYPASS_EXPRESSION = `(http.host eq "petposture.com") and (http.request.uri.path eq "/") and (not (${HOME_EXPRESSION}))`;
 const HOME_BYPASS_REF = 'bypass_excluded_petposture_homepage';
+const NEXT_IMAGE_REF = 'cache_nextjs_optimized_images';
+export const NEXT_IMAGE_EXPRESSION = '(http.host eq "petposture.com") and (http.request.method in {"GET" "HEAD"}) and starts_with(http.request.uri.path, "/_next/image")';
 // Recorded v16 historical rule deliberately lacks lower(); never re-enable it.
 const V16_DISABLED_HTML_EXPRESSION = '(http.host eq "petposture.com") and (http.request.method in {"GET" "HEAD"}) and (http.request.uri.path eq "/") and (http.request.uri.query eq "") and (not any(http.request.headers.names[*] eq "purpose")) and (not any(http.request.headers.names[*] eq "sec-purpose")) and (not any(http.request.headers.names[*] eq "next-router-prefetch")) and (not any(http.request.headers.names[*] eq "rsc")) and (not any(http.request.headers.names[*] eq "next-router-state-tree")) and (not any(http.request.headers.names[*] eq "next-router-segment-prefetch")) and (not any(http.request.headers.names[*] eq "cookie"))';
 const V16_STATIC_EXPRESSION = '((http.host eq "petposture.com") and starts_with(http.request.uri.path, "/_next/static/")) or ((http.host eq "api.petposture.com") and starts_with(http.request.uri.path, "/storage/"))';
@@ -53,6 +56,60 @@ export function buildHomeBypassRule() {
     action: 'set_cache_settings',
     action_parameters: { cache: false },
   };
+}
+
+export function buildNextImageRule() {
+  return {
+    ref: NEXT_IMAGE_REF,
+    description: NEXT_IMAGE_RULE_DESCRIPTION,
+    expression: NEXT_IMAGE_EXPRESSION,
+    enabled: true,
+    action: 'set_cache_settings',
+    action_parameters: { browser_ttl: { mode: 'respect_origin' }, cache: true, edge_ttl: { mode: 'respect_origin' } },
+  };
+}
+
+export function auditNextImageRuleset(ruleset, { throwOnFailure = true } = {}) {
+  assertRulesetShape(ruleset);
+  const respectOrigin = { browser_ttl: { mode: 'respect_origin' }, cache: true, edge_ttl: { mode: 'respect_origin' } };
+  const reviewed = [
+    { description: HTML_RULE_DESCRIPTION, enabled: false, expression: V16_DISABLED_HTML_EXPRESSION, action_parameters: respectOrigin },
+    { description: 'Long cache for Next.js static assets and uploaded storage files', enabled: true, expression: V16_STATIC_EXPRESSION,
+      action_parameters: { browser_ttl: { default: 2592000, mode: 'override_origin' }, cache: true, edge_ttl: { default: 2592000, mode: 'override_origin' } } },
+    { description: API_RULE_DESCRIPTION, enabled: true, expression: LIVE_API_EXPRESSION,
+      action_parameters: { browser_ttl: { default: 60, mode: 'override_origin' }, cache: true, edge_ttl: { default: 300, mode: 'override_origin' } } },
+    { description: HOME_RULE_DESCRIPTION, enabled: true, expression: HOME_EXPRESSION, action_parameters: respectOrigin },
+    buildNextImageRule(),
+  ];
+  const failures = [];
+  if (![4, 5].includes(ruleset.rules.length)) failures.push('Only the reviewed four-rule baseline or five-rule Next image topology is permitted');
+  const refs = new Set();
+  const ids = new Set();
+  for (let index = 0; index < ruleset.rules.length; index += 1) {
+    const rule = ruleset.rules[index];
+    const expected = reviewed[index];
+    if (!rule || !expected) { failures.push(`Unreviewed rule at order ${index + 1}`); continue; }
+    for (const field of ['description', 'enabled']) if (rule[field] !== expected[field]) failures.push(`Rule ${index + 1} ${field} differs from reviewed topology`);
+    if (rule.action !== 'set_cache_settings') failures.push(`Rule ${index + 1} action drift`);
+    if (!exactExpression(rule.expression, expected.expression)) failures.push(`Rule ${index + 1} expression drift`);
+    if (stableJson(rule.action_parameters) !== stableJson(expected.action_parameters)) failures.push(`Rule ${index + 1} action_parameters drift`);
+    if (typeof rule.ref !== 'string' || !rule.ref.trim() || refs.has(rule.ref)) failures.push(`Rule ${index + 1} missing or duplicate ref`);
+    refs.add(rule.ref);
+    if ((index === 4 && rule.ref !== NEXT_IMAGE_REF) || (index < 4 && rule.ref === NEXT_IMAGE_REF)) failures.push(`Rule ${index + 1} unreviewed Next image ref`);
+    if (index < 4 && (typeof rule.id !== 'string' || !rule.id.trim())) failures.push(`Rule ${index + 1} missing ID`);
+    if (rule.id !== undefined) { if (ids.has(rule.id)) failures.push(`Rule ${index + 1} duplicate ID`); ids.add(rule.id); }
+  }
+  const report = { pass: failures.length === 0, failures, rules: ruleset.rules.map((rule, index) => ({ order: index + 1, ...clone(rule) })), imageRulePresent: ruleset.rules.some((rule) => rule?.description === NEXT_IMAGE_RULE_DESCRIPTION) };
+  if (!report.pass && throwOnFailure) throw new Error(`Next image ruleset audit failed closed:\n- ${failures.join('\n- ')}`);
+  return report;
+}
+
+export function buildNextImageRules(ruleset) {
+  const audit = auditNextImageRuleset(ruleset);
+  const rules = clone(ruleset.rules);
+  if (!audit.imageRulePresent) rules.push(buildNextImageRule());
+  auditNextImageRuleset({ ...ruleset, rules });
+  return { rules, changed: !audit.imageRulePresent };
 }
 
 export function auditHomeBypassRuleset(ruleset, { throwOnFailure = true } = {}) {
@@ -370,8 +427,8 @@ export async function runCommand(argv, {
   artifactWriter = saveArtifact,
 } = {}) {
   const { command, options } = parseArgs(argv);
-  if (!['export', 'audit', 'apply-home', 'apply-home-bypass', 'restore'].includes(command)) {
-    throw new Error('Usage: cloudflare-storefront-rules.mjs export|audit|apply-home|apply-home-bypass|restore [--from-export path] [--execute] [--confirm-restore]');
+  if (!['export', 'audit', 'apply-home', 'apply-home-bypass', 'apply-next-image', 'restore'].includes(command)) {
+    throw new Error('Usage: cloudflare-storefront-rules.mjs export|audit|apply-home|apply-home-bypass|apply-next-image|restore [--from-export path] [--execute] [--confirm-restore]');
   }
   const credentials = requireEnvironment(env);
   const live = await cloudflareRequest({ ...credentials, fetchImpl });
@@ -392,9 +449,10 @@ export async function runCommand(argv, {
   if (!options.fromExport) throw new Error(`${command} requires --from-export <path>`);
   const supplied = JSON.parse(await readFile(options.fromExport, 'utf8'));
 
-  if (command === 'apply-home' || command === 'apply-home-bypass') {
+  if (command === 'apply-home' || command === 'apply-home-bypass' || command === 'apply-next-image') {
     parseExport(supplied, live, { requireTrusted: true });
     const bypass = command === 'apply-home-bypass';
+    const nextImage = command === 'apply-next-image';
     let update;
     if (bypass) {
       update = buildHomeBypassRules(live);
@@ -404,6 +462,16 @@ export async function runCommand(argv, {
       }
       if (!update.changed) {
         stdout.write('NO OP: reviewed homepage bypass already present; no Cloudflare mutation performed\n');
+        return { command, changed: false, dryRun: !options.execute, result: clone(live) };
+      }
+    } else if (nextImage) {
+      update = buildNextImageRules(live);
+      const report = auditNextImageRuleset({ ...live, rules: update.rules });
+      for (const rule of report.rules) {
+        stdout.write(`${rule.order}. ${rule.description}\n   enabled=${rule.enabled} action=${rule.action}\n   ${rule.expression}\n   ${JSON.stringify(rule.action_parameters)}\n`);
+      }
+      if (!update.changed) {
+        stdout.write('NO OP: reviewed Next image cache rule already present; no Cloudflare mutation performed\n');
         return { command, changed: false, dryRun: !options.execute, result: clone(live) };
       }
     } else {
@@ -419,6 +487,7 @@ export async function runCommand(argv, {
     update ??= buildApplyRules(live);
     const request = buildMutationRequest(live, update.rules);
     if (bypass) auditHomeBypassRuleset({ ...live, rules: request.rules });
+    if (nextImage) auditNextImageRuleset({ ...live, rules: request.rules });
     if (!options.execute) {
       stdout.write(`DRY RUN: no Cloudflare mutation performed\nRollback export ${rollbackFile}\nWould atomically PUT ${update.rules.length} rules\n`);
       return { command, dryRun: true, rollbackFile, request };

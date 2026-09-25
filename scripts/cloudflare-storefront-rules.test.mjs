@@ -20,6 +20,11 @@ import {
   LIVE_LEGACY_HTML_EXPRESSION,
   LIVE_LEGACY_HTML_EXPRESSION_SHA256,
   buildMutationRequest,
+  NEXT_IMAGE_EXPRESSION,
+  NEXT_IMAGE_RULE_DESCRIPTION,
+  buildNextImageRule,
+  buildNextImageRules,
+  auditNextImageRuleset,
 } from './cloudflare-storefront-rules.mjs';
 
 const fixture = JSON.parse(await readFile(new URL('./fixtures/cloudflare-cache-ruleset.json', import.meta.url), 'utf8'));
@@ -65,6 +70,43 @@ test('buildHomeRule is a narrowly scoped anonymous homepage cache rule', () => {
   assert.deepEqual(rule.action_parameters.browser_ttl, { mode: 'respect_origin' });
   assert.deepEqual(rule.action_parameters.edge_ttl, { mode: 'respect_origin' });
   assert.equal('override_origin' in rule.action_parameters, false);
+});
+
+test('Next image builder appends only the narrow GET/HEAD optimized-image cache rule', () => {
+  const update = buildNextImageRules(liveV16Fixture);
+  assert.equal(update.changed, true);
+  assert.deepEqual(update.rules.slice(0, 4), liveV16Fixture.rules);
+  assert.deepEqual(update.rules[4], buildNextImageRule());
+  assert.equal(update.rules[4].description, NEXT_IMAGE_RULE_DESCRIPTION);
+  assert.equal(update.rules[4].expression, NEXT_IMAGE_EXPRESSION);
+  assert.match(NEXT_IMAGE_EXPRESSION, /http\.request\.method\s+in\s+\{"GET" "HEAD"\}/);
+  assert.match(NEXT_IMAGE_EXPRESSION, /starts_with\(http\.request\.uri\.path, "\/_next\/image"\)/);
+  assert.equal(auditNextImageRuleset({ ...liveV16Fixture, rules: update.rules }).pass, true);
+  assert.equal(buildNextImageRules({ ...liveV16Fixture, rules: update.rules }).changed, false);
+  const widened = { ...liveV16Fixture, rules: [...liveV16Fixture.rules, { ...buildNextImageRule(), expression: '(http.host eq "petposture.com")' }] };
+  assert.throws(() => auditNextImageRuleset(widened), /expression drift/i);
+});
+
+test('apply-next-image dry-run and execute use one trusted export and one atomic PUT', async () => {
+  for (const execute of [false, true]) {
+    const artifactDir = await mkdtemp(path.join(os.tmpdir(), `cloudflare-next-image-${execute ? 'execute' : 'dry'}-`));
+    const exportPath = path.join(artifactDir, 'fresh.json');
+    await writeFile(exportPath, JSON.stringify(createExportArtifact(liveV16Fixture)));
+    const requests = [];
+    const result = await runCommand(['apply-next-image', '--from-export', exportPath, ...(execute ? ['--execute'] : [])], {
+      env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+      fetchImpl: async (_url, options) => {
+        requests.push(options);
+        return cloudflareResponse(options.method === 'PUT' ? { ...liveV16Fixture, version: '17', rules: JSON.parse(options.body).rules } : liveV16Fixture);
+      },
+      stdout: output().stream,
+      artifactDir,
+    });
+    assert.deepEqual(requests.map(({ method }) => method), execute ? ['GET', 'PUT'] : ['GET']);
+    const candidate = execute ? JSON.parse(requests[1].body).rules : result.request.rules;
+    assert.deepEqual(candidate.slice(0, 4), liveV16Fixture.rules);
+    assert.equal(candidate[4].expression, NEXT_IMAGE_EXPRESSION);
+  }
 });
 
 test('buildApplyRules accepts exact broad HTML and path-only API legacy candidates together', () => {
