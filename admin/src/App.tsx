@@ -8,7 +8,7 @@ import { AdminUser, fetchCurrentUser, isAdminRole } from '@/lib/auth';
 import { fetchAbilities, can } from '@/lib/permissions';
 import toast, { Toaster } from 'react-hot-toast';
 import { BrandingProvider } from '@/context/BrandingContext';
-import { canAccessFinance } from '@/navigation/adminNavigation';
+import { canAccessFinance, isCoreAdminRole } from '@/navigation/adminNavigation';
 
 // Lazy-load all page components → Vite creates separate chunks per route
 const PostsListPage   = lazy(() => import('@/features/posts/PostsListPage').then(m => ({ default: m.PostsListPage })));
@@ -169,27 +169,23 @@ function AdminApp() {
   );
 }
 
-function isCoreAdministrator(userRoles: string[]) {
-  return userRoles.some((role) => ['super_admin', 'admin', 'staff'].includes(role));
-}
-
-export function canManageCommerce(_userRoles: string[], abilities: string[] = []) {
+export function canManageCommerce(abilities: string[] = []) {
   return can(abilities, 'view_any_order');
 }
 
-export function canManageDiscounts(_userRoles: string[], abilities: string[] = []) {
+export function canManageDiscounts(abilities: string[] = []) {
   return can(abilities, 'view_any_discount');
 }
 
-export function canManageShipping(_userRoles: string[], abilities: string[] = []) {
+export function canManageShipping(abilities: string[] = []) {
   return can(abilities, 'view_any_shipping_method');
 }
 
-export function canManageCustomers(_userRoles: string[], abilities: string[] = []) {
+export function canManageCustomers(abilities: string[] = []) {
   return can(abilities, 'view_any_customer');
 }
 
-export function canManageReviews(_userRoles: string[], abilities: string[] = []) {
+export function canManageReviews(abilities: string[] = []) {
   return can(abilities, 'view_any_review');
 }
 
@@ -197,10 +193,10 @@ export function canManageReviews(_userRoles: string[], abilities: string[] = [])
 // core admins only, even though Support/Product Manager hold delete_review on the
 // backend (Phase 6b, commit a7ac753). Do not widen this without explicit sign-off.
 export function canDeleteReviews(userRoles: string[]) {
-  return isCoreAdministrator(userRoles);
+  return isCoreAdminRole(userRoles);
 }
 
-export function canRefundOrders(_userRoles: string[], abilities: string[] = []) {
+export function canRefundOrders(abilities: string[] = []) {
   return can(abilities, 'refund_order');
 }
 
@@ -217,19 +213,19 @@ export interface HomeRouteCandidate {
 export const ADMIN_HOME_CANDIDATES: HomeRouteCandidate[] = [
   {
     path: '/dashboard',
-    canAccess: (roles) => isCoreAdministrator(roles),
+    canAccess: (roles) => isCoreAdminRole(roles),
   },
   {
     path: '/products',
-    canAccess: (roles, abilities) => !isCoreAdministrator(roles) && can(abilities, 'view_any_product'),
+    canAccess: (roles, abilities) => !isCoreAdminRole(roles) && can(abilities, 'view_any_product'),
   },
   {
     path: '/orders',
-    canAccess: (roles, abilities) => !isCoreAdministrator(roles) && can(abilities, 'view_any_order'),
+    canAccess: (roles, abilities) => !isCoreAdminRole(roles) && can(abilities, 'view_any_order'),
   },
   {
     path: '/posts',
-    canAccess: (roles, abilities) => isCoreAdministrator(roles) && can(abilities, 'view_any_post'),
+    canAccess: (roles, abilities) => isCoreAdminRole(roles) && can(abilities, 'view_any_post'),
   },
 ];
 
@@ -241,15 +237,15 @@ export function getAdminHomeRoute(userRoles: string[], abilities: string[] = [],
 
 export function AppRoutes({ userRoles, userAbilities = [] }: { userRoles: string[]; userAbilities?: string[] }) {
   const location = useLocation();
-  const isCoreAdmin = isCoreAdministrator(userRoles);
+  const isCoreAdmin = isCoreAdminRole(userRoles);
   const canManageProducts = can(userAbilities, 'view_any_product');
-  const canManageSales = canManageCommerce(userRoles, userAbilities);
+  const canManageSales = canManageCommerce(userAbilities);
   const canViewDashboard = can(userAbilities, 'view_dashboard_sales') || can(userAbilities, 'view_dashboard_conversion');
-  const canManageDiscountsList = canManageDiscounts(userRoles, userAbilities);
-  const canManageShippingMethods = canManageShipping(userRoles, userAbilities);
-  const canViewFinance = canAccessFinance(userRoles, userAbilities);
-  const canViewCustomers = canManageCustomers(userRoles, userAbilities);
-  const canModerateReviews = canManageReviews(userRoles, userAbilities);
+  const canManageDiscountsList = canManageDiscounts(userAbilities);
+  const canManageShippingMethods = canManageShipping(userAbilities);
+  const canViewFinance = canAccessFinance(userAbilities);
+  const canViewCustomers = canManageCustomers(userAbilities);
+  const canModerateReviews = canManageReviews(userAbilities);
   const canViewContent = can(userAbilities, 'view_any_blog_category')
     || can(userAbilities, 'view_any_post')
     || can(userAbilities, 'view_any_comment')
@@ -307,7 +303,7 @@ export function AppRoutes({ userRoles, userAbilities = [] }: { userRoles: string
       {canManageSales && <>
         <Route path="/orders" element={<OrdersListPage />} />
         <Route path="/orders/new" element={<OrderFormPage />} />
-        <Route path="/orders/:id" element={<OrderDetailPage canRefund={canRefundOrders(userRoles, userAbilities)} />} />
+        <Route path="/orders/:id" element={<OrderDetailPage canRefund={canRefundOrders(userAbilities)} />} />
         <Route path="/return-requests" element={<ReturnRequestsListPage />} />
         <Route path="/return-requests/:id" element={<ReturnRequestDetailPage />} />
       </>}

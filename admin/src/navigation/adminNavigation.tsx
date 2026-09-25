@@ -10,14 +10,14 @@ export interface AdminNavItem {
   path: string;
   icon: React.ReactNode;
   children?: AdminNavItem[];
-  canAccess: (roles: string[], abilities: string[]) => boolean;
+  canAccess: (abilities: string[]) => boolean;
 }
 
 export interface AdminNavGroup {
   key: AdminNavGroupKey;
   titleKey: string;
   fallbackTitle: string;
-  canAccess?: (roles: string[], abilities: string[]) => boolean;
+  canAccess?: (abilities: string[]) => boolean;
   items: AdminNavItem[];
 }
 
@@ -26,23 +26,23 @@ export function isCoreAdminRole(roles: string[]): boolean {
   return roles.some((role) => ['super_admin', 'admin', 'staff'].includes(role));
 }
 
-export function canAccessOrders(_roles: string[], abilities: string[]): boolean {
+export function canAccessOrders(abilities: string[]): boolean {
   return can(abilities, 'view_any_order');
 }
 
-export function canAccessReviews(_roles: string[], abilities: string[]): boolean {
+export function canAccessReviews(abilities: string[]): boolean {
   return can(abilities, 'view_any_review');
 }
 
-export function canAccessCatalogue(_roles: string[], abilities: string[]): boolean {
+export function canAccessCatalogue(abilities: string[]): boolean {
   return can(abilities, 'view_any_product');
 }
 
-export function canAccessDashboard(_roles: string[], abilities: string[]): boolean {
+export function canAccessDashboard(abilities: string[]): boolean {
   return can(abilities, 'view_dashboard_sales') || can(abilities, 'view_dashboard_conversion');
 }
 
-export function canAccessFinance(_roles: string[], abilities: string[]): boolean {
+export function canAccessFinance(abilities: string[]): boolean {
   return can(abilities, 'view_any_goal') || can(abilities, 'view_any_payment_method');
 }
 
@@ -83,7 +83,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     key: 'sales',
     titleKey: 'sidebar.sales',
     fallbackTitle: 'SALES',
-    canAccess: (_roles, abilities) => (
+    canAccess: (abilities) => (
       can(abilities, 'view_any_order')
       || can(abilities, 'view_any_review')
       || can(abilities, 'view_any_customer')
@@ -137,7 +137,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2m18 0v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75M9 11a4 4 0 100-8 4 4 0 000 8z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_customer'),
+        canAccess: (abilities) => can(abilities, 'view_any_customer'),
       },
       {
         key: 'shipping',
@@ -149,7 +149,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7h-9m9 5h-9m9 5h-9M7 7h.01M7 12h.01M7 17h.01" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_shipping_method'),
+        canAccess: (abilities) => can(abilities, 'view_any_shipping_method'),
       },
       {
         key: 'discounts',
@@ -161,7 +161,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v8m-4-4h8M5 4h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_discount'),
+        canAccess: (abilities) => can(abilities, 'view_any_discount'),
       },
     ],
   },
@@ -225,7 +225,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_product_type'),
+        canAccess: (abilities) => can(abilities, 'view_any_product_type'),
       },
       {
         key: 'custom-fields',
@@ -237,7 +237,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_custom_field'),
+        canAccess: (abilities) => can(abilities, 'view_any_custom_field'),
       },
       {
         key: 'brands',
@@ -249,7 +249,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_brand'),
+        canAccess: (abilities) => can(abilities, 'view_any_brand'),
       },
       {
         key: 'collection-groups',
@@ -261,7 +261,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_collection_group'),
+        canAccess: (abilities) => can(abilities, 'view_any_collection_group'),
         children: [
           {
             key: 'collections',
@@ -273,7 +273,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v4m0 0H6a2 2 0 00-2 2v2m8-4h6a2 2 0 012 2v2m-8-4v4M2 15h4v4H2v-4zm8 0h4v4h-4v-4zm8 0h4v4h-4v-4z" />
               </svg>
             ),
-            canAccess: (_roles, abilities) => can(abilities, 'view_any_collection'),
+            canAccess: (abilities) => can(abilities, 'view_any_collection'),
           },
         ],
       },
@@ -287,7 +287,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_breed'),
+        canAccess: (abilities) => can(abilities, 'view_any_breed'),
       },
       {
         key: 'solutions',
@@ -299,7 +299,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_solution'),
+        canAccess: (abilities) => can(abilities, 'view_any_solution'),
       },
     ],
   },
@@ -307,7 +307,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     key: 'content',
     titleKey: 'sidebar.content',
     fallbackTitle: 'CONTENT',
-    canAccess: (_roles, abilities) => (
+    canAccess: (abilities) => (
       can(abilities, 'view_any_blog_category')
       || can(abilities, 'view_any_post')
       || can(abilities, 'view_any_comment')
@@ -326,7 +326,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_blog_category'),
+        canAccess: (abilities) => can(abilities, 'view_any_blog_category'),
       },
       {
         key: 'posts',
@@ -338,7 +338,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l6 6v10a2 2 0 01-2 2z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_post'),
+        canAccess: (abilities) => can(abilities, 'view_any_post'),
       },
       {
         key: 'comments',
@@ -350,7 +350,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_comment'),
+        canAccess: (abilities) => can(abilities, 'view_any_comment'),
       },
       {
         key: 'tags',
@@ -362,7 +362,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_blog_tag'),
+        canAccess: (abilities) => can(abilities, 'view_any_blog_tag'),
       },
       {
         key: 'seo-social',
@@ -374,7 +374,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_seo_social'),
+        canAccess: (abilities) => can(abilities, 'view_seo_social'),
       },
       {
         key: 'legal-policies',
@@ -386,7 +386,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_page'),
+        canAccess: (abilities) => can(abilities, 'view_any_page'),
       },
     ],
   },
@@ -394,7 +394,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     key: 'affiliate',
     titleKey: 'sidebar.affiliate',
     fallbackTitle: 'AFFILIATE',
-    canAccess: (_roles, abilities) => can(abilities, 'view_any_affiliate_report') || can(abilities, 'view_any_affiliate_network'),
+    canAccess: (abilities) => can(abilities, 'view_any_affiliate_report') || can(abilities, 'view_any_affiliate_network'),
     items: [
       {
         key: 'affiliate-reports',
@@ -406,7 +406,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_affiliate_report'),
+        canAccess: (abilities) => can(abilities, 'view_any_affiliate_report'),
       },
       {
         key: 'affiliate-networks',
@@ -418,7 +418,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_affiliate_network'),
+        canAccess: (abilities) => can(abilities, 'view_any_affiliate_network'),
       },
     ],
   },
@@ -426,7 +426,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     key: 'system',
     titleKey: 'sidebar.system',
     fallbackTitle: 'SYSTEM',
-    canAccess: (_roles, abilities) => (
+    canAccess: (abilities) => (
       can(abilities, 'view_any_system_user')
       || can(abilities, 'view_any_role')
       || can(abilities, 'view_any_system_media')
@@ -444,7 +444,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_system_user'),
+        canAccess: (abilities) => can(abilities, 'view_any_system_user'),
       },
       {
         key: 'roles',
@@ -456,7 +456,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_role'),
+        canAccess: (abilities) => can(abilities, 'view_any_role'),
       },
       {
         key: 'media',
@@ -468,7 +468,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_system_media'),
+        canAccess: (abilities) => can(abilities, 'view_any_system_media'),
       },
       {
         key: 'activity-logs',
@@ -480,7 +480,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_any_activity_log'),
+        canAccess: (abilities) => can(abilities, 'view_any_activity_log'),
       },
       {
         key: 'settings',
@@ -493,22 +493,22 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         ),
-        canAccess: (_roles, abilities) => can(abilities, 'view_general_settings'),
+        canAccess: (abilities) => can(abilities, 'view_general_settings'),
       },
     ],
   },
 ];
 
-export function getVisibleNavigation(roles: string[], abilities: string[]): AdminNavGroup[] {
+export function getVisibleNavigation(abilities: string[]): AdminNavGroup[] {
   return ADMIN_NAV_GROUPS
-    .filter((group) => !group.canAccess || group.canAccess(roles, abilities))
+    .filter((group) => !group.canAccess || group.canAccess(abilities))
     .map((group) => ({
       ...group,
       items: group.items
-        .filter((item) => item.canAccess(roles, abilities))
+        .filter((item) => item.canAccess(abilities))
         .map((item) => ({
           ...item,
-          children: item.children ? item.children.filter((child) => child.canAccess(roles, abilities)) : undefined,
+          children: item.children ? item.children.filter((child) => child.canAccess(abilities)) : undefined,
         })),
     }))
     .filter((group) => group.items.length > 0);

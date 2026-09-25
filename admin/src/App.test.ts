@@ -45,23 +45,23 @@ function renderRoutes(userRoles: string[], path = '/shipping') {
 
 describe('commerce admin role handling', () => {
   it('grants sales visibility to core admin, Order Manager, and Support only', () => {
-    expect(canManageCommerce(['admin'], abilitiesFor(['admin']))).toBe(true);
-    expect(canManageCommerce(['Order Manager'], abilitiesFor(['Order Manager']))).toBe(true);
-    expect(canManageCommerce(['Support'], abilitiesFor(['Support']))).toBe(true);
-    expect(canManageCommerce(['Product Manager'], abilitiesFor(['Product Manager']))).toBe(false);
+    expect(canManageCommerce(abilitiesFor(['admin']))).toBe(true);
+    expect(canManageCommerce(abilitiesFor(['Order Manager']))).toBe(true);
+    expect(canManageCommerce(abilitiesFor(['Support']))).toBe(true);
+    expect(canManageCommerce(abilitiesFor(['Product Manager']))).toBe(false);
   });
 
   it('uses orders as the Commerce-only home and excludes Support from refunds', () => {
     expect(getAdminHomeRoute(['Support'], abilitiesFor(['Support']))).toBe('/orders');
     expect(getAdminHomeRoute(['Order Manager'], abilitiesFor(['Order Manager']))).toBe('/orders');
-    expect(canRefundOrders(['Support'], abilitiesFor(['Support']))).toBe(false);
-    expect(canRefundOrders(['Order Manager'], abilitiesFor(['Order Manager']))).toBe(true);
-    expect(canRefundOrders(['staff'], abilitiesFor(['staff']))).toBe(true);
+    expect(canRefundOrders(abilitiesFor(['Support']))).toBe(false);
+    expect(canRefundOrders(abilitiesFor(['Order Manager']))).toBe(true);
+    expect(canRefundOrders(abilitiesFor(['staff']))).toBe(true);
   });
 
   it('allows Customers only for core administrators', async () => {
-    for (const role of ['super_admin', 'admin', 'staff']) expect(canManageCustomers([role], abilitiesFor([role]))).toBe(true);
-    for (const role of ['Support', 'Order Manager', 'Product Manager']) expect(canManageCustomers([role], abilitiesFor([role]))).toBe(false);
+    for (const role of ['super_admin', 'admin', 'staff']) expect(canManageCustomers(abilitiesFor([role]))).toBe(true);
+    for (const role of ['Support', 'Order Manager', 'Product Manager']) expect(canManageCustomers(abilitiesFor([role]))).toBe(false);
 
     const core = renderRoutes(['admin'], '/customers');
     await act(async () => await Promise.resolve());
@@ -102,7 +102,7 @@ describe('commerce admin role handling', () => {
   });
 
   it.each(['super_admin', 'admin', 'staff'])('permits Discounts for core role %s', (role) => {
-    expect(canManageDiscounts([role], abilitiesFor([role]))).toBe(true);
+    expect(canManageDiscounts(abilitiesFor([role]))).toBe(true);
   });
 
   it.each([
@@ -110,7 +110,7 @@ describe('commerce admin role handling', () => {
     ['Order Manager', ['Order Manager'], 'Orders route'],
     ['Product Manager', ['Product Manager'], 'Products route'],
   ])('uses the existing safe home fallback rather than Discounts for %s', async (_role, userRoles, expectedRoute) => {
-    expect(canManageDiscounts(userRoles, abilitiesFor(userRoles))).toBe(false);
+    expect(canManageDiscounts(abilitiesFor(userRoles))).toBe(false);
     const { host, root } = renderRoutes(userRoles, '/discounts');
     await act(async () => await Promise.resolve());
 
@@ -163,19 +163,19 @@ describe('commerce admin role handling', () => {
   });
 
   it('allows Shipping routes only for core administrators', () => {
-    expect(canManageShipping(['super_admin'], abilitiesFor(['super_admin']))).toBe(true);
-    expect(canManageShipping(['admin'], abilitiesFor(['admin']))).toBe(true);
-    expect(canManageShipping(['staff'], abilitiesFor(['staff']))).toBe(true);
-    expect(canManageShipping(['Order Manager'], abilitiesFor(['Order Manager']))).toBe(false);
-    expect(canManageShipping(['Support'], abilitiesFor(['Support']))).toBe(false);
-    expect(canManageShipping(['Product Manager'], abilitiesFor(['Product Manager']))).toBe(false);
+    expect(canManageShipping(abilitiesFor(['super_admin']))).toBe(true);
+    expect(canManageShipping(abilitiesFor(['admin']))).toBe(true);
+    expect(canManageShipping(abilitiesFor(['staff']))).toBe(true);
+    expect(canManageShipping(abilitiesFor(['Order Manager']))).toBe(false);
+    expect(canManageShipping(abilitiesFor(['Support']))).toBe(false);
+    expect(canManageShipping(abilitiesFor(['Product Manager']))).toBe(false);
   });
 
   it('grants Reviews moderation to core admins, Support, and Product Manager but limits deletion to core admins', () => {
-    expect(canManageReviews(['admin'], abilitiesFor(['admin']))).toBe(true);
-    expect(canManageReviews(['Support'], abilitiesFor(['Support']))).toBe(true);
-    expect(canManageReviews(['Product Manager'], abilitiesFor(['Product Manager']))).toBe(true);
-    expect(canManageReviews(['Order Manager'], abilitiesFor(['Order Manager']))).toBe(false);
+    expect(canManageReviews(abilitiesFor(['admin']))).toBe(true);
+    expect(canManageReviews(abilitiesFor(['Support']))).toBe(true);
+    expect(canManageReviews(abilitiesFor(['Product Manager']))).toBe(true);
+    expect(canManageReviews(abilitiesFor(['Order Manager']))).toBe(false);
     expect(canDeleteReviews(['admin'])).toBe(true);
     expect(canDeleteReviews(['Support'])).toBe(false);
     expect(canDeleteReviews(['Product Manager'])).toBe(false);
@@ -322,7 +322,7 @@ describe('admin home route resolution', () => {
     ['unknown role', ['guest']],
     ['empty roles', []],
   ])('fails closed for Payment Methods when finance access is denied to %s', async (_case, userRoles) => {
-    expect(canAccessFinance(userRoles, abilitiesFor(userRoles))).toBe(false);
+    expect(canAccessFinance(abilitiesFor(userRoles))).toBe(false);
     const { host, root } = renderRoutes(userRoles, '/finance/payment-methods');
     await act(async () => await Promise.resolve());
 

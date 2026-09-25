@@ -26,7 +26,7 @@ export function AppShell({ children, userName, userRoles, userAbilities = [] }: 
     system: true,
   });
 
-  const visibleNavGroups = getVisibleNavigation(userRoles, userAbilities);
+  const visibleNavGroups = getVisibleNavigation(userAbilities);
 
   const activeNavGroupKey = visibleNavGroups.find((group) => (
     group.items.some((item) => (
