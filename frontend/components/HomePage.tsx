@@ -262,7 +262,7 @@ function ShopCategories() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 30 }}>
                     <span style={{
                       fontFamily: F.body, fontSize: 11.5, fontWeight: 700, lineHeight: 1.25,
-                      color: hoveredBreed === b.slug ? C.rust : C.primary,
+                      color: hoveredBreed === b.slug ? C.primaryHover : C.primary,
                       transition: 'color 0.2s ease',
                     }}>
                       {b.name}
@@ -284,9 +284,9 @@ function ShopCategories() {
                 />
               ))}
             </div>
-            <Link href="/dogs" style={{
+            <Link href="/dogs" className="text-primary transition-colors hover:text-[#2c3840]" style={{
               display: 'block', textAlign: 'center', fontFamily: F.nav,
-              fontSize: 12, fontWeight: 800, color: C.rust,
+              fontSize: 12, fontWeight: 800,
               textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
               marginTop: 'auto',
             }}>
@@ -359,9 +359,9 @@ function ShopCategories() {
                 />
               ))}
             </div>
-            <Link href="/solutions" style={{
+            <Link href="/solutions" className="text-primary transition-colors hover:text-[#2c3840]" style={{
               display: 'block', textAlign: 'center', fontFamily: F.nav,
-              fontSize: 12, fontWeight: 800, color: C.rust,
+              fontSize: 12, fontWeight: 800,
               textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
               marginTop: 'auto',
             }}>
@@ -787,7 +787,7 @@ function PostCard({ post }: { post: BlogPost }) {
 
       <h3 style={{
         fontFamily: F.heading, fontSize: 16, fontWeight: 700,
-        color: isHovered ? C.rust : C.primary,
+        color: isHovered ? C.primaryHover : C.primary,
         lineHeight: 1.5, margin: '0 0 10px',
         transition: 'color 0.25s ease',
       }}>
@@ -805,7 +805,7 @@ function PostCard({ post }: { post: BlogPost }) {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
           fontSize: 11, fontWeight: 700,
-          color: isHovered ? C.rust : C.grayText,
+          color: C.grayText,
           letterSpacing: '0.05em', textTransform: 'capitalize',
           transition: 'color 0.25s ease',
         }}>
@@ -816,7 +816,9 @@ function PostCard({ post }: { post: BlogPost }) {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
           fontSize: 13, fontWeight: 700,
-          color: C.rust,
+          color: isHovered ? C.primaryHover : C.primary,
+          transform: isHovered ? 'translateX(3px)' : 'translateX(0)',
+          transition: 'color 0.25s ease, transform 0.25s ease',
         }}>
           Read →
         </div>

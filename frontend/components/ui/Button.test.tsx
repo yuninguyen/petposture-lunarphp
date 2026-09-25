@@ -111,4 +111,5 @@ it("migrates checkout completion and success navigation to the shared primitive"
   expect(successSource).not.toMatch(/bg-\[#df8448\][^"]*text-white/);
   expect(checkoutSource).toContain("rounded-tl-[8px] rounded-tr-[8px]");
   expect(checkoutSource).toContain("rounded-bl-[8px] rounded-br-[8px]");
+  expect(checkoutSource).toContain("overflow-visible rounded-[8px]");
 });

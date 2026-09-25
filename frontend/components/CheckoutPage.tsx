@@ -1406,7 +1406,7 @@ export default function CheckoutPage() {
                             className="h-9 w-auto object-contain lg:h-11"
                         />
                     </Link>
-                    <Link href="/cart" className="relative flex items-center justify-center p-1 text-[#333333] transition hover:text-rust" aria-label="Shopping cart">
+                    <Link href="/cart" className="relative flex items-center justify-center p-1 text-[#333333] transition hover:text-rust lg:-translate-y-0.5" aria-label="Shopping cart">
                         <ShoppingBag size={22} />
                         {items.length > 0 && (
                             <span className="absolute -right-1.5 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-secondary text-[10px] font-black text-ink shadow-sm">
@@ -1592,7 +1592,7 @@ export default function CheckoutPage() {
                                     <p>All transactions are secure and encrypted.</p>
                                 </div>
                             </div>
-                            <div className="overflow-hidden rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
+                            <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
                                 {availablePaymentMethods.map((method, index) => (
                                     <React.Fragment key={method.method}>
                                         <label

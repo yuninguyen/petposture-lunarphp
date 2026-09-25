@@ -70,7 +70,7 @@ export default async function Page() {
                                     href={`/dogs/${breed.slug}`}
                                     className="group block rounded-[20px] border border-[#eadfd3] bg-white p-6 shadow-[0_12px_28px_rgba(34,33,33,0.04)] transition hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(34,33,33,0.08)]"
                                 >
-                                    <h2 className="mb-2 text-[20px] font-bold text-[#2d3a43] transition-colors group-hover:text-rust">
+                                    <h2 className="mb-2 text-[20px] font-bold text-[#2d3a43] transition-colors group-hover:text-[#2c3840]">
                                         {breed.name}
                                     </h2>
                                     {breed.description && (
@@ -78,7 +78,7 @@ export default async function Page() {
                                             {breed.description}
                                         </p>
                                     )}
-                                    <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.05em] text-[#54646e] transition-colors group-hover:text-rust">
+                                    <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.05em] text-[#54646e] transition-colors group-hover:text-[#2c3840]">
                                         View Guide <ArrowUpRight size={14} />
                                     </span>
                                 </Link>
