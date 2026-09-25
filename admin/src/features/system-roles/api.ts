@@ -7,15 +7,15 @@ export interface RoleItem {
   permissions: string[];
 }
 
+export interface PermissionGroup {
+  key: string;
+  label: string;
+  abilities: string[];
+}
+
 export interface RolesResponse {
   data: RoleItem[];
-  permission_groups: {
-    PRODUCT: string[];
-    ORDER: string[];
-    REVIEW: string[];
-    POST: string[];
-    [key: string]: string[];
-  };
+  permission_groups: PermissionGroup[] | Record<string, string[]>;
 }
 
 export async function fetchRoles(): Promise<RolesResponse> {

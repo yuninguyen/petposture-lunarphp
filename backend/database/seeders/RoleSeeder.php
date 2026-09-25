@@ -145,30 +145,10 @@ class RoleSeeder extends Seeder
                         ->values(),
                 );
             } else {
-                if ($roleName === 'Product Manager') {
-                    $role->givePermissionTo(AdminAbilityRegistry::BRANDS);
-                    $role->givePermissionTo(AdminAbilityRegistry::BREEDS);
-                    $role->givePermissionTo(AdminAbilityRegistry::COLLECTION_GROUPS);
-                    $role->givePermissionTo(AdminAbilityRegistry::COLLECTIONS);
-                    $role->givePermissionTo(AdminAbilityRegistry::PRODUCT_TYPES);
-                    $role->givePermissionTo(AdminAbilityRegistry::CUSTOM_FIELDS);
-                    $role->givePermissionTo(AdminAbilityRegistry::SOLUTIONS);
-                    $role->givePermissionTo($reviewAbilities);
-                }
-
-                if (in_array($roleName, ['Order Manager', 'Support'], true)) {
-                    $role->givePermissionTo(AdminAbilityRegistry::DASHBOARD_SALES);
-                    $role->givePermissionTo(AdminAbilityRegistry::DASHBOARD_CONVERSION);
-                    $role->givePermissionTo(AdminAbilityRegistry::RETURN_REQUESTS);
-                    // Orders abilities (including refund_order) are backfilled once by the
-                    // 2026_09_23_000001 migration, not re-granted here on every reseed —
-                    // refund_order predates this registry and an admin may have manually
-                    // revoked it via the Roles & Permissions UI; reseeding must not restore it.
-                }
-
-                if ($roleName === 'Support') {
-                    $role->givePermissionTo($reviewAbilities);
-                }
+                // Business roles that were already seeded are not re-granted permissions here
+                // on every reseed. Permissions were backfilled once by Phase 6b migrations, and
+                // an admin may have manually revoked them via the Roles & Permissions UI;
+                // reseeding must not overwrite operator customizations.
             }
         }
 

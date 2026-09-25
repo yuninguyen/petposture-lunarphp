@@ -231,4 +231,59 @@ describe('RolesPage', () => {
 
     expect(screen.getByText('The selected permission is invalid.')).toBeInTheDocument();
   });
+
+  it('renders domain groups with new array structure and allows searching by domain or ability', async () => {
+    const domainGroupResponse: RolesResponse = {
+      data: [
+        { id: 4, name: 'Product Manager', editable: true, permissions: ['view_any_brand', 'view_any_customer'] },
+        { id: 6, name: 'Support', editable: true, permissions: ['view_any_customer'] },
+      ],
+      permission_groups: [
+        {
+          key: 'brands',
+          label: 'Brands',
+          abilities: ['view_any_brand', 'create_brand', 'update_brand'],
+        },
+        {
+          key: 'customers',
+          label: 'Customers',
+          abilities: ['view_any_customer', 'update_customer'],
+        },
+        {
+          key: 'orders',
+          label: 'Orders',
+          abilities: ['view_any_order', 'update_order'],
+        },
+      ],
+    };
+
+    vi.mocked(fetchJson).mockResolvedValueOnce(domainGroupResponse);
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Product Manager' })).toBeInTheDocument();
+    });
+
+    // Domain badges on card
+    expect(screen.getByText(/Brands:\s*1\/3/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Customers:\s*1\/2/)).toHaveLength(2);
+
+    const editButtons = screen.getAllByRole('button', { name: /Edit permissions/i });
+    fireEvent.click(editButtons[0]);
+
+    // Modal shows all 3 groups
+    expect(screen.getByText('Brands')).toBeInTheDocument();
+    expect(screen.getByText('Customers')).toBeInTheDocument();
+    expect(screen.getByText('Orders')).toBeInTheDocument();
+
+    // Search filter
+    const searchInput = screen.getByPlaceholderText(/Search domains or abilities.../i);
+    fireEvent.change(searchInput, { target: { value: 'Customer' } });
+
+    // Only Customers group remains visible
+    expect(screen.getByText('Customers')).toBeInTheDocument();
+    expect(screen.queryByText('Brands')).not.toBeInTheDocument();
+    expect(screen.queryByText('Orders')).not.toBeInTheDocument();
+  });
 });

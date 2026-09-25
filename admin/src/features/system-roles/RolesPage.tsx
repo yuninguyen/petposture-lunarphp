@@ -8,6 +8,7 @@ import {
   fetchRoles,
   updateRolePermissions,
   type RoleItem,
+  type PermissionGroup,
 } from './api';
 
 interface ApiError extends Error {
@@ -25,7 +26,12 @@ function formatGroupName(groupKey: string): string {
     REVIEW: 'Review',
     POST: 'Post',
   };
-  return map[groupKey] || groupKey.charAt(0).toUpperCase() + groupKey.slice(1).toLowerCase();
+  return (
+    map[groupKey] ||
+    groupKey
+      .replace(/[/_-]/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+  );
 }
 
 function formatPermissionLabel(permKey: string): string {
@@ -42,6 +48,7 @@ export function RolesPage() {
 
   const [editingRole, setEditingRole] = useState<RoleItem | null>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data: response, isLoading, isError } = useQuery({
@@ -50,28 +57,52 @@ export function RolesPage() {
   });
 
   const roles = response?.data ?? [];
-  const permissionGroups = useMemo(() => {
-    return response?.permission_groups ?? {
-      PRODUCT: [],
-      ORDER: [],
-      REVIEW: [],
-      POST: [],
-    };
+
+  const permissionGroups: PermissionGroup[] = useMemo(() => {
+    const raw = response?.permission_groups;
+    if (Array.isArray(raw)) {
+      return raw;
+    }
+    if (raw && typeof raw === 'object') {
+      return Object.entries(raw).map(([key, abilities]) => ({
+        key,
+        label: formatGroupName(key),
+        abilities: Array.isArray(abilities) ? abilities : [],
+      }));
+    }
+    return [];
   }, [response?.permission_groups]);
 
-  const allMatrixPermissions = useMemo(() => {
-    return Object.values(permissionGroups).flat();
+  const allAbilities = useMemo(() => {
+    return Array.from(new Set(permissionGroups.flatMap((g) => g.abilities)));
   }, [permissionGroups]);
+
+  const filteredGroups = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return permissionGroups;
+    return permissionGroups.filter((g) => {
+      const translatedTitle = (t(`system_roles.domains.${g.key}`, g.label) || g.label).toLowerCase();
+      if (
+        translatedTitle.includes(q) ||
+        g.label.toLowerCase().includes(q) ||
+        g.key.toLowerCase().includes(q)
+      ) {
+        return true;
+      }
+      return g.abilities.some((a) => a.toLowerCase().includes(q));
+    });
+  }, [permissionGroups, searchQuery, t]);
 
   const updateMutation = useMutation({
     mutationFn: ({ roleId, permissions }: { roleId: number; permissions: string[] }) =>
       updateRolePermissions(roleId, permissions),
-    onSuccess: (updatedRole) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-roles'] });
       toast.success(
         t('system_roles.update_success', 'Permissions updated successfully')
       );
       setEditingRole(null);
+      setSearchQuery('');
       setErrorMessage(null);
     },
     onError: (error: ApiError) => {
@@ -90,11 +121,13 @@ export function RolesPage() {
   function handleOpenEdit(role: RoleItem) {
     setEditingRole(role);
     setSelectedPermissions([...role.permissions]);
+    setSearchQuery('');
     setErrorMessage(null);
   }
 
   function handleCloseModal() {
     setEditingRole(null);
+    setSearchQuery('');
     setErrorMessage(null);
   }
 
@@ -190,8 +223,8 @@ export function RolesPage() {
                       <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-600">
                         {t('system_roles.permissions_count', {
                           count: role.permissions.length,
-                          total: allMatrixPermissions.length,
-                          defaultValue: `${role.permissions.length} / ${allMatrixPermissions.length} permissions`,
+                          total: allAbilities.length,
+                          defaultValue: `${role.permissions.length} / ${allAbilities.length} permissions`,
                         })}
                       </span>
                     )}
@@ -211,26 +244,40 @@ export function RolesPage() {
                         <p className="font-medium text-slate-600">
                           {t('system_roles.granted_domains', 'Domain permissions:')}
                         </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {Object.entries(permissionGroups).map(([groupKey, groupPerms]) => {
-                            const grantedInGroup = groupPerms.filter((p) =>
-                              role.permissions.includes(p)
-                            ).length;
-                            const hasAccess = grantedInGroup > 0;
-                            return (
-                              <span
-                                key={groupKey}
-                                className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ${
-                                  hasAccess
-                                    ? 'bg-secondary/10 text-secondary-dark'
-                                    : 'bg-slate-100 text-slate-400'
-                                }`}
-                              >
-                                {t(`system_roles.groups.${groupKey}`, formatGroupName(groupKey))}:{' '}
-                                {grantedInGroup}/{groupPerms.length}
+                        <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
+                          {permissionGroups
+                            .filter((group) =>
+                              group.abilities.some((p) => role.permissions.includes(p))
+                            )
+                            .map((group) => {
+                              const grantedInGroup = group.abilities.filter((p) =>
+                                role.permissions.includes(p)
+                              ).length;
+                              const groupTitle =
+                                t(`system_roles.domains.${group.key}`, group.label) ||
+                                t(`system_roles.groups.${group.key}`, group.label) ||
+                                group.label;
+                              return (
+                                <span
+                                  key={group.key}
+                                  className="inline-flex items-center rounded-md bg-secondary/10 px-2 py-0.5 text-[11px] font-medium text-secondary-dark"
+                                >
+                                  {groupTitle}: {grantedInGroup}/{group.abilities.length}
+                                </span>
+                              );
+                            })}
+                          {permissionGroups.length > 0 &&
+                            permissionGroups.every(
+                              (group) =>
+                                !group.abilities.some((p) => role.permissions.includes(p))
+                            ) && (
+                              <span className="text-[11px] italic text-slate-400">
+                                {t(
+                                  'system_roles.no_permissions_granted',
+                                  'No domain permissions assigned'
+                                )}
                               </span>
-                            );
-                          })}
+                            )}
                         </div>
                       </div>
                     )}
@@ -259,7 +306,7 @@ export function RolesPage() {
       {/* Edit Permissions Modal */}
       {editingRole && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-slate-200 bg-white shadow-xl">
+          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-2xl border border-slate-200 bg-white shadow-xl">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <div>
@@ -299,6 +346,45 @@ export function RolesPage() {
               </button>
             </div>
 
+            {/* Search Filter */}
+            <div className="border-b border-slate-100 px-6 py-3 bg-slate-50/40">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t(
+                    'system_roles.search_placeholder',
+                    'Search domains or abilities...'
+                  )}
+                  className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-8 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
+                />
+                <svg
+                  className="absolute left-3 top-2.5 h-4 w-4 text-slate-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-2 text-xs text-slate-400 hover:text-slate-600 p-0.5"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Modal Body: Scrollable Permission Groups */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
               {errorMessage && (
@@ -307,83 +393,91 @@ export function RolesPage() {
                 </div>
               )}
 
-              {Object.entries(permissionGroups).map(([groupKey, perms]) => {
-                const groupTitle = t(
-                  `system_roles.groups.${groupKey}`,
-                  formatGroupName(groupKey)
-                );
-                const selectedCount = perms.filter((p) =>
-                  selectedPermissions.includes(p)
-                ).length;
-                const allSelected = selectedCount === perms.length;
+              {filteredGroups.length === 0 ? (
+                <div className="py-12 text-center text-xs text-slate-400">
+                  {t(
+                    'system_roles.no_matching_groups',
+                    'No domain groups match your search.'
+                  )}
+                </div>
+              ) : (
+                filteredGroups.map((group) => {
+                  const groupTitle =
+                    t(`system_roles.domains.${group.key}`, group.label) ||
+                    t(`system_roles.groups.${group.key}`, group.label) ||
+                    group.label;
+                  const selectedCount = group.abilities.filter((p) =>
+                    selectedPermissions.includes(p)
+                  ).length;
 
-                return (
-                  <div
-                    key={groupKey}
-                    className="rounded-xl border border-slate-200 bg-slate-50/50 p-4"
-                  >
-                    <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-slate-800">
-                          {groupTitle}
-                        </span>
-                        <span className="rounded-full bg-slate-200/70 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-                          {selectedCount}/{perms.length}
-                        </span>
-                      </div>
+                  return (
+                    <div
+                      key={group.key}
+                      className="rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+                    >
+                      <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-slate-800">
+                            {groupTitle}
+                          </span>
+                          <span className="rounded-full bg-slate-200/70 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                            {selectedCount}/{group.abilities.length}
+                          </span>
+                        </div>
 
-                      <div className="flex items-center gap-2 text-xs">
-                        <button
-                          type="button"
-                          onClick={() => handleSelectAllInGroup(perms)}
-                          className="font-medium text-secondary hover:underline"
-                        >
-                          {t('system_roles.select_all', 'Select all')}
-                        </button>
-                        <span className="text-slate-300">|</span>
-                        <button
-                          type="button"
-                          onClick={() => handleDeselectAllInGroup(perms)}
-                          className="font-medium text-slate-500 hover:text-slate-700"
-                        >
-                          {t('system_roles.deselect_all', 'Deselect all')}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                      {perms.map((perm) => {
-                        const checked = selectedPermissions.includes(perm);
-                        return (
-                          <label
-                            key={perm}
-                            className={`flex cursor-pointer select-none items-start gap-2.5 rounded-lg border p-2.5 transition-colors ${
-                              checked
-                                ? 'border-secondary/40 bg-secondary/5 text-slate-900'
-                                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                            }`}
+                        <div className="flex items-center gap-2 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectAllInGroup(group.abilities)}
+                            className="font-medium text-secondary hover:underline"
                           >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => handleTogglePermission(perm)}
-                              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-secondary focus:ring-secondary accent-secondary"
-                            />
-                            <div className="flex flex-col">
-                              <span className="text-xs font-semibold leading-tight">
-                                {formatPermissionLabel(perm)}
-                              </span>
-                              <span className="text-[10px] text-slate-400 font-mono">
-                                {perm}
-                              </span>
-                            </div>
-                          </label>
-                        );
-                      })}
+                            {t('system_roles.select_all', 'Select all')}
+                          </button>
+                          <span className="text-slate-300">|</span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeselectAllInGroup(group.abilities)}
+                            className="font-medium text-slate-500 hover:text-slate-700"
+                          >
+                            {t('system_roles.deselect_all', 'Deselect all')}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                        {group.abilities.map((perm) => {
+                          const checked = selectedPermissions.includes(perm);
+                          return (
+                            <label
+                              key={perm}
+                              className={`flex cursor-pointer select-none items-start gap-2.5 rounded-lg border p-2.5 transition-colors ${
+                                checked
+                                  ? 'border-secondary/40 bg-secondary/5 text-slate-900'
+                                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => handleTogglePermission(perm)}
+                                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-secondary focus:ring-secondary accent-secondary"
+                              />
+                              <div className="flex flex-col">
+                                <span className="text-xs font-semibold leading-tight">
+                                  {formatPermissionLabel(perm)}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  {perm}
+                                </span>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
 
             {/* Modal Footer */}
@@ -391,8 +485,8 @@ export function RolesPage() {
               <span className="text-xs text-slate-500">
                 {t('system_roles.total_selected', {
                   count: selectedPermissions.length,
-                  total: allMatrixPermissions.length,
-                  defaultValue: `${selectedPermissions.length} of ${allMatrixPermissions.length} selected`,
+                  total: allAbilities.length,
+                  defaultValue: `${selectedPermissions.length} of ${allAbilities.length} selected`,
                 })}
               </span>
 

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\Admin;
 
 use App\Models\User;
+use App\Security\AdminAbilityRegistry;
 use App\Security\AdminPermissionMatrix;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,12 +83,19 @@ class RoleControllerTest extends TestCase
         // Check junk permission is filtered out from response
         $this->assertNotContains('settings:core', $rolesByName['Product Manager']['permissions']);
 
-        // Check permission groups match matrix
+        // Check permission groups match registry domains
         $groups = $response->json('permission_groups');
-        $this->assertEquals(AdminPermissionMatrix::PRODUCT, $groups['PRODUCT']);
-        $this->assertEquals(AdminPermissionMatrix::ORDER, $groups['ORDER']);
-        $this->assertEquals(AdminPermissionMatrix::REVIEW, $groups['REVIEW']);
-        $this->assertEquals(AdminPermissionMatrix::POST, $groups['POST']);
+        $this->assertIsArray($groups);
+        $this->assertNotEmpty($groups);
+        $groupsByKey = collect($groups)->keyBy('key');
+        $this->assertTrue($groupsByKey->has('products'));
+        $this->assertTrue($groupsByKey->has('orders'));
+        $this->assertTrue($groupsByKey->has('reviews'));
+        $this->assertTrue($groupsByKey->has('posts'));
+        $this->assertEqualsCanonicalizing(AdminAbilityRegistry::PRODUCTS, $groupsByKey['products']['abilities']);
+        $this->assertEqualsCanonicalizing(AdminAbilityRegistry::ORDERS, $groupsByKey['orders']['abilities']);
+        $this->assertEqualsCanonicalizing(AdminAbilityRegistry::REVIEWS, $groupsByKey['reviews']['abilities']);
+        $this->assertEqualsCanonicalizing(AdminAbilityRegistry::POSTS, $groupsByKey['posts']['abilities']);
     }
 
     public function test_update_permissions_for_business_role_succeeds_and_updates_database(): void
