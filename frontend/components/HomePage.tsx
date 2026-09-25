@@ -263,7 +263,9 @@ function ShopCategories() {
                     <span style={{
                       fontFamily: F.body, fontSize: 11.5, fontWeight: 700, lineHeight: 1.25,
                       color: hoveredBreed === b.slug ? C.primaryHover : C.primary,
-                      transition: 'color 0.2s ease',
+                      fontWeight: hoveredBreed === b.slug ? 800 : 700,
+                      transform: hoveredBreed === b.slug ? 'translateY(-2px)' : 'translateY(0)',
+                      transition: 'color 0.2s ease, transform 0.2s ease, font-weight 0.2s ease',
                     }}>
                       {b.name}
                     </span>
@@ -284,13 +286,13 @@ function ShopCategories() {
                 />
               ))}
             </div>
-            <Link href="/dogs" className="text-primary transition-colors hover:text-[#2c3840]" style={{
+            <Link href="/dogs" className="group text-primary transition-colors hover:text-[#2c3840]" style={{
               display: 'block', textAlign: 'center', fontFamily: F.nav,
               fontSize: 12, fontWeight: 800,
               textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
               marginTop: 'auto',
             }}>
-              Explore All Breeds →
+              Explore All Breeds <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
             </Link>
           </div>
 
@@ -332,6 +334,7 @@ function ShopCategories() {
                     width: 88, height: 88, borderRadius: '50%',
                     background: `${s.accent}${hoveredSolution === s.slug ? '3d' : '26'}`,
                     boxShadow: hoveredSolution === s.slug ? `0 8px 20px ${s.accent}33` : 'none',
+                    transform: hoveredSolution === s.slug ? 'translateY(-2px)' : 'translateY(0)',
                     transition: 'all 0.2s ease',
                   }}>
                     <Image src={s.img} alt={s.name} fill sizes="88px" className="object-contain p-1.5" />
@@ -339,7 +342,9 @@ function ShopCategories() {
                   <span style={{
                     fontFamily: F.body, fontSize: 12.5, fontWeight: 600, textAlign: 'center',
                     color: hoveredSolution === s.slug ? s.accent : C.primary,
-                    transition: 'color 0.2s ease',
+                    fontWeight: hoveredSolution === s.slug ? 700 : 600,
+                    transform: hoveredSolution === s.slug ? 'translateY(-2px)' : 'translateY(0)',
+                    transition: 'color 0.2s ease, transform 0.2s ease, font-weight 0.2s ease',
                   }}>
                     {s.name}
                   </span>
@@ -359,13 +364,13 @@ function ShopCategories() {
                 />
               ))}
             </div>
-            <Link href="/solutions" className="text-primary transition-colors hover:text-[#2c3840]" style={{
+            <Link href="/solutions" className="group text-primary transition-colors hover:text-[#2c3840]" style={{
               display: 'block', textAlign: 'center', fontFamily: F.nav,
               fontSize: 12, fontWeight: 800,
               textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
               marginTop: 'auto',
             }}>
-              Explore All Solutions →
+              Explore All Solutions <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
             </Link>
           </div>
         </div>

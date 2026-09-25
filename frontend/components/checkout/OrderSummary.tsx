@@ -57,8 +57,8 @@ export function OrderSummary({
     const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
     return (
-        <aside className={`order-first w-full border-b border-[#e8e8ea] bg-[#fafafa] px-4 ${mobileExpanded ? 'py-6' : 'py-3'} md:px-8 lg:order-last lg:w-[440px] lg:border-b-0 lg:border-l lg:px-10 lg:py-12`}>
-            <div className="lg:sticky lg:top-12">
+        <aside className={`order-first w-full border-b border-[#e8e8ea] bg-[#fafafa] px-4 ${mobileExpanded ? 'py-6' : 'py-3'} md:px-8 lg:order-last lg:sticky lg:top-[76px] lg:h-[calc(100vh-76px)] lg:w-[440px] lg:self-start lg:overflow-y-auto lg:border-b-0 lg:border-l lg:px-10 lg:py-12`}>
+            <div>
                 {/* Mobile: compact toggle bar (total + show/hide) */}
                 <button
                     type="button"
