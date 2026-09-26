@@ -12,6 +12,7 @@ final class StorefrontJson
         $decoded = json_decode($json, true, 32, JSON_THROW_ON_ERROR);
         $offset = 0;
         self::value($json, $offset);
+
         return $decoded;
     }
 
@@ -42,6 +43,7 @@ final class StorefrontJson
         $kind = $json[$offset];
         if ($kind === '"') {
             self::stringToken($json, $offset);
+
             return;
         }
         if ($kind === '{' || $kind === '[') {
@@ -51,6 +53,7 @@ final class StorefrontJson
             self::whitespace($json, $offset);
             if ($json[$offset] === $end) {
                 $offset++;
+
                 return;
             }
             do {
@@ -70,6 +73,7 @@ final class StorefrontJson
                 self::whitespace($json, $offset);
                 $separator = $json[$offset++];
             } while ($separator === ',');
+
             return;
         }
         while (isset($json[$offset]) && ! str_contains(",]} \t\r\n", $json[$offset])) {

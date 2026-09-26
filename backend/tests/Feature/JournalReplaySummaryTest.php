@@ -23,7 +23,9 @@ class JournalReplaySummaryTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (DB::getConnections() as $connection) $connection->disconnect();
+        foreach (DB::getConnections() as $connection) {
+            $connection->disconnect();
+        }
         parent::tearDown();
         gc_collect_cycles();
         unlink($this->database);
@@ -41,6 +43,7 @@ class JournalReplaySummaryTest extends TestCase
             if ($calls === 1) {
                 // Another replay owner wins the later row after selection.
                 DB::table('storefront_refresh_journal')->where('id', $third)->update(['next_dispatch_at' => now()->addMinutes(5)]);
+
                 return null;
             }
             throw new RuntimeException('transport failed');

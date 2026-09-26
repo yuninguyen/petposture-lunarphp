@@ -6,7 +6,6 @@ namespace Tests\Feature\Api\Admin;
 
 use App\Models\Review;
 use App\Models\User;
-use App\Security\AdminAbilityRegistry;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

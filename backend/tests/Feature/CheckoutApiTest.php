@@ -30,6 +30,7 @@ use Lunar\Models\TaxClass;
 use Lunar\Models\TaxRate;
 use Lunar\Models\TaxRateAmount;
 use Lunar\Models\TaxZone;
+use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -1566,9 +1567,9 @@ class CheckoutApiTest extends TestCase
             ->assertCreated()
             ->json('data.id');
 
-        $activity = \Spatie\Activitylog\Models\Activity::query()
+        $activity = Activity::query()
             ->where('log_name', 'default')
-            ->where('subject_type', (new Order())->getMorphClass())
+            ->where('subject_type', (new Order)->getMorphClass())
             ->where('subject_id', $orderId)
             ->where('description', 'created')
             ->where('properties->source', 'manual')
@@ -1593,7 +1594,7 @@ class CheckoutApiTest extends TestCase
 
         $orderId = $this->postJson('/api/admin/orders', $payload)->assertCreated()->json('data.id');
 
-        $activity = \Spatie\Activitylog\Models\Activity::query()
+        $activity = Activity::query()
             ->where('log_name', 'default')
             ->where('subject_id', $orderId)
             ->where('description', 'created')

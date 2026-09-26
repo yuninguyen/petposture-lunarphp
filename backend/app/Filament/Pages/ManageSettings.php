@@ -15,9 +15,11 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Symfony\Component\Mime\Email;
@@ -80,7 +82,7 @@ class ManageSettings extends Page
         $this->form->fill($data);
     }
 
-    public function fetchOpenAiModels(\Filament\Forms\Get $get): void
+    public function fetchOpenAiModels(Get $get): void
     {
         $apiKey = trim((string) $get('openai_api_key')) ?: (Setting::get('openai_api_key') ?: config('services.openai.key'));
         $baseUrl = trim((string) $get('openai_base_url')) ?: (Setting::get('openai_base_url') ?: config('services.openai.base_url')) ?: 'https://api.openai.com/v1';
@@ -105,7 +107,7 @@ class ManageSettings extends Page
                 $message = is_string($error) ? $error : ($error['message'] ?? null);
 
                 throw new \RuntimeException(
-                    'HTTP '.$response->status().': '.($message ?: \Illuminate\Support\Str::limit($response->body(), 200))
+                    'HTTP '.$response->status().': '.($message ?: Str::limit($response->body(), 200))
                 );
             }
 
@@ -356,7 +358,7 @@ class ManageSettings extends Page
                                             FormAction::make('fetchOpenAiModels')
                                                 ->icon('heroicon-o-arrow-path')
                                                 ->tooltip(__('Fetch available models'))
-                                                ->action(fn (\Filament\Forms\Get $get) => $this->fetchOpenAiModels($get)),
+                                                ->action(fn (Get $get) => $this->fetchOpenAiModels($get)),
                                         ),
                                     TextInput::make('openai_base_url')
                                         ->label(__('OpenAI Base URL'))

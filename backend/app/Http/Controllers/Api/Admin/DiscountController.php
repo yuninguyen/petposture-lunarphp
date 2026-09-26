@@ -380,6 +380,7 @@ class DiscountController extends Controller
             if (method_exists($c, 'translateAttribute')) {
                 $name = $c->translateAttribute('name');
             }
+
             return [
                 'id' => $c->id,
                 'name' => (string) ($name ?: ($c->attribute_data['name']['value'] ?? $c->name ?? "Collection #{$c->id}")),
@@ -393,6 +394,7 @@ class DiscountController extends Controller
             if ($p && method_exists($p, 'translateAttribute')) {
                 $name = $p->translateAttribute('name');
             }
+
             return [
                 'id' => $lim->discountable_id,
                 'name' => (string) ($name ?: ($p?->attribute_data['name']['value'] ?? $p?->name ?? "Product #{$lim->discountable_id}")),
@@ -415,6 +417,7 @@ class DiscountController extends Controller
             if ($c && method_exists($c, 'translateAttribute')) {
                 $name = $c->translateAttribute('name');
             }
+
             return [
                 'id' => $cond->discountable_id,
                 'name' => (string) ($name ?: ($c?->attribute_data['name']['value'] ?? $c?->name ?? "Collection #{$cond->discountable_id}")),
@@ -428,6 +431,7 @@ class DiscountController extends Controller
             if ($p && method_exists($p, 'translateAttribute')) {
                 $name = $p->translateAttribute('name');
             }
+
             return [
                 'id' => $cond->discountable_id,
                 'name' => (string) ($name ?: ($p?->attribute_data['name']['value'] ?? $p?->name ?? "Product #{$cond->discountable_id}")),
@@ -441,6 +445,7 @@ class DiscountController extends Controller
             if ($p && method_exists($p, 'translateAttribute')) {
                 $name = $p->translateAttribute('name');
             }
+
             return [
                 'id' => $rew->discountable_id,
                 'name' => (string) ($name ?: ($p?->attribute_data['name']['value'] ?? $p?->name ?? "Product #{$rew->discountable_id}")),

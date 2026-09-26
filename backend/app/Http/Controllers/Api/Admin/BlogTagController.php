@@ -64,6 +64,7 @@ class BlogTagController extends Controller
     public function destroy(BlogTag $blogTag): JsonResponse
     {
         $blogTag->delete();
+
         return response()->json(null, 204);
     }
 

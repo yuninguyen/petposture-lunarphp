@@ -4,8 +4,8 @@ namespace Tests\Feature\Api\Admin;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\Sanctum;
 use Lunar\Models\Address;
 use Lunar\Models\Customer;
 use Lunar\Models\Order;
@@ -160,7 +160,6 @@ class CustomerControllerTest extends TestCase
             $this->getJson('/api/admin/customers')->assertOk();
         }
     }
-
 
     public function test_customer_summary_exposes_the_detail_profile_contract_without_loading_tab_data(): void
     {

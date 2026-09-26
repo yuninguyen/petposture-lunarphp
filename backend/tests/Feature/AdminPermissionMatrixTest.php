@@ -8,6 +8,7 @@ use App\Models\Post;
 use App\Models\Review;
 use App\Models\User;
 use App\Policies\ReviewPolicy;
+use App\Security\AdminAbilityRegistry;
 use App\Security\AdminPermissionMatrix;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -251,9 +252,9 @@ class AdminPermissionMatrixTest extends TestCase
         $this->assertNotEmpty($expectedPermissions);
         // Phase 6b also grants Order Manager the dashboard and return-request registry abilities on fresh seed.
         $expectedRegistryPermissions = [
-            ...\App\Security\AdminAbilityRegistry::DASHBOARD_SALES,
-            ...\App\Security\AdminAbilityRegistry::DASHBOARD_CONVERSION,
-            ...\App\Security\AdminAbilityRegistry::RETURN_REQUESTS,
+            ...AdminAbilityRegistry::DASHBOARD_SALES,
+            ...AdminAbilityRegistry::DASHBOARD_CONVERSION,
+            ...AdminAbilityRegistry::RETURN_REQUESTS,
         ];
         $this->assertCount(count($expectedPermissions) + count($expectedRegistryPermissions), $orderManager->permissions);
         foreach ($expectedPermissions as $permission) {

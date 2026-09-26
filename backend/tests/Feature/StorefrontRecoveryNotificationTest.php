@@ -11,6 +11,7 @@ use Filament\Notifications\Livewire\Notifications;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Session\Store;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -22,6 +23,7 @@ use Tests\TestCase;
 class StorefrontRecoveryNotificationTest extends TestCase
 {
     private string $database;
+
     private const MESSAGE = 'Content saved; cache refresh recovery could not be recorded. Automatic retry is not guaranteed; operator action is required.';
 
     protected function setUp(): void
@@ -41,7 +43,9 @@ class StorefrontRecoveryNotificationTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (DB::getConnections() as $connection) $connection->disconnect();
+        foreach (DB::getConnections() as $connection) {
+            $connection->disconnect();
+        }
         parent::tearDown();
         gc_collect_cycles();
         unlink($this->database);
@@ -58,7 +62,9 @@ class StorefrontRecoveryNotificationTest extends TestCase
         $snapshot = null;
         foreach ($matches[1] as $encoded) {
             $candidate = html_entity_decode($encoded, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            if (str_ends_with(json_decode($candidate, true)['memo']['name'], 'manage-settings')) $snapshot = $candidate;
+            if (str_ends_with(json_decode($candidate, true)['memo']['name'], 'manage-settings')) {
+                $snapshot = $candidate;
+            }
         }
         $this->assertNotNull($snapshot);
         $this->mock(StorefrontRefreshJournal::class)->shouldReceive('record')->andThrow(new RuntimeException('private DB secret'));
@@ -88,6 +94,7 @@ class StorefrontRecoveryNotificationTest extends TestCase
         $original = new JsonResponse(['components' => [['snapshot' => 'unchanged', 'effects' => ['html' => 'saved']]]]);
         $response = app(AttachCloudflarePurgeWarning::class)->handle($request, function () use ($original) {
             app(CloudflarePurgeNotice::class)->markRecoveryUnavailable();
+
             return $original;
         });
         $this->assertSame($original, $response);
@@ -104,6 +111,7 @@ class StorefrontRecoveryNotificationTest extends TestCase
         $original = redirect('/admin/manage-settings');
         $response = app(AttachCloudflarePurgeWarning::class)->handle($request, function () use ($original) {
             app(CloudflarePurgeNotice::class)->markRecoveryUnavailable();
+
             return $original;
         });
         $this->assertSame($original, $response);
@@ -114,7 +122,7 @@ class StorefrontRecoveryNotificationTest extends TestCase
     public function test_session_notification_failure_cannot_replace_original_exception(): void
     {
         $request = Request::create('/admin/save', 'POST');
-        $session = \Mockery::mock(\Illuminate\Session\Store::class);
+        $session = \Mockery::mock(Store::class);
         $session->shouldReceive('push')->once()->andThrow(new RuntimeException('session failure'));
         $request->setLaravelSession($session);
         app()->instance('session.store', $session);
@@ -139,6 +147,7 @@ class StorefrontRecoveryNotificationTest extends TestCase
         $original = new JsonResponse($payload);
         $response = app(AttachCloudflarePurgeWarning::class)->handle($request, function () use ($original) {
             app(CloudflarePurgeNotice::class)->markRecoveryUnavailable();
+
             return $original;
         });
         $this->assertSame($payload, $response->getData(true));
@@ -148,7 +157,7 @@ class StorefrontRecoveryNotificationTest extends TestCase
     public function test_session_notification_failure_preserves_successful_response(): void
     {
         $request = Request::create('/admin/save', 'POST');
-        $session = \Mockery::mock(\Illuminate\Session\Store::class);
+        $session = \Mockery::mock(Store::class);
         $session->shouldReceive('push')->once()->andThrow(new RuntimeException('session failure'));
         $request->setLaravelSession($session);
         app()->instance('session.store', $session);
@@ -156,6 +165,7 @@ class StorefrontRecoveryNotificationTest extends TestCase
         $original = new Response('saved', 201);
         $response = app(AttachCloudflarePurgeWarning::class)->handle($request, function () use ($original) {
             app(CloudflarePurgeNotice::class)->markRecoveryUnavailable();
+
             return $original;
         });
         $this->assertSame($original, $response);

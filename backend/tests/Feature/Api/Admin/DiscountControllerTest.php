@@ -626,7 +626,7 @@ class DiscountControllerTest extends TestCase
         // otherwise leak into this second, uncoupled place-order call within the
         // same test process. A real HTTP request gets a fresh container each
         // time in production, so this reset only matters here.
-        app(\Lunar\Base\ShippingManifestInterface::class)->clearOptions();
+        app(ShippingManifestInterface::class)->clearOptions();
 
         // Order placed WITHOUT coupon: express shipping is 2500 cents ($25.00)
         $orderResponseNoCoupon = $this->postJson('/api/checkout/place-order', [
@@ -942,7 +942,7 @@ class DiscountControllerTest extends TestCase
             'product_type_id' => $productType->id,
             'status' => 'published',
             'attribute_data' => [
-                'name' => new Text('Test Product ' . Str::random(5)),
+                'name' => new Text('Test Product '.Str::random(5)),
             ],
         ]);
 
@@ -963,7 +963,7 @@ class DiscountControllerTest extends TestCase
         $variant = ProductVariant::create([
             'product_id' => $product->id,
             'tax_class_id' => $taxClass->id,
-            'sku' => 'SKU-' . Str::upper(Str::random(6)),
+            'sku' => 'SKU-'.Str::upper(Str::random(6)),
             'stock' => 50,
             'shippable' => true,
         ]);

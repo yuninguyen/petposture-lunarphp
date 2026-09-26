@@ -1,0 +1,1675 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Access to an undefined property App\\Filament\\Pages\\Goals\:\:\$form\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Pages/Goals.php
+
+		-
+			message: '#^Access to an undefined property App\\Filament\\Pages\\ManageSettings\:\:\$form\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Pages/ManageSettings.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\|Lunar\\Admin\\Models\\Staff\:\:\$unreadNotifications\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Pages/NotificationsPage.php
+
+		-
+			message: '#^Access to an undefined property App\\Filament\\Pages\\Payment\:\:\$form\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Pages/Payment.php
+
+		-
+			message: '#^Access to an undefined property App\\Filament\\Pages\\SeoSocial\:\:\$form\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Pages/SeoSocial.php
+
+		-
+			message: '#^Access to an undefined property App\\Filament\\Resources\\MediaResource\\Pages\\CreateMedia\:\:\$form\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Resources/MediaResource/Pages/CreateMedia.php
+
+		-
+			message: '#^Method App\\Filament\\Resources\\OrderResource\\Pages\\CreateOrder\:\:handleRecordCreation\(\) should return Illuminate\\Database\\Eloquent\\Model but returns Lunar\\Models\\Contracts\\Order\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Filament/Resources/OrderResource/Pages/CreateOrder.php
+
+		-
+			message: '#^Cannot access property \$is_core on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Filament/Resources/PageResource/Pages/EditPage.php
+
+		-
+			message: '#^Cannot access property \$seo on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Filament/Resources/PostResource/Pages/EditPost.php
+
+		-
+			message: '#^Cannot access property \$slug on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Filament/Resources/PostResource/Pages/EditPost.php
+
+		-
+			message: '#^Cannot access property \$status on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Filament/Resources/PostResource/Pages/EditPost.php
+
+		-
+			message: '#^Cannot call method getAllMeta\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Filament/Resources/PostResource/Pages/EditPost.php
+
+		-
+			message: '#^Cannot call method metadata\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Filament/Resources/PostResource/Pages/EditPost.php
+
+		-
+			message: '#^Cannot call method seo\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Filament/Resources/PostResource/Pages/EditPost.php
+
+		-
+			message: '#^Cannot call method setMeta\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Filament/Resources/PostResource/Pages/EditPost.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\AffiliateClick\:\:\$total\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Widgets/AffiliateClicksOverview.php
+
+		-
+			message: '#^Cannot access property \$decimal on int\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Filament/Widgets/SalesByCategoryChart.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\AffiliateClick\:\:\$total\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Api/Admin/AffiliateReportController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:withTrashed\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Http/Controllers/Api/Admin/BrandController.php
+
+		-
+			message: '#^Relation ''featuredMedia'' is not found in App\\Models\\Breed model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/Admin/BreedController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$collection_group_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/Admin/CollectionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/Admin/CollectionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\|Illuminate\\Database\\Eloquent\\Model\:\:\$parent_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/Admin/CollectionController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\:\:toTree\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Api/Admin/CollectionController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\:\:withTrashed\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Api/Admin/CollectionController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:defaultOrder\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Api/Admin/CollectionController.php
+
+		-
+			message: '#^Relation ''post'' is not found in App\\Models\\Comment model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/Admin/CommentController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Discount\:\:\$data\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/Admin/DiscountController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Discount\:\:\$max_uses_per_user\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/Admin/DiscountController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CuratorMedia\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/Admin/MediaLibraryController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\CuratorMedia\:\:\$folder\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/Admin/MediaLibraryController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\|Lunar\\Admin\\Models\\Staff\:\:\$unreadNotifications\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/Admin/NotificationController.php
+
+		-
+			message: '#^Anonymous function should return Lunar\\Models\\ProductAssociation but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/Admin/ProductAssociationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Support\\HigherOrderCollectionProxy\<string, Illuminate\\Database\\Eloquent\\Model, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\>\:\:\$prices\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/Admin/ProductController.php
+
+		-
+			message: '#^Property Lunar\\Models\\ProductOptionValue\:\:\$meta \(Illuminate\\Database\\Eloquent\\Casts\\AsArrayObject\|null\) does not accept array\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Http/Controllers/Api/Admin/ProductOptionController.php
+
+		-
+			message: '#^Anonymous function should return Lunar\\Models\\ProductVariant but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/Admin/ProductVariantController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Support\\Collection\:\:load\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Api/Admin/ProductVariantController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Api/Admin/ProfileController.php
+
+		-
+			message: '#^Relation ''product'' is not found in App\\Models\\Review model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/Admin/ReviewController.php
+
+		-
+			message: '#^Called ''pluck'' on Laravel collection, but could have been retrieved as a query\.$#'
+			identifier: larastan.noUnnecessaryCollectionCall
+			count: 1
+			path: app/Http/Controllers/Api/Admin/SeoSocialController.php
+
+		-
+			message: '#^Relation ''featuredMedia'' is not found in App\\Models\\Solution model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/Admin/SolutionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/CheckoutController.php
+
+		-
+			message: '#^Relation ''blogCategory'' is not found in App\\Models\\Post model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/ContentController.php
+
+		-
+			message: '#^Relation ''featuredMedia'' is not found in App\\Models\\Post model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/ContentController.php
+
+		-
+			message: '#^Relation ''tags'' is not found in App\\Models\\Post model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/ContentController.php
+
+		-
+			message: '#^Relation ''orderEvents'' is not found in Lunar\\Models\\Order model\.$#'
+			identifier: larastan.relationExistence
+			count: 5
+			path: app/Http/Controllers/Api/OrderController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Post\:\:\$breeds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/PostController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Post\:\:\$solutions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/PostController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Post\:\:\$tags\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/PostController.php
+
+		-
+			message: '#^Relation ''blogCategory'' is not found in App\\Models\\Post model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/PostController.php
+
+		-
+			message: '#^Relation ''breeds'' is not found in App\\Models\\Post model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/PostController.php
+
+		-
+			message: '#^Relation ''featuredMedia'' is not found in App\\Models\\Post model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/PostController.php
+
+		-
+			message: '#^Relation ''solutions'' is not found in App\\Models\\Post model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/PostController.php
+
+		-
+			message: '#^Relation ''tags'' is not found in App\\Models\\Post model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/PostController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\ProductController\:\:resolveCurrentPublishedProduct\(\) should return Lunar\\Models\\Product\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/ProductController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\ProductController\:\:resolvePreviewProduct\(\) should return Lunar\\Models\\Product\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/ProductController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\ProductController\:\:resolvePublishedProduct\(\) should return Lunar\\Models\\Product\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/ProductController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Api\\ProductController\:\:resolveRedirectProduct\(\) should return Lunar\\Models\\Product\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/ProductController.php
+
+		-
+			message: '#^Anonymous function should return Illuminate\\Database\\Eloquent\\Collection\<int, array\{title\: string\|null, url\: mixed\}\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, array\{title\: string\|null, url\: mixed\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/SiteMediaController.php
+
+		-
+			message: '#^Anonymous function should return Illuminate\\Support\\Collection\<int, array\{title\: string\|null, url\: mixed\}\> but returns Illuminate\\Support\\Collection\<int, array\{title\: string\|null, url\: mixed\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Api/SiteMediaController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Solution\:\:\$featuredMedia\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/SolutionController.php
+
+		-
+			message: '#^Relation ''featuredMedia'' is not found in App\\Models\\Solution model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/SolutionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BlogCategoryResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BlogCategoryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BlogCategoryResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BlogCategoryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BlogCategoryResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BlogCategoryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BlogCategoryResource\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BlogCategoryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BlogCategoryResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BlogCategoryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BlogTagResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BlogTagResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BlogTagResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BlogTagResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BlogTagResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BlogTagResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BlogTagResource\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BlogTagResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BlogTagResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BlogTagResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BrandResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BrandResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BrandResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BrandResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BreedResource\:\:\$body_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BreedResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BreedResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BreedResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BreedResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BreedResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BreedResource\:\:\$featured_image\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BreedResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BreedResource\:\:\$featured_image_alt\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BreedResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BreedResource\:\:\$featured_media_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BreedResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BreedResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BreedResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BreedResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BreedResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BreedResource\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BreedResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\BreedResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/BreedResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CollectionGroupResource\:\:\$handle\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CollectionGroupResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CollectionGroupResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CollectionGroupResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CollectionGroupResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CollectionGroupResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CollectionResource\:\:\$attribute_data\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CollectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CollectionResource\:\:\$children\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CollectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CollectionResource\:\:\$collection_group_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CollectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CollectionResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CollectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CollectionResource\:\:\$parent_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CollectionResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Admin\\CollectionResource\:\:relationLoaded\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CollectionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CommentResource\:\:\$comment\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CommentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CommentResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CommentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CommentResource\:\:\$customer_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CommentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CommentResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CommentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CommentResource\:\:\$post\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Admin/CommentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CommentResource\:\:\$post_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CommentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CommentResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CommentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CommentResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CommentResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CustomFieldResource\:\:\$attribute_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CustomFieldResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CustomFieldResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CustomFieldResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CustomFieldResource\:\:\$handle\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CustomFieldResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CustomFieldResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CustomFieldResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CustomFieldResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CustomFieldResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CustomFieldResource\:\:\$position\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CustomFieldResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CustomFieldResource\:\:\$required\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CustomFieldResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\CustomFieldResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CustomFieldResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Admin\\CustomFieldResource\:\:getRelation\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Admin/CustomFieldResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$brand\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$brand_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$collections\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$defaultUrl\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$has_variants\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$images\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$productOptions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$productType\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$product_type_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$variants\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Resources/Admin/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductTypeResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductTypeResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductTypeResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductTypeResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$backorder\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$ean\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$gtin\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$has_order_history\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$height_unit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$height_value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$length_unit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$length_value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$min_quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$mpn\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$prices\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$product\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$product_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$purchasable\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$quantity_increment\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$shippable\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$stock\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$tax_class_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$tax_ref\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$unit_quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$values\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$weight_unit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$weight_value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$width_unit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductVariantResource\:\:\$width_value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/ProductVariantResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SolutionResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SolutionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SolutionResource\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SolutionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SolutionResource\:\:\$featured_image\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SolutionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SolutionResource\:\:\$featured_image_alt\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SolutionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SolutionResource\:\:\$featured_media_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SolutionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SolutionResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SolutionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SolutionResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SolutionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SolutionResource\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SolutionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SolutionResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SolutionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SystemUserResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SystemUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SystemUserResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SystemUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SystemUserResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SystemUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SystemUserResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SystemUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SystemUserResource\:\:\$last_login_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SystemUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SystemUserResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SystemUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SystemUserResource\:\:\$roles\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SystemUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\SystemUserResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Admin/SystemUserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CheckoutSessionResource\:\:\$currency\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CheckoutSessionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CheckoutSessionResource\:\:\$expires_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CheckoutSessionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CheckoutSessionResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CheckoutSessionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CheckoutSessionResource\:\:\$token\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CheckoutSessionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CheckoutSessionResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CheckoutSessionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CuratorMediaResource\:\:\$alt\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CuratorMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CuratorMediaResource\:\:\$folder\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CuratorMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CuratorMediaResource\:\:\$height\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CuratorMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CuratorMediaResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CuratorMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CuratorMediaResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CuratorMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CuratorMediaResource\:\:\$thumbnail_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CuratorMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CuratorMediaResource\:\:\$url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CuratorMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\CuratorMediaResource\:\:\$width\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/CuratorMediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$currency_code\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$customer_reference\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$discount_total\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$lines\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$meta\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$orderEvents\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$reference\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$shippingAddress\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$shipping_total\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$sub_total\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$tax_total\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderResource\:\:\$total\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Cannot access property \$product on class\-string\|object\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Resources/Api/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$admin_note\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$approved_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$completed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$customer_note\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$fee_waived\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$items\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$refund_amount_minor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$rejected_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$requested_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$restocking_fee_minor\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$return_carrier\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$return_tracking_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$return_tracking_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$rma_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\OrderReturnRequestResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/OrderReturnRequestResource.php
+
+		-
+			message: '#^Cannot access property \$product on class\-string\|object\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Http/Resources/Api/OrderTrackingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$author\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$blogCategory\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$breeds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$featured_image\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$featured_image_alt\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$featured_media_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$published_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$read_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$seo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$solutions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$tags\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\PostResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\PostResource\:\:getAllMeta\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\PostResource\:\:hasOutOfStockComparisonItems\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Api/PostResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$brand\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$collections\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$images\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$productOptions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$seo_meta_description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$seo_meta_is_followable\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$seo_meta_is_indexable\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$seo_meta_og_description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$seo_meta_og_image\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$seo_meta_og_title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$seo_meta_title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$thumbnail\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\ProductResource\:\:\$variants\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\ProductResource\:\:relationLoaded\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\ProductResource\:\:translateAttribute\(\)\.$#'
+			identifier: method.notFound
+			count: 11
+			path: app/Http/Resources/Api/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\UserResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\UserResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\UserResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\UserResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\Api\\UserResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/Api/UserResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\UserResource\:\:getRoleNames\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/Api/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CategoryResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CategoryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CategoryResource\:\:\$image_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CategoryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CategoryResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CategoryResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\CategoryResource\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/CategoryResource.php
+
+		-
+			message: '#^Relation ''orderEvents'' is not found in Lunar\\Models\\Order model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Jobs/SendOrderConfirmationJob.php
+
+		-
+			message: '#^Relation ''orderEvents'' is not found in Lunar\\Models\\Order model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Jobs/SendOrderLifecycleEmailJob.php
+
+		-
+			message: '#^Method App\\Lunar\\ShippingModifiers\\DefaultShippingModifier\:\:handle\(\) with return type void returns mixed but should not return anything\.$#'
+			identifier: return.void
+			count: 1
+			path: app/Lunar/ShippingModifiers/DefaultShippingModifier.php
+
+		-
+			message: '#^Call to an undefined method Spatie\\Image\\Drivers\\ImageDriver\:\:performOnCollections\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Legacy/Product.php
+
+		-
+			message: '#^Class App\\Models\\ProductVariant not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/Legacy/Product.php
+
+		-
+			message: '#^Method App\\Models\\Legacy\\Product\:\:setMeta\(\) should return App\\Models\\Metadata but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Legacy/Product.php
+
+		-
+			message: '#^Method App\\Models\\Post\:\:setMeta\(\) should return App\\Models\\Metadata but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Post.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:withTrashed\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Admin/ProductVariantMatrixService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:withTrashed\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/AttributeUsageChecker.php
+
+		-
+			message: '#^Cannot access property \$value on int\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/CheckoutService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Legacy\\Product\:\:\$category\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ProductSyncService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\ProductSyncMapping\:\:\$lunarProduct\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/ProductSyncService.php
+
+		-
+			message: '#^Method App\\Services\\ProductSyncService\:\:syncVariant\(\) should return Lunar\\Models\\ProductVariant but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/ProductSyncService.php
+
+		-
+			message: '#^Relation ''lunarProduct'' is not found in App\\Models\\ProductSyncMapping model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Services/ProductSyncService.php

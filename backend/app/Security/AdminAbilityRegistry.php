@@ -879,7 +879,7 @@ final class AdminAbilityRegistry
     /**
      * Determine if any of the provided roles grants a specific ability.
      *
-     * @param list<string> $roles
+     * @param  list<string>  $roles
      */
     public static function rolesHaveAbility(array $roles, string $ability): bool
     {

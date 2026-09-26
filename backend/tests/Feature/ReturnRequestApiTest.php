@@ -9,6 +9,7 @@ use App\Models\OrderReturnRequest;
 use App\Models\User;
 use App\Services\ReturnRequestService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
@@ -495,7 +496,7 @@ class ReturnRequestApiTest extends TestCase
 
     public function test_each_permitted_role_can_use_the_new_admin_return_request_endpoints(): void
     {
-        $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
+        $this->withoutMiddleware(ThrottleRequests::class);
 
         foreach (['super_admin', 'admin', 'staff', 'Order Manager', 'Support'] as $role) {
             $previewRequestId = $this->createReturnRequestViaApi()['id'];

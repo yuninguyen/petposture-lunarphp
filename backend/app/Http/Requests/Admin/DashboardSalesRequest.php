@@ -6,6 +6,7 @@ use App\Http\Requests\Concerns\ResolvesDateRangePreset;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class DashboardSalesRequest extends FormRequest
 {
@@ -70,7 +71,7 @@ class DashboardSalesRequest extends FormRequest
             'none' => null,
             'yesterday' => $spanDays === 1
                 ? ['start' => $primaryStart->copy()->subDay(), 'end' => $primaryEnd->copy()->subDay(), 'label' => 'Yesterday']
-                : throw \Illuminate\Validation\ValidationException::withMessages(['comparison' => ['Yesterday comparison requires a single-day primary range.']]),
+                : throw ValidationException::withMessages(['comparison' => ['Yesterday comparison requires a single-day primary range.']]),
             'previous_year' => ['start' => $primaryStart->copy()->subYear(), 'end' => $primaryEnd->copy()->subYear(), 'label' => 'Previous year'],
             'previous_year_match_day' => ['start' => $primaryStart->copy()->subDays(364), 'end' => $primaryEnd->copy()->subDays(364), 'label' => 'Previous year (match day of week)'],
             'custom' => ['start' => Carbon::createFromFormat('Y-m-d', $this->validated('compare_start_date'))->startOfDay(), 'end' => Carbon::createFromFormat('Y-m-d', $this->validated('compare_end_date'))->endOfDay(), 'label' => 'Custom'],

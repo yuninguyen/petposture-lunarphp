@@ -123,7 +123,7 @@ class BreedsAbilityParityTest extends TestCase
             $this->actingAsRole($role);
 
             $breedName = "Breed Created By {$role} {$counter}";
-            $breedSlug = "breed-created-by-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}";
+            $breedSlug = 'breed-created-by-'.strtolower(str_replace(' ', '-', $role))."-{$counter}";
             $counter++;
 
             $response = $this->postJson('/api/admin/breeds', [
@@ -150,7 +150,7 @@ class BreedsAbilityParityTest extends TestCase
             $this->actingAsRole($role);
 
             $breedName = "Unauthorized Breed {$role} {$counter}";
-            $breedSlug = "unauthorized-breed-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}";
+            $breedSlug = 'unauthorized-breed-'.strtolower(str_replace(' ', '-', $role))."-{$counter}";
             $counter++;
 
             $response = $this->postJson('/api/admin/breeds', [
@@ -180,7 +180,7 @@ class BreedsAbilityParityTest extends TestCase
             $this->actingAsRole($role);
 
             $newName = "Breed Updated By {$role} {$counter}";
-            $newSlug = "breed-updated-by-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}";
+            $newSlug = 'breed-updated-by-'.strtolower(str_replace(' ', '-', $role))."-{$counter}";
             $counter++;
 
             $response = $this->putJson("/api/admin/breeds/{$breed->id}", [
@@ -213,7 +213,7 @@ class BreedsAbilityParityTest extends TestCase
 
             $response = $this->putJson("/api/admin/breeds/{$breed->id}", [
                 'name' => "Tampered By {$role}",
-                'slug' => "tampered-by-" . strtolower(str_replace(' ', '-', $role)),
+                'slug' => 'tampered-by-'.strtolower(str_replace(' ', '-', $role)),
             ]);
 
             $response->assertForbidden(
@@ -235,7 +235,7 @@ class BreedsAbilityParityTest extends TestCase
 
             $breed = Breed::query()->create([
                 'name' => "Breed To Delete By {$role} {$counter}",
-                'slug' => "breed-to-delete-by-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}",
+                'slug' => 'breed-to-delete-by-'.strtolower(str_replace(' ', '-', $role))."-{$counter}",
             ]);
             $counter++;
 
@@ -279,11 +279,11 @@ class BreedsAbilityParityTest extends TestCase
 
             $breed1 = Breed::query()->create([
                 'name' => "Bulk Delete Item 1 By {$role} {$counter}",
-                'slug' => "bulk-delete-item-1-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}",
+                'slug' => 'bulk-delete-item-1-'.strtolower(str_replace(' ', '-', $role))."-{$counter}",
             ]);
             $breed2 = Breed::query()->create([
                 'name' => "Bulk Delete Item 2 By {$role} {$counter}",
-                'slug' => "bulk-delete-item-2-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}",
+                'slug' => 'bulk-delete-item-2-'.strtolower(str_replace(' ', '-', $role))."-{$counter}",
             ]);
             $counter++;
 

@@ -9,9 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 class StorefrontRefreshJournalEntry extends Model
 {
     protected $table = 'storefront_refresh_journal';
+
     protected $connection = StorefrontRefreshJournal::CONNECTION;
+
     protected $keyType = 'string';
+
     public $incrementing = false;
+
     protected $guarded = ['*'];
 
     protected function casts(): array

@@ -7,8 +7,8 @@ use App\Models\Category;
 use App\Models\Legacy\Product as LegacyProduct;
 use App\Models\ProductSyncMapping;
 use App\Models\Review;
-use App\Models\Solution;
 use App\Models\SeoMetadata;
+use App\Models\Solution;
 use App\Services\ProductSyncService;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,6 +18,7 @@ use Lunar\Models\Country;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Language;
+use Lunar\Models\Product;
 use Lunar\Models\Product as LunarProduct;
 use Lunar\Models\ProductType;
 use Lunar\Models\TaxClass;
@@ -149,7 +150,7 @@ class ProductCatalogApiTest extends TestCase
             'seo-bed'
         );
         SeoMetadata::query()->create([
-            'seoable_type' => \Lunar\Models\Product::class,
+            'seoable_type' => Product::class,
             'seoable_id' => $product->id,
             'title' => 'SEO title',
             'description' => 'SEO description',

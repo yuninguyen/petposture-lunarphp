@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Api\Admin;
 
 use App\Models\User;
-use App\Security\AdminAbilityRegistry;
-use App\Security\AdminPermissionMatrix;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

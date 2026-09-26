@@ -9,8 +9,6 @@ use App\Models\User;
 use App\Services\AiSeoGeneratorService;
 use App\Support\ImageUploadResizer;
 use Awcodes\Curator\Components\Forms\CuratorPicker;
-use FilamentTiptapEditor\Facades\TiptapConverter;
-use FilamentTiptapEditor\TiptapEditor;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -19,6 +17,10 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use FilamentTiptapEditor\Enums\TiptapOutput;
+use FilamentTiptapEditor\Facades\TiptapConverter;
+use FilamentTiptapEditor\TiptapEditor;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class PostResource extends Resource
@@ -91,7 +93,7 @@ class PostResource extends Resource
                     ->label(__('Content'))
                     ->required()
                     ->profile('blog')
-                    ->output(\FilamentTiptapEditor\Enums\TiptapOutput::Html)
+                    ->output(TiptapOutput::Html)
                     ->stateBindingModifiers([])
                     ->columnSpanFull()
                     ->disableBubbleMenus()
@@ -197,199 +199,199 @@ class PostResource extends Resource
     protected static function comparisonDetailsSection(): Forms\Components\Section
     {
         return Forms\Components\Section::make(__('Comparison Details'))
-                    ->description(__('Retailer price comparison shown above the article body. Only used when post type is Comparison.'))
-                    ->visible(fn (Get $get): bool => $get('type') === Post::TYPE_COMPARISON)
+            ->description(__('Retailer price comparison shown above the article body. Only used when post type is Comparison.'))
+            ->visible(fn (Get $get): bool => $get('type') === Post::TYPE_COMPARISON)
+            ->schema([
+                Forms\Components\Textarea::make('metadata.comparison_intro')
+                    ->label(__('Intro'))
+                    ->rows(2)
+                    ->columnSpanFull(),
+
+                Forms\Components\Toggle::make('metadata.disclosure_shown')
+                    ->label(__('Show affiliate disclosure banner'))
+                    ->default(true)
+                    ->disabled(fn (Get $get): bool => collect($get('metadata.comparison_items') ?? [])
+                        ->contains(fn (array $item): bool => filled($item['affiliate_url'] ?? null)))
+                    ->helperText(fn (Get $get): ?string => collect($get('metadata.comparison_items') ?? [])
+                        ->contains(fn (array $item): bool => filled($item['affiliate_url'] ?? null))
+                            ? __('Affiliate disclosure is required when comparison items include affiliate links.')
+                            : null)
+                    ->columnSpanFull(),
+
+                Forms\Components\Repeater::make('metadata.comparison_items')
+                    ->label(__('Comparison Items'))
+                    ->columnSpanFull()
+                    ->collapsible()
+                    ->itemLabel(fn (array $state): ?string => $state['product_name'] ?? null)
                     ->schema([
-                        Forms\Components\Textarea::make('metadata.comparison_intro')
-                            ->label(__('Intro'))
-                            ->rows(2)
-                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('product_name')
+                            ->label(__('Product Name'))
+                            ->required(),
 
-                        Forms\Components\Toggle::make('metadata.disclosure_shown')
-                            ->label(__('Show affiliate disclosure banner'))
-                            ->default(true)
-                            ->disabled(fn (Get $get): bool => collect($get('metadata.comparison_items') ?? [])
-                                ->contains(fn (array $item): bool => filled($item['affiliate_url'] ?? null)))
-                            ->helperText(fn (Get $get): ?string => collect($get('metadata.comparison_items') ?? [])
-                                ->contains(fn (array $item): bool => filled($item['affiliate_url'] ?? null))
-                                    ? __('Affiliate disclosure is required when comparison items include affiliate links.')
-                                    : null)
-                            ->columnSpanFull(),
+                        Forms\Components\FileUpload::make('image_url')
+                            ->label(__('Image'))
+                            ->image()
+                            ->directory('comparisons')
+                            ->saveUploadedFileUsing(ImageUploadResizer::make(800, 800)),
 
-                        Forms\Components\Repeater::make('metadata.comparison_items')
-                            ->label(__('Comparison Items'))
-                            ->columnSpanFull()
-                            ->collapsible()
-                            ->itemLabel(fn (array $state): ?string => $state['product_name'] ?? null)
-                            ->schema([
-                                Forms\Components\TextInput::make('product_name')
-                                    ->label(__('Product Name'))
-                                    ->required(),
+                        Forms\Components\Select::make('retailer')
+                            ->label(__('Retailer'))
+                            ->options(fn () => AffiliateNetwork::where('active', true)->pluck('name', 'slug'))
+                            ->helperText(__('Manage the list under Content Management → Affiliate Networks.'))
+                            ->required(),
 
-                                Forms\Components\FileUpload::make('image_url')
-                                    ->label(__('Image'))
-                                    ->image()
-                                    ->directory('comparisons')
-                                    ->saveUploadedFileUsing(ImageUploadResizer::make(800, 800)),
-
-                                Forms\Components\Select::make('retailer')
-                                    ->label(__('Retailer'))
-                                    ->options(fn () => AffiliateNetwork::where('active', true)->pluck('name', 'slug'))
-                                    ->helperText(__('Manage the list under Content Management → Affiliate Networks.'))
-                                    ->required(),
-
-                                Forms\Components\Select::make('highlight')
-                                    ->label(__('Highlight'))
-                                    ->options([
-                                        'best_overall' => __('Best Overall'),
-                                        'best_value' => __('Best Value'),
-                                        'budget_pick' => __('Budget Pick'),
-                                    ])
-                                    ->placeholder(__('None')),
-
-                                Forms\Components\Toggle::make('in_stock')
-                                    ->label(__('In Stock'))
-                                    ->default(true)
-                                    ->helperText(__('Turn off if this retailer is out of stock — flags the post in the list.')),
-
-                                Forms\Components\TextInput::make('price_display')
-                                    ->label(__('Price (display)'))
-                                    ->placeholder('$64.99')
-                                    ->nullable(),
-
-                                Forms\Components\TextInput::make('price_cents')
-                                    ->label(__('Price (cents, for sorting)'))
-                                    ->numeric()
-                                    ->required(),
-
-                                Forms\Components\TextInput::make('rating')
-                                    ->label(__('Rating (0–5)'))
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->maxValue(5)
-                                    ->step(0.1),
-
-                                Forms\Components\TextInput::make('affiliate_url')
-                                    ->label(__('Affiliate URL'))
-                                    ->url()
-                                    ->nullable()
-                                    ->live(onBlur: true)
-                                    ->columnSpanFull(),
-
-                                Forms\Components\TextInput::make('metadata.source_url')
-                                     ->label(__('Price/rating source URL'))
-                                     ->url()
-                                     ->required(fn (Get $get): bool => filled($get('price_display')) || filled($get('price_cents')) || filled($get('rating')))
-                                     ->columnSpanFull(),
-
-                                Forms\Components\DateTimePicker::make('metadata.checked_at')
-                                     ->label(__('Checked at'))
-                                     ->required(fn (Get $get): bool => filled($get('price_display')) || filled($get('price_cents')) || filled($get('rating'))),
-
-                                Forms\Components\TagsInput::make('pros')
-                                    ->label(__('Pros')),
-
-                                Forms\Components\TagsInput::make('cons')
-                                    ->label(__('Cons')),
-
-                                Forms\Components\TextInput::make('in_house_match_url')
-                                    ->label(__('We carry a similar product (URL, optional)'))
-                                    ->url()
-                                    ->columnSpanFull(),
+                        Forms\Components\Select::make('highlight')
+                            ->label(__('Highlight'))
+                            ->options([
+                                'best_overall' => __('Best Overall'),
+                                'best_value' => __('Best Value'),
+                                'budget_pick' => __('Budget Pick'),
                             ])
-                            ->columns(2),
-                    ]);
+                            ->placeholder(__('None')),
+
+                        Forms\Components\Toggle::make('in_stock')
+                            ->label(__('In Stock'))
+                            ->default(true)
+                            ->helperText(__('Turn off if this retailer is out of stock — flags the post in the list.')),
+
+                        Forms\Components\TextInput::make('price_display')
+                            ->label(__('Price (display)'))
+                            ->placeholder('$64.99')
+                            ->nullable(),
+
+                        Forms\Components\TextInput::make('price_cents')
+                            ->label(__('Price (cents, for sorting)'))
+                            ->numeric()
+                            ->required(),
+
+                        Forms\Components\TextInput::make('rating')
+                            ->label(__('Rating (0–5)'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(5)
+                            ->step(0.1),
+
+                        Forms\Components\TextInput::make('affiliate_url')
+                            ->label(__('Affiliate URL'))
+                            ->url()
+                            ->nullable()
+                            ->live(onBlur: true)
+                            ->columnSpanFull(),
+
+                        Forms\Components\TextInput::make('metadata.source_url')
+                            ->label(__('Price/rating source URL'))
+                            ->url()
+                            ->required(fn (Get $get): bool => filled($get('price_display')) || filled($get('price_cents')) || filled($get('rating')))
+                            ->columnSpanFull(),
+
+                        Forms\Components\DateTimePicker::make('metadata.checked_at')
+                            ->label(__('Checked at'))
+                            ->required(fn (Get $get): bool => filled($get('price_display')) || filled($get('price_cents')) || filled($get('rating'))),
+
+                        Forms\Components\TagsInput::make('pros')
+                            ->label(__('Pros')),
+
+                        Forms\Components\TagsInput::make('cons')
+                            ->label(__('Cons')),
+
+                        Forms\Components\TextInput::make('in_house_match_url')
+                            ->label(__('We carry a similar product (URL, optional)'))
+                            ->url()
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
+            ]);
     }
 
     protected static function seoSection(): Forms\Components\Section
     {
         return Forms\Components\Section::make(__('SEO Settings'))
-                    ->description(__('Optimize this post for search engines and social media.'))
-                    ->headerActions([
-                        Forms\Components\Actions\Action::make('generateSeo')
-                            ->label(__('Generate with AI'))
-                            ->icon('heroicon-o-sparkles')
-                            ->color('gray')
-                            ->action(function (Get $get, Set $set) {
-                                $title = (string) $get('title');
-                                $content = TiptapConverter::asHTML($get('content') ?? '');
+            ->description(__('Optimize this post for search engines and social media.'))
+            ->headerActions([
+                Forms\Components\Actions\Action::make('generateSeo')
+                    ->label(__('Generate with AI'))
+                    ->icon('heroicon-o-sparkles')
+                    ->color('gray')
+                    ->action(function (Get $get, Set $set) {
+                        $title = (string) $get('title');
+                        $content = TiptapConverter::asHTML($get('content') ?? '');
 
-                                if (blank($title)) {
-                                    Notification::make()
-                                        ->title(__('Add a title first'))
-                                        ->warning()
-                                        ->send();
+                        if (blank($title)) {
+                            Notification::make()
+                                ->title(__('Add a title first'))
+                                ->warning()
+                                ->send();
 
-                                    return;
-                                }
+                            return;
+                        }
 
-                                try {
-                                    $result = app(AiSeoGeneratorService::class)->generate($title, $content);
-                                } catch (\Throwable $e) {
-                                    Notification::make()
-                                        ->title(__('SEO generation failed'))
-                                        ->body($e->getMessage())
-                                        ->danger()
-                                        ->send();
+                        try {
+                            $result = app(AiSeoGeneratorService::class)->generate($title, $content);
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title(__('SEO generation failed'))
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
 
-                                    return;
-                                }
+                            return;
+                        }
 
-                                $set('seo.title', $result['seo_title']);
-                                $set('seo.keyphrase', $result['focus_keyphrase']);
-                                $set('seo.description', $result['meta_description']);
-                                $set('seo.og_title', $result['social_title']);
-                                $set('seo.og_description', $result['social_description']);
+                        $set('seo.title', $result['seo_title']);
+                        $set('seo.keyphrase', $result['focus_keyphrase']);
+                        $set('seo.description', $result['meta_description']);
+                        $set('seo.og_title', $result['social_title']);
+                        $set('seo.og_description', $result['social_description']);
 
-                                Notification::make()
-                                    ->title(__('SEO fields generated — review before saving'))
-                                    ->success()
-                                    ->send();
-                            }),
-                    ])
-                    ->schema([
-                        Forms\Components\Tabs::make('SEO')
-                            ->tabs([
-                                Forms\Components\Tabs\Tab::make(__('Google Search'))
-                                    ->schema([
-                                        Forms\Components\TextInput::make('seo.title')
-                                            ->label(__('SEO Title'))
-                                            ->maxLength(60)
-                                            ->live(onBlur: true),
-                                        Forms\Components\TextInput::make('seo.keyphrase')
-                                            ->label(__('Focus Keyphrase')),
-                                        Forms\Components\Textarea::make('seo.description')
-                                            ->label(__('Meta Description'))
-                                            ->maxLength(160)
-                                            ->live(onBlur: true),
-                                        Forms\Components\Placeholder::make('serp_preview')
-                                            ->label(__('Search Preview'))
-                                            ->content(function (Get $get) {
-                                                $toStr = fn ($value) => is_array($value) ? '' : (string) $value;
+                        Notification::make()
+                            ->title(__('SEO fields generated — review before saving'))
+                            ->success()
+                            ->send();
+                    }),
+            ])
+            ->schema([
+                Forms\Components\Tabs::make('SEO')
+                    ->tabs([
+                        Forms\Components\Tabs\Tab::make(__('Google Search'))
+                            ->schema([
+                                Forms\Components\TextInput::make('seo.title')
+                                    ->label(__('SEO Title'))
+                                    ->maxLength(60)
+                                    ->live(onBlur: true),
+                                Forms\Components\TextInput::make('seo.keyphrase')
+                                    ->label(__('Focus Keyphrase')),
+                                Forms\Components\Textarea::make('seo.description')
+                                    ->label(__('Meta Description'))
+                                    ->maxLength(160)
+                                    ->live(onBlur: true),
+                                Forms\Components\Placeholder::make('serp_preview')
+                                    ->label(__('Search Preview'))
+                                    ->content(function (Get $get) {
+                                        $toStr = fn ($value) => is_array($value) ? '' : (string) $value;
 
-                                                $title = Str::limit($toStr($get('seo.title')) ?: $toStr($get('title')) ?: __('Untitled Post'), 60, '');
-                                                $description = Str::limit($toStr($get('seo.description')) ?: strip_tags(TiptapConverter::asHTML($get('content') ?? '')), 160, '');
-                                                $url = rtrim(config('app.frontend_url'), '/').'/blog/'.($toStr($get('slug')) ?: 'post-slug');
+                                        $title = Str::limit($toStr($get('seo.title')) ?: $toStr($get('title')) ?: __('Untitled Post'), 60, '');
+                                        $description = Str::limit($toStr($get('seo.description')) ?: strip_tags(TiptapConverter::asHTML($get('content') ?? '')), 160, '');
+                                        $url = rtrim(config('app.frontend_url'), '/').'/blog/'.($toStr($get('slug')) ?: 'post-slug');
 
-                                                return new \Illuminate\Support\HtmlString(
-                                                    view('filament.forms.serp-preview', compact('title', 'description', 'url'))->render()
-                                                );
-                                            }),
-                                    ]),
-                                Forms\Components\Tabs\Tab::make(__('Social Media'))
-                                    ->schema([
-                                        Forms\Components\TextInput::make('seo.og_title')
-                                            ->label(__('Social Title')),
-                                        Forms\Components\Textarea::make('seo.og_description')
-                                            ->label(__('Social Description')),
-                                        Forms\Components\FileUpload::make('seo.og_image')
-                                            ->label(__('Social Image'))
-                                            ->image()
-                                            ->directory('seo')
-                                            ->saveUploadedFileUsing(ImageUploadResizer::make(1200, 630)),
-                                    ]),
+                                        return new HtmlString(
+                                            view('filament.forms.serp-preview', compact('title', 'description', 'url'))->render()
+                                        );
+                                    }),
                             ]),
-                    ])->collapsible();
+                        Forms\Components\Tabs\Tab::make(__('Social Media'))
+                            ->schema([
+                                Forms\Components\TextInput::make('seo.og_title')
+                                    ->label(__('Social Title')),
+                                Forms\Components\Textarea::make('seo.og_description')
+                                    ->label(__('Social Description')),
+                                Forms\Components\FileUpload::make('seo.og_image')
+                                    ->label(__('Social Image'))
+                                    ->image()
+                                    ->directory('seo')
+                                    ->saveUploadedFileUsing(ImageUploadResizer::make(1200, 630)),
+                            ]),
+                    ]),
+            ])->collapsible();
     }
 
     public static function table(Table $table): Table
@@ -401,12 +403,12 @@ class PostResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->html()
-                    ->formatStateUsing(function (Post $record): \Illuminate\Support\HtmlString {
+                    ->formatStateUsing(function (Post $record): HtmlString {
                         $badge = $record->hasOutOfStockComparisonItems()
                             ? ' <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-danger-100 text-danger-700">⚠ '.__('Out of stock').'</span>'
                             : '';
 
-                        return new \Illuminate\Support\HtmlString(e($record->title).$badge);
+                        return new HtmlString(e($record->title).$badge);
                     }),
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('Status'))

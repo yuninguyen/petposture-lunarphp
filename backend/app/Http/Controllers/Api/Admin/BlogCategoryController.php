@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\BlogCategory;
 use App\Http\Resources\Admin\BlogCategoryResource;
+use App\Models\BlogCategory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
@@ -21,11 +21,11 @@ class BlogCategoryController extends Controller
         if ($request->has('search')) {
             $search = $request->input('search');
             $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%");
+                ->orWhere('slug', 'like', "%{$search}%");
         }
 
         $perPage = $request->input('per_page', 10);
-        
+
         $categories = $query->latest()->paginate($perPage);
 
         return BlogCategoryResource::collection($categories);
@@ -66,7 +66,7 @@ class BlogCategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:blog_categories,slug,' . $blogCategory->id,
+            'slug' => 'nullable|string|max:255|unique:blog_categories,slug,'.$blogCategory->id,
         ]);
 
         if (empty($validated['slug'])) {

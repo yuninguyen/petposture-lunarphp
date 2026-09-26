@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Setting;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
@@ -282,52 +283,52 @@ class Payment extends Page
                                     ])
                                     ->key('stripe_test_section')
                                     ->schema([
-                                Select::make('stripe_mode')
-                                    ->label(__('Stripe Mode'))
-                                    ->options([
-                                        'test' => 'Test (Sandbox)',
-                                        'live' => 'Live (Production)',
-                                    ])
-                                    ->required()
-                                    ->helperText('Switch to Test to use Stripe test cards without real charges.'),
-
-                                Grid::make(2)->schema([
-                                    TextInput::make('stripe_key')
-                                        ->label(__('Publishable Key'))
-                                        ->placeholder('pk_live_...')
-                                        ->helperText('Starts with pk_live_ or pk_test_'),
-
-                                    TextInput::make('stripe_secret')
-                                        ->label(__('Secret Key'))
-                                        ->password()
-                                        ->revealable()
-                                        ->placeholder('sk_live_...')
-                                        ->helperText('Starts with sk_live_ or sk_test_'),
-                                ]),
-
-                                TextInput::make('stripe_webhook_secret')
-                                    ->label(__('Webhook Signing Secret'))
-                                    ->password()
-                                    ->revealable()
-                                    ->placeholder('whsec_...')
-                                    ->helperText('From Stripe Dashboard → Developers → Webhooks → your endpoint → Signing secret.')
-                                    ->columnSpanFull(),
-
-                                TextInput::make('webhook_url')
-                                    ->label('Webhook Endpoint URL')
-                                    ->default(fn () => url('/api/webhooks/stripe'))
-                                    ->disabled()
-                                    ->dehydrated(false)
-                                    ->suffixAction(
-                                        \Filament\Forms\Components\Actions\Action::make('copy')
-                                            ->icon('heroicon-o-clipboard-document')
-                                            ->tooltip('Copy to clipboard')
-                                            ->action(fn () => null)
-                                            ->extraAttributes([
-                                                'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                        Select::make('stripe_mode')
+                                            ->label(__('Stripe Mode'))
+                                            ->options([
+                                                'test' => 'Test (Sandbox)',
+                                                'live' => 'Live (Production)',
                                             ])
-                                    )
-                                    ->helperText('Register this URL in your Stripe Dashboard → Developers → Webhooks.'),
+                                            ->required()
+                                            ->helperText('Switch to Test to use Stripe test cards without real charges.'),
+
+                                        Grid::make(2)->schema([
+                                            TextInput::make('stripe_key')
+                                                ->label(__('Publishable Key'))
+                                                ->placeholder('pk_live_...')
+                                                ->helperText('Starts with pk_live_ or pk_test_'),
+
+                                            TextInput::make('stripe_secret')
+                                                ->label(__('Secret Key'))
+                                                ->password()
+                                                ->revealable()
+                                                ->placeholder('sk_live_...')
+                                                ->helperText('Starts with sk_live_ or sk_test_'),
+                                        ]),
+
+                                        TextInput::make('stripe_webhook_secret')
+                                            ->label(__('Webhook Signing Secret'))
+                                            ->password()
+                                            ->revealable()
+                                            ->placeholder('whsec_...')
+                                            ->helperText('From Stripe Dashboard → Developers → Webhooks → your endpoint → Signing secret.')
+                                            ->columnSpanFull(),
+
+                                        TextInput::make('webhook_url')
+                                            ->label('Webhook Endpoint URL')
+                                            ->default(fn () => url('/api/webhooks/stripe'))
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->suffixAction(
+                                                Action::make('copy')
+                                                    ->icon('heroicon-o-clipboard-document')
+                                                    ->tooltip('Copy to clipboard')
+                                                    ->action(fn () => null)
+                                                    ->extraAttributes([
+                                                        'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                                    ])
+                                            )
+                                            ->helperText('Register this URL in your Stripe Dashboard → Developers → Webhooks.'),
                                     ]),
                             ]),
 
@@ -344,50 +345,50 @@ class Payment extends Page
                                     ])
                                     ->key('paypal_test_section')
                                     ->schema([
-                                Select::make('paypal_mode')
-                                    ->label(__('PayPal Mode'))
-                                    ->options([
-                                        'sandbox' => 'Sandbox (Test)',
-                                        'live' => 'Live (Production)',
-                                    ])
-                                    ->required()
-                                    ->helperText('Switch to Sandbox to use PayPal test accounts without real charges.')
-                                    ->columnSpanFull(),
-
-                                Grid::make(2)->schema([
-                                    TextInput::make('paypal_client_id')
-                                        ->label(__('Client ID'))
-                                        ->helperText('From developer.paypal.com → Apps & Credentials.'),
-
-                                    TextInput::make('paypal_client_secret')
-                                        ->label(__('Client Secret'))
-                                        ->password()
-                                        ->revealable()
-                                        ->helperText('From developer.paypal.com → Apps & Credentials.'),
-                                ]),
-
-                                TextInput::make('paypal_webhook_id')
-                                    ->label(__('Webhook ID'))
-                                    ->password()
-                                    ->revealable()
-                                    ->helperText('From PayPal Dashboard → Webhooks → your endpoint → Webhook ID. Leave blank to skip signature verification (not recommended in live mode).')
-                                    ->columnSpanFull(),
-
-                                TextInput::make('paypal_webhook_url')
-                                    ->label('PayPal Webhook Endpoint URL')
-                                    ->default(fn () => url('/api/webhooks/paypal'))
-                                    ->disabled()
-                                    ->dehydrated(false)
-                                    ->suffixAction(
-                                        \Filament\Forms\Components\Actions\Action::make('copyPayPalWebhook')
-                                            ->icon('heroicon-o-clipboard-document')
-                                            ->tooltip('Copy to clipboard')
-                                            ->action(fn () => null)
-                                            ->extraAttributes([
-                                                'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                        Select::make('paypal_mode')
+                                            ->label(__('PayPal Mode'))
+                                            ->options([
+                                                'sandbox' => 'Sandbox (Test)',
+                                                'live' => 'Live (Production)',
                                             ])
-                                    )
-                                    ->helperText('Register this URL in your PayPal Dashboard → Webhooks.'),
+                                            ->required()
+                                            ->helperText('Switch to Sandbox to use PayPal test accounts without real charges.')
+                                            ->columnSpanFull(),
+
+                                        Grid::make(2)->schema([
+                                            TextInput::make('paypal_client_id')
+                                                ->label(__('Client ID'))
+                                                ->helperText('From developer.paypal.com → Apps & Credentials.'),
+
+                                            TextInput::make('paypal_client_secret')
+                                                ->label(__('Client Secret'))
+                                                ->password()
+                                                ->revealable()
+                                                ->helperText('From developer.paypal.com → Apps & Credentials.'),
+                                        ]),
+
+                                        TextInput::make('paypal_webhook_id')
+                                            ->label(__('Webhook ID'))
+                                            ->password()
+                                            ->revealable()
+                                            ->helperText('From PayPal Dashboard → Webhooks → your endpoint → Webhook ID. Leave blank to skip signature verification (not recommended in live mode).')
+                                            ->columnSpanFull(),
+
+                                        TextInput::make('paypal_webhook_url')
+                                            ->label('PayPal Webhook Endpoint URL')
+                                            ->default(fn () => url('/api/webhooks/paypal'))
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->suffixAction(
+                                                Action::make('copyPayPalWebhook')
+                                                    ->icon('heroicon-o-clipboard-document')
+                                                    ->tooltip('Copy to clipboard')
+                                                    ->action(fn () => null)
+                                                    ->extraAttributes([
+                                                        'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                                    ])
+                                            )
+                                            ->helperText('Register this URL in your PayPal Dashboard → Webhooks.'),
                                     ]),
                             ]),
 
@@ -404,50 +405,50 @@ class Payment extends Page
                                     ])
                                     ->key('airwallex_test_section')
                                     ->schema([
-                                Select::make('airwallex_mode')
-                                    ->label(__('Airwallex Mode'))
-                                    ->options([
-                                        'sandbox' => 'Sandbox (Test)',
-                                        'live' => 'Live (Production)',
-                                    ])
-                                    ->required()
-                                    ->helperText('Switch to Sandbox to use Airwallex demo credentials without real charges.')
-                                    ->columnSpanFull(),
-
-                                Grid::make(2)->schema([
-                                    TextInput::make('airwallex_client_id')
-                                        ->label(__('Client ID'))
-                                        ->helperText('From Airwallex Dashboard → Account → API Keys.'),
-
-                                    TextInput::make('airwallex_api_key')
-                                        ->label(__('API Key'))
-                                        ->password()
-                                        ->revealable()
-                                        ->helperText('From Airwallex Dashboard → Account → API Keys.'),
-                                ]),
-
-                                TextInput::make('airwallex_webhook_secret')
-                                    ->label(__('Webhook Secret'))
-                                    ->password()
-                                    ->revealable()
-                                    ->helperText('From Airwallex Dashboard → Developer → Webhooks → your endpoint. Leave blank to skip signature verification (not recommended in live mode).')
-                                    ->columnSpanFull(),
-
-                                TextInput::make('airwallex_webhook_url')
-                                    ->label('Airwallex Webhook Endpoint URL')
-                                    ->default(fn () => url('/api/webhooks/airwallex'))
-                                    ->disabled()
-                                    ->dehydrated(false)
-                                    ->suffixAction(
-                                        \Filament\Forms\Components\Actions\Action::make('copyAirwallexWebhook')
-                                            ->icon('heroicon-o-clipboard-document')
-                                            ->tooltip('Copy to clipboard')
-                                            ->action(fn () => null)
-                                            ->extraAttributes([
-                                                'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                        Select::make('airwallex_mode')
+                                            ->label(__('Airwallex Mode'))
+                                            ->options([
+                                                'sandbox' => 'Sandbox (Test)',
+                                                'live' => 'Live (Production)',
                                             ])
-                                    )
-                                    ->helperText('Register this URL in your Airwallex Dashboard → Developer → Webhooks.'),
+                                            ->required()
+                                            ->helperText('Switch to Sandbox to use Airwallex demo credentials without real charges.')
+                                            ->columnSpanFull(),
+
+                                        Grid::make(2)->schema([
+                                            TextInput::make('airwallex_client_id')
+                                                ->label(__('Client ID'))
+                                                ->helperText('From Airwallex Dashboard → Account → API Keys.'),
+
+                                            TextInput::make('airwallex_api_key')
+                                                ->label(__('API Key'))
+                                                ->password()
+                                                ->revealable()
+                                                ->helperText('From Airwallex Dashboard → Account → API Keys.'),
+                                        ]),
+
+                                        TextInput::make('airwallex_webhook_secret')
+                                            ->label(__('Webhook Secret'))
+                                            ->password()
+                                            ->revealable()
+                                            ->helperText('From Airwallex Dashboard → Developer → Webhooks → your endpoint. Leave blank to skip signature verification (not recommended in live mode).')
+                                            ->columnSpanFull(),
+
+                                        TextInput::make('airwallex_webhook_url')
+                                            ->label('Airwallex Webhook Endpoint URL')
+                                            ->default(fn () => url('/api/webhooks/airwallex'))
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->suffixAction(
+                                                Action::make('copyAirwallexWebhook')
+                                                    ->icon('heroicon-o-clipboard-document')
+                                                    ->tooltip('Copy to clipboard')
+                                                    ->action(fn () => null)
+                                                    ->extraAttributes([
+                                                        'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                                    ])
+                                            )
+                                            ->helperText('Register this URL in your Airwallex Dashboard → Developer → Webhooks.'),
                                     ]),
                             ]),
 
@@ -464,55 +465,55 @@ class Payment extends Page
                                     ])
                                     ->key('payoneer_test_section')
                                     ->schema([
-                                Select::make('payoneer_mode')
-                                    ->label(__('Payoneer Mode'))
-                                    ->options([
-                                        'sandbox' => 'Sandbox (Test)',
-                                        'live' => 'Live (Production)',
-                                    ])
-                                    ->required()
-                                    ->helperText('Switch to Sandbox to use Payoneer test credentials without real charges.')
-                                    ->columnSpanFull(),
-
-                                TextInput::make('payoneer_merchant_code')
-                                    ->label(__('Merchant Code'))
-                                    ->helperText('From your Payoneer Checkout merchant account.')
-                                    ->columnSpanFull(),
-
-                                Grid::make(2)->schema([
-                                    TextInput::make('payoneer_api_key')
-                                        ->label(__('API Key'))
-                                        ->password()
-                                        ->revealable(),
-
-                                    TextInput::make('payoneer_api_secret')
-                                        ->label(__('API Secret'))
-                                        ->password()
-                                        ->revealable(),
-                                ]),
-
-                                TextInput::make('payoneer_webhook_secret')
-                                    ->label(__('Webhook Secret'))
-                                    ->password()
-                                    ->revealable()
-                                    ->helperText('Leave blank to skip signature verification (not recommended in live mode).')
-                                    ->columnSpanFull(),
-
-                                TextInput::make('payoneer_webhook_url')
-                                    ->label('Payoneer Webhook Endpoint URL')
-                                    ->default(fn () => url('/api/webhooks/payoneer'))
-                                    ->disabled()
-                                    ->dehydrated(false)
-                                    ->suffixAction(
-                                        \Filament\Forms\Components\Actions\Action::make('copyPayoneerWebhook')
-                                            ->icon('heroicon-o-clipboard-document')
-                                            ->tooltip('Copy to clipboard')
-                                            ->action(fn () => null)
-                                            ->extraAttributes([
-                                                'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                        Select::make('payoneer_mode')
+                                            ->label(__('Payoneer Mode'))
+                                            ->options([
+                                                'sandbox' => 'Sandbox (Test)',
+                                                'live' => 'Live (Production)',
                                             ])
-                                    )
-                                    ->helperText('Register this URL as the notification callback in your Payoneer Checkout dashboard.'),
+                                            ->required()
+                                            ->helperText('Switch to Sandbox to use Payoneer test credentials without real charges.')
+                                            ->columnSpanFull(),
+
+                                        TextInput::make('payoneer_merchant_code')
+                                            ->label(__('Merchant Code'))
+                                            ->helperText('From your Payoneer Checkout merchant account.')
+                                            ->columnSpanFull(),
+
+                                        Grid::make(2)->schema([
+                                            TextInput::make('payoneer_api_key')
+                                                ->label(__('API Key'))
+                                                ->password()
+                                                ->revealable(),
+
+                                            TextInput::make('payoneer_api_secret')
+                                                ->label(__('API Secret'))
+                                                ->password()
+                                                ->revealable(),
+                                        ]),
+
+                                        TextInput::make('payoneer_webhook_secret')
+                                            ->label(__('Webhook Secret'))
+                                            ->password()
+                                            ->revealable()
+                                            ->helperText('Leave blank to skip signature verification (not recommended in live mode).')
+                                            ->columnSpanFull(),
+
+                                        TextInput::make('payoneer_webhook_url')
+                                            ->label('Payoneer Webhook Endpoint URL')
+                                            ->default(fn () => url('/api/webhooks/payoneer'))
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->suffixAction(
+                                                Action::make('copyPayoneerWebhook')
+                                                    ->icon('heroicon-o-clipboard-document')
+                                                    ->tooltip('Copy to clipboard')
+                                                    ->action(fn () => null)
+                                                    ->extraAttributes([
+                                                        'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                                    ])
+                                            )
+                                            ->helperText('Register this URL as the notification callback in your Payoneer Checkout dashboard.'),
                                     ]),
                             ]),
 
@@ -529,48 +530,48 @@ class Payment extends Page
                                     ])
                                     ->key('pingpong_test_section')
                                     ->schema([
-                                Select::make('pingpong_mode')
-                                    ->label(__('PingPong Mode'))
-                                    ->options([
-                                        'sandbox' => 'Sandbox (Test)',
-                                        'live' => 'Live (Production)',
-                                    ])
-                                    ->required()
-                                    ->helperText('Switch to Sandbox to use PingPong test credentials without real charges.')
-                                    ->columnSpanFull(),
-
-                                TextInput::make('pingpong_app_id')
-                                    ->label(__('App ID'))
-                                    ->helperText('From your PingPong merchant dashboard.')
-                                    ->columnSpanFull(),
-
-                                Textarea::make('pingpong_private_key')
-                                    ->label(__('Merchant Private Key (PEM)'))
-                                    ->rows(4)
-                                    ->helperText('Your RSA private key, used to sign requests to PingPong.')
-                                    ->columnSpanFull(),
-
-                                Textarea::make('pingpong_public_key')
-                                    ->label(__("PingPong's Public Key (PEM)"))
-                                    ->rows(4)
-                                    ->helperText('Used to verify the authenticity of PingPong webhook notifications. Leave blank to skip signature verification (not recommended in live mode).')
-                                    ->columnSpanFull(),
-
-                                TextInput::make('pingpong_webhook_url')
-                                    ->label('PingPong Notification URL')
-                                    ->default(fn () => url('/api/webhooks/pingpong'))
-                                    ->disabled()
-                                    ->dehydrated(false)
-                                    ->suffixAction(
-                                        \Filament\Forms\Components\Actions\Action::make('copyPingPongWebhook')
-                                            ->icon('heroicon-o-clipboard-document')
-                                            ->tooltip('Copy to clipboard')
-                                            ->action(fn () => null)
-                                            ->extraAttributes([
-                                                'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                        Select::make('pingpong_mode')
+                                            ->label(__('PingPong Mode'))
+                                            ->options([
+                                                'sandbox' => 'Sandbox (Test)',
+                                                'live' => 'Live (Production)',
                                             ])
-                                    )
-                                    ->helperText('Register this URL as the notificationUrl in your PingPong merchant dashboard.'),
+                                            ->required()
+                                            ->helperText('Switch to Sandbox to use PingPong test credentials without real charges.')
+                                            ->columnSpanFull(),
+
+                                        TextInput::make('pingpong_app_id')
+                                            ->label(__('App ID'))
+                                            ->helperText('From your PingPong merchant dashboard.')
+                                            ->columnSpanFull(),
+
+                                        Textarea::make('pingpong_private_key')
+                                            ->label(__('Merchant Private Key (PEM)'))
+                                            ->rows(4)
+                                            ->helperText('Your RSA private key, used to sign requests to PingPong.')
+                                            ->columnSpanFull(),
+
+                                        Textarea::make('pingpong_public_key')
+                                            ->label(__("PingPong's Public Key (PEM)"))
+                                            ->rows(4)
+                                            ->helperText('Used to verify the authenticity of PingPong webhook notifications. Leave blank to skip signature verification (not recommended in live mode).')
+                                            ->columnSpanFull(),
+
+                                        TextInput::make('pingpong_webhook_url')
+                                            ->label('PingPong Notification URL')
+                                            ->default(fn () => url('/api/webhooks/pingpong'))
+                                            ->disabled()
+                                            ->dehydrated(false)
+                                            ->suffixAction(
+                                                Action::make('copyPingPongWebhook')
+                                                    ->icon('heroicon-o-clipboard-document')
+                                                    ->tooltip('Copy to clipboard')
+                                                    ->action(fn () => null)
+                                                    ->extraAttributes([
+                                                        'x-on:click' => 'navigator.clipboard.writeText($el.closest(\'.fi-input-wrp\').querySelector(\'input\').value); $tooltip(\'Copied!\', { timeout: 1500 })',
+                                                    ])
+                                            )
+                                            ->helperText('Register this URL as the notificationUrl in your PingPong merchant dashboard.'),
                                     ]),
                             ]),
                     ])

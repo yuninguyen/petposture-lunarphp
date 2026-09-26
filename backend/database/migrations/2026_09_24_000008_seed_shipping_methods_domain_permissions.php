@@ -14,12 +14,18 @@ return new class extends Migration
     {
         $abilities = AdminAbilityRegistry::SHIPPING_METHODS;
         app(PermissionRegistrar::class)->forgetCachedPermissions();
-        foreach ($abilities as $name) Permission::query()->firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        foreach ($abilities as $name) {
+            Permission::query()->firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        }
         foreach (AdminAbilityRegistry::coreRoles() as $coreRole) {
-            if ($role = Role::query()->where('name', $coreRole)->where('guard_name', 'web')->first()) $role->givePermissionTo($abilities);
+            if ($role = Role::query()->where('name', $coreRole)->where('guard_name', 'web')->first()) {
+                $role->givePermissionTo($abilities);
+            }
         }
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
-    public function down(): void { /* Non-destructive rollback preserves manual operator customizations. */ }
+    public function down(): void
+    { /* Non-destructive rollback preserves manual operator customizations. */
+    }
 };

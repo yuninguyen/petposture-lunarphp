@@ -17,6 +17,7 @@ class StorefrontBodyBoundsTest extends TestCase
             $sink = $options['sink'];
             $written += $sink->write(str_repeat('a', 2097152));
             $this->assertSame(0, $sink->write('x'));
+
             return Http::response('unused');
         });
         try {
@@ -38,6 +39,7 @@ class StorefrontBodyBoundsTest extends TestCase
             usleep(60000);
             $this->assertGreaterThan($deadline, hrtime(true) / 1e9);
             $this->assertSame(0, $options['sink']->write('late'));
+
             return Http::response('unused');
         });
         try {

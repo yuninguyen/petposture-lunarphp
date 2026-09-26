@@ -12,6 +12,7 @@ use App\Services\PublicContentPurgeCoordinator;
 use App\Services\StorefrontRefreshJournal;
 use App\Support\CloudflarePurgeNotice;
 use App\Support\StorefrontMutationBatch;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -20,12 +21,14 @@ use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Tests\Fixtures\StorefrontHttp;
 use Tests\TestCase;
 
 /** Injected same-process local boundaries, not process-kill or queue-ack proof. */
 class JournalFinalLocalAcceptanceTest extends TestCase
 {
     private string $database;
+
     private static ?string $template = null;
 
     protected function setUp(): void
@@ -117,7 +120,9 @@ class JournalFinalLocalAcceptanceTest extends TestCase
         $reader = DB::connection('committed')->table($model->getTable())->where('id', $model->getKey());
         $batch = app(StorefrontMutationBatch::class);
         $batch->begin();
-        foreach ($keys as $key) Cache::put($key, 'stale before mutation');
+        foreach ($keys as $key) {
+            Cache::put($key, 'stale before mutation');
+        }
         $manager = Cache::getFacadeRoot();
         $store = $manager->store();
         $failures = 0;
@@ -128,15 +133,20 @@ class JournalFinalLocalAcceptanceTest extends TestCase
                 $failures++;
                 throw new RuntimeException('one-shot early eviction');
             }
+
             return $store->forget($key);
         });
         try {
-            if ($transaction !== 'autocommit') DB::beginTransaction();
+            if ($transaction !== 'autocommit') {
+                DB::beginTransaction();
+            }
             $this->assertTrue($delete ? $model->delete() : $model->update([$column => $current]));
             $this->assertSame(1, $failures);
             $this->assertSame($keys, $forgotten);
             $this->assertTrue($store->has($keys[0]));
-            foreach (array_slice($keys, 1) as $key) $this->assertFalse($store->has($key));
+            foreach (array_slice($keys, 1) as $key) {
+                $this->assertFalse($store->has($key));
+            }
             // Destroy mutable event attributes before callbacks/handoff can read them again.
             $model->$column = 'not-the-event-key';
             $this->assertSame(0, DB::connection('committed')->table('storefront_refresh_journal')->count());
@@ -144,17 +154,23 @@ class JournalFinalLocalAcceptanceTest extends TestCase
             Http::assertNothingSent();
             if ($transaction !== 'autocommit') {
                 $this->assertSame($original, $reader->value($column));
-                if ($transaction === 'rollback') DB::rollBack();
-                else DB::commit();
+                if ($transaction === 'rollback') {
+                    DB::rollBack();
+                } else {
+                    DB::commit();
+                }
             }
             $this->assertSame($transaction === 'rollback' ? $original : ($delete ? null : $current), $reader->value($column));
-            foreach ($keys as $key) $store->put($key, 'refilled before completion');
+            foreach ($keys as $key) {
+                $store->put($key, 'refilled before completion');
+            }
             $batch->end();
             app(PublicContentPurgeCoordinator::class)->flushCompletedMutation();
             if ($transaction === 'rollback') {
                 $this->assertSame(0, DB::connection('committed')->table('storefront_refresh_journal')->count());
                 Bus::assertNothingDispatched();
                 Http::assertNothingSent();
+
                 return;
             }
             $row = DB::connection('committed')->table('storefront_refresh_journal')->sole();
@@ -165,7 +181,7 @@ class JournalFinalLocalAcceptanceTest extends TestCase
             Cache::swap($manager);
             $this->successfulEffects($keys);
             $job->handle(app(CloudflareCacheService::class));
-            \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
+            StorefrontHttp::assertPurgeCount(1);
             $this->assertSame(1, $failures);
             $this->assertSame('completed', app(StorefrontRefreshJournal::class)->find($row->id)->state);
         } finally {
@@ -197,13 +213,15 @@ class JournalFinalLocalAcceptanceTest extends TestCase
         $this->assertSame($id, $job->journalId);
         $this->assertSame($keys, $journal->find($id)->cache_keys);
         $this->assertSame(1, $journal->find($id)->recovery_attempts);
-        foreach ($keys as $key) Cache::put($key, 'stale refill');
+        foreach ($keys as $key) {
+            Cache::put($key, 'stale refill');
+        }
         $this->successfulEffects($keys, function () use ($journal, $id) {
             $this->assertSame(2, $journal->find($id)->recovery_attempts);
             $this->assertSame('leased', $journal->find($id)->state);
         });
         $job->handle(app(CloudflareCacheService::class));
-        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
+        StorefrontHttp::assertPurgeCount(1);
         $this->assertSame('completed', $journal->find($id)->state);
         $this->assertSame(2, $journal->find($id)->recovery_attempts);
         $this->assertFalse($journal->finish($id, $claim->lease_token, true, 'success'));
@@ -226,7 +244,9 @@ class JournalFinalLocalAcceptanceTest extends TestCase
         DB::purge(StorefrontRefreshJournal::CONNECTION);
         $this->assertFalse(app(StorefrontMutationBatch::class)->hasChanges());
         $this->assertFalse(app(CloudflarePurgeNotice::class)->hasAttempted());
-        foreach (['setting:old', 'setting:new'] as $key) Cache::put($key, 'unrecoverable refill');
+        foreach (['setting:old', 'setting:new'] as $key) {
+            Cache::put($key, 'unrecoverable refill');
+        }
         $this->replayCommand();
         $this->assertSame(['selected' => 0, 'submitted' => 0, 'deferred' => 0, 'failed' => 0], app(StorefrontRefreshJournal::class)->replaySummary());
         $this->assertSame(0, DB::connection(StorefrontRefreshJournal::CONNECTION)->table('storefront_refresh_journal')->count());
@@ -261,15 +281,21 @@ class JournalFinalLocalAcceptanceTest extends TestCase
         $this->assertSame($keys, $journal->find($id)->cache_keys);
         $this->assertSame('pending', $journal->find($id)->state);
         $this->assertSame(0, $journal->find($id)->recovery_attempts);
-        foreach ($keys as $key) Cache::put($key, 'refill');
+        foreach ($keys as $key) {
+            Cache::put($key, 'refill');
+        }
         $this->successfulEffects($keys);
         $original->handle(app(CloudflareCacheService::class));
         $this->assertSame('completed', $journal->find($id)->state);
-        foreach ($keys as $key) Cache::put($key, 'fresh after completion');
+        foreach ($keys as $key) {
+            Cache::put($key, 'fresh after completion');
+        }
         $replacement->handle(app(CloudflareCacheService::class));
-        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
+        StorefrontHttp::assertPurgeCount(1);
         $this->assertSame(1, $journal->find($id)->recovery_attempts);
-        foreach ($keys as $key) $this->assertSame('fresh after completion', Cache::get($key));
+        foreach ($keys as $key) {
+            $this->assertSame('fresh after completion', Cache::get($key));
+        }
     }
 
     public function test_completed_unacknowledged_envelope_redelivery_has_no_effects(): void
@@ -279,27 +305,33 @@ class JournalFinalLocalAcceptanceTest extends TestCase
         $id = $journal->record($keys);
         $this->assertTrue($journal->dispatch($id));
         $envelope = Bus::dispatched(PurgeCloudflareCache::class)->sole();
-        foreach ($keys as $key) Cache::put($key, 'refill');
+        foreach ($keys as $key) {
+            Cache::put($key, 'refill');
+        }
         $this->successfulEffects($keys);
         $envelope->handle(app(CloudflareCacheService::class));
         $completed = $journal->find($id);
         $this->assertSame('completed', $completed->state);
         $this->assertNotNull($completed->completed_at);
         $this->assertSame(1, $completed->recovery_attempts);
-        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
+        StorefrontHttp::assertPurgeCount(1);
         app()->forgetScopedInstances();
         DB::purge(StorefrontRefreshJournal::CONNECTION);
         Bus::fake();
-        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::swap(new Factory);
         Http::preventStrayRequests();
-        foreach ($keys as $key) Cache::put($key, 'fresh after completion');
+        foreach ($keys as $key) {
+            Cache::put($key, 'fresh after completion');
+        }
         $envelope->handle(app(CloudflareCacheService::class));
         $this->replayCommand();
         $row = app(StorefrontRefreshJournal::class)->find($id);
         $this->assertEquals($completed, $row);
         $this->assertNull($row->lease_token);
         $this->assertNull($row->lease_expires_at);
-        foreach ($keys as $key) $this->assertSame('fresh after completion', Cache::get($key));
+        foreach ($keys as $key) {
+            $this->assertSame('fresh after completion', Cache::get($key));
+        }
         Http::assertNothingSent();
         Bus::assertNothingDispatched();
     }
@@ -311,9 +343,14 @@ class JournalFinalLocalAcceptanceTest extends TestCase
 
     private function successfulEffects(array $keys, ?callable $inside = null): void
     {
-        \Tests\Fixtures\StorefrontHttp::fake(function () use ($keys, $inside) {
-            foreach ($keys as $key) $this->assertFalse(Cache::has($key), 'Refresh must see every captured key evicted');
-            if ($inside !== null) $inside();
+        StorefrontHttp::fake(function () use ($keys, $inside) {
+            foreach ($keys as $key) {
+                $this->assertFalse(Cache::has($key), 'Refresh must see every captured key evicted');
+            }
+            if ($inside !== null) {
+                $inside();
+            }
+
             return Http::response(['success' => true]);
         });
     }

@@ -13,9 +13,7 @@ use Lunar\Models\ProductType;
 
 class CustomFieldService
 {
-    public function __construct(private readonly AttributeUsageChecker $usageChecker)
-    {
-    }
+    public function __construct(private readonly AttributeUsageChecker $usageChecker) {}
 
     public function manageableQuery()
     {
@@ -127,7 +125,7 @@ class CustomFieldService
     }
 
     /**
-     * @param array<int, int> $productTypeIds
+     * @param  array<int, int>  $productTypeIds
      */
     private function attachToProductTypes(Attribute $attribute, array $productTypeIds): void
     {
@@ -137,7 +135,7 @@ class CustomFieldService
     }
 
     /**
-     * @param array<int, int> $productTypeIds
+     * @param  array<int, int>  $productTypeIds
      */
     private function detachFromProductTypes(Attribute $attribute, array $productTypeIds): void
     {

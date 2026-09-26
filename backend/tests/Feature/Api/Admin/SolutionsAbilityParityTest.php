@@ -123,7 +123,7 @@ class SolutionsAbilityParityTest extends TestCase
             $this->actingAsRole($role);
 
             $solutionName = "Solution Created By {$role} {$counter}";
-            $solutionSlug = "solution-created-by-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}";
+            $solutionSlug = 'solution-created-by-'.strtolower(str_replace(' ', '-', $role))."-{$counter}";
             $counter++;
 
             $response = $this->postJson('/api/admin/solutions', [
@@ -150,7 +150,7 @@ class SolutionsAbilityParityTest extends TestCase
             $this->actingAsRole($role);
 
             $solutionName = "Unauthorized Solution {$role} {$counter}";
-            $solutionSlug = "unauthorized-solution-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}";
+            $solutionSlug = 'unauthorized-solution-'.strtolower(str_replace(' ', '-', $role))."-{$counter}";
             $counter++;
 
             $response = $this->postJson('/api/admin/solutions', [
@@ -180,7 +180,7 @@ class SolutionsAbilityParityTest extends TestCase
             $this->actingAsRole($role);
 
             $newName = "Solution Updated By {$role} {$counter}";
-            $newSlug = "solution-updated-by-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}";
+            $newSlug = 'solution-updated-by-'.strtolower(str_replace(' ', '-', $role))."-{$counter}";
             $counter++;
 
             $response = $this->putJson("/api/admin/solutions/{$solution->id}", [
@@ -213,7 +213,7 @@ class SolutionsAbilityParityTest extends TestCase
 
             $response = $this->putJson("/api/admin/solutions/{$solution->id}", [
                 'name' => "Tampered By {$role}",
-                'slug' => "tampered-by-" . strtolower(str_replace(' ', '-', $role)),
+                'slug' => 'tampered-by-'.strtolower(str_replace(' ', '-', $role)),
             ]);
 
             $response->assertForbidden(
@@ -235,7 +235,7 @@ class SolutionsAbilityParityTest extends TestCase
 
             $solution = Solution::query()->create([
                 'name' => "Solution To Delete By {$role} {$counter}",
-                'slug' => "solution-to-delete-by-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}",
+                'slug' => 'solution-to-delete-by-'.strtolower(str_replace(' ', '-', $role))."-{$counter}",
             ]);
             $counter++;
 
@@ -279,11 +279,11 @@ class SolutionsAbilityParityTest extends TestCase
 
             $s1 = Solution::query()->create([
                 'name' => "Bulk Delete Item 1 By {$role} {$counter}",
-                'slug' => "bulk-delete-item-1-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}",
+                'slug' => 'bulk-delete-item-1-'.strtolower(str_replace(' ', '-', $role))."-{$counter}",
             ]);
             $s2 = Solution::query()->create([
                 'name' => "Bulk Delete Item 2 By {$role} {$counter}",
-                'slug' => "bulk-delete-item-2-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}",
+                'slug' => 'bulk-delete-item-2-'.strtolower(str_replace(' ', '-', $role))."-{$counter}",
             ]);
             $counter++;
 

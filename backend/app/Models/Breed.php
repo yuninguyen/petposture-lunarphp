@@ -13,14 +13,15 @@ class Breed extends Model
     use HasFactory, HasSeo;
 
     protected $fillable = [
-        'name', 
-        'slug', 
-        'body_type', 
+        'name',
+        'slug',
+        'body_type',
         'description',
         'featured_image',
         'featured_image_alt',
         'featured_media_id',
     ];
+
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'breed_product', 'breed_id', 'lunar_product_id')

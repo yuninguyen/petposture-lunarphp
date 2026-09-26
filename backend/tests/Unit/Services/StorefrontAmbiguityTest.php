@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\Unit\Services;
 
 use App\Services\StorefrontOriginFreshnessService;

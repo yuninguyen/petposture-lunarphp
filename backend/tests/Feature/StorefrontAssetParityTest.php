@@ -48,6 +48,7 @@ class StorefrontAssetParityTest extends TestCase
             $this->assertFalse($request->hasHeader('Cookie'));
             $settings = StorefrontHtml::settings();
             $settings['shop_logo'] = $logo;
+
             return Http::response(['status' => 'Request was successful.', 'data' => str_ends_with($request->url(), '/api/settings') ? $settings : []]);
         });
         $projection = (new StorefrontRevalidationService)->expected(hrtime(true) / 1e9 + 30);

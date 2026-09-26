@@ -4,6 +4,7 @@ namespace App\Http\Resources\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Lunar\Base\FieldType;
 
@@ -38,11 +39,11 @@ class CollectionResource extends JsonResource
 
         $value = $name->getValue();
 
-        if (! is_array($value) && ! $value instanceof \Illuminate\Support\Collection) {
+        if (! is_array($value) && ! $value instanceof Collection) {
             return $locale === 'en' ? (string) $value : '';
         }
 
-        $translated = $value instanceof \Illuminate\Support\Collection
+        $translated = $value instanceof Collection
             ? $value->get($locale)
             : ($value[$locale] ?? null);
 

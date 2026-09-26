@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
+use App\Filament\Resources\CuratorMediaResource;
 use App\Filament\Widgets\AffiliateClicksOverview;
 use App\Filament\Widgets\ClicksByNetworkWidget;
 use App\Filament\Widgets\LatestOrdersTable;
@@ -36,6 +37,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use Livewire\Livewire;
@@ -843,7 +845,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::BODY_END,
-                fn (): string => \Illuminate\Support\Facades\Blade::render("@vite(['resources/js/source-editor.js'])"),
+                fn (): string => Blade::render("@vite(['resources/js/source-editor.js'])"),
             )
             // ->discoverWidgets(in: app_path('Filament\\Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
@@ -880,7 +882,7 @@ class AdminPanelProvider extends PanelProvider
                 FilamentShieldPlugin::make(),
                 FilamentApexChartsPlugin::make(),
                 CuratorPlugin::make()
-                    ->resource(\App\Filament\Resources\CuratorMediaResource::class),
+                    ->resource(CuratorMediaResource::class),
             ])
             ->profile(isSimple: false)
             ->sidebarWidth('16rem')

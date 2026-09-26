@@ -22,6 +22,7 @@ class StorefrontRetryExpectedReadTest extends TestCase
             $seen[] = [$name, $request->method(), $request->url()];
             if (str_ends_with($request->url(), '/api/settings')) {
                 $this->assertNull(Cache::get('setting:shop_name'));
+
                 return Http::response(['status' => 'Request was successful.', 'data' => StorefrontHtml::settings($name)]);
             }
             if (str_contains($request->url(), '/api/site-media?')) {
@@ -33,6 +34,7 @@ class StorefrontRetryExpectedReadTest extends TestCase
             if ($request->url() === 'http://127.0.0.1:3001/') {
                 return Http::response(StorefrontHtml::render($name), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']);
             }
+
             return Http::response(['success' => $name === 'C'], $name === 'C' ? 200 : 503);
         });
         $service = app(StorefrontCacheRefreshService::class);

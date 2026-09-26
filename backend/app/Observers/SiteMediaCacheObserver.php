@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\SiteMedia;
+use App\Services\PublicContentPurgeCoordinator;
 use Illuminate\Support\Facades\Cache;
 
 class SiteMediaCacheObserver
@@ -25,7 +26,7 @@ class SiteMediaCacheObserver
         ]));
 
         $keys = array_map(fn ($collection) => "public-api:site-media:v1:{$collection}", $collections);
-        app(\App\Services\PublicContentPurgeCoordinator::class)->requestPurge($keys, $siteMedia->getConnectionName());
+        app(PublicContentPurgeCoordinator::class)->requestPurge($keys, $siteMedia->getConnectionName());
         foreach ($keys as $key) {
             try {
                 Cache::forget($key);

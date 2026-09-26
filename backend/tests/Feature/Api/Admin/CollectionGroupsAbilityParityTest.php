@@ -123,7 +123,7 @@ class CollectionGroupsAbilityParityTest extends TestCase
             $this->actingAsRole($role);
 
             $groupName = "Group Created By {$role} {$counter}";
-            $groupHandle = "group-created-by-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}";
+            $groupHandle = 'group-created-by-'.strtolower(str_replace(' ', '-', $role))."-{$counter}";
             $counter++;
 
             $response = $this->postJson('/api/admin/collection-groups', [
@@ -150,7 +150,7 @@ class CollectionGroupsAbilityParityTest extends TestCase
             $this->actingAsRole($role);
 
             $groupName = "Unauthorized Group {$role} {$counter}";
-            $groupHandle = "unauthorized-group-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}";
+            $groupHandle = 'unauthorized-group-'.strtolower(str_replace(' ', '-', $role))."-{$counter}";
             $counter++;
 
             $response = $this->postJson('/api/admin/collection-groups', [
@@ -180,7 +180,7 @@ class CollectionGroupsAbilityParityTest extends TestCase
             $this->actingAsRole($role);
 
             $newName = "Group Updated By {$role} {$counter}";
-            $newHandle = "group-updated-by-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}";
+            $newHandle = 'group-updated-by-'.strtolower(str_replace(' ', '-', $role))."-{$counter}";
             $counter++;
 
             $response = $this->putJson("/api/admin/collection-groups/{$group->id}", [
@@ -213,7 +213,7 @@ class CollectionGroupsAbilityParityTest extends TestCase
 
             $response = $this->putJson("/api/admin/collection-groups/{$group->id}", [
                 'name' => "Tampered By {$role}",
-                'handle' => "tampered-by-" . strtolower(str_replace(' ', '-', $role)),
+                'handle' => 'tampered-by-'.strtolower(str_replace(' ', '-', $role)),
             ]);
 
             $response->assertForbidden(
@@ -235,7 +235,7 @@ class CollectionGroupsAbilityParityTest extends TestCase
 
             $group = CollectionGroup::query()->create([
                 'name' => "Group To Delete By {$role} {$counter}",
-                'handle' => "group-to-delete-by-" . strtolower(str_replace(' ', '-', $role)) . "-{$counter}",
+                'handle' => 'group-to-delete-by-'.strtolower(str_replace(' ', '-', $role))."-{$counter}",
             ]);
             $counter++;
 

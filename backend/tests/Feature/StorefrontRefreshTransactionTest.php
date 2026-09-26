@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\ManageSettings;
 use App\Http\Controllers\Api\Admin\BreedController;
 use App\Http\Controllers\Api\Admin\SeoSocialController;
 use App\Http\Middleware\AttachCloudflarePurgeWarning;
@@ -10,6 +11,7 @@ use App\Models\Breed;
 use App\Models\Post;
 use App\Models\Setting;
 use App\Models\SiteMedia;
+use App\Models\User;
 use App\Observers\PublicContentCacheObserver;
 use App\Observers\SiteMediaCacheObserver;
 use App\Services\CloudflareCacheService;
@@ -18,16 +20,21 @@ use App\Services\StorefrontRefreshJournal;
 use App\Support\CloudflarePurgeNotice;
 use App\Support\StorefrontMutationBatch;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Spatie\Permission\Models\Role;
+use Tests\Fixtures\StorefrontHttp;
 use Tests\TestCase;
 
 class StorefrontRefreshTransactionTest extends TestCase
@@ -55,7 +62,7 @@ class StorefrontRefreshTransactionTest extends TestCase
         Storage::fake('public');
         Http::preventStrayRequests();
         config(['services.cloudflare.api_token' => 'test-only', 'services.cloudflare.zone_id' => 'test-zone']);
-        \Tests\Fixtures\StorefrontHttp::fake();
+        StorefrontHttp::fake();
     }
 
     protected function tearDown(): void
@@ -91,10 +98,11 @@ class StorefrontRefreshTransactionTest extends TestCase
     public function test_real_settings_controller_batches_all_nontransactional_saves(): void
     {
         $seen = [];
-        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
+        StorefrontHttp::fake(function () use (&$seen) {
             $seen[] = DB::connection('committed')->table('settings')->pluck('value', 'key')->all();
             $this->assertFalse(Cache::has('setting:business_phone'));
             $this->assertFalse(Cache::has('setting:business_address'));
+
             return Http::response(['success' => true]);
         });
         $this->complete(function () {
@@ -128,18 +136,19 @@ class StorefrontRefreshTransactionTest extends TestCase
         });
         $this->assertFalse(Cache::has('setting:old'));
         $this->assertFalse(Cache::has('setting:new'));
-        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
+        StorefrontHttp::assertPurgeCount(1);
     }
 
     public function test_breed_controller_commits_final_seo_and_pivots_before_attempt(): void
     {
         $post = Post::query()->createQuietly(['title' => 'Article', 'slug' => 'article', 'content' => 'text', 'status' => 'published']);
         $seen = [];
-        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen, $post) {
+        StorefrontHttp::fake(function () use (&$seen, $post) {
             $reader = DB::connection('committed');
             $seen[] = $reader->table('breeds')->value('name');
             $this->assertSame('Final SEO', $reader->table('seo_metadata')->value('title'));
             $this->assertSame($post->id, $reader->table('post_breed')->value('post_id'));
+
             return Http::response(['success' => true]);
         });
         $this->complete(function () use ($post) {
@@ -206,10 +215,11 @@ class StorefrontRefreshTransactionTest extends TestCase
             : [PublicContentCacheObserver::class, SiteMediaCacheObserver::class]);
         $site = SiteMedia::query()->createQuietly(['title' => 'hero', 'collection' => 'banner']);
         $seen = [];
-        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
+        StorefrontHttp::fake(function () use (&$seen) {
             $seen[] = DB::connection('committed')->table('media')->value('collection_name');
             $this->assertFalse(Cache::has('public-api:site-media:v1:banner'));
             $this->assertFalse(Cache::has('public-api:site-media:v1:general'));
+
             return Http::response(['success' => true]);
         });
         $this->complete(function () use ($site) {
@@ -239,7 +249,7 @@ class StorefrontRefreshTransactionTest extends TestCase
             Cache::put('public-api:site-media:v1:general', 'stale');
             Http::assertNothingSent();
         });
-        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
+        StorefrontHttp::assertPurgeCount(1);
         $this->assertFalse(Cache::has('public-api:site-media:v1:banner'));
         $this->assertFalse(Cache::has('public-api:site-media:v1:general'));
         $this->assertSame(0, DB::connection('committed')->table('media')->count());
@@ -289,17 +299,18 @@ class StorefrontRefreshTransactionTest extends TestCase
             $this->assertSame('original failure', $e->getMessage());
         }
         $this->assertSame('B', DB::connection('committed')->table('settings')->value('value'));
-        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
+        StorefrontHttp::assertPurgeCount(1);
         $this->assertFalse(app(StorefrontMutationBatch::class)->isCollecting());
     }
 
     public function test_failure_warns_and_queues_one_snapshot_even_after_explicit_success(): void
     {
-        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::swap(new Factory);
         Http::preventStrayRequests();
         $purges = 0;
-        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$purges) {
+        StorefrontHttp::fake(function () use (&$purges) {
             $purges++;
+
             return Http::response(['success' => $purges === 1], $purges === 1 ? 200 : 500);
         });
         app(PublicContentPurgeCoordinator::class)->purge();
@@ -309,7 +320,7 @@ class StorefrontRefreshTransactionTest extends TestCase
             Setting::set('two', 'D');
         });
         $this->assertSame(2, $purges);
-        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(2);
+        StorefrontHttp::assertPurgeCount(2);
         $this->assertSame('saved', $response->getContent());
         $this->assertSame('purge-pending', $response->headers->get('X-PetPosture-Cache-Warning'));
         Bus::assertDispatchedTimes(PurgeCloudflareCache::class, 1);
@@ -321,8 +332,9 @@ class StorefrontRefreshTransactionTest extends TestCase
         $job = new PurgeCloudflareCache(['setting:one', 'setting:one', 'public-api:site-media:v1:banner', 'session:secret', 'public-api:settings:v1']);
         $this->assertSame(['setting:one', 'public-api:site-media:v1:banner'], $job->cacheKeys);
         $seen = [];
-        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
+        StorefrontHttp::fake(function () use (&$seen) {
             $seen[] = Cache::has('setting:one');
+
             return Http::response(['success' => count($seen) > 1], count($seen) > 1 ? 200 : 500);
         });
         for ($attempt = 0; $attempt < 2; $attempt++) {
@@ -370,10 +382,11 @@ class StorefrontRefreshTransactionTest extends TestCase
     {
         $response = $this->complete(function () {
             Setting::set('saved', 'B');
+
             return new Response('later validation failure', 422);
         });
         $this->assertSame(422, $response->getStatusCode());
-        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
+        StorefrontHttp::assertPurgeCount(1);
     }
 
     public function test_unrelated_media_owner_does_not_mark_content(): void
@@ -424,9 +437,10 @@ class StorefrontRefreshTransactionTest extends TestCase
         $breed->posts()->attach($post->id);
         $breed->seo()->create(['title' => 'Old SEO']);
         $seen = [];
-        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
+        StorefrontHttp::fake(function () use (&$seen) {
             $reader = DB::connection('committed');
             $seen[] = [$reader->table('breeds')->value('name'), $reader->table('seo_metadata')->value('title'), $reader->table('post_breed')->count()];
+
             return Http::response(['success' => true]);
         });
         $this->complete(function () use ($breed) {
@@ -440,26 +454,28 @@ class StorefrontRefreshTransactionTest extends TestCase
 
     public function test_web_request_batches_real_livewire_settings_save_without_api_warning_header(): void
     {
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        $user = \App\Models\User::factory()->create(['is_active' => true]);
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $user = User::factory()->create(['is_active' => true]);
         $user->assignRole('admin');
         $this->actingAs($user);
         Setting::query()->createQuietly(['key' => 'shop_name', 'value' => 'Before']);
-        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::swap(new Factory);
         Http::preventStrayRequests();
         $seen = [];
-        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
+        StorefrontHttp::fake(function () use (&$seen) {
             $seen[] = DB::connection('committed')->table('settings')->pluck('value', 'key')->all();
+
             return Http::response(['success' => false], 500);
         });
-        \Illuminate\Support\Facades\Route::middleware('web')->post('/c0-settings-save', function () {
-            \Livewire\Livewire::test(\App\Filament\Pages\ManageSettings::class)
+        Route::middleware('web')->post('/c0-settings-save', function () {
+            Livewire::test(ManageSettings::class)
                 ->set('data.shop_name', 'Final shop')
                 ->set('data.shop_description', 'Final description')
                 ->call('save')
                 ->assertHasNoFormErrors();
             Http::assertNothingSent();
             Bus::assertNothingDispatched();
+
             return response('saved');
         });
 

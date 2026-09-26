@@ -2,17 +2,22 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\PublicContentPurgeCoordinator;
 use App\Support\CloudflarePurgeNotice;
+use App\Support\StorefrontMutationBatch;
 use Closure;
+use Filament\Notifications\Notification;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class AttachCloudflarePurgeWarning
 {
     public function __construct(
         private readonly CloudflarePurgeNotice $notice,
-        private readonly \App\Support\StorefrontMutationBatch $batch,
-        private readonly \App\Services\PublicContentPurgeCoordinator $coordinator,
+        private readonly StorefrontMutationBatch $batch,
+        private readonly PublicContentPurgeCoordinator $coordinator,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -24,7 +29,7 @@ class AttachCloudflarePurgeWarning
         } finally {
             try {
                 $this->coordinator->flushCompletedMutation();
-                foreach (\Illuminate\Support\Facades\DB::getConnections() as $connection) {
+                foreach (DB::getConnections() as $connection) {
                     if ($connection->transactionLevel() > 0) {
                         $this->notice->markPending();
                     }
@@ -54,7 +59,7 @@ class AttachCloudflarePurgeWarning
                 return;
             }
 
-            \Filament\Notifications\Notification::make('storefront-recovery-unavailable')
+            Notification::make('storefront-recovery-unavailable')
                 ->danger()
                 ->title('Cache refresh recovery unavailable')
                 ->body($this->notice->result()->message)
@@ -64,7 +69,7 @@ class AttachCloudflarePurgeWarning
             // Completion follows Livewire dehydration, so Filament's normal
             // notificationsSent hook may already have run with an empty session.
             // Redirects consume the session notification on the destination mount.
-            if (! $request->hasHeader('X-Livewire') || ! $response instanceof \Illuminate\Http\JsonResponse) {
+            if (! $request->hasHeader('X-Livewire') || ! $response instanceof JsonResponse) {
                 return;
             }
             $data = $response->getData(true);

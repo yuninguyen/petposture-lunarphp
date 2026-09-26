@@ -11,10 +11,10 @@ use App\Security\AdminAbilityRegistry;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
-use Spatie\Permission\Models\Role;
 use Lunar\DiscountTypes\AmountOff;
 use Lunar\Models\Address;
 use Lunar\Models\Customer;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class CoreOnlyDomainsAbilityParityTest extends TestCase
@@ -22,7 +22,9 @@ class CoreOnlyDomainsAbilityParityTest extends TestCase
     use RefreshDatabase;
 
     private const ALLOWED = ['super_admin', 'admin', 'staff'];
+
     private const BLOCKED = ['Product Manager', 'Order Manager', 'Support', 'customer'];
+
     private const DOMAINS = [
         'CUSTOMERS' => '2026_09_24_000001_seed_customers_domain_permissions.php',
         'SETTINGS_GENERAL' => '2026_09_24_000002_seed_settings_general_domain_permissions.php',
@@ -35,21 +37,33 @@ class CoreOnlyDomainsAbilityParityTest extends TestCase
         'DISCOUNTS' => '2026_09_24_000009_seed_discounts_domain_permissions.php',
     ];
 
-    protected function setUp(): void { parent::setUp(); $this->seed(RoleSeeder::class); }
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(RoleSeeder::class);
+    }
 
     public function test_core_roles_can_enter_and_non_core_roles_are_forbidden_for_every_route(): void
     {
-        foreach (self::ALLOWED as $role) foreach ($this->requests() as [$method, $uri, $payload]) {
-            $this->actAs($role); $this->assertNotSame(403, $this->{$method}($uri, $payload)->getStatusCode(), "$role: $method $uri");
+        foreach (self::ALLOWED as $role) {
+            foreach ($this->requests() as [$method, $uri, $payload]) {
+                $this->actAs($role);
+                $this->assertNotSame(403, $this->{$method}($uri, $payload)->getStatusCode(), "$role: $method $uri");
+            }
         }
-        foreach (self::BLOCKED as $role) foreach ($this->requests() as [$method, $uri, $payload]) {
-            $this->actAs($role); $this->assertSame(403, $this->{$method}($uri, $payload)->getStatusCode(), "$role: $method $uri");
+        foreach (self::BLOCKED as $role) {
+            foreach ($this->requests() as [$method, $uri, $payload]) {
+                $this->actAs($role);
+                $this->assertSame(403, $this->{$method}($uri, $payload)->getStatusCode(), "$role: $method $uri");
+            }
         }
     }
 
     public function test_unauthenticated_requests_are_unauthorized(): void
     {
-        foreach ($this->requests() as [$method, $uri, $payload]) $this->{$method}($uri, $payload)->assertUnauthorized();
+        foreach ($this->requests() as [$method, $uri, $payload]) {
+            $this->{$method}($uri, $payload)->assertUnauthorized();
+        }
     }
 
     public function test_each_migration_assigns_only_core_roles(): void
@@ -57,8 +71,16 @@ class CoreOnlyDomainsAbilityParityTest extends TestCase
         foreach (self::DOMAINS as $constant => $migration) {
             (require database_path("migrations/$migration"))->up();
             $abilities = constant(AdminAbilityRegistry::class.'::'.$constant);
-            foreach (self::ALLOWED as $role) foreach ($abilities as $ability) $this->assertTrue(Role::findByName($role)->hasPermissionTo($ability), "$role: $ability");
-            foreach (self::BLOCKED as $role) foreach ($abilities as $ability) $this->assertFalse(Role::findByName($role)->hasPermissionTo($ability), "$role: $ability");
+            foreach (self::ALLOWED as $role) {
+                foreach ($abilities as $ability) {
+                    $this->assertTrue(Role::findByName($role)->hasPermissionTo($ability), "$role: $ability");
+                }
+            }
+            foreach (self::BLOCKED as $role) {
+                foreach ($abilities as $ability) {
+                    $this->assertFalse(Role::findByName($role)->hasPermissionTo($ability), "$role: $ability");
+                }
+            }
         }
     }
 
@@ -69,6 +91,7 @@ class CoreOnlyDomainsAbilityParityTest extends TestCase
         $loginAccount = User::factory()->create();
         $shippingMethod = ShippingMethod::query()->create(['code' => 'parity-'.uniqid(), 'name' => 'Parity', 'eta' => '1 day', 'price' => 0, 'free_over' => 0]);
         $discount = Discount::query()->create(['name' => 'Parity', 'handle' => 'parity-'.uniqid(), 'type' => AmountOff::class, 'starts_at' => now(), 'data' => []]);
+
         return [
             ['getJson', '/api/admin/customers', []], ['getJson', "/api/admin/customers/{$customer->id}", []], ['getJson', "/api/admin/customers/{$customer->id}/orders", []], ['getJson', "/api/admin/customers/{$customer->id}/addresses", []], ['getJson', "/api/admin/customers/{$customer->id}/login-accounts", []], ['putJson', "/api/admin/customers/{$customer->id}/login-accounts/{$loginAccount->id}", []], ['patchJson', "/api/admin/customers/{$customer->id}/addresses/{$address->id}", []], ['deleteJson', "/api/admin/customers/{$customer->id}/addresses/{$address->id}", []], ['putJson', "/api/admin/customers/{$customer->id}", []],
             ['getJson', '/api/admin/settings/general', []], ['putJson', '/api/admin/settings/general', []], ['getJson', '/api/admin/settings/branding', []], ['putJson', '/api/admin/settings/branding', []], ['getJson', '/api/admin/settings/analytics', []], ['putJson', '/api/admin/settings/analytics', []], ['getJson', '/api/admin/settings/smtp', []], ['putJson', '/api/admin/settings/smtp', []], ['postJson', '/api/admin/settings/smtp/test', []], ['getJson', '/api/admin/settings/ai', []], ['putJson', '/api/admin/settings/ai', []], ['postJson', '/api/admin/settings/ai/fetch-models', []],
@@ -78,5 +101,10 @@ class CoreOnlyDomainsAbilityParityTest extends TestCase
         ];
     }
 
-    private function actAs(string $role): void { $user = User::factory()->create(); $user->assignRole($role); Sanctum::actingAs($user); }
+    private function actAs(string $role): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole($role);
+        Sanctum::actingAs($user);
+    }
 }

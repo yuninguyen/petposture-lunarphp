@@ -12,6 +12,7 @@ use App\Notifications\NewReviewNotification;
 use App\Services\ProductRouteService;
 use App\Services\ReviewPurchaseEvidenceService;
 use App\Traits\HttpResponses;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -455,13 +456,13 @@ class ProductController extends Controller
             ->find($redirect->product_id);
     }
 
-    private function productQuery(): \Illuminate\Database\Eloquent\Builder
+    private function productQuery(): Builder
     {
         return Product::query()
             ->select('lunar_products.*')
             ->leftJoin('seo_metadata', function ($join): void {
                 $join->on('seo_metadata.seoable_id', '=', 'lunar_products.id')
-                    ->where('seo_metadata.seoable_type', '=', \Lunar\Models\Product::class);
+                    ->where('seo_metadata.seoable_type', '=', Product::class);
             })
             ->selectRaw('seo_metadata.title as seo_meta_title, seo_metadata.description as seo_meta_description, seo_metadata.og_title as seo_meta_og_title, seo_metadata.og_description as seo_meta_og_description, seo_metadata.og_image as seo_meta_og_image, seo_metadata.is_indexable as seo_meta_is_indexable, seo_metadata.is_followable as seo_meta_is_followable')
             ->selectSub(Review::query()->selectRaw('AVG(rating)')->whereColumn('lunar_product_id', 'lunar_products.id')->where('status', 'approved'), 'approved_reviews_avg_rating')

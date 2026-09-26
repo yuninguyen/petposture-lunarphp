@@ -509,4 +509,3 @@ class AffiliateNetworkManagementTest extends TestCase
             ->assertJsonValidationErrors(['date_to']);
     }
 }
-

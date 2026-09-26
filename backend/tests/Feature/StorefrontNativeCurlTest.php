@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Services\StorefrontRevalidationService;
+use GuzzleHttp\Exception\ConnectException;
+use Illuminate\Http\Client\ConnectionException;
 use Tests\TestCase;
 
 class StorefrontNativeCurlTest extends TestCase
@@ -20,15 +22,15 @@ class StorefrontNativeCurlTest extends TestCase
             try {
                 (new StorefrontRevalidationService)->homepage($started + $budget);
                 $this->fail($case.' response must fail before server EOF.');
-            } catch (\RuntimeException|\Illuminate\Http\Client\ConnectionException $error) {
+            } catch (\RuntimeException|ConnectionException $error) {
                 $elapsed = hrtime(true) / 1e9 - $started;
                 $this->assertLessThan($case === 'oversize' ? 2.0 : 1.5, $elapsed);
                 if ($case === 'oversize') {
                     $this->assertSame('Storefront body budget exceeded.', $error->getMessage());
                 } else {
-                    $this->assertInstanceOf(\Illuminate\Http\Client\ConnectionException::class, $error);
+                    $this->assertInstanceOf(ConnectionException::class, $error);
                     $cause = $error->getPrevious();
-                    $this->assertInstanceOf(\GuzzleHttp\Exception\ConnectException::class, $cause);
+                    $this->assertInstanceOf(ConnectException::class, $cause);
                     $this->assertSame(28, $cause->getHandlerContext()['errno'] ?? null);
                 }
                 fwrite(STDOUT, sprintf("NATIVE_CURL_%s_ELAPSED=%.6f\n", strtoupper($case), $elapsed));

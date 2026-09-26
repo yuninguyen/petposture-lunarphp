@@ -111,7 +111,7 @@ class SystemUsersAbilityParityTest extends TestCase
         foreach (self::ALLOWED_ROLES as $role) {
             $this->actingAsRole($role);
 
-            $email = "sys_user_{$role}_" . uniqid() . "@example.com";
+            $email = "sys_user_{$role}_".uniqid().'@example.com';
             $response = $this->postJson('/api/admin/system/users', [
                 'name' => "System User {$role}",
                 'email' => $email,
@@ -131,7 +131,7 @@ class SystemUsersAbilityParityTest extends TestCase
         foreach (self::BLOCKED_ROLES as $role) {
             $this->actingAsRole($role);
 
-            $email = "blocked_sys_user_{$role}_" . uniqid() . "@example.com";
+            $email = "blocked_sys_user_{$role}_".uniqid().'@example.com';
             $response = $this->postJson('/api/admin/system/users', [
                 'name' => "Blocked User {$role}",
                 'email' => $email,

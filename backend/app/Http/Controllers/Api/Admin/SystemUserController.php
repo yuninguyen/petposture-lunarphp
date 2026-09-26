@@ -82,7 +82,7 @@ class SystemUserController extends Controller
         // Guard 2: Cannot remove the last active super admin
         if ($user->hasRole('super_admin')) {
             $isLosingSuperAdmin = ($request->has('is_active') && $request->boolean('is_active') === false)
-                || ($request->has('roles') && !in_array('super_admin', $request->input('roles', [])));
+                || ($request->has('roles') && ! in_array('super_admin', $request->input('roles', [])));
 
             if ($isLosingSuperAdmin) {
                 $activeSuperAdminCount = User::role('super_admin')->where('is_active', true)->count();
@@ -112,7 +112,7 @@ class SystemUserController extends Controller
             $data['is_active'] = $request->boolean('is_active');
         }
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $data['password'] = Hash::make($validated['password']);
         }
 

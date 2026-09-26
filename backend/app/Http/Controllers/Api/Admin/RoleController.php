@@ -90,7 +90,7 @@ class RoleController extends Controller
             ->map(fn (array $d) => [
                 'key' => $d['key'],
                 'label' => self::domainLabel($d['key']),
-                'abilities' => array_values(array_filter($d['abilities'], fn (string $a) => !str_contains($a, '::'))),
+                'abilities' => array_values(array_filter($d['abilities'], fn (string $a) => ! str_contains($a, '::'))),
             ])
             ->values()
             ->all();
@@ -99,7 +99,7 @@ class RoleController extends Controller
             'data' => $roles->map(fn (Role $role) => [
                 'id' => $role->id,
                 'name' => $role->name,
-                'editable' => !in_array($role->name, ['super_admin', 'admin', 'staff'], true),
+                'editable' => ! in_array($role->name, ['super_admin', 'admin', 'staff'], true),
                 'permissions' => $role->permissions->pluck('name')->intersect($managed)->values(),
             ]),
             'permission_groups' => $domainGroups,
@@ -119,7 +119,7 @@ class RoleController extends Controller
         if (in_array($role->name, ['super_admin', 'admin', 'staff'], true)) {
             abort(403, 'This role always has full access and cannot be edited.');
         }
-        if (!in_array($role->name, User::ADMIN_PANEL_ROLES, true)) {
+        if (! in_array($role->name, User::ADMIN_PANEL_ROLES, true)) {
             abort(404);
         }
 

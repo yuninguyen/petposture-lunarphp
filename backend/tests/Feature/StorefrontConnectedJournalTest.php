@@ -17,8 +17,11 @@ use Tests\TestCase;
 class StorefrontConnectedJournalTest extends TestCase
 {
     private string $database;
+
     private array $calls = [];
+
     private bool $purgeFails = true;
+
     private string $expectedName = 'B';
 
     protected function setUp(): void
@@ -37,6 +40,7 @@ class StorefrontConnectedJournalTest extends TestCase
             $this->calls[] = $request->method().' '.$request->url();
             if (str_ends_with($request->url(), '/api/settings')) {
                 $this->assertNull(Cache::get('setting:shop_name'));
+
                 return Http::response(['status' => 'Request was successful.', 'data' => StorefrontHtml::settings($this->expectedName)]);
             }
             if (str_contains($request->url(), '/api/site-media?')) {
@@ -48,6 +52,7 @@ class StorefrontConnectedJournalTest extends TestCase
             if ($request->url() === 'http://127.0.0.1:3001/') {
                 return Http::response(StorefrontHtml::render($this->expectedName), 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']);
             }
+
             return Http::response(['success' => ! $this->purgeFails], $this->purgeFails ? 503 : 200);
         });
     }

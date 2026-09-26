@@ -69,7 +69,7 @@ class MediaControllerTest extends TestCase
         $contents = ob_get_clean();
         imagedestroy($image);
 
-        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('photo.jpg', $contents);
+        $file = UploadedFile::fake()->createWithContent('photo.jpg', $contents);
 
         $response = $this->postJson('/api/admin/media', ['file' => $file])->assertCreated();
 
@@ -92,7 +92,7 @@ class MediaControllerTest extends TestCase
         $marker = "\x00\x21\xF9\x04";
         $contents .= $marker.str_repeat("\x00", 4).$marker.str_repeat("\x00", 4);
 
-        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('animated.gif', $contents);
+        $file = UploadedFile::fake()->createWithContent('animated.gif', $contents);
 
         $response = $this->postJson('/api/admin/media', ['file' => $file])->assertCreated();
 

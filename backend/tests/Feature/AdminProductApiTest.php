@@ -15,7 +15,6 @@ use Lunar\Models\Product;
 use Lunar\Models\ProductOption;
 use Lunar\Models\ProductOptionValue;
 use Lunar\Models\ProductType;
-use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;

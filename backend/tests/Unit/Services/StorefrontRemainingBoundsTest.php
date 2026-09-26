@@ -36,6 +36,7 @@ class StorefrontRemainingBoundsTest extends TestCase
             $this->assertGreaterThan(0, $options['timeout']);
             $this->assertLessThanOrEqual(0.5, $options['timeout']);
             $this->assertSame($options['timeout'], $options['connect_timeout']);
+
             return Http::response('body', 200, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']);
         });
         $this->assertSame('body', (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 0.5));

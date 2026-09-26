@@ -18,8 +18,8 @@ class CloudflarePurgeNotice
     public function markRecoveryUnavailable(): CloudflarePurgeResult
     {
         $this->recoveryUnavailable = true;
-        return $this->result = new CloudflarePurgeResult(false, true, message:
-            'Content saved; cache refresh recovery could not be recorded. Automatic retry is not guaranteed; operator action is required.');
+
+        return $this->result = new CloudflarePurgeResult(false, true, message: 'Content saved; cache refresh recovery could not be recorded. Automatic retry is not guaranteed; operator action is required.');
     }
 
     public function hasAttempted(): bool

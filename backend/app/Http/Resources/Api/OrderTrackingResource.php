@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api;
 
+use App\Models\ShippingMethod;
 use App\Services\ProductSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -122,7 +123,7 @@ class OrderTrackingResource extends JsonResource
             return 'Standard';
         }
 
-        return \App\Models\ShippingMethod::where('code', $code)->value('name')
+        return ShippingMethod::where('code', $code)->value('name')
             ?? Str::of($code)->replace(['_', '-'], ' ')->title()->toString();
     }
 
@@ -134,5 +135,4 @@ class OrderTrackingResource extends JsonResource
             default => (string) ($meta['fulfillment_status'] ?? 'unfulfilled'),
         };
     }
-
 }

@@ -22,6 +22,7 @@ class StorefrontRefreshJournal
     public const CONNECTION = 'storefront_refresh_journal';
 
     private int $lastReplayDispatchFailures = 0;
+
     private array $lastReplaySummary = ['selected' => 0, 'submitted' => 0, 'deferred' => 0, 'failed' => 0];
 
     public function replaySummary(): array
@@ -33,7 +34,9 @@ class StorefrontRefreshJournal
     {
         return $this->lastReplayDispatchFailures;
     }
+
     private const BACKOFF = [30, 120, 300];
+
     private const STATUSES = ['enqueue_unavailable', 'eviction_failed', 'refresh_failed', 'lease_expired', 'not_configured', 'attempts_exhausted', 'success'];
 
     private function connection(): Connection
@@ -55,6 +58,7 @@ class StorefrontRefreshJournal
         if ($connection->transactionLevel() !== 0 || $connection->getPdo()->inTransaction()) {
             throw new RuntimeException('Journal connection must remain in autocommit mode.');
         }
+
         return $connection;
     }
 
@@ -70,6 +74,7 @@ class StorefrontRefreshJournal
                 throw new InvalidArgumentException('Invalid journal cache-key snapshot.');
             }
         }
+
         return array_values(array_unique($keys));
     }
 
@@ -90,6 +95,7 @@ class StorefrontRefreshJournal
                     'next_attempt_at' => $now, 'next_dispatch_at' => $now,
                     'created_at' => $now, 'updated_at' => $now,
                 ]);
+
                 return $id;
             } catch (Throwable $error) {
                 // A duplicate or uncertain acknowledgement is safe only if the
@@ -106,6 +112,7 @@ class StorefrontRefreshJournal
         if ($actual !== $keys) {
             throw new InvalidArgumentException('Journal identifier snapshot mismatch.');
         }
+
         return $id;
     }
 
@@ -117,6 +124,7 @@ class StorefrontRefreshJournal
             $row->recovery_attempts = (int) $row->recovery_attempts;
             $row->initial_attempted = (bool) $row->initial_attempted;
         }
+
         return $row;
     }
 
@@ -142,6 +150,7 @@ class StorefrontRefreshJournal
             || CarbonImmutable::parse($row->lease_expires_at, 'UTC')->lessThanOrEqualTo(CarbonImmutable::now('UTC'))) {
             return null;
         }
+
         return $row;
     }
 
@@ -149,6 +158,7 @@ class StorefrontRefreshJournal
     {
         $exhausted = $row->recovery_attempts >= 4;
         $delay = $row->recovery_attempts > 0 ? self::BACKOFF[min($row->recovery_attempts, 3) - 1] : 0;
+
         return [
             'state' => $exhausted ? 'exhausted' : 'retry',
             'last_status' => $exhausted ? 'attempts_exhausted' : $status,
@@ -171,6 +181,7 @@ class StorefrontRefreshJournal
             'state' => 'completed', 'last_status' => 'success', 'completed_at' => $now,
             'lease_token' => null, 'lease_expires_at' => null, 'updated_at' => $now,
         ] : $this->failureValues($row, $status, $now);
+
         return $this->rows()->where('id', $id)->where('state', 'leased')
             ->where('lease_token', $token)->where('lease_expires_at', '>', $now)->update($values) === 1;
     }
@@ -200,11 +211,14 @@ class StorefrontRefreshJournal
                     ->where('next_dispatch_at', $next)
                     ->update(['last_status' => 'enqueue_unavailable', 'updated_at' => $now]);
                 $this->warn();
+
                 return false;
             }
+
             return true;
         } catch (Throwable) {
             $this->warn();
+
             return false;
         }
     }
@@ -270,6 +284,7 @@ class StorefrontRefreshJournal
                 $this->rows()->whereIn('id', $ids)->where('state', 'completed')->where('completed_at', '<', $cutoff)->delete();
             }
         }
+
         return $processed;
     }
 }

@@ -2,7 +2,9 @@
 
 namespace Tests\Fixtures;
 
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Assert;
 
 final class StorefrontHttp
 {
@@ -12,7 +14,7 @@ final class StorefrontHttp
     {
         $unexpected = self::$unexpectedRequests;
         self::$unexpectedRequests = [];
-        \PHPUnit\Framework\Assert::assertSame([], $unexpected, 'Unexpected fixture HTTP requests: '.implode(', ', $unexpected));
+        Assert::assertSame([], $unexpected, 'Unexpected fixture HTTP requests: '.implode(', ', $unexpected));
     }
 
     public static function configure(): void
@@ -24,7 +26,7 @@ final class StorefrontHttp
     public static function fake(?callable $purge = null): void
     {
         self::configure();
-        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::swap(new Factory);
         Http::preventStrayRequests();
         Http::fake(function ($request) use ($purge) {
             if (self::isPurge($request)) {
@@ -46,7 +48,7 @@ final class StorefrontHttp
 
     public static function assertPurgeCount(int $count): void
     {
-        \PHPUnit\Framework\Assert::assertCount($count, Http::recorded(fn ($request) => self::isPurge($request)));
+        Assert::assertCount($count, Http::recorded(fn ($request) => self::isPurge($request)));
     }
 
     public static function response($request)
@@ -55,6 +57,7 @@ final class StorefrontHttp
         if ($request->method() !== ($post ? 'POST' : 'GET')) {
             return null;
         }
+
         return match ($request->url()) {
             'http://127.0.0.1:8001/api/settings' => Http::response(['status' => 'Request was successful.', 'data' => StorefrontHtml::settings()]),
             'http://127.0.0.1:8001/api/site-media?collection=banner' => Http::response(['status' => 'Request was successful.', 'data' => []]),

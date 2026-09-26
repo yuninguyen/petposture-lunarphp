@@ -13,12 +13,12 @@ class Solution extends Model
     use HasFactory, HasSeo;
 
     protected $fillable = [
-        'name', 
-        'slug', 
+        'name',
+        'slug',
         'description',
         'featured_image',
         'featured_image_alt',
-        'featured_media_id'
+        'featured_media_id',
     ];
 
     public function products(): BelongsToMany

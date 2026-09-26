@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PageResource\Pages;
 use App\Models\Page;
-use FilamentTiptapEditor\TiptapEditor;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
@@ -12,6 +11,8 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use FilamentTiptapEditor\Enums\TiptapOutput;
+use FilamentTiptapEditor\TiptapEditor;
 use Illuminate\Support\Str;
 
 class PageResource extends Resource
@@ -57,7 +58,7 @@ class PageResource extends Resource
                     ->label(__('Content'))
                     ->required()
                     ->profile('blog')
-                    ->output(\FilamentTiptapEditor\Enums\TiptapOutput::Html)
+                    ->output(TiptapOutput::Html)
                     ->stateBindingModifiers([])
                     ->columnSpanFull()
                     ->extraInputAttributes(['style' => 'min-height: 400px']),

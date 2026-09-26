@@ -27,9 +27,7 @@ use Lunar\Models\TaxClass;
 
 class ProductController extends Controller
 {
-    public function __construct(private readonly ProductAttributeService $attributeService)
-    {
-    }
+    public function __construct(private readonly ProductAttributeService $attributeService) {}
 
     public function index(Request $request): JsonResponse
     {

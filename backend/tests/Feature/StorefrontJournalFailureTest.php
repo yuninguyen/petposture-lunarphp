@@ -5,10 +5,9 @@ namespace Tests\Feature;
 use App\Http\Middleware\AttachCloudflarePurgeWarning;
 use App\Jobs\PurgeCloudflareCache;
 use App\Models\Setting;
-use App\Services\PublicContentPurgeCoordinator;
+use App\Models\SiteMedia;
 use App\Services\StorefrontRefreshJournal;
 use App\Support\CloudflarePurgeNotice;
-use App\Support\StorefrontMutationBatch;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Bus;
@@ -16,7 +15,11 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use RuntimeException;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Tests\Fixtures\StorefrontHttp;
 use Tests\TestCase;
 
 class StorefrontJournalFailureTest extends TestCase
@@ -33,7 +36,7 @@ class StorefrontJournalFailureTest extends TestCase
         Bus::fake();
         Http::preventStrayRequests();
         config(['services.cloudflare.api_token' => 'test-only', 'services.cloudflare.zone_id' => 'test-zone']);
-        \Tests\Fixtures\StorefrontHttp::fake(fn () => Http::response(['success' => false], 503));
+        StorefrontHttp::fake(fn () => Http::response(['success' => false], 503));
     }
 
     protected function tearDown(): void
@@ -60,7 +63,7 @@ class StorefrontJournalFailureTest extends TestCase
         $response = $this->complete(function () {
             Setting::create(['key' => 'journal-key', 'value' => 'committed']);
         });
-        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
+        StorefrontHttp::assertPurgeCount(1);
         $this->assertSame(201, $response->status());
         $row = DB::table('storefront_refresh_journal')->first();
         $this->assertSame(['setting:journal-key'], json_decode($row->cache_keys, true));
@@ -82,11 +85,11 @@ class StorefrontJournalFailureTest extends TestCase
 
     public function test_direct_media_move_delete_preserves_both_keys_when_early_cache_fails(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('public');
-        $site = \App\Models\SiteMedia::withoutEvents(fn () => \App\Models\SiteMedia::create(['title' => 'Fixture', 'collection' => 'before']));
-        $media = \Spatie\MediaLibrary\MediaCollections\Models\Media::withoutEvents(fn () => \Spatie\MediaLibrary\MediaCollections\Models\Media::create([
+        Storage::fake('public');
+        $site = SiteMedia::withoutEvents(fn () => SiteMedia::create(['title' => 'Fixture', 'collection' => 'before']));
+        $media = Media::withoutEvents(fn () => Media::create([
             'model_type' => $site->getMorphClass(), 'model_id' => $site->id,
-            'uuid' => (string) \Illuminate\Support\Str::uuid(), 'collection_name' => 'before',
+            'uuid' => (string) Str::uuid(), 'collection_name' => 'before',
             'name' => 'hero', 'file_name' => 'hero.jpg', 'mime_type' => 'image/jpeg',
             'disk' => 'public', 'conversions_disk' => 'public', 'size' => 1,
             'manipulations' => [], 'custom_properties' => [], 'generated_conversions' => [],
@@ -98,7 +101,7 @@ class StorefrontJournalFailureTest extends TestCase
             $media->delete();
         });
         $this->assertSame(201, $response->status());
-        $this->assertSame(0, \Spatie\MediaLibrary\MediaCollections\Models\Media::count());
+        $this->assertSame(0, Media::count());
         $keys = json_decode(DB::table('storefront_refresh_journal')->first()->cache_keys, true);
         $this->assertEqualsCanonicalizing(['public-api:site-media:v1:before', 'public-api:site-media:v1:after'], $keys);
         Bus::assertDispatched(PurgeCloudflareCache::class);

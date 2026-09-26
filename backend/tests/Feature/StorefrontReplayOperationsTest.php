@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\PurgeCloudflareCache;
 use App\Services\StorefrontRefreshJournal;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -24,7 +26,9 @@ class StorefrontReplayOperationsTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (DB::getConnections() as $connection) $connection->disconnect();
+        foreach (DB::getConnections() as $connection) {
+            $connection->disconnect();
+        }
         parent::tearDown();
         gc_collect_cycles();
         unlink($this->database);
@@ -39,7 +43,7 @@ class StorefrontReplayOperationsTest extends TestCase
         $id = app(StorefrontRefreshJournal::class)->record(['setting:scheduled']);
         Bus::fake();
         $this->artisan('storefront:refresh-replay', ['--limit' => 100, '--max-seconds' => 20])->assertExitCode(0);
-        Bus::assertDispatched(\App\Jobs\PurgeCloudflareCache::class, fn ($job) => $job->journalId === $id);
+        Bus::assertDispatched(PurgeCloudflareCache::class, fn ($job) => $job->journalId === $id);
     }
 
     public function test_competing_claim_after_selection_is_harmless_command_contention(): void
@@ -73,7 +77,7 @@ class StorefrontReplayOperationsTest extends TestCase
         app()->instance(StorefrontRefreshJournal::class, $journal);
         $id = $journal->record(['setting:ops']);
         Bus::shouldReceive('dispatch')->once()->andThrow(new RuntimeException('secret queue error'));
-        \Illuminate\Support\Facades\Log::shouldReceive('warning')->once()->andThrow(new RuntimeException('secret logger error'));
+        Log::shouldReceive('warning')->once()->andThrow(new RuntimeException('secret logger error'));
         $this->artisan('storefront:refresh-replay')
             ->expectsOutput('Storefront refresh replay degraded: submission unavailable; journal retained for later replay.')
             ->assertExitCode(1);

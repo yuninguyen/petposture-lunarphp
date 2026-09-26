@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Jobs\PurgeCloudflareCache;
 use App\Support\CloudflarePurgeNotice;
-use App\ValueObjects\CloudflarePurgeResult;
 use App\Support\StorefrontMutationBatch;
+use App\ValueObjects\CloudflarePurgeResult;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -84,6 +84,7 @@ class PublicContentPurgeCoordinator
             } catch (Throwable) {
                 // Diagnostics must never replace a committed save or its original error.
             }
+
             return null;
         }
     }

@@ -371,7 +371,7 @@ class DashboardSalesPresetControllerTest extends TestCase
         // Primary: Feb 1, 2024 to May 15, 2024 (105 days > 90 days, leap year 2024)
         // Compare (previous_year): Feb 1, 2023 to May 15, 2023 (non-leap year 2023)
         // Calendar days differ (105 vs 104 days), but month buckets must strictly match (4 buckets).
-        $response = $this->getJson('/api/admin/dashboard/sales?' . http_build_query([
+        $response = $this->getJson('/api/admin/dashboard/sales?'.http_build_query([
             'preset' => 'custom',
             'start_date' => '2024-02-01',
             'end_date' => '2024-05-15',

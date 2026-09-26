@@ -3,19 +3,30 @@
 namespace Tests\Feature;
 
 use App\Jobs\PurgeCloudflareCache;
+use App\Models\StorefrontRefreshJournalEntry;
+use App\Services\CloudflareCacheService;
+use App\Services\PublicContentPurgeCoordinator;
 use App\Services\StorefrontRefreshJournal;
+use App\Support\CloudflarePurgeNotice;
+use App\Support\StorefrontMutationBatch;
+use App\ValueObjects\CloudflarePurgeResult;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
+use Tests\Fixtures\StorefrontHttp;
 use Tests\TestCase;
 
 class StorefrontRefreshJournalTest extends TestCase
 {
     private string $database;
+
     private static ?string $template = null;
 
     protected function setUp(): void
@@ -34,8 +45,8 @@ class StorefrontRefreshJournalTest extends TestCase
         }
         Bus::fake();
         Http::preventStrayRequests();
-        \Tests\Fixtures\StorefrontHttp::configure();
-        Http::fake(fn ($request) => \Tests\Fixtures\StorefrontHttp::response($request));
+        StorefrontHttp::configure();
+        Http::fake(fn ($request) => StorefrontHttp::response($request));
     }
 
     protected function tearDown(): void
@@ -82,13 +93,13 @@ class StorefrontRefreshJournalTest extends TestCase
 
     public function test_invalid_committed_snapshot_never_becomes_empty_success_or_dispatch(): void
     {
-        $batch = app(\App\Support\StorefrontMutationBatch::class);
+        $batch = app(StorefrontMutationBatch::class);
         $batch->begin();
-        app(\App\Services\PublicContentPurgeCoordinator::class)->requestPurge(['setting:valid', 'session:invalid']);
-        $result = app(\App\Services\PublicContentPurgeCoordinator::class)->flushCompletedMutation();
+        app(PublicContentPurgeCoordinator::class)->requestPurge(['setting:valid', 'session:invalid']);
+        $result = app(PublicContentPurgeCoordinator::class)->flushCompletedMutation();
         $batch->end();
         $this->assertFalse($result->successful);
-        $this->assertTrue(app(\App\Support\CloudflarePurgeNotice::class)->isRecoveryUnavailable());
+        $this->assertTrue(app(CloudflarePurgeNotice::class)->isRecoveryUnavailable());
         $this->assertSame(0, DB::table('storefront_refresh_journal')->count());
         Bus::assertNothingDispatched();
         Http::assertNothingSent();
@@ -98,15 +109,16 @@ class StorefrontRefreshJournalTest extends TestCase
     {
         $journal = app(StorefrontRefreshJournal::class);
         $id = $journal->record(['setting:completion']);
-        $service = $this->mock(\App\Services\CloudflareCacheService::class);
+        $service = $this->mock(CloudflareCacheService::class);
         $service->shouldReceive('purgeAll')->once()->andReturnUsing(function () {
             DB::connection(StorefrontRefreshJournal::CONNECTION)->statement('PRAGMA query_only = ON');
-            return new \App\ValueObjects\CloudflarePurgeResult(true, true);
+
+            return new CloudflarePurgeResult(true, true);
         });
         try {
             (new PurgeCloudflareCache([], journalId: $id))->handle($service);
             $this->fail('Completion update outage must not return confirmed success');
-        } catch (\Illuminate\Database\QueryException) {
+        } catch (QueryException) {
             DB::connection(StorefrontRefreshJournal::CONNECTION)->statement('PRAGMA query_only = OFF');
         }
         $this->assertSame('leased', $journal->find($id)->state);
@@ -271,7 +283,7 @@ class StorefrontRefreshJournalTest extends TestCase
         try {
             $j->record(['setting:locked'], $id);
             $this->fail('Concurrent SQLite writer unexpectedly recorded.');
-        } catch (\Illuminate\Database\QueryException) {
+        } catch (QueryException) {
             $this->assertNull($j->find($id));
         } finally {
             DB::rollBack();
@@ -349,15 +361,16 @@ class StorefrontRefreshJournalTest extends TestCase
             $this->assertSame($id, $reader->table('storefront_refresh_journal')->value('id'));
             unset($j);
             DB::purge(StorefrontRefreshJournal::CONNECTION);
-            \Illuminate\Support\Facades\Cache::put('setting:journal_old', 'stale');
-            \Illuminate\Support\Facades\Cache::put('setting:journal_committed', 'stale');
-            Http::swap(new \Illuminate\Http\Client\Factory);
+            Cache::put('setting:journal_old', 'stale');
+            Cache::put('setting:journal_committed', 'stale');
+            Http::swap(new Factory);
             Http::preventStrayRequests();
             Http::fake(function ($request) use ($reader) {
-                $this->assertFalse(\Illuminate\Support\Facades\Cache::has('setting:journal_old'));
-                $this->assertFalse(\Illuminate\Support\Facades\Cache::has('setting:journal_committed'));
+                $this->assertFalse(Cache::has('setting:journal_old'));
+                $this->assertFalse(Cache::has('setting:journal_committed'));
                 $this->assertSame('final', $reader->table('settings')->where('key', 'journal_committed')->value('value'));
-                return \Tests\Fixtures\StorefrontHttp::response($request) ?? Http::response(['success' => true]);
+
+                return StorefrontHttp::response($request) ?? Http::response(['success' => true]);
             });
             $this->travel(30)->seconds();
             $j = app(StorefrontRefreshJournal::class);
@@ -392,7 +405,7 @@ class StorefrontRefreshJournalTest extends TestCase
     {
         $j = app(StorefrontRefreshJournal::class);
         $id = $j->record(['setting:test']);
-        $entry = \App\Models\StorefrontRefreshJournalEntry::findOrFail($id);
+        $entry = StorefrontRefreshJournalEntry::findOrFail($id);
         $this->assertSame(['setting:test'], $entry->cache_keys);
         $this->assertFalse($entry->initial_attempted);
         $this->assertSame(0, $entry->recovery_attempts);

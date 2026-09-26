@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api\Admin;
 
+use App\Models\ShippingMethod;
 use App\Models\User;
 use App\Security\AdminAbilityRegistry;
 use Database\Seeders\RoleSeeder;
@@ -107,7 +108,7 @@ class OrdersAbilityParityTest extends TestCase
 
     public function test_shipping_method_picker_follows_the_same_ability_as_the_product_picker(): void
     {
-        \App\Models\ShippingMethod::query()->firstOrCreate(
+        ShippingMethod::query()->firstOrCreate(
             ['code' => 'standard'],
             ['name' => 'Standard Shipping', 'price' => 5]
         );

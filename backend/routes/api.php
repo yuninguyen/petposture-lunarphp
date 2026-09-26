@@ -28,11 +28,11 @@ use App\Http\Controllers\Api\Admin\ProductOptionController;
 use App\Http\Controllers\Api\Admin\ProductTypeController;
 use App\Http\Controllers\Api\Admin\ProductVariantController as AdminProductVariantController;
 use App\Http\Controllers\Api\Admin\ProfileController;
-use App\Http\Controllers\Api\Admin\SessionController;
 use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\SecureSettingsController;
 use App\Http\Controllers\Api\Admin\SeoSocialController;
+use App\Http\Controllers\Api\Admin\SessionController;
 use App\Http\Controllers\Api\Admin\ShippingMethodController;
 use App\Http\Controllers\Api\Admin\SystemUserController;
 use App\Http\Controllers\Api\Admin\UserController;
@@ -325,48 +325,48 @@ Route::prefix('/admin')
         Route::patch('/pages/{page}', [PageController::class, 'update']);
         Route::delete('/pages/{page}', [PageController::class, 'destroy']);
 
-            Route::get('/customers', [CustomerController::class, 'index']);
-            Route::get('/customers/{customer}/orders', [CustomerController::class, 'orders']);
-            Route::get('/customers/{customer}/addresses', [CustomerController::class, 'addresses']);
-            Route::get('/customers/{customer}/login-accounts', [CustomerController::class, 'loginAccounts']);
-            Route::match(['put', 'patch'], '/customers/{customer}/login-accounts/{user}', [CustomerController::class, 'updateLoginAccount']);
-            Route::match(['put', 'patch'], '/customers/{customer}/addresses/{address}', [CustomerController::class, 'updateAddress']);
-            Route::delete('/customers/{customer}/addresses/{address}', [CustomerController::class, 'destroyAddress']);
-            Route::get('/customers/{customer}', [CustomerController::class, 'show']);
-            Route::match(['put', 'patch'], '/customers/{customer}', [CustomerController::class, 'update']);
+        Route::get('/customers', [CustomerController::class, 'index']);
+        Route::get('/customers/{customer}/orders', [CustomerController::class, 'orders']);
+        Route::get('/customers/{customer}/addresses', [CustomerController::class, 'addresses']);
+        Route::get('/customers/{customer}/login-accounts', [CustomerController::class, 'loginAccounts']);
+        Route::match(['put', 'patch'], '/customers/{customer}/login-accounts/{user}', [CustomerController::class, 'updateLoginAccount']);
+        Route::match(['put', 'patch'], '/customers/{customer}/addresses/{address}', [CustomerController::class, 'updateAddress']);
+        Route::delete('/customers/{customer}/addresses/{address}', [CustomerController::class, 'destroyAddress']);
+        Route::get('/customers/{customer}', [CustomerController::class, 'show']);
+        Route::match(['put', 'patch'], '/customers/{customer}', [CustomerController::class, 'update']);
 
-            Route::get('/settings/general', [AdminSettingsController::class, 'general']);
-            Route::put('/settings/general', [AdminSettingsController::class, 'updateGeneral']);
-            Route::get('/settings/branding', [AdminSettingsController::class, 'branding']);
-            Route::put('/settings/branding', [AdminSettingsController::class, 'updateBranding']);
-            Route::get('/settings/analytics', [AdminSettingsController::class, 'analytics']);
-            Route::put('/settings/analytics', [AdminSettingsController::class, 'updateAnalytics']);
-            Route::get('/settings/smtp', [SecureSettingsController::class, 'smtp']);
-            Route::put('/settings/smtp', [SecureSettingsController::class, 'updateSmtp']);
-            Route::post('/settings/smtp/test', [SecureSettingsController::class, 'testSmtp']);
-            Route::get('/settings/ai', [SecureSettingsController::class, 'ai']);
-            Route::put('/settings/ai', [SecureSettingsController::class, 'updateAi']);
-            Route::post('/settings/ai/fetch-models', [SecureSettingsController::class, 'fetchAiModels']);
+        Route::get('/settings/general', [AdminSettingsController::class, 'general']);
+        Route::put('/settings/general', [AdminSettingsController::class, 'updateGeneral']);
+        Route::get('/settings/branding', [AdminSettingsController::class, 'branding']);
+        Route::put('/settings/branding', [AdminSettingsController::class, 'updateBranding']);
+        Route::get('/settings/analytics', [AdminSettingsController::class, 'analytics']);
+        Route::put('/settings/analytics', [AdminSettingsController::class, 'updateAnalytics']);
+        Route::get('/settings/smtp', [SecureSettingsController::class, 'smtp']);
+        Route::put('/settings/smtp', [SecureSettingsController::class, 'updateSmtp']);
+        Route::post('/settings/smtp/test', [SecureSettingsController::class, 'testSmtp']);
+        Route::get('/settings/ai', [SecureSettingsController::class, 'ai']);
+        Route::put('/settings/ai', [SecureSettingsController::class, 'updateAi']);
+        Route::post('/settings/ai/fetch-models', [SecureSettingsController::class, 'fetchAiModels']);
 
-            Route::get('/finance/payment-methods', [PaymentMethodController::class, 'index']);
-            Route::put('/finance/payment-methods/{gateway}', [PaymentMethodController::class, 'update'])
-                ->where('gateway', 'stripe|paypal|airwallex|payoneer');
-            Route::post('/finance/payment-methods/{gateway}/test', [PaymentMethodController::class, 'test'])
-                ->where('gateway', 'stripe|paypal|airwallex|payoneer');
+        Route::get('/finance/payment-methods', [PaymentMethodController::class, 'index']);
+        Route::put('/finance/payment-methods/{gateway}', [PaymentMethodController::class, 'update'])
+            ->where('gateway', 'stripe|paypal|airwallex|payoneer');
+        Route::post('/finance/payment-methods/{gateway}/test', [PaymentMethodController::class, 'test'])
+            ->where('gateway', 'stripe|paypal|airwallex|payoneer');
 
-            Route::get('/shipping-methods', [ShippingMethodController::class, 'index']);
-            Route::post('/shipping-methods', [ShippingMethodController::class, 'store']);
-            Route::get('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'show']);
-            Route::put('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'update']);
-            Route::patch('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'update']);
-            Route::delete('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'destroy']);
+        Route::get('/shipping-methods', [ShippingMethodController::class, 'index']);
+        Route::post('/shipping-methods', [ShippingMethodController::class, 'store']);
+        Route::get('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'show']);
+        Route::put('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'update']);
+        Route::patch('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'update']);
+        Route::delete('/shipping-methods/{shippingMethod}', [ShippingMethodController::class, 'destroy']);
 
-            Route::get('/discounts', [DiscountController::class, 'index']);
-            Route::post('/discounts', [DiscountController::class, 'store']);
-            Route::get('/discounts/{discount}', [DiscountController::class, 'show']);
-            Route::put('/discounts/{discount}', [DiscountController::class, 'update']);
-            Route::patch('/discounts/{discount}', [DiscountController::class, 'update']);
-            Route::delete('/discounts/{discount}', [DiscountController::class, 'destroy']);
+        Route::get('/discounts', [DiscountController::class, 'index']);
+        Route::post('/discounts', [DiscountController::class, 'store']);
+        Route::get('/discounts/{discount}', [DiscountController::class, 'show']);
+        Route::put('/discounts/{discount}', [DiscountController::class, 'update']);
+        Route::patch('/discounts/{discount}', [DiscountController::class, 'update']);
+        Route::delete('/discounts/{discount}', [DiscountController::class, 'destroy']);
     });
 
 // Session-status check — intentionally outside auth:sanctum so anonymous

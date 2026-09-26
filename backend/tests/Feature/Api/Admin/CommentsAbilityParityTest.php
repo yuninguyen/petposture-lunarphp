@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Security\AdminAbilityRegistry;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -469,7 +470,7 @@ class CommentsAbilityParityTest extends TestCase
     {
         return Post::query()->create([
             'title' => $title,
-            'slug' => \Illuminate\Support\Str::slug($title).'-'.uniqid(),
+            'slug' => Str::slug($title).'-'.uniqid(),
             'content' => 'Sample post content',
             'status' => 'published',
         ]);

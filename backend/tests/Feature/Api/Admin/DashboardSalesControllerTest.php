@@ -3,18 +3,13 @@
 namespace Tests\Feature\Api\Admin;
 
 use App\Models\OrderReturnRequest;
-use App\Models\Review;
 use App\Models\Setting;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
-use Lunar\Models\Collection;
 use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
-use Lunar\Models\Price;
-use Lunar\Models\Product;
-use Lunar\Models\ProductVariant;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 

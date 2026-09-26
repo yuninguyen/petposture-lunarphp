@@ -34,6 +34,7 @@ use App\Payments\PaymentGatewayManager;
 use App\Support\CloudflarePurgeNotice;
 use App\Support\MailConfigSync;
 use App\Support\ProductionMailConfiguration;
+use App\Support\StorefrontMutationBatch;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -45,13 +46,13 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Lunar\Base\DiscountManagerInterface;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Lunar\Base\ShippingModifiers;
 use Lunar\Facades\Telemetry;
 use Lunar\Models\Brand;
 use Lunar\Models\Order;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -61,7 +62,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(CloudflarePurgeNotice::class);
-        $this->app->scoped(\App\Support\StorefrontMutationBatch::class);
+        $this->app->scoped(StorefrontMutationBatch::class);
 
         $this->app->singleton(PaymentGatewayManager::class, function ($app) {
             return new PaymentGatewayManager([

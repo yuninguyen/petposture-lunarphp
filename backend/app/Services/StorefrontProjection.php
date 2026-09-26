@@ -7,6 +7,7 @@ use InvalidArgumentException;
 final class StorefrontProjection
 {
     private const URL = 'https://petposture.com';
+
     private const DESCRIPTION = 'Breed-focused pet product recommendations based on practical fit, materials, usability and everyday comfort.';
 
     public static function fromPublicData(array $settings, array $banners): array

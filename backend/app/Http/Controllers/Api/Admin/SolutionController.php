@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Solution;
 use App\Http\Resources\Admin\SolutionResource;
+use App\Models\Solution;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +19,7 @@ class SolutionController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%");
+                    ->orWhere('slug', 'like', "%{$search}%");
             });
         }
 
@@ -79,12 +79,14 @@ class SolutionController extends Controller
         });
 
         $solution->loadCount(['posts', 'products'])->load('featuredMedia');
+
         return new SolutionResource($solution);
     }
 
     public function show(Solution $solution)
     {
         $solution->loadCount(['posts', 'products'])->load(['featuredMedia', 'seo', 'products', 'posts']);
+
         return new SolutionResource($solution);
     }
 
@@ -92,7 +94,7 @@ class SolutionController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:solutions,slug,' . $solution->id,
+            'slug' => 'required|string|max:255|unique:solutions,slug,'.$solution->id,
             'description' => 'nullable|string',
             'featured_image' => 'nullable|string',
             'featured_image_alt' => 'nullable|string|max:255',
@@ -110,7 +112,7 @@ class SolutionController extends Controller
             'post_ids.*' => 'integer|exists:posts,id',
         ]);
 
-        DB::transaction(function () use ($request, $solution, $validated) {
+        DB::transaction(function () use ($solution, $validated) {
             $seoData = $validated['seo'] ?? null;
             unset($validated['seo']);
 
@@ -136,12 +138,14 @@ class SolutionController extends Controller
         });
 
         $solution->refresh()->loadCount(['posts', 'products'])->load(['featuredMedia', 'seo']);
+
         return new SolutionResource($solution);
     }
 
     public function destroy(Solution $solution)
     {
         $solution->delete();
+
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 
@@ -153,6 +157,7 @@ class SolutionController extends Controller
         ]);
 
         Solution::whereIn('id', $validated['ids'])->delete();
+
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 }

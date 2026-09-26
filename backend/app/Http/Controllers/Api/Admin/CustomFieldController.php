@@ -13,9 +13,7 @@ use Lunar\Models\Attribute;
 
 class CustomFieldController extends Controller
 {
-    public function __construct(private readonly CustomFieldService $customFields)
-    {
-    }
+    public function __construct(private readonly CustomFieldService $customFields) {}
 
     public function index(): AnonymousResourceCollection
     {

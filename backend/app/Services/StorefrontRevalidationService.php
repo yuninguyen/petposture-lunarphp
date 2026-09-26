@@ -84,6 +84,7 @@ class StorefrontRevalidationService
             $length = strlen($chunk);
             if ($bytes + $length > $limit || $this->consumed + $length > 13107200 || hrtime(true) / 1e9 >= $deadline) {
                 $budgetExceeded = true;
+
                 // A short native write aborts cURL immediately; throwing through its
                 // callback can defer unwinding until the transfer timeout on Windows.
                 return 0;

@@ -39,7 +39,7 @@ class AffiliateNetworkManagementController extends Controller
             'cookie_days' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $slug = !empty($validated['slug']) ? Str::slug($validated['slug']) : Str::slug($validated['name']);
+        $slug = ! empty($validated['slug']) ? Str::slug($validated['slug']) : Str::slug($validated['name']);
 
         $network = AffiliateNetwork::create([
             'name' => $validated['name'],
@@ -148,7 +148,7 @@ class AffiliateNetworkManagementController extends Controller
         SyncAffiliateReportJob::dispatch($network->id);
 
         return response()->json([
-            'message' => 'Sync triggered successfully for ' . $network->name,
+            'message' => 'Sync triggered successfully for '.$network->name,
         ], 202);
     }
 

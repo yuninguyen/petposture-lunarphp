@@ -20,8 +20,8 @@ class ActivityLogController extends Controller
     private static function subjectTypeMap(): array
     {
         return [
-            'product' => [(new Product())->getMorphClass(), 'product', Product::class],
-            'order' => [(new Order())->getMorphClass(), 'order', Order::class],
+            'product' => [(new Product)->getMorphClass(), 'product', Product::class],
+            'order' => [(new Order)->getMorphClass(), 'order', Order::class],
             'post' => [Post::class],
             'user' => [User::class],
             'role' => [Role::class],
@@ -94,9 +94,9 @@ class ActivityLogController extends Controller
                 $subjectType = null;
                 if ($activity->subject_type) {
                     $raw = $activity->subject_type;
-                    if ($raw === 'product' || $raw === (new Product())->getMorphClass()) {
+                    if ($raw === 'product' || $raw === (new Product)->getMorphClass()) {
                         $subjectType = 'Product';
-                    } elseif ($raw === 'order' || $raw === (new Order())->getMorphClass()) {
+                    } elseif ($raw === 'order' || $raw === (new Order)->getMorphClass()) {
                         $subjectType = 'Order';
                     } else {
                         $base = class_basename($raw);

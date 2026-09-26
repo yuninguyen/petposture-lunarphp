@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services;
 
 use App\Services\StorefrontRevalidationService;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -15,6 +16,7 @@ class StorefrontRevalidationServiceTest extends TestCase
         $requests = [];
         Http::fake(function ($request, $options) use (&$requests) {
             $requests[] = [$request, $options];
+
             return Http::response($request->method() === 'POST' ? ['revalidated' => true, 'scope' => 'homepage'] : '<!DOCTYPE html><html><body></body></html>', 200,
                 ['Content-Type' => $request->method() === 'POST' ? 'application/json' : 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']);
         });
@@ -61,7 +63,7 @@ class StorefrontRevalidationServiceTest extends TestCase
             'public, s-maxage=300, stale-while-revalidate=86400, no-cache',
             'public, max-age=0, s-maxage=300, stale-while-revalidate=86400',
         ] as $policy) {
-            Http::swap(new \Illuminate\Http\Client\Factory);
+            Http::swap(new Factory);
             Http::fake(fn () => Http::response('<!DOCTYPE html><html><body></body></html>', 200,
                 ['Content-Type' => 'text/html', 'Cache-Control' => $policy]));
 
@@ -99,7 +101,7 @@ class StorefrontRevalidationServiceTest extends TestCase
         foreach ([[302, ['Location' => 'https://petposture.com']], [200, ['Set-Cookie' => 'x=1']],
             [200, ['Cache-Control' => 'private']], [200, ['Content-Type' => 'application/json']],
             [200, ['Content-Length' => '2097153']]] as [$status, $headers]) {
-            Http::swap(new \Illuminate\Http\Client\Factory);
+            Http::swap(new Factory);
             Http::fake(fn () => Http::response('body', $status, $headers + ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300']));
             try {
                 (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);

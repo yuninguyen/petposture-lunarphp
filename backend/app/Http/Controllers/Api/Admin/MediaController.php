@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\CuratorMediaResource;
 use App\Models\CuratorMedia;
+use App\Support\ImageOptimizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -38,7 +39,7 @@ class MediaController extends Controller
         $directory = config('curator.directory');
 
         $path = $file->store($directory, $disk);
-        $path = \App\Support\ImageOptimizer::optimize($disk, $path);
+        $path = ImageOptimizer::optimize($disk, $path);
         [$width, $height] = getimagesize(Storage::disk($disk)->path($path)) ?: [null, null];
 
         $media = CuratorMedia::create([

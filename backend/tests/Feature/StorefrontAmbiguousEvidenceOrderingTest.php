@@ -1,7 +1,9 @@
 <?php
+
 namespace Tests\Feature;
 
 use App\Services\StorefrontCacheRefreshService;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Http;
 use Tests\Fixtures\StorefrontHtml;
 use Tests\Fixtures\StorefrontHttp;
@@ -15,13 +17,14 @@ class StorefrontAmbiguousEvidenceOrderingTest extends TestCase
             foreach ([1, 2] as $badRead) {
                 StorefrontHttp::configure();
                 config()->set('services.cloudflare', ['api_token' => 'test-only', 'zone_id' => 'test-zone']);
-                Http::swap(new \Illuminate\Http\Client\Factory);
+                Http::swap(new Factory);
                 Http::preventStrayRequests();
                 $reads = 0;
                 $purges = 0;
                 Http::fake(function ($request) use ($fault, $badRead, &$reads, &$purges) {
                     if (StorefrontHttp::isPurge($request)) {
                         $purges++;
+
                         return Http::response(['success' => true]);
                     }
                     if ($request->url() === 'http://127.0.0.1:3001/') {
@@ -29,11 +32,16 @@ class StorefrontAmbiguousEvidenceOrderingTest extends TestCase
                         $html = StorefrontHtml::render();
                         $headers = ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400'];
                         if ($reads === $badRead) {
-                            if ($fault === 'cookie') $headers['Set-Cookie'] = '';
-                            else $html = str_replace('"name":"B"', '"name":"old","name":"B"', $html);
+                            if ($fault === 'cookie') {
+                                $headers['Set-Cookie'] = '';
+                            } else {
+                                $html = str_replace('"name":"B"', '"name":"old","name":"B"', $html);
+                            }
                         }
+
                         return Http::response($html, 200, $headers);
                     }
+
                     return StorefrontHttp::response($request);
                 });
                 $this->assertFalse(app(StorefrontCacheRefreshService::class)->refresh([])->successful);

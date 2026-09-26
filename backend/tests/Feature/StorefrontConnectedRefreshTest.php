@@ -5,9 +5,8 @@ namespace Tests\Feature;
 use App\Jobs\PurgeCloudflareCache;
 use App\Services\CloudflareCacheService;
 use App\Services\StorefrontCacheRefreshService;
-use App\Services\StorefrontRefreshJournal;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Tests\Fixtures\StorefrontHtml;
 use Tests\TestCase;
@@ -23,7 +22,7 @@ class StorefrontConnectedRefreshTest extends TestCase
         config()->set('services.storefront', ['internal_url' => 'http://127.0.0.1:3001',
             'backend_internal_url' => 'http://127.0.0.1:8001', 'revalidation_secret' => 'test-secret']);
         config()->set('services.cloudflare', ['api_token' => 'test-token', 'zone_id' => 'test-zone']);
-        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::swap(new Factory);
         Http::preventStrayRequests();
         Http::fake(function ($request) use (&$pages, $purgeFails, $policy) {
             $this->calls[] = $request->method().' '.$request->url();
@@ -32,6 +31,7 @@ class StorefrontConnectedRefreshTest extends TestCase
             }
             if (str_ends_with($request->url(), '/api/settings')) {
                 $this->assertNull(Cache::get('setting:shop_name'));
+
                 return Http::response(['status' => 'Request was successful.', 'data' => StorefrontHtml::settings()]);
             }
             if (str_contains($request->url(), '/api/site-media?collection=banner')) {
@@ -44,6 +44,7 @@ class StorefrontConnectedRefreshTest extends TestCase
                 return Http::response(array_shift($pages) ?? StorefrontHtml::render('A'), 200,
                     ['Content-Type' => 'text/html', 'Cache-Control' => $policy]);
             }
+
             return Http::response(['success' => ! $purgeFails], $purgeFails ? 503 : 200);
         });
     }

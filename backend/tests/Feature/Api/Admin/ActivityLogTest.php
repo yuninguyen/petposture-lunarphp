@@ -9,7 +9,6 @@ use App\Models\SiteMedia;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Lunar\FieldTypes\Text;
@@ -315,7 +314,7 @@ class ActivityLogTest extends TestCase
         $storeResponse->assertCreated();
         $productId = $storeResponse->json('data.id');
 
-        $productMorphClass = (new Product())->getMorphClass();
+        $productMorphClass = (new Product)->getMorphClass();
 
         $createActivity = Activity::where('subject_type', $productMorphClass)
             ->where('subject_id', $productId)
@@ -374,7 +373,7 @@ class ActivityLogTest extends TestCase
     {
         Sanctum::actingAs($this->admin);
 
-        $orderMorphClass = (new Order())->getMorphClass();
+        $orderMorphClass = (new Order)->getMorphClass();
 
         // 1. Order status update
         $order = Order::factory()->create([
@@ -681,7 +680,7 @@ class ActivityLogTest extends TestCase
     {
         Sanctum::actingAs($this->admin);
 
-        $orderMorphClass = (new Order())->getMorphClass();
+        $orderMorphClass = (new Order)->getMorphClass();
 
         // Orders with status 'awaiting-payment' fail returnOrder() validation
         $order = Order::factory()->create([
@@ -706,7 +705,7 @@ class ActivityLogTest extends TestCase
     {
         Sanctum::actingAs($this->admin);
 
-        $productMorphClass = (new Product())->getMorphClass();
+        $productMorphClass = (new Product)->getMorphClass();
 
         $product = Product::create([
             'product_type_id' => $this->productType->id,

@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 class Turnstile implements ValidationRule
 {
-    public function __construct(private readonly ?string $remoteIp = null)
-    {
-    }
+    public function __construct(private readonly ?string $remoteIp = null) {}
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {

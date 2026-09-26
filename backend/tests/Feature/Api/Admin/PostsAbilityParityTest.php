@@ -19,9 +19,14 @@ class PostsAbilityParityTest extends TestCase
     use RefreshDatabase;
 
     private const ALLOWED = ['super_admin', 'admin', 'staff'];
+
     private const BLOCKED = ['Product Manager', 'Order Manager', 'Support', 'customer'];
 
-    protected function setUp(): void { parent::setUp(); $this->seed(RoleSeeder::class); }
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(RoleSeeder::class);
+    }
 
     public function test_allowed_roles_can_enter_every_post_route(): void
     {
@@ -54,8 +59,16 @@ class PostsAbilityParityTest extends TestCase
     public function test_migration_assigns_post_abilities_only_to_core_roles(): void
     {
         (require database_path('migrations/2026_09_23_000002_seed_posts_domain_permissions.php'))->up();
-        foreach (self::ALLOWED as $role) foreach (AdminAbilityRegistry::POSTS as $ability) $this->assertTrue(Role::findByName($role)->hasPermissionTo($ability));
-        foreach (self::BLOCKED as $role) foreach (AdminAbilityRegistry::POSTS as $ability) $this->assertFalse(Role::findByName($role)->hasPermissionTo($ability));
+        foreach (self::ALLOWED as $role) {
+            foreach (AdminAbilityRegistry::POSTS as $ability) {
+                $this->assertTrue(Role::findByName($role)->hasPermissionTo($ability));
+            }
+        }
+        foreach (self::BLOCKED as $role) {
+            foreach (AdminAbilityRegistry::POSTS as $ability) {
+                $this->assertFalse(Role::findByName($role)->hasPermissionTo($ability));
+            }
+        }
     }
 
     private function requests(): array
@@ -63,6 +76,7 @@ class PostsAbilityParityTest extends TestCase
         $suffix = uniqid();
         $category = BlogCategory::query()->create(['name' => 'Parity category '.$suffix, 'slug' => 'parity-category-'.$suffix]);
         $post = Post::query()->create(['blog_category_id' => $category->id, 'title' => 'Parity post '.$suffix, 'slug' => 'parity-'.$suffix, 'content' => '<p>Parity</p>', 'status' => 'draft']);
+
         return [
             ['getJson', '/api/admin/posts', []], ['getJson', "/api/admin/posts/{$post->id}", []], ['getJson', "/api/admin/posts/{$post->id}/preview-url", []],
             ['postJson', '/api/admin/posts', []], ['putJson', "/api/admin/posts/{$post->id}", []], ['deleteJson', "/api/admin/posts/{$post->id}", []],
@@ -70,5 +84,10 @@ class PostsAbilityParityTest extends TestCase
         ];
     }
 
-    private function actAs(string $role): void { $user = User::factory()->create(); $user->assignRole($role); Sanctum::actingAs($user); }
+    private function actAs(string $role): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole($role);
+        Sanctum::actingAs($user);
+    }
 }

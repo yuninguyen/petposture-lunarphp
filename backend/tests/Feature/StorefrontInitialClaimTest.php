@@ -25,7 +25,9 @@ class StorefrontInitialClaimTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (DB::getConnections() as $connection) $connection->disconnect();
+        foreach (DB::getConnections() as $connection) {
+            $connection->disconnect();
+        }
         parent::tearDown();
         gc_collect_cycles();
         unlink($this->database);

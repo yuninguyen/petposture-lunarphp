@@ -98,6 +98,7 @@ class RoleSeeder extends Seeder
 
             if (in_array($roleName, ['super_admin', 'admin', 'staff'], true)) {
                 $role->syncPermissions(Permission::query()->where('guard_name', 'web')->get());
+
                 continue;
             }
 

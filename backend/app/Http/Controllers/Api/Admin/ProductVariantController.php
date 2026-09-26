@@ -20,8 +20,7 @@ class ProductVariantController extends Controller
     public function __construct(
         private readonly ProductAttributeService $attributeService,
         private readonly ProductVariantMatrixService $matrixService
-    ) {
-    }
+    ) {}
 
     public function update(
         UpdateProductVariantRequest $request,

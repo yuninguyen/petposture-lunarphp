@@ -3,7 +3,6 @@
 namespace Tests\Feature\Api\Admin;
 
 use App\Models\User;
-use App\Notifications\NewCustomerRegisteredNotification;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;

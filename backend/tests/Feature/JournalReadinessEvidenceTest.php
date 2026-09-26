@@ -1,6 +1,9 @@
 <?php
+
 namespace Tests\Feature;
+
 use Tests\TestCase;
+
 class JournalReadinessEvidenceTest extends TestCase
 {
     public function test_visibility_above_lease_passes_numeric_checks_but_not_activation(): void

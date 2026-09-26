@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Api\Admin;
 
 use App\Models\User;
+use App\Security\AdminAbilityRegistry;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -230,7 +231,7 @@ class BrandsAbilityParityTest extends TestCase
         $pm = Role::query()->where('name', 'Product Manager')->where('guard_name', 'web')->first();
         $this->assertNotNull($pm);
 
-        foreach (\App\Security\AdminAbilityRegistry::BRANDS as $permission) {
+        foreach (AdminAbilityRegistry::BRANDS as $permission) {
             $this->assertTrue(
                 $pm->hasPermissionTo($permission),
                 "Product Manager must have permission '{$permission}' after migration."

@@ -3,6 +3,9 @@
 namespace App\Jobs;
 
 use App\Services\CloudflareCacheService;
+use App\Services\StorefrontCacheRefreshService;
+use App\Services\StorefrontRefreshJournal;
+use App\ValueObjects\CloudflarePurgeResult;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -46,37 +49,39 @@ class PurgeCloudflareCache implements ShouldQueue
             if (! $result->successful) {
                 throw new RuntimeException($result->message ?? 'Cloudflare cache purge failed.');
             }
+
             return;
         }
-        $result = (new \App\Services\StorefrontCacheRefreshService($cloudflare))->refresh($this->cacheKeys);
+        $result = (new StorefrontCacheRefreshService($cloudflare))->refresh($this->cacheKeys);
 
         if (! $result->successful) {
             throw new RuntimeException($result->message ?? 'Cloudflare cache purge failed.');
         }
     }
 
-    public function attemptJournal(CloudflareCacheService $cloudflare, bool $initial = false): \App\ValueObjects\CloudflarePurgeResult
+    public function attemptJournal(CloudflareCacheService $cloudflare, bool $initial = false): CloudflarePurgeResult
     {
-        $journal = app(\App\Services\StorefrontRefreshJournal::class);
+        $journal = app(StorefrontRefreshJournal::class);
         $row = $journal->claim($this->journalId, $initial);
         if ($row === null) {
             // Queue acknowledgement is not proof that the initial refresh completed.
             // Conservatively leave initial completion unconfirmed; replay owns due work.
-            return new \App\ValueObjects\CloudflarePurgeResult(! $initial, true,
+            return new CloudflarePurgeResult(! $initial, true,
                 message: $initial ? 'Cache refresh completion could not be confirmed.' : null);
         }
         $status = 'refresh_failed';
         try {
-            $result = (new \App\Services\StorefrontCacheRefreshService($cloudflare))->refresh($row->cache_keys);
+            $result = (new StorefrontCacheRefreshService($cloudflare))->refresh($row->cache_keys);
             $status = ! $result->configured ? 'not_configured' : ($result->successful ? 'success' : 'refresh_failed');
         } catch (Throwable) {
-            $result = new \App\ValueObjects\CloudflarePurgeResult(false, true, message: 'Cloudflare cache purge unavailable.');
+            $result = new CloudflarePurgeResult(false, true, message: 'Cloudflare cache purge unavailable.');
         }
         $successful = $result->configured && $result->successful;
         if (! $journal->finish($row->id, $row->lease_token, $successful, $status)) {
-            return new \App\ValueObjects\CloudflarePurgeResult(false, true, message: 'Cache refresh completion could not be confirmed.');
+            return new CloudflarePurgeResult(false, true, message: 'Cache refresh completion could not be confirmed.');
         }
-        return $successful ? $result : new \App\ValueObjects\CloudflarePurgeResult(false, true, $result->status, 'Cloudflare cache purge pending.');
+
+        return $successful ? $result : new CloudflarePurgeResult(false, true, $result->status, 'Cloudflare cache purge pending.');
     }
 
     public function failed(Throwable $exception): void

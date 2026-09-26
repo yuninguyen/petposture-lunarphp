@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Breed;
 use App\Http\Resources\Admin\BreedResource;
+use App\Models\Breed;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +19,7 @@ class BreedController extends Controller
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%");
+                    ->orWhere('slug', 'like', "%{$search}%");
             });
         }
 
@@ -81,12 +81,14 @@ class BreedController extends Controller
         });
 
         $breed->loadCount(['posts', 'products'])->load('featuredMedia');
+
         return new BreedResource($breed);
     }
 
     public function show(Breed $breed)
     {
         $breed->loadCount(['posts', 'products'])->load(['featuredMedia', 'seo', 'products', 'posts']);
+
         return new BreedResource($breed);
     }
 
@@ -94,7 +96,7 @@ class BreedController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:breeds,slug,' . $breed->id,
+            'slug' => 'required|string|max:255|unique:breeds,slug,'.$breed->id,
             'body_type' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'featured_image' => 'nullable|string',
@@ -113,7 +115,7 @@ class BreedController extends Controller
             'post_ids.*' => 'integer|exists:posts,id',
         ]);
 
-        DB::transaction(function () use ($request, $breed, $validated) {
+        DB::transaction(function () use ($breed, $validated) {
             $seoData = $validated['seo'] ?? null;
             unset($validated['seo']);
 
@@ -140,12 +142,14 @@ class BreedController extends Controller
         });
 
         $breed->refresh()->loadCount(['posts', 'products'])->load(['featuredMedia', 'seo']);
+
         return new BreedResource($breed);
     }
 
     public function destroy(Breed $breed)
     {
         $breed->delete();
+
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 
@@ -157,6 +161,7 @@ class BreedController extends Controller
         ]);
 
         Breed::whereIn('id', $validated['ids'])->delete();
+
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 }

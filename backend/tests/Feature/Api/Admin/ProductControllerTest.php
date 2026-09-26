@@ -3,9 +3,9 @@
 namespace Tests\Feature\Api\Admin;
 
 use App\Models\CuratorMedia;
-use App\Services\ProductRouteService;
 use App\Models\SeoMetadata;
 use App\Models\User;
+use App\Services\ProductRouteService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;

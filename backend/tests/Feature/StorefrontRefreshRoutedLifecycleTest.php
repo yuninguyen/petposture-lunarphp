@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Spatie\Permission\Models\Role;
+use Tests\Fixtures\StorefrontHttp;
 use Tests\TestCase;
 
 /** Real registered routes: no RefreshDatabase, controller calls, or Livewire::test wrapper. */
@@ -57,7 +58,7 @@ class StorefrontRefreshRoutedLifecycleTest extends TestCase
         Storage::fake('local');
         Storage::fake('tmp-for-tests');
         Http::preventStrayRequests();
-        \Tests\Fixtures\StorefrontHttp::fake();
+        StorefrontHttp::fake();
         Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $user = User::factory()->create(['is_active' => true]);
         $user->assignRole('admin');
@@ -92,10 +93,11 @@ class StorefrontRefreshRoutedLifecycleTest extends TestCase
     {
         Setting::query()->createQuietly(['key' => 'business_phone', 'value' => 'Before']);
         $seen = [];
-        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
+        StorefrontHttp::fake(function () use (&$seen) {
             $seen[] = DB::connection('routed_committed')->table('settings')->pluck('value', 'key')->all();
             $this->assertFalse(Cache::has('setting:business_phone'));
             $this->assertFalse(Cache::has('setting:business_address'));
+
             return Http::response(['success' => true]);
         });
         Cache::put('setting:business_phone', 'Before');
@@ -119,10 +121,11 @@ class StorefrontRefreshRoutedLifecycleTest extends TestCase
         $snapshot = $this->pageSnapshot('/admin/manage-settings', 'manage-settings');
         Http::assertNothingSent();
         $seen = [];
-        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
+        StorefrontHttp::fake(function () use (&$seen) {
             $seen[] = DB::connection('routed_committed')->table('settings')->pluck('value', 'key')->all();
             $this->assertFalse(Cache::has('setting:shop_name'));
             $this->assertFalse(Cache::has('setting:shop_description'));
+
             return Http::response(['success' => true]);
         });
         Cache::put('setting:shop_name', 'Before');
@@ -167,7 +170,7 @@ class StorefrontRefreshRoutedLifecycleTest extends TestCase
         $this->assertSame(0, DB::connection('routed_committed')->table('site_media')->count());
 
         $seen = [];
-        \Tests\Fixtures\StorefrontHttp::fake(function () use (&$seen) {
+        StorefrontHttp::fake(function () use (&$seen) {
             $reader = DB::connection('routed_committed');
             $seen[] = $reader->table('media')->orderBy('id')->get();
             $this->assertSame('Final hero', $reader->table('site_media')->value('title'));
@@ -181,6 +184,7 @@ class StorefrontRefreshRoutedLifecycleTest extends TestCase
             $this->assertCount(2, Storage::disk('public')->allFiles());
             $this->assertFalse(Cache::has('public-api:site-media:v1:banner'));
             $this->assertSame('unrelated', Cache::get('public-api:site-media:v1:general'));
+
             return Http::response(['success' => true]);
         });
         Cache::put('public-api:site-media:v1:banner', 'Before');
@@ -230,7 +234,7 @@ class StorefrontRefreshRoutedLifecycleTest extends TestCase
 
     private function assertCompletedBatch(array $keys): void
     {
-        \Tests\Fixtures\StorefrontHttp::assertPurgeCount(1);
+        StorefrontHttp::assertPurgeCount(1);
         Bus::assertNothingDispatched();
         $this->assertFalse(app(StorefrontMutationBatch::class)->isCollecting());
         $this->assertSame(0, DB::transactionLevel());

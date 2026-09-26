@@ -7,6 +7,7 @@ use App\Services\StorefrontOriginFreshnessService;
 use App\Services\StorefrontProjection;
 use App\Services\StorefrontRevalidationService;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\Fixtures\StorefrontHtml;
@@ -37,7 +38,7 @@ class StorefrontRemainingFailuresTest extends TestCase
         config()->set('services.storefront', []);
         $this->assertFalse(app(StorefrontCacheRefreshService::class)->refresh([])->successful);
         Http::assertNothingSent();
-        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::swap(new Factory);
         config()->set('services.storefront.backend_internal_url', 'http://127.0.0.1:8001');
         $calls = 0;
         Http::fake(function () use (&$calls) {
@@ -52,7 +53,7 @@ class StorefrontRemainingFailuresTest extends TestCase
     {
         config()->set('services.storefront', ['internal_url' => 'http://127.0.0.1:3001', 'revalidation_secret' => 'test-secret']);
         foreach ([['revalidated' => false, 'scope' => 'homepage'], ['revalidated' => true, 'scope' => 'other'], ['revalidated' => true, 'scope' => 'homepage', 'extra' => true]] as $ack) {
-            Http::swap(new \Illuminate\Http\Client\Factory);
+            Http::swap(new Factory);
             Http::fake(fn () => Http::response($ack));
             try {
                 (new StorefrontRevalidationService)->invalidate(hrtime(true) / 1e9 + 30);
@@ -61,7 +62,7 @@ class StorefrontRemainingFailuresTest extends TestCase
                 $this->addToAssertionCount(1);
             }
         }
-        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::swap(new Factory);
         Http::fake(fn () => Http::response('encoded', 200, ['Content-Type' => 'text/html', 'Content-Encoding' => 'gzip', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400']));
         $this->expectException(\RuntimeException::class);
         (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);

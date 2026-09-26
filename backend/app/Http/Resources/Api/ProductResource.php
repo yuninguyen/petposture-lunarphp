@@ -220,23 +220,29 @@ class ProductResource extends JsonResource
         $defaultVariant = $this->variants->first();
         if ($defaultVariant) {
             $hasWeight = collect($specs)->contains('label', 'Weight');
-            if (!$hasWeight && $defaultVariant->weight_value) {
+            if (! $hasWeight && $defaultVariant->weight_value) {
                 $specs[] = [
                     'label' => 'Weight',
-                    'value' => $defaultVariant->weight_value . ' ' . ($defaultVariant->weight_unit ?: 'kg')
+                    'value' => $defaultVariant->weight_value.' '.($defaultVariant->weight_unit ?: 'kg'),
                 ];
             }
 
             $hasDimensions = collect($specs)->contains('label', 'Dimensions');
-            if (!$hasDimensions) {
+            if (! $hasDimensions) {
                 $dims = [];
-                if ($defaultVariant->length_value) $dims[] = $defaultVariant->length_value;
-                if ($defaultVariant->width_value) $dims[] = $defaultVariant->width_value;
-                if ($defaultVariant->height_value) $dims[] = $defaultVariant->height_value;
+                if ($defaultVariant->length_value) {
+                    $dims[] = $defaultVariant->length_value;
+                }
+                if ($defaultVariant->width_value) {
+                    $dims[] = $defaultVariant->width_value;
+                }
+                if ($defaultVariant->height_value) {
+                    $dims[] = $defaultVariant->height_value;
+                }
                 if (count($dims) > 0) {
                     $specs[] = [
                         'label' => 'Dimensions',
-                        'value' => implode(' x ', $dims) . ' ' . ($defaultVariant->length_unit ?: 'cm')
+                        'value' => implode(' x ', $dims).' '.($defaultVariant->length_unit ?: 'cm'),
                     ];
                 }
             }

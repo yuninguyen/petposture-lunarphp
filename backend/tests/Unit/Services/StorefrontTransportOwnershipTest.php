@@ -3,9 +3,11 @@
 namespace Tests\Unit\Services;
 
 use App\Services\StorefrontRevalidationService;
+use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Psr7\FnStream;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Utils;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -26,11 +28,15 @@ class StorefrontTransportOwnershipTest extends TestCase
         $written = null;
         $stream = Utils::streamFor('retained body');
         $body = FnStream::decorate($stream, [
-            'close' => function () use (&$closed, $stream) { $closed = true; $stream->close(); },
+            'close' => function () use (&$closed, $stream) {
+                $closed = true;
+                $stream->close();
+            },
         ]);
         Http::fake(function ($request, $options) use ($body, &$written) {
             $written = $options['sink']->write(str_repeat('x', 2097153));
-            return \GuzzleHttp\Promise\Create::promiseFor(new Response(200, [], $body));
+
+            return Create::promiseFor(new Response(200, [], $body));
         });
         try {
             (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);
@@ -46,14 +52,19 @@ class StorefrontTransportOwnershipTest extends TestCase
     {
         config()->set('services.storefront.internal_url', 'http://127.0.0.1:3001');
         foreach ([503, 200] as $status) {
-            Http::swap(new \Illuminate\Http\Client\Factory);
+            Http::swap(new Factory);
             $closed = false;
             $stream = Utils::streamFor('body');
             $body = FnStream::decorate($stream, [
-                'close' => function () use (&$closed, $stream) { $closed = true; $stream->close(); },
-                'read' => function () { throw new \RuntimeException('Distinct read failed.'); },
+                'close' => function () use (&$closed, $stream) {
+                    $closed = true;
+                    $stream->close();
+                },
+                'read' => function () {
+                    throw new \RuntimeException('Distinct read failed.');
+                },
             ]);
-            Http::fake(fn () => \GuzzleHttp\Promise\Create::promiseFor(new Response($status, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400'], $body)));
+            Http::fake(fn () => Create::promiseFor(new Response($status, ['Content-Type' => 'text/html', 'Cache-Control' => 'public, s-maxage=300, stale-while-revalidate=86400'], $body)));
             try {
                 (new StorefrontRevalidationService)->homepage(hrtime(true) / 1e9 + 30);
                 $this->fail('Unsafe response should fail.');

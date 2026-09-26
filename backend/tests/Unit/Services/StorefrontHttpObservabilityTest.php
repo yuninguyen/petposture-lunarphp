@@ -4,6 +4,7 @@ namespace Tests\Unit\Services;
 
 use App\Services\StorefrontCacheRefreshService;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\AssertionFailedError;
 use Tests\Fixtures\StorefrontHttp;
 use Tests\TestCase;
 
@@ -15,7 +16,7 @@ class StorefrontHttpObservabilityTest extends TestCase
         config()->set('services.storefront.backend_internal_url', 'http://127.0.0.1:8002');
         app(StorefrontCacheRefreshService::class)->refresh([]);
         StorefrontHttp::fake();
-        $this->expectException(\PHPUnit\Framework\AssertionFailedError::class);
+        $this->expectException(AssertionFailedError::class);
         $this->expectExceptionMessage('GET http://127.0.0.1:8002/api/settings');
         StorefrontHttp::assertNoUnexpectedRequests();
     }
@@ -27,7 +28,7 @@ class StorefrontHttpObservabilityTest extends TestCase
             Http::post('http://127.0.0.1:8001/api/settings');
         } catch (\Throwable) {
         }
-        $this->expectException(\PHPUnit\Framework\AssertionFailedError::class);
+        $this->expectException(AssertionFailedError::class);
         $this->expectExceptionMessage('POST http://127.0.0.1:8001/api/settings');
         StorefrontHttp::assertNoUnexpectedRequests();
     }

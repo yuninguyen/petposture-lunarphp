@@ -18,7 +18,7 @@ class BlogPostSeeder extends Seeder
         $healthCategory = BlogCategory::whereSlug('suc-khoe')->first();
         $nutritionCategory = BlogCategory::whereSlug('dinh-duong')->first();
 
-        if (!$healthCategory) {
+        if (! $healthCategory) {
             $healthCategory = BlogCategory::create([
                 'name' => 'Sức khỏe',
                 'slug' => 'suc-khoe',
@@ -26,7 +26,7 @@ class BlogPostSeeder extends Seeder
             ]);
         }
 
-        if (!$nutritionCategory) {
+        if (! $nutritionCategory) {
             $nutritionCategory = BlogCategory::create([
                 'name' => 'Dinh dưỡng',
                 'slug' => 'dinh-duong',
