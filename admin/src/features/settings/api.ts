@@ -1,5 +1,10 @@
 import { fetchJson } from '@/lib/api';
 
+export async function revealAiSecret(field: string): Promise<string> {
+  const { data } = await fetchJson<{ data: { value: string } }>(`/admin/settings/ai/reveal/${encodeURIComponent(field)}`);
+  return data.value;
+}
+
 export type SettingSource = 'database' | 'environment' | 'mixed' | 'none';
 export type FieldSource = Exclude<SettingSource, 'mixed'>;
 export type AiProvider = 'auto' | 'anthropic' | 'openai' | 'grok' | 'gemini';

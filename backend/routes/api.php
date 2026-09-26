@@ -347,6 +347,7 @@ Route::prefix('/admin')
         Route::get('/settings/ai', [SecureSettingsController::class, 'ai']);
         Route::put('/settings/ai', [SecureSettingsController::class, 'updateAi']);
         Route::post('/settings/ai/fetch-models', [SecureSettingsController::class, 'fetchAiModels']);
+        Route::get('/settings/ai/reveal/{field}', [SecureSettingsController::class, 'revealAiSecret'])->middleware('throttle:30,1');
 
         Route::get('/finance/payment-methods', [PaymentMethodController::class, 'index']);
         Route::put('/finance/payment-methods/{gateway}', [PaymentMethodController::class, 'update'])

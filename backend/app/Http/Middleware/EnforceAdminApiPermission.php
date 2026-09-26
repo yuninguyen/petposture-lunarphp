@@ -188,7 +188,7 @@ class EnforceAdminApiPermission
 
     private function isSettingsPath(string $path): bool
     {
-        return in_array($path, ['settings/general', 'settings/branding', 'settings/analytics', 'settings/smtp', 'settings/smtp/test', 'settings/ai', 'settings/ai/fetch-models'], true);
+        return in_array($path, ['settings/general', 'settings/branding', 'settings/analytics', 'settings/smtp', 'settings/smtp/test', 'settings/ai', 'settings/ai/fetch-models', 'settings/ai/reveal/{field}'], true);
     }
 
     private function settingsAbilityFor(Request $request, string $path): ?string
@@ -201,6 +201,7 @@ class EnforceAdminApiPermission
             'settings/smtp/test' => ['post' => 'test_smtp_settings'],
             'settings/ai' => ['get' => 'view_ai_settings', 'put' => 'update_ai_settings'],
             'settings/ai/fetch-models' => ['post' => 'test_ai_settings'],
+            'settings/ai/reveal/{field}' => ['get' => 'update_ai_settings'],
         ];
 
         return $abilities[$path][strtolower($request->method())] ?? null;

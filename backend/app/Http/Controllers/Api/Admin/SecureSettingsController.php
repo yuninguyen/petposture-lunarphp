@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\UpdateAiSettingsRequest;
 use App\Http\Requests\Admin\UpdateSmtpSettingsRequest;
 use App\Services\Admin\SecureSettingsService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class SecureSettingsController extends Controller
 {
@@ -37,6 +38,23 @@ class SecureSettingsController extends Controller
     public function updateAi(UpdateAiSettingsRequest $request, SecureSettingsService $settings): JsonResponse
     {
         return response()->json(['data' => $settings->updateAi($request->validated())]);
+    }
+
+    public function revealAiSecret(Request $request, string $field, SecureSettingsService $settings): JsonResponse
+    {
+        $value = $settings->revealAiSecret($field);
+
+        if ($value === null) {
+            return response()->json(['message' => 'No stored value.'], 404)->header('Cache-Control', 'no-store');
+        }
+
+        activity()
+            ->causedBy($request->user())
+            ->event('revealed_secret')
+            ->withProperties(['field' => $field])
+            ->log('revealed_secret');
+
+        return response()->json(['data' => ['value' => $value]])->header('Cache-Control', 'no-store');
     }
 
     public function fetchAiModels(FetchAiModelsRequest $request, SecureSettingsService $settings): JsonResponse

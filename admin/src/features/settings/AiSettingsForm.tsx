@@ -7,6 +7,7 @@ import {
   apiErrorData,
   fetchAiModels,
   fetchAiSettings,
+  revealAiSecret,
   updateAiSettings,
   type AiCandidateFields,
   type AiModelFetchPayload,
@@ -123,7 +124,8 @@ export function AiSettingsForm() {
   const effectiveModel = clearFields.has('openai_model') ? '' : (values?.openai_model ?? '');
   const modelIsAllowed = effectiveModel === '' || models.includes(effectiveModel);
   const currentFetchSucceeded = hasOpenAiChanges && fetchedRevision === openAiRevision && modelIsAllowed;
-  const maySave = hasChanges && (!hasOpenAiChanges || currentFetchSucceeded);
+  const hasOpenAiValueChanges = Boolean(openAiPayload.fields && Object.keys(openAiPayload.fields).length > 0);
+  const maySave = hasChanges && (!hasOpenAiValueChanges || currentFetchSucceeded);
   const pending = isFetching || isSaving;
   const modelOptions = Array.from(new Set([...(effectiveModel ? [effectiveModel] : []), ...models])).sort();
 
@@ -256,7 +258,7 @@ export function AiSettingsForm() {
     const markedForClear = clearFields.has(key);
     const label = t(labelKey);
     if (type === 'secret') {
-      return <SecretSettingInput key={key} id={`ai-${key}`} label={label} value={values[key]} field={state} disabled={pending} markedForClear={markedForClear} onChange={(value) => changeValue(key, value)} onRequestClear={() => requestClear(key)} onUndoClear={() => undoClear(key)} />;
+      return <SecretSettingInput key={key} id={`ai-${key}`} label={label} value={values[key]} field={state} disabled={pending} markedForClear={markedForClear} onChange={(value) => changeValue(key, value)} onRequestClear={() => requestClear(key)} onUndoClear={() => undoClear(key)} onReveal={() => revealAiSecret(key)} />;
     }
     return (
       <div key={key} className="space-y-2">

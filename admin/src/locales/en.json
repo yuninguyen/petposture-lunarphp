@@ -1550,6 +1550,8 @@
   "settings.secrets.undo_remove_override": "Undo removal",
   "settings.secrets.show_candidate": "Show candidate credential",
   "settings.secrets.hide_candidate": "Hide candidate credential",
+  "settings.secrets.revealed_readonly": "Showing the stored key. Hide it to type a new one.",
+  "settings.secrets.reveal_failed": "Could not load the stored key.",
   "settings.secrets.clear_confirmation": "Remove database override — this field will fall back to environment configuration if available. This does not remove or disable the environment value.",
   "settings_general.loading": "Loading general settings…",
   "settings_general.load_error": "General settings could not be loaded.",

@@ -95,6 +95,68 @@ describe('SecretSettingInput', () => {
     cleanup(host, root);
   });
 
+  it('loads and shows the stored database key read-only on demand, and forgets it when hidden', async () => {
+    const onReveal = vi.fn().mockResolvedValue('stored-key-123');
+    const { host, root } = renderInput(
+      { configured: true, source: 'database', hint: 'Configured in database' },
+      { onReveal },
+    );
+    const input = host.querySelector<HTMLInputElement>('input')!;
+    const toggle = host.querySelector<HTMLButtonElement>('[data-action="toggle-secret"]')!;
+
+    expect(onReveal).not.toHaveBeenCalled();
+    await act(async () => { toggle.click(); });
+    expect(onReveal).toHaveBeenCalledOnce();
+    expect(input.type).toBe('text');
+    expect(input.value).toBe('stored-key-123');
+    expect(input.readOnly).toBe(true);
+
+    await act(async () => { toggle.click(); });
+    expect(input.type).toBe('password');
+    expect(input.value).toBe('');
+    expect(host.innerHTML).not.toContain('stored-key-123');
+
+    await act(async () => { toggle.click(); });
+    expect(onReveal).toHaveBeenCalledTimes(2);
+
+    cleanup(host, root);
+  });
+
+  it('does not request the stored key for environment source or when a new candidate was typed', async () => {
+    const onReveal = vi.fn().mockResolvedValue('should-not-load');
+    const environment = renderInput(
+      { configured: true, source: 'environment', hint: 'Using environment configuration' },
+      { onReveal },
+    );
+    await act(async () => { environment.host.querySelector<HTMLButtonElement>('[data-action="toggle-secret"]')!.click(); });
+    expect(onReveal).not.toHaveBeenCalled();
+    cleanup(environment.host, environment.root);
+
+    const typed = renderInput(
+      { configured: true, source: 'database', hint: 'Configured in database' },
+      { onReveal, value: 'typed-candidate' },
+    );
+    await act(async () => { typed.host.querySelector<HTMLButtonElement>('[data-action="toggle-secret"]')!.click(); });
+    expect(onReveal).not.toHaveBeenCalled();
+    expect(typed.host.querySelector<HTMLInputElement>('input')!.value).toBe('typed-candidate');
+    cleanup(typed.host, typed.root);
+  });
+
+  it('shows an error and keeps the field blank when the stored key cannot be loaded', async () => {
+    const onReveal = vi.fn().mockRejectedValue(new Error('forbidden'));
+    const { host, root } = renderInput(
+      { configured: true, source: 'database', hint: 'Configured in database' },
+      { onReveal },
+    );
+
+    await act(async () => { host.querySelector<HTMLButtonElement>('[data-action="toggle-secret"]')!.click(); });
+
+    expect(host.querySelector<HTMLInputElement>('input')!.value).toBe('');
+    expect(host.querySelector('[role="alert"]')).not.toBeNull();
+
+    cleanup(host, root);
+  });
+
   it('offers clear only for database source and invokes clear', () => {
     const onRequestClear = vi.fn();
     const database = renderInput(

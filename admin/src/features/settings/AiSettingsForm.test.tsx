@@ -155,14 +155,25 @@ describe('AiSettingsForm', () => {
     cleanup(rendered);
   });
 
-  it.each(['openai_api_key', 'openai_base_url', 'openai_model'])('sends %s clear intent to the server and treats a successful fetch as validation', async (key) => {
+  it.each(['openai_api_key', 'openai_base_url', 'openai_model'])('enables Save immediately when only the %s override is removed, and still sends clear intent on Fetch models', async (key) => {
     const rendered = await renderForm();
     const input = field(rendered.host, key);
     await click(input.closest('.space-y-2')!.querySelector<HTMLElement>('[data-action="remove-override"]')!);
     expect(input).toBeDisabled();
-    expect(button(rendered.host, 'Save')).toBeDisabled();
+    expect(button(rendered.host, 'Save')).toBeEnabled();
     await click(button(rendered.host, 'Fetch models'));
     expect(mocks.fetchAiModels).toHaveBeenCalledWith({ clear_fields: [key] });
+    expect(button(rendered.host, 'Save')).toBeEnabled();
+    cleanup(rendered);
+  });
+
+  it('still requires a successful Fetch models before saving a new OpenAI value, even alongside a removed override', async () => {
+    const rendered = await renderForm();
+    const removeKey = field(rendered.host, 'openai_base_url').closest('.space-y-2')!.querySelector<HTMLElement>('[data-action="remove-override"]')!;
+    await click(removeKey);
+    setValue(field(rendered.host, 'openai_api_key'), 'sk-new-candidate');
+    expect(button(rendered.host, 'Save')).toBeDisabled();
+    await click(button(rendered.host, 'Fetch models'));
     expect(button(rendered.host, 'Save')).toBeEnabled();
     cleanup(rendered);
   });

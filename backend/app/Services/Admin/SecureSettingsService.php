@@ -139,6 +139,22 @@ class SecureSettingsService
         return $this->ai();
     }
 
+    public function aiSecretFieldNames(): array
+    {
+        return array_keys(array_filter(self::AI_FIELDS, fn (array $definition): bool => $definition['secret']));
+    }
+
+    public function revealAiSecret(string $field): ?string
+    {
+        if (! in_array($field, $this->aiSecretFieldNames(), true)) {
+            return null;
+        }
+
+        $value = Setting::query()->where('key', $field)->first()?->cast_value;
+
+        return $this->hasValue($value) ? (string) $value : null;
+    }
+
     public function fetchOpenAiModels(array $payload): array
     {
         $apiKey = $this->resolveCandidateField('openai_api_key', $payload, self::AI_FIELDS['openai_api_key']);

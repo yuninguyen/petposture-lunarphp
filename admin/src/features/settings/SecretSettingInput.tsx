@@ -14,6 +14,7 @@ export interface SecretSettingInputProps {
   onChange(value: string): void;
   onRequestClear(): void;
   onUndoClear(): void;
+  onReveal?(): Promise<string>;
 }
 
 export function SecretSettingInput({
@@ -26,9 +27,35 @@ export function SecretSettingInput({
   onChange,
   onRequestClear,
   onUndoClear,
+  onReveal,
 }: SecretSettingInputProps) {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
+  const [revealed, setRevealed] = useState<string | null>(null);
+  const [revealing, setRevealing] = useState(false);
+  const [revealFailed, setRevealFailed] = useState(false);
+  const canReveal = Boolean(onReveal) && field.source === 'database';
+  const showingStored = visible && value === '' && revealed !== null && !markedForClear;
+
+  const toggleVisible = async () => {
+    if (visible) {
+      setVisible(false);
+      setRevealed(null);
+      setRevealFailed(false);
+      return;
+    }
+    setVisible(true);
+    if (!canReveal || value !== '' || markedForClear) return;
+    setRevealing(true);
+    setRevealFailed(false);
+    try {
+      setRevealed(await onReveal!());
+    } catch {
+      setRevealFailed(true);
+    } finally {
+      setRevealing(false);
+    }
+  };
   const status = field.source === 'database'
     ? t('settings.secrets.hints.database')
     : field.source === 'environment'
@@ -57,8 +84,9 @@ export function SecretSettingInput({
         <Input
           id={id}
           type={visible ? 'text' : 'password'}
-          value={markedForClear ? '' : value}
+          value={markedForClear ? '' : showingStored ? revealed! : value}
           disabled={disabled || markedForClear}
+          readOnly={showingStored}
           autoComplete="new-password"
           onChange={(event) => onChange(event.target.value)}
           className="pr-10"
@@ -66,8 +94,8 @@ export function SecretSettingInput({
         <button
           type="button"
           data-action="toggle-secret"
-          disabled={disabled || markedForClear}
-          onClick={() => setVisible((current) => !current)}
+          disabled={disabled || markedForClear || revealing}
+          onClick={() => void toggleVisible()}
           aria-label={visible
             ? t('settings.secrets.hide_candidate')
             : t('settings.secrets.show_candidate')}
@@ -78,6 +106,8 @@ export function SecretSettingInput({
         </button>
       </div>
       <p className="text-xs text-gray-500">{status}</p>
+      {showingStored && <p className="text-xs text-gray-500">{t('settings.secrets.revealed_readonly')}</p>}
+      {revealFailed && <p role="alert" className="text-xs text-red-600">{t('settings.secrets.reveal_failed')}</p>}
       {markedForClear && (
         <p role="alert" className="text-xs text-amber-700">
           {t('settings.secrets.clear_confirmation')}
