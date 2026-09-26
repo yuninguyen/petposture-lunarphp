@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS entrypoint run directly by node in the production image */
 const { createServer } = require('http')
 const { URL } = require('url')
 const next = require('next')
