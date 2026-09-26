@@ -46,7 +46,7 @@ jobs:
           DB_DATABASE: ':memory:'
 
       - name: Copy .env
-        run: cp .env.example .env && php artisan key:generate
+        run: cp .env.example .env && touch database/database.sqlite && php artisan key:generate
 
       - name: Check code style (Pint)
         run: ./vendor/bin/pint --test
