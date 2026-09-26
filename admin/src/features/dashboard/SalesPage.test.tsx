@@ -180,6 +180,7 @@ describe('SalesPage', () => {
 
     expect(await screen.findByText('Recent system activity')).toBeInTheDocument();
     expect(screen.getByText('Order #PP-1001 was placed')).toBeInTheDocument();
+    expect(document.querySelector('.lucide-shopping-cart')).not.toBeNull();
   });
 
   it('renders goal progress bars and target indicators', async () => {

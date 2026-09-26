@@ -80,4 +80,24 @@ describe('MediaPicker', () => {
     act(() => root.unmount());
     host.remove();
   });
+
+  it('uses a fixed-height contained preview for logos', async () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = createRoot(host);
+
+    await act(async () => {
+      root.render(createElement(MediaPicker, {
+        value: { id: '1', url: 'https://cdn.example/logo.png' },
+        onChange: vi.fn(),
+        context: 'general',
+        preview: 'logo',
+      }));
+    });
+
+    expect(host.querySelector('img')).toHaveClass('h-64', 'object-contain');
+
+    act(() => root.unmount());
+    host.remove();
+  });
 });

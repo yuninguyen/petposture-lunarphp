@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { Activity, ShoppingCart, Star, UserPlus, type LucideIcon } from 'lucide-react';
 import { useDashboardSales } from './api';
 import { formatOrderAmount } from '@/features/orders/orderPresentation';
 import { DateRangePicker, type DateRangeValue } from './DateRangePicker';
@@ -9,6 +10,19 @@ import {
   formatComparisonLabel,
   type ComparisonValue,
 } from './ComparisonPicker';
+
+function activityIcon(icon: string): LucideIcon {
+  switch (icon) {
+    case 'shopping-cart':
+      return ShoppingCart;
+    case 'user-plus':
+      return UserPlus;
+    case 'star':
+      return Star;
+    default:
+      return Activity;
+  }
+}
 
 export function SalesPage() {
   const { t } = useTranslation();
@@ -441,20 +455,24 @@ export function SalesPage() {
               <p className="text-sm text-slate-400">{t('dashboard.no_activity', 'No recent activity')}</p>
             ) : (
               <div className="space-y-3.5">
-                {recent_activity.map((a, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div
-                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white text-xs"
-                      style={{ backgroundColor: a.color }}
-                    >
-                      •
+                {recent_activity.map((a, index) => {
+                  const ActivityIcon = activityIcon(a.icon);
+
+                  return (
+                    <div key={index} className="flex items-start gap-3">
+                      <div
+                        className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white"
+                        style={{ backgroundColor: a.color }}
+                      >
+                        <ActivityIcon aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2.25} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-slate-800">{a.title}</p>
+                        <p className="text-xs text-slate-500 truncate">{a.description}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-slate-800">{a.title}</p>
-                      <p className="text-xs text-slate-500 truncate">{a.description}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

@@ -116,6 +116,7 @@ describe('non-secret settings forms', () => {
     expect(rendered.host.querySelector<HTMLTextAreaElement>('#shop_description')).toHaveValue('Stored description');
     expect(rendered.host.querySelectorAll('[data-testid="media-picker"]')).toHaveLength(2);
     expect(Array.from(rendered.host.querySelectorAll('[data-testid="media-picker"]')).every((picker) => picker.getAttribute('data-context') === 'general')).toBe(true);
+    expect(rendered.host.querySelectorAll('[data-testid="media-picker"]')[0]).toHaveAttribute('data-preview', 'logo');
     expect(rendered.host.querySelector('[data-url="https://cdn.example/legacy-logo.png"]')).toHaveAttribute('data-id', 'null');
     expect(rendered.host.querySelectorAll('[data-testid="media-picker"]')[1]).toHaveAttribute('data-preview', 'favicon');
     expect(rendered.host.textContent).toContain('Select an image from the general media library.');
@@ -173,6 +174,7 @@ describe('non-secret settings forms', () => {
     expect(pickers).toHaveLength(2);
     expect(Array.from(pickers).every((picker) => picker.dataset.context === 'general')).toBe(true);
     expect(pickers[0]).toHaveAttribute('data-id', 'null');
+    expect(pickers[0]).toHaveAttribute('data-preview', 'logo');
     expect(pickers[1]).toHaveAttribute('data-preview', 'favicon');
     expect(rendered.host.textContent).toContain('Select an image from the general media library.');
     expect(rendered.host.textContent).toContain('Use a square PNG favicon — recommended 512 × 512 px (minimum 48 × 48 px).');

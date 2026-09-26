@@ -5,7 +5,7 @@ import { MediaLibraryModal, type MediaContext } from '@/components/ui/media-libr
 
 type MediaPickerValue = { id: string | null; url: string } | null;
 type MediaPickerChangeHandler = { bivarianceHack(media: MediaPickerValue): void }['bivarianceHack'];
-type MediaPickerPreview = 'default' | 'favicon';
+type MediaPickerPreview = 'default' | 'logo' | 'favicon';
 
 export function MediaPicker({
   value,
@@ -35,6 +35,8 @@ export function MediaPicker({
             className={
               fill
                 ? 'w-full flex-1 min-h-0 object-cover rounded-lg border border-gray-200'
+                : preview === 'logo'
+                  ? 'h-64 w-full object-contain rounded-lg border border-gray-200 bg-slate-50 p-3'
                 : preview === 'favicon'
                   ? 'aspect-square w-full object-contain rounded-lg border border-gray-200 bg-slate-50 p-3'
                 : 'w-full max-h-48 object-cover rounded-lg border border-gray-200'
@@ -57,6 +59,8 @@ export function MediaPicker({
           className={
             fill
               ? 'absolute inset-0 flex w-full flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 text-sm text-gray-400 hover:border-secondary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50'
+              : preview === 'logo'
+                ? 'flex h-64 w-full flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 text-sm text-gray-400 hover:border-secondary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50'
               : preview === 'favicon'
                 ? 'flex aspect-square w-full flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 text-sm text-gray-400 hover:border-secondary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50'
               : 'flex h-28 w-full flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 text-sm text-gray-400 hover:border-secondary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50'

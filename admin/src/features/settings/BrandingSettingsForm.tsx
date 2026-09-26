@@ -78,7 +78,7 @@ export function BrandingSettingsForm() {
       <div className="grid gap-6 md:grid-cols-2">
         <fieldset className="space-y-2" aria-labelledby="admin-logo-label">
           <legend id="admin-logo-label" className="text-sm font-medium text-ink">{t('settings_branding.admin_logo')}</legend>
-          <MediaPicker value={logo} disabled={mutation.isPending} onChange={(value) => changeMedia(setLogo, value)} context="general" />
+          <MediaPicker value={logo} disabled={mutation.isPending} onChange={(value) => changeMedia(setLogo, value)} context="general" preview="logo" />
           <p className="text-xs text-slate-500">{t('settings_branding.media_help')}</p>
           {logo?.id === null && <p role="note" className="text-xs text-amber-700">{t('settings.media_legacy_preview')}</p>}
         </fieldset>

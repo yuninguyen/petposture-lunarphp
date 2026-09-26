@@ -119,7 +119,7 @@ export function GeneralSettingsForm() {
       <div className="grid gap-6 md:grid-cols-2">
         <fieldset className="space-y-2" aria-labelledby="shop-logo-label">
           <legend id="shop-logo-label" className="text-sm font-medium text-ink">{t('settings_general.shop_logo')}</legend>
-          <MediaPicker value={logo} disabled={mutation.isPending} onChange={(value) => { clearFeedback(); setLogo(value); }} context="general" />
+          <MediaPicker value={logo} disabled={mutation.isPending} onChange={(value) => { clearFeedback(); setLogo(value); }} context="general" preview="logo" />
           <p className="text-xs text-slate-500">{t('settings_general.media_help')}</p>
           {logo?.id === null && <p role="note" className="text-xs text-amber-700">{t('settings.media_legacy_preview')}</p>}
         </fieldset>
