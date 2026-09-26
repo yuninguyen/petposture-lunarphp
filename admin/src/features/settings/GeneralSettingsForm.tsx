@@ -125,8 +125,9 @@ export function GeneralSettingsForm() {
         </fieldset>
         <fieldset className="space-y-2" aria-labelledby="shop-favicon-label">
           <legend id="shop-favicon-label" className="text-sm font-medium text-ink">{t('settings_general.shop_favicon')}</legend>
-          <MediaPicker value={favicon} disabled={mutation.isPending} onChange={(value) => { clearFeedback(); setFavicon(value); }} context="general" />
+          <MediaPicker value={favicon} disabled={mutation.isPending} onChange={(value) => { clearFeedback(); setFavicon(value); }} context="general" preview="favicon" />
           <p className="text-xs text-slate-500">{t('settings_general.media_help')}</p>
+          <p className="text-xs text-slate-500">{t('settings.favicon_image_help')}</p>
           {favicon?.id === null && <p role="note" className="text-xs text-amber-700">{t('settings.media_legacy_preview')}</p>}
         </fieldset>
       </div>

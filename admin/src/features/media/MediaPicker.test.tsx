@@ -50,4 +50,34 @@ describe('MediaPicker', () => {
     act(() => root.unmount());
     host.remove();
   });
+
+  it('uses a square contained preview for favicons', async () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const root = createRoot(host);
+
+    await act(async () => {
+      root.render(createElement(MediaPicker, {
+        value: { id: '1', url: 'https://cdn.example/favicon.png' },
+        onChange: vi.fn(),
+        context: 'general',
+        preview: 'favicon',
+      }));
+    });
+
+    expect(host.querySelector('img')).toHaveClass('aspect-square', 'object-contain');
+
+    await act(async () => {
+      root.render(createElement(MediaPicker, {
+        value: null,
+        onChange: vi.fn(),
+        context: 'general',
+        preview: 'favicon',
+      }));
+    });
+    expect(host.querySelector('button')).toHaveClass('aspect-square');
+
+    act(() => root.unmount());
+    host.remove();
+  });
 });

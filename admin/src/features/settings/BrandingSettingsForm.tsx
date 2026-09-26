@@ -84,8 +84,9 @@ export function BrandingSettingsForm() {
         </fieldset>
         <fieldset className="space-y-2" aria-labelledby="admin-favicon-label">
           <legend id="admin-favicon-label" className="text-sm font-medium text-ink">{t('settings_branding.admin_favicon')}</legend>
-          <MediaPicker value={favicon} disabled={mutation.isPending} onChange={(value) => changeMedia(setFavicon, value)} context="general" />
+          <MediaPicker value={favicon} disabled={mutation.isPending} onChange={(value) => changeMedia(setFavicon, value)} context="general" preview="favicon" />
           <p className="text-xs text-slate-500">{t('settings_branding.media_help')}</p>
+          <p className="text-xs text-slate-500">{t('settings.favicon_image_help')}</p>
           {favicon?.id === null && <p role="note" className="text-xs text-amber-700">{t('settings.media_legacy_preview')}</p>}
         </fieldset>
       </div>

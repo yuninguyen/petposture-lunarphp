@@ -25,13 +25,14 @@ vi.mock('./api', async (importOriginal) => ({
 }));
 
 vi.mock('@/features/media/MediaPicker', () => ({
-  MediaPicker: ({ value, onChange, context, disabled }: {
+  MediaPicker: ({ value, onChange, context, disabled, preview }: {
     value: { id: string | null; url: string } | null;
     onChange(value: { id: string | null; url: string } | null): void;
     context: string;
     disabled?: boolean;
+    preview?: string;
   }) => (
-    <div data-testid="media-picker" data-context={context} data-id={value?.id ?? 'null'} data-url={value?.url ?? ''} data-disabled={String(Boolean(disabled))}>
+    <div data-testid="media-picker" data-context={context} data-id={value?.id ?? 'null'} data-url={value?.url ?? ''} data-preview={preview ?? 'default'} data-disabled={String(Boolean(disabled))}>
       <button type="button" disabled={disabled} data-action="select-media" onClick={() => onChange({ id: '123', url: 'https://cdn.example/new.png' })}>Select media</button>
       <button type="button" disabled={disabled} data-action="remove-media" onClick={() => onChange(null)}>Remove media</button>
     </div>
@@ -116,7 +117,9 @@ describe('non-secret settings forms', () => {
     expect(rendered.host.querySelectorAll('[data-testid="media-picker"]')).toHaveLength(2);
     expect(Array.from(rendered.host.querySelectorAll('[data-testid="media-picker"]')).every((picker) => picker.getAttribute('data-context') === 'general')).toBe(true);
     expect(rendered.host.querySelector('[data-url="https://cdn.example/legacy-logo.png"]')).toHaveAttribute('data-id', 'null');
+    expect(rendered.host.querySelectorAll('[data-testid="media-picker"]')[1]).toHaveAttribute('data-preview', 'favicon');
     expect(rendered.host.textContent).toContain('Select an image from the general media library.');
+    expect(rendered.host.textContent).toContain('Use a square PNG favicon — recommended 512 × 512 px (minimum 48 × 48 px).');
     expect(rendered.host.querySelector('[role="note"]')).toHaveTextContent('This legacy image has no media library ID. Select a new image to replace it.');
     expect(button(rendered.host)).toBeDisabled();
 
@@ -170,7 +173,9 @@ describe('non-secret settings forms', () => {
     expect(pickers).toHaveLength(2);
     expect(Array.from(pickers).every((picker) => picker.dataset.context === 'general')).toBe(true);
     expect(pickers[0]).toHaveAttribute('data-id', 'null');
+    expect(pickers[1]).toHaveAttribute('data-preview', 'favicon');
     expect(rendered.host.textContent).toContain('Select an image from the general media library.');
+    expect(rendered.host.textContent).toContain('Use a square PNG favicon — recommended 512 × 512 px (minimum 48 × 48 px).');
     expect(rendered.host.querySelector('[role="note"]')).toHaveTextContent('This legacy image has no media library ID. Select a new image to replace it.');
     await click(pickers[0].querySelector<HTMLElement>('[data-action="select-media"]')!);
     await click(pickers[1].querySelector<HTMLElement>('[data-action="remove-media"]')!);
