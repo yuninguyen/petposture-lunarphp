@@ -188,7 +188,7 @@ describe('ActivityLogsPage', () => {
   });
 
   it('has EN and VI labels for every logged event', () => {
-    const events = ['created', 'updated', 'deleted', 'refunded', 'returned', 'permissions_updated', 'status-update'];
+    const events = ['created', 'updated', 'deleted', 'refunded', 'returned', 'permissions_updated', 'status-update', 'revealed_secret'];
     for (const locale of [enLocale, viLocale] as Record<string, string>[]) {
       for (const event of events) {
         expect(locale[`system_activity_logs.event.${event}`]).toBeTruthy();
