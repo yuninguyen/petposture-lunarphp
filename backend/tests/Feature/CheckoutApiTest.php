@@ -10,6 +10,7 @@ use App\Models\UserAddress;
 use App\Services\CheckoutService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -1552,6 +1553,133 @@ class CheckoutApiTest extends TestCase
         Sanctum::actingAs($this->userWithRole('Product Manager'));
         $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant))
             ->assertForbidden();
+    }
+
+    public function test_stock_is_decremented_once_when_order_reaches_payment_received_or_processing(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $this->makeAdmin();
+        $order = Order::query()->findOrFail(
+            $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, ['payment_method' => 'cod']))
+                ->assertCreated()
+                ->json('data.id'),
+        );
+        $this->assertSame('awaiting-payment', $order->status);
+        $this->assertSame(25, $variant->fresh()->stock);
+
+        $order->update(['status' => 'payment-received']);
+        $this->assertSame(24, $variant->fresh()->stock);
+
+        // Moving on to processing must not decrement a second time.
+        $order->update(['status' => 'processing']);
+        $this->assertSame(24, $variant->fresh()->stock);
+    }
+
+    public function test_stock_is_restored_when_a_reduced_order_is_cancelled(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $this->makeAdmin();
+        $order = Order::query()->findOrFail(
+            $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, ['payment_method' => 'cod']))
+                ->assertCreated()
+                ->json('data.id'),
+        );
+
+        $order->update(['status' => 'processing']);
+        $this->assertSame(24, $variant->fresh()->stock);
+
+        $order->update(['status' => 'cancelled']);
+        $this->assertSame(25, $variant->fresh()->stock);
+    }
+
+    public function test_stock_is_not_restored_when_cancelling_before_any_reduction_happened(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $this->makeAdmin();
+        $order = Order::query()->findOrFail(
+            $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, ['payment_method' => 'cod']))
+                ->assertCreated()
+                ->json('data.id'),
+        );
+        $this->assertSame('awaiting-payment', $order->status);
+
+        $order->update(['status' => 'cancelled']);
+
+        $this->assertSame(25, $variant->fresh()->stock);
+    }
+
+    public function test_shipping_line_is_never_treated_as_an_inventory_line(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $this->makeAdmin();
+        $order = Order::query()->findOrFail(
+            $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, ['payment_method' => 'cod']))
+                ->assertCreated()
+                ->json('data.id'),
+        );
+        $order->loadMissing('lines');
+        $this->assertTrue($order->lines->contains('type', 'shipping'));
+
+        $order->update(['status' => 'payment-received']);
+
+        // Only the physical line's quantity (1) came off stock, not the shipping line too.
+        $this->assertSame(24, $variant->fresh()->stock);
+    }
+
+    public function test_stock_never_goes_negative_and_logs_a_warning_when_insufficient(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $this->makeAdmin();
+        $order = Order::query()->findOrFail(
+            $this->postJson('/api/admin/orders', $this->manualOrderPayload($variant, ['payment_method' => 'cod']))
+                ->assertCreated()
+                ->json('data.id'),
+        );
+
+        // Simulate a concurrent order draining stock to zero between this
+        // order being placed and it reaching payment-received.
+        $variant->update(['stock' => 0]);
+        Log::spy();
+
+        $order->update(['status' => 'payment-received']);
+
+        $this->assertSame(0, $variant->fresh()->stock);
+        Log::shouldHaveReceived('warning')->once()->with(
+            'Insufficient product variant stock while reducing order inventory.',
+            \Mockery::on(fn (array $context): bool => $context['variant_id'] === $variant->id
+                && $context['sku'] === $variant->sku
+                && $context['requested_quantity'] === 1
+                && $context['stock_before_reduction'] === 0),
+        );
+    }
+
+    public function test_order_cancellation_does_not_over_restore_a_line_that_failed_to_decrement_due_to_insufficient_stock(): void
+    {
+        $variantA = $this->createPurchasableVariant();
+        $variantB = $this->createPurchasableVariant();
+        $this->makeAdmin();
+
+        $payload = $this->manualOrderPayload($variantA, ['payment_method' => 'cod']);
+        $payload['items'] = [
+            ['variant_id' => $variantA->id, 'quantity' => 1],
+            ['variant_id' => $variantB->id, 'quantity' => 1],
+        ];
+
+        $order = Order::query()->findOrFail(
+            $this->postJson('/api/admin/orders', $payload)->assertCreated()->json('data.id'),
+        );
+
+        $variantB->update(['stock' => 0]);
+
+        $order->update(['status' => 'payment-received']);
+        $this->assertSame(24, $variantA->fresh()->stock);
+        $this->assertSame(0, $variantB->fresh()->stock);
+
+        $order->update(['status' => 'cancelled']);
+        $this->assertSame(25, $variantA->fresh()->stock);
+
+        // Variant B never lost stock, so cancellation must not credit it either.
+        $this->assertSame(0, $variantB->fresh()->stock);
     }
 
     public function test_manual_order_creation_writes_an_audit_log_without_customer_data(): void

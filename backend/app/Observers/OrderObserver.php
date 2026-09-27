@@ -60,9 +60,46 @@ class OrderObserver
 
             $purchasable = $line->purchasable;
 
-            if ($purchasable instanceof ProductVariant) {
-                $purchasable->increment('stock', $line->quantity * $multiplier);
+            if (! $purchasable instanceof ProductVariant) {
+                continue;
             }
+
+            if ($multiplier < 0) {
+                $requestedQuantity = $line->quantity * -$multiplier;
+                $decremented = $purchasable->newQuery()
+                    ->whereKey($purchasable->getKey())
+                    ->where('stock', '>=', $requestedQuantity)
+                    ->decrement('stock', $requestedQuantity);
+
+                if ($decremented === 0) {
+                    $stockBeforeReduction = $purchasable->newQuery()
+                        ->whereKey($purchasable->getKey())
+                        ->value('stock');
+
+                    Log::warning('Insufficient product variant stock while reducing order inventory.', [
+                        'variant_id' => $purchasable->getKey(),
+                        'sku' => $purchasable->sku,
+                        'requested_quantity' => $requestedQuantity,
+                        'stock_before_reduction' => $stockBeforeReduction,
+                    ]);
+
+                    continue;
+                }
+
+                // Only a line whose stock was actually decremented here should
+                // ever be credited back on cancellation — otherwise a line
+                // skipped for insufficient stock would gain stock it never lost.
+                $line->update(['meta' => array_merge((array) $line->meta, ['inventory_reduced' => true])]);
+
+                continue;
+            }
+
+            if (! (bool) (($line->meta ?? [])['inventory_reduced'] ?? false)) {
+                continue;
+            }
+
+            $purchasable->increment('stock', $line->quantity * $multiplier);
+            $line->update(['meta' => array_merge((array) $line->meta, ['inventory_reduced' => false])]);
         }
     }
 }
