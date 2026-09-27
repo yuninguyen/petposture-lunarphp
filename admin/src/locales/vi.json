@@ -761,7 +761,7 @@
   "products.select_product_type": "Chọn loại sản phẩm",
   "products.sku": "SKU",
   "products.base_price": "Giá cơ bản",
-  "products.cost": "Giá vốn (nội bộ, không hiển thị cho khách)",
+  "products.cost": "Giá vốn (nội bộ)",
   "products.title_description": "Tiêu đề & mô tả",
   "products.media": "Hình ảnh",
   "products.alt_text_placeholder": "Văn bản thay thế (hỗ trợ accessibility & SEO)",
