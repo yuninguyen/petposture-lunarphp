@@ -23,6 +23,7 @@ class UpdateProductVariantRequest extends FormRequest
             'mpn' => ['nullable', 'string', 'max:255'],
             'ean' => ['nullable', 'string', 'max:255'],
             'stock' => ['required', 'integer', 'min:0'],
+            'cost' => ['nullable', 'numeric', 'min:0'],
             'backorder' => ['required', 'integer', 'min:0'],
             'purchasable' => ['required', Rule::in(['always', 'in_stock', 'in_stock_or_on_backorder'])],
             'unit_quantity' => ['required', 'integer', 'min:1'],

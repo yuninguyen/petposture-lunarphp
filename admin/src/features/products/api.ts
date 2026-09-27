@@ -29,7 +29,7 @@ export interface ProductOptionValue { id: number; name: string }
 export interface ProductOption { id: number; name: string; shared: boolean; values: ProductOptionValue[] }
 export interface ProductVariant {
   id: number; product_id: number; sku: string; gtin: string | null; mpn: string | null; ean: string | null;
-  stock: number; backorder: number; purchasable: 'always' | 'in_stock' | 'in_stock_or_on_backorder';
+  stock: number; cost: string | null; backorder: number; purchasable: 'always' | 'in_stock' | 'in_stock_or_on_backorder';
   unit_quantity: number; quantity_increment: number; min_quantity: number; tax_class_id: number;
   tax_ref: string | null; shippable: boolean; length_value: string | number | null; length_unit: string | null;
   width_value: string | number | null; width_unit: string | null; height_value: string | number | null;
@@ -54,7 +54,7 @@ export interface ProductFilters { search?: string; status?: ProductStatus | ''; 
 export interface CreateProductPayload { name: string; product_type_id: number; sku: string; base_price: string }
 export interface UpdateProductPayload { slug: string; status: ProductStatus; brand_id: number | null; attributes: AttributeValues; collections: number[]; media: Array<{ id: number; source: ProductMedia['source']; alt: string }>; seo: ProductSeo }
 export interface UpdateVariantPayload {
-  sku: string; gtin: string | null; mpn: string | null; ean: string | null; stock: number; backorder: number;
+  sku: string; gtin: string | null; mpn: string | null; ean: string | null; stock: number; cost: string | null; backorder: number;
   purchasable: ProductVariant['purchasable']; unit_quantity: number; quantity_increment: number; min_quantity: number;
   tax_class_id: number; tax_ref: string | null; shippable: boolean; length_value: string | null; length_unit: string | null;
   width_value: string | null; width_unit: string | null; height_value: string | null; height_unit: string | null;

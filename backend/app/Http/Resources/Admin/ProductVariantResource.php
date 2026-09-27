@@ -30,6 +30,7 @@ class ProductVariantResource extends JsonResource
             'mpn' => $this->mpn,
             'ean' => $this->ean,
             'stock' => (int) $this->stock,
+            'cost' => $this->resource->getAttribute('cost') === null ? null : (string) $this->resource->getAttribute('cost'),
             'backorder' => (int) $this->backorder,
             'purchasable' => $this->purchasable,
             'unit_quantity' => (int) $this->unit_quantity,

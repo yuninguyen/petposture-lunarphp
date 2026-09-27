@@ -763,6 +763,27 @@ class ProductControllerTest extends TestCase
         $this->assertSame(2, ProductVariant::query()->where('product_id', $product->id)->count());
     }
 
+    public function test_variant_cost_can_be_set_updated_and_cleared(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->product('Cost product');
+        $variant = $this->variant($product, 'COST-1', 5000, 10);
+
+        $payload = $this->variantPayload('COST-1');
+        $payload['cost'] = '4.25';
+
+        $this->putJson("/api/admin/products/{$product->id}/variants/{$variant->id}", $payload)
+            ->assertOk()
+            ->assertJsonPath('data.cost', '4.25');
+        $this->assertSame('4.25', (string) $variant->fresh()->cost);
+
+        $payload['cost'] = null;
+        $this->putJson("/api/admin/products/{$product->id}/variants/{$variant->id}", $payload)
+            ->assertOk()
+            ->assertJsonPath('data.cost', null);
+        $this->assertNull($variant->fresh()->cost);
+    }
+
     public function test_variant_update_rejects_variant_owned_by_another_product(): void
     {
         $this->actingAsAdmin();

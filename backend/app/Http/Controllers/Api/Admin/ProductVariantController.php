@@ -34,7 +34,7 @@ class ProductVariantController extends Controller
             $product->load('productType');
 
             $locked->fill(collect($validated)->only([
-                'sku', 'gtin', 'mpn', 'ean', 'stock', 'backorder', 'purchasable',
+                'sku', 'gtin', 'mpn', 'ean', 'stock', 'cost', 'backorder', 'purchasable',
                 'unit_quantity', 'quantity_increment', 'min_quantity', 'tax_class_id',
                 'tax_ref', 'shippable', 'length_value', 'length_unit', 'width_value',
                 'width_unit', 'height_value', 'height_unit', 'weight_value', 'weight_unit',

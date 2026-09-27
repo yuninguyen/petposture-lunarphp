@@ -16,6 +16,7 @@ function variant(id: number, history = false): ProductVariant {
     mpn: null,
     ean: null,
     stock: 1,
+    cost: null,
     backorder: 0,
     purchasable: 'always',
     unit_quantity: 1,

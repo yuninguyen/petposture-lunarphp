@@ -761,6 +761,7 @@
   "products.select_product_type": "Select product type",
   "products.sku": "SKU",
   "products.base_price": "Base price",
+  "products.cost": "Cost (internal, not shown to customers)",
   "products.title_description": "Title & description",
   "products.media": "Media",
   "products.alt_text_placeholder": "Alt text (for accessibility & SEO)",

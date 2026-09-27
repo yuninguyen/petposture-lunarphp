@@ -30,7 +30,7 @@ describe('Product schemas', () => {
   });
 
   it('normalizes optional variant strings and numeric fields', () => {
-    const parsed = variantFormSchema.parse({ sku: 'A', gtin: '', mpn: '', ean: '', stock: '0', backorder: '0', purchasable: 'always', unit_quantity: '1', quantity_increment: '1', min_quantity: '1', tax_class_id: '2', tax_ref: '', shippable: true, length_value: '', length_unit: null, width_value: '', width_unit: null, height_value: '', height_unit: null, weight_value: '', weight_unit: null, base_price: '0', attributes: {} });
-    expect(parsed).toMatchObject({ gtin: null, stock: 0, tax_class_id: 2, base_price: '0' });
+    const parsed = variantFormSchema.parse({ sku: 'A', gtin: '', mpn: '', ean: '', stock: '0', cost: '', backorder: '0', purchasable: 'always', unit_quantity: '1', quantity_increment: '1', min_quantity: '1', tax_class_id: '2', tax_ref: '', shippable: true, length_value: '', length_unit: null, width_value: '', width_unit: null, height_value: '', height_unit: null, weight_value: '', weight_unit: null, base_price: '0', attributes: {} });
+    expect(parsed).toMatchObject({ gtin: null, stock: 0, cost: null, tax_class_id: 2, base_price: '0' });
   });
 });

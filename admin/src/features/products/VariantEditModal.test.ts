@@ -16,6 +16,7 @@ const variant: ProductVariant = {
   mpn: null,
   ean: null,
   stock: 5,
+  cost: null,
   backorder: 0,
   purchasable: 'always',
   unit_quantity: 1,
@@ -78,6 +79,23 @@ describe('VariantEditModal display modes', () => {
     await act(async () => save.click());
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ sku: 'SINGLE-001', base_price: '10000', stock: 5 }));
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('renders cost blank when unset and submits a typed cost as a string', async () => {
+    const { host, root, onSave } = renderEditor(true);
+    const cost = host.querySelector<HTMLInputElement>('input[name="cost"]')!;
+    expect(cost.value).toBe('');
+
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(cost, '3.50');
+      cost.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    const save = Array.from(host.querySelectorAll('button')).find((button) => button.textContent === 'common.save')!;
+    await act(async () => save.click());
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ cost: '3.50' }));
     act(() => root.unmount());
     host.remove();
   });
