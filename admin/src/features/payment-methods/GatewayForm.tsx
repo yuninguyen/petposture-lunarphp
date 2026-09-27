@@ -209,7 +209,7 @@ export function GatewayForm({ gateway, webhookUrl, copyStatus, onCopyWebhookUrl,
 
   return (
     <form className="space-y-6" onSubmit={(event) => { event.preventDefault(); void save(); }}>
-      <div data-testid="mode-webhook-row" className="flex flex-col gap-4 sm:flex-row sm:items-end">
+      <div data-testid="mode-webhook-row" className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="space-y-2 sm:w-48">
           <label htmlFor={`${gateway.gateway}-mode`} className="text-sm font-medium text-ink">
             {t('payment_methods.mode', { defaultValue: 'Mode' })}

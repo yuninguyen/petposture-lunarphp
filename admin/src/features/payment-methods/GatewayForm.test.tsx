@@ -120,6 +120,8 @@ describe('GatewayForm', () => {
     const modeRow = rendered.host.querySelector('[data-testid="mode-webhook-row"]');
     expect(modeRow).toContainElement(rendered.host.querySelector('#stripe-mode'));
     expect(modeRow).toContainElement(rendered.host.querySelector('#stripe-webhook-url'));
+    expect(modeRow).toHaveClass('sm:items-start');
+    expect(modeRow).not.toHaveClass('sm:items-end');
 
     await click(Array.from(rendered.host.querySelectorAll<HTMLButtonElement>('button')).find((button) => button.textContent === 'Copy webhook URL')!);
     expect(rendered.onCopyWebhookUrl).toHaveBeenCalledTimes(1);
