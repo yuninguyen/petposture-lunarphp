@@ -1802,13 +1802,13 @@ class CheckoutApiTest extends TestCase
 
     public function test_refunding_a_gateway_without_a_refund_implementation_is_rejected_by_name_not_misrouted_to_stripe(): void
     {
-        // refundOrder() only implements Stripe and PayPal. Any other gateway
-        // (airwallex, payoneer, pingpong, manual-offline, ...) must be rejected by
-        // its own name — never silently fall into the Stripe branch just because
-        // it isn't PayPal. Real Airwallex/Payoneer refunds are tracked separately.
+        // refundOrder() only implements Stripe, PayPal and Cash on Delivery. Any other
+        // gateway (airwallex, payoneer, pingpong, ...) must be rejected by its own
+        // name — never silently fall into the Stripe branch just because it isn't
+        // PayPal. Real Airwallex/Payoneer refunds are tracked separately.
         $this->makeAdmin();
 
-        foreach (['airwallex', 'payoneer', 'pingpong', 'manual-offline'] as $gateway) {
+        foreach (['airwallex', 'payoneer', 'pingpong'] as $gateway) {
             $order = Order::factory()->create([
                 'status' => 'processing',
                 'total' => 5000,
@@ -1825,6 +1825,32 @@ class CheckoutApiTest extends TestCase
 
             $this->assertSame('paid', $order->fresh()->meta['payment_status']);
         }
+    }
+
+    public function test_refunding_a_cash_on_delivery_order_succeeds_locally_without_a_payment_intent(): void
+    {
+        // COD never captures a real electronic payment, so there is nothing to call
+        // out to Stripe/PayPal for — no payment_intent_id, no external HTTP call.
+        $this->makeAdmin();
+        Http::fake(); // any external call here would fail this test.
+
+        $order = Order::factory()->create([
+            'status' => 'processing',
+            'total' => 5000,
+            'meta' => [
+                'payment_gateway' => 'manual-offline',
+                'payment_status' => 'paid',
+            ],
+        ]);
+
+        $this->postJson("/api/admin/orders/{$order->id}/refund", ['reason' => 'customer_request'])
+            ->assertOk()
+            ->assertJsonPath('data.refund_status', 'refunded')
+            ->assertJsonPath('data.payment_status', 'refunded');
+
+        Http::assertNothingSent();
+        $this->assertSame('refunded', $order->fresh()->meta['payment_status']);
+        $this->assertStringStartsWith('manual_', $order->fresh()->meta['refund_id']);
     }
 
     public function test_manual_card_order_forces_admin_flag_when_calling_checkout_service(): void

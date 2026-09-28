@@ -331,13 +331,16 @@ class OrderOperationsService
         $meta = (array) ($order->meta ?? []);
         $gateway = (string) ($meta['payment_gateway'] ?? '');
 
-        if (! in_array($gateway, ['stripe', 'paypal'], true)) {
+        if (! in_array($gateway, ['stripe', 'paypal', 'manual-offline'], true)) {
             throw ValidationException::withMessages([
                 'refund' => ["Refunds are not supported yet for the \"{$gateway}\" payment gateway."],
             ]);
         }
 
         $isPayPal = $gateway === 'paypal';
+        // Cash on delivery never captures a real electronic payment, so there is no
+        // provider charge to reverse — refunding it is a local bookkeeping action only.
+        $isManualOffline = $gateway === 'manual-offline';
 
         $paymentIntentId = (string) ($meta['payment_intent_id'] ?? '');
         $paypalCaptureId = (string) ($meta['paypal_capture_id'] ?? '');
@@ -348,7 +351,7 @@ class OrderOperationsService
             ]);
         }
 
-        if (! $isPayPal && ! $paymentIntentId) {
+        if (! $isPayPal && ! $isManualOffline && ! $paymentIntentId) {
             throw ValidationException::withMessages([
                 'refund' => ['This order has no Stripe payment intent to refund.'],
             ]);
@@ -371,10 +374,16 @@ class OrderOperationsService
                 : (is_numeric($raw) ? (int) $raw : null);
         }
 
-        $gatewayLabel = $isPayPal ? 'PayPal' : 'Stripe';
-        $refund = $isPayPal
-            ? $this->paypal()->refund($paypalCaptureId, $resolvedAmount, (string) ($order->currency_code ?: 'USD'))
-            : $this->stripe()->refund($paymentIntentId, $resolvedAmount);
+        $gatewayLabel = $isPayPal ? 'PayPal' : ($isManualOffline ? 'Cash on Delivery' : 'Stripe');
+        $refund = match (true) {
+            $isPayPal => $this->paypal()->refund($paypalCaptureId, $resolvedAmount, (string) ($order->currency_code ?: 'USD')),
+            $isManualOffline => [
+                'refund_id' => 'manual_'.Str::lower(Str::random(14)),
+                'status' => 'succeeded',
+                'amount' => $resolvedAmount,
+            ],
+            default => $this->stripe()->refund($paymentIntentId, $resolvedAmount),
+        };
 
         $meta['refund_status'] = 'refunded';
         $meta['refund_id'] = $refund['refund_id'];
