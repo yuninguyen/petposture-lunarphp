@@ -222,7 +222,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                         </Button>
                                     </div>
                                     <div className="flex flex-col">
-                                        <div className={`flex items-center gap-2 text-sm font-bold capitalize tracking-wider ${isAvailable ? 'text-green-600' : 'text-zinc-400'}`}>
+                                        <div className={`flex items-center gap-2 text-sm font-bold capitalize ${isAvailable ? 'text-green-600' : 'text-zinc-400'}`}>
                                             <ShieldCheck size={18} /> {isAvailable ? 'In Stock' : 'Out of Stock'}
                                         </div>
                                         <p className="mt-1 text-xs text-zinc-500">Free shipping on orders over $50</p>
