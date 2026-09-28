@@ -180,7 +180,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                         onClick={() =>
                                                             setSelectedValues((prev) => ({ ...prev, [option.name]: value.id }))
                                                         }
-                                                        className={`rounded-[3px] border-2 px-4 py-2 text-sm font-bold uppercase tracking-wide transition-colors ${isSelected
+                                                        className={`rounded-[3px] border-2 px-4 py-2 text-sm font-bold capitalize transition-colors ${isSelected
                                                             ? 'border-secondary bg-secondary text-ink'
                                                             : 'border-zinc-200 bg-white text-primary hover:border-secondary'
                                                             }`}

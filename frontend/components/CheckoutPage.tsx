@@ -1468,7 +1468,7 @@ export default function CheckoutPage() {
                                     <h2 className="text-[18px] font-semibold text-[#333333]">Contact</h2>
                                 </div>
                                 <p className="text-sm text-[#707070]">
-                                    Already have an account? <Link href="/sign-in" className="text-[#197bbd] underline">Log in</Link>
+                                    Already have an account? <Link href="/sign-in" className="text-[#197bbd] underline">Sign in</Link>
                                 </p>
                             </div>
                             <div className="space-y-3">
@@ -1828,11 +1828,11 @@ export default function CheckoutPage() {
 
                     <footer className="mt-16 border-t border-[#e6e6e6] pt-8">
                         <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-[#707070]">
-                            <Link href="/return-refund-policy" className="hover:underline">Refund policy</Link>
-                            <Link href="/shipping-policy" className="hover:underline">Shipping policy</Link>
-                            <Link href="/privacy-policy" className="hover:underline">Privacy policy</Link>
-                            <Link href="/terms-and-conditions" className="hover:underline">Terms of service</Link>
-                            <Link href="/contact" className="hover:underline">Contact information</Link>
+                            <Link href="/return-refund-policy" className="underline">Refund policy</Link>
+                            <Link href="/shipping-policy" className="underline">Shipping policy</Link>
+                            <Link href="/privacy-policy" className="underline">Privacy policy</Link>
+                            <Link href="/terms-and-conditions" className="underline">Terms of service</Link>
+                            <Link href="/contact" className="underline">Contact information</Link>
                         </div>
                     </footer>
                 </div>
