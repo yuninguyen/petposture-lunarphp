@@ -330,6 +330,13 @@ class OrderOperationsService
     {
         $meta = (array) ($order->meta ?? []);
         $gateway = (string) ($meta['payment_gateway'] ?? '');
+
+        if (! in_array($gateway, ['stripe', 'paypal'], true)) {
+            throw ValidationException::withMessages([
+                'refund' => ["Refunds are not supported yet for the \"{$gateway}\" payment gateway."],
+            ]);
+        }
+
         $isPayPal = $gateway === 'paypal';
 
         $paymentIntentId = (string) ($meta['payment_intent_id'] ?? '');

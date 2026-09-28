@@ -38,8 +38,14 @@ export interface PaymentMethodTestResult {
   mode: string;
 }
 
-export function fetchPaymentMethods(): Promise<{ data: PaymentMethodState[] }> {
+export interface PaymentMethodsResponse { data: PaymentMethodState[]; cod: { enabled: boolean } }
+
+export function fetchPaymentMethods(): Promise<PaymentMethodsResponse> {
   return fetchJson('/admin/finance/payment-methods');
+}
+
+export function updateCodPaymentMethod(enabled: boolean): Promise<{ data: { enabled: boolean } }> {
+  return fetchJson('/admin/finance/payment-methods/cod', { method: 'PUT', body: { enabled } });
 }
 
 export function updatePaymentMethod(

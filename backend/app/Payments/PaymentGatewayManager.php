@@ -20,6 +20,10 @@ class PaymentGatewayManager
 
         foreach ($this->gateways as $gateway) {
             if ($gateway->method() === $requestedMethod) {
+                if (! ($gateway->definition()['enabled'] ?? true)) {
+                    throw new InvalidArgumentException("Unsupported payment method [{$requestedMethod}].");
+                }
+
                 return $gateway;
             }
         }

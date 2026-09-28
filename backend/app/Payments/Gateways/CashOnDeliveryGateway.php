@@ -2,6 +2,7 @@
 
 namespace App\Payments\Gateways;
 
+use App\Models\Setting;
 use App\Payments\Contracts\PaymentGatewayInterface;
 use App\Payments\Data\PaymentPreparation;
 
@@ -37,7 +38,7 @@ class CashOnDeliveryGateway implements PaymentGatewayInterface
             'gateway' => 'manual-offline',
             'collection' => 'offline',
             'description' => 'Use this only for testing or offline settlement workflows.',
-            'enabled' => true,
+            'enabled' => (bool) Setting::get('cod_enabled', true),
             'mode' => 'manual',
             'brands' => [],
         ];

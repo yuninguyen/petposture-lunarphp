@@ -65,6 +65,18 @@ class PaymentMethodService
         return array_map(fn (string $gateway): array => $this->describe($gateway), array_keys(self::GATEWAYS));
     }
 
+    public function codEnabled(): bool
+    {
+        return (bool) Setting::get('cod_enabled', true);
+    }
+
+    public function updateCod(bool $enabled): array
+    {
+        Setting::set('cod_enabled', $enabled, 'boolean', 'payment');
+
+        return ['enabled' => $this->codEnabled()];
+    }
+
     public function describe(string $gateway): array
     {
         $definition = $this->definition($gateway);

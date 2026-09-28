@@ -403,6 +403,7 @@ class ActivityLogTest extends TestCase
             'user_id' => $this->admin->id,
             'total' => 10000,
             'meta' => [
+                'payment_gateway' => 'stripe',
                 'payment_intent_id' => 'pi_test_refund_123',
                 'payment_status' => 'paid',
             ],

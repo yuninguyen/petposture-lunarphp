@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\UserAddress;
 use App\Services\CheckoutService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
@@ -1767,6 +1768,65 @@ class CheckoutApiTest extends TestCase
         ]))->assertUnprocessable()->assertJsonValidationErrors(['items.0.quantity']);
     }
 
+    public function test_admin_refund_calls_the_real_stripe_refund_endpoint_and_updates_order_meta(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $paid = $this->createPaidCardOrder($variant);
+        $this->makeAdmin();
+
+        config()->set('services.stripe.secret', 'sk_test_refund_flow');
+        Cache::forget('stripe_secret');
+        Http::fake([
+            'https://api.stripe.com/v1/refunds' => Http::response([
+                'id' => 're_test_flow_1',
+                'status' => 'succeeded',
+                'amount' => 2500,
+            ]),
+        ]);
+
+        $this->postJson("/api/admin/orders/{$paid['order_id']}/refund", [
+            'amount' => 25.00,
+            'reason' => 'customer_request',
+        ])->assertOk()
+            ->assertJsonPath('data.refund_status', 'refunded')
+            ->assertJsonPath('data.payment_status', 'partially-refunded');
+
+        Http::assertSent(fn ($request) => $request->url() === 'https://api.stripe.com/v1/refunds'
+            && $request['payment_intent'] === $paid['intent_id']
+            && (int) $request['amount'] === 2500);
+
+        $order = Order::query()->findOrFail($paid['order_id']);
+        $this->assertSame('re_test_flow_1', $order->meta['refund_id']);
+        $this->assertSame('partially-refunded', $order->meta['payment_status']);
+    }
+
+    public function test_refunding_a_gateway_without_a_refund_implementation_is_rejected_by_name_not_misrouted_to_stripe(): void
+    {
+        // refundOrder() only implements Stripe and PayPal. Any other gateway
+        // (airwallex, payoneer, pingpong, manual-offline, ...) must be rejected by
+        // its own name — never silently fall into the Stripe branch just because
+        // it isn't PayPal. Real Airwallex/Payoneer refunds are tracked separately.
+        $this->makeAdmin();
+
+        foreach (['airwallex', 'payoneer', 'pingpong', 'manual-offline'] as $gateway) {
+            $order = Order::factory()->create([
+                'status' => 'processing',
+                'total' => 5000,
+                'meta' => [
+                    'payment_gateway' => $gateway,
+                    'payment_status' => 'paid',
+                ],
+            ]);
+
+            $this->postJson("/api/admin/orders/{$order->id}/refund", ['reason' => 'customer_request'])
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors(['refund'])
+                ->assertJsonFragment(['refund' => ["Refunds are not supported yet for the \"{$gateway}\" payment gateway."]]);
+
+            $this->assertSame('paid', $order->fresh()->meta['payment_status']);
+        }
+    }
+
     public function test_manual_card_order_forces_admin_flag_when_calling_checkout_service(): void
     {
         $variant = $this->createPurchasableVariant();
@@ -1989,6 +2049,7 @@ class CheckoutApiTest extends TestCase
 
         $order = Order::find($orderId);
         $meta = (array) ($order->meta ?? []);
+        $meta['payment_gateway'] = 'stripe';
         $meta['payment_intent_id'] = $intentId;
         $meta['payment_status'] = 'paid';
         $order->update([

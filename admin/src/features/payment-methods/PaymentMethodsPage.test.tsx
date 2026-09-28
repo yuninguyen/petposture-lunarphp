@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import en from '../../locales/en.json';
 import viLocale from '../../locales/vi.json';
-import type { PaymentMethodState } from './api';
+import type { PaymentMethodsResponse, PaymentMethodState } from './api';
 
 let language: 'en' | 'vi' = 'en';
 
@@ -65,6 +65,8 @@ const gateways = [
   gateway('payoneer', 'Payoneer'),
 ];
 
+const COD_ENABLED = { enabled: true };
+
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const view = render(
@@ -91,7 +93,7 @@ describe('PaymentMethodsPage', () => {
 
   it('uses translated gateway names instead of hardcoded API labels', async () => {
     language = 'vi';
-    mocks.fetchJson.mockResolvedValue({ data: gateways.map((item) => ({ ...item, label: `API ${item.label}` })) });
+    mocks.fetchJson.mockResolvedValue({ data: gateways.map((item) => ({ ...item, label: `API ${item.label}` })), cod: COD_ENABLED });
     renderPage();
 
     await screen.findByTestId('gateway-form');
@@ -116,6 +118,7 @@ describe('PaymentMethodsPage', () => {
         gateways[3],
         { ...gateways[0], label: 'Duplicate Stripe' },
       ],
+      cod: COD_ENABLED,
     });
     const { container } = renderPage();
 
@@ -146,6 +149,7 @@ describe('PaymentMethodsPage', () => {
         { ...gateways[2], source: 'mixed' },
         { ...gateways[3], configured: false, source: 'none' },
       ],
+      cod: COD_ENABLED,
     });
     renderPage();
 
@@ -157,7 +161,7 @@ describe('PaymentMethodsPage', () => {
   });
 
   it('passes the selected webhook URL and copy state through GatewayForm', async () => {
-    mocks.fetchJson.mockResolvedValue({ data: gateways });
+    mocks.fetchJson.mockResolvedValue({ data: gateways, cod: COD_ENABLED });
     renderPage();
 
     const form = await screen.findByTestId('gateway-form');
@@ -173,7 +177,7 @@ describe('PaymentMethodsPage', () => {
   });
 
   it('switches gateways through desktop or mobile selectors and remounts candidate state', async () => {
-    mocks.fetchJson.mockResolvedValue({ data: gateways });
+    mocks.fetchJson.mockResolvedValue({ data: gateways, cod: COD_ENABLED });
     renderPage();
 
     const candidate = await screen.findByLabelText('Candidate');
@@ -189,11 +193,11 @@ describe('PaymentMethodsPage', () => {
   });
 
   it('renders accessible loading, error, and empty states', async () => {
-    let resolve!: (value: { data: PaymentMethodState[] }) => void;
+    let resolve!: (value: PaymentMethodsResponse) => void;
     mocks.fetchJson.mockReturnValueOnce(new Promise((next) => { resolve = next; }));
     const loading = renderPage();
     expect(screen.getByRole('status')).toHaveTextContent('Loading payment methods…');
-    resolve({ data: gateways });
+    resolve({ data: gateways, cod: COD_ENABLED });
     await screen.findByTestId('gateway-form');
     loading.unmount();
 
@@ -203,21 +207,47 @@ describe('PaymentMethodsPage', () => {
     expect(screen.getByRole('alert')).not.toHaveTextContent('Database host and token leaked');
     error.unmount();
 
-    mocks.fetchJson.mockResolvedValueOnce({ data: [] });
+    mocks.fetchJson.mockResolvedValueOnce({ data: [], cod: COD_ENABLED });
     renderPage();
     expect(await screen.findByText('No payment methods are available.')).toHaveAttribute('role', 'status');
   });
 
   it('replaces a saved gateway with fresh safe metadata in query data', async () => {
-    mocks.fetchJson.mockResolvedValue({ data: gateways });
+    mocks.fetchJson.mockResolvedValue({ data: gateways, cod: COD_ENABLED });
     const { queryClient } = renderPage();
     await screen.findByTestId('gateway-form');
 
     fireEvent.click(screen.getByRole('button', { name: 'Mock save' }));
 
     await waitFor(() => expect(screen.getAllByText('Stripe updated').length).toBeGreaterThan(0));
-    const cached = queryClient.getQueryData<PaymentMethodState[]>(['admin', 'payment-methods']);
-    expect(cached?.find((item) => item.gateway === 'stripe')?.label).toBe('Stripe updated');
+    const cached = queryClient.getQueryData<PaymentMethodsResponse>(['admin', 'payment-methods']);
+    expect(cached?.data.find((item) => item.gateway === 'stripe')?.label).toBe('Stripe updated');
     expect(JSON.stringify(cached)).not.toContain(SECRET_SENTINEL);
+  });
+
+  it('renders the COD toggle state and sends the PUT request when switched', async () => {
+    mocks.fetchJson.mockResolvedValue({ data: gateways, cod: { enabled: true } });
+    renderPage();
+    await screen.findByTestId('gateway-form');
+
+    const toggle = screen.getByRole('checkbox', { name: /Enabled/ });
+    expect(toggle).toBeChecked();
+
+    mocks.fetchJson.mockResolvedValueOnce({ data: { enabled: false } });
+    fireEvent.click(toggle);
+
+    await waitFor(() => expect(mocks.fetchJson).toHaveBeenCalledWith('/admin/finance/payment-methods/cod', {
+      method: 'PUT',
+      body: { enabled: false },
+    }));
+    await screen.findByRole('checkbox', { name: /Disabled/ });
+  });
+
+  it('starts the COD toggle unchecked when the server reports it disabled', async () => {
+    mocks.fetchJson.mockResolvedValue({ data: gateways, cod: { enabled: false } });
+    renderPage();
+    await screen.findByTestId('gateway-form');
+
+    expect(screen.getByRole('checkbox', { name: /Disabled/ })).not.toBeChecked();
   });
 });

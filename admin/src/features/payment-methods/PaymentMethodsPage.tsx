@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { fetchPaymentMethods, type PaymentGateway, type PaymentMethodState } from './api';
+import { fetchPaymentMethods, updateCodPaymentMethod, type PaymentGateway, type PaymentMethodState, type PaymentMethodsResponse } from './api';
 import { GatewayForm } from './GatewayForm';
 
 const QUERY_KEY = ['admin', 'payment-methods'] as const;
 const APPROVED_GATEWAYS: PaymentGateway[] = ['stripe', 'paypal', 'airwallex', 'payoneer'];
 
-function replaceGateway(current: PaymentMethodState[] | undefined, next: PaymentMethodState): PaymentMethodState[] {
-  return (current ?? []).map((gateway) => gateway.gateway === next.gateway ? next : gateway);
+function replaceGateway(current: PaymentMethodsResponse | undefined, next: PaymentMethodState): PaymentMethodsResponse | undefined {
+  if (!current) return current;
+  return { ...current, data: current.data.map((gateway) => gateway.gateway === next.gateway ? next : gateway) };
 }
 
 export function PaymentMethodsPage() {
@@ -16,11 +17,16 @@ export function PaymentMethodsPage() {
   const queryClient = useQueryClient();
   const paymentMethodsQuery = useQuery({
     queryKey: QUERY_KEY,
-    queryFn: async () => (await fetchPaymentMethods()).data,
+    queryFn: fetchPaymentMethods,
   });
+  const codMutation = useMutation({
+    mutationFn: updateCodPaymentMethod,
+    onSuccess: (result) => queryClient.setQueryData<PaymentMethodsResponse>(QUERY_KEY, (current) => current && { ...current, cod: result.data }),
+  });
+  const codEnabled = paymentMethodsQuery.data?.cod.enabled ?? true;
   const gateways = useMemo(() => {
     const byGateway = new Map<PaymentGateway, PaymentMethodState>();
-    for (const gateway of paymentMethodsQuery.data ?? []) {
+    for (const gateway of paymentMethodsQuery.data?.data ?? []) {
       if (APPROVED_GATEWAYS.includes(gateway.gateway) && !byGateway.has(gateway.gateway)) {
         byGateway.set(gateway.gateway, gateway);
       }
@@ -131,8 +137,24 @@ export function PaymentMethodsPage() {
           webhookUrl={selected.webhook_url}
           copyStatus={copyStatus}
           onCopyWebhookUrl={() => void copyWebhookUrl()}
-          onSaved={(next) => queryClient.setQueryData<PaymentMethodState[]>(QUERY_KEY, (current) => replaceGateway(current, next))}
+          onSaved={(next) => queryClient.setQueryData<PaymentMethodsResponse>(QUERY_KEY, (current) => replaceGateway(current, next))}
         />
+      </section>
+
+      <section className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div>
+          <h2 className="font-semibold text-slate-900">{t('payment_methods.cod.title', { defaultValue: 'Cash on delivery' })}</h2>
+          <p className="mt-1 text-sm text-slate-500">{t('payment_methods.cod.description', { defaultValue: 'Let customers pay when their order is delivered.' })}</p>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={codEnabled}
+            disabled={codMutation.isPending}
+            onChange={(event) => codMutation.mutate(event.target.checked)}
+          />
+          {codEnabled ? t('payment_methods.cod.enabled', { defaultValue: 'Enabled' }) : t('payment_methods.cod.disabled', { defaultValue: 'Disabled' })}
+        </label>
       </section>
     </div>
   );

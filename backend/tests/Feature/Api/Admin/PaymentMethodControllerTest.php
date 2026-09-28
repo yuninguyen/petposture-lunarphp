@@ -4,6 +4,7 @@ namespace Tests\Feature\Api\Admin;
 
 use App\Models\Setting;
 use App\Models\User;
+use App\Payments\PaymentGatewayManager;
 use App\Services\AirwallexService;
 use App\Services\PayoneerService;
 use App\Services\PayPalService;
@@ -809,6 +810,62 @@ class PaymentMethodControllerTest extends TestCase
         $reflection->setAccessible(true);
 
         return $reflection->invoke($service);
+    }
+
+    public function test_cod_is_enabled_by_default_and_toggling_it_persists(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $this->getJson('/api/admin/finance/payment-methods')
+            ->assertOk()
+            ->assertJsonPath('cod.enabled', true);
+
+        $this->putJson('/api/admin/finance/payment-methods/cod', ['enabled' => false])
+            ->assertOk()
+            ->assertJsonPath('data.enabled', false);
+
+        $this->getJson('/api/admin/finance/payment-methods')
+            ->assertOk()
+            ->assertJsonPath('cod.enabled', false);
+    }
+
+    public function test_cod_toggle_rejects_non_boolean_and_requires_core_admin(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $this->putJson('/api/admin/finance/payment-methods/cod', ['enabled' => 'not-a-boolean'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['enabled']);
+
+        foreach (['customer', 'Product Manager', 'Order Manager', 'Support'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+            $this->putJson('/api/admin/finance/payment-methods/cod', ['enabled' => false])->assertForbidden();
+        }
+
+        $this->postJson('/api/admin/finance/payment-methods/cod')->assertMethodNotAllowed();
+    }
+
+    public function test_disabling_cod_actually_blocks_checkout_not_just_hides_the_toggle(): void
+    {
+        Setting::set('cod_enabled', false, 'boolean', 'payment');
+
+        $this->getJson('/api/checkout/payment-methods')
+            ->assertOk()
+            ->assertJsonFragment(['method' => 'cod', 'enabled' => false]);
+
+        $manager = app(PaymentGatewayManager::class);
+        $this->expectException(\InvalidArgumentException::class);
+        $manager->forMethod('cod');
+    }
+
+    public function test_enabling_cod_after_disabling_it_restores_checkout_access(): void
+    {
+        Setting::set('cod_enabled', false, 'boolean', 'payment');
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $this->putJson('/api/admin/finance/payment-methods/cod', ['enabled' => true])->assertOk();
+
+        $manager = app(PaymentGatewayManager::class);
+        $this->assertSame('cod', $manager->forMethod('cod')->method());
     }
 
     private function userWithRole(string $role): User

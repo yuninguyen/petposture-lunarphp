@@ -350,6 +350,7 @@ Route::prefix('/admin')
         Route::get('/settings/ai/reveal/{field}', [SecureSettingsController::class, 'revealAiSecret'])->middleware('throttle:30,1');
 
         Route::get('/finance/payment-methods', [PaymentMethodController::class, 'index']);
+        Route::put('/finance/payment-methods/cod', [PaymentMethodController::class, 'updateCod']);
         Route::put('/finance/payment-methods/{gateway}', [PaymentMethodController::class, 'update'])
             ->where('gateway', 'stripe|paypal|airwallex|payoneer');
         Route::post('/finance/payment-methods/{gateway}/test', [PaymentMethodController::class, 'test'])
