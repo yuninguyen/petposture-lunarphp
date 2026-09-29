@@ -906,17 +906,13 @@ git commit -m "test(checkout): prove existing endpoints support the express chec
 **Files:**
 - Create: `docs/PLAN-express-checkout-manual-qa-2026-09-29.md`
 
-**Interfaces:** none — this task's deliverable is confirming a production configuration step and producing a checklist for a human to run through, since Apple Pay cannot be exercised by an automated test or on the current Windows dev machine (spec §5).
+**Interfaces:** none — this task's deliverable is producing a checklist for a human to run through, since Apple Pay cannot be exercised by an automated test or on the current Windows dev machine (spec §5).
 
-- [ ] **Step 1: Confirm who performs the Stripe Dashboard step**
+- [x] **Step 1 (done 2026-09-30): Domain already registered and verified**
 
-Before this task is considered done, get explicit confirmation from the user on whether Claude performs the Apple Pay domain registration in the Stripe Dashboard (requires production account access) or the user does it. Do not proceed to Step 2 without this answer.
+User registered `petposture.com` in the Stripe Dashboard's newer **Payment method domains** tab (`Settings → Payments → Payment method domains`, domain ID `pmd_1UL5qVA7CIjKKiOg7XvnqFSC`, created 2026-09-29). This flow validates the domain automatically via an HTTPS request from Stripe — it does **not** require hosting a static `.well-known/apple-developer-merchantid-domain-association` file (that requirement belongs to the older, separate Apple Pay domain-registration flow this plan originally assumed). Confirmed via Dashboard screenshot: Status = **Enabled**, Apple Pay status = **Apple Pay enabled**. No code change needed for this step; skip straight to Step 2.
 
-- [ ] **Step 2: Register the domain and serve the verification file**
-
-In the Stripe Dashboard (production account) → Settings → Payment methods → Apple Pay, add `petposture.com` as a registered domain. Stripe provides a file to download; save it to `frontend/public/.well-known/apple-developer-merchantid-domain-association` (Next.js serves anything under `public/` at the site root — confirm this path resolves to `https://petposture.com/.well-known/apple-developer-merchantid-domain-association` after deploy, over HTTPS, with no redirect).
-
-- [ ] **Step 3: Write the manual QA checklist**
+- [ ] **Step 2: Write the manual QA checklist**
 
 ```markdown
 # Express Checkout — Manual QA Checklist
@@ -947,7 +943,7 @@ Run after deploy to production (Apple Pay cannot be tested locally or in CI).
 - [ ] Existing card form (typed card number) still works exactly as before
 ```
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
 git add docs/PLAN-express-checkout-manual-qa-2026-09-29.md
