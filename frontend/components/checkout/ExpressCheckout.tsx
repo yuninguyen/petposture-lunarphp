@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchApi } from '../../lib/fetchApi';
 
+declare global {
+    interface Window {
+        paypal?: { Buttons: (options: Record<string, unknown>) => { render: (element: HTMLElement) => void } };
+    }
+}
+
 type StripeWalletInstance = {
     paymentRequest: (options: Record<string, unknown>) => {
         canMakePayment: () => Promise<{ applePay?: boolean } | null>;
@@ -40,6 +46,10 @@ type StripePaymentMethodEvent = {
     complete: (status: 'success' | 'fail') => void;
 };
 
+type PayPalShippingData = { orderInfo?: { shipping_address?: { country_code?: string; state?: string; city?: string; postal_code?: string; address_line_1?: string; address_line_2?: string } }; payer?: { email_address?: string; name?: { given_name?: string; surname?: string }; phone?: { phone_number?: { national_number?: string } } } };
+type PayPalActions = { order: { patch: (operations: unknown[]) => Promise<void> }; reject: () => void };
+type PayPalApproval = { orderID: string };
+
 export interface ExpressCheckoutProps {
     items: Array<{ variantId: number; quantity: number }>;
     couponCode: string | null;
@@ -49,12 +59,14 @@ export interface ExpressCheckoutProps {
     onOrderPlaced: (orderAccess: { reference: string; trackingToken: string }) => void;
 }
 
-export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, onOrderPlaced }: ExpressCheckoutProps) {
+export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, onOrderPlaced }: ExpressCheckoutProps) {
     const [canApplePay, setCanApplePay] = useState(false);
     const [canGooglePay, setCanGooglePay] = useState(false);
-    const [canPayPal] = useState(false);
+    const [canPayPal, setCanPayPal] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const stripeButtonMountRef = useRef<HTMLDivElement>(null);
+    const paypalButtonMountRef = useRef<HTMLDivElement>(null);
+    const latestShippingAddressRef = useRef<Record<string, unknown> | null>(null);
 
     useEffect(() => {
         if (!stripeInstance || typeof (stripeInstance as unknown as Partial<StripeWalletInstance>).paymentRequest !== 'function') return;
@@ -171,6 +183,71 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         return () => { cancelled = true; };
     }, [stripeInstance, items, couponCode, subtotalMinor, onOrderPlaced]);
 
+    useEffect(() => {
+        if (!paypalClientId) return;
+        let cancelled = false;
+        const renderButtons = () => {
+            if (cancelled || !window.paypal || !paypalButtonMountRef.current) return;
+            window.paypal.Buttons({
+                style: { layout: 'horizontal', label: 'paypal', height: 44 },
+                createOrder: async () => {
+                    const response = await fetchApi('/api/checkout/paypal-order', {
+                        method: 'POST', body: { payment_method: 'paypal', items, coupon_code: couponCode, currency: 'usd' },
+                    });
+                    const data = await response.json();
+                    if (!response.ok || !data?.paypal_order?.paypal_order_id) throw new Error(data?.message || 'Unable to start PayPal checkout.');
+                    return data.paypal_order.paypal_order_id;
+                },
+                onShippingAddressChange: async (data: PayPalShippingData, actions: PayPalActions) => {
+                    try {
+                        const walletAddress = data.orderInfo?.shipping_address;
+                        const address = { country: walletAddress?.country_code ?? 'US', state: walletAddress?.state ?? '', city: walletAddress?.city ?? '', postcode: walletAddress?.postal_code ?? '' };
+                        const ratesResponse = await fetchApi(`/api/checkout/shipping-rates?subtotal_minor=${subtotalMinor}${couponCode ? `&coupon_code=${encodeURIComponent(couponCode)}` : ''}`);
+                        const rate = (await ratesResponse.json()).rates?.[0];
+                        if (!rate) return actions.reject();
+                        const taxResponse = await fetchApi('/api/checkout/tax-quote', { method: 'POST', body: { shipping: address, subtotal_amount: subtotalMinor / 100 } });
+                        const taxMinor = (await taxResponse.json()).quote?.tax_amount ?? 0;
+                        latestShippingAddressRef.current = {
+                            email: data.payer?.email_address ?? '', first_name: data.payer?.name?.given_name ?? '', last_name: data.payer?.name?.surname ?? '',
+                            line_one: walletAddress?.address_line_1 ?? '', line_two: walletAddress?.address_line_2 ?? null,
+                            city: address.city, state: address.state, postcode: address.postcode, country: address.country,
+                            phone: data.payer?.phone?.phone_number?.national_number ?? null,
+                        };
+                        return actions.order.patch([{ op: 'replace', path: "/purchase_units/@reference_id=='default'/amount", value: {
+                            currency_code: 'USD', value: ((subtotalMinor + rate.price_minor + taxMinor) / 100).toFixed(2),
+                            breakdown: { item_total: { currency_code: 'USD', value: (subtotalMinor / 100).toFixed(2) }, shipping: { currency_code: 'USD', value: (rate.price_minor / 100).toFixed(2) }, tax_total: { currency_code: 'USD', value: (taxMinor / 100).toFixed(2) } },
+                        } }]);
+                    } catch { actions.reject(); }
+                },
+                onApprove: async (data: PayPalApproval) => {
+                    try {
+                        if (!latestShippingAddressRef.current) { setError('Missing shipping address. Please try again.'); return; }
+                        const orderResponse = await fetchApi('/api/checkout/place-order', { method: 'POST', headers: { 'Idempotency-Key': data.orderID }, body: { items, shipping: latestShippingAddressRef.current, billing_same_as_shipping: true, payment_method: 'paypal', payment_context: { paypal_order_id: data.orderID }, coupon_code: couponCode } });
+                        const order = await orderResponse.json();
+                        if (orderResponse.status !== 201 || !order?.order?.reference || !order?.order?.tracking_access_token) { setError(order?.message || 'Order could not be created. Please try again.'); return; }
+                        const captureResponse = await fetchApi('/api/checkout/paypal-capture', { method: 'POST', body: { paypal_order_id: data.orderID } });
+                        const capture = await captureResponse.json();
+                        if (!captureResponse.ok || capture?.capture?.status !== 'COMPLETED') { setError('Payment could not be captured. Please try again.'); return; }
+                        onOrderPlaced({ reference: order.order.reference, trackingToken: order.order.tracking_access_token });
+                    } catch { setError('Something went wrong. Please try again.'); }
+                },
+            }).render(paypalButtonMountRef.current);
+        };
+        const script = document.getElementById('paypal-express-sdk') as HTMLScriptElement | null;
+        if (window.paypal) renderButtons();
+        else if (!script) {
+            const sdk = document.createElement('script');
+            sdk.id = 'paypal-express-sdk';
+            sdk.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(paypalClientId)}&currency=USD&components=buttons`;
+            sdk.addEventListener('load', renderButtons, { once: true });
+            document.head.appendChild(sdk);
+        } else script.addEventListener('load', renderButtons, { once: true });
+        queueMicrotask(() => {
+            if (!cancelled) setCanPayPal(true);
+        });
+        return () => { cancelled = true; };
+    }, [paypalClientId, items, couponCode, subtotalMinor, onOrderPlaced, canPayPal]);
+
     const anyAvailable = canApplePay || canGooglePay || canPayPal;
     if (!anyAvailable) return null;
 
@@ -180,6 +257,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             {error && <p role="alert" className="text-center text-[13px] text-red-600">{error}</p>}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {(canApplePay || canGooglePay) && <div ref={stripeButtonMountRef} className="h-11" />}
+                {canPayPal && <div ref={paypalButtonMountRef} />}
             </div>
             <div className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-[#e8e8ea]" />

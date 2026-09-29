@@ -105,4 +105,41 @@ describe('ExpressCheckout', () => {
             total: expect.objectContaining({ amount: 2750 }),
         }));
     });
+
+    it('loads the PayPal SDK with the given client id when paypalClientId is provided', () => {
+        render(<ExpressCheckout {...baseProps} paypalClientId="test-client-id" />);
+        const script = document.getElementById('paypal-express-sdk') as HTMLScriptElement | null;
+        expect(script?.src).toContain('client-id=test-client-id');
+    });
+
+    it('creates the order and captures payment through existing endpoints on PayPal approval', async () => {
+        const fetchMock = vi.mocked(fetchApi);
+        const calls: string[] = [];
+        fetchMock.mockImplementation((endpoint) => {
+            calls.push(endpoint);
+            if (endpoint.includes('/api/checkout/shipping-rates')) return Promise.resolve({ ok: true, json: async () => ({ rates: [{ code: 'standard', name: 'Standard', price_minor: 500 }] }) } as Response);
+            if (endpoint.includes('/api/checkout/tax-quote')) return Promise.resolve({ ok: true, json: async () => ({ quote: { tax_amount: 250 } }) } as Response);
+            if (endpoint.includes('/api/checkout/place-order')) return Promise.resolve({ status: 201, json: async () => ({ order: { reference: 'PP-1', tracking_access_token: 'tok-1' } }) } as Response);
+            return Promise.resolve({ ok: true, json: async () => ({ capture: { status: 'COMPLETED' } }) } as Response);
+        });
+        let buttonsConfig: Record<string, unknown> = {};
+        window.paypal = { Buttons: (options) => { buttonsConfig = options; return { render: vi.fn() }; } };
+        const onOrderPlaced = vi.fn();
+        render(<ExpressCheckout {...baseProps} paypalClientId="test-client-id" onOrderPlaced={onOrderPlaced} />);
+
+        await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+
+        const shippingChange = buttonsConfig.onShippingAddressChange as (data: Record<string, unknown>, actions: Record<string, unknown>) => Promise<void>;
+        await shippingChange(
+            { orderInfo: { shipping_address: { country_code: 'US', state: 'TX', city: 'Austin', postal_code: '78701' } }, payer: { email_address: 'a@b.com', name: { given_name: 'A', surname: 'B' } } },
+            { order: { patch: vi.fn() }, reject: vi.fn() },
+        );
+        const approve = buttonsConfig.onApprove as (data: { orderID: string }) => Promise<void>;
+        await approve({ orderID: 'PAYPAL-1' });
+
+        expect(calls.some((endpoint) => endpoint.includes('/api/checkout/place-order'))).toBe(true);
+        expect(calls.some((endpoint) => endpoint.includes('/api/checkout/paypal-capture'))).toBe(true);
+        expect(onOrderPlaced).toHaveBeenCalledWith({ reference: 'PP-1', trackingToken: 'tok-1' });
+        delete window.paypal;
+    });
 });
