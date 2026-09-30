@@ -272,7 +272,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         let cancelled = false;
         const renderButtons = () => {
             if (cancelled || !window.paypal || !paypalButtonMountRef.current) return;
-            window.paypal.Buttons({
+            const buttons = window.paypal.Buttons({
                 style: { layout: 'horizontal', label: 'paypal', height: 44, tagline: false },
                 createOrder: async () => {
                     const response = await fetchApi('/api/checkout/paypal-order', {
@@ -315,7 +315,21 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                         onOrderPlacedRef.current({ reference: order.order.reference, trackingToken: order.order.tracking_access_token });
                     } catch { setError('Something went wrong. Please try again.'); }
                 },
-            }).render(paypalButtonMountRef.current);
+            });
+            // PayPal's SDK measures its container's width at render() time
+            // to lay out its logo/wordmark -- calling it synchronously here
+            // (same tick the flex row's CSS is applied) can measure a
+            // pre-layout width and clip the wordmark permanently, since the
+            // iframe's internal content never re-measures afterward.
+            // Deferring two animation frames guarantees the browser has
+            // finished computing the final flex-distributed width first.
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    if (!cancelled && paypalButtonMountRef.current) {
+                        buttons.render(paypalButtonMountRef.current);
+                    }
+                });
+            });
         };
         const script = document.getElementById('paypal-express-sdk') as HTMLScriptElement | null;
         if (window.paypal) renderButtons();
