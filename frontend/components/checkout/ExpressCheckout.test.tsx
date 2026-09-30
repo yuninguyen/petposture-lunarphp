@@ -52,7 +52,12 @@ describe('ExpressCheckout', () => {
         const elementsGroup = { create: vi.fn().mockReturnValue(expressCheckoutElement), submit: vi.fn(), update: vi.fn() };
         const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn() };
 
-        render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} />);
+        // paypalClientId is included because canPayPal (derived from it)
+        // gates whether the component renders anything on the very first
+        // pass -- matching production, where PayPal is always configured.
+        // Without it, the Stripe mount <div> wouldn't exist yet either,
+        // since nothing would be known to be available.
+        render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} paypalClientId="test-client-id" />);
 
         expect(stripeInstance.elements).toHaveBeenCalledWith(expect.objectContaining({
             mode: 'payment',
@@ -62,6 +67,12 @@ describe('ExpressCheckout', () => {
         expect(elementsGroup.create).toHaveBeenCalledWith('expressCheckout', expect.objectContaining({
             paymentMethods: expect.objectContaining({ applePay: 'always', googlePay: 'always' }),
         }));
+        // The element must mount synchronously in the same pass it's created,
+        // not deferred until canExpressPay is true -- the
+        // 'availablepaymentmethodschange' event (which sets canExpressPay)
+        // only fires after mounting, so a deferred mount deadlocks and the
+        // element never renders anything.
+        expect(expressCheckoutElement.mount).toHaveBeenCalled();
     });
 
     it('recalculates shipping and tax through the existing endpoints when the wallet reports an address', async () => {

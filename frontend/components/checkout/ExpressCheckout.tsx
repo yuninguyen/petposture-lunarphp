@@ -76,7 +76,6 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
     const canPayPal = Boolean(paypalClientId);
     const [error, setError] = useState<string | null>(null);
     const stripeButtonMountRef = useRef<HTMLDivElement>(null);
-    const expressCheckoutElementRef = useRef<StripeExpressCheckoutElement | null>(null);
     const paypalButtonMountRef = useRef<HTMLDivElement>(null);
     const latestShippingAddressRef = useRef<Record<string, unknown> | null>(null);
 
@@ -98,7 +97,6 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
     }, [items, couponCode, subtotalMinor, onOrderPlaced]);
 
     useEffect(() => {
-        console.debug('[ExpressCheckout debug] effect running, stripeInstance:', stripeInstance, 'has elements fn:', typeof (stripeInstance as unknown as Partial<StripeElementsInstance>)?.elements);
         if (!stripeInstance || typeof (stripeInstance as unknown as Partial<StripeElementsInstance>).elements !== 'function') return;
         let cancelled = false;
         const stripe = stripeInstance as unknown as StripeElementsInstance;
@@ -107,7 +105,6 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             amount: subtotalMinorRef.current,
             currency: 'usd',
         });
-        console.debug('[ExpressCheckout debug] elements group created:', elements);
         // Card is the only payment_method type we allow here -- Apple Pay and
         // Google Pay both ride on it (per Stripe's docs), and this keeps
         // Stripe's own PayPal/Link/etc. buttons from also appearing and
@@ -129,7 +126,6 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         });
 
         expressCheckoutElement.on('availablepaymentmethodschange', (event) => {
-            console.debug('[ExpressCheckout debug] availablepaymentmethodschange:', event.paymentMethods, 'cancelled:', cancelled);
             if (cancelled) return;
             setCanExpressPay(Boolean(event.paymentMethods));
         });
@@ -239,24 +235,20 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             }
         });
 
-        expressCheckoutElementRef.current = expressCheckoutElement;
+        // The mount <div> is always rendered in the JSX (visibility is what
+        // toggles on canExpressPay, not presence) specifically so it exists
+        // here, on this very first synchronous pass -- the Express Checkout
+        // Element only fires 'availablepaymentmethodschange' (which is what
+        // flips canExpressPay true) *after* it has been mounted, so deferring
+        // the mount call until canExpressPay is true would deadlock.
+        if (stripeButtonMountRef.current) {
+            stripeButtonMountRef.current.innerHTML = '';
+            expressCheckoutElement.mount(stripeButtonMountRef.current);
+        }
         return () => { cancelled = true; };
         // items/couponCode/subtotalMinor/onOrderPlaced are read via refs above
         // on purpose -- see the comment where those refs are declared.
     }, [stripeInstance]);
-
-    // The mount <div> below only exists in the DOM once canExpressPay is
-    // true (it's conditionally rendered in the JSX), but canExpressPay only
-    // becomes true *after* the effect above has already run once against a
-    // still-null ref. Mounting here, keyed on canExpressPay, catches the
-    // div once React has actually committed it.
-    useEffect(() => {
-        console.debug('[ExpressCheckout debug] mount effect, canExpressPay:', canExpressPay, 'div:', stripeButtonMountRef.current, 'element:', expressCheckoutElementRef.current);
-        if (canExpressPay && stripeButtonMountRef.current && expressCheckoutElementRef.current) {
-            stripeButtonMountRef.current.innerHTML = '';
-            expressCheckoutElementRef.current.mount(stripeButtonMountRef.current);
-        }
-    }, [canExpressPay]);
 
     useEffect(() => {
         if (!paypalClientId) return;
@@ -330,7 +322,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             <p className="text-center text-[13px] font-medium uppercase tracking-wide text-[#707070]">Express checkout</p>
             {error && <p role="alert" className="text-center text-[13px] text-red-600">{error}</p>}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {canExpressPay && <div ref={stripeButtonMountRef} />}
+                <div ref={stripeButtonMountRef} style={{ visibility: canExpressPay ? 'visible' : 'hidden' }} />
                 {canPayPal && <div ref={paypalButtonMountRef} />}
             </div>
             <div className="flex items-center gap-3">
