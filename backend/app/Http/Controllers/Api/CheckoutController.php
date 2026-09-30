@@ -499,6 +499,55 @@ class CheckoutController extends Controller
         }
     }
 
+    public function updatePayPalOrderAmount(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'paypal_order_id' => 'required|string',
+            'items' => 'required|array|min:1',
+            'items.*.variantId' => 'required|exists:lunar_product_variants,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'coupon_code' => 'nullable|string',
+            'shipping_method' => 'nullable|string',
+            'shipping.state' => 'nullable|string|max:255',
+            'shipping.country' => 'nullable|string|max:255',
+            'shipping.city' => 'nullable|string|max:255',
+            'shipping.postcode' => 'nullable|string|max:32',
+        ])->validate();
+
+        try {
+            $totals = $this->checkoutService->calculateTotals(
+                $validated['items'],
+                $validated['coupon_code'] ?? null,
+                $validated['shipping'] ?? null,
+                $validated['shipping_method'] ?? null,
+            );
+
+            $this->payPalService->updateOrderAmount(
+                $validated['paypal_order_id'],
+                $totals['subtotal_minor'],
+                $totals['discount_minor'],
+                $totals['shipping_minor'],
+                $totals['tax_minor'],
+                $totals['currency'],
+            );
+
+            return response()->json([
+                'success' => true,
+                'totals' => $totals,
+            ]);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error("PayPal Order Amount Update Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code' => ErrorCode::PAYMENT_INTENT_ERROR->value,
+                'success' => false,
+                'message' => 'Unable to update PayPal order. Please try again.',
+            ], 500);
+        }
+    }
+
     public function capturePayPalOrder(Request $request)
     {
         $validated = Validator::make($request->all(), [

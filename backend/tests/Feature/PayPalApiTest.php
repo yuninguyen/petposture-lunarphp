@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\CheckoutService;
 use App\Services\PayPalService;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,6 +83,74 @@ class PayPalApiTest extends TestCase
             ],
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['quantity']);
+    }
+
+    // ─── Update order amount (PayPal v6 shipping-address-change callback) ────
+
+    public function test_update_paypal_order_amount_is_a_no_op_when_not_configured(): void
+    {
+        $variant = $this->createPurchasableVariant();
+
+        $response = $this->postJson('/api/checkout/paypal-order/amount', [
+            'paypal_order_id' => 'PAYPAL-PLACEHOLDER-ANYTHING',
+            'items' => [
+                ['variantId' => $variant->id, 'quantity' => 1],
+            ],
+            'shipping' => ['state' => 'TX', 'country' => 'United States'],
+        ]);
+
+        $response->assertOk()->assertJsonPath('success', true);
+    }
+
+    public function test_update_paypal_order_amount_patches_paypal_with_the_computed_breakdown(): void
+    {
+        config()->set('services.paypal.client_id', 'test-client-id');
+        config()->set('services.paypal.client_secret', 'test-client-secret');
+        config()->set('services.paypal.mode', 'sandbox-test-'.Str::lower(Str::random(8)));
+        Cache::forget('paypal_client_id');
+        Cache::forget('paypal_client_secret');
+        Cache::forget('paypal_mode');
+        Cache::put('paypal_access_token_'.config('services.paypal.mode'), 'test-access-token');
+
+        $variant = $this->createPurchasableVariant();
+        $totals = app(CheckoutService::class)->calculateTotals(
+            [['variantId' => $variant->id, 'quantity' => 1]],
+            null,
+            ['state' => 'TX', 'country' => 'United States'],
+            null,
+        );
+
+        $patchResponse = new \Illuminate\Http\Client\Response(new Response(
+            200,
+            ['Content-Type' => 'application/json'],
+            json_encode(['id' => 'ORDER-TO-PATCH'], JSON_THROW_ON_ERROR),
+        ));
+
+        Http::shouldReceive('withToken')->once()->with('test-access-token')->andReturnSelf();
+        Http::shouldReceive('patch')->once()
+            ->with(
+                'https://api-m.sandbox.paypal.com/v2/checkout/orders/ORDER-TO-PATCH',
+                Mockery::on(function (array $body) use ($totals): bool {
+                    $expectedTotal = number_format($totals['total_minor'] / 100, 2, '.', '');
+                    $expectedSubtotal = number_format($totals['subtotal_minor'] / 100, 2, '.', '');
+                    $expectedShipping = number_format($totals['shipping_minor'] / 100, 2, '.', '');
+                    $expectedTax = number_format($totals['tax_minor'] / 100, 2, '.', '');
+
+                    return $body[0]['op'] === 'replace'
+                        && $body[0]['path'] === "/purchase_units/@reference_id=='default'/amount"
+                        && $body[0]['value']['value'] === $expectedTotal
+                        && $body[0]['value']['breakdown']['item_total']['value'] === $expectedSubtotal
+                        && $body[0]['value']['breakdown']['shipping']['value'] === $expectedShipping
+                        && $body[0]['value']['breakdown']['tax_total']['value'] === $expectedTax;
+                }),
+            )
+            ->andReturn($patchResponse);
+
+        $this->postJson('/api/checkout/paypal-order/amount', [
+            'paypal_order_id' => 'ORDER-TO-PATCH',
+            'items' => [['variantId' => $variant->id, 'quantity' => 1]],
+            'shipping' => ['state' => 'TX', 'country' => 'United States'],
+        ])->assertOk()->assertJsonPath('success', true);
     }
 
     // ─── Place order with PayPal ─────────────────────────────────────────────

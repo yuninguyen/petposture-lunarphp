@@ -173,6 +173,56 @@ class PayPalService
         ];
     }
 
+    /**
+     * Patches a not-yet-captured PayPal order's amount server-side. The v6
+     * JS SDK's shipping-address/shipping-option-change callbacks have no
+     * client-side equivalent of the v5 SDK's actions.order.patch() -- they
+     * expect the merchant's own backend to update the order directly, per
+     * PayPal's own v6 migration docs ("Call YOUR backend directly").
+     */
+    public function updateOrderAmount(
+        string $paypalOrderId,
+        int $subtotalMinor,
+        int $discountMinor,
+        int $shippingMinor,
+        int $taxMinor,
+        string $currency,
+    ): void {
+        if (! $this->isConfigured() || str_starts_with($paypalOrderId, 'PAYPAL-PLACEHOLDER-')) {
+            return;
+        }
+
+        $currency = strtoupper($currency);
+        $totalMinor = max(0, $subtotalMinor - $discountMinor + $shippingMinor + $taxMinor);
+
+        $breakdown = [
+            'item_total' => ['currency_code' => $currency, 'value' => $this->minorToDecimal($subtotalMinor)],
+            'shipping' => ['currency_code' => $currency, 'value' => $this->minorToDecimal($shippingMinor)],
+            'tax_total' => ['currency_code' => $currency, 'value' => $this->minorToDecimal($taxMinor)],
+        ];
+
+        if ($discountMinor > 0) {
+            $breakdown['discount'] = ['currency_code' => $currency, 'value' => $this->minorToDecimal($discountMinor)];
+        }
+
+        $response = Http::withToken($this->accessToken())
+            ->patch($this->baseUrl()."/v2/checkout/orders/{$paypalOrderId}", [[
+                'op' => 'replace',
+                'path' => "/purchase_units/@reference_id=='default'/amount",
+                'value' => [
+                    'currency_code' => $currency,
+                    'value' => $this->minorToDecimal($totalMinor),
+                    'breakdown' => $breakdown,
+                ],
+            ]]);
+
+        if (! $response->successful()) {
+            throw new RuntimeException(
+                $response->json('message') ?? 'Unable to update PayPal order amount.'
+            );
+        }
+    }
+
     public function refund(string $captureId, ?int $amountMinor, string $currency): array
     {
         if (! $this->isConfigured() || str_starts_with($captureId, 'CAPTURE-PLACEHOLDER-')) {
