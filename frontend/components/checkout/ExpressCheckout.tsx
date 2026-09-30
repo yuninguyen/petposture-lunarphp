@@ -64,13 +64,15 @@ export interface ExpressCheckoutProps {
 }
 
 export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, onOrderPlaced }: ExpressCheckoutProps) {
-    const [canExpressPay, setCanExpressPay] = useState(false);
-    // Unlike Apple Pay/Google Pay (which need an async canMakePayment()
-    // check), PayPal's availability is knowable synchronously from the
-    // first render -- it only needs a client id.
+    const [canApplePay, setCanApplePay] = useState(false);
+    const [canGooglePay, setCanGooglePay] = useState(false);
+    // Unlike Apple Pay/Google Pay (which need an async availability check),
+    // PayPal's availability is knowable synchronously from the first render
+    // -- it only needs a client id.
     const canPayPal = Boolean(paypalClientId);
     const [error, setError] = useState<string | null>(null);
-    const stripeButtonMountRef = useRef<HTMLDivElement>(null);
+    const appleButtonMountRef = useRef<HTMLDivElement>(null);
+    const googleButtonMountRef = useRef<HTMLDivElement>(null);
     const paypalButtonMountRef = useRef<HTMLDivElement>(null);
     const latestShippingAddressRef = useRef<Record<string, unknown> | null>(null);
 
@@ -95,161 +97,171 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         if (!stripeInstance || typeof (stripeInstance as unknown as Partial<StripeElementsInstance>).elements !== 'function') return;
         let cancelled = false;
         const stripe = stripeInstance as unknown as StripeElementsInstance;
-        const elements = stripe.elements({
-            mode: 'payment',
-            amount: subtotalMinorRef.current,
-            currency: 'usd',
-        });
-        // Card is the only payment_method type this element shows -- Apple
-        // Pay and Google Pay both ride on it (per Stripe's docs). PayPal is
-        // excluded here and handled by the separate PayPal Buttons SDK
-        // integration below instead: Stripe's own PayPal support requires
-        // additional activation on the Stripe Dashboard side (confirmed
-        // unavailable on this account -- paypal.available: false from
-        // Stripe's own eligibility check), so the already-working PayPal
-        // integration (this account's real PayPal REST credentials) stays
-        // in place rather than depending on that separate setup step.
-        let latestShippingRate: { code: string; name: string; price_minor: number } | null = null;
 
-        const expressCheckoutElement = elements.create('expressCheckout', {
-            emailRequired: true,
-            shippingAddressRequired: true,
-            allowedShippingCountries: ['US'],
-            paymentMethods: {
-                applePay: 'always',
-                googlePay: 'always',
-                paypal: 'never',
-                amazonPay: 'never',
-                klarna: 'never',
-                link: 'never',
-            },
-            layout: { maxColumns: 2 },
-            // googlePay defaults to the 'buy' button type ("Buy with"
-            // text); 'plain' matches applePay's own default (logo only).
-            buttonType: { googlePay: 'plain' },
-            buttonTheme: { applePay: 'black', googlePay: 'black' },
-        });
+        // Apple Pay and Google Pay each get their own Elements group and
+        // their own 'expressCheckout' instance, restricted via
+        // paymentMethods to show only that one wallet, mounted into their
+        // own <div>. That's what makes 3 genuinely equal-width, independent
+        // buttons (PayPal | Apple Pay | Google Pay) possible in one row --
+        // a single expressCheckout instance bundles every enabled wallet
+        // into one shared mount point sized as a unit, not as N equal
+        // buttons.
+        const mountWallet = (
+            walletKey: 'applePay' | 'googlePay',
+            setCanPay: (value: boolean) => void,
+            mountRef: React.RefObject<HTMLDivElement | null>,
+        ) => {
+            const elements = stripe.elements({
+                mode: 'payment',
+                amount: subtotalMinorRef.current,
+                currency: 'usd',
+            });
+            let latestShippingRate: { code: string; name: string; price_minor: number } | null = null;
 
-        expressCheckoutElement.on('availablepaymentmethodschange', (event) => {
-            if (cancelled) return;
-            setCanExpressPay(Boolean(event.paymentMethods));
-        });
+            const expressCheckoutElement = elements.create('expressCheckout', {
+                emailRequired: true,
+                shippingAddressRequired: true,
+                allowedShippingCountries: ['US'],
+                paymentMethods: {
+                    applePay: walletKey === 'applePay' ? 'always' : 'never',
+                    googlePay: walletKey === 'googlePay' ? 'always' : 'never',
+                    paypal: 'never',
+                    amazonPay: 'never',
+                    klarna: 'never',
+                    link: 'never',
+                },
+                // googlePay defaults to the 'buy' button type ("Buy with"
+                // text); 'plain' matches applePay's own default (logo only).
+                buttonType: { googlePay: 'plain' },
+                buttonTheme: { applePay: 'black', googlePay: 'black' },
+            });
 
-        expressCheckoutElement.on('shippingaddresschange', async (event) => {
-            try {
-                const address = {
-                    country: event.address.country ?? 'US',
-                    state: event.address.state ?? '',
-                    city: event.address.city ?? '',
-                    postcode: event.address.postal_code ?? '',
-                };
-                const ratesResponse = await fetchApi(`/api/checkout/shipping-rates?subtotal_minor=${subtotalMinorRef.current}${couponCodeRef.current ? `&coupon_code=${encodeURIComponent(couponCodeRef.current)}` : ''}`);
-                const rates = await ratesResponse.json();
-                const rate = rates.rates?.[0];
-                if (!rate) { event.reject(); return; }
+            expressCheckoutElement.on('availablepaymentmethodschange', (event) => {
+                if (cancelled) return;
+                setCanPay(Boolean(event.paymentMethods));
+            });
 
-                const taxResponse = await fetchApi('/api/checkout/tax-quote', {
-                    method: 'POST',
-                    body: { shipping: address, subtotal_amount: subtotalMinorRef.current / 100 },
-                });
-                const taxMinor = (await taxResponse.json()).quote?.tax_amount ?? 0;
-                latestShippingRate = { code: rate.code, name: rate.name, price_minor: rate.price_minor };
-                elements.update({ amount: subtotalMinorRef.current + rate.price_minor + taxMinor });
-                event.resolve({
-                    shippingRates: [{ id: rate.code, displayName: rate.name, amount: rate.price_minor }],
-                    lineItems: [
-                        { name: 'Subtotal', amount: subtotalMinorRef.current },
-                        { name: 'Tax', amount: taxMinor },
-                    ],
-                });
-            } catch {
-                event.reject();
+            expressCheckoutElement.on('shippingaddresschange', async (event) => {
+                try {
+                    const address = {
+                        country: event.address.country ?? 'US',
+                        state: event.address.state ?? '',
+                        city: event.address.city ?? '',
+                        postcode: event.address.postal_code ?? '',
+                    };
+                    const ratesResponse = await fetchApi(`/api/checkout/shipping-rates?subtotal_minor=${subtotalMinorRef.current}${couponCodeRef.current ? `&coupon_code=${encodeURIComponent(couponCodeRef.current)}` : ''}`);
+                    const rates = await ratesResponse.json();
+                    const rate = rates.rates?.[0];
+                    if (!rate) { event.reject(); return; }
+
+                    const taxResponse = await fetchApi('/api/checkout/tax-quote', {
+                        method: 'POST',
+                        body: { shipping: address, subtotal_amount: subtotalMinorRef.current / 100 },
+                    });
+                    const taxMinor = (await taxResponse.json()).quote?.tax_amount ?? 0;
+                    latestShippingRate = { code: rate.code, name: rate.name, price_minor: rate.price_minor };
+                    elements.update({ amount: subtotalMinorRef.current + rate.price_minor + taxMinor });
+                    event.resolve({
+                        shippingRates: [{ id: rate.code, displayName: rate.name, amount: rate.price_minor }],
+                        lineItems: [
+                            { name: 'Subtotal', amount: subtotalMinorRef.current },
+                            { name: 'Tax', amount: taxMinor },
+                        ],
+                    });
+                } catch {
+                    event.reject();
+                }
+            });
+
+            expressCheckoutElement.on('shippingratechange', (event) => {
+                event.resolve({});
+            });
+
+            expressCheckoutElement.on('confirm', async (event) => {
+                try {
+                    const { error: submitError } = await elements.submit();
+                    if (submitError) {
+                        event.paymentFailed({ reason: 'fail', message: submitError.message });
+                        return;
+                    }
+
+                    const walletAddress = event.shippingAddress?.address;
+                    const nameParts = (event.shippingAddress?.name ?? event.billingDetails?.name ?? '').split(' ');
+                    const shipping = {
+                        email: event.billingDetails?.email ?? '',
+                        first_name: nameParts[0] ?? '',
+                        last_name: nameParts.slice(1).join(' '),
+                        line_one: walletAddress?.line1 ?? '',
+                        line_two: walletAddress?.line2 ?? null,
+                        city: walletAddress?.city ?? '',
+                        state: walletAddress?.state ?? '',
+                        postcode: walletAddress?.postal_code ?? '',
+                        country: walletAddress?.country ?? 'US',
+                        phone: event.billingDetails?.phone ?? null,
+                    };
+
+                    const intentResponse = await fetchApi('/api/checkout/payment-intent', {
+                        method: 'POST',
+                        body: {
+                            payment_method: 'card', items: itemsRef.current, coupon_code: couponCodeRef.current,
+                            shipping_method: latestShippingRate?.code ?? null,
+                            shipping: { state: shipping.state, country: shipping.country, city: shipping.city, postcode: shipping.postcode },
+                            currency: 'usd', email: shipping.email,
+                        },
+                    });
+                    const intent = await intentResponse.json();
+                    if (!intentResponse.ok || !intent?.payment_intent) {
+                        event.paymentFailed({ reason: 'fail', message: intent?.message || 'Unable to prepare payment. Please try again.' });
+                        return;
+                    }
+
+                    const { error: confirmError } = await stripe.confirmPayment({
+                        elements,
+                        clientSecret: intent.payment_intent.client_secret,
+                        confirmParams: { return_url: window.location.href },
+                        redirect: 'if_required',
+                    });
+                    if (confirmError) {
+                        event.paymentFailed({ reason: 'fail', message: confirmError.message ?? 'Payment could not be confirmed.' });
+                        return;
+                    }
+
+                    const orderResponse = await fetchApi('/api/checkout/place-order', {
+                        method: 'POST', headers: { 'Idempotency-Key': intent.payment_intent.intent_id },
+                        body: {
+                            items: itemsRef.current, shipping, billing_same_as_shipping: true,
+                            shipping_method: latestShippingRate?.code ?? null, payment_method: 'card',
+                            payment_context: { intent_id: intent.payment_intent.intent_id }, coupon_code: couponCodeRef.current,
+                        },
+                    });
+                    const order = await orderResponse.json();
+                    if (orderResponse.status !== 201 || !order?.order?.reference || !order?.order?.tracking_access_token) {
+                        setError(order?.message || 'Order could not be created. Please try again.');
+                        return;
+                    }
+                    onOrderPlacedRef.current({ reference: order.order.reference, trackingToken: order.order.tracking_access_token });
+                } catch {
+                    event.paymentFailed({ reason: 'fail' });
+                    setError('Something went wrong. Please try again.');
+                }
+            });
+
+            // The mount <div> is always rendered in the JSX (visibility is
+            // what toggles on canPay, not presence) specifically so it
+            // exists here, on this very first synchronous pass -- the
+            // Express Checkout Element only fires
+            // 'availablepaymentmethodschange' (which is what flips canPay
+            // true) *after* it has been mounted, so deferring the mount
+            // call until canPay is true would deadlock.
+            if (mountRef.current) {
+                mountRef.current.innerHTML = '';
+                expressCheckoutElement.mount(mountRef.current);
             }
-        });
+        };
 
-        expressCheckoutElement.on('shippingratechange', (event) => {
-            event.resolve({});
-        });
+        mountWallet('applePay', setCanApplePay, appleButtonMountRef);
+        mountWallet('googlePay', setCanGooglePay, googleButtonMountRef);
 
-        expressCheckoutElement.on('confirm', async (event) => {
-            try {
-                const { error: submitError } = await elements.submit();
-                if (submitError) {
-                    event.paymentFailed({ reason: 'fail', message: submitError.message });
-                    return;
-                }
-
-                const walletAddress = event.shippingAddress?.address;
-                const nameParts = (event.shippingAddress?.name ?? event.billingDetails?.name ?? '').split(' ');
-                const shipping = {
-                    email: event.billingDetails?.email ?? '',
-                    first_name: nameParts[0] ?? '',
-                    last_name: nameParts.slice(1).join(' '),
-                    line_one: walletAddress?.line1 ?? '',
-                    line_two: walletAddress?.line2 ?? null,
-                    city: walletAddress?.city ?? '',
-                    state: walletAddress?.state ?? '',
-                    postcode: walletAddress?.postal_code ?? '',
-                    country: walletAddress?.country ?? 'US',
-                    phone: event.billingDetails?.phone ?? null,
-                };
-
-                const intentResponse = await fetchApi('/api/checkout/payment-intent', {
-                    method: 'POST',
-                    body: {
-                        payment_method: 'card', items: itemsRef.current, coupon_code: couponCodeRef.current,
-                        shipping_method: latestShippingRate?.code ?? null,
-                        shipping: { state: shipping.state, country: shipping.country, city: shipping.city, postcode: shipping.postcode },
-                        currency: 'usd', email: shipping.email,
-                    },
-                });
-                const intent = await intentResponse.json();
-                if (!intentResponse.ok || !intent?.payment_intent) {
-                    event.paymentFailed({ reason: 'fail', message: intent?.message || 'Unable to prepare payment. Please try again.' });
-                    return;
-                }
-
-                const { error: confirmError } = await stripe.confirmPayment({
-                    elements,
-                    clientSecret: intent.payment_intent.client_secret,
-                    confirmParams: { return_url: window.location.href },
-                    redirect: 'if_required',
-                });
-                if (confirmError) {
-                    event.paymentFailed({ reason: 'fail', message: confirmError.message ?? 'Payment could not be confirmed.' });
-                    return;
-                }
-
-                const orderResponse = await fetchApi('/api/checkout/place-order', {
-                    method: 'POST', headers: { 'Idempotency-Key': intent.payment_intent.intent_id },
-                    body: {
-                        items: itemsRef.current, shipping, billing_same_as_shipping: true,
-                        shipping_method: latestShippingRate?.code ?? null, payment_method: 'card',
-                        payment_context: { intent_id: intent.payment_intent.intent_id }, coupon_code: couponCodeRef.current,
-                    },
-                });
-                const order = await orderResponse.json();
-                if (orderResponse.status !== 201 || !order?.order?.reference || !order?.order?.tracking_access_token) {
-                    setError(order?.message || 'Order could not be created. Please try again.');
-                    return;
-                }
-                onOrderPlacedRef.current({ reference: order.order.reference, trackingToken: order.order.tracking_access_token });
-            } catch {
-                event.paymentFailed({ reason: 'fail' });
-                setError('Something went wrong. Please try again.');
-            }
-        });
-
-        // The mount <div> is always rendered in the JSX (visibility is what
-        // toggles on canExpressPay, not presence) specifically so it exists
-        // here, on this very first synchronous pass -- the Express Checkout
-        // Element only fires 'availablepaymentmethodschange' (which is what
-        // flips canExpressPay true) *after* it has been mounted, so deferring
-        // the mount call until canExpressPay is true would deadlock.
-        if (stripeButtonMountRef.current) {
-            stripeButtonMountRef.current.innerHTML = '';
-            expressCheckoutElement.mount(stripeButtonMountRef.current);
-        }
         return () => { cancelled = true; };
         // items/couponCode/subtotalMinor/onOrderPlaced are read via refs above
         // on purpose -- see the comment where those refs are declared.
@@ -319,21 +331,21 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         // on purpose -- see the comment where those refs are declared.
     }, [paypalClientId]);
 
-    const anyAvailable = canExpressPay || canPayPal;
+    const anyAvailable = canApplePay || canGooglePay || canPayPal;
     if (!anyAvailable) return null;
 
     return (
         <div className="mb-8 space-y-4">
             <p className="text-center text-[13px] font-medium uppercase tracking-wide text-[#707070]">Express checkout</p>
             {error && <p role="alert" className="text-center text-[13px] text-red-600">{error}</p>}
-            {/* PayPal first, then Apple Pay/Google Pay (bundled in one Stripe
-                mount point -- Stripe's architecture doesn't allow splitting
-                them into separate same-row elements). flex-1 on both keeps
-                the two cells equal width regardless of how many buttons
-                render inside the Stripe cell. */}
+            {/* PayPal, then Apple Pay, then Google Pay -- three independent
+                mount points (each its own Express Checkout Element instance
+                for Apple Pay/Google Pay) so flex-1 makes them genuinely
+                equal-width, not just two unevenly-packed cells. */}
             <div className="flex flex-col gap-3 sm:flex-row">
                 {canPayPal && <div ref={paypalButtonMountRef} className="sm:flex-1" />}
-                <div ref={stripeButtonMountRef} className="sm:flex-1" style={{ visibility: canExpressPay ? 'visible' : 'hidden' }} />
+                <div ref={appleButtonMountRef} className="sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden' }} />
+                <div ref={googleButtonMountRef} className="sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden' }} />
             </div>
             <div className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-[#e8e8ea]" />

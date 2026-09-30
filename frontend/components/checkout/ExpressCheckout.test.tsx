@@ -47,7 +47,7 @@ describe('ExpressCheckout', () => {
         expect(element.textContent).not.toContain('Express checkout');
     });
 
-    it('creates a Stripe Express Checkout Element (Apple Pay/Google Pay only -- PayPal is never in this element, it has its own Buttons SDK integration) with the item subtotal when a Stripe instance is provided', () => {
+    it('creates two independent Stripe Express Checkout Elements -- one restricted to Apple Pay, one to Google Pay -- so they render as equal-width buttons instead of one bundled, unevenly-packed cell', () => {
         const expressCheckoutElement = { mount: vi.fn(), on: vi.fn() };
         const elementsGroup = { create: vi.fn().mockReturnValue(expressCheckoutElement), submit: vi.fn(), update: vi.fn() };
         const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn() };
@@ -55,26 +55,30 @@ describe('ExpressCheckout', () => {
         // paypalClientId is included because canPayPal (derived from it)
         // gates whether the component renders anything on the very first
         // pass -- matching production, where PayPal is always configured.
-        // Without it, the Stripe mount <div> wouldn't exist yet either,
+        // Without it, neither Stripe mount <div> would exist yet either,
         // since nothing would be known to be available.
         render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} paypalClientId="test-client-id" />);
 
+        expect(stripeInstance.elements).toHaveBeenCalledTimes(2);
         expect(stripeInstance.elements).toHaveBeenCalledWith(expect.objectContaining({
             mode: 'payment',
             amount: 2000,
             currency: 'usd',
         }));
+        expect(elementsGroup.create).toHaveBeenCalledTimes(2);
         expect(elementsGroup.create).toHaveBeenCalledWith('expressCheckout', expect.objectContaining({
-            paymentMethods: expect.objectContaining({ applePay: 'always', googlePay: 'always', paypal: 'never' }),
-            layout: expect.objectContaining({ maxColumns: 2 }),
+            paymentMethods: expect.objectContaining({ applePay: 'always', googlePay: 'never', paypal: 'never' }),
+        }));
+        expect(elementsGroup.create).toHaveBeenCalledWith('expressCheckout', expect.objectContaining({
+            paymentMethods: expect.objectContaining({ applePay: 'never', googlePay: 'always', paypal: 'never' }),
             buttonType: expect.objectContaining({ googlePay: 'plain' }),
         }));
-        // The element must mount synchronously in the same pass it's created,
-        // not deferred until canExpressPay is true -- the
-        // 'availablepaymentmethodschange' event (which sets canExpressPay)
+        // Both elements must mount synchronously in the same pass they're
+        // created, not deferred until their own canPay state is true -- the
+        // 'availablepaymentmethodschange' event (which sets that state)
         // only fires after mounting, so a deferred mount deadlocks and the
         // element never renders anything.
-        expect(expressCheckoutElement.mount).toHaveBeenCalled();
+        expect(expressCheckoutElement.mount).toHaveBeenCalledTimes(2);
     });
 
     it('recalculates shipping and tax through the existing endpoints when the wallet reports an address', async () => {
