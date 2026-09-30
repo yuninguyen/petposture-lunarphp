@@ -9,41 +9,45 @@ declare global {
     }
 }
 
-type StripeWalletInstance = {
-    paymentRequest: (options: Record<string, unknown>) => {
-        canMakePayment: () => Promise<{ applePay?: boolean; googlePay?: boolean } | null>;
-        on(event: 'shippingaddresschange', handler: (event: StripeShippingAddressChangeEvent) => void): void;
-        on(event: 'paymentmethod', handler: (event: StripePaymentMethodEvent) => void): void;
-    };
-    elements: () => {
-        create: (type: 'paymentRequestButton', options: Record<string, unknown>) => { mount: (element: HTMLElement) => void };
-    };
-    confirmCardPayment: (
-        clientSecret: string,
-        data: Record<string, unknown>,
-        options: Record<string, unknown>,
-    ) => Promise<{ error?: { message?: string } | null }>;
+type StripeAddress = { line1?: string; line2?: string | null; city?: string; state?: string; postal_code?: string; country?: string };
+
+type StripeElementsInstance = {
+    elements: (options: Record<string, unknown>) => StripeElementsGroup;
+    confirmPayment: (options: Record<string, unknown>) => Promise<{ error?: { message?: string } | null }>;
 };
 
-type StripeShippingAddressChangeEvent = {
-    shippingAddress: { country: string; region: string; city: string; postalCode: string };
-    updateWith: (details: Record<string, unknown>) => void;
+type StripeElementsGroup = {
+    submit: () => Promise<{ error?: { message?: string } | null }>;
+    update: (options: Record<string, unknown>) => void;
+    create: (type: 'expressCheckout', options: Record<string, unknown>) => StripeExpressCheckoutElement;
 };
 
-type StripePaymentMethodEvent = {
-    payerEmail?: string;
-    payerPhone?: string;
-    paymentMethod: { id: string };
-    shippingOption?: { id: string };
-    shippingAddress?: {
-        recipient?: string;
-        addressLine?: string[];
-        city?: string;
-        region?: string;
-        postalCode?: string;
-        country?: string;
-    };
-    complete: (status: 'success' | 'fail') => void;
+type StripeExpressCheckoutElement = {
+    mount: (element: HTMLElement) => void;
+    on(event: 'availablepaymentmethodschange', handler: (event: { paymentMethods: Record<string, unknown> | null }) => void): void;
+    on(event: 'shippingaddresschange', handler: (event: StripeExpressShippingAddressChangeEvent) => void): void;
+    on(event: 'shippingratechange', handler: (event: StripeExpressShippingRateChangeEvent) => void): void;
+    on(event: 'confirm', handler: (event: StripeExpressConfirmEvent) => void): void;
+};
+
+type StripeExpressShippingAddressChangeEvent = {
+    address: { city?: string; state?: string; postal_code?: string; country?: string };
+    resolve: (payload: Record<string, unknown>) => void;
+    reject: () => void;
+};
+
+type StripeExpressShippingRateChangeEvent = {
+    shippingRate: { id: string; amount: number };
+    resolve: (payload: Record<string, unknown>) => void;
+    reject: () => void;
+};
+
+type StripeExpressConfirmEvent = {
+    expressPaymentType: string;
+    billingDetails?: { name?: string; email?: string; phone?: string; address?: StripeAddress };
+    shippingAddress?: { name?: string; address?: StripeAddress };
+    shippingRate?: { id: string; amount: number };
+    paymentFailed: (payload: { reason?: string; message?: string }) => void;
 };
 
 type PayPalShippingData = { orderInfo?: { shipping_address?: { country_code?: string; state?: string; city?: string; postal_code?: string; address_line_1?: string; address_line_2?: string } }; payer?: { email_address?: string; name?: { given_name?: string; surname?: string }; phone?: { phone_number?: { national_number?: string } } } };
@@ -60,8 +64,7 @@ export interface ExpressCheckoutProps {
 }
 
 export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, onOrderPlaced }: ExpressCheckoutProps) {
-    const [canApplePay, setCanApplePay] = useState(false);
-    const [canGooglePay, setCanGooglePay] = useState(false);
+    const [canExpressPay, setCanExpressPay] = useState(false);
     // Unlike Apple Pay/Google Pay (which need an async canMakePayment()
     // check), PayPal's availability is knowable synchronously from the
     // first render -- it only needs a client id. Keeping it as async state
@@ -94,99 +97,129 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
     }, [items, couponCode, subtotalMinor, onOrderPlaced]);
 
     useEffect(() => {
-        if (!stripeInstance || typeof (stripeInstance as unknown as Partial<StripeWalletInstance>).paymentRequest !== 'function') return;
+        if (!stripeInstance || typeof (stripeInstance as unknown as Partial<StripeElementsInstance>).elements !== 'function') return;
         let cancelled = false;
-        const stripe = stripeInstance as unknown as StripeWalletInstance;
-        const paymentRequest = stripe.paymentRequest({
-            country: 'US',
+        const stripe = stripeInstance as unknown as StripeElementsInstance;
+        const elements = stripe.elements({
+            mode: 'payment',
+            amount: subtotalMinorRef.current,
             currency: 'usd',
-            total: { label: 'PetPosture', amount: subtotalMinorRef.current },
-            requestPayerName: true,
-            requestPayerEmail: true,
-            requestShipping: true,
+        });
+        // Card is the only payment_method type we allow here -- Apple Pay and
+        // Google Pay both ride on it (per Stripe's docs), and this keeps
+        // Stripe's own PayPal/Link/etc. buttons from also appearing and
+        // duplicating the separate PayPal Buttons SDK integration below.
+        let latestShippingRate: { code: string; name: string; price_minor: number } | null = null;
+
+        const expressCheckoutElement = elements.create('expressCheckout', {
+            emailRequired: true,
+            shippingAddressRequired: true,
+            allowedShippingCountries: ['US'],
+            paymentMethods: {
+                applePay: 'always',
+                googlePay: 'always',
+                paypal: 'never',
+                amazonPay: 'never',
+                klarna: 'never',
+                link: 'never',
+            },
         });
 
-        paymentRequest.canMakePayment().then((result) => {
-            if (cancelled || !result) return;
-            setCanApplePay(Boolean(result.applePay));
-            setCanGooglePay(Boolean(result.googlePay));
+        expressCheckoutElement.on('availablepaymentmethodschange', (event) => {
+            if (cancelled) return;
+            setCanExpressPay(Boolean(event.paymentMethods));
         });
 
-        paymentRequest.on('shippingaddresschange', async (event) => {
+        expressCheckoutElement.on('shippingaddresschange', async (event) => {
             try {
                 const address = {
-                    country: event.shippingAddress.country,
-                    state: event.shippingAddress.region,
-                    city: event.shippingAddress.city,
-                    postcode: event.shippingAddress.postalCode,
+                    country: event.address.country ?? 'US',
+                    state: event.address.state ?? '',
+                    city: event.address.city ?? '',
+                    postcode: event.address.postal_code ?? '',
                 };
                 const ratesResponse = await fetchApi(`/api/checkout/shipping-rates?subtotal_minor=${subtotalMinorRef.current}${couponCodeRef.current ? `&coupon_code=${encodeURIComponent(couponCodeRef.current)}` : ''}`);
                 const rates = await ratesResponse.json();
                 const rate = rates.rates?.[0];
-                if (!rate) return event.updateWith({ status: 'invalid_shipping_address' });
+                if (!rate) { event.reject(); return; }
 
                 const taxResponse = await fetchApi('/api/checkout/tax-quote', {
                     method: 'POST',
                     body: { shipping: address, subtotal_amount: subtotalMinorRef.current / 100 },
                 });
-                const tax = await taxResponse.json();
-                const shippingMinor = rate.price_minor;
-                const taxMinor = tax.quote?.tax_amount ?? 0;
-                event.updateWith({
-                    status: 'success',
-                    shippingOptions: [{ id: rate.code, label: rate.name, detail: '', amount: shippingMinor }],
-                    total: { label: 'PetPosture', amount: subtotalMinorRef.current + shippingMinor + taxMinor },
+                const taxMinor = (await taxResponse.json()).quote?.tax_amount ?? 0;
+                latestShippingRate = { code: rate.code, name: rate.name, price_minor: rate.price_minor };
+                elements.update({ amount: subtotalMinorRef.current + rate.price_minor + taxMinor });
+                event.resolve({
+                    shippingRates: [{ id: rate.code, displayName: rate.name, amount: rate.price_minor }],
+                    lineItems: [
+                        { name: 'Subtotal', amount: subtotalMinorRef.current },
+                        { name: 'Tax', amount: taxMinor },
+                    ],
                 });
             } catch {
-                event.updateWith({ status: 'fail' });
+                event.reject();
             }
         });
 
-        paymentRequest.on('paymentmethod', async (event) => {
+        expressCheckoutElement.on('shippingratechange', (event) => {
+            event.resolve({});
+        });
+
+        expressCheckoutElement.on('confirm', async (event) => {
             try {
+                const { error: submitError } = await elements.submit();
+                if (submitError) {
+                    event.paymentFailed({ reason: 'fail', message: submitError.message });
+                    return;
+                }
+
+                const walletAddress = event.shippingAddress?.address;
+                const nameParts = (event.shippingAddress?.name ?? event.billingDetails?.name ?? '').split(' ');
                 const shipping = {
-                    email: event.payerEmail ?? '',
-                    first_name: event.shippingAddress?.recipient?.split(' ')[0] ?? '',
-                    last_name: event.shippingAddress?.recipient?.split(' ').slice(1).join(' ') ?? '',
-                    line_one: event.shippingAddress?.addressLine?.[0] ?? '',
-                    line_two: event.shippingAddress?.addressLine?.[1] ?? null,
-                    city: event.shippingAddress?.city ?? '',
-                    state: event.shippingAddress?.region ?? '',
-                    postcode: event.shippingAddress?.postalCode ?? '',
-                    country: event.shippingAddress?.country ?? 'US',
-                    phone: event.payerPhone ?? null,
+                    email: event.billingDetails?.email ?? '',
+                    first_name: nameParts[0] ?? '',
+                    last_name: nameParts.slice(1).join(' '),
+                    line_one: walletAddress?.line1 ?? '',
+                    line_two: walletAddress?.line2 ?? null,
+                    city: walletAddress?.city ?? '',
+                    state: walletAddress?.state ?? '',
+                    postcode: walletAddress?.postal_code ?? '',
+                    country: walletAddress?.country ?? 'US',
+                    phone: event.billingDetails?.phone ?? null,
                 };
+
                 const intentResponse = await fetchApi('/api/checkout/payment-intent', {
                     method: 'POST',
                     body: {
                         payment_method: 'card', items: itemsRef.current, coupon_code: couponCodeRef.current,
-                        shipping_method: event.shippingOption?.id ?? null,
+                        shipping_method: latestShippingRate?.code ?? null,
                         shipping: { state: shipping.state, country: shipping.country, city: shipping.city, postcode: shipping.postcode },
                         currency: 'usd', email: shipping.email,
                     },
                 });
                 const intent = await intentResponse.json();
                 if (!intentResponse.ok || !intent?.payment_intent) {
-                    event.complete('fail');
-                    setError(intent?.message || 'Unable to prepare payment. Please try again.');
+                    event.paymentFailed({ reason: 'fail', message: intent?.message || 'Unable to prepare payment. Please try again.' });
                     return;
                 }
-                const { error: confirmError } = await stripe.confirmCardPayment(
-                    intent.payment_intent.client_secret,
-                    { payment_method: event.paymentMethod.id },
-                    { handleActions: false },
-                );
+
+                const { error: confirmError } = await stripe.confirmPayment({
+                    elements,
+                    clientSecret: intent.payment_intent.client_secret,
+                    confirmParams: { return_url: window.location.href },
+                    redirect: 'if_required',
+                });
                 if (confirmError) {
-                    event.complete('fail');
-                    setError(confirmError.message ?? 'Payment could not be confirmed.');
+                    event.paymentFailed({ reason: 'fail', message: confirmError.message ?? 'Payment could not be confirmed.' });
                     return;
                 }
-                event.complete('success');
+
                 const orderResponse = await fetchApi('/api/checkout/place-order', {
                     method: 'POST', headers: { 'Idempotency-Key': intent.payment_intent.intent_id },
                     body: {
                         items: itemsRef.current, shipping, billing_same_as_shipping: true,
-                        shipping_method: event.shippingOption?.id ?? null, payment_method: 'card',
+                        shipping_method: latestShippingRate?.code ?? null, payment_method: 'card',
                         payment_context: { intent_id: intent.payment_intent.intent_id }, coupon_code: couponCodeRef.current,
                     },
                 });
@@ -197,14 +230,14 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                 }
                 onOrderPlacedRef.current({ reference: order.order.reference, trackingToken: order.order.tracking_access_token });
             } catch {
-                event.complete('fail');
+                event.paymentFailed({ reason: 'fail' });
                 setError('Something went wrong. Please try again.');
             }
         });
 
         if (stripeButtonMountRef.current) {
             stripeButtonMountRef.current.innerHTML = '';
-            stripe.elements().create('paymentRequestButton', { paymentRequest }).mount(stripeButtonMountRef.current);
+            expressCheckoutElement.mount(stripeButtonMountRef.current);
         }
         return () => { cancelled = true; };
         // items/couponCode/subtotalMinor/onOrderPlaced are read via refs above
@@ -275,7 +308,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         // on purpose -- see the comment where those refs are declared.
     }, [paypalClientId]);
 
-    const anyAvailable = canApplePay || canGooglePay || canPayPal;
+    const anyAvailable = canExpressPay || canPayPal;
     if (!anyAvailable) return null;
 
     return (
@@ -283,7 +316,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             <p className="text-center text-[13px] font-medium uppercase tracking-wide text-[#707070]">Express checkout</p>
             {error && <p role="alert" className="text-center text-[13px] text-red-600">{error}</p>}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {(canApplePay || canGooglePay) && <div ref={stripeButtonMountRef} className="h-11" />}
+                {canExpressPay && <div ref={stripeButtonMountRef} />}
                 {canPayPal && <div ref={paypalButtonMountRef} />}
             </div>
             <div className="flex items-center gap-3">

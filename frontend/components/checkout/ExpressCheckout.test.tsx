@@ -47,22 +47,20 @@ describe('ExpressCheckout', () => {
         expect(element.textContent).not.toContain('Express checkout');
     });
 
-    it('creates a Stripe payment request with the item subtotal when a Stripe instance is provided', () => {
-        const paymentRequest = { canMakePayment: vi.fn().mockResolvedValue(null), on: vi.fn(), update: vi.fn() };
-        const stripeInstance = {
-            paymentRequest: vi.fn().mockReturnValue(paymentRequest),
-            elements: vi.fn().mockReturnValue({ create: vi.fn().mockReturnValue({ mount: vi.fn(), on: vi.fn() }) }),
-        };
+    it('creates a Stripe Express Checkout Element with the item subtotal when a Stripe instance is provided', () => {
+        const expressCheckoutElement = { mount: vi.fn(), on: vi.fn() };
+        const elementsGroup = { create: vi.fn().mockReturnValue(expressCheckoutElement), submit: vi.fn(), update: vi.fn() };
+        const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn() };
 
         render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} />);
 
-        expect(stripeInstance.paymentRequest).toHaveBeenCalledWith(expect.objectContaining({
-            country: 'US',
+        expect(stripeInstance.elements).toHaveBeenCalledWith(expect.objectContaining({
+            mode: 'payment',
+            amount: 2000,
             currency: 'usd',
-            total: { label: 'PetPosture', amount: 2000 },
-            requestPayerName: true,
-            requestPayerEmail: true,
-            requestShipping: true,
+        }));
+        expect(elementsGroup.create).toHaveBeenCalledWith('expressCheckout', expect.objectContaining({
+            paymentMethods: expect.objectContaining({ applePay: 'always', googlePay: 'always' }),
         }));
     });
 
@@ -75,35 +73,35 @@ describe('ExpressCheckout', () => {
             return Promise.resolve({ ok: true, json: async () => ({ quote: { rate_percentage: 8, tax_amount: 250 } }) } as Response);
         });
 
-        type ShippingAddressEvent = {
-            shippingAddress: { country: string; region: string; city: string; postalCode: string };
-            updateWith: (details: Record<string, unknown>) => void;
+        type ShippingAddressChangeEvent = {
+            address: { city?: string; state?: string; postal_code?: string; country?: string };
+            resolve: (payload: Record<string, unknown>) => void;
+            reject: () => void;
         };
-        let shippingAddressHandler: ((event: ShippingAddressEvent) => Promise<void>) | undefined;
-        const paymentRequest = {
-            canMakePayment: vi.fn().mockResolvedValue({ applePay: true }),
+        let shippingAddressHandler: ((event: ShippingAddressChangeEvent) => Promise<void>) | undefined;
+        const expressCheckoutElement = {
+            mount: vi.fn(),
             on: vi.fn((event: string, handler: unknown) => {
-                if (event === 'shippingaddresschange') shippingAddressHandler = handler as (event: ShippingAddressEvent) => Promise<void>;
+                if (event === 'shippingaddresschange') shippingAddressHandler = handler as (event: ShippingAddressChangeEvent) => Promise<void>;
             }),
         };
-        const stripeInstance = {
-            paymentRequest: vi.fn().mockReturnValue(paymentRequest),
-            elements: vi.fn().mockReturnValue({ create: vi.fn().mockReturnValue({ mount: vi.fn() }) }),
-        };
+        const elementsGroup = { create: vi.fn().mockReturnValue(expressCheckoutElement), submit: vi.fn(), update: vi.fn() };
+        const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn() };
 
         render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} subtotalMinor={2000} />);
-        const updateWith = vi.fn();
+        const resolve = vi.fn();
         await act(async () => {
             await shippingAddressHandler?.({
-                shippingAddress: { country: 'US', region: 'TX', city: 'Austin', postalCode: '78701' },
-                updateWith,
+                address: { country: 'US', state: 'TX', city: 'Austin', postal_code: '78701' },
+                resolve,
+                reject: vi.fn(),
             });
         });
 
         expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/api/checkout/shipping-rates'));
-        expect(updateWith).toHaveBeenCalledWith(expect.objectContaining({
-            status: 'success',
-            total: expect.objectContaining({ amount: 2750 }),
+        expect(elementsGroup.update).toHaveBeenCalledWith({ amount: 2000 + 500 + 250 });
+        expect(resolve).toHaveBeenCalledWith(expect.objectContaining({
+            shippingRates: [expect.objectContaining({ id: 'standard', amount: 500 })],
         }));
     });
 
