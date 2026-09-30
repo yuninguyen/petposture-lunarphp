@@ -352,23 +352,23 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         <div className="mb-8 space-y-4">
             <p className="text-center text-[13px] font-medium uppercase tracking-wide text-[#707070]">Express checkout</p>
             {error && <p role="alert" className="text-center text-[13px] text-red-600">{error}</p>}
-            {/* PayPal, then Apple Pay, then Google Pay -- three independent
-                mount points (each its own Express Checkout Element instance
-                for Apple Pay/Google Pay) so flex-1 makes them genuinely
-                equal-width, not just two unevenly-packed cells.
-                min-w-0 is required here: flex items default to
-                min-width: auto, which lets a child's own intrinsic content
-                width (PayPal's button has a larger natural min-width than
-                the Stripe buttons) override flex-basis and grab more than
-                its equal share, shrinking the other two -- confirmed live,
-                PayPal measured 300px wide next to 117.8px Stripe cells
-                despite all three sharing the same flex: 1 1 0%. overflow-hidden
-                clips PayPal's brief oversized flash while its iframe is
-                still loading, before it snaps to the configured height. */}
-            <div className="flex flex-col gap-3 sm:flex-row">
-                {canPayPal && <div ref={paypalButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" />}
-                <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden' }} />
-                <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden' }} />
+            {/* PayPal's rendered button has a hard floor of 300px width --
+                confirmed by testing 6 different style configs (label,
+                color, shape, horizontal vs vertical layout) directly
+                against PayPal's SDK, all rendered at exactly 300px
+                regardless. Squeezing it into an equal third (down to
+                ~178px in a 3-column row) clips its logo; no style option
+                works around it. PayPal gets its own full-width row instead,
+                and Apple Pay/Google Pay -- which have no such floor -- split
+                a second row evenly with min-w-0 (flex items default to
+                min-width: auto, which would otherwise let either child's
+                intrinsic content width override the equal flex-basis). */}
+            <div className="space-y-3">
+                {canPayPal && <div ref={paypalButtonMountRef} />}
+                <div className="flex flex-col gap-3 sm:flex-row">
+                    <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden' }} />
+                    <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden' }} />
+                </div>
             </div>
             <div className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-[#e8e8ea]" />
