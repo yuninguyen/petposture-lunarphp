@@ -341,11 +341,20 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             {/* PayPal, then Apple Pay, then Google Pay -- three independent
                 mount points (each its own Express Checkout Element instance
                 for Apple Pay/Google Pay) so flex-1 makes them genuinely
-                equal-width, not just two unevenly-packed cells. */}
+                equal-width, not just two unevenly-packed cells.
+                min-w-0 is required here: flex items default to
+                min-width: auto, which lets a child's own intrinsic content
+                width (PayPal's button has a larger natural min-width than
+                the Stripe buttons) override flex-basis and grab more than
+                its equal share, shrinking the other two -- confirmed live,
+                PayPal measured 300px wide next to 117.8px Stripe cells
+                despite all three sharing the same flex: 1 1 0%. overflow-hidden
+                clips PayPal's brief oversized flash while its iframe is
+                still loading, before it snaps to the configured height. */}
             <div className="flex flex-col gap-3 sm:flex-row">
-                {canPayPal && <div ref={paypalButtonMountRef} className="sm:flex-1" />}
-                <div ref={appleButtonMountRef} className="sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden' }} />
-                <div ref={googleButtonMountRef} className="sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden' }} />
+                {canPayPal && <div ref={paypalButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" />}
+                <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden' }} />
+                <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden' }} />
             </div>
             <div className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-[#e8e8ea]" />
