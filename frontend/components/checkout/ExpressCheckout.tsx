@@ -11,7 +11,7 @@ declare global {
 
 type StripeWalletInstance = {
     paymentRequest: (options: Record<string, unknown>) => {
-        canMakePayment: () => Promise<{ applePay?: boolean } | null>;
+        canMakePayment: () => Promise<{ applePay?: boolean; googlePay?: boolean } | null>;
         on(event: 'shippingaddresschange', handler: (event: StripeShippingAddressChangeEvent) => void): void;
         on(event: 'paymentmethod', handler: (event: StripePaymentMethodEvent) => void): void;
     };
@@ -84,7 +84,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         paymentRequest.canMakePayment().then((result) => {
             if (cancelled || !result) return;
             setCanApplePay(Boolean(result.applePay));
-            setCanGooglePay(!result.applePay);
+            setCanGooglePay(Boolean(result.googlePay));
         });
 
         paymentRequest.on('shippingaddresschange', async (event) => {
