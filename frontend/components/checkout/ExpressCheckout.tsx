@@ -98,6 +98,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
     }, [items, couponCode, subtotalMinor, onOrderPlaced]);
 
     useEffect(() => {
+        console.debug('[ExpressCheckout debug] effect running, stripeInstance:', stripeInstance, 'has elements fn:', typeof (stripeInstance as unknown as Partial<StripeElementsInstance>)?.elements);
         if (!stripeInstance || typeof (stripeInstance as unknown as Partial<StripeElementsInstance>).elements !== 'function') return;
         let cancelled = false;
         const stripe = stripeInstance as unknown as StripeElementsInstance;
@@ -106,6 +107,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             amount: subtotalMinorRef.current,
             currency: 'usd',
         });
+        console.debug('[ExpressCheckout debug] elements group created:', elements);
         // Card is the only payment_method type we allow here -- Apple Pay and
         // Google Pay both ride on it (per Stripe's docs), and this keeps
         // Stripe's own PayPal/Link/etc. buttons from also appearing and
@@ -127,6 +129,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         });
 
         expressCheckoutElement.on('availablepaymentmethodschange', (event) => {
+            console.debug('[ExpressCheckout debug] availablepaymentmethodschange:', event.paymentMethods, 'cancelled:', cancelled);
             if (cancelled) return;
             setCanExpressPay(Boolean(event.paymentMethods));
         });
@@ -248,6 +251,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
     // still-null ref. Mounting here, keyed on canExpressPay, catches the
     // div once React has actually committed it.
     useEffect(() => {
+        console.debug('[ExpressCheckout debug] mount effect, canExpressPay:', canExpressPay, 'div:', stripeButtonMountRef.current, 'element:', expressCheckoutElementRef.current);
         if (canExpressPay && stripeButtonMountRef.current && expressCheckoutElementRef.current) {
             stripeButtonMountRef.current.innerHTML = '';
             expressCheckoutElementRef.current.mount(stripeButtonMountRef.current);
