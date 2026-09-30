@@ -1438,6 +1438,7 @@ export default function CheckoutPage() {
                         couponCode={coupon.discountAmount > 0 ? coupon.code : null}
                         subtotalMinor={Math.round(totalAmount * 100)}
                         stripeInstance={stripeInstanceRef.current}
+                        paypalClientId={selectedPayPalMethod.client_id ?? null}
                         onOrderPlaced={redirectToSuccess}
                     />
                     <header className="mb-10 hidden lg:block">
