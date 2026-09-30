@@ -327,9 +327,15 @@ export default function CheckoutPage() {
         mode: 'placeholder',
         publishable_key: null,
     };
-    const stripeLiveMode = form.paymentMethod === 'card'
-        && selectedCardMethod.mode === 'configured'
+    // Whether Stripe is configured server-side at all, independent of which
+    // payment method the customer has selected in the regular form -- the
+    // Express Checkout row needs a Stripe instance available up front
+    // (before the customer engages with the form), so its readiness can't
+    // be gated on form.paymentMethod === 'card' the way the visual card
+    // fields below are.
+    const stripeConfigured = selectedCardMethod.mode === 'configured'
         && Boolean(selectedCardMethod.publishable_key);
+    const stripeLiveMode = form.paymentMethod === 'card' && stripeConfigured;
     const selectedPayPalMethod = paymentMethods.find((method) => method.method === 'paypal') ?? {
         method: 'paypal' as const,
         label: 'PayPal',
@@ -480,7 +486,7 @@ export default function CheckoutPage() {
     }, []);
 
     useEffect(() => {
-        if (typeof window === 'undefined' || !stripeLiveMode || !selectedCardMethod?.publishable_key) {
+        if (typeof window === 'undefined' || !stripeConfigured || !selectedCardMethod?.publishable_key) {
             setStripeReady(false);
             setStripeError(null);
             return;
@@ -516,7 +522,7 @@ export default function CheckoutPage() {
         script.src = 'https://js.stripe.com/v3/';
         script.addEventListener('load', initialiseStripe, { once: true });
         document.head.appendChild(script);
-    }, [selectedCardMethod?.publishable_key, stripeLiveMode]);
+    }, [selectedCardMethod?.publishable_key, stripeConfigured]);
 
     useEffect(() => {
         if (!stripeLiveMode || !stripeReady || !stripeElementsRef.current
