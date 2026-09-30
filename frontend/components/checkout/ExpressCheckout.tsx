@@ -76,6 +76,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
     const canPayPal = Boolean(paypalClientId);
     const [error, setError] = useState<string | null>(null);
     const stripeButtonMountRef = useRef<HTMLDivElement>(null);
+    const expressCheckoutElementRef = useRef<StripeExpressCheckoutElement | null>(null);
     const paypalButtonMountRef = useRef<HTMLDivElement>(null);
     const latestShippingAddressRef = useRef<Record<string, unknown> | null>(null);
 
@@ -235,14 +236,23 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             }
         });
 
-        if (stripeButtonMountRef.current) {
-            stripeButtonMountRef.current.innerHTML = '';
-            expressCheckoutElement.mount(stripeButtonMountRef.current);
-        }
+        expressCheckoutElementRef.current = expressCheckoutElement;
         return () => { cancelled = true; };
         // items/couponCode/subtotalMinor/onOrderPlaced are read via refs above
         // on purpose -- see the comment where those refs are declared.
     }, [stripeInstance]);
+
+    // The mount <div> below only exists in the DOM once canExpressPay is
+    // true (it's conditionally rendered in the JSX), but canExpressPay only
+    // becomes true *after* the effect above has already run once against a
+    // still-null ref. Mounting here, keyed on canExpressPay, catches the
+    // div once React has actually committed it.
+    useEffect(() => {
+        if (canExpressPay && stripeButtonMountRef.current && expressCheckoutElementRef.current) {
+            stripeButtonMountRef.current.innerHTML = '';
+            expressCheckoutElementRef.current.mount(stripeButtonMountRef.current);
+        }
+    }, [canExpressPay]);
 
     useEffect(() => {
         if (!paypalClientId) return;
