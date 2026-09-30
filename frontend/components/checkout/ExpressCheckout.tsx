@@ -3,12 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchApi } from '../../lib/fetchApi';
 
-declare global {
-    interface Window {
-        paypal?: { Buttons: (options: Record<string, unknown>) => { render: (element: HTMLElement) => void } };
-    }
-}
-
 type StripeAddress = { line1?: string; line2?: string | null; city?: string; state?: string; postal_code?: string; country?: string };
 
 type StripeElementsInstance = {
@@ -50,38 +44,22 @@ type StripeExpressConfirmEvent = {
     paymentFailed: (payload: { reason?: string; message?: string }) => void;
 };
 
-type PayPalShippingData = { orderInfo?: { shipping_address?: { country_code?: string; state?: string; city?: string; postal_code?: string; address_line_1?: string; address_line_2?: string } }; payer?: { email_address?: string; name?: { given_name?: string; surname?: string }; phone?: { phone_number?: { national_number?: string } } } };
-type PayPalActions = { order: { patch: (operations: unknown[]) => Promise<void> }; reject: () => void };
-type PayPalApproval = { orderID: string };
-
 export interface ExpressCheckoutProps {
     items: Array<{ variantId: number; quantity: number }>;
     couponCode: string | null;
     subtotalMinor: number;
     stripeInstance: ReturnType<NonNullable<typeof window.Stripe>> | null;
-    paypalClientId: string | null;
     onOrderPlaced: (orderAccess: { reference: string; trackingToken: string }) => void;
 }
 
-export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, onOrderPlaced }: ExpressCheckoutProps) {
+export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, onOrderPlaced }: ExpressCheckoutProps) {
     const [canExpressPay, setCanExpressPay] = useState(false);
-    // Unlike Apple Pay/Google Pay (which need an async canMakePayment()
-    // check), PayPal's availability is knowable synchronously from the
-    // first render -- it only needs a client id. Keeping it as async state
-    // instead of a derived value previously caused a mount-order race: the
-    // effect's first pass ran before the <div ref={paypalButtonMountRef}>
-    // existed in the DOM (because that div was itself gated on this same
-    // state), so window.paypal.Buttons(...).render() had no element to
-    // attach to on that pass.
-    const canPayPal = Boolean(paypalClientId);
     const [error, setError] = useState<string | null>(null);
     const stripeButtonMountRef = useRef<HTMLDivElement>(null);
-    const paypalButtonMountRef = useRef<HTMLDivElement>(null);
-    const latestShippingAddressRef = useRef<Record<string, unknown> | null>(null);
 
     // Read via .current inside effect callbacks instead of closing over the
-    // props directly, so the mount effects below only need to depend on
-    // stripeInstance/paypalClientId (which settle once) rather than on
+    // props directly, so the mount effect below only needs to depend on
+    // stripeInstance (which settles once) rather than on
     // items/couponCode/subtotalMinor/onOrderPlaced, which change identity on
     // every CheckoutPage re-render and would otherwise re-run the effect and
     // stack a duplicate wallet button on top of the previous one each time.
@@ -105,24 +83,32 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             amount: subtotalMinorRef.current,
             currency: 'usd',
         });
-        // Card is the only payment_method type we allow here -- Apple Pay and
-        // Google Pay both ride on it (per Stripe's docs), and this keeps
-        // Stripe's own PayPal/Link/etc. buttons from also appearing and
-        // duplicating the separate PayPal Buttons SDK integration below.
         let latestShippingRate: { code: string; name: string; price_minor: number } | null = null;
 
         const expressCheckoutElement = elements.create('expressCheckout', {
             emailRequired: true,
             shippingAddressRequired: true,
             allowedShippingCountries: ['US'],
+            // PayPal rides the same Stripe-confirmed PaymentIntent as Apple
+            // Pay/Google Pay here (paymentMethods.paypal: 'auto'), rather
+            // than a separate PayPal Buttons SDK integration -- that keeps
+            // all three in the one Express Checkout Element mount point, so
+            // Stripe's own layout.maxColumns lays them out as genuinely
+            // equal-width buttons in a single row instead of two separately
+            // sized DOM elements (a Stripe iframe next to a PayPal iframe)
+            // that can't be visually unified with CSS alone.
             paymentMethods: {
                 applePay: 'always',
                 googlePay: 'always',
-                paypal: 'never',
+                paypal: 'auto',
                 amazonPay: 'never',
                 klarna: 'never',
                 link: 'never',
             },
+            layout: { maxColumns: 3 },
+            // googlePay defaults to the 'buy' button type ("Buy with"
+            // text); 'plain' matches applePay's own default (logo only).
+            buttonType: { googlePay: 'plain' },
         });
 
         expressCheckoutElement.on('availablepaymentmethodschange', (event) => {
@@ -204,6 +190,10 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                     return;
                 }
 
+                // Regardless of which wallet the customer picked inside the
+                // Element (Apple Pay, Google Pay, or PayPal), Stripe confirms
+                // it as the same kind of PaymentIntent, so it's placed
+                // through the existing card/Stripe order path either way.
                 const { error: confirmError } = await stripe.confirmPayment({
                     elements,
                     clientSecret: intent.payment_intent.client_secret,
@@ -250,81 +240,19 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         // on purpose -- see the comment where those refs are declared.
     }, [stripeInstance]);
 
-    useEffect(() => {
-        if (!paypalClientId) return;
-        let cancelled = false;
-        const renderButtons = () => {
-            if (cancelled || !window.paypal || !paypalButtonMountRef.current) return;
-            window.paypal.Buttons({
-                style: { layout: 'horizontal', label: 'paypal', height: 44, tagline: false },
-                createOrder: async () => {
-                    const response = await fetchApi('/api/checkout/paypal-order', {
-                        method: 'POST', body: { payment_method: 'paypal', items: itemsRef.current, coupon_code: couponCodeRef.current, currency: 'usd' },
-                    });
-                    const data = await response.json();
-                    if (!response.ok || !data?.paypal_order?.paypal_order_id) throw new Error(data?.message || 'Unable to start PayPal checkout.');
-                    return data.paypal_order.paypal_order_id;
-                },
-                onShippingAddressChange: async (data: PayPalShippingData, actions: PayPalActions) => {
-                    try {
-                        const walletAddress = data.orderInfo?.shipping_address;
-                        const address = { country: walletAddress?.country_code ?? 'US', state: walletAddress?.state ?? '', city: walletAddress?.city ?? '', postcode: walletAddress?.postal_code ?? '' };
-                        const ratesResponse = await fetchApi(`/api/checkout/shipping-rates?subtotal_minor=${subtotalMinorRef.current}${couponCodeRef.current ? `&coupon_code=${encodeURIComponent(couponCodeRef.current)}` : ''}`);
-                        const rate = (await ratesResponse.json()).rates?.[0];
-                        if (!rate) return actions.reject();
-                        const taxResponse = await fetchApi('/api/checkout/tax-quote', { method: 'POST', body: { shipping: address, subtotal_amount: subtotalMinorRef.current / 100 } });
-                        const taxMinor = (await taxResponse.json()).quote?.tax_amount ?? 0;
-                        latestShippingAddressRef.current = {
-                            email: data.payer?.email_address ?? '', first_name: data.payer?.name?.given_name ?? '', last_name: data.payer?.name?.surname ?? '',
-                            line_one: walletAddress?.address_line_1 ?? '', line_two: walletAddress?.address_line_2 ?? null,
-                            city: address.city, state: address.state, postcode: address.postcode, country: address.country,
-                            phone: data.payer?.phone?.phone_number?.national_number ?? null,
-                        };
-                        return actions.order.patch([{ op: 'replace', path: "/purchase_units/@reference_id=='default'/amount", value: {
-                            currency_code: 'USD', value: ((subtotalMinorRef.current + rate.price_minor + taxMinor) / 100).toFixed(2),
-                            breakdown: { item_total: { currency_code: 'USD', value: (subtotalMinorRef.current / 100).toFixed(2) }, shipping: { currency_code: 'USD', value: (rate.price_minor / 100).toFixed(2) }, tax_total: { currency_code: 'USD', value: (taxMinor / 100).toFixed(2) } },
-                        } }]);
-                    } catch { actions.reject(); }
-                },
-                onApprove: async (data: PayPalApproval) => {
-                    try {
-                        if (!latestShippingAddressRef.current) { setError('Missing shipping address. Please try again.'); return; }
-                        const orderResponse = await fetchApi('/api/checkout/place-order', { method: 'POST', headers: { 'Idempotency-Key': data.orderID }, body: { items: itemsRef.current, shipping: latestShippingAddressRef.current, billing_same_as_shipping: true, payment_method: 'paypal', payment_context: { paypal_order_id: data.orderID }, coupon_code: couponCodeRef.current } });
-                        const order = await orderResponse.json();
-                        if (orderResponse.status !== 201 || !order?.order?.reference || !order?.order?.tracking_access_token) { setError(order?.message || 'Order could not be created. Please try again.'); return; }
-                        const captureResponse = await fetchApi('/api/checkout/paypal-capture', { method: 'POST', body: { paypal_order_id: data.orderID } });
-                        const capture = await captureResponse.json();
-                        if (!captureResponse.ok || capture?.capture?.status !== 'COMPLETED') { setError('Payment could not be captured. Please try again.'); return; }
-                        onOrderPlacedRef.current({ reference: order.order.reference, trackingToken: order.order.tracking_access_token });
-                    } catch { setError('Something went wrong. Please try again.'); }
-                },
-            }).render(paypalButtonMountRef.current);
-        };
-        const script = document.getElementById('paypal-express-sdk') as HTMLScriptElement | null;
-        if (window.paypal) renderButtons();
-        else if (!script) {
-            const sdk = document.createElement('script');
-            sdk.id = 'paypal-express-sdk';
-            sdk.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(paypalClientId)}&currency=USD&components=buttons`;
-            sdk.addEventListener('load', renderButtons, { once: true });
-            document.head.appendChild(sdk);
-        } else script.addEventListener('load', renderButtons, { once: true });
-        return () => { cancelled = true; };
-        // items/couponCode/subtotalMinor/onOrderPlaced are read via refs above
-        // on purpose -- see the comment where those refs are declared.
-    }, [paypalClientId]);
-
-    const anyAvailable = canExpressPay || canPayPal;
-    if (!anyAvailable) return null;
+    // stripeInstance null means nothing will ever be mounted (the effect
+    // above never gets a real elements group to work with), so there is
+    // truly nothing to show -- unlike canExpressPay being merely not-yet-
+    // resolved, where the mount <div> below still needs to exist in the DOM
+    // for the Express Checkout Element to mount into and determine
+    // availability in the first place.
+    if (!stripeInstance) return null;
 
     return (
-        <div className="mb-8 space-y-4">
+        <div className="mb-8 space-y-4" style={{ visibility: canExpressPay ? 'visible' : 'hidden' }}>
             <p className="text-center text-[13px] font-medium uppercase tracking-wide text-[#707070]">Express checkout</p>
             {error && <p role="alert" className="text-center text-[13px] text-red-600">{error}</p>}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <div ref={stripeButtonMountRef} style={{ visibility: canExpressPay ? 'visible' : 'hidden' }} />
-                {canPayPal && <div ref={paypalButtonMountRef} />}
-            </div>
+            <div ref={stripeButtonMountRef} />
             <div className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-[#e8e8ea]" />
                 <span className="text-[12px] font-medium uppercase text-[#a0a0a0]">Or</span>
