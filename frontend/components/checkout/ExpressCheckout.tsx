@@ -217,7 +217,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         const renderButtons = () => {
             if (cancelled || !window.paypal || !paypalButtonMountRef.current) return;
             window.paypal.Buttons({
-                style: { layout: 'horizontal', label: 'paypal', height: 44 },
+                style: { layout: 'horizontal', label: 'paypal', height: 44, tagline: false },
                 createOrder: async () => {
                     const response = await fetchApi('/api/checkout/paypal-order', {
                         method: 'POST', body: { payment_method: 'paypal', items: itemsRef.current, coupon_code: couponCodeRef.current, currency: 'usd' },
