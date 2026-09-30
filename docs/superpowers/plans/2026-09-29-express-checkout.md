@@ -743,19 +743,17 @@ const redirectToSuccess = (orderAccess: { reference: string; trackingToken: stri
 
 At implementation time, verify the exact success-page URL param contract by reading `finishSuccessSideEffectsAndRedirect`'s own `router.push(...)` call and match it exactly (including whatever it does with `email`) — the snippet above is illustrative of the reduced scope (no localStorage write, no newsletter call), not a literal final diff.
 
-- [ ] **Step 3: Add the "Enter shipping address" placeholder to the order summary's shipping line**
+**Note — "Enter shipping address" placeholder decision (2026-09-30):** deliberately dropped from scope. Real Shopify behavior (confirmed via Shopify Help Center: "Accelerated checkouts and accelerated checkout buttons") is that the Express Checkout row's wallet sheets (Apple Pay sheet, Google Pay sheet, PayPal popup) show their own live shipping/tax/total recalculation independently — the page's persistent `OrderSummary.tsx` panel is never synced to the wallet's math in Shopify either. Tasks 2–3 already implement the correct behavior (`ev.updateWith()` / `actions.order.patch()` inside each wallet's own sheet). `OrderSummary.tsx` is intentionally left untouched — do not add a "no address yet" branch there.
 
-Locate the order summary's shipping line (search this file for where the subtotal/shipping/total breakdown renders). Where the shipping cost is currently shown, add a branch: if `form.shippingMethod` is not yet set and no address has been entered, render `Enter shipping address` in place of a dollar amount (matches the reference screenshot; read-only display change — does not alter how shipping is calculated for the regular form flow).
-
-- [ ] **Step 4: Manual smoke test**
+- [ ] **Step 3: Manual smoke test**
 
 Run: check `frontend/package.json` for the dev script name, then run it (e.g. `npm run dev`).
 Visit `/checkout` with at least one item in the cart. Confirm:
 - No console errors.
 - If Stripe test/live keys and PayPal client id are configured, at least one express button renders (Google Pay testable in Chrome; Apple Pay untestable on this Windows dev machine per spec §5).
-- The page layout is otherwise unchanged (form still works end to end).
+- The page layout is otherwise unchanged (form still works end to end), including the existing `OrderSummary.tsx` shipping/tax display behavior.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add frontend/components/CheckoutPage.tsx
