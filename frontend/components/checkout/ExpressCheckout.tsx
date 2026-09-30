@@ -62,11 +62,36 @@ export interface ExpressCheckoutProps {
 export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, onOrderPlaced }: ExpressCheckoutProps) {
     const [canApplePay, setCanApplePay] = useState(false);
     const [canGooglePay, setCanGooglePay] = useState(false);
-    const [canPayPal, setCanPayPal] = useState(false);
+    // Unlike Apple Pay/Google Pay (which need an async canMakePayment()
+    // check), PayPal's availability is knowable synchronously from the
+    // first render -- it only needs a client id. Keeping it as async state
+    // instead of a derived value previously caused a mount-order race: the
+    // effect's first pass ran before the <div ref={paypalButtonMountRef}>
+    // existed in the DOM (because that div was itself gated on this same
+    // state), so window.paypal.Buttons(...).render() had no element to
+    // attach to on that pass.
+    const canPayPal = Boolean(paypalClientId);
     const [error, setError] = useState<string | null>(null);
     const stripeButtonMountRef = useRef<HTMLDivElement>(null);
     const paypalButtonMountRef = useRef<HTMLDivElement>(null);
     const latestShippingAddressRef = useRef<Record<string, unknown> | null>(null);
+
+    // Read via .current inside effect callbacks instead of closing over the
+    // props directly, so the mount effects below only need to depend on
+    // stripeInstance/paypalClientId (which settle once) rather than on
+    // items/couponCode/subtotalMinor/onOrderPlaced, which change identity on
+    // every CheckoutPage re-render and would otherwise re-run the effect and
+    // stack a duplicate wallet button on top of the previous one each time.
+    const itemsRef = useRef(items);
+    const couponCodeRef = useRef(couponCode);
+    const subtotalMinorRef = useRef(subtotalMinor);
+    const onOrderPlacedRef = useRef(onOrderPlaced);
+    useEffect(() => {
+        itemsRef.current = items;
+        couponCodeRef.current = couponCode;
+        subtotalMinorRef.current = subtotalMinor;
+        onOrderPlacedRef.current = onOrderPlaced;
+    }, [items, couponCode, subtotalMinor, onOrderPlaced]);
 
     useEffect(() => {
         if (!stripeInstance || typeof (stripeInstance as unknown as Partial<StripeWalletInstance>).paymentRequest !== 'function') return;
@@ -75,7 +100,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         const paymentRequest = stripe.paymentRequest({
             country: 'US',
             currency: 'usd',
-            total: { label: 'PetPosture', amount: subtotalMinor },
+            total: { label: 'PetPosture', amount: subtotalMinorRef.current },
             requestPayerName: true,
             requestPayerEmail: true,
             requestShipping: true,
@@ -95,14 +120,14 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                     city: event.shippingAddress.city,
                     postcode: event.shippingAddress.postalCode,
                 };
-                const ratesResponse = await fetchApi(`/api/checkout/shipping-rates?subtotal_minor=${subtotalMinor}${couponCode ? `&coupon_code=${encodeURIComponent(couponCode)}` : ''}`);
+                const ratesResponse = await fetchApi(`/api/checkout/shipping-rates?subtotal_minor=${subtotalMinorRef.current}${couponCodeRef.current ? `&coupon_code=${encodeURIComponent(couponCodeRef.current)}` : ''}`);
                 const rates = await ratesResponse.json();
                 const rate = rates.rates?.[0];
                 if (!rate) return event.updateWith({ status: 'invalid_shipping_address' });
 
                 const taxResponse = await fetchApi('/api/checkout/tax-quote', {
                     method: 'POST',
-                    body: { shipping: address, subtotal_amount: subtotalMinor / 100 },
+                    body: { shipping: address, subtotal_amount: subtotalMinorRef.current / 100 },
                 });
                 const tax = await taxResponse.json();
                 const shippingMinor = rate.price_minor;
@@ -110,7 +135,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                 event.updateWith({
                     status: 'success',
                     shippingOptions: [{ id: rate.code, label: rate.name, detail: '', amount: shippingMinor }],
-                    total: { label: 'PetPosture', amount: subtotalMinor + shippingMinor + taxMinor },
+                    total: { label: 'PetPosture', amount: subtotalMinorRef.current + shippingMinor + taxMinor },
                 });
             } catch {
                 event.updateWith({ status: 'fail' });
@@ -134,7 +159,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                 const intentResponse = await fetchApi('/api/checkout/payment-intent', {
                     method: 'POST',
                     body: {
-                        payment_method: 'card', items, coupon_code: couponCode,
+                        payment_method: 'card', items: itemsRef.current, coupon_code: couponCodeRef.current,
                         shipping_method: event.shippingOption?.id ?? null,
                         shipping: { state: shipping.state, country: shipping.country, city: shipping.city, postcode: shipping.postcode },
                         currency: 'usd', email: shipping.email,
@@ -160,9 +185,9 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                 const orderResponse = await fetchApi('/api/checkout/place-order', {
                     method: 'POST', headers: { 'Idempotency-Key': intent.payment_intent.intent_id },
                     body: {
-                        items, shipping, billing_same_as_shipping: true,
+                        items: itemsRef.current, shipping, billing_same_as_shipping: true,
                         shipping_method: event.shippingOption?.id ?? null, payment_method: 'card',
-                        payment_context: { intent_id: intent.payment_intent.intent_id }, coupon_code: couponCode,
+                        payment_context: { intent_id: intent.payment_intent.intent_id }, coupon_code: couponCodeRef.current,
                     },
                 });
                 const order = await orderResponse.json();
@@ -170,7 +195,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                     setError(order?.message || 'Order could not be created. Please try again.');
                     return;
                 }
-                onOrderPlaced({ reference: order.order.reference, trackingToken: order.order.tracking_access_token });
+                onOrderPlacedRef.current({ reference: order.order.reference, trackingToken: order.order.tracking_access_token });
             } catch {
                 event.complete('fail');
                 setError('Something went wrong. Please try again.');
@@ -178,10 +203,13 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         });
 
         if (stripeButtonMountRef.current) {
+            stripeButtonMountRef.current.innerHTML = '';
             stripe.elements().create('paymentRequestButton', { paymentRequest }).mount(stripeButtonMountRef.current);
         }
         return () => { cancelled = true; };
-    }, [stripeInstance, items, couponCode, subtotalMinor, onOrderPlaced]);
+        // items/couponCode/subtotalMinor/onOrderPlaced are read via refs above
+        // on purpose -- see the comment where those refs are declared.
+    }, [stripeInstance]);
 
     useEffect(() => {
         if (!paypalClientId) return;
@@ -192,7 +220,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                 style: { layout: 'horizontal', label: 'paypal', height: 44 },
                 createOrder: async () => {
                     const response = await fetchApi('/api/checkout/paypal-order', {
-                        method: 'POST', body: { payment_method: 'paypal', items, coupon_code: couponCode, currency: 'usd' },
+                        method: 'POST', body: { payment_method: 'paypal', items: itemsRef.current, coupon_code: couponCodeRef.current, currency: 'usd' },
                     });
                     const data = await response.json();
                     if (!response.ok || !data?.paypal_order?.paypal_order_id) throw new Error(data?.message || 'Unable to start PayPal checkout.');
@@ -202,10 +230,10 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                     try {
                         const walletAddress = data.orderInfo?.shipping_address;
                         const address = { country: walletAddress?.country_code ?? 'US', state: walletAddress?.state ?? '', city: walletAddress?.city ?? '', postcode: walletAddress?.postal_code ?? '' };
-                        const ratesResponse = await fetchApi(`/api/checkout/shipping-rates?subtotal_minor=${subtotalMinor}${couponCode ? `&coupon_code=${encodeURIComponent(couponCode)}` : ''}`);
+                        const ratesResponse = await fetchApi(`/api/checkout/shipping-rates?subtotal_minor=${subtotalMinorRef.current}${couponCodeRef.current ? `&coupon_code=${encodeURIComponent(couponCodeRef.current)}` : ''}`);
                         const rate = (await ratesResponse.json()).rates?.[0];
                         if (!rate) return actions.reject();
-                        const taxResponse = await fetchApi('/api/checkout/tax-quote', { method: 'POST', body: { shipping: address, subtotal_amount: subtotalMinor / 100 } });
+                        const taxResponse = await fetchApi('/api/checkout/tax-quote', { method: 'POST', body: { shipping: address, subtotal_amount: subtotalMinorRef.current / 100 } });
                         const taxMinor = (await taxResponse.json()).quote?.tax_amount ?? 0;
                         latestShippingAddressRef.current = {
                             email: data.payer?.email_address ?? '', first_name: data.payer?.name?.given_name ?? '', last_name: data.payer?.name?.surname ?? '',
@@ -214,21 +242,21 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                             phone: data.payer?.phone?.phone_number?.national_number ?? null,
                         };
                         return actions.order.patch([{ op: 'replace', path: "/purchase_units/@reference_id=='default'/amount", value: {
-                            currency_code: 'USD', value: ((subtotalMinor + rate.price_minor + taxMinor) / 100).toFixed(2),
-                            breakdown: { item_total: { currency_code: 'USD', value: (subtotalMinor / 100).toFixed(2) }, shipping: { currency_code: 'USD', value: (rate.price_minor / 100).toFixed(2) }, tax_total: { currency_code: 'USD', value: (taxMinor / 100).toFixed(2) } },
+                            currency_code: 'USD', value: ((subtotalMinorRef.current + rate.price_minor + taxMinor) / 100).toFixed(2),
+                            breakdown: { item_total: { currency_code: 'USD', value: (subtotalMinorRef.current / 100).toFixed(2) }, shipping: { currency_code: 'USD', value: (rate.price_minor / 100).toFixed(2) }, tax_total: { currency_code: 'USD', value: (taxMinor / 100).toFixed(2) } },
                         } }]);
                     } catch { actions.reject(); }
                 },
                 onApprove: async (data: PayPalApproval) => {
                     try {
                         if (!latestShippingAddressRef.current) { setError('Missing shipping address. Please try again.'); return; }
-                        const orderResponse = await fetchApi('/api/checkout/place-order', { method: 'POST', headers: { 'Idempotency-Key': data.orderID }, body: { items, shipping: latestShippingAddressRef.current, billing_same_as_shipping: true, payment_method: 'paypal', payment_context: { paypal_order_id: data.orderID }, coupon_code: couponCode } });
+                        const orderResponse = await fetchApi('/api/checkout/place-order', { method: 'POST', headers: { 'Idempotency-Key': data.orderID }, body: { items: itemsRef.current, shipping: latestShippingAddressRef.current, billing_same_as_shipping: true, payment_method: 'paypal', payment_context: { paypal_order_id: data.orderID }, coupon_code: couponCodeRef.current } });
                         const order = await orderResponse.json();
                         if (orderResponse.status !== 201 || !order?.order?.reference || !order?.order?.tracking_access_token) { setError(order?.message || 'Order could not be created. Please try again.'); return; }
                         const captureResponse = await fetchApi('/api/checkout/paypal-capture', { method: 'POST', body: { paypal_order_id: data.orderID } });
                         const capture = await captureResponse.json();
                         if (!captureResponse.ok || capture?.capture?.status !== 'COMPLETED') { setError('Payment could not be captured. Please try again.'); return; }
-                        onOrderPlaced({ reference: order.order.reference, trackingToken: order.order.tracking_access_token });
+                        onOrderPlacedRef.current({ reference: order.order.reference, trackingToken: order.order.tracking_access_token });
                     } catch { setError('Something went wrong. Please try again.'); }
                 },
             }).render(paypalButtonMountRef.current);
@@ -242,11 +270,10 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             sdk.addEventListener('load', renderButtons, { once: true });
             document.head.appendChild(sdk);
         } else script.addEventListener('load', renderButtons, { once: true });
-        queueMicrotask(() => {
-            if (!cancelled) setCanPayPal(true);
-        });
         return () => { cancelled = true; };
-    }, [paypalClientId, items, couponCode, subtotalMinor, onOrderPlaced, canPayPal]);
+        // items/couponCode/subtotalMinor/onOrderPlaced are read via refs above
+        // on purpose -- see the comment where those refs are declared.
+    }, [paypalClientId]);
 
     const anyAvailable = canApplePay || canGooglePay || canPayPal;
     if (!anyAvailable) return null;
