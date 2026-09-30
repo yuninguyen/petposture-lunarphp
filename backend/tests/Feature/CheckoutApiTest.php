@@ -2247,6 +2247,74 @@ class CheckoutApiTest extends TestCase
         );
     }
 
+    public function test_express_style_paypal_order_can_be_created_without_upfront_address_then_captured(): void
+    {
+        $variant = $this->createPurchasableVariant();
+
+        $prepare = $this->postJson('/api/checkout/paypal-order', [
+            'payment_method' => 'paypal',
+            'items' => [['variantId' => $variant->id, 'quantity' => 1]],
+            'currency' => 'usd',
+        ]);
+        $prepare->assertOk();
+        $paypalOrderId = $prepare->json('paypal_order.paypal_order_id');
+        $this->assertNotEmpty($paypalOrderId);
+
+        $place = $this->postJson('/api/checkout/place-order', [
+            'items' => [['variantId' => $variant->id, 'quantity' => 1]],
+            'shipping' => [
+                'email' => 'express@petposture.com', 'first_name' => 'Express', 'last_name' => 'Buyer',
+                'line_one' => '1 Wallet Way', 'city' => 'Austin', 'state' => 'TX', 'postcode' => '78701', 'country' => 'US',
+            ],
+            'billing_same_as_shipping' => true,
+            'payment_method' => 'paypal',
+            'payment_context' => ['paypal_order_id' => $paypalOrderId],
+        ]);
+        $place->assertCreated();
+        $order = Order::query()->findOrFail($place->json('order.id'));
+        $this->assertSame($paypalOrderId, $order->meta['paypal_order_id']);
+
+        $capture = $this->postJson('/api/checkout/paypal-capture', ['paypal_order_id' => $paypalOrderId]);
+        $capture->assertOk();
+        $this->assertSame('paid', $order->fresh()->meta['payment_status']);
+    }
+
+    public function test_express_style_card_order_reuses_the_existing_payment_intent_and_place_order_endpoints(): void
+    {
+        $variant = $this->createPurchasableVariant();
+
+        config()->set('services.stripe.secret', 'sk_test_express_flow');
+        Cache::forget('stripe_secret');
+        Http::fake([
+            'https://api.stripe.com/v1/payment_intents' => Http::response([
+                'id' => 'pi_express_1', 'client_secret' => 'pi_express_1_secret', 'amount' => 8999,
+                'currency' => 'usd', 'status' => 'requires_payment_method',
+            ]),
+        ]);
+
+        $intent = $this->postJson('/api/checkout/payment-intent', [
+            'payment_method' => 'card',
+            'items' => [['variantId' => $variant->id, 'quantity' => 1]],
+            'shipping' => ['state' => 'TX', 'country' => 'US', 'city' => 'Austin', 'postcode' => '78701'],
+            'currency' => 'usd', 'email' => 'express@petposture.com',
+        ]);
+        $intent->assertOk();
+        $intentId = $intent->json('payment_intent.intent_id');
+        $this->assertSame('pi_express_1', $intentId);
+
+        $place = $this->postJson('/api/checkout/place-order', [
+            'items' => [['variantId' => $variant->id, 'quantity' => 1]],
+            'shipping' => [
+                'email' => 'express@petposture.com', 'first_name' => 'Express', 'last_name' => 'Buyer',
+                'line_one' => '1 Wallet Way', 'city' => 'Austin', 'state' => 'TX', 'postcode' => '78701', 'country' => 'US',
+            ],
+            'billing_same_as_shipping' => true,
+            'payment_method' => 'card',
+            'payment_context' => ['intent_id' => $intentId],
+        ]);
+        $place->assertCreated();
+    }
+
     private function checkoutPayload(ProductVariant $variant, array $overrides = []): array
     {
         return array_replace_recursive([

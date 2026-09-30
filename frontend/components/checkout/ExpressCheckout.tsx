@@ -158,11 +158,11 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                 }
                 event.complete('success');
                 const orderResponse = await fetchApi('/api/checkout/place-order', {
-                    method: 'POST', headers: { 'Idempotency-Key': intent.payment_intent.id },
+                    method: 'POST', headers: { 'Idempotency-Key': intent.payment_intent.intent_id },
                     body: {
                         items, shipping, billing_same_as_shipping: true,
                         shipping_method: event.shippingOption?.id ?? null, payment_method: 'card',
-                        payment_context: { intent_id: intent.payment_intent.id }, coupon_code: couponCode,
+                        payment_context: { intent_id: intent.payment_intent.intent_id }, coupon_code: couponCode,
                     },
                 });
                 const order = await orderResponse.json();
