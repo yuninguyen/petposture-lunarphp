@@ -1025,7 +1025,7 @@ export default function CheckoutPage() {
         const isFirst = index === 0;
         const isLast = index === availablePaymentMethods.length - 1;
 
-        return `flex cursor-pointer items-center justify-between px-4 py-[15px] text-[14px] transition ${isSelected ? 'bg-[#f8fafc]' : 'bg-white hover:bg-[#fbfbfc]'} ${isFirst ? 'rounded-tl-[8px] rounded-tr-[8px]' : ''} ${isLast && !expandsDetailsBelow ? 'rounded-bl-[8px] rounded-br-[8px]' : ''} ${index < availablePaymentMethods.length - 1 || expandsDetailsBelow ? 'border-b border-[#d9d9d9]' : ''}`;
+        return `block cursor-pointer px-4 py-3 text-[14px] transition ${isSelected ? 'bg-[#f8fafc]' : 'bg-white hover:bg-[#fbfbfc]'} ${isFirst ? 'rounded-tl-[8px] rounded-tr-[8px]' : ''} ${isLast && !expandsDetailsBelow ? 'rounded-bl-[8px] rounded-br-[8px]' : ''} ${index < availablePaymentMethods.length - 1 || expandsDetailsBelow ? 'border-b border-[#d9d9d9]' : ''}`;
     };
 
     const prepareCardPaymentIntent = async () => {
@@ -1630,41 +1630,39 @@ export default function CheckoutPage() {
                                     <p>All transactions are secure and encrypted.</p>
                                 </div>
                             </div>
-                            <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#1a1a1a,0_8px_24px_rgba(17,24,39,0.03)]">
+                            <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
                                 {availablePaymentMethods.map((method, index) => (
                                     <React.Fragment key={method.method}>
                                         <label
                                             className={paymentRowClasses(method.method, index)}
                                         >
-                                            <div className="flex min-h-[40px] items-start gap-4">
-                                                <input
-                                                    type="radio"
-                                                    name="paymentMethod"
-                                                    checked={form.paymentMethod === method.method}
-                                                    onChange={() => {
-                                                        activateStep('payment');
-                                                        updateField('paymentMethod', method.method);
-                                                    }}
-                                                    className="mt-0.5 h-4 w-4 border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
-                                                />
-                                                <div className="pr-3">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <span className="text-[16px] font-semibold text-[#2d3742]">{method.label}</span>
-                                                    </div>
-                                                    {method.description ? (
-                                                        <p className="mt-1 pr-2 text-sm leading-[1.45] text-[#6f7782]">{method.description}</p>
-                                                    ) : null}
-                                                    {method.mode === 'placeholder' && method.method === 'paypal' ? (
-                                                        <p className="mt-1 text-sm font-medium text-[#8a5a34]">PayPal is not configured yet — placeholder mode.</p>
-                                                    ) : null}
-                                                    {method.mode === 'manual' && method.method === 'cod' ? (
-                                                        <p className="mt-1 text-sm font-medium text-[#8a5a34]">Offline/manual method for testing only.</p>
-                                                    ) : null}
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-4">
+                                                    <input
+                                                        type="radio"
+                                                        name="paymentMethod"
+                                                        checked={form.paymentMethod === method.method}
+                                                        onChange={() => {
+                                                            activateStep('payment');
+                                                            updateField('paymentMethod', method.method);
+                                                        }}
+                                                        className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
+                                                    />
+                                                    <span className="text-[16px] font-semibold text-[#2d3742]">{method.label}</span>
+                                                </div>
+                                                <div className="flex flex-shrink-0 items-center">
+                                                    {renderPaymentBadges(method)}
                                                 </div>
                                             </div>
-                                            <div className="ml-3 flex flex-shrink-0 items-center">
-                                                {renderPaymentBadges(method)}
-                                            </div>
+                                            {method.description ? (
+                                                <p className="mt-1 pl-8 pr-2 text-sm leading-[1.45] text-[#6f7782]">{method.description}</p>
+                                            ) : null}
+                                            {method.mode === 'placeholder' && method.method === 'paypal' ? (
+                                                <p className="mt-1 pl-8 text-sm font-medium text-[#8a5a34]">PayPal is not configured yet — placeholder mode.</p>
+                                            ) : null}
+                                            {method.mode === 'manual' && method.method === 'cod' ? (
+                                                <p className="mt-1 pl-8 text-sm font-medium text-[#8a5a34]">Offline/manual method for testing only.</p>
+                                            ) : null}
                                         </label>
 
                                         {method.method === 'card' && form.paymentMethod === 'card' && (
@@ -1734,24 +1732,24 @@ export default function CheckoutPage() {
 
                         <section className="pt-6">
                             <h2 className="mb-3 text-[18px] font-semibold text-[#333333]">Billing address</h2>
-                            <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#1a1a1a,0_8px_24px_rgba(17,24,39,0.03)]">
-                                <label className={`flex cursor-pointer items-center gap-3 rounded-t-[8px] border-b border-[#d9d9d9] px-4 py-[15px] text-[14px] transition ${form.billingAddress === 'same' ? 'bg-[#f8fafc]' : 'bg-white hover:bg-[#fbfbfc]'}`}>
+                            <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
+                                <label className={`flex cursor-pointer items-center gap-3 rounded-t-[8px] border-b border-[#d9d9d9] px-4 py-3 text-[14px] transition ${form.billingAddress === 'same' ? 'bg-[#f8fafc]' : 'bg-white hover:bg-[#fbfbfc]'}`}>
                                     <input
                                         type="radio"
                                         name="billingAddressChoice"
                                         checked={form.billingAddress === 'same'}
                                         onChange={() => updateField('billingAddress', 'same')}
-                                        className="h-4 w-4 border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
+                                        className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
                                     />
                                     <span className="text-[16px] font-semibold text-[#2d3742]">Same as shipping address</span>
                                 </label>
-                                <label className={`flex cursor-pointer items-center gap-3 px-4 py-[15px] text-[14px] transition ${form.billingAddress === 'different' ? 'bg-[#f8fafc]' : 'rounded-b-[8px] bg-white hover:bg-[#fbfbfc]'}`}>
+                                <label className={`flex cursor-pointer items-center gap-3 px-4 py-3 text-[14px] transition ${form.billingAddress === 'different' ? 'bg-[#f8fafc]' : 'rounded-b-[8px] bg-white hover:bg-[#fbfbfc]'}`}>
                                     <input
                                         type="radio"
                                         name="billingAddressChoice"
                                         checked={form.billingAddress === 'different'}
                                         onChange={() => updateField('billingAddress', 'different')}
-                                        className="h-4 w-4 border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
+                                        className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
                                     />
                                     <span className="text-[16px] font-semibold text-[#2d3742]">Use a different billing address</span>
                                 </label>
