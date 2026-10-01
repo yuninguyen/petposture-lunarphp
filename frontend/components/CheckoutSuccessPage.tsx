@@ -216,6 +216,7 @@ function OrderSuccessContent() {
     const queryEmail = searchParams.get("email") ?? "";
     const gateway = searchParams.get("gateway") ?? "";
     const sessionId = searchParams.get("session_id") ?? "";
+    const redirectStatus = searchParams.get("redirect_status") ?? "";
     const [trackingToken, setTrackingToken] = useState(initialToken);
     const [email, setEmail] = useState(queryEmail);
     const [order, setOrder] = useState<TrackingOrder | null>(null);
@@ -231,6 +232,7 @@ function OrderSuccessContent() {
                 const apiBase = getApiBaseUrl();
                 let accessEmail = queryEmail;
                 let response: Response;
+                let lookupUrl: string | null = null;
 
                 if (sessionId && !accessEmail) {
                     try {
@@ -275,7 +277,7 @@ function OrderSuccessContent() {
                 }
 
                 if (gateway && sessionId) {
-                    const lookupUrl = `${apiBase}/api/orders/by-payment-session?gateway=${encodeURIComponent(gateway)}&session_id=${encodeURIComponent(sessionId)}`;
+                    lookupUrl = `${apiBase}/api/orders/by-payment-session?gateway=${encodeURIComponent(gateway)}&session_id=${encodeURIComponent(sessionId)}`;
                     try {
                         response = await fetch(lookupUrl);
                     } catch {
@@ -296,10 +298,28 @@ function OrderSuccessContent() {
                     });
                 }
 
-                const payload = await response.json();
+                let payload = await response.json();
 
                 if (!response.ok || !payload?.data) {
                     throw new Error(payload?.message || "Unable to access this order.");
+                }
+
+                if (gateway === "stripe" && redirectStatus === "succeeded" && lookupUrl && payload.data.status === "awaiting-payment") {
+                    for (let attempt = 0; attempt < 5; attempt += 1) {
+                        await new Promise((resolve) => setTimeout(resolve, 2000));
+                        try {
+                            const refreshedResponse = await fetch(lookupUrl);
+                            const refreshedPayload = await refreshedResponse.json();
+                            if (refreshedResponse.ok && refreshedPayload?.data) {
+                                payload = refreshedPayload;
+                                if (payload.data.status !== "awaiting-payment") {
+                                    break;
+                                }
+                            }
+                        } catch {
+                            // Keep the last valid order state and try the next refresh.
+                        }
+                    }
                 }
 
                 const trackedOrder = payload.data as TrackingOrder;
@@ -324,7 +344,7 @@ function OrderSuccessContent() {
         };
 
         void loadOrder();
-    }, [gateway, initialToken, queryEmail, sessionId]);
+    }, [gateway, initialToken, queryEmail, redirectStatus, sessionId]);
 
     if (loading) {
         return (
@@ -356,6 +376,7 @@ function OrderSuccessContent() {
         : "—";
 
     const deliveredDone = timeline.find((step) => step.key === "delivered")?.done ?? false;
+    const stripePaymentPending = gateway === "stripe" && order.status === "awaiting-payment";
 
     return (
         <main className="min-h-screen bg-[#fcfcfd] font-hanken text-[#333333]">
@@ -398,8 +419,17 @@ function OrderSuccessContent() {
                         <p className="flex items-start gap-2.5 text-[14px] leading-[1.65] text-[#7a4020]">
                             <Mail size={15} className="mt-0.5 flex-shrink-0 text-[#df8448]" />
                             <span>
-                                <span className="font-semibold">Your order is confirmed</span><br />
-                                You&apos;ll receive a confirmation email soon
+                                {stripePaymentPending ? (
+                                    <>
+                                        <span className="font-semibold">Your payment is processing</span><br />
+                                        We&apos;ll update your order once Stripe confirms the payment.
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="font-semibold">Your order is confirmed</span><br />
+                                        You&apos;ll receive a confirmation email soon
+                                    </>
+                                )}
                             </span>
                         </p>
                     </div>

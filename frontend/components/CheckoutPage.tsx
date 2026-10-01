@@ -26,7 +26,13 @@ import { getShippingAmount } from '@/lib/pricing';
 import { getAttributionData } from '@/lib/attribution';
 import { Button } from '@/components/ui/Button';
 import { ExpressCheckout } from './checkout/ExpressCheckout';
-import { isStripeAltPaymentMethodEligible } from './checkout/stripeAltPaymentMethods';
+import {
+    buildAffirmPaymentData,
+    buildCashAppPaymentData,
+    buildKlarnaPaymentData,
+    confirmStripeAltPayment,
+    isStripeAltPaymentMethodEligible,
+} from './checkout/stripeAltPaymentMethods';
 
 declare global {
     interface Window {
@@ -816,6 +822,18 @@ export default function CheckoutPage() {
         })
         .sort((left, right) => paymentMethodOrder[left.method as keyof typeof paymentMethodOrder] - paymentMethodOrder[right.method as keyof typeof paymentMethodOrder]);
 
+    useEffect(() => {
+        const selectedMethod = form.paymentMethod;
+        const isStripeAltMethod = selectedMethod === 'cashapp' || selectedMethod === 'affirm' || selectedMethod === 'klarna';
+
+        if (isStripeAltMethod && !availablePaymentMethods.some((method) => method.method === selectedMethod)) {
+            const fallbackMethod = availablePaymentMethods[0]?.method ?? 'cod';
+            setForm((previous) => previous.paymentMethod === selectedMethod
+                ? { ...previous, paymentMethod: fallbackMethod }
+                : previous);
+        }
+    }, [availablePaymentMethods, form.paymentMethod]);
+
     const formatPhoneNumber = (value: string) => {
         const cleaned = value.replace(/\D/g, '');
         if (cleaned.length === 0) return '';
@@ -1393,6 +1411,37 @@ export default function CheckoutPage() {
         return data.session;
     };
 
+    const prepareStripeAltSession = async (method: 'cashapp' | 'affirm' | 'klarna'): Promise<{
+        client_secret: string;
+        intent_id: string;
+        session_id: string;
+        return_url: string;
+        mode: string;
+        publishable_key?: string | null;
+    }> => {
+        const { shippingAddress, billingAddress } = buildOrderAddresses();
+        const response = await fetchApi('/api/checkout/stripe-alt-session', {
+            method: 'POST',
+            body: {
+                payment_method: method,
+                items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+                coupon_code: coupon.discountAmount > 0 ? coupon.code : null,
+                shipping_method: form.shippingMethod,
+                email: form.email,
+                shipping: { email: form.email, ...shippingAddress },
+                billing_same_as_shipping: form.billingAddress === 'same',
+                billing: billingAddress,
+            },
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data?.success || !data?.session?.session_id) {
+            throw new Error(data?.message || 'Unable to prepare payment. Please try again.');
+        }
+
+        return data.session;
+    };
+
     const finishSuccessSideEffectsAndRedirect = (orderAccess: { reference: string; trackingToken: string }) => {
         if (form.saveInfo && form.email) {
             fetchApi('/api/newsletter/subscribe', {
@@ -1445,6 +1494,64 @@ export default function CheckoutPage() {
         setPaypalError(null);
 
         try {
+            if (form.paymentMethod === 'cashapp' || form.paymentMethod === 'affirm' || form.paymentMethod === 'klarna') {
+                const method = form.paymentMethod;
+                const session = await prepareStripeAltSession(method);
+                let stripe = stripeInstanceRef.current;
+
+                if (session.mode === 'configured' && !stripe) {
+                    if (!window.Stripe || !session.publishable_key) {
+                        throw new Error('Stripe is still loading. Please try again in a moment.');
+                    }
+                    stripe = window.Stripe(session.publishable_key);
+                    stripeInstanceRef.current = stripe;
+                }
+
+                const orderAccess = await placeOrder({
+                    intent_id: session.intent_id,
+                    session_id: session.session_id,
+                });
+                sessionStorage.setItem(`petposture_payment_access:${session.session_id}`, JSON.stringify({
+                    email: form.email,
+                    trackingToken: orderAccess.trackingToken,
+                }));
+
+                localStorage.removeItem('petposture_cart');
+                localStorage.removeItem('petposture_cart_coupon');
+                clearCoupon();
+
+                if (session.mode === 'placeholder') {
+                    window.location.href = session.return_url;
+                    return;
+                }
+
+                if (!stripe) {
+                    throw new Error('Stripe is not ready to confirm this payment.');
+                }
+
+                const { shippingAddress, billingAddress } = buildOrderAddresses();
+                const confirmationData = method === 'affirm'
+                    ? buildAffirmPaymentData({
+                        email: form.email,
+                        billing: billingAddress,
+                        shipping: shippingAddress,
+                        returnUrl: session.return_url,
+                    })
+                    : method === 'klarna'
+                        ? buildKlarnaPaymentData(session.return_url)
+                        : buildCashAppPaymentData(session.return_url);
+                const confirmation = await confirmStripeAltPayment(stripe, method, session.client_secret, confirmationData);
+
+                if (confirmation.error?.message) {
+                    throw new Error(confirmation.error.message);
+                }
+
+                if (method === 'cashapp') {
+                    window.location.href = session.return_url;
+                }
+                return;
+            }
+
             const useRedirectFlow = redirectPaymentMethods.has(form.paymentMethod)
                 && (form.paymentMethod !== 'paypal' || paypalLiveMode);
 
