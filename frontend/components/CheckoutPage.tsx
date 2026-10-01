@@ -349,7 +349,7 @@ export default function CheckoutPage() {
     });
     const selectedCardMethod = paymentMethods.find((method) => method.method === 'card') ?? {
         method: 'card' as const,
-        label: 'Credit card',
+        label: 'Credit or Debit Card',
         gateway: 'stripe',
         collection: 'direct',
         enabled: true,
@@ -781,7 +781,7 @@ export default function CheckoutPage() {
         : [
             {
                 method: 'card',
-                label: 'Credit card',
+                label: 'Credit or Debit Card',
                 gateway: 'stripe',
                 collection: 'direct',
                 enabled: true,
@@ -1820,7 +1820,7 @@ export default function CheckoutPage() {
                                         id="saveInfo"
                                         checked={form.saveInfo}
                                         onChange={(e) => updateField('saveInfo', e.target.checked)}
-                                        className="h-4 w-4 rounded border-[#bfc6ce] accent-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
+                                        className="h-4 w-4 rounded border-[#bfc6ce] accent-[#1a1a1a] text-[#1a1a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] focus-visible:ring-offset-2"
                                     />
                                     <label htmlFor="saveInfo" className="text-sm text-[#333333]">Email me with news and offers</label>
                                 </div>
@@ -1938,7 +1938,7 @@ export default function CheckoutPage() {
                                                             activateStep('payment');
                                                             updateField('paymentMethod', method.method);
                                                         }}
-                                                        className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
+                                                        className="h-4 w-4 rounded-full accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] focus-visible:ring-offset-2"
                                                     />
                                                     <span className="text-[14px] font-semibold text-[#2d3742]">{method.label}</span>
                                                 </div>
@@ -1985,7 +1985,7 @@ export default function CheckoutPage() {
                                                                     type="checkbox"
                                                                     checked={form.billingAddress === 'same'}
                                                                     onChange={(e) => updateField('billingAddress', e.target.checked ? 'same' : 'different')}
-                                                                    className="mt-0.5 h-4 w-4 rounded border-[#bfc6ce] accent-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
+                                                                    className="mt-0.5 h-4 w-4 rounded border-[#bfc6ce] accent-[#1a1a1a] text-[#1a1a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] focus-visible:ring-offset-2"
                                                                 />
                                                                 <span>Use shipping address as billing address</span>
                                                             </label>
@@ -2064,7 +2064,7 @@ export default function CheckoutPage() {
                                             name="billingAddressChoice"
                                             checked={form.billingAddress === 'same'}
                                             onChange={() => updateField('billingAddress', 'same')}
-                                            className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
+                                            className="h-4 w-4 rounded-full accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] focus-visible:ring-offset-2"
                                         />
                                         <span className="text-[15px] font-semibold text-[#2d3742]">Same as shipping address</span>
                                     </label>
@@ -2074,7 +2074,7 @@ export default function CheckoutPage() {
                                             name="billingAddressChoice"
                                             checked={form.billingAddress === 'different'}
                                             onChange={() => updateField('billingAddress', 'different')}
-                                            className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
+                                            className="h-4 w-4 rounded-full accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] focus-visible:ring-offset-2"
                                         />
                                         <span className="text-[15px] font-semibold text-[#2d3742]">Use a different billing address</span>
                                     </label>
@@ -2094,7 +2094,7 @@ export default function CheckoutPage() {
                                 variant="primary"
                                 size="md"
                                 disabled={isLoading || items.length === 0 || paypalPopupWaiting}
-                                className="!normal-case !tracking-normal w-full gap-2 shadow-[0_14px_30px_rgba(223,132,72,0.22)]"
+                                className="!normal-case !text-base !tracking-normal w-full gap-2 shadow-[0_14px_30px_rgba(223,132,72,0.22)]"
                             >
                                 {paypalPopupWaiting ? (
                                     'Waiting for PayPal…'
