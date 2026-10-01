@@ -30,7 +30,7 @@ import { ExpressCheckout } from './checkout/ExpressCheckout';
 declare global {
     interface Window {
         Stripe?: (publishableKey: string) => {
-            elements: () => {
+            elements: (options?: Record<string, unknown>) => {
                 create: (
                     type: 'card' | 'cardNumber' | 'cardExpiry' | 'cardCvc',
                     options?: Record<string, unknown>
@@ -501,7 +501,15 @@ export default function CheckoutPage() {
             }
 
             stripeInstanceRef.current = window.Stripe(selectedCardMethod.publishable_key);
-            stripeElementsRef.current = stripeInstanceRef.current.elements();
+            // Elements render in their own iframe, so fontFamily: 'inherit'
+            // can't see the page's self-hosted next/font Hanken Grotesk --
+            // it falls back to the browser default and visibly mismatches
+            // "Name on card" below. Loading the same family from Google
+            // Fonts here is a separate source just for Stripe's iframe; it
+            // doesn't change how the rest of the page serves the font.
+            stripeElementsRef.current = stripeInstanceRef.current.elements({
+                fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;700&display=swap' }],
+            });
             setStripeReady(true);
             setStripeError(null);
         };
@@ -540,7 +548,7 @@ export default function CheckoutPage() {
             style: {
                 base: {
                     color: '#1f2937',
-                    fontFamily: 'inherit',
+                    fontFamily: "'Hanken Grotesk', sans-serif",
                     fontSize: '14px',
                     '::placeholder': {
                         color: '#9ca3af',

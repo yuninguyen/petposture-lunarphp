@@ -7,7 +7,7 @@ import { fetchApi } from "@/lib/fetchApi";
 declare global {
     interface Window {
         Stripe?: (publishableKey: string) => {
-            elements: () => {
+            elements: (options?: Record<string, unknown>) => {
                 create: (
                     type: "card" | "cardNumber" | "cardExpiry" | "cardCvc",
                     options?: Record<string, unknown>
