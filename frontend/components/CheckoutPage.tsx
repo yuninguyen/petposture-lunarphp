@@ -495,13 +495,15 @@ export default function CheckoutPage() {
     }, []);
 
     useEffect(() => {
-        if (typeof window === 'undefined' || !stripeConfigured || !selectedCardMethod?.publishable_key) {
+        if (typeof window === 'undefined') return;
+        let cancelled = false;
+        if (!stripeConfigured || !selectedCardMethod?.publishable_key) {
             setStripeReady(false);
             setStripeError(null);
-            return;
         }
 
         const initialiseStripe = () => {
+            if (cancelled || !stripeConfigured || !selectedCardMethod?.publishable_key) return;
             if (!window.Stripe || !selectedCardMethod.publishable_key) {
                 setStripeError('Stripe.js could not be loaded.');
                 return;
@@ -523,14 +525,14 @@ export default function CheckoutPage() {
 
         if (window.Stripe) {
             initialiseStripe();
-            return;
+            return () => { cancelled = true; };
         }
 
         const existingScript = document.getElementById(stripeJsScriptId) as HTMLScriptElement | null;
 
         if (existingScript) {
             existingScript.addEventListener('load', initialiseStripe, { once: true });
-            return;
+            return () => { cancelled = true; };
         }
 
         const script = document.createElement('script');
@@ -539,6 +541,7 @@ export default function CheckoutPage() {
         script.src = 'https://js.stripe.com/v3/';
         script.addEventListener('load', initialiseStripe, { once: true });
         document.head.appendChild(script);
+        return () => { cancelled = true; };
     }, [selectedCardMethod?.publishable_key, stripeConfigured]);
 
     useEffect(() => {

@@ -45,6 +45,16 @@ async function flushMicrotasks(times = 6) {
     }
 }
 
+function deferred<T>() {
+    let resolve!: (value: T) => void;
+    let reject!: (reason?: unknown) => void;
+    const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+    });
+    return { promise, resolve, reject };
+}
+
 describe('ExpressCheckout', () => {
     it('renders nothing when no wallet method is available', () => {
         const element = render(<ExpressCheckout {...baseProps} />);
@@ -137,8 +147,9 @@ describe('ExpressCheckout', () => {
         expect(script?.src).toBe('https://www.sandbox.paypal.com/web-sdk/v6/core');
     });
 
-    it('creates a v6 SDK instance, checks PayPal eligibility, and mounts the logo-only PayPal button once eligible', async () => {
-        const findEligibleMethods = vi.fn().mockResolvedValue({ isEligible: () => true });
+    it('mounts the logo-only PayPal button while eligibility is still resolving', async () => {
+        const eligibility = deferred<{ isEligible: (method: string) => boolean }>();
+        const findEligibleMethods = vi.fn().mockReturnValue(eligibility.promise);
         const createPayPalOneTimePaymentSession = vi.fn().mockReturnValue({ start: vi.fn() });
         const createInstance = vi.fn().mockResolvedValue({ findEligibleMethods, createPayPalOneTimePaymentSession });
         window.paypal = { createInstance } as never;
@@ -153,6 +164,36 @@ describe('ExpressCheckout', () => {
         expect(findEligibleMethods).toHaveBeenCalledWith({ currencyCode: 'USD' });
         expect(createPayPalOneTimePaymentSession).toHaveBeenCalledTimes(1);
         expect(element.querySelector('button[aria-label="Pay with PayPal"] img[alt="PayPal"]')).not.toBeNull();
+
+        await act(async () => { eligibility.resolve({ isEligible: () => true }); await eligibility.promise; });
+    });
+
+    it('removes the optimistic PayPal button when eligibility resolves false', async () => {
+        const eligibility = deferred<{ isEligible: (method: string) => boolean }>();
+        const findEligibleMethods = vi.fn().mockReturnValue(eligibility.promise);
+        const createPayPalOneTimePaymentSession = vi.fn().mockReturnValue({ start: vi.fn() });
+        window.paypal = { createInstance: vi.fn().mockResolvedValue({ findEligibleMethods, createPayPalOneTimePaymentSession }) } as never;
+
+        const element = render(<ExpressCheckout {...baseProps} paypalClientId="test-client-id" />);
+        await act(async () => { await flushMicrotasks(); });
+        expect(element.querySelector('button[aria-label="Pay with PayPal"]')).not.toBeNull();
+
+        await act(async () => { eligibility.resolve({ isEligible: () => false }); await eligibility.promise; });
+        expect(element.querySelector('button[aria-label="Pay with PayPal"]')).toBeNull();
+    });
+
+    it('removes the optimistic PayPal button when eligibility rejects', async () => {
+        const eligibility = deferred<{ isEligible: (method: string) => boolean }>();
+        const findEligibleMethods = vi.fn().mockReturnValue(eligibility.promise);
+        const createPayPalOneTimePaymentSession = vi.fn().mockReturnValue({ start: vi.fn() });
+        window.paypal = { createInstance: vi.fn().mockResolvedValue({ findEligibleMethods, createPayPalOneTimePaymentSession }) } as never;
+
+        const element = render(<ExpressCheckout {...baseProps} paypalClientId="test-client-id" />);
+        await act(async () => { await flushMicrotasks(); });
+        expect(element.querySelector('button[aria-label="Pay with PayPal"]')).not.toBeNull();
+
+        await act(async () => { eligibility.reject(new Error('eligibility failed')); await eligibility.promise.catch(() => undefined); });
+        expect(element.querySelector('button[aria-label="Pay with PayPal"]')).toBeNull();
     });
 
     it('patches the PayPal order amount through the new amount endpoint when the wallet reports a shipping address', async () => {

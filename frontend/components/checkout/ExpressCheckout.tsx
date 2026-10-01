@@ -325,6 +325,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                 });
                 if (cancelled) return;
                 paypalSdkInstanceRef.current = sdkInstance;
+                setCanPayPal(true);
                 const eligibility = await sdkInstance.findEligibleMethods({ currencyCode: 'USD' });
                 if (cancelled) return;
                 setCanPayPal(eligibility.isEligible('paypal'));

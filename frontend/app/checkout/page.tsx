@@ -7,5 +7,19 @@ import CheckoutPage from '@/components/CheckoutPage';
 export const dynamic = 'force-dynamic';
 
 export default function Page() {
-  return <CheckoutPage />;
+  return (
+    <>
+      {/* Hosts we load classic <script>s from (no crossorigin attribute) must be
+          preconnected WITHOUT crossOrigin -- an anonymous preconnect opens a
+          different socket pool, so the later script request would not reuse
+          it. Hosts we only call with CORS fetch keep crossOrigin. */}
+      <link rel="preconnect" href="https://js.stripe.com" />
+      <link rel="preconnect" href="https://api.stripe.com" crossOrigin="anonymous" />
+      <link rel="preconnect" href="https://www.paypal.com" />
+      <link rel="preconnect" href="https://www.sandbox.paypal.com" />
+      <link rel="preconnect" href="https://api-m.paypal.com" crossOrigin="anonymous" />
+      <link rel="preconnect" href="https://api-m.sandbox.paypal.com" crossOrigin="anonymous" />
+      <CheckoutPage />
+    </>
+  );
 }
