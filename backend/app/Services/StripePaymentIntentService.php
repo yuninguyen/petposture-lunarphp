@@ -227,6 +227,8 @@ class StripePaymentIntentService
         $meta['payment_intent_status'] = $intent['status'];
         $meta['payment_status'] = 'pending';
         $meta['payment_provider_mode'] = $intent['mode'];
+        $meta['payment_method'] = 'card';
+        $meta['payment_label'] = 'Card';
 
         $order->update([
             'meta' => $meta,

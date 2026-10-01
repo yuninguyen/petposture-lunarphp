@@ -110,7 +110,7 @@ class OrderController extends Controller
     public function byPaymentSession(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'gateway' => 'required|string|in:airwallex,payoneer,pingpong,paypal',
+            'gateway' => 'required|string|in:airwallex,payoneer,pingpong,paypal,stripe',
             'session_id' => 'required|string',
         ]);
 
@@ -161,7 +161,7 @@ class OrderController extends Controller
         $paymentMethod = (string) (($order->meta['payment_method'] ?? '') ?: '');
         $paymentStatus = (string) (($order->meta['payment_status'] ?? '') ?: 'awaiting-payment');
 
-        $retryEligible = $paymentMethod === 'card'
+        $retryEligible = in_array($paymentMethod, ['card', 'cashapp', 'affirm', 'klarna'], true)
             && ! in_array($paymentStatus, ['paid', 'cancelled'], true)
             && in_array($order->status, ['awaiting-payment', 'payment-offline'], true)
             && $order->created_at?->greaterThan(now()->subHours(24));

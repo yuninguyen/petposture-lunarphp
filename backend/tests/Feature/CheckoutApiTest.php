@@ -2316,6 +2316,170 @@ class CheckoutApiTest extends TestCase
         $place->assertCreated();
     }
 
+    public function test_stripe_alt_session_returns_a_safe_redirect_session_and_creates_a_method_specific_intent(): void
+    {
+        config()->set('services.stripe.key', 'pk_test_alt_checkout');
+        config()->set('services.stripe.secret', 'sk_test_alt_checkout');
+        config()->set('services.stripe.alt_methods', ['affirm']);
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+        Http::fake([
+            'https://api.stripe.com/v1/payment_intents' => Http::response([
+                'id' => 'pi_alt_affirm_1',
+                'client_secret' => 'pi_alt_affirm_1_secret',
+                'amount' => 8999,
+                'currency' => 'usd',
+                'status' => 'requires_action',
+            ]),
+        ]);
+        $variant = $this->createPurchasableVariant();
+
+        $response = $this->postJson('/api/checkout/stripe-alt-session', $this->stripeAltSessionPayload($variant));
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('session.intent_id', 'pi_alt_affirm_1')
+            ->assertJsonPath('session.client_secret', 'pi_alt_affirm_1_secret')
+            ->assertJsonPath('session.amount', 8999)
+            ->assertJsonPath('session.currency', 'USD')
+            ->assertJsonPath('session.mode', 'configured')
+            ->assertJsonPath('session.publishable_key', 'pk_test_alt_checkout');
+
+        $sessionId = (string) $response->json('session.session_id');
+        $this->assertMatchesRegularExpression('/^STRIPE-[A-Z0-9]{20}$/', $sessionId);
+        $this->assertSame(
+            rtrim((string) config('app.frontend_url'), '/').'/checkout/success?gateway=stripe&session_id='.$sessionId,
+            $response->json('session.return_url'),
+        );
+        $this->assertStringNotContainsString('client_secret', $response->json('session.return_url'));
+
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://api.stripe.com/v1/payment_intents'
+            && $request['payment_method_types[0]'] === 'affirm'
+            && $request['shipping[name]'] === 'Jane Doe'
+            && $request['shipping[address][line1]'] === '123 Congress Ave'
+            && $request['shipping[address][country]'] === 'US'
+            && $request['payment_method_data[billing_details][email]'] === 'guest@petposture.com');
+    }
+
+    public function test_stripe_alt_session_rejects_disabled_method_and_out_of_range_amounts_without_calling_stripe(): void
+    {
+        config()->set('services.stripe.key', 'pk_test_alt_checkout');
+        config()->set('services.stripe.secret', 'sk_test_alt_checkout');
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+        Http::fake();
+        $variant = $this->createPurchasableVariant();
+        $payload = $this->stripeAltSessionPayload($variant);
+
+        config()->set('services.stripe.alt_methods', []);
+        $this->postJson('/api/checkout/stripe-alt-session', $payload)
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Affirm - Pay Over Time is unavailable. Please select another payment method.');
+        Http::assertNothingSent();
+
+        config()->set('services.stripe.alt_methods', ['affirm']);
+        Price::query()->where('priceable_id', $variant->id)->update(['price' => 1000]);
+        $this->postJson('/api/checkout/stripe-alt-session', $payload)
+            ->assertUnprocessable()
+            ->assertJsonPath('message', "Affirm - Pay Over Time isn't available for this order amount.");
+        Http::assertNothingSent();
+
+        Price::query()->where('priceable_id', $variant->id)->update(['price' => 3_100_000]);
+        $this->postJson('/api/checkout/stripe-alt-session', $payload)
+            ->assertUnprocessable()
+            ->assertJsonPath('message', "Affirm - Pay Over Time isn't available for this order amount.");
+        Http::assertNothingSent();
+    }
+
+    public function test_stripe_payment_session_lookup_finds_recent_orders_and_rejects_unknown_or_expired_sessions(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $order = Order::query()->findOrFail($placeResponse->json('order.id'));
+        $meta = (array) $order->meta;
+        $meta['stripe_session_id'] = 'STRIPE-SESSION-123';
+        $order->update(['meta' => $meta]);
+
+        $this->getJson('/api/orders/by-payment-session?gateway=stripe&session_id=STRIPE-SESSION-123')
+            ->assertOk()
+            ->assertJsonPath('data.reference', $order->reference);
+
+        $this->getJson('/api/orders/by-payment-session?gateway=stripe&session_id=STRIPE-UNKNOWN')
+            ->assertNotFound();
+
+        $order->update(['created_at' => now()->subHours(25)]);
+        $this->getJson('/api/orders/by-payment-session?gateway=stripe&session_id=STRIPE-SESSION-123')
+            ->assertNotFound();
+    }
+
+    public function test_stripe_webhook_marks_an_affirm_order_as_paid(): void
+    {
+        config()->set('services.stripe.alt_methods', ['affirm']);
+        config()->set('services.stripe.key', 'pk_test_alt_checkout');
+        config()->set('services.stripe.secret', 'sk_test_alt_checkout');
+        config()->set('services.stripe.webhook_secret', null);
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'affirm',
+            'payment_context' => ['intent_id' => 'pi_affirm_paid_123', 'session_id' => 'STRIPE-AFFIRM-123'],
+        ]));
+        $placeResponse->assertCreated();
+
+        $this->postJson('/api/webhooks/stripe', [
+            'id' => 'evt_affirm_paid_123',
+            'type' => 'payment_intent.succeeded',
+            'data' => ['object' => ['id' => 'pi_affirm_paid_123', 'status' => 'succeeded']],
+        ])->assertOk()->assertJsonPath('result.payment_status', 'paid');
+
+        $order = Order::query()->findOrFail($placeResponse->json('order.id'));
+        $this->assertSame('affirm', $order->meta['payment_method']);
+        $this->assertSame('paid', $order->meta['payment_status']);
+    }
+
+    public function test_affirm_order_can_retry_with_card_and_updates_its_payment_method(): void
+    {
+        config()->set('services.stripe.alt_methods', ['affirm']);
+        config()->set('services.stripe.key', 'pk_test_alt_checkout');
+        config()->set('services.stripe.secret', 'sk_test_alt_checkout');
+        config()->set('services.stripe.webhook_secret', null);
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'affirm',
+            'payment_context' => ['intent_id' => 'pi_affirm_retry_123', 'session_id' => 'STRIPE-AFFIRM-RETRY'],
+        ]));
+        $placeResponse->assertCreated();
+
+        config()->set('services.stripe.secret', null);
+        Cache::forget('stripe_secret');
+
+        $response = $this->postJson('/api/orders/retry-payment', [
+            'tracking_token' => $placeResponse->json('order.tracking_access_token'),
+            'email' => 'guest@petposture.com',
+        ]);
+
+        $response->assertOk()->assertJsonPath('success', true);
+        $order = Order::query()->findOrFail($placeResponse->json('order.id'));
+        $this->assertSame('card', $order->meta['payment_method']);
+        $this->assertSame('Card', $order->meta['payment_label']);
+        $this->assertSame('stripe', $order->meta['payment_gateway']);
+
+        $this->postJson('/api/webhooks/stripe', [
+            'id' => 'evt_affirm_retry_paid_123',
+            'type' => 'payment_intent.succeeded',
+            'data' => ['object' => ['id' => $response->json('payment_intent.intent_id'), 'status' => 'succeeded']],
+        ])->assertOk()->assertJsonPath('result.payment_status', 'paid');
+
+        $order->refresh();
+        $this->assertSame('card', $order->meta['payment_method']);
+        $this->assertSame('paid', $order->meta['payment_status']);
+    }
+
     private function checkoutPayload(ProductVariant $variant, array $overrides = []): array
     {
         return array_replace_recursive([
@@ -2342,5 +2506,25 @@ class CheckoutApiTest extends TestCase
             'shipping_method' => 'standard',
             'payment_method' => 'cod',
         ], $overrides);
+    }
+
+    private function stripeAltSessionPayload(ProductVariant $variant): array
+    {
+        return [
+            'payment_method' => 'affirm',
+            'items' => [['variantId' => $variant->id, 'quantity' => 1]],
+            'email' => 'guest@petposture.com',
+            'shipping_method' => 'standard',
+            'shipping' => [
+                'first_name' => 'Jane',
+                'last_name' => 'Doe',
+                'line_one' => '123 Congress Ave',
+                'city' => 'Austin',
+                'state' => 'TX',
+                'postcode' => '78701',
+                'country' => 'US',
+            ],
+            'billing_same_as_shipping' => true,
+        ];
     }
 }

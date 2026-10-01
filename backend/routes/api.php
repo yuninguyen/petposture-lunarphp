@@ -125,6 +125,7 @@ Route::get('/checkout/session/{token}', [CheckoutController::class, 'showSession
 Route::post('/checkout/session/{token}/payment-intent', [CheckoutController::class, 'prepareSessionPaymentIntent'])->middleware('throttle:api-write');
 Route::post('/checkout/session/{token}/confirm', [CheckoutController::class, 'confirmSession'])->middleware('throttle:api-write');
 Route::post('/checkout/payment-intent', [CheckoutController::class, 'preparePaymentIntent'])->middleware('throttle:api-write');
+Route::post('/checkout/stripe-alt-session', [CheckoutController::class, 'prepareStripeAltSession'])->middleware('throttle:api-write');
 Route::post('/checkout/paypal-order', [CheckoutController::class, 'preparePayPalOrder'])->middleware('throttle:api-write');
 Route::post('/checkout/paypal-order/amount', [CheckoutController::class, 'updatePayPalOrderAmount'])->middleware('throttle:api-write');
 Route::post('/checkout/paypal-order/shipping', [CheckoutController::class, 'getPayPalOrderShipping'])->middleware('throttle:api-write');

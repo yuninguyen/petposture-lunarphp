@@ -9,6 +9,7 @@ use App\Http\Resources\Api\CheckoutSessionResource;
 use App\Http\Resources\Api\OrderCreatedResource;
 use App\Models\CheckoutSession;
 use App\Models\UserAddress;
+use App\Payments\PaymentGatewayManager;
 use App\Services\AirwallexService;
 use App\Services\ApplyCouponService;
 use App\Services\CheckoutService;
@@ -427,6 +428,139 @@ class CheckoutController extends Controller
                 'success' => false,
                 'message' => 'Unable to prepare payment. Please try again.',
             ], 500);
+        }
+    }
+
+    public function prepareStripeAltSession(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'payment_method' => 'required|string|in:cashapp,affirm,klarna',
+            'items' => 'required|array|min:1',
+            'items.*.variantId' => 'required|exists:lunar_product_variants,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'coupon_code' => 'nullable|string',
+            'shipping_method' => 'nullable|string',
+            'email' => 'required|email',
+            'shipping' => 'nullable|array',
+            'shipping.email' => 'nullable|email',
+            'shipping.first_name' => 'nullable|string|max:255',
+            'shipping.last_name' => 'nullable|string|max:255',
+            'shipping.company' => 'nullable|string|max:255',
+            'shipping.line_one' => 'nullable|string|max:255',
+            'shipping.line_two' => 'nullable|string|max:255',
+            'shipping.city' => 'nullable|string|max:255',
+            'shipping.state' => 'nullable|string|max:255',
+            'shipping.postcode' => 'nullable|string|max:32',
+            'shipping.country' => 'nullable|string|max:255',
+            'shipping.phone' => 'nullable|string|max:50',
+            'billing_same_as_shipping' => 'nullable|boolean',
+            'billing' => 'nullable|array',
+            'billing.first_name' => 'nullable|string|max:255',
+            'billing.last_name' => 'nullable|string|max:255',
+            'billing.company' => 'nullable|string|max:255',
+            'billing.line_one' => 'nullable|string|max:255',
+            'billing.line_two' => 'nullable|string|max:255',
+            'billing.city' => 'nullable|string|max:255',
+            'billing.state' => 'nullable|string|max:255',
+            'billing.postcode' => 'nullable|string|max:32',
+            'billing.country' => 'nullable|string|max:255',
+            'billing.phone' => 'nullable|string|max:50',
+        ])->validate();
+
+        $method = (string) $validated['payment_method'];
+        $definition = collect(app(PaymentGatewayManager::class)->supportedMethods())
+            ->firstWhere('method', $method);
+
+        if (! $definition || ! ($definition['enabled'] ?? false)) {
+            $label = (string) ($definition['label'] ?? Str::headline($method));
+
+            return response()->json([
+                'message' => "{$label} is unavailable. Please select another payment method.",
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        try {
+            $shipping = (array) ($validated['shipping'] ?? []);
+            $billing = ! empty($validated['billing_same_as_shipping'])
+                ? $shipping
+                : ((array) ($validated['billing'] ?? []) ?: $shipping);
+            $amount = $this->checkoutService->calculateTotal(
+                $validated['items'],
+                $validated['coupon_code'] ?? null,
+                $shipping,
+                $validated['shipping_method'] ?? null,
+            );
+            $minimum = $definition['min_amount_minor'] ?? null;
+            $maximum = $definition['max_amount_minor'] ?? null;
+
+            if (($minimum !== null && $amount < (int) $minimum)
+                || ($maximum !== null && $amount > (int) $maximum)) {
+                return response()->json([
+                    'message' => (string) $definition['label']." isn't available for this order amount.",
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $stripeAddress = static function (array $address): array {
+                $country = strtoupper(trim((string) ($address['country'] ?? 'US')));
+
+                return [
+                    'line1' => $address['line_one'] ?? null,
+                    'line2' => $address['line_two'] ?? null,
+                    'city' => $address['city'] ?? null,
+                    'state' => $address['state'] ?? null,
+                    'postal_code' => $address['postcode'] ?? null,
+                    'country' => in_array($country, ['UNITED STATES', 'USA'], true) ? 'US' : $country,
+                ];
+            };
+            $stripeName = static fn (array $address): string => trim(
+                (string) ($address['first_name'] ?? '').' '.(string) ($address['last_name'] ?? '')
+            );
+            $sessionId = 'STRIPE-'.Str::upper(Str::random(20));
+            $returnUrl = rtrim((string) config('app.frontend_url'), '/').'/checkout/success?gateway=stripe&session_id='.$sessionId;
+            $intent = $this->stripePaymentIntentService->create([
+                'amount' => $amount,
+                'currency' => 'usd',
+                'email' => $validated['email'],
+                'payment_method_types' => [$method],
+                'shipping' => [
+                    'name' => $stripeName($shipping),
+                    'address' => $stripeAddress($shipping),
+                ],
+                'billing' => [
+                    'name' => $stripeName($billing),
+                    'email' => $validated['email'],
+                    'phone' => $billing['phone'] ?? null,
+                    'address' => $stripeAddress($billing),
+                ],
+                'metadata' => [
+                    'source' => 'petposture-checkout',
+                    'payment_method' => $method,
+                ],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'session' => [
+                    'client_secret' => $intent['client_secret'],
+                    'intent_id' => $intent['intent_id'],
+                    'session_id' => $sessionId,
+                    'return_url' => $returnUrl,
+                    'amount' => $intent['amount'],
+                    'currency' => $intent['currency'],
+                    'mode' => $intent['mode'],
+                    'publishable_key' => $intent['publishable_key'],
+                ],
+            ]);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error("Stripe Alternative Payment Session Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code' => ErrorCode::PAYMENT_INTENT_ERROR->value,
+                'success' => false,
+                'message' => 'Unable to prepare payment. Please try again.',
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
