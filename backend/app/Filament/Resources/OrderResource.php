@@ -279,6 +279,9 @@ class OrderResource extends Resource
                         'cod' => 'COD',
                         'card' => 'Card',
                         'paypal' => 'PayPal',
+                        'cashapp' => 'Cash App Pay',
+                        'affirm' => 'Affirm',
+                        'klarna' => 'Klarna',
                         default => $state ? str($state)->headline()->toString() : '—',
                     }),
                 Tables\Columns\TextColumn::make('created_at')

@@ -189,6 +189,16 @@ describe('orderPresentation helpers', () => {
       expect(withoutEmail.details).toBeNull();
     });
 
+    it.each([
+      ['cashapp', 'Cash App Pay'],
+      ['affirm', 'Affirm'],
+      ['klarna', 'Klarna'],
+    ])('resolves %s with a readable label', (paymentMethod, label) => {
+      const presentation = getOrderPaymentPresentation({ payment_method: paymentMethod });
+      expect(presentation.label).toBe(label);
+      expect(presentation.details).toBeNull();
+    });
+
     it('resolves Cash on Delivery', () => {
       const cod = getOrderPaymentPresentation({
         payment_method: 'cod',

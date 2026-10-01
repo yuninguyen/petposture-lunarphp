@@ -42,6 +42,14 @@ final class AdminOrderPresentation
             return 'COD';
         }
 
+        if (in_array($method, ['cashapp', 'affirm', 'klarna'], true)) {
+            return [
+                'cashapp' => 'Cash App Pay',
+                'affirm' => 'Affirm',
+                'klarna' => 'Klarna',
+            ][$method];
+        }
+
         if ($method !== '') {
             return Str::headline($method);
         }

@@ -203,6 +203,21 @@ export function getOrderPaymentPresentation(order?: OrderPresentationPaymentSour
     };
   }
 
+  if (rawMethod === 'cashapp' || rawMethod === 'affirm' || rawMethod === 'klarna') {
+    const labels = {
+      cashapp: 'Cash App Pay',
+      affirm: 'Affirm',
+      klarna: 'Klarna',
+    } as const;
+
+    return {
+      method: rawMethod,
+      label: labels[rawMethod],
+      details: null,
+      gatewayLabel,
+    };
+  }
+
   if (rawMethod === 'cod') {
     return {
       method: 'cod',

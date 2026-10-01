@@ -208,6 +208,14 @@ class CustomerOrderResource extends JsonResource
             return 'Payment';
         }
 
+        if (in_array($paymentMethod, ['cashapp', 'affirm', 'klarna'], true)) {
+            return [
+                'cashapp' => 'Cash App Pay',
+                'affirm' => 'Affirm',
+                'klarna' => 'Klarna',
+            ][$paymentMethod];
+        }
+
         return str($paymentMethod)
             ->replace(['_', '-'], ' ')
             ->title()

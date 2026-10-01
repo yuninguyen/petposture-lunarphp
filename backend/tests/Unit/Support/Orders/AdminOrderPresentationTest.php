@@ -77,6 +77,19 @@ class AdminOrderPresentationTest extends TestCase
         $this->assertSame('—', AdminOrderPresentation::paymentMethod([]));
     }
 
+    public function test_payment_method_uses_readable_labels_for_stripe_alternative_methods(): void
+    {
+        $this->assertSame('Cash App Pay', AdminOrderPresentation::paymentMethod([
+            'payment_method' => 'cashapp',
+        ]));
+        $this->assertSame('Affirm', AdminOrderPresentation::paymentMethod([
+            'payment_method' => 'affirm',
+        ]));
+        $this->assertSame('Klarna', AdminOrderPresentation::paymentMethod([
+            'payment_method' => 'klarna',
+        ]));
+    }
+
     public function test_money_formatting_with_usd_fallback_and_explicit_currency(): void
     {
         $this->assertSame('USD $123.45', AdminOrderPresentation::money(12345));
