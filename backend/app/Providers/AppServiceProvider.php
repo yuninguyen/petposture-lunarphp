@@ -24,8 +24,11 @@ use App\Observers\SanitizeRichTextObserver;
 use App\Observers\SettingCacheObserver;
 use App\Observers\SiteMediaCacheObserver;
 use App\Observers\SiteMediaLibraryCacheObserver;
+use App\Payments\Gateways\AffirmGateway;
 use App\Payments\Gateways\AirwallexGateway;
+use App\Payments\Gateways\CashAppPayGateway;
 use App\Payments\Gateways\CashOnDeliveryGateway;
+use App\Payments\Gateways\KlarnaGateway;
 use App\Payments\Gateways\PayoneerGateway;
 use App\Payments\Gateways\PayPalGateway;
 use App\Payments\Gateways\PingPongGateway;
@@ -69,6 +72,9 @@ class AppServiceProvider extends ServiceProvider
                 new CashOnDeliveryGateway,
                 new StripeCardGateway,
                 $app->make(PayPalGateway::class),
+                new CashAppPayGateway,
+                new AffirmGateway,
+                new KlarnaGateway,
                 $app->make(AirwallexGateway::class),
                 $app->make(PayoneerGateway::class),
                 $app->make(PingPongGateway::class),
