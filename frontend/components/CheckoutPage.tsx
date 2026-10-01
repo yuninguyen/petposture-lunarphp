@@ -1008,11 +1008,18 @@ export default function CheckoutPage() {
 
     const paymentRowClasses = (method: PaymentMethod, index: number) => {
         const isSelected = form.paymentMethod === method;
-        const expandsCardDetails = isSelected && method === 'card';
+        // Card and PayPal both render a detail panel directly below their
+        // row when selected (card fields; the PayPal notice/status text) --
+        // the row must stay square-bottomed and keep its divider in that
+        // case so the rounding lands on the panel below it instead,
+        // otherwise a selected last-row method renders its own rounded
+        // corners above a square-cornered panel, mismatching the outer
+        // container's real bottom edge.
+        const expandsDetailsBelow = isSelected && (method === 'card' || method === 'paypal');
         const isFirst = index === 0;
         const isLast = index === availablePaymentMethods.length - 1;
 
-        return `flex cursor-pointer items-center justify-between px-4 py-[15px] text-[14px] transition ${isSelected ? 'bg-[#f7faff] ring-1 ring-inset ring-[#cfe2f3]' : 'bg-white hover:bg-[#fbfbfc]'} ${isFirst ? 'rounded-tl-[8px] rounded-tr-[8px]' : ''} ${isLast && !expandsCardDetails ? 'rounded-bl-[8px] rounded-br-[8px]' : ''} ${index < availablePaymentMethods.length - 1 || expandsCardDetails ? 'border-b border-[#d9d9d9]' : ''}`;
+        return `flex cursor-pointer items-center justify-between px-4 py-[15px] text-[14px] transition ${isSelected ? 'bg-[#f7faff] ring-1 ring-inset ring-[#cfe2f3]' : 'bg-white hover:bg-[#fbfbfc]'} ${isFirst ? 'rounded-tl-[8px] rounded-tr-[8px]' : ''} ${isLast && !expandsDetailsBelow ? 'rounded-bl-[8px] rounded-br-[8px]' : ''} ${index < availablePaymentMethods.length - 1 || expandsDetailsBelow ? 'border-b border-[#d9d9d9]' : ''}`;
     };
 
     const prepareCardPaymentIntent = async () => {
@@ -1808,7 +1815,7 @@ export default function CheckoutPage() {
                                         )}
 
                                         {method.method === 'paypal' && form.paymentMethod === 'paypal' && (
-                                            <div className="grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3">
+                                            <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
                                                 <p className="text-sm leading-[1.45] text-[#6f7782]">
                                                     {paypalLiveMode
                                                         ? 'A PayPal window will open to complete your purchase.'
