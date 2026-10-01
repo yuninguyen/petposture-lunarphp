@@ -68,14 +68,71 @@ class StripePaymentIntentService
             $request = $request->withHeaders(['Idempotency-Key' => $idempotencyKey]);
         }
 
-        $response = $request->post('https://api.stripe.com/v1/payment_intents', array_filter([
+        $parameters = array_filter([
             'amount' => $amount,
             'currency' => $currency,
             'receipt_email' => $email ?: null,
             'automatic_payment_methods[enabled]' => 'true',
             'metadata[source]' => 'petposture-checkout',
             'metadata[email]' => $email ?: null,
-        ], static fn ($value) => $value !== null && $value !== ''));
+        ], static fn ($value) => $value !== null && $value !== '');
+
+        $paymentMethodTypes = $payload['payment_method_types'] ?? [];
+        if (is_array($paymentMethodTypes) && $paymentMethodTypes !== []) {
+            unset($parameters['automatic_payment_methods[enabled]']);
+
+            foreach (array_values($paymentMethodTypes) as $index => $paymentMethodType) {
+                $parameters["payment_method_types[{$index}]"] = $paymentMethodType;
+            }
+        }
+
+        foreach ([
+            'shipping' => 'shipping',
+            'billing' => 'payment_method_data[billing_details]',
+        ] as $payloadKey => $stripePrefix) {
+            $details = $payload[$payloadKey] ?? null;
+            if (! is_array($details)) {
+                continue;
+            }
+
+            $fields = $payloadKey === 'billing' ? ['name', 'email', 'phone'] : ['name'];
+            foreach ($fields as $field) {
+                if (array_key_exists($field, $details)) {
+                    $parameters["{$stripePrefix}[{$field}]"] = $details[$field];
+                }
+            }
+
+            $address = $details['address'] ?? $details;
+            if (! is_array($address)) {
+                continue;
+            }
+
+            foreach ([
+                'line1' => 'line1',
+                'line2' => 'line2',
+                'city' => 'city',
+                'state' => 'state',
+                'postal_code' => 'postal_code',
+                'country' => 'country',
+            ] as $field => $stripeField) {
+                if (array_key_exists($field, $address)) {
+                    $parameters["{$stripePrefix}[address][{$stripeField}]"] = $address[$field];
+                }
+            }
+        }
+
+        $metadata = $payload['metadata'] ?? [];
+        if (is_array($metadata)) {
+            foreach ($metadata as $key => $value) {
+                if (is_scalar($value) || $value === null) {
+                    $parameters["metadata[{$key}]"] = $value;
+                }
+            }
+        }
+
+        $parameters = array_filter($parameters, static fn ($value) => $value !== null && $value !== '');
+
+        $response = $request->post('https://api.stripe.com/v1/payment_intents', $parameters);
 
         if (! $response->successful()) {
             throw new RuntimeException(

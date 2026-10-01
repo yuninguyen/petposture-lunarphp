@@ -32,6 +32,10 @@ return [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'alt_methods' => array_values(array_filter(array_map(
+            static fn (string $method): string => strtolower(trim($method)),
+            explode(',', (string) env('STRIPE_ALT_PAYMENT_METHODS', '')),
+        ), static fn (string $method): bool => $method !== '')),
         'tax' => [
             'default_product_tax_code' => env('STRIPE_TAX_DEFAULT_PRODUCT_TAX_CODE', 'txcd_99999999'),
         ],
