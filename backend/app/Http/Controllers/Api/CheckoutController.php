@@ -526,12 +526,18 @@ class CheckoutController extends Controller
                     'name' => $stripeName($shipping),
                     'address' => $stripeAddress($shipping),
                 ],
-                'billing' => [
+                // Only Klarna takes its billing details from the intent: with a
+                // PaymentMethod already attached, stripe.confirmKlarnaPayment()
+                // needs nothing but return_url. Affirm and Cash App create their
+                // PaymentMethod at confirm time on the client (Affirm sends its
+                // own billing_details there), so attaching one here would
+                // collide with that.
+                ...($method === 'klarna' ? ['billing' => [
                     'name' => $stripeName($billing),
                     'email' => $validated['email'],
                     'phone' => $billing['phone'] ?? null,
                     'address' => $stripeAddress($billing),
-                ],
+                ]] : []),
                 'metadata' => [
                     'source' => 'petposture-checkout',
                     'payment_method' => $method,

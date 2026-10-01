@@ -92,8 +92,34 @@ class StripeAltPaymentIntentTest extends TestCase
         Http::assertSent(fn ($request): bool => $request->url() === 'https://api.stripe.com/v1/payment_intents'
             && $request['payment_method_types[0]'] === 'affirm'
             && $request['shipping[address][line1]'] === '1 Main St'
+            && $request['payment_method_data[type]'] === 'affirm'
             && $request['payment_method_data[billing_details][email]'] === 'buyer@example.com'
             && $request['metadata[payment_method]'] === 'affirm'
             && ! array_key_exists('automatic_payment_methods[enabled]', $request->data()));
+    }
+
+    public function test_billing_details_without_an_explicit_method_type_are_not_sent_to_stripe(): void
+    {
+        Http::fake([
+            'https://api.stripe.com/v1/payment_intents' => Http::response([
+                'id' => 'pi_plain_1',
+                'client_secret' => 'pi_plain_1_secret',
+                'amount' => 4200,
+                'currency' => 'usd',
+                'status' => 'requires_payment_method',
+            ]),
+        ]);
+
+        app(StripePaymentIntentService::class)->create([
+            'amount' => 4200,
+            'currency' => 'usd',
+            'billing' => ['name' => 'Buyer Example', 'email' => 'buyer@example.com'],
+        ]);
+
+        // Stripe answers "Missing required param: payment_method_data[type]"
+        // to payment_method_data[...] without a type; never send it untyped.
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://api.stripe.com/v1/payment_intents'
+            && ! array_key_exists('payment_method_data[billing_details][email]', $request->data())
+            && ! array_key_exists('payment_method_data[type]', $request->data()));
     }
 }

@@ -95,6 +95,17 @@ class StripePaymentIntentService
                 continue;
             }
 
+            // Stripe rejects any payment_method_data[...] param without a type
+            // ("Missing required param: payment_method_data[type]"), so billing
+            // details can only ride along on an intent whose method is known.
+            if ($payloadKey === 'billing') {
+                if (! is_array($paymentMethodTypes) || $paymentMethodTypes === []) {
+                    continue;
+                }
+
+                $parameters['payment_method_data[type]'] = array_values($paymentMethodTypes)[0];
+            }
+
             $fields = $payloadKey === 'billing' ? ['name', 'email', 'phone'] : ['name'];
             foreach ($fields as $field) {
                 if (array_key_exists($field, $details)) {

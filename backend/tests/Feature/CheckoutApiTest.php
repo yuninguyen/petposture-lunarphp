@@ -2358,7 +2358,40 @@ class CheckoutApiTest extends TestCase
             && $request['shipping[name]'] === 'Jane Doe'
             && $request['shipping[address][line1]'] === '123 Congress Ave'
             && $request['shipping[address][country]'] === 'US'
-            && $request['payment_method_data[billing_details][email]'] === 'guest@petposture.com');
+            // Affirm builds its PaymentMethod on the client at confirm time;
+            // Stripe also rejects payment_method_data[...] without a type.
+            && ! array_key_exists('payment_method_data[type]', $request->data())
+            && ! array_key_exists('payment_method_data[billing_details][email]', $request->data()));
+    }
+
+    public function test_stripe_alt_session_attaches_billing_details_only_for_klarna(): void
+    {
+        config()->set('services.stripe.key', 'pk_test_alt_checkout');
+        config()->set('services.stripe.secret', 'sk_test_alt_checkout');
+        config()->set('services.stripe.alt_methods', ['klarna']);
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+        Http::fake([
+            'https://api.stripe.com/v1/payment_intents' => Http::response([
+                'id' => 'pi_alt_klarna_1',
+                'client_secret' => 'pi_alt_klarna_1_secret',
+                'amount' => 8999,
+                'currency' => 'usd',
+                'status' => 'requires_confirmation',
+            ]),
+        ]);
+        $variant = $this->createPurchasableVariant();
+
+        $this->postJson('/api/checkout/stripe-alt-session', array_merge(
+            $this->stripeAltSessionPayload($variant),
+            ['payment_method' => 'klarna'],
+        ))->assertOk()->assertJsonPath('session.intent_id', 'pi_alt_klarna_1');
+
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://api.stripe.com/v1/payment_intents'
+            && $request['payment_method_types[0]'] === 'klarna'
+            && $request['payment_method_data[type]'] === 'klarna'
+            && $request['payment_method_data[billing_details][email]'] === 'guest@petposture.com'
+            && $request['payment_method_data[billing_details][address][country]'] === 'US');
     }
 
     public function test_stripe_alt_session_rejects_disabled_method_and_out_of_range_amounts_without_calling_stripe(): void
