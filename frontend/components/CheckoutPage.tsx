@@ -46,7 +46,7 @@ declare global {
                     unmount: () => void;
                     destroy: () => void;
                     on: ((event: 'change', handler: (event: { brand?: string }) => void) => void)
-                        & ((event: 'focus' | 'blur', handler: () => void) => void);
+                    & ((event: 'focus' | 'blur', handler: () => void) => void);
                 };
             };
             confirmCardPayment: (
@@ -1940,7 +1940,7 @@ export default function CheckoutPage() {
                                                         }}
                                                         className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
                                                     />
-                                                    <span className="text-[15px] font-semibold text-[#2d3742]">{method.label}</span>
+                                                    <span className="text-[14px] font-semibold text-[#2d3742]">{method.label}</span>
                                                 </div>
                                                 <div className="flex flex-shrink-0 items-center">
                                                     {renderPaymentBadges(method)}
@@ -2022,7 +2022,7 @@ export default function CheckoutPage() {
 
                                         {method.method === 'paypal' && form.paymentMethod === 'paypal' && (
                                             <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
-                                                <p className="text-sm leading-[1.45] text-[#6f7782]">
+                                                <p className="text-[16px] leading-[1.45] text-[#6f7782]">
                                                     {paypalLiveMode
                                                         ? 'A PayPal window will open to complete your purchase.'
                                                         : 'PayPal is running in placeholder mode — click "Complete order" below to simulate a PayPal order without a live PayPal account.'}
