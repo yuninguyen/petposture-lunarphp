@@ -1667,7 +1667,7 @@ export default function CheckoutPage() {
                                         id="saveInfo"
                                         checked={form.saveInfo}
                                         onChange={(e) => updateField('saveInfo', e.target.checked)}
-                                        className="h-4 w-4 rounded border-[#d9d9d9] text-[#197bbd] focus:ring-[#197bbd]"
+                                        className="h-4 w-4 rounded border-[#bfc6ce] accent-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
                                     />
                                     <label htmlFor="saveInfo" className="text-sm text-[#333333]">Email me with news and offers</label>
                                 </div>
