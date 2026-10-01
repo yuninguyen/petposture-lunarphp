@@ -1025,7 +1025,7 @@ export default function CheckoutPage() {
         const isFirst = index === 0;
         const isLast = index === availablePaymentMethods.length - 1;
 
-        return `flex cursor-pointer items-center justify-between px-4 py-[15px] text-[14px] transition ${isSelected ? 'bg-[#f7faff] ring-1 ring-inset ring-[#cfe2f3]' : 'bg-white hover:bg-[#fbfbfc]'} ${isFirst ? 'rounded-tl-[8px] rounded-tr-[8px]' : ''} ${isLast && !expandsDetailsBelow ? 'rounded-bl-[8px] rounded-br-[8px]' : ''} ${index < availablePaymentMethods.length - 1 || expandsDetailsBelow ? 'border-b border-[#d9d9d9]' : ''}`;
+        return `flex cursor-pointer items-center justify-between px-4 py-[15px] text-[14px] transition ${isSelected ? 'bg-[#f8fafc]' : 'bg-white hover:bg-[#fbfbfc]'} ${isFirst ? 'rounded-tl-[8px] rounded-tr-[8px]' : ''} ${isLast && !expandsDetailsBelow ? 'rounded-bl-[8px] rounded-br-[8px]' : ''} ${index < availablePaymentMethods.length - 1 || expandsDetailsBelow ? 'border-b border-[#d9d9d9]' : ''}`;
     };
 
     const prepareCardPaymentIntent = async () => {
@@ -1630,7 +1630,7 @@ export default function CheckoutPage() {
                                     <p>All transactions are secure and encrypted.</p>
                                 </div>
                             </div>
-                            <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
+                            <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#1a1a1a,0_8px_24px_rgba(17,24,39,0.03)]">
                                 {availablePaymentMethods.map((method, index) => (
                                     <React.Fragment key={method.method}>
                                         <label
@@ -1645,7 +1645,7 @@ export default function CheckoutPage() {
                                                         activateStep('payment');
                                                         updateField('paymentMethod', method.method);
                                                     }}
-                                                    className="mt-0.5 h-4 w-4 border-[#bfc6ce] text-[#197bbd] focus:ring-1 focus:ring-[#197bbd]"
+                                                    className="mt-0.5 h-4 w-4 border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
                                                 />
                                                 <div className="pr-3">
                                                     <div className="flex items-center gap-1.5">
@@ -1734,24 +1734,24 @@ export default function CheckoutPage() {
 
                         <section className="pt-6">
                             <h2 className="mb-3 text-[18px] font-semibold text-[#333333]">Billing address</h2>
-                            <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
-                                <label className={`flex cursor-pointer items-center gap-3 rounded-t-[8px] border-b border-[#d9d9d9] px-4 py-[15px] text-[14px] transition ${form.billingAddress === 'same' ? 'bg-[#f7faff] ring-1 ring-inset ring-[#cfe2f3]' : 'bg-white hover:bg-[#fbfbfc]'}`}>
+                            <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#1a1a1a,0_8px_24px_rgba(17,24,39,0.03)]">
+                                <label className={`flex cursor-pointer items-center gap-3 rounded-t-[8px] border-b border-[#d9d9d9] px-4 py-[15px] text-[14px] transition ${form.billingAddress === 'same' ? 'bg-[#f8fafc]' : 'bg-white hover:bg-[#fbfbfc]'}`}>
                                     <input
                                         type="radio"
                                         name="billingAddressChoice"
                                         checked={form.billingAddress === 'same'}
                                         onChange={() => updateField('billingAddress', 'same')}
-                                        className="h-4 w-4 border-[#bfc6ce] text-[#197bbd] focus:ring-1 focus:ring-[#197bbd]"
+                                        className="h-4 w-4 border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
                                     />
                                     <span className="text-[16px] font-semibold text-[#2d3742]">Same as shipping address</span>
                                 </label>
-                                <label className={`flex cursor-pointer items-center gap-3 px-4 py-[15px] text-[14px] transition ${form.billingAddress === 'different' ? 'bg-[#f7faff] ring-1 ring-inset ring-[#cfe2f3]' : 'rounded-b-[8px] bg-white hover:bg-[#fbfbfc]'}`}>
+                                <label className={`flex cursor-pointer items-center gap-3 px-4 py-[15px] text-[14px] transition ${form.billingAddress === 'different' ? 'bg-[#f8fafc]' : 'rounded-b-[8px] bg-white hover:bg-[#fbfbfc]'}`}>
                                     <input
                                         type="radio"
                                         name="billingAddressChoice"
                                         checked={form.billingAddress === 'different'}
                                         onChange={() => updateField('billingAddress', 'different')}
-                                        className="h-4 w-4 border-[#bfc6ce] text-[#197bbd] focus:ring-1 focus:ring-[#197bbd]"
+                                        className="h-4 w-4 border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
                                     />
                                     <span className="text-[16px] font-semibold text-[#2d3742]">Use a different billing address</span>
                                 </label>
