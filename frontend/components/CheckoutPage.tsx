@@ -1797,9 +1797,12 @@ export default function CheckoutPage() {
                                                             </label>
                                                         </div>
                                                         {form.billingAddress === 'different' && (
-                                                            <div className="grid gap-3 rounded-[8px] border border-[#d9d9d9] bg-white p-4">
-                                                                {renderBillingAddressFields()}
-                                                            </div>
+                                                            <>
+                                                                <p className="text-[16px] font-semibold text-[#2d3742]">Billing address</p>
+                                                                <div className="grid gap-3 rounded-[8px] border border-[#d9d9d9] bg-white p-4">
+                                                                    {renderBillingAddressFields()}
+                                                                </div>
+                                                            </>
                                                         )}
                                                     </>
                                                 ) : (
