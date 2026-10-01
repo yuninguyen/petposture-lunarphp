@@ -55,6 +55,7 @@ class PayPalGateway implements PaymentGatewayInterface
             'mode' => $configured ? 'configured' : 'placeholder',
             'brands' => ['paypal'],
             'client_id' => $configured ? $this->payPalService->clientId() : null,
+            'environment' => $this->payPalService->environment(),
         ];
     }
 }

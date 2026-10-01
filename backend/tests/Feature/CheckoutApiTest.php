@@ -624,7 +624,8 @@ class CheckoutApiTest extends TestCase
             ->assertJsonPath('methods.1.method', 'card')
             ->assertJsonPath('methods.1.gateway', 'stripe')
             ->assertJsonPath('methods.1.collection', 'direct')
-            ->assertJsonPath('methods.2.method', 'paypal');
+            ->assertJsonPath('methods.2.method', 'paypal')
+            ->assertJsonPath('methods.2.environment', 'sandbox');
     }
 
     public function test_prepare_payment_intent_returns_placeholder_payload_when_stripe_is_not_configured(): void

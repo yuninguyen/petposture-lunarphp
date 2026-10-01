@@ -153,6 +153,79 @@ class PayPalApiTest extends TestCase
         ])->assertOk()->assertJsonPath('success', true);
     }
 
+    // ─── Order shipping lookup (PayPal v6 onApprove has no address) ──────────
+
+    public function test_get_paypal_order_shipping_returns_guest_defaults_when_not_configured(): void
+    {
+        $response = $this->postJson('/api/checkout/paypal-order/shipping', [
+            'paypal_order_id' => 'PAYPAL-PLACEHOLDER-ANYTHING',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('shipping.first_name', 'Guest')
+            ->assertJsonPath('shipping.country', 'US');
+    }
+
+    public function test_get_paypal_order_shipping_normalizes_the_real_paypal_order_response(): void
+    {
+        config()->set('services.paypal.client_id', 'test-client-id');
+        config()->set('services.paypal.client_secret', 'test-client-secret');
+        config()->set('services.paypal.mode', 'sandbox-test-'.Str::lower(Str::random(8)));
+        Cache::forget('paypal_client_id');
+        Cache::forget('paypal_client_secret');
+        Cache::forget('paypal_mode');
+        Cache::put('paypal_access_token_'.config('services.paypal.mode'), 'test-access-token');
+
+        $orderResponse = new \Illuminate\Http\Client\Response(new Response(
+            200,
+            ['Content-Type' => 'application/json'],
+            json_encode([
+                'id' => 'ORDER-WITH-SHIPPING',
+                'payer' => [
+                    'email_address' => 'ada@example.com',
+                    'phone' => ['phone_number' => ['national_number' => '5555550123']],
+                ],
+                'purchase_units' => [[
+                    'shipping' => [
+                        'name' => ['full_name' => 'Ada Lovelace'],
+                        'address' => [
+                            'address_line_1' => '1 Infinite Loop',
+                            'address_line_2' => 'Suite 2',
+                            'admin_area_2' => 'Austin',
+                            'admin_area_1' => 'TX',
+                            'postal_code' => '78701',
+                            'country_code' => 'US',
+                        ],
+                    ],
+                ]],
+            ], JSON_THROW_ON_ERROR),
+        ));
+
+        Http::shouldReceive('withToken')->once()->with('test-access-token')->andReturnSelf();
+        Http::shouldReceive('get')->once()
+            ->with('https://api-m.sandbox.paypal.com/v2/checkout/orders/ORDER-WITH-SHIPPING')
+            ->andReturn($orderResponse);
+
+        $this->postJson('/api/checkout/paypal-order/shipping', [
+            'paypal_order_id' => 'ORDER-WITH-SHIPPING',
+        ])->assertOk()->assertExactJson([
+            'success' => true,
+            'shipping' => [
+                'email' => 'ada@example.com',
+                'first_name' => 'Ada',
+                'last_name' => 'Lovelace',
+                'line_one' => '1 Infinite Loop',
+                'line_two' => 'Suite 2',
+                'city' => 'Austin',
+                'state' => 'TX',
+                'postcode' => '78701',
+                'country' => 'US',
+                'phone' => '5555550123',
+            ],
+        ]);
+    }
+
     // ─── Place order with PayPal ─────────────────────────────────────────────
 
     public function test_place_order_with_paypal_stores_paypal_order_id_in_meta(): void

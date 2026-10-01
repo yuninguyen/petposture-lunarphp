@@ -548,6 +548,28 @@ class CheckoutController extends Controller
         }
     }
 
+    public function getPayPalOrderShipping(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'paypal_order_id' => 'required|string',
+        ])->validate();
+
+        try {
+            return response()->json([
+                'success' => true,
+                'shipping' => $this->payPalService->getShippingDetails($validated['paypal_order_id']),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("PayPal Order Shipping Lookup Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code' => ErrorCode::PAYMENT_INTENT_ERROR->value,
+                'success' => false,
+                'message' => 'Unable to retrieve PayPal order details. Please try again.',
+            ], 500);
+        }
+    }
+
     public function capturePayPalOrder(Request $request)
     {
         $validated = Validator::make($request->all(), [

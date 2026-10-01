@@ -35,6 +35,16 @@ class PayPalService
         );
     }
 
+    /**
+     * The v6 JS SDK loads a different script host per environment
+     * ('production' => www.paypal.com, anything else => www.sandbox.paypal.com)
+     * -- translates our internal 'live'/'sandbox' mode into that vocabulary.
+     */
+    public function environment(): string
+    {
+        return $this->mode() === 'live' ? 'production' : 'sandbox';
+    }
+
     private function webhookId(): string
     {
         return Cache::remember('paypal_webhook_id', 300, fn () => Setting::get('paypal_webhook_id') ?: (string) config('services.paypal.webhook_id')
@@ -136,6 +146,51 @@ class PayPalService
             'mode' => 'configured',
             'client_id' => $this->clientId(),
             'approve_url' => $approveUrl,
+        ];
+    }
+
+    /**
+     * The v6 JS SDK's onApprove callback only returns {orderId, payerId} --
+     * unlike v5, it never exposes the buyer's finalized shipping address to
+     * client-side JS. Fetch it from PayPal directly so place-order can be
+     * called with a complete shipping payload, same shape every other
+     * payment method already sends.
+     */
+    public function getShippingDetails(string $paypalOrderId): array
+    {
+        if (! $this->isConfigured() || str_starts_with($paypalOrderId, 'PAYPAL-PLACEHOLDER-')) {
+            return [
+                'email' => '', 'first_name' => 'Guest', 'last_name' => '',
+                'line_one' => '', 'line_two' => null, 'city' => '', 'state' => '',
+                'postcode' => '', 'country' => 'US', 'phone' => null,
+            ];
+        }
+
+        $response = Http::withToken($this->accessToken())
+            ->get($this->baseUrl()."/v2/checkout/orders/{$paypalOrderId}");
+
+        if (! $response->successful()) {
+            throw new RuntimeException(
+                $response->json('message') ?? 'Unable to retrieve PayPal order details.'
+            );
+        }
+
+        $shipping = (array) $response->json('purchase_units.0.shipping');
+        $address = (array) ($shipping['address'] ?? []);
+        $fullName = trim((string) ($shipping['name']['full_name'] ?? ''));
+        $nameParts = $fullName === '' ? ['Guest', ''] : array_pad(explode(' ', $fullName, 2), 2, '');
+
+        return [
+            'email' => (string) $response->json('payer.email_address', ''),
+            'first_name' => $nameParts[0],
+            'last_name' => $nameParts[1],
+            'line_one' => (string) ($address['address_line_1'] ?? ''),
+            'line_two' => $address['address_line_2'] ?? null,
+            'city' => (string) ($address['admin_area_2'] ?? ''),
+            'state' => (string) ($address['admin_area_1'] ?? ''),
+            'postcode' => (string) ($address['postal_code'] ?? ''),
+            'country' => (string) ($address['country_code'] ?? 'US'),
+            'phone' => $response->json('payer.phone.phone_number.national_number'),
         ];
     }
 
