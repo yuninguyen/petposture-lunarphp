@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle, Loader2, Mail, Package, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2, Mail, Package, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api";
 import { fetchApi } from "@/lib/fetchApi";
 import { useCart } from "@/context/CartContext";
@@ -431,10 +431,12 @@ function OrderSuccessContent() {
                 <div className="flex-1 border-r border-[#e8e8ea] bg-white px-4 pt-4 pb-8 md:px-8 lg:px-12 lg:pt-6 lg:pb-12">
                     <div className="flex items-center gap-4">
                         <div className="flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-full bg-[#fff3eb]">
-                            <CheckCircle size={28} strokeWidth={2} className="text-[#df8448]" />
+                            {stripePaymentFailed
+                                ? <AlertCircle size={28} strokeWidth={2} className="text-[#df8448]" />
+                                : <CheckCircle size={28} strokeWidth={2} className="text-[#df8448]" />}
                         </div>
                         <div>
-                            <p className="text-[14px] font-semibold text-[#df8448]">Confirmation #{order.reference}</p>
+                            <p className="text-[14px] font-semibold text-[#df8448]">{stripePaymentFailed ? "Order" : "Confirmation"} #{order.reference}</p>
                             <h1 className="mt-0.5 text-[22px] font-bold leading-tight tracking-tight text-[#2f3d46]">{stripePaymentFailed ? "Your payment didn't go through" : `Thank you${customerName ? `, ${customerName}` : ""}!`}</h1>
                         </div>
                     </div>
