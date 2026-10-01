@@ -1727,15 +1727,18 @@ export default function CheckoutPage() {
 
             <div className="mx-auto flex min-h-screen max-w-[1100px] flex-col lg:flex-row">
                 <div className="flex-1 border-r border-[#e8e8ea] bg-white px-4 pt-4 pb-8 md:px-8 lg:px-12 lg:pt-6 lg:pb-12">
-                    <ExpressCheckout
-                        items={items.map((item) => ({ variantId: item.variantId, quantity: item.quantity }))}
-                        couponCode={coupon.discountAmount > 0 ? coupon.code : null}
-                        subtotalMinor={Math.round(totalAmount * 100)}
-                        stripeInstance={stripeInstanceRef.current}
-                        paypalClientId={selectedPayPalMethod.client_id ?? null}
-                        paypalEnvironment={selectedPayPalMethod.environment === 'sandbox' ? 'sandbox' : 'production'}
-                        onOrderPlaced={redirectToSuccess}
-                    />
+                    {/* Stripe rejects elements({ amount: 0 }) and the throw takes down the whole page. */}
+                    {items.length > 0 && (
+                        <ExpressCheckout
+                            items={items.map((item) => ({ variantId: item.variantId, quantity: item.quantity }))}
+                            couponCode={coupon.discountAmount > 0 ? coupon.code : null}
+                            subtotalMinor={Math.round(totalAmount * 100)}
+                            stripeInstance={stripeInstanceRef.current}
+                            paypalClientId={selectedPayPalMethod.client_id ?? null}
+                            paypalEnvironment={selectedPayPalMethod.environment === 'sandbox' ? 'sandbox' : 'production'}
+                            onOrderPlaced={redirectToSuccess}
+                        />
+                    )}
                     <header className="mb-10 hidden lg:block">
                         <nav className="flex items-center gap-2 text-[14px] text-[#707070]">
                             <Link href="/cart" className="hover:text-[#333333]">Cart</Link>
