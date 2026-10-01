@@ -38,7 +38,7 @@ export function ShippingMethodSelector({
                 {options.map((option, index) => (
                     <label
                         key={option.id}
-                        className={`flex cursor-pointer items-center justify-between p-4 text-[14px] transition ${index < options.length - 1 ? 'border-b border-[#d9d9d9]' : ''} ${value === option.id ? 'bg-[#f7faff]' : 'hover:bg-[#fbfbfc]'}`}
+                        className={`flex cursor-pointer items-center justify-between p-4 text-[14px] transition ${index < options.length - 1 ? 'border-b border-[#d9d9d9]' : ''} ${value === option.id ? 'bg-[#f8fafc]' : 'hover:bg-[#fbfbfc]'}`}
                     >
                         <div className="flex items-center gap-4">
                             <input
@@ -46,7 +46,7 @@ export function ShippingMethodSelector({
                                 name="shippingMethod"
                                 checked={value === option.id}
                                 onChange={() => onChange(option.id)}
-                                className="h-4 w-4 border-[#d9d9d9] text-[#197bbd]"
+                                className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a]"
                             />
                             <div>
                                 <span className="text-[#333333]">{option.name}</span>
