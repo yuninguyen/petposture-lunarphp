@@ -1787,7 +1787,7 @@ export default function CheckoutPage() {
                                                         }}
                                                         className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
                                                     />
-                                                    <span className="text-[16px] font-semibold text-[#2d3742]">{method.label}</span>
+                                                    <span className="text-[15px] font-semibold text-[#2d3742]">{method.label}</span>
                                                 </div>
                                                 <div className="flex flex-shrink-0 items-center">
                                                     {renderPaymentBadges(method)}
@@ -1901,7 +1901,7 @@ export default function CheckoutPage() {
                                             onChange={() => updateField('billingAddress', 'same')}
                                             className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
                                         />
-                                        <span className="text-[16px] font-semibold text-[#2d3742]">Same as shipping address</span>
+                                        <span className="text-[15px] font-semibold text-[#2d3742]">Same as shipping address</span>
                                     </label>
                                     <label className={`flex cursor-pointer items-center gap-3 px-4 py-3 text-[14px] transition ${form.billingAddress === 'different' ? 'bg-[#f8fafc]' : 'rounded-b-[8px] bg-white hover:bg-[#fbfbfc]'}`}>
                                         <input
@@ -1911,7 +1911,7 @@ export default function CheckoutPage() {
                                             onChange={() => updateField('billingAddress', 'different')}
                                             className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
                                         />
-                                        <span className="text-[16px] font-semibold text-[#2d3742]">Use a different billing address</span>
+                                        <span className="text-[15px] font-semibold text-[#2d3742]">Use a different billing address</span>
                                     </label>
 
                                     {form.billingAddress === 'different' && (
