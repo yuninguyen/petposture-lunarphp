@@ -28,7 +28,7 @@ describe('isStripeAltPaymentMethodEligible', () => {
         expect(isStripeAltPaymentMethodEligible({ method: 'cashapp', enabled: false, min_amount_minor: null, max_amount_minor: null }, 1)).toBe(false);
     });
 
-    it('maps Affirm billing and shipping details into the Stripe.js call', async () => {
+    it('maps Affirm billing details into the Stripe.js call without re-sending shipping the server already set', async () => {
         const stripe = {
             confirmAffirmPayment: vi.fn().mockResolvedValue({}),
             confirmKlarnaPayment: vi.fn(),
@@ -42,7 +42,6 @@ describe('isStripeAltPaymentMethodEligible', () => {
         await confirmStripeAltPayment(stripeInstance as NonNullable<typeof stripeInstance>, 'affirm', 'pi_secret', buildAffirmPaymentData({
             email: 'jane@example.com',
             billing: { first_name: 'Jane', last_name: 'Doe', line_one: '1 Main St', line_two: 'Unit 2', city: 'Austin', state: 'TX', postcode: '78701', country: 'United States' },
-            shipping: { first_name: 'Jane', last_name: 'Doe', line_one: '2 Oak St', city: 'Austin', state: 'TX', postcode: '78702', country: 'United States' },
             returnUrl,
         }));
 
@@ -53,12 +52,9 @@ describe('isStripeAltPaymentMethodEligible', () => {
                 name: 'Jane Doe',
                 address: { line1: '1 Main St', line2: 'Unit 2', city: 'Austin', state: 'TX', country: 'US', postal_code: '78701' },
             } },
-            shipping: {
-                name: 'Jane Doe',
-                address: { line1: '2 Oak St', city: 'Austin', state: 'TX', country: 'US', postal_code: '78702' },
-            },
             return_url: returnUrl,
         });
+        expect(stripe.confirmAffirmPayment.mock.calls[0][1]).not.toHaveProperty('shipping');
     });
 
     it('passes the Klarna and Cash App Pay argument shapes to their Stripe.js methods', async () => {

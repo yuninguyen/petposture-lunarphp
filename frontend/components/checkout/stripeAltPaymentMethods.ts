@@ -14,7 +14,6 @@ type CheckoutAddress = {
 type AffirmConfirmationInput = {
     email: string;
     billing: CheckoutAddress;
-    shipping: CheckoutAddress;
     returnUrl: string;
 };
 
@@ -56,7 +55,11 @@ function mapStripeAddress(address: CheckoutAddress) {
     };
 }
 
-export function buildAffirmPaymentData({ email, billing, shipping, returnUrl }: AffirmConfirmationInput) {
+// No `shipping` here on purpose: the server already set it on the PaymentIntent
+// with the secret key, and Stripe rejects changing it from a publishable key
+// ("The shipping information on this PaymentIntent was last set with a secret
+// key and therefore cannot be changed with a publishable key").
+export function buildAffirmPaymentData({ email, billing, returnUrl }: AffirmConfirmationInput) {
     return {
         payment_method: {
             billing_details: {
@@ -64,10 +67,6 @@ export function buildAffirmPaymentData({ email, billing, shipping, returnUrl }: 
                 name: `${billing.first_name} ${billing.last_name}`.trim(),
                 address: mapStripeAddress(billing),
             },
-        },
-        shipping: {
-            name: `${shipping.first_name} ${shipping.last_name}`.trim(),
-            address: mapStripeAddress(shipping),
         },
         return_url: returnUrl,
     };

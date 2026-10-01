@@ -1529,12 +1529,11 @@ export default function CheckoutPage() {
                     throw new Error('Stripe is not ready to confirm this payment.');
                 }
 
-                const { shippingAddress, billingAddress } = buildOrderAddresses();
+                const { billingAddress } = buildOrderAddresses();
                 const confirmationData = method === 'affirm'
                     ? buildAffirmPaymentData({
                         email: form.email,
                         billing: billingAddress,
-                        shipping: shippingAddress,
                         returnUrl: session.return_url,
                     })
                     : method === 'klarna'
