@@ -1012,6 +1012,104 @@ export default function CheckoutPage() {
         return null;
     };
 
+    // Shared by the Card panel's inline "different billing address" form and
+    // the standalone Billing address section (shown for every other
+    // method) -- same fields, same form.billing* state either way, only the
+    // surrounding wrapper differs per caller.
+    const renderBillingAddressFields = () => (
+        <>
+            <div className="relative">
+                <select
+                    name="billingCountry"
+                    autoComplete="billing country-name"
+                    value={form.billingCountry}
+                    onChange={(e) => updateField('billingCountry', e.target.value)}
+                    className="h-[46px] w-full appearance-none rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
+                >
+                    {countryOptions.map((country) => (
+                        <option key={country} value={country}>{country}</option>
+                    ))}
+                </select>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+                <input
+                    required={form.billingAddress === 'different'}
+                    name="billingFirstName"
+                    autoComplete="billing given-name"
+                    placeholder="First name"
+                    value={form.billingFirstName}
+                    onChange={(e) => updateField('billingFirstName', e.target.value)}
+                    className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
+                />
+                <input
+                    required={form.billingAddress === 'different'}
+                    name="billingLastName"
+                    autoComplete="billing family-name"
+                    placeholder="Last name"
+                    value={form.billingLastName}
+                    onChange={(e) => updateField('billingLastName', e.target.value)}
+                    className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
+                />
+            </div>
+
+            <div className="relative">
+                <input
+                    required={form.billingAddress === 'different'}
+                    name="billingAddress1"
+                    autoComplete="billing address-line1"
+                    placeholder="Address"
+                    value={form.billingAddress1}
+                    onChange={(e) => updateField('billingAddress1', e.target.value)}
+                    onFocus={() => setActiveAddressTarget('billing')}
+                    onBlur={() => window.setTimeout(() => setActiveAddressTarget((prev) => (prev === 'billing' ? null : prev)), 120)}
+                    className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 pr-10 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
+                />
+                <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#707070]" />
+                {renderAddressSuggestions('billing')}
+            </div>
+
+            <input
+                name="billingAddress2"
+                autoComplete="billing address-line2"
+                placeholder="Apartment, suite, etc. (optional)"
+                value={form.billingAddress2}
+                onChange={(e) => updateField('billingAddress2', e.target.value)}
+                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
+            />
+
+            <div className="grid gap-3 md:grid-cols-3">
+                <input
+                    required={form.billingAddress === 'different'}
+                    name="billingCity"
+                    autoComplete="billing address-level2"
+                    placeholder="City"
+                    value={form.billingCity}
+                    onChange={(e) => updateField('billingCity', e.target.value)}
+                    className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
+                />
+                <input
+                    required={form.billingAddress === 'different'}
+                    name="billingProvince"
+                    autoComplete="billing address-level1"
+                    placeholder="State"
+                    value={form.billingProvince}
+                    onChange={(e) => updateField('billingProvince', e.target.value)}
+                    className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
+                />
+                <input
+                    required={form.billingAddress === 'different'}
+                    name="billingPostalCode"
+                    autoComplete="billing postal-code"
+                    placeholder="ZIP code"
+                    value={form.billingPostalCode}
+                    onChange={(e) => updateField('billingPostalCode', e.target.value)}
+                    className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
+                />
+            </div>
+        </>
+    );
+
     const paymentRowClasses = (method: PaymentMethod, index: number) => {
         const isSelected = form.paymentMethod === method;
         // Card and PayPal both render a detail panel directly below their
@@ -1686,6 +1784,23 @@ export default function CheckoutPage() {
                                                         {stripeError ? (
                                                             <p className="text-sm font-medium text-[#b42318]">{stripeError}</p>
                                                         ) : null}
+                                                        <div className="rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 py-3">
+                                                            <label htmlFor="billingSameAsShipping" className="flex cursor-pointer items-start gap-3 text-[14px] text-[#333333]">
+                                                                <input
+                                                                    id="billingSameAsShipping"
+                                                                    type="checkbox"
+                                                                    checked={form.billingAddress === 'same'}
+                                                                    onChange={(e) => updateField('billingAddress', e.target.checked ? 'same' : 'different')}
+                                                                    className="mt-0.5 h-4 w-4 rounded border-[#bfc6ce] accent-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
+                                                                />
+                                                                <span>Use shipping address as billing address</span>
+                                                            </label>
+                                                        </div>
+                                                        {form.billingAddress === 'different' && (
+                                                            <div className="grid gap-3 rounded-[8px] border border-[#d9d9d9] bg-white p-4">
+                                                                {renderBillingAddressFields()}
+                                                            </div>
+                                                        )}
                                                     </>
                                                 ) : (
                                                     // Never render a hand-rolled card number/CVC form: raw PAN input
@@ -1730,125 +1845,39 @@ export default function CheckoutPage() {
                             </div>
                         </section>
 
-                        <section className="pt-6">
-                            <h2 className="mb-3 text-[18px] font-semibold text-[#333333]">Billing address</h2>
-                            <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
-                                <label className={`flex cursor-pointer items-center gap-3 rounded-t-[8px] border-b border-[#d9d9d9] px-4 py-3 text-[14px] transition ${form.billingAddress === 'same' ? 'bg-[#f8fafc]' : 'bg-white hover:bg-[#fbfbfc]'}`}>
-                                    <input
-                                        type="radio"
-                                        name="billingAddressChoice"
-                                        checked={form.billingAddress === 'same'}
-                                        onChange={() => updateField('billingAddress', 'same')}
-                                        className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
-                                    />
-                                    <span className="text-[16px] font-semibold text-[#2d3742]">Same as shipping address</span>
-                                </label>
-                                <label className={`flex cursor-pointer items-center gap-3 px-4 py-3 text-[14px] transition ${form.billingAddress === 'different' ? 'bg-[#f8fafc]' : 'rounded-b-[8px] bg-white hover:bg-[#fbfbfc]'}`}>
-                                    <input
-                                        type="radio"
-                                        name="billingAddressChoice"
-                                        checked={form.billingAddress === 'different'}
-                                        onChange={() => updateField('billingAddress', 'different')}
-                                        className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
-                                    />
-                                    <span className="text-[16px] font-semibold text-[#2d3742]">Use a different billing address</span>
-                                </label>
-
-                                {form.billingAddress === 'different' && (
-                                    <div className="grid gap-3 rounded-b-[8px] border-t border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3">
-                                        <div className="relative">
-                                            <select
-                                                name="billingCountry"
-                                                autoComplete="billing country-name"
-                                                value={form.billingCountry}
-                                                onChange={(e) => updateField('billingCountry', e.target.value)}
-                                                className="h-[46px] w-full appearance-none rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
-                                            >
-                                                {countryOptions.map((country) => (
-                                                    <option key={country} value={country}>{country}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="grid gap-3 md:grid-cols-2">
-                                            <input
-                                                required={form.billingAddress === 'different'}
-                                                name="billingFirstName"
-                                                autoComplete="billing given-name"
-                                                placeholder="First name"
-                                                value={form.billingFirstName}
-                                                onChange={(e) => updateField('billingFirstName', e.target.value)}
-                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
-                                            />
-                                            <input
-                                                required={form.billingAddress === 'different'}
-                                                name="billingLastName"
-                                                autoComplete="billing family-name"
-                                                placeholder="Last name"
-                                                value={form.billingLastName}
-                                                onChange={(e) => updateField('billingLastName', e.target.value)}
-                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
-                                            />
-                                        </div>
-
-                                        <div className="relative">
-                                            <input
-                                                required={form.billingAddress === 'different'}
-                                                name="billingAddress1"
-                                                autoComplete="billing address-line1"
-                                                placeholder="Address"
-                                                value={form.billingAddress1}
-                                                onChange={(e) => updateField('billingAddress1', e.target.value)}
-                                                onFocus={() => setActiveAddressTarget('billing')}
-                                                onBlur={() => window.setTimeout(() => setActiveAddressTarget((prev) => (prev === 'billing' ? null : prev)), 120)}
-                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 pr-10 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
-                                            />
-                                            <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#707070]" />
-                                            {renderAddressSuggestions('billing')}
-                                        </div>
-
+                        {form.paymentMethod !== 'card' && (
+                            <section className="pt-6">
+                                <h2 className="mb-3 text-[18px] font-semibold text-[#333333]">Billing address</h2>
+                                <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
+                                    <label className={`flex cursor-pointer items-center gap-3 rounded-t-[8px] border-b border-[#d9d9d9] px-4 py-3 text-[14px] transition ${form.billingAddress === 'same' ? 'bg-[#f8fafc]' : 'bg-white hover:bg-[#fbfbfc]'}`}>
                                         <input
-                                            name="billingAddress2"
-                                            autoComplete="billing address-line2"
-                                            placeholder="Apartment, suite, etc. (optional)"
-                                            value={form.billingAddress2}
-                                            onChange={(e) => updateField('billingAddress2', e.target.value)}
-                                            className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
+                                            type="radio"
+                                            name="billingAddressChoice"
+                                            checked={form.billingAddress === 'same'}
+                                            onChange={() => updateField('billingAddress', 'same')}
+                                            className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
                                         />
+                                        <span className="text-[16px] font-semibold text-[#2d3742]">Same as shipping address</span>
+                                    </label>
+                                    <label className={`flex cursor-pointer items-center gap-3 px-4 py-3 text-[14px] transition ${form.billingAddress === 'different' ? 'bg-[#f8fafc]' : 'rounded-b-[8px] bg-white hover:bg-[#fbfbfc]'}`}>
+                                        <input
+                                            type="radio"
+                                            name="billingAddressChoice"
+                                            checked={form.billingAddress === 'different'}
+                                            onChange={() => updateField('billingAddress', 'different')}
+                                            className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
+                                        />
+                                        <span className="text-[16px] font-semibold text-[#2d3742]">Use a different billing address</span>
+                                    </label>
 
-                                        <div className="grid gap-3 md:grid-cols-3">
-                                            <input
-                                                required={form.billingAddress === 'different'}
-                                                name="billingCity"
-                                                autoComplete="billing address-level2"
-                                                placeholder="City"
-                                                value={form.billingCity}
-                                                onChange={(e) => updateField('billingCity', e.target.value)}
-                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
-                                            />
-                                            <input
-                                                required={form.billingAddress === 'different'}
-                                                name="billingProvince"
-                                                autoComplete="billing address-level1"
-                                                placeholder="State"
-                                                value={form.billingProvince}
-                                                onChange={(e) => updateField('billingProvince', e.target.value)}
-                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
-                                            />
-                                            <input
-                                                required={form.billingAddress === 'different'}
-                                                name="billingPostalCode"
-                                                autoComplete="billing postal-code"
-                                                placeholder="ZIP code"
-                                                value={form.billingPostalCode}
-                                                onChange={(e) => updateField('billingPostalCode', e.target.value)}
-                                                className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
-                                            />
+                                    {form.billingAddress === 'different' && (
+                                        <div className="grid gap-3 rounded-b-[8px] border-t border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3">
+                                            {renderBillingAddressFields()}
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-                        </section>
+                                    )}
+                                </div>
+                            </section>
+                        )}
 
                         <div className="pt-6">
                             <Button
