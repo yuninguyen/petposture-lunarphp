@@ -307,6 +307,7 @@ export default function CheckoutPage() {
     const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
     const [activeAddressTarget, setActiveAddressTarget] = useState<AddressTarget | null>(null);
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>([]);
+    const [paymentMethodsLoaded, setPaymentMethodsLoaded] = useState(false);
     const [detectedCardBrand, setDetectedCardBrand] = useState<string>('unknown');
     const [preparedPaymentIntent, setPreparedPaymentIntent] = useState<PreparedPaymentIntent | null>(null);
     const [paymentIntentMessage, setPaymentIntentMessage] = useState<string | null>(null);
@@ -389,7 +390,7 @@ export default function CheckoutPage() {
         const loadPaymentMethods = async () => {
             try {
                 const apiBase = getApiBaseUrl();
-                const response = await fetch(`${apiBase}/api/checkout/payment-methods`);
+                const response = await fetch(`${apiBase}/api/checkout/payment-methods`, { cache: 'no-store' });
                 const data = await response.json();
 
                 if (!response.ok || !Array.isArray(data?.methods)) {
@@ -403,14 +404,17 @@ export default function CheckoutPage() {
                 const methods = data.methods as PaymentMethodOption[];
                 setPaymentMethods(methods.filter((method) => method.enabled));
 
-                const selectedStillExists = methods.some((method) => method.method === form.paymentMethod && method.enabled);
+                setForm((prev) => {
+                    const selectedStillExists = methods.some((method) => method.method === prev.paymentMethod && method.enabled);
+                    if (selectedStillExists) return prev;
 
-                if (!selectedStillExists) {
                     const fallbackMethod = methods.find((method) => method.enabled)?.method ?? 'cod';
-                    setForm((prev) => ({ ...prev, paymentMethod: fallbackMethod }));
-                }
+                    return { ...prev, paymentMethod: fallbackMethod };
+                });
             } catch {
                 setPaymentMethods([]);
+            } finally {
+                if (!cancelled) setPaymentMethodsLoaded(true);
             }
         };
 
@@ -419,7 +423,7 @@ export default function CheckoutPage() {
         return () => {
             cancelled = true;
         };
-    }, [form.paymentMethod]);
+    }, []);
 
     useEffect(() => {
         setForm((prev) => ({
@@ -1923,7 +1927,7 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
                             <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
-                                {availablePaymentMethods.map((method, index) => (
+                                {paymentMethodsLoaded ? availablePaymentMethods.map((method, index) => (
                                     <React.Fragment key={method.method}>
                                         <label
                                             className={paymentRowClasses(method.method, index)}
@@ -2022,7 +2026,7 @@ export default function CheckoutPage() {
 
                                         {method.method === 'paypal' && form.paymentMethod === 'paypal' && (
                                             <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
-                                                <p className="text-[16px] leading-[1.45] text-[#6f7782]">
+                                                <p className="text-sm leading-[1.45] text-[#6f7782]">
                                                     {paypalLiveMode
                                                         ? 'A PayPal window will open to complete your purchase.'
                                                         : 'PayPal is running in placeholder mode — click "Complete order" below to simulate a PayPal order without a live PayPal account.'}
@@ -2048,9 +2052,9 @@ export default function CheckoutPage() {
                                             </div>
                                         )}
                                     </React.Fragment>
-                                ))}
-
-
+                                )) : (
+                                    <div className="bg-white px-4 py-4 text-sm text-[#707070]">Loading payment methods…</div>
+                                )}
                             </div>
                         </section>
 

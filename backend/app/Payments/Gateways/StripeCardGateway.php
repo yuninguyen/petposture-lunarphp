@@ -59,7 +59,7 @@ class StripeCardGateway implements PaymentGatewayInterface
             'method' => $this->method(),
             // Distinct from label(), which stays 'Card' for order meta/admin
             // display -- this is the checkout page's own copy.
-            'label' => 'Credit card',
+            'label' => 'Credit or Debit Card',
             'gateway' => 'stripe',
             'collection' => 'direct',
             'enabled' => true,
