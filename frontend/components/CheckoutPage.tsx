@@ -26,6 +26,7 @@ import { getShippingAmount } from '@/lib/pricing';
 import { getAttributionData } from '@/lib/attribution';
 import { Button } from '@/components/ui/Button';
 import { ExpressCheckout } from './checkout/ExpressCheckout';
+import { isStripeAltPaymentMethodEligible } from './checkout/stripeAltPaymentMethods';
 
 declare global {
     interface Window {
@@ -46,6 +47,18 @@ declare global {
                 clientSecret: string,
                 data: Record<string, unknown>
             ) => Promise<{
+                error?: { message?: string };
+                paymentIntent?: { status?: string };
+            }>;
+            confirmAffirmPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<{
+                error?: { message?: string };
+                paymentIntent?: { status?: string };
+            }>;
+            confirmKlarnaPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<{
+                error?: { message?: string };
+                paymentIntent?: { status?: string };
+            }>;
+            confirmCashappPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<{
                 error?: { message?: string };
                 paymentIntent?: { status?: string };
             }>;
@@ -107,7 +120,7 @@ const countryOptions = ['United States'];
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const googleMapsScriptId = 'petposture-google-places';
 const stripeJsScriptId = 'petposture-stripe-js';
-const paymentMethodOrder = { card: 0, paypal: 1, airwallex: 2, payoneer: 3, pingpong: 4, cod: 5 } as const;
+const paymentMethodOrder = { card: 0, paypal: 1, cashapp: 2, affirm: 3, klarna: 4, airwallex: 5, payoneer: 6, pingpong: 7, cod: 8 } as const;
 
 type AddressTarget = 'shipping' | 'billing';
 type AddressSuggestion = {
@@ -118,7 +131,7 @@ type AddressSuggestion = {
     target: AddressTarget;
 };
 
-type PaymentMethod = 'cod' | 'card' | 'paypal' | 'airwallex' | 'payoneer' | 'pingpong';
+type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'klarna' | 'airwallex' | 'payoneer' | 'pingpong';
 
 const redirectPaymentMethods: ReadonlySet<PaymentMethod> = new Set(['airwallex', 'payoneer', 'pingpong', 'paypal']);
 
@@ -131,6 +144,8 @@ type PaymentMethodOption = {
     enabled: boolean;
     mode?: string;
     brands?: string[];
+    min_amount_minor?: number | null;
+    max_amount_minor?: number | null;
     publishable_key?: string | null;
     client_id?: string | null;
     environment?: string | null;
@@ -787,7 +802,18 @@ export default function CheckoutPage() {
                 brands: [],
             },
         ] satisfies PaymentMethodOption[])
-        .filter((method) => method.method === 'card' || method.method === 'paypal' || method.method === 'cod')
+        .filter((method) => {
+            if (method.method === 'cashapp' || method.method === 'affirm' || method.method === 'klarna') {
+                return isStripeAltPaymentMethodEligible({
+                    method: method.method,
+                    enabled: method.enabled,
+                    min_amount_minor: method.min_amount_minor,
+                    max_amount_minor: method.max_amount_minor,
+                }, Math.round(finalTotal * 100));
+            }
+
+            return method.method === 'card' || method.method === 'paypal' || method.method === 'cod';
+        })
         .sort((left, right) => paymentMethodOrder[left.method as keyof typeof paymentMethodOrder] - paymentMethodOrder[right.method as keyof typeof paymentMethodOrder]);
 
     const formatPhoneNumber = (value: string) => {
@@ -1036,6 +1062,11 @@ export default function CheckoutPage() {
             );
         }
 
+        if (method.method === 'cashapp' || method.method === 'affirm' || method.method === 'klarna') {
+            const labels = { cashapp: 'Cash App Pay', affirm: 'Affirm', klarna: 'Klarna' };
+            return <span className="rounded-[4px] border border-[#d9d9d9] bg-white px-2 py-1 text-[11px] font-semibold text-[#4b5563]">{labels[method.method]}</span>;
+        }
+
         return null;
     };
 
@@ -1163,7 +1194,7 @@ export default function CheckoutPage() {
         // otherwise a selected last-row method renders its own rounded
         // corners above a square-cornered panel, mismatching the outer
         // container's real bottom edge.
-        const expandsDetailsBelow = isSelected && (method === 'card' || method === 'paypal');
+        const expandsDetailsBelow = isSelected && (method === 'card' || method === 'paypal' || method === 'cashapp' || method === 'affirm' || method === 'klarna');
         const isFirst = index === 0;
         const isLast = index === availablePaymentMethods.length - 1;
 
@@ -1883,6 +1914,18 @@ export default function CheckoutPage() {
                                                 {paypalError ? (
                                                     <p className="text-sm font-medium text-[#b42318]">{paypalError}</p>
                                                 ) : null}
+                                            </div>
+                                        )}
+
+                                        {(method.method === 'cashapp' || method.method === 'affirm' || method.method === 'klarna') && form.paymentMethod === method.method && (
+                                            <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
+                                                <p className="text-sm leading-[1.45] text-[#6f7782]">
+                                                    {method.method === 'cashapp'
+                                                        ? "You'll be redirected to Cash App Pay to complete your purchase"
+                                                        : method.method === 'affirm'
+                                                            ? "You'll be redirected to Affirm - Pay Over Time to complete your purchase"
+                                                            : "You'll be redirected to Pay with Klarna to complete your purchase"}
+                                                </p>
                                             </div>
                                         )}
                                     </React.Fragment>

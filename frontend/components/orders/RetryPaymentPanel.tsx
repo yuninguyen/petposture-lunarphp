@@ -26,6 +26,18 @@ declare global {
                 error?: { message?: string };
                 paymentIntent?: { status?: string };
             }>;
+            confirmAffirmPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<{
+                error?: { message?: string };
+                paymentIntent?: { status?: string };
+            }>;
+            confirmKlarnaPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<{
+                error?: { message?: string };
+                paymentIntent?: { status?: string };
+            }>;
+            confirmCashappPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<{
+                error?: { message?: string };
+                paymentIntent?: { status?: string };
+            }>;
         };
     }
 }
