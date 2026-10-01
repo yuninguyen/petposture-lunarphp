@@ -208,8 +208,8 @@ test('expanded order total shows currency before the formatted amount', () => {
     assert.match(expandedTotals, /<span>Total<\/span>[\s\S]*\{order\.currency\}[\s\S]*\{order\.total\.formatted\}/);
 });
 
-test('separate billing payload carries the checkout contact phone', () => {
-    assert.match(separateBillingPayload, /\bphone:\s*form\.phone\b/);
+test('separate billing payload uses the billing phone, falling back to the checkout contact phone', () => {
+    assert.match(separateBillingPayload, /\bphone:\s*form\.billingPhone\s*\|\|\s*form\.phone\b/);
 });
 
 test('billing display falls back to the shipping phone', () => {
