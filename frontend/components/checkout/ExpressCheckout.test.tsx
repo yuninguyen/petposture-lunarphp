@@ -137,7 +137,7 @@ describe('ExpressCheckout', () => {
         expect(script?.src).toBe('https://www.sandbox.paypal.com/web-sdk/v6/core');
     });
 
-    it('creates a v6 SDK instance, checks PayPal eligibility, and mounts a <paypal-button> once eligible', async () => {
+    it('creates a v6 SDK instance, checks PayPal eligibility, and mounts the logo-only PayPal button once eligible', async () => {
         const findEligibleMethods = vi.fn().mockResolvedValue({ isEligible: () => true });
         const createPayPalOneTimePaymentSession = vi.fn().mockReturnValue({ start: vi.fn() });
         const createInstance = vi.fn().mockResolvedValue({ findEligibleMethods, createPayPalOneTimePaymentSession });
@@ -152,7 +152,7 @@ describe('ExpressCheckout', () => {
         }));
         expect(findEligibleMethods).toHaveBeenCalledWith({ currencyCode: 'USD' });
         expect(createPayPalOneTimePaymentSession).toHaveBeenCalledTimes(1);
-        expect(element.querySelector('paypal-button')).not.toBeNull();
+        expect(element.querySelector('button[aria-label="Pay with PayPal"] img[alt="PayPal"]')).not.toBeNull();
     });
 
     it('patches the PayPal order amount through the new amount endpoint when the wallet reports a shipping address', async () => {

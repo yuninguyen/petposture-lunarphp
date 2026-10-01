@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchApi } from '../../lib/fetchApi';
 
-type PayPalButtonElement = HTMLElement & { type?: 'buynow' | 'checkout' | 'donate' | 'pay' | 'subscribe'; disabled?: boolean };
-
 type PayPalEligiblePaymentMethods = { isEligible: (method: string) => boolean };
 type PayPalOnApproveData = { fundingSource: string; orderId: string; payerId?: string; billingToken?: string };
 type PayPalOnShippingAddressChangeData = { orderId: string; shippingAddress: { city?: string; countryCode: string; postalCode?: string; state?: string } };
@@ -29,9 +27,6 @@ declare global {
         paypal?: {
             createInstance: (options: { clientId: string; components: ['paypal-payments']; pageType?: string }) => Promise<PayPalSdkInstance>;
         };
-    }
-    interface HTMLElementTagNameMap {
-        'paypal-button': PayPalButtonElement;
     }
 }
 
@@ -407,8 +402,24 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             onError: (data) => setError(data.message || 'Something went wrong. Please try again.'),
         });
 
-        const button = document.createElement('paypal-button');
-        button.type = 'pay';
+        // v6's <paypal-button> element has no logo-only variant -- every
+        // `type` value prepends a verb ("Pay with", "Buy Now", "Checkout",
+        // "Donate", "Subscribe") before the wordmark, confirmed live by
+        // cycling through all of them and inspecting the shadow DOM; hiding
+        // the text node via injected CSS also didn't stick through the
+        // SDK's own re-renders. A plain button with the same PayPal logo
+        // asset already used elsewhere on this checkout page (the payment
+        // method radio option) is the only reliable way to show just the
+        // logo.
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('aria-label', 'Pay with PayPal');
+        button.className = 'flex h-11 w-full items-center justify-center rounded-md bg-[#ffc439] transition-colors hover:bg-[#f2ba36]';
+        const logo = document.createElement('img');
+        logo.src = 'https://www.paypalobjects.com/webstatic/mktg/Logo/pp-logo-100px.png';
+        logo.alt = 'PayPal';
+        logo.className = 'h-5 w-auto';
+        button.appendChild(logo);
         const handleClick = () => {
             const createOrderPromise = fetchApi('/api/checkout/paypal-order', {
                 method: 'POST',
