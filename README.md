@@ -469,6 +469,25 @@ used to read `config()` directly, which meant `/api/checkout/payment-methods` re
 in the DB and payment-intent creation succeeded, breaking checkout with "Stripe card form is not
 ready yet." If you add another Stripe-touching class, follow the same DB-first pattern.
 
+### Stripe alternative methods: Cash App Pay, Affirm, Klarna
+
+Three extra checkout methods are paid through the same Stripe account and are switched on by
+`STRIPE_ALT_PAYMENT_METHODS` in `backend/.env` (comma list, e.g. `cashapp,affirm,klarna`; empty =
+none shown). A method appears only if it is listed **and** Stripe is configured; each one must
+also be activated in the Stripe Dashboard (Settings → Payment methods), separately for test and
+live mode. Order amounts outside a method's range hide it (Affirm $35–$30,000, Klarna up to $4,000
+— a conservative cap, Cash App none). Flow: `POST /api/checkout/stripe-alt-session` creates the
+PaymentIntent (`payment_method_types[]` = the one method) → the frontend creates the pending order
+→ Stripe.js `confirmAffirmPayment`/`confirmKlarnaPayment`/`confirmCashappPayment` redirects the
+buyer (Cash App on desktop shows a QR modal and the page redirects itself afterwards) → the
+existing `payment_intent.*` webhook marks the order paid. Refunds reuse the Stripe refund path
+(BNPL refunds return status `pending`). A declined/abandoned attempt leaves the order
+`awaiting-payment`; the success page then offers "Retry card payment". Logos live in
+`frontend/public/assets/payment/` (Cash App's is a hand-built badge, not the official asset).
+`/api/checkout/payment-methods` is edge-cached by Cloudflare and deploys do not purge it, so after
+changing `STRIPE_ALT_PAYMENT_METHODS` run `App\Services\CloudflareCacheService::purgeAll()` (via
+`php artisan tinker` on the VPS).
+
 ### PayPal config: DB `Setting` overrides `.env` (same pattern as Stripe)
 
 PayPal credentials follow the exact same DB-first pattern as Stripe: `backend/.env`
