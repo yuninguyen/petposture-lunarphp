@@ -15,6 +15,7 @@ const baseProps = {
     subtotalMinor: 2000,
     stripeInstance: null,
     paypalClientId: null,
+    paypalEnvironment: 'production' as const,
     onOrderPlaced: vi.fn(),
 };
 
@@ -34,7 +35,15 @@ afterEach(() => {
     container?.remove();
     root = null;
     container = null;
+    delete (window as { paypal?: unknown }).paypal;
+    document.getElementById('paypal-v6-sdk')?.remove();
 });
+
+async function flushMicrotasks(times = 6) {
+    for (let i = 0; i < times; i += 1) {
+        await Promise.resolve();
+    }
+}
 
 describe('ExpressCheckout', () => {
     it('renders nothing when no wallet method is available', () => {
@@ -122,40 +131,95 @@ describe('ExpressCheckout', () => {
         }));
     });
 
-    it('loads the PayPal SDK with the given client id when paypalClientId is provided', () => {
-        render(<ExpressCheckout {...baseProps} paypalClientId="test-client-id" />);
-        const script = document.getElementById('paypal-express-sdk') as HTMLScriptElement | null;
-        expect(script?.src).toContain('client-id=test-client-id');
+    it('injects the v6 SDK script for the configured environment when PayPal is not already loaded', () => {
+        render(<ExpressCheckout {...baseProps} paypalClientId="test-client-id" paypalEnvironment="sandbox" />);
+        const script = document.getElementById('paypal-v6-sdk') as HTMLScriptElement | null;
+        expect(script?.src).toBe('https://www.sandbox.paypal.com/web-sdk/v6/core');
     });
 
-    it('creates the order and captures payment through existing endpoints on PayPal approval', async () => {
+    it('creates a v6 SDK instance, checks PayPal eligibility, and mounts a <paypal-button> once eligible', async () => {
+        const findEligibleMethods = vi.fn().mockResolvedValue({ isEligible: () => true });
+        const createPayPalOneTimePaymentSession = vi.fn().mockReturnValue({ start: vi.fn() });
+        const createInstance = vi.fn().mockResolvedValue({ findEligibleMethods, createPayPalOneTimePaymentSession });
+        window.paypal = { createInstance } as never;
+
+        const element = render(<ExpressCheckout {...baseProps} paypalClientId="test-client-id" />);
+        await act(async () => { await flushMicrotasks(); });
+
+        expect(createInstance).toHaveBeenCalledWith(expect.objectContaining({
+            clientId: 'test-client-id',
+            components: ['paypal-payments'],
+        }));
+        expect(findEligibleMethods).toHaveBeenCalledWith({ currencyCode: 'USD' });
+        expect(createPayPalOneTimePaymentSession).toHaveBeenCalledTimes(1);
+        expect(element.querySelector('paypal-button')).not.toBeNull();
+    });
+
+    it('patches the PayPal order amount through the new amount endpoint when the wallet reports a shipping address', async () => {
+        const fetchMock = vi.mocked(fetchApi);
+        fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true, totals: {} }) } as Response);
+
+        let sessionOptions: Record<string, unknown> = {};
+        const createPayPalOneTimePaymentSession = vi.fn((options: Record<string, unknown>) => {
+            sessionOptions = options;
+            return { start: vi.fn() };
+        });
+        const findEligibleMethods = vi.fn().mockResolvedValue({ isEligible: () => true });
+        window.paypal = { createInstance: vi.fn().mockResolvedValue({ findEligibleMethods, createPayPalOneTimePaymentSession }) } as never;
+
+        render(<ExpressCheckout {...baseProps} paypalClientId="test-client-id" />);
+        await act(async () => { await flushMicrotasks(); });
+
+        const onShippingAddressChange = sessionOptions.onShippingAddressChange as (data: {
+            orderId: string;
+            shippingAddress: { city?: string; countryCode: string; postalCode?: string; state?: string };
+        }) => Promise<void>;
+        await act(async () => {
+            await onShippingAddressChange({ orderId: 'PAYPAL-1', shippingAddress: { countryCode: 'US', state: 'TX', city: 'Austin', postalCode: '78701' } });
+        });
+
+        expect(fetchMock).toHaveBeenCalledWith('/api/checkout/paypal-order/amount', expect.objectContaining({
+            method: 'POST',
+            body: expect.objectContaining({
+                paypal_order_id: 'PAYPAL-1',
+                shipping: { country: 'US', state: 'TX', city: 'Austin', postcode: '78701' },
+            }),
+        }));
+    });
+
+    it('fetches shipping details, places the order, and captures payment through existing endpoints on PayPal approval', async () => {
         const fetchMock = vi.mocked(fetchApi);
         const calls: string[] = [];
         fetchMock.mockImplementation((endpoint) => {
             calls.push(endpoint);
-            if (endpoint.includes('/api/checkout/shipping-rates')) return Promise.resolve({ ok: true, json: async () => ({ rates: [{ code: 'standard', name: 'Standard', price_minor: 500 }] }) } as Response);
-            if (endpoint.includes('/api/checkout/tax-quote')) return Promise.resolve({ ok: true, json: async () => ({ quote: { tax_amount: 250 } }) } as Response);
+            if (endpoint.includes('/api/checkout/paypal-order/shipping')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: async () => ({ shipping: { email: 'a@b.com', first_name: 'A', last_name: 'B', line_one: '1 Main St', line_two: null, city: 'Austin', state: 'TX', postcode: '78701', country: 'US', phone: null } }),
+                } as Response);
+            }
             if (endpoint.includes('/api/checkout/place-order')) return Promise.resolve({ status: 201, json: async () => ({ order: { reference: 'PP-1', tracking_access_token: 'tok-1' } }) } as Response);
             return Promise.resolve({ ok: true, json: async () => ({ capture: { status: 'COMPLETED' } }) } as Response);
         });
-        let buttonsConfig: Record<string, unknown> = {};
-        window.paypal = { Buttons: (options) => { buttonsConfig = options; return { render: vi.fn() }; } };
+
+        let sessionOptions: Record<string, unknown> = {};
+        const createPayPalOneTimePaymentSession = vi.fn((options: Record<string, unknown>) => {
+            sessionOptions = options;
+            return { start: vi.fn() };
+        });
+        const findEligibleMethods = vi.fn().mockResolvedValue({ isEligible: () => true });
+        window.paypal = { createInstance: vi.fn().mockResolvedValue({ findEligibleMethods, createPayPalOneTimePaymentSession }) } as never;
+
         const onOrderPlaced = vi.fn();
         render(<ExpressCheckout {...baseProps} paypalClientId="test-client-id" onOrderPlaced={onOrderPlaced} />);
+        await act(async () => { await flushMicrotasks(); });
 
-        await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+        const onApprove = sessionOptions.onApprove as (data: { orderId: string }) => Promise<void>;
+        await act(async () => { await onApprove({ orderId: 'PAYPAL-1' }); });
 
-        const shippingChange = buttonsConfig.onShippingAddressChange as (data: Record<string, unknown>, actions: Record<string, unknown>) => Promise<void>;
-        await shippingChange(
-            { orderInfo: { shipping_address: { country_code: 'US', state: 'TX', city: 'Austin', postal_code: '78701' } }, payer: { email_address: 'a@b.com', name: { given_name: 'A', surname: 'B' } } },
-            { order: { patch: vi.fn() }, reject: vi.fn() },
-        );
-        const approve = buttonsConfig.onApprove as (data: { orderID: string }) => Promise<void>;
-        await approve({ orderID: 'PAYPAL-1' });
-
+        expect(calls.some((endpoint) => endpoint.includes('/api/checkout/paypal-order/shipping'))).toBe(true);
         expect(calls.some((endpoint) => endpoint.includes('/api/checkout/place-order'))).toBe(true);
         expect(calls.some((endpoint) => endpoint.includes('/api/checkout/paypal-capture'))).toBe(true);
         expect(onOrderPlaced).toHaveBeenCalledWith({ reference: 'PP-1', trackingToken: 'tok-1' });
-        delete window.paypal;
     });
 });

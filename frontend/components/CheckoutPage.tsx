@@ -131,6 +131,7 @@ type PaymentMethodOption = {
     brands?: string[];
     publishable_key?: string | null;
     client_id?: string | null;
+    environment?: string | null;
 };
 
 type PreparedPaymentIntent = {
@@ -344,6 +345,7 @@ export default function CheckoutPage() {
         enabled: true,
         mode: 'placeholder',
         client_id: null,
+        environment: 'production',
     };
     const paypalLiveMode = form.paymentMethod === 'paypal'
         && selectedPayPalMethod.mode === 'configured'
@@ -1439,6 +1441,7 @@ export default function CheckoutPage() {
                         subtotalMinor={Math.round(totalAmount * 100)}
                         stripeInstance={stripeInstanceRef.current}
                         paypalClientId={selectedPayPalMethod.client_id ?? null}
+                        paypalEnvironment={selectedPayPalMethod.environment === 'sandbox' ? 'sandbox' : 'production'}
                         onOrderPlaced={redirectToSuccess}
                     />
                     <header className="mb-10 hidden lg:block">

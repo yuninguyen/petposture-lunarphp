@@ -3,10 +3,59 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchApi } from '../../lib/fetchApi';
 
+type PayPalButtonElement = HTMLElement & { type?: 'buynow' | 'checkout' | 'donate' | 'pay' | 'subscribe'; disabled?: boolean };
+
+type PayPalEligiblePaymentMethods = { isEligible: (method: string) => boolean };
+type PayPalOnApproveData = { fundingSource: string; orderId: string; payerId?: string; billingToken?: string };
+type PayPalOnShippingAddressChangeData = { orderId: string; shippingAddress: { city?: string; countryCode: string; postalCode?: string; state?: string } };
+type PayPalErrorData = { message: string; code: string };
+
+type PayPalOneTimePaymentSession = {
+    start: (presentationModeOptions: { presentationMode: 'auto' }, paymentSessionPromise: Promise<{ orderId: string }>) => Promise<void>;
+};
+
+type PayPalSdkInstance = {
+    findEligibleMethods: (options?: { currencyCode?: string }) => Promise<PayPalEligiblePaymentMethods>;
+    createPayPalOneTimePaymentSession: (options: {
+        commit?: boolean;
+        onApprove?: (data: PayPalOnApproveData) => Promise<void>;
+        onShippingAddressChange?: (data: PayPalOnShippingAddressChangeData) => Promise<void>;
+        onError?: (data: PayPalErrorData) => void;
+    }) => PayPalOneTimePaymentSession;
+};
+
 declare global {
     interface Window {
-        paypal?: { Buttons: (options: Record<string, unknown>) => { render: (element: HTMLElement) => void } };
+        paypal?: {
+            createInstance: (options: { clientId: string; components: ['paypal-payments']; pageType?: string }) => Promise<PayPalSdkInstance>;
+        };
     }
+    interface HTMLElementTagNameMap {
+        'paypal-button': PayPalButtonElement;
+    }
+}
+
+// PayPal's v6 Web SDK script sets window.paypal itself once loaded; there is
+// no npm package involved here, matching how Shopify's own checkout loads it.
+function loadPayPalSdk(environment: 'production' | 'sandbox'): Promise<void> {
+    if (window.paypal) return Promise.resolve();
+    const scriptId = 'paypal-v6-sdk';
+    const existing = document.getElementById(scriptId) as HTMLScriptElement | null;
+    if (existing) {
+        return new Promise((resolve, reject) => {
+            existing.addEventListener('load', () => resolve(), { once: true });
+            existing.addEventListener('error', () => reject(new Error('Failed to load PayPal SDK')), { once: true });
+        });
+    }
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.id = scriptId;
+        const host = environment === 'production' ? 'https://www.paypal.com' : 'https://www.sandbox.paypal.com';
+        script.src = `${host}/web-sdk/v6/core`;
+        script.addEventListener('load', () => resolve(), { once: true });
+        script.addEventListener('error', () => reject(new Error('Failed to load PayPal SDK')), { once: true });
+        document.head.appendChild(script);
+    });
 }
 
 type StripeAddress = { line1?: string; line2?: string | null; city?: string; state?: string; postal_code?: string; country?: string };
@@ -50,31 +99,25 @@ type StripeExpressConfirmEvent = {
     paymentFailed: (payload: { reason?: string; message?: string }) => void;
 };
 
-type PayPalShippingData = { orderInfo?: { shipping_address?: { country_code?: string; state?: string; city?: string; postal_code?: string; address_line_1?: string; address_line_2?: string } }; payer?: { email_address?: string; name?: { given_name?: string; surname?: string }; phone?: { phone_number?: { national_number?: string } } } };
-type PayPalActions = { order: { patch: (operations: unknown[]) => Promise<void> }; reject: () => void };
-type PayPalApproval = { orderID: string };
-
 export interface ExpressCheckoutProps {
     items: Array<{ variantId: number; quantity: number }>;
     couponCode: string | null;
     subtotalMinor: number;
     stripeInstance: ReturnType<NonNullable<typeof window.Stripe>> | null;
     paypalClientId: string | null;
+    paypalEnvironment: 'production' | 'sandbox';
     onOrderPlaced: (orderAccess: { reference: string; trackingToken: string }) => void;
 }
 
-export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, onOrderPlaced }: ExpressCheckoutProps) {
+export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, paypalEnvironment, onOrderPlaced }: ExpressCheckoutProps) {
     const [canApplePay, setCanApplePay] = useState(false);
     const [canGooglePay, setCanGooglePay] = useState(false);
-    // Unlike Apple Pay/Google Pay (which need an async availability check),
-    // PayPal's availability is knowable synchronously from the first render
-    // -- it only needs a client id.
-    const canPayPal = Boolean(paypalClientId);
+    const [canPayPal, setCanPayPal] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const appleButtonMountRef = useRef<HTMLDivElement>(null);
     const googleButtonMountRef = useRef<HTMLDivElement>(null);
     const paypalButtonMountRef = useRef<HTMLDivElement>(null);
-    const latestShippingAddressRef = useRef<Record<string, unknown> | null>(null);
+    const paypalSdkInstanceRef = useRef<PayPalSdkInstance | null>(null);
 
     // Read via .current inside effect callbacks instead of closing over the
     // props directly, so the mount effects below only need to depend on
@@ -267,114 +310,163 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         // on purpose -- see the comment where those refs are declared.
     }, [stripeInstance]);
 
+    // PayPal's v6 Web SDK reports eligibility asynchronously via its own
+    // findEligibleMethods() call rather than an event fired only after
+    // mounting, so (unlike the Stripe Element above) there's no deadlock
+    // risk in waiting for canPayPal before creating the <paypal-button>
+    // element in the effect below.
     useEffect(() => {
         if (!paypalClientId) return;
         let cancelled = false;
-        const renderButtons = () => {
-            if (cancelled || !window.paypal || !paypalButtonMountRef.current) return;
-            const buttons = window.paypal.Buttons({
-                style: { layout: 'horizontal', label: 'paypal', height: 44, tagline: false },
-                createOrder: async () => {
-                    const response = await fetchApi('/api/checkout/paypal-order', {
-                        method: 'POST', body: { payment_method: 'paypal', items: itemsRef.current, coupon_code: couponCodeRef.current, currency: 'usd' },
-                    });
-                    const data = await response.json();
-                    if (!response.ok || !data?.paypal_order?.paypal_order_id) throw new Error(data?.message || 'Unable to start PayPal checkout.');
-                    return data.paypal_order.paypal_order_id;
-                },
-                onShippingAddressChange: async (data: PayPalShippingData, actions: PayPalActions) => {
-                    try {
-                        const walletAddress = data.orderInfo?.shipping_address;
-                        const address = { country: walletAddress?.country_code ?? 'US', state: walletAddress?.state ?? '', city: walletAddress?.city ?? '', postcode: walletAddress?.postal_code ?? '' };
-                        const ratesResponse = await fetchApi(`/api/checkout/shipping-rates?subtotal_minor=${subtotalMinorRef.current}${couponCodeRef.current ? `&coupon_code=${encodeURIComponent(couponCodeRef.current)}` : ''}`);
-                        const rate = (await ratesResponse.json()).rates?.[0];
-                        if (!rate) return actions.reject();
-                        const taxResponse = await fetchApi('/api/checkout/tax-quote', { method: 'POST', body: { shipping: address, subtotal_amount: subtotalMinorRef.current / 100 } });
-                        const taxMinor = (await taxResponse.json()).quote?.tax_amount ?? 0;
-                        latestShippingAddressRef.current = {
-                            email: data.payer?.email_address ?? '', first_name: data.payer?.name?.given_name ?? '', last_name: data.payer?.name?.surname ?? '',
-                            line_one: walletAddress?.address_line_1 ?? '', line_two: walletAddress?.address_line_2 ?? null,
-                            city: address.city, state: address.state, postcode: address.postcode, country: address.country,
-                            phone: data.payer?.phone?.phone_number?.national_number ?? null,
-                        };
-                        return actions.order.patch([{ op: 'replace', path: "/purchase_units/@reference_id=='default'/amount", value: {
-                            currency_code: 'USD', value: ((subtotalMinorRef.current + rate.price_minor + taxMinor) / 100).toFixed(2),
-                            breakdown: { item_total: { currency_code: 'USD', value: (subtotalMinorRef.current / 100).toFixed(2) }, shipping: { currency_code: 'USD', value: (rate.price_minor / 100).toFixed(2) }, tax_total: { currency_code: 'USD', value: (taxMinor / 100).toFixed(2) } },
-                        } }]);
-                    } catch { actions.reject(); }
-                },
-                onApprove: async (data: PayPalApproval) => {
-                    try {
-                        if (!latestShippingAddressRef.current) { setError('Missing shipping address. Please try again.'); return; }
-                        const orderResponse = await fetchApi('/api/checkout/place-order', { method: 'POST', headers: { 'Idempotency-Key': data.orderID }, body: { items: itemsRef.current, shipping: latestShippingAddressRef.current, billing_same_as_shipping: true, payment_method: 'paypal', payment_context: { paypal_order_id: data.orderID }, coupon_code: couponCodeRef.current } });
-                        const order = await orderResponse.json();
-                        if (orderResponse.status !== 201 || !order?.order?.reference || !order?.order?.tracking_access_token) { setError(order?.message || 'Order could not be created. Please try again.'); return; }
-                        const captureResponse = await fetchApi('/api/checkout/paypal-capture', { method: 'POST', body: { paypal_order_id: data.orderID } });
-                        const capture = await captureResponse.json();
-                        if (!captureResponse.ok || capture?.capture?.status !== 'COMPLETED') { setError('Payment could not be captured. Please try again.'); return; }
-                        onOrderPlacedRef.current({ reference: order.order.reference, trackingToken: order.order.tracking_access_token });
-                    } catch { setError('Something went wrong. Please try again.'); }
-                },
-            });
-            // PayPal's SDK measures its container's width at render() time
-            // to lay out its logo/wordmark -- calling it synchronously here
-            // (same tick the flex row's CSS is applied) can measure a
-            // pre-layout width and clip the wordmark permanently, since the
-            // iframe's internal content never re-measures afterward.
-            // Deferring two animation frames guarantees the browser has
-            // finished computing the final flex-distributed width first.
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    if (!cancelled && paypalButtonMountRef.current) {
-                        buttons.render(paypalButtonMountRef.current);
-                    }
+
+        (async () => {
+            try {
+                await loadPayPalSdk(paypalEnvironment);
+                if (cancelled || !window.paypal) return;
+                const sdkInstance = await window.paypal.createInstance({
+                    clientId: paypalClientId,
+                    components: ['paypal-payments'],
+                    pageType: 'checkout',
                 });
-            });
-        };
-        const script = document.getElementById('paypal-express-sdk') as HTMLScriptElement | null;
-        if (window.paypal) renderButtons();
-        else if (!script) {
-            const sdk = document.createElement('script');
-            sdk.id = 'paypal-express-sdk';
-            sdk.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(paypalClientId)}&currency=USD&components=buttons`;
-            sdk.addEventListener('load', renderButtons, { once: true });
-            document.head.appendChild(sdk);
-        } else script.addEventListener('load', renderButtons, { once: true });
+                if (cancelled) return;
+                paypalSdkInstanceRef.current = sdkInstance;
+                const eligibility = await sdkInstance.findEligibleMethods({ currencyCode: 'USD' });
+                if (cancelled) return;
+                setCanPayPal(eligibility.isEligible('paypal'));
+            } catch {
+                if (!cancelled) setCanPayPal(false);
+            }
+        })();
+
         return () => { cancelled = true; };
-        // items/couponCode/subtotalMinor/onOrderPlaced are read via refs above
-        // on purpose -- see the comment where those refs are declared.
-    }, [paypalClientId]);
+    }, [paypalClientId, paypalEnvironment]);
+
+    useEffect(() => {
+        if (!canPayPal || !paypalSdkInstanceRef.current || !paypalButtonMountRef.current) return;
+        const sdkInstance = paypalSdkInstanceRef.current;
+        const mountEl = paypalButtonMountRef.current;
+        mountEl.innerHTML = '';
+
+        const session = sdkInstance.createPayPalOneTimePaymentSession({
+            commit: true,
+            onShippingAddressChange: async (data) => {
+                const address = {
+                    country: data.shippingAddress.countryCode ?? 'US',
+                    state: data.shippingAddress.state ?? '',
+                    city: data.shippingAddress.city ?? '',
+                    postcode: data.shippingAddress.postalCode ?? '',
+                };
+                // calculateTotals() on the backend recomputes shipping/tax
+                // and patches the PayPal order's amount directly -- v6 has
+                // no client-side order.patch() like v5 did, so there's
+                // nothing further to resolve/return here.
+                const response = await fetchApi('/api/checkout/paypal-order/amount', {
+                    method: 'POST',
+                    body: { paypal_order_id: data.orderId, items: itemsRef.current, coupon_code: couponCodeRef.current, shipping: address },
+                });
+                if (!response.ok) throw new Error('Unable to update PayPal order amount.');
+            },
+            onApprove: async (data) => {
+                try {
+                    // v6's onApprove carries no shipping address (unlike
+                    // v5's onApprove), so it must be fetched from the order
+                    // itself before placing the order.
+                    const shippingResponse = await fetchApi('/api/checkout/paypal-order/shipping', {
+                        method: 'POST', body: { paypal_order_id: data.orderId },
+                    });
+                    const shippingData = await shippingResponse.json();
+                    if (!shippingResponse.ok || !shippingData?.shipping) {
+                        setError('Unable to retrieve shipping details. Please try again.');
+                        return;
+                    }
+
+                    const orderResponse = await fetchApi('/api/checkout/place-order', {
+                        method: 'POST', headers: { 'Idempotency-Key': data.orderId },
+                        body: {
+                            items: itemsRef.current, shipping: shippingData.shipping, billing_same_as_shipping: true,
+                            payment_method: 'paypal', payment_context: { paypal_order_id: data.orderId }, coupon_code: couponCodeRef.current,
+                        },
+                    });
+                    const order = await orderResponse.json();
+                    if (orderResponse.status !== 201 || !order?.order?.reference || !order?.order?.tracking_access_token) {
+                        setError(order?.message || 'Order could not be created. Please try again.');
+                        return;
+                    }
+
+                    const captureResponse = await fetchApi('/api/checkout/paypal-capture', { method: 'POST', body: { paypal_order_id: data.orderId } });
+                    const capture = await captureResponse.json();
+                    if (!captureResponse.ok || capture?.capture?.status !== 'COMPLETED') {
+                        setError('Payment could not be captured. Please try again.');
+                        return;
+                    }
+                    onOrderPlacedRef.current({ reference: order.order.reference, trackingToken: order.order.tracking_access_token });
+                } catch {
+                    setError('Something went wrong. Please try again.');
+                }
+            },
+            onError: (data) => setError(data.message || 'Something went wrong. Please try again.'),
+        });
+
+        const button = document.createElement('paypal-button');
+        button.type = 'pay';
+        const handleClick = () => {
+            const createOrderPromise = fetchApi('/api/checkout/paypal-order', {
+                method: 'POST',
+                body: { payment_method: 'paypal', items: itemsRef.current, coupon_code: couponCodeRef.current, currency: 'usd' },
+            }).then(async (response) => {
+                const data = await response.json();
+                if (!response.ok || !data?.paypal_order?.paypal_order_id) throw new Error(data?.message || 'Unable to start PayPal checkout.');
+                return { orderId: data.paypal_order.paypal_order_id as string };
+            });
+            session.start({ presentationMode: 'auto' }, createOrderPromise)
+                .catch(() => setError('Something went wrong. Please try again.'));
+        };
+        button.addEventListener('click', handleClick);
+        mountEl.appendChild(button);
+
+        return () => {
+            button.removeEventListener('click', handleClick);
+            mountEl.innerHTML = '';
+        };
+        // items/couponCode/onOrderPlaced are read via refs above on purpose
+        // -- see the comment where those refs are declared.
+    }, [canPayPal]);
 
     const anyAvailable = canApplePay || canGooglePay || canPayPal;
-    if (!anyAvailable) return null;
+    // Gating the initial render itself on anyAvailable would mean the mount
+    // <div>s below never attach to real DOM nodes until something is
+    // already known available -- but nothing is known synchronously any
+    // more now that PayPal's eligibility (like Apple/Google Pay's) is only
+    // discovered async, so that would permanently deadlock every wallet.
+    // A client id being configured is the one signal known up front, so it
+    // gates whether the component attempts to render at all; anyAvailable
+    // only controls the label/divider's visibility once eligibility settles.
+    if (!paypalClientId && !stripeInstance) return null;
 
     return (
         <div className="mb-8 space-y-4">
-            <p className="text-center text-[13px] font-medium uppercase tracking-wide text-[#707070]">Express checkout</p>
+            {anyAvailable && <p className="text-center text-[13px] font-medium uppercase tracking-wide text-[#707070]">Express checkout</p>}
             {error && <p role="alert" className="text-center text-[13px] text-red-600">{error}</p>}
-            {/* PayPal's rendered button has a hard floor of 300px width --
-                confirmed by testing 6 different style configs (label,
-                color, shape, horizontal vs vertical layout) directly
-                against PayPal's SDK, all rendered at exactly 300px
-                regardless. Squeezing it into an equal third (down to
-                ~178px in a 3-column row) clips its logo; no style option
-                works around it. PayPal gets its own full-width row instead,
-                and Apple Pay/Google Pay -- which have no such floor -- split
-                a second row evenly with min-w-0 (flex items default to
-                min-width: auto, which would otherwise let either child's
-                intrinsic content width override the equal flex-basis). */}
-            <div className="space-y-3">
-                {canPayPal && <div ref={paypalButtonMountRef} />}
-                <div className="flex flex-col gap-3 sm:flex-row">
-                    <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden' }} />
-                    <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden' }} />
+            {/* PayPal's v5 Buttons SDK rendered its iframe at a hard floor of
+                300px, which clipped in an equal third -- confirmed across 6
+                different style configs. The v6 Web SDK's <paypal-button>
+                custom element (what Shopify itself uses) has no such floor,
+                so all three wallets can share one equal-width row with
+                min-w-0 (flex items default to min-width: auto, which would
+                otherwise let any child's intrinsic content width override
+                the equal flex-basis). */}
+            <div className="flex flex-col gap-3 sm:flex-row">
+                <div ref={paypalButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canPayPal ? 'visible' : 'hidden' }} />
+                <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden' }} />
+                <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden' }} />
+            </div>
+            {anyAvailable && (
+                <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-[#e8e8ea]" />
+                    <span className="text-[12px] font-medium uppercase text-[#a0a0a0]">Or</span>
+                    <div className="h-px flex-1 bg-[#e8e8ea]" />
                 </div>
-            </div>
-            <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-[#e8e8ea]" />
-                <span className="text-[12px] font-medium uppercase text-[#a0a0a0]">Or</span>
-                <div className="h-px flex-1 bg-[#e8e8ea]" />
-            </div>
+            )}
         </div>
     );
 }
