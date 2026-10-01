@@ -57,10 +57,11 @@ class StripeCardGateway implements PaymentGatewayInterface
 
         return [
             'method' => $this->method(),
-            'label' => $this->label(),
+            // Distinct from label(), which stays 'Card' for order meta/admin
+            // display -- this is the checkout page's own copy.
+            'label' => 'Credit card',
             'gateway' => 'stripe',
             'collection' => 'direct',
-            'description' => 'Pay securely with Visa, Mastercard, Amex, and other major cards.',
             'enabled' => true,
             'mode' => $configured ? 'configured' : 'placeholder',
             'brands' => ['visa', 'mastercard', 'amex'],

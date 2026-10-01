@@ -1977,7 +1977,7 @@ class CheckoutApiTest extends TestCase
         $cardMethod = collect($methodsResponse->json('methods'))
             ->firstWhere('method', 'card');
         $this->assertNotNull($cardMethod);
-        $this->assertSame('Card', $cardMethod['label']);
+        $this->assertSame('Credit card', $cardMethod['label']);
 
         $this->makeAdmin();
         $variant = $this->createPurchasableVariant();

@@ -550,9 +550,9 @@ export default function CheckoutPage() {
         };
 
         const elements = stripeElementsRef.current;
-        const cardNumberElement = elements.create('cardNumber', elementStyle);
-        const cardExpiryElement = elements.create('cardExpiry', elementStyle);
-        const cardCvcElement = elements.create('cardCvc', elementStyle);
+        const cardNumberElement = elements.create('cardNumber', { ...elementStyle, placeholder: 'Card number' });
+        const cardExpiryElement = elements.create('cardExpiry', { ...elementStyle, placeholder: 'Expiration date (MM / YY)' });
+        const cardCvcElement = elements.create('cardCvc', { ...elementStyle, placeholder: 'Security code' });
 
         cardNumberElement.mount(stripeCardNumberMountRef.current);
         cardExpiryElement.mount(stripeCardExpiryMountRef.current);
@@ -728,7 +728,6 @@ export default function CheckoutPage() {
                 label: 'Credit card',
                 gateway: 'stripe',
                 collection: 'direct',
-                description: 'Pay securely with Visa, Mastercard, Amex, and other major cards.',
                 enabled: true,
                 mode: 'placeholder',
                 brands: ['visa', 'mastercard', 'amex'],
@@ -738,7 +737,6 @@ export default function CheckoutPage() {
                 label: 'PayPal',
                 gateway: 'paypal',
                 collection: 'popup',
-                description: 'Pay with your PayPal balance, bank account, or linked card.',
                 enabled: true,
                 mode: 'placeholder',
                 brands: ['paypal'],

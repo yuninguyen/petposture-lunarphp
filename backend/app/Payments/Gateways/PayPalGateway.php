@@ -50,7 +50,6 @@ class PayPalGateway implements PaymentGatewayInterface
             'label' => $this->label(),
             'gateway' => 'paypal',
             'collection' => 'redirect',
-            'description' => 'Pay with your PayPal balance, bank account, or linked card.',
             'enabled' => true,
             'mode' => $configured ? 'configured' : 'placeholder',
             'brands' => ['paypal'],
