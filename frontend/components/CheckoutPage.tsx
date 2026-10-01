@@ -1132,7 +1132,7 @@ export default function CheckoutPage() {
                 />
             </div>
 
-            <div className="group relative">
+            <div className="relative">
                 <input
                     name="billingPhone"
                     autoComplete="billing tel"
@@ -1141,10 +1141,12 @@ export default function CheckoutPage() {
                     onChange={(e) => updateField('billingPhone', e.target.value)}
                     className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 pr-10 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
                 />
-                <HelpCircle size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-help text-[#707070]" />
-                <div className="pointer-events-none absolute right-0 top-[calc(100%+6px)] z-10 w-max max-w-[220px] rounded-[6px] bg-[#1a1a1a] px-3 py-2 text-xs leading-[1.4] text-white opacity-0 transition-opacity group-hover:opacity-100">
-                    In case we need to contact you about your order
-                </div>
+                <span className="group absolute right-3.5 top-1/2 flex -translate-y-1/2 cursor-help items-center">
+                    <HelpCircle size={16} className="text-[#707070]" />
+                    <div className="invisible absolute bottom-[calc(100%+8px)] right-0 z-[100] w-max max-w-[220px] translate-y-1 rounded-[6px] bg-[#1a1a1a] px-3 py-2 text-xs leading-[1.4] text-white opacity-0 shadow-2xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+                        In case we need to contact you about your order
+                    </div>
+                </span>
             </div>
         </>
     );
