@@ -38,7 +38,8 @@ declare global {
                     mount: (element: string | HTMLElement) => void;
                     unmount: () => void;
                     destroy: () => void;
-                    on: (event: 'change', handler: (event: { brand?: string }) => void) => void;
+                    on: ((event: 'change', handler: (event: { brand?: string }) => void) => void)
+                        & ((event: 'focus' | 'blur', handler: () => void) => void);
                 };
             };
             confirmCardPayment: (
@@ -99,6 +100,7 @@ type CheckoutFormState = {
     billingCity: string;
     billingProvince: string;
     billingPostalCode: string;
+    billingPhone: string;
 };
 
 const countryOptions = ['United States'];
@@ -291,6 +293,10 @@ export default function CheckoutPage() {
     const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
     const [stripeReady, setStripeReady] = useState(false);
     const [stripeError, setStripeError] = useState<string | null>(null);
+    // Stripe Elements render in their own iframes, so the focus ring the rest
+    // of the form gets "for free" via :focus-within doesn't reach these --
+    // each element reports its own focus/blur instead.
+    const [focusedStripeField, setFocusedStripeField] = useState<'number' | 'expiry' | 'cvc' | null>(null);
     const [paypalError, setPaypalError] = useState<string | null>(null);
     const [paypalPopupWaiting, setPaypalPopupWaiting] = useState(false);
     const [form, setForm] = useState<CheckoutFormState>({
@@ -318,6 +324,7 @@ export default function CheckoutPage() {
         billingCity: '',
         billingProvince: '',
         billingPostalCode: '',
+        billingPhone: '',
     });
     const selectedCardMethod = paymentMethods.find((method) => method.method === 'card') ?? {
         method: 'card' as const,
@@ -550,6 +557,13 @@ export default function CheckoutPage() {
                     color: '#1f2937',
                     fontFamily: "'Hanken Grotesk', sans-serif",
                     fontSize: '14px',
+                    fontWeight: '400',
+                    // The page's own font-smoothing (globals.css: antialiased)
+                    // doesn't cross into Stripe's iframe -- without this,
+                    // "Card number"/"Expiration date"/"Security code" render
+                    // slightly heavier than "Name on card" below them despite
+                    // sharing the same family/size/weight.
+                    fontSmoothing: 'antialiased',
                     '::placeholder': {
                         color: '#9ca3af',
                     },
@@ -569,6 +583,16 @@ export default function CheckoutPage() {
         cardNumberElement.on('change', (event) => {
             setDetectedCardBrand(event.brand || 'unknown');
         });
+
+        // Each Element reports its own focus/blur since it lives in its own
+        // iframe -- used to paint the same orange focus ring the rest of the
+        // form gets natively, on the wrapping <div> instead.
+        cardNumberElement.on('focus', () => setFocusedStripeField('number'));
+        cardNumberElement.on('blur', () => setFocusedStripeField((prev) => (prev === 'number' ? null : prev)));
+        cardExpiryElement.on('focus', () => setFocusedStripeField('expiry'));
+        cardExpiryElement.on('blur', () => setFocusedStripeField((prev) => (prev === 'expiry' ? null : prev)));
+        cardCvcElement.on('focus', () => setFocusedStripeField('cvc'));
+        cardCvcElement.on('blur', () => setFocusedStripeField((prev) => (prev === 'cvc' ? null : prev)));
 
         stripeCardNumberElementRef.current = cardNumberElement;
         stripeCardExpiryElementRef.current = cardExpiryElement;
@@ -1107,6 +1131,21 @@ export default function CheckoutPage() {
                     className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
                 />
             </div>
+
+            <div className="group relative">
+                <input
+                    name="billingPhone"
+                    autoComplete="billing tel"
+                    placeholder="Phone"
+                    value={form.billingPhone}
+                    onChange={(e) => updateField('billingPhone', e.target.value)}
+                    className="h-[46px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 pr-10 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]"
+                />
+                <HelpCircle size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-help text-[#707070]" />
+                <div className="pointer-events-none absolute right-0 top-[calc(100%+6px)] z-10 w-max max-w-[220px] rounded-[6px] bg-[#1a1a1a] px-3 py-2 text-xs leading-[1.4] text-white opacity-0 transition-opacity group-hover:opacity-100">
+                    In case we need to contact you about your order
+                </div>
+            </div>
         </>
     );
 
@@ -1239,7 +1278,7 @@ export default function CheckoutPage() {
                 province: form.billingProvince,
                 postalCode: form.billingPostalCode,
                 country: form.billingCountry,
-                phone: form.phone,
+                phone: form.billingPhone || form.phone,
             });
 
         return { shippingAddress, billingAddress };
@@ -1744,7 +1783,7 @@ export default function CheckoutPage() {
                                                             activateStep('payment');
                                                             updateField('paymentMethod', method.method);
                                                         }}
-                                                        className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
+                                                        className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
                                                     />
                                                     <span className="text-[16px] font-semibold text-[#2d3742]">{method.label}</span>
                                                 </div>
@@ -1767,20 +1806,20 @@ export default function CheckoutPage() {
                                             <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
                                                 {stripeLiveMode ? (
                                                     <>
-                                                        <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5">
+                                                        <div className={`flex h-[48px] items-center rounded-[8px] border bg-white px-3.5 transition ${focusedStripeField === 'number' ? 'border-secondary ring-2 ring-[#f4cdb7]' : 'border-[#d9d9d9]'}`}>
                                                             <div ref={stripeCardNumberMountRef} className="flex-1" />
                                                             <Lock size={15} className="ml-2 flex-shrink-0 text-[#9ca3af]" />
                                                         </div>
                                                         <div className="grid gap-3 md:grid-cols-2">
-                                                            <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5">
+                                                            <div className={`flex h-[48px] items-center rounded-[8px] border bg-white px-3.5 transition ${focusedStripeField === 'expiry' ? 'border-secondary ring-2 ring-[#f4cdb7]' : 'border-[#d9d9d9]'}`}>
                                                                 <div ref={stripeCardExpiryMountRef} className="flex-1" />
                                                             </div>
-                                                            <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5">
+                                                            <div className={`flex h-[48px] items-center rounded-[8px] border bg-white px-3.5 transition ${focusedStripeField === 'cvc' ? 'border-secondary ring-2 ring-[#f4cdb7]' : 'border-[#d9d9d9]'}`}>
                                                                 <div ref={stripeCardCvcMountRef} className="flex-1" />
                                                                 <HelpCircle size={15} className="ml-2 flex-shrink-0 text-[#9ca3af]" />
                                                             </div>
                                                         </div>
-                                                        <input value={form.cardName} onChange={(e) => updateField('cardName', e.target.value)} placeholder="Name on card" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-[#197bbd] focus:ring-1 focus:ring-[#c6def0]" />
+                                                        <input value={form.cardName} onChange={(e) => updateField('cardName', e.target.value)} placeholder="Name on card" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
                                                         {stripeError ? (
                                                             <p className="text-sm font-medium text-[#b42318]">{stripeError}</p>
                                                         ) : null}
@@ -1791,7 +1830,7 @@ export default function CheckoutPage() {
                                                                     type="checkbox"
                                                                     checked={form.billingAddress === 'same'}
                                                                     onChange={(e) => updateField('billingAddress', e.target.checked ? 'same' : 'different')}
-                                                                    className="mt-0.5 h-4 w-4 rounded border-[#bfc6ce] accent-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
+                                                                    className="mt-0.5 h-4 w-4 rounded border-[#bfc6ce] accent-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
                                                                 />
                                                                 <span>Use shipping address as billing address</span>
                                                             </label>
@@ -1858,7 +1897,7 @@ export default function CheckoutPage() {
                                             name="billingAddressChoice"
                                             checked={form.billingAddress === 'same'}
                                             onChange={() => updateField('billingAddress', 'same')}
-                                            className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
+                                            className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
                                         />
                                         <span className="text-[16px] font-semibold text-[#2d3742]">Same as shipping address</span>
                                     </label>
@@ -1868,7 +1907,7 @@ export default function CheckoutPage() {
                                             name="billingAddressChoice"
                                             checked={form.billingAddress === 'different'}
                                             onChange={() => updateField('billingAddress', 'different')}
-                                            className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:ring-1 focus:ring-[#1a1a1a]"
+                                            className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
                                         />
                                         <span className="text-[16px] font-semibold text-[#2d3742]">Use a different billing address</span>
                                     </label>

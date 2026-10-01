@@ -46,7 +46,7 @@ export function ShippingMethodSelector({
                                 name="shippingMethod"
                                 checked={value === option.id}
                                 onChange={() => onChange(option.id)}
-                                className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a]"
+                                className="h-4 w-4 accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus:outline-none focus:ring-1 focus:ring-[#1a1a1a]"
                             />
                             <div>
                                 <span className="text-[#333333]">{option.name}</span>
