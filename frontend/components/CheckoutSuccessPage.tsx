@@ -346,6 +346,27 @@ function OrderSuccessContent() {
         void loadOrder();
     }, [gateway, initialToken, queryEmail, redirectStatus, sessionId]);
 
+    // After a successful card retry the order flips to paid via webhook a moment
+    // later; without this the page keeps showing the failed-attempt state.
+    const refreshOrderAfterRetry = async () => {
+        if (!gateway || !sessionId) return;
+        const lookupUrl = `${getApiBaseUrl()}/api/orders/by-payment-session?gateway=${encodeURIComponent(gateway)}&session_id=${encodeURIComponent(sessionId)}`;
+
+        for (let attempt = 0; attempt < 6; attempt += 1) {
+            await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 1000 : 2000));
+            try {
+                const response = await fetch(lookupUrl);
+                const payload = await response.json();
+                if (response.ok && payload?.data) {
+                    setOrder(payload.data as TrackingOrder);
+                    if (payload.data.status !== "awaiting-payment") break;
+                }
+            } catch {
+                // Keep the current order state and try again.
+            }
+        }
+    };
+
     if (loading) {
         return (
             <main className="flex min-h-screen items-center justify-center bg-[#fcfcfd]">
@@ -528,7 +549,7 @@ function OrderSuccessContent() {
                         </div>
 
                         {trackingToken && email ? (
-                            <RetryPaymentPanel trackingToken={trackingToken} email={email} orderStatus={order.status} />
+                            <RetryPaymentPanel trackingToken={trackingToken} email={email} orderStatus={order.status} onCompleted={() => void refreshOrderAfterRetry()} />
                         ) : null}
 
                         <div className="hidden flex-col items-center justify-between gap-4 pb-2 pt-1 sm:flex-row lg:flex">
@@ -536,7 +557,7 @@ function OrderSuccessContent() {
                                 Need help? <Link href="/contact" className="font-semibold text-[#1a1a1a] underline underline-offset-2 hover:text-[#df8448]">Contact us</Link>
                             </p>
                             <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
-                                <ButtonLink href="/shop" variant="primary" className="w-full sm:w-auto">
+                                <ButtonLink href="/shop" variant="primary" className="w-full capitalize tracking-normal sm:w-auto">
                                     Continue shopping
                                 </ButtonLink>
                                 {deliveredDone ? (
@@ -563,7 +584,7 @@ function OrderSuccessContent() {
                             Need help? <Link href="/contact" className="font-semibold text-[#1a1a1a] underline underline-offset-2 hover:text-[#df8448]">Contact us</Link>
                         </p>
                         <div className="flex w-full flex-col items-center gap-3 sm:flex-row">
-                            <ButtonLink href="/shop" variant="primary" className="w-full sm:w-auto">
+                            <ButtonLink href="/shop" variant="primary" className="w-full capitalize tracking-normal sm:w-auto">
                                 Continue shopping
                             </ButtonLink>
                             {deliveredDone ? (
