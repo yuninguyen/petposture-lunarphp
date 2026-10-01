@@ -1081,8 +1081,18 @@ export default function CheckoutPage() {
         }
 
         if (method.method === 'cashapp' || method.method === 'affirm' || method.method === 'klarna') {
-            const labels = { cashapp: 'Cash App Pay', affirm: 'Affirm', klarna: 'Klarna' };
-            return <span className="rounded-[4px] border border-[#d9d9d9] bg-white px-2 py-1 text-[11px] font-semibold text-[#4b5563]">{labels[method.method]}</span>;
+            const logos = {
+                cashapp: { src: '/assets/payment/cashapp.svg', alt: 'Cash App Pay' },
+                affirm: { src: '/assets/payment/affirm.svg', alt: 'Affirm' },
+                klarna: { src: '/assets/payment/klarna.svg', alt: 'Klarna' },
+            };
+            const logo = logos[method.method];
+            return (
+                <div className="flex h-[24px] w-[38px] items-center justify-center overflow-hidden rounded-[3px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={logo.src} alt={logo.alt} width="38" height="24" className="h-full w-full object-contain" />
+                </div>
+            );
         }
 
         return null;
