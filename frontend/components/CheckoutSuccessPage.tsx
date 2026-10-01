@@ -377,6 +377,9 @@ function OrderSuccessContent() {
 
     const deliveredDone = timeline.find((step) => step.key === "delivered")?.done ?? false;
     const stripePaymentPending = gateway === "stripe" && order.status === "awaiting-payment";
+    // Stripe sends the buyer back with redirect_status=failed when a redirect
+    // method (Affirm, Klarna, Cash App Pay) is declined or abandoned.
+    const stripePaymentFailed = stripePaymentPending && (redirectStatus === "failed" || redirectStatus === "canceled");
 
     return (
         <main className="min-h-screen bg-[#fcfcfd] font-hanken text-[#333333]">
@@ -411,7 +414,7 @@ function OrderSuccessContent() {
                         </div>
                         <div>
                             <p className="text-[14px] font-semibold text-[#df8448]">Confirmation #{order.reference}</p>
-                            <h1 className="mt-0.5 text-[22px] font-bold leading-tight tracking-tight text-[#2f3d46]">Thank you{customerName ? `, ${customerName}` : ""}!</h1>
+                            <h1 className="mt-0.5 text-[22px] font-bold leading-tight tracking-tight text-[#2f3d46]">{stripePaymentFailed ? "Your payment didn't go through" : `Thank you${customerName ? `, ${customerName}` : ""}!`}</h1>
                         </div>
                     </div>
 
@@ -419,7 +422,12 @@ function OrderSuccessContent() {
                         <p className="flex items-start gap-2.5 text-[14px] leading-[1.65] text-[#7a4020]">
                             <Mail size={15} className="mt-0.5 flex-shrink-0 text-[#df8448]" />
                             <span>
-                                {stripePaymentPending ? (
+                                {stripePaymentFailed ? (
+                                    <>
+                                        <span className="font-semibold">You haven&apos;t been charged</span><br />
+                                        Your order is saved. Choose a payment method below to complete it.
+                                    </>
+                                ) : stripePaymentPending ? (
                                     <>
                                         <span className="font-semibold">Your payment is processing</span><br />
                                         We&apos;ll update your order once Stripe confirms the payment.
