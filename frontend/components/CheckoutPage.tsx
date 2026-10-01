@@ -2092,9 +2092,9 @@ export default function CheckoutPage() {
                             <Button
                                 type="submit"
                                 variant="primary"
-                                size="lg"
+                                size="md"
                                 disabled={isLoading || items.length === 0 || paypalPopupWaiting}
-                                className="w-full gap-2 shadow-[0_14px_30px_rgba(223,132,72,0.22)]"
+                                className="!normal-case !tracking-normal w-full gap-2 shadow-[0_14px_30px_rgba(223,132,72,0.22)]"
                             >
                                 {paypalPopupWaiting ? (
                                     'Waiting for PayPal…'
