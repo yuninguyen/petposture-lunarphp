@@ -17,13 +17,24 @@ class PaymentMethodService
 {
     // Admin list order (grouped by gateway). PingPong is deliberately absent: it isn't
     // sold on the storefront and the admin API must not expose it.
-    private const PAYMENT_METHODS = ['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'afterpay_clearpay', 'klarna', 'cashapp', 'amazon_pay', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'payoneer'];
+    private const PAYMENT_METHODS = ['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'afterpay_clearpay', 'klarna', 'cashapp', 'amazon_pay', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'airwallex_card', 'airwallex_ach_debit', 'airwallex_affirm', 'airwallex_afterpay_clearpay', 'airwallex_apple_pay', 'airwallex_cashapp', 'airwallex_google_pay', 'airwallex_klarna', 'airwallex_venmo', 'airwallex_paypal', 'payoneer'];
 
     // Listed so the admin can see them, but there is no checkout flow behind them yet.
     private const UNSUPPORTED_METHODS = [
         'ach_debit' => ['label' => 'ACH Direct Debit', 'gateway' => 'stripe'],
         'afterpay_clearpay' => ['label' => 'Afterpay / Clearpay', 'gateway' => 'stripe'],
         'amazon_pay' => ['label' => 'Amazon Pay', 'gateway' => 'stripe'],
+        // What Airwallex's hosted page offers; the keys are prefixed so they never clash with Stripe's.
+        'airwallex_card' => ['label' => 'Credit or Debit Card', 'gateway' => 'airwallex'],
+        'airwallex_ach_debit' => ['label' => 'ACH Direct Debit', 'gateway' => 'airwallex'],
+        'airwallex_affirm' => ['label' => 'Affirm', 'gateway' => 'airwallex'],
+        'airwallex_afterpay_clearpay' => ['label' => 'Afterpay / Clearpay', 'gateway' => 'airwallex'],
+        'airwallex_apple_pay' => ['label' => 'Apple Pay', 'gateway' => 'airwallex'],
+        'airwallex_cashapp' => ['label' => 'Cash App Pay', 'gateway' => 'airwallex'],
+        'airwallex_google_pay' => ['label' => 'Google Pay', 'gateway' => 'airwallex'],
+        'airwallex_klarna' => ['label' => 'Klarna', 'gateway' => 'airwallex'],
+        'airwallex_venmo' => ['label' => 'Venmo', 'gateway' => 'airwallex'],
+        'airwallex_paypal' => ['label' => 'PayPal', 'gateway' => 'airwallex'],
         'venmo' => ['label' => 'Venmo', 'gateway' => 'paypal'],
     ];
 

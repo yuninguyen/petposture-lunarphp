@@ -920,7 +920,7 @@ class PaymentMethodControllerTest extends TestCase
 
         $methods = array_column($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'), 'method');
 
-        $this->assertSame(['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'afterpay_clearpay', 'klarna', 'cashapp', 'amazon_pay', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'payoneer'], $methods);
+        $this->assertSame(['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'afterpay_clearpay', 'klarna', 'cashapp', 'amazon_pay', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'airwallex_card', 'airwallex_ach_debit', 'airwallex_affirm', 'airwallex_afterpay_clearpay', 'airwallex_apple_pay', 'airwallex_cashapp', 'airwallex_google_pay', 'airwallex_klarna', 'airwallex_venmo', 'airwallex_paypal', 'payoneer'], $methods);
 
         $this->putJson('/api/admin/finance/payment-methods/methods/pingpong', ['enabled' => true])->assertNotFound();
         $this->assertSame($methods, array_column($this->getJson('/api/admin/finance/payment-methods')->json('methods'), 'method'));
@@ -1083,7 +1083,7 @@ class PaymentMethodControllerTest extends TestCase
         Sanctum::actingAs($this->userWithRole('admin'));
 
         $methods = collect($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'));
-        foreach (['ach_debit' => 'stripe', 'afterpay_clearpay' => 'stripe', 'amazon_pay' => 'stripe', 'venmo' => 'paypal'] as $method => $gateway) {
+        foreach (['ach_debit' => 'stripe', 'afterpay_clearpay' => 'stripe', 'amazon_pay' => 'stripe', 'venmo' => 'paypal', 'airwallex_klarna' => 'airwallex', 'airwallex_paypal' => 'airwallex'] as $method => $gateway) {
             $row = $methods->firstWhere('method', $method);
             $this->assertSame($gateway, $row['gateway']);
             $this->assertFalse($row['supported']);

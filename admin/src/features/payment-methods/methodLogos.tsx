@@ -28,7 +28,8 @@ const GLYPHS = {
 };
 
 export function MethodLogo({ method }: { method: string }) {
-  const logo = LOGOS[method];
+  // Airwallex rows reuse the method's own logo ("airwallex_klarna" shows the Klarna badge).
+  const logo = LOGOS[method.replace(/^airwallex_/, '')] ?? LOGOS[method];
   const tile = 'flex h-9 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200';
 
   if (!logo) return <span aria-hidden="true" className={`${tile} bg-slate-50`} />;
