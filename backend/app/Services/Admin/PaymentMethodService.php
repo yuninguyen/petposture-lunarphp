@@ -24,6 +24,10 @@ class PaymentMethodService
         'ach_debit' => ['label' => 'ACH Direct Debit', 'gateway' => 'stripe'],
         'afterpay_clearpay' => ['label' => 'Afterpay / Clearpay', 'gateway' => 'stripe'],
         'amazon_pay' => ['label' => 'Amazon Pay', 'gateway' => 'stripe'],
+        // The storefront does not sell through Airwallex or Payoneer yet, so a switch for them would
+        // change nothing visible. These override their registered gateways with a locked row.
+        'airwallex' => ['label' => 'Airwallex', 'gateway' => 'airwallex'],
+        'payoneer' => ['label' => 'Payoneer', 'gateway' => 'payoneer'],
         // What Airwallex's hosted page offers; the keys are prefixed so they never clash with Stripe's.
         'airwallex_card' => ['label' => 'Credit or Debit Card', 'gateway' => 'airwallex'],
         'airwallex_ach_debit' => ['label' => 'ACH Direct Debit', 'gateway' => 'airwallex'],
