@@ -1,11 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { fetchPaymentMethods, updateCardBrands, updateCheckoutPaymentMethod, updateCodPaymentMethod, type CheckoutPaymentMethodState, type PaymentGateway, type PaymentMethodState, type PaymentMethodsResponse } from './api';
+import { Badge, type BadgeColor } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import {
+  fetchPaymentMethods,
+  refreshStripeSync,
+  updateCardBrands,
+  updateCheckoutPaymentMethod,
+  updateCodPaymentMethod,
+  type CheckoutPaymentMethodState,
+  type PaymentGateway,
+  type PaymentMethodState,
+  type PaymentMethodsResponse,
+  type StripeStatus,
+} from './api';
 import { GatewayForm } from './GatewayForm';
+import { MethodLogo } from './methodLogos';
 
 const QUERY_KEY = ['admin', 'payment-methods'] as const;
 const APPROVED_GATEWAYS: PaymentGateway[] = ['stripe', 'paypal', 'airwallex', 'payoneer'];
+const STRIPE_STATUS_COLORS: Record<StripeStatus, BadgeColor> = { on: 'emerald', off: 'red', unavailable: 'amber' };
 
 function replaceGateway(current: PaymentMethodsResponse | undefined, next: PaymentMethodState): PaymentMethodsResponse | undefined {
   if (!current) return current;
@@ -38,6 +54,10 @@ export function PaymentMethodsPage() {
     mutationFn: updateCardBrands,
     onSuccess: (result) => queryClient.setQueryData<PaymentMethodsResponse>(QUERY_KEY, (current) => current && { ...current, card_brands: result.data }),
   });
+  const syncMutation = useMutation({
+    mutationFn: refreshStripeSync,
+    onSuccess: (result) => queryClient.setQueryData<PaymentMethodsResponse>(QUERY_KEY, (current) => current && { ...current, methods: result.data.methods, stripe_sync: result.data.stripe_sync }),
+  });
   const gateways = useMemo(() => {
     const byGateway = new Map<PaymentGateway, PaymentMethodState>();
     for (const gateway of paymentMethodsQuery.data?.data ?? []) {
@@ -57,6 +77,7 @@ export function PaymentMethodsPage() {
     [paymentMethodsQuery.data?.methods, selectedGateway],
   );
   const cardBrands = paymentMethodsQuery.data?.card_brands;
+  const stripeSync = paymentMethodsQuery.data?.stripe_sync;
   const [copyStatus, setCopyStatus] = useState<'copied' | 'error' | null>(null);
 
   useEffect(() => {
@@ -93,6 +114,13 @@ export function PaymentMethodsPage() {
     mixed: t('payment_methods.source.mixed', { defaultValue: 'Mixed' }),
     none: t('payment_methods.source.none', { defaultValue: 'None' }),
   })[source];
+  const enabledLabel = t('payment_methods.checkout_methods.enabled', { defaultValue: 'Enabled' });
+  const disabledLabel = t('payment_methods.checkout_methods.disabled', { defaultValue: 'Disabled' });
+  const stripeStatusLabel = (status: StripeStatus) => ({
+    on: t('payment_methods.stripe_status.on', { defaultValue: 'On in Stripe' }),
+    off: t('payment_methods.stripe_status.off', { defaultValue: 'Off in Stripe' }),
+    unavailable: t('payment_methods.stripe_status.unavailable', { defaultValue: 'Not available in Stripe' }),
+  })[status];
 
   async function copyWebhookUrl() {
     setCopyStatus(null);
@@ -105,7 +133,7 @@ export function PaymentMethodsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
       <header>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           {t('payment_methods.title', { defaultValue: 'Payment methods' })}
@@ -150,7 +178,100 @@ export function PaymentMethodsPage() {
         ))}
       </div>
 
+      {selectedMethods.length > 0 && (
+        <section aria-label={t('payment_methods.checkout_methods.title', { defaultValue: 'Checkout payment methods' })} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+            <div>
+              <h2 className="font-semibold text-slate-900">{t('payment_methods.checkout_methods.title', { defaultValue: 'Checkout payment methods' })}</h2>
+              <p className="mt-1 text-sm text-slate-500">{t('payment_methods.checkout_methods.description', { defaultValue: 'Disabled methods are hidden from checkout.' })}</p>
+            </div>
+            {selected.gateway === 'stripe' && (
+              <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
+                <Button type="button" variant="secondary" disabled={syncMutation.isPending} onClick={() => syncMutation.mutate()}>
+                  {syncMutation.isPending
+                    ? t('payment_methods.stripe_sync.refreshing', { defaultValue: 'Refreshing…' })
+                    : t('payment_methods.stripe_sync.refresh', { defaultValue: 'Refresh from Stripe' })}
+                </Button>
+                <p role="status" className="text-xs text-slate-500">
+                  {stripeSync?.ok && stripeSync.checked_at
+                    ? t('payment_methods.stripe_sync.checked', { defaultValue: 'Checked {{time}}', time: new Date(stripeSync.checked_at).toLocaleTimeString() })
+                    : stripeSync && !stripeSync.ok
+                      ? t('payment_methods.stripe_sync.failed', { defaultValue: 'Could not read Stripe; only this site\'s switches apply.' })
+                      : null}
+                </p>
+              </div>
+            )}
+          </div>
+          <ul className="divide-y divide-slate-100">
+            {selectedMethods.map((method) => {
+              const unsupported = method.supported === false;
+              const hiddenAtCheckout = !unsupported && method.admin_enabled && !method.enabled;
+              const stripeBlocked = method.stripe_status === 'off' || method.stripe_status === 'unavailable';
+              return (
+                <li key={method.method} className="px-5 py-4 sm:px-6">
+                  <div className="flex items-center gap-4">
+                    <MethodLogo method={method.method} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-slate-900">{method.label}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        {unsupported && <Badge color="slate">{t('payment_methods.checkout_methods.unsupported', { defaultValue: 'Not supported yet.' })}</Badge>}
+                        {method.stripe_status && <Badge color={STRIPE_STATUS_COLORS[method.stripe_status]}>{stripeStatusLabel(method.stripe_status)}</Badge>}
+                        {hiddenAtCheckout && <Badge color="amber">{t('payment_methods.hidden_at_checkout', { defaultValue: 'Hidden at checkout' })}</Badge>}
+                      </div>
+                      {!unsupported && !method.available && !stripeBlocked && (
+                        <p className="mt-1 text-xs text-amber-700">{t('payment_methods.checkout_methods.unavailable', { defaultValue: 'Unavailable with current gateway settings.' })}</p>
+                      )}
+                    </div>
+                    <span className="hidden w-16 text-right text-xs font-medium text-slate-500 sm:block">{method.admin_enabled ? enabledLabel : disabledLabel}</span>
+                    <Switch
+                      checked={method.admin_enabled}
+                      label={`${method.label} ${method.admin_enabled ? enabledLabel : disabledLabel}`}
+                      disabled={methodMutation.isPending || unsupported}
+                      onChange={(enabled) => methodMutation.mutate({ method: method.method, enabled })}
+                    />
+                  </div>
+                  {method.method === 'card' && cardBrands && (
+                    <fieldset className="mt-3 rounded-lg bg-slate-50 px-4 py-3 sm:ml-[4.5rem]">
+                      <legend className="px-1 text-xs font-medium text-slate-700">{t('payment_methods.checkout_methods.brands_title', { defaultValue: 'Card logos shown at checkout' })}</legend>
+                      <p className="mb-2 text-xs text-slate-500">{t('payment_methods.checkout_methods.brands_hint', { defaultValue: 'Display only. Which cards are accepted is set in your Stripe account.' })}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {cardBrands.available.map((brand) => {
+                          const on = cardBrands.enabled.includes(brand);
+                          return (
+                            <label
+                              key={brand}
+                              className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${on ? 'border-secondary bg-secondary/10 text-slate-900' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-100'}`}
+                            >
+                              <input
+                                type="checkbox"
+                                className="sr-only"
+                                checked={on}
+                                disabled={brandsMutation.isPending}
+                                onChange={(event) => brandsMutation.mutate(
+                                  event.target.checked ? [...cardBrands.enabled, brand] : cardBrands.enabled.filter((item) => item !== brand),
+                                )}
+                              />
+                              {t(`payment_methods.card_brands.${brand}`, { defaultValue: brand })}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          {selected.gateway === 'stripe' && (
+            <p className="border-t border-slate-100 bg-slate-50 px-5 py-3 text-xs text-slate-500 sm:px-6">
+              {t('payment_methods.stripe_sync.hint', { defaultValue: 'Read-only: turning a method off in Stripe hides it at checkout. This page never changes your Stripe account.' })}
+            </p>
+          )}
+        </section>
+      )}
+
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <h2 className="mb-4 font-semibold text-slate-900">{t('payment_methods.credentials.title', { defaultValue: 'Connection & credentials' })}</h2>
         <GatewayForm
           key={selected.gateway}
           gateway={selected}
@@ -161,83 +282,22 @@ export function PaymentMethodsPage() {
         />
       </section>
 
-      {selectedMethods.length > 0 && (
-        <section aria-label={t('payment_methods.checkout_methods.title', { defaultValue: 'Checkout payment methods' })} className="rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
-            <h2 className="font-semibold text-slate-900">{t('payment_methods.checkout_methods.title', { defaultValue: 'Checkout payment methods' })}</h2>
-            <p className="mt-1 text-sm text-slate-500">{t('payment_methods.checkout_methods.description', { defaultValue: 'Disabled methods are hidden from checkout.' })}</p>
-          </div>
-          <ul className="divide-y divide-slate-100">
-            {selectedMethods.map((method) => {
-              const unsupported = method.supported === false;
-              return (
-                <li key={method.method} className="px-5 py-4 sm:px-6">
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">{method.label}</p>
-                      {unsupported ? (
-                        <p className="mt-1 text-xs text-slate-500">{t('payment_methods.checkout_methods.unsupported', { defaultValue: 'Not supported yet.' })}</p>
-                      ) : !method.available && (
-                        <p className="mt-1 text-xs text-amber-700">{t('payment_methods.checkout_methods.unavailable', { defaultValue: 'Unavailable with current gateway settings.' })}</p>
-                      )}
-                    </div>
-                    <label className="flex shrink-0 items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        aria-label={`${method.label} ${method.admin_enabled
-                          ? t('payment_methods.checkout_methods.enabled', { defaultValue: 'Enabled' })
-                          : t('payment_methods.checkout_methods.disabled', { defaultValue: 'Disabled' })}`}
-                        checked={method.admin_enabled}
-                        disabled={methodMutation.isPending || unsupported}
-                        onChange={(event) => methodMutation.mutate({ method: method.method, enabled: event.target.checked })}
-                      />
-                      {method.admin_enabled
-                        ? t('payment_methods.checkout_methods.enabled', { defaultValue: 'Enabled' })
-                        : t('payment_methods.checkout_methods.disabled', { defaultValue: 'Disabled' })}
-                    </label>
-                  </div>
-                  {method.method === 'card' && cardBrands && (
-                    <fieldset className="mt-3 rounded-lg bg-slate-50 px-4 py-3">
-                      <legend className="px-1 text-xs font-medium text-slate-700">{t('payment_methods.checkout_methods.brands_title', { defaultValue: 'Card logos shown at checkout' })}</legend>
-                      <p className="mb-2 text-xs text-slate-500">{t('payment_methods.checkout_methods.brands_hint', { defaultValue: 'Display only. Which cards are accepted is set in your Stripe account.' })}</p>
-                      <div className="flex flex-wrap gap-x-5 gap-y-2">
-                        {cardBrands.available.map((brand) => (
-                          <label key={brand} className="flex items-center gap-2 text-sm text-slate-800">
-                            <input
-                              type="checkbox"
-                              checked={cardBrands.enabled.includes(brand)}
-                              disabled={brandsMutation.isPending}
-                              onChange={(event) => brandsMutation.mutate(
-                                event.target.checked ? [...cardBrands.enabled, brand] : cardBrands.enabled.filter((item) => item !== brand),
-                              )}
-                            />
-                            {t(`payment_methods.card_brands.${brand}`, { defaultValue: brand })}
-                          </label>
-                        ))}
-                      </div>
-                    </fieldset>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
-
       <section className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div>
           <h2 className="font-semibold text-slate-900">{t('payment_methods.cod.title', { defaultValue: 'Cash on delivery' })}</h2>
           <p className="mt-1 text-sm text-slate-500">{t('payment_methods.cod.description', { defaultValue: 'Let customers pay when their order is delivered.' })}</p>
         </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-medium text-slate-500">
+            {codEnabled ? t('payment_methods.cod.enabled', { defaultValue: 'Enabled' }) : t('payment_methods.cod.disabled', { defaultValue: 'Disabled' })}
+          </span>
+          <Switch
             checked={codEnabled}
+            label={`${t('payment_methods.cod.title', { defaultValue: 'Cash on delivery' })} ${codEnabled ? enabledLabel : disabledLabel}`}
             disabled={codMutation.isPending}
-            onChange={(event) => codMutation.mutate(event.target.checked)}
+            onChange={(enabled) => codMutation.mutate(enabled)}
           />
-          {codEnabled ? t('payment_methods.cod.enabled', { defaultValue: 'Enabled' }) : t('payment_methods.cod.disabled', { defaultValue: 'Disabled' })}
-        </label>
+        </div>
       </section>
     </div>
   );

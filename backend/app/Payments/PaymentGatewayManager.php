@@ -4,6 +4,7 @@ namespace App\Payments;
 
 use App\Models\Setting;
 use App\Payments\Contracts\PaymentGatewayInterface;
+use App\Services\StripePaymentMethodStatusService;
 use InvalidArgumentException;
 
 class PaymentGatewayManager
@@ -30,7 +31,7 @@ class PaymentGatewayManager
 
         foreach ($this->gateways as $gateway) {
             if ($gateway->method() === $requestedMethod) {
-                if (! ($gateway->definition()['enabled'] ?? true) || ! $this->adminEnabled($switch)) {
+                if (! ($gateway->definition()['enabled'] ?? true) || ! $this->adminEnabled($switch) || $this->stripeBlocked($switch)) {
                     throw new InvalidArgumentException("Unsupported payment method [{$switch}].");
                 }
 
@@ -49,11 +50,14 @@ class PaymentGatewayManager
         foreach ($this->gateways as $gateway) {
             $definition = $gateway->definition();
             $available = $gateway->method() === 'cod' ? true : (bool) ($definition['enabled'] ?? true);
+            $stripeStatus = $this->stripeStatus($gateway->method());
+            $available = $available && ! $this->stripeBlocked($gateway->method());
             $adminEnabled = $this->adminEnabled($gateway->method());
             $methods[] = [
                 ...$definition,
                 'available' => $available,
                 'admin_enabled' => $adminEnabled,
+                'stripe_status' => $stripeStatus,
                 'enabled' => $available && $adminEnabled,
             ];
 
@@ -64,7 +68,8 @@ class PaymentGatewayManager
 
         if ($card !== null) {
             foreach (self::WALLETS as $wallet => $label) {
-                $available = ($card['mode'] ?? null) === 'configured';
+                $stripeStatus = $this->stripeStatus($wallet);
+                $available = ($card['mode'] ?? null) === 'configured' && ! $this->stripeBlocked($wallet);
                 $adminEnabled = $this->adminEnabled($wallet);
                 $methods[] = [
                     'method' => $wallet,
@@ -76,12 +81,27 @@ class PaymentGatewayManager
                     'publishable_key' => $card['publishable_key'] ?? null,
                     'available' => $available,
                     'admin_enabled' => $adminEnabled,
+                    'stripe_status' => $stripeStatus,
                     'enabled' => $available && $adminEnabled,
                 ];
             }
         }
 
         return $methods;
+    }
+
+    /** What the Stripe dashboard says about a Stripe-powered method ('on'/'off'/'unavailable'), or null if unknown/not Stripe. */
+    private function stripeStatus(string $method): ?string
+    {
+        return isset(StripePaymentMethodStatusService::STRIPE_KEYS[$method])
+            ? app(StripePaymentMethodStatusService::class)->status($method)
+            : null;
+    }
+
+    private function stripeBlocked(string $method): bool
+    {
+        return isset(StripePaymentMethodStatusService::STRIPE_KEYS[$method])
+            && app(StripePaymentMethodStatusService::class)->isBlocked($method);
     }
 
     private function adminEnabled(string $method): bool

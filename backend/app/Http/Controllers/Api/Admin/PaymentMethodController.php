@@ -31,6 +31,15 @@ class PaymentMethodController extends Controller
         ]);
     }
 
+    public function refreshStripeSync(PaymentMethodService $paymentMethods, PaymentGatewayManager $gateways): JsonResponse
+    {
+        $sync = $paymentMethods->refreshStripeSync();
+
+        return response()->json([
+            'data' => ['methods' => $paymentMethods->checkoutMethods($gateways), 'stripe_sync' => $sync],
+        ]);
+    }
+
     public function updateCardBrands(Request $request, PaymentMethodService $paymentMethods): JsonResponse
     {
         $validated = $request->validate([
@@ -62,6 +71,7 @@ class PaymentMethodController extends Controller
             'cod' => ['enabled' => $paymentMethods->codEnabled()],
             'methods' => $paymentMethods->checkoutMethods($gateways),
             'card_brands' => $paymentMethods->cardBrands(),
+            'stripe_sync' => $paymentMethods->stripeSync(),
         ]);
     }
 }

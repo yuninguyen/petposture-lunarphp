@@ -230,7 +230,7 @@ describe('PaymentMethodsPage', () => {
     renderPage();
     await screen.findByTestId('gateway-form');
 
-    const toggle = screen.getByRole('checkbox', { name: /Enabled/ });
+    const toggle = screen.getByRole('switch', { name: /Enabled/ });
     expect(toggle).toBeChecked();
 
     mocks.fetchJson.mockResolvedValueOnce({ data: { enabled: false } });
@@ -240,7 +240,7 @@ describe('PaymentMethodsPage', () => {
       method: 'PUT',
       body: { enabled: false },
     }));
-    await screen.findByRole('checkbox', { name: /Disabled/ });
+    await screen.findByRole('switch', { name: /Disabled/ });
   });
 
   it('starts the COD toggle unchecked when the server reports it disabled', async () => {
@@ -248,7 +248,7 @@ describe('PaymentMethodsPage', () => {
     renderPage();
     await screen.findByTestId('gateway-form');
 
-    expect(screen.getByRole('checkbox', { name: /Disabled/ })).not.toBeChecked();
+    expect(screen.getByRole('switch', { name: /Disabled/ })).toHaveAttribute('aria-checked', 'false');
   });
 
   it('keeps checkout method rows in place after toggling one off', async () => {
@@ -263,12 +263,12 @@ describe('PaymentMethodsPage', () => {
     ));
     renderPage();
 
-    fireEvent.click(await screen.findByRole('checkbox', { name: 'Credit card Enabled' }));
-    await screen.findByRole('checkbox', { name: 'Credit card Disabled' });
+    fireEvent.click(await screen.findByRole('switch', { name: 'Credit card Enabled' }));
+    await screen.findByRole('switch', { name: 'Credit card Disabled' });
 
     expect(mocks.fetchJson).toHaveBeenCalledWith('/admin/finance/payment-methods/methods/card', { method: 'PUT', body: { enabled: false } });
     expect(
-      screen.getAllByRole('checkbox')
+      screen.getAllByRole('switch')
         .map((checkbox) => checkbox.getAttribute('aria-label'))
         .filter((label) => /Credit card|Cash App/.test(label ?? '')),
     ).toEqual(['Credit card Disabled', 'Cash App Pay Enabled']);
@@ -286,17 +286,55 @@ describe('PaymentMethodsPage', () => {
     mocks.fetchJson.mockResolvedValue({ data: gateways, cod: COD_ENABLED, methods: catalogue });
     renderPage();
 
-    await screen.findByRole('checkbox', { name: 'Credit card Enabled' });
-    expect(screen.getByRole('checkbox', { name: 'Google Pay Enabled' })).toBeEnabled();
-    expect(screen.queryByRole('checkbox', { name: /^PayPal/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'ACH Direct Debit Disabled' })).toBeDisabled();
+    await screen.findByRole('switch', { name: 'Credit card Enabled' });
+    expect(screen.getByRole('switch', { name: 'Google Pay Enabled' })).toBeEnabled();
+    expect(screen.queryByRole('switch', { name: /^PayPal/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'ACH Direct Debit Disabled' })).toBeDisabled();
     expect(screen.getByText('Not supported yet.')).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByTestId('gateway-selector')[1]);
 
-    await screen.findByRole('checkbox', { name: 'PayPal Enabled' });
-    expect(screen.queryByRole('checkbox', { name: /^Credit card/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Venmo Disabled' })).toBeDisabled();
+    await screen.findByRole('switch', { name: 'PayPal Enabled' });
+    expect(screen.queryByRole('switch', { name: /^Credit card/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Venmo Disabled' })).toBeDisabled();
+  });
+
+  it('shows what Stripe reports for each method and re-reads Stripe on request', async () => {
+    const methods = [
+      { method: 'card', label: 'Credit card', gateway: 'stripe', enabled: true, available: true, admin_enabled: true, supported: true, stripe_status: 'on' },
+      { method: 'klarna', label: 'Klarna', gateway: 'stripe', enabled: false, available: false, admin_enabled: true, supported: true, stripe_status: 'off' },
+    ];
+    mocks.fetchJson.mockImplementation(async (_url: string, options?: { method?: string }) => (
+      options?.method === 'POST'
+        ? { data: { methods: [methods[0], { ...methods[1], stripe_status: 'on', enabled: true, available: true }], stripe_sync: { ok: true, checked_at: '2026-10-03T10:00:00Z' } } }
+        : { data: gateways, cod: COD_ENABLED, methods, stripe_sync: { ok: true, checked_at: '2026-10-03T09:00:00Z' } }
+    ));
+    renderPage();
+
+    expect(await screen.findByText('Off in Stripe')).toBeInTheDocument();
+    expect(screen.getByText('On in Stripe')).toBeInTheDocument();
+    expect(screen.getByText('Hidden at checkout')).toBeInTheDocument();
+    // Stripe's state never flips this site's own switch.
+    expect(screen.getByRole('switch', { name: 'Klarna Enabled' })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh from Stripe' }));
+
+    await waitFor(() => expect(mocks.fetchJson).toHaveBeenCalledWith('/admin/finance/payment-methods/stripe-sync', { method: 'POST' }));
+    await waitFor(() => expect(screen.queryByText('Off in Stripe')).not.toBeInTheDocument());
+    expect(screen.queryByText('Hidden at checkout')).not.toBeInTheDocument();
+  });
+
+  it('says so when Stripe could not be read and offers no Stripe state', async () => {
+    mocks.fetchJson.mockResolvedValue({
+      data: gateways,
+      cod: COD_ENABLED,
+      methods: [{ method: 'card', label: 'Credit card', gateway: 'stripe', enabled: true, available: true, admin_enabled: true, supported: true, stripe_status: null }],
+      stripe_sync: { ok: false, checked_at: null },
+    });
+    renderPage();
+
+    expect(await screen.findByText(/read Stripe/)).toBeInTheDocument();
+    expect(screen.queryByText(/in Stripe$/)).not.toBeInTheDocument();
   });
 
   it('saves the card logo selection when a brand is ticked or unticked', async () => {

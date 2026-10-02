@@ -510,6 +510,16 @@ purges the Cloudflare API cache, so the storefront follows within the purge dela
 - Card logos next to "Credit card" follow `Setting` `payment_card_brands` (json list; default all of
   visa, mastercard, amex, discover, diners, jcb, unionpay — the cards Stripe accepts). Display only — Stripe's own
   settings decide which cards are accepted. `PUT /api/admin/finance/payment-methods/card-brands`.
+- **Stripe dashboard state (read-only).** `StripePaymentMethodStatusService` reads the default
+  `payment_method_configurations` object from the Stripe API (cached 120 s; a failed read is retried
+  after 30 s) and the admin shows "On / Off / Not available in Stripe" next to each Stripe method.
+  A method Stripe reports as off or unavailable is hidden at checkout and refused by `place-order`,
+  while this site's own switch is left untouched. Nothing is ever written to the Stripe account. If
+  Stripe cannot be read (restricted key, outage) the status is unknown and nothing is hidden. The
+  admin "Refresh from Stripe" button (`POST /api/admin/finance/payment-methods/stripe-sync`) re-reads
+  immediately and saves `stripe_payment_method_sync_at`, which purges the cached public response.
+  `STRIPE_PAYMENT_METHOD_SYNC=false` turns the lookup off (tests do this). The secret key needs read
+  access to payment method configurations.
 - If an admin switches every method off, checkout shows "No payment methods are available right
   now" and disables Complete Order; the built-in fallback list is only used when the payment-methods
   API itself is unreachable.

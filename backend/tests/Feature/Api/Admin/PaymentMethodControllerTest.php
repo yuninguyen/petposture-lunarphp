@@ -12,6 +12,7 @@ use App\Services\StripePaymentIntentService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
@@ -923,6 +924,110 @@ class PaymentMethodControllerTest extends TestCase
 
         $this->putJson('/api/admin/finance/payment-methods/methods/pingpong', ['enabled' => true])->assertNotFound();
         $this->assertSame($methods, array_column($this->getJson('/api/admin/finance/payment-methods')->json('methods'), 'method'));
+    }
+
+    /**
+     * Pretend the Stripe dashboard has these methods in the given state ('on', 'off' or 'unavailable').
+     *
+     * @param  array<string, string>  $states  Stripe key => state; anything not listed is on
+     */
+    private function fakeStripeDashboard(array $states = [], int $httpStatus = 200): void
+    {
+        // Http::fake() stacks stubs and the first match wins, so start from a clean client each time.
+        Http::swap(new HttpFactory);
+        config()->set('services.stripe.method_status_sync', true);
+        config()->set('services.stripe.key', 'pk_test_status');
+        config()->set('services.stripe.secret', 'sk_test_status');
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+        Cache::forget('stripe_payment_method_status');
+
+        $config = ['id' => 'pmc_default', 'object' => 'payment_method_configuration', 'is_default' => true, 'active' => true];
+        foreach (['card', 'google_pay', 'apple_pay', 'affirm', 'afterpay_clearpay', 'klarna', 'cashapp', 'amazon_pay', 'us_bank_account'] as $key) {
+            $state = $states[$key] ?? 'on';
+            $config[$key] = [
+                'available' => $state !== 'unavailable',
+                'display_preference' => ['preference' => $state === 'off' ? 'off' : 'on', 'value' => $state === 'off' ? 'off' : 'on'],
+            ];
+        }
+
+        Http::fake(['https://api.stripe.com/v1/payment_method_configurations*' => $httpStatus === 200
+            ? Http::response(['object' => 'list', 'data' => [$config]])
+            : Http::response(['error' => ['message' => 'nope']], $httpStatus)]);
+    }
+
+    public function test_a_method_turned_off_in_stripe_is_hidden_at_checkout_and_shown_as_off_in_admin(): void
+    {
+        $this->fakeStripeDashboard(['klarna' => 'off', 'affirm' => 'unavailable']);
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $methods = collect($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'))->keyBy('method');
+        $this->assertSame('off', $methods['klarna']['stripe_status']);
+        $this->assertSame('unavailable', $methods['affirm']['stripe_status']);
+        $this->assertSame('on', $methods['card']['stripe_status']);
+        $this->assertSame('on', $methods['ach_debit']['stripe_status'], 'Locked methods still report Stripe\'s state.');
+        $this->assertNull($methods['paypal']['stripe_status'], 'Only Stripe-powered methods have a Stripe status.');
+        $this->assertTrue($methods['klarna']['admin_enabled'], 'Our own switch is untouched by Stripe.');
+        $this->assertFalse($methods['klarna']['enabled']);
+        $this->getJson('/api/admin/finance/payment-methods')->assertJsonPath('stripe_sync.ok', true);
+
+        $public = collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->keyBy('method');
+        $this->assertFalse($public['klarna']['enabled']);
+        $this->assertFalse($public['affirm']['enabled']);
+        $this->assertTrue($public['card']['enabled']);
+
+        $this->expectException(\InvalidArgumentException::class);
+        app(PaymentGatewayManager::class)->forMethod('klarna');
+    }
+
+    public function test_wallets_follow_stripe_status_too(): void
+    {
+        $this->fakeStripeDashboard(['apple_pay' => 'off']);
+
+        $public = collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->keyBy('method');
+
+        $this->assertFalse($public['apple_pay']['enabled']);
+        $this->assertTrue($public['google_pay']['enabled']);
+        $this->assertSame('card', app(PaymentGatewayManager::class)->forMethod('card', 'google_pay')->method());
+        $this->expectException(\InvalidArgumentException::class);
+        app(PaymentGatewayManager::class)->forMethod('card', 'apple_pay');
+    }
+
+    public function test_an_unreachable_stripe_never_hides_anything(): void
+    {
+        $this->fakeStripeDashboard([], 403);
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $methods = collect($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'))->keyBy('method');
+        $this->assertNull($methods['card']['stripe_status']);
+        $this->assertTrue($methods['card']['enabled']);
+        $this->assertTrue($methods['apple_pay']['enabled']);
+        $this->getJson('/api/admin/finance/payment-methods')->assertJsonPath('stripe_sync.ok', false);
+        $this->assertSame('card', app(PaymentGatewayManager::class)->forMethod('card')->method());
+    }
+
+    public function test_refreshing_the_stripe_status_rereads_stripe_and_purges_the_storefront_cache(): void
+    {
+        $this->fakeStripeDashboard();
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $this->assertSame('on', collect($this->getJson('/api/admin/finance/payment-methods')->json('methods'))->firstWhere('method', 'klarna')['stripe_status']);
+
+        $this->fakeStripeDashboard(['klarna' => 'off']);
+        // Still the cached answer until someone refreshes.
+        Cache::put('stripe_payment_method_status', ['statuses' => ['klarna' => 'on'], 'ok' => true, 'checked_at' => now()->toIso8601String()], 120);
+
+        $response = $this->postJson('/api/admin/finance/payment-methods/stripe-sync')->assertOk();
+        $this->assertSame('off', collect($response->json('data.methods'))->firstWhere('method', 'klarna')['stripe_status']);
+        $response->assertJsonPath('data.stripe_sync.ok', true);
+        $this->assertNotNull(Setting::get('stripe_payment_method_sync_at'));
+    }
+
+    public function test_only_core_admins_can_refresh_the_stripe_status(): void
+    {
+        foreach (['customer', 'Product Manager', 'Order Manager', 'Support'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+            $this->postJson('/api/admin/finance/payment-methods/stripe-sync')->assertForbidden();
+        }
     }
 
     public function test_wallets_switch_independently_of_credit_card_and_order_creation_follows_the_wallet_switch(): void

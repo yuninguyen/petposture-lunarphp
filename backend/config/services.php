@@ -32,6 +32,9 @@ return [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        // Read which payment methods are on in the Stripe dashboard (read-only) so the
+        // admin can show it and checkout can hide methods Stripe has turned off.
+        'method_status_sync' => (bool) env('STRIPE_PAYMENT_METHOD_SYNC', true),
         'alt_methods' => array_values(array_filter(array_map(
             static fn (string $method): string => strtolower(trim($method)),
             explode(',', (string) env('STRIPE_ALT_PAYMENT_METHODS', '')),

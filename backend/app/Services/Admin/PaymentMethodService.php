@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Models\Setting;
 use App\Payments\Gateways\StripeCardGateway;
 use App\Payments\PaymentGatewayManager;
+use App\Services\StripePaymentMethodStatusService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -112,6 +113,7 @@ class PaymentMethodService
                 'admin_enabled' => false,
                 'enabled' => false,
                 'supported' => false,
+                'stripe_status' => $info['gateway'] === 'stripe' ? app(StripePaymentMethodStatusService::class)->status($method) : null,
             ];
         }
 
@@ -123,6 +125,28 @@ class PaymentMethodService
         }
 
         return $methods;
+    }
+
+    /**
+     * Whether the last read of the Stripe dashboard's payment-method switches worked.
+     *
+     * @return array{ok: bool, checked_at: string|null}
+     */
+    public function stripeSync(): array
+    {
+        $snapshot = app(StripePaymentMethodStatusService::class)->snapshot();
+
+        return ['ok' => $snapshot['ok'], 'checked_at' => $snapshot['checked_at']];
+    }
+
+    /** Re-read Stripe now and make the storefront pick the result up. */
+    public function refreshStripeSync(): array
+    {
+        app(StripePaymentMethodStatusService::class)->refresh();
+        // Saving a Setting is what purges the edge-cached public payment-methods response.
+        Setting::set('stripe_payment_method_sync_at', now()->toIso8601String(), 'string', 'payment');
+
+        return $this->stripeSync();
     }
 
     /**

@@ -29,6 +29,15 @@ export interface CheckoutPaymentMethodState {
   admin_enabled: boolean;
   // false for listed-but-unbuilt methods (ACH Direct Debit, Venmo): shown, but locked.
   supported?: boolean;
+  // What the Stripe dashboard says (read-only); null/absent = not a Stripe method or unknown.
+  stripe_status?: StripeStatus | null;
+}
+
+export type StripeStatus = 'on' | 'off' | 'unavailable';
+
+export interface StripeSyncState {
+  ok: boolean;
+  checked_at: string | null;
 }
 
 export interface CardBrandsState {
@@ -59,6 +68,7 @@ export interface PaymentMethodsResponse {
   cod: { enabled: boolean };
   methods?: CheckoutPaymentMethodState[];
   card_brands?: CardBrandsState;
+  stripe_sync?: StripeSyncState;
 }
 
 export function fetchPaymentMethods(): Promise<PaymentMethodsResponse> {
@@ -74,6 +84,11 @@ export function updateCheckoutPaymentMethod(method: string, enabled: boolean): P
     method: 'PUT',
     body: { enabled },
   });
+}
+
+// Re-reads the Stripe dashboard now (read-only on Stripe's side) and refreshes the storefront.
+export function refreshStripeSync(): Promise<{ data: { methods: CheckoutPaymentMethodState[]; stripe_sync: StripeSyncState } }> {
+  return fetchJson('/admin/finance/payment-methods/stripe-sync', { method: 'POST' });
 }
 
 export function updateCardBrands(brands: string[]): Promise<{ data: CardBrandsState }> {
