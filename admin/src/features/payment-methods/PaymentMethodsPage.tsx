@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
   fetchPaymentMethods,
+  refreshAirwallexSync,
   refreshStripeSync,
   updateCardBrands,
   updateCheckoutPaymentMethod,
@@ -58,6 +59,10 @@ export function PaymentMethodsPage() {
     mutationFn: refreshStripeSync,
     onSuccess: (result) => queryClient.setQueryData<PaymentMethodsResponse>(QUERY_KEY, (current) => current && { ...current, methods: result.data.methods, stripe_sync: result.data.stripe_sync }),
   });
+  const airwallexSyncMutation = useMutation({
+    mutationFn: refreshAirwallexSync,
+    onSuccess: (result) => queryClient.setQueryData<PaymentMethodsResponse>(QUERY_KEY, (current) => current && { ...current, methods: result.data.methods, airwallex_sync: result.data.airwallex_sync }),
+  });
   const gateways = useMemo(() => {
     const byGateway = new Map<PaymentGateway, PaymentMethodState>();
     for (const gateway of paymentMethodsQuery.data?.data ?? []) {
@@ -77,7 +82,11 @@ export function PaymentMethodsPage() {
     [paymentMethodsQuery.data?.methods, selectedGateway],
   );
   const cardBrands = paymentMethodsQuery.data?.card_brands;
-  const stripeSync = paymentMethodsQuery.data?.stripe_sync;
+  // Gateways whose method states are read (read-only) from the provider's own API.
+  const syncByGateway = {
+    stripe: { sync: paymentMethodsQuery.data?.stripe_sync, mutation: syncMutation, prefix: 'stripe' },
+    airwallex: { sync: paymentMethodsQuery.data?.airwallex_sync, mutation: airwallexSyncMutation, prefix: 'airwallex' },
+  } as const;
   const [copyStatus, setCopyStatus] = useState<'copied' | 'error' | null>(null);
 
   useEffect(() => {
@@ -116,11 +125,19 @@ export function PaymentMethodsPage() {
   })[source];
   const enabledLabel = t('payment_methods.checkout_methods.enabled', { defaultValue: 'Enabled' });
   const disabledLabel = t('payment_methods.checkout_methods.disabled', { defaultValue: 'Disabled' });
-  const stripeStatusLabel = (status: StripeStatus) => ({
-    on: t('payment_methods.stripe_status.on', { defaultValue: 'On in Stripe' }),
-    off: t('payment_methods.stripe_status.off', { defaultValue: 'Off in Stripe' }),
-    unavailable: t('payment_methods.stripe_status.unavailable', { defaultValue: 'Not available in Stripe' }),
-  })[status];
+  const providerStatusLabel = (provider: 'stripe' | 'airwallex', status: StripeStatus) => ({
+    stripe: {
+      on: t('payment_methods.stripe_status.on', { defaultValue: 'On in Stripe' }),
+      off: t('payment_methods.stripe_status.off', { defaultValue: 'Off in Stripe' }),
+      unavailable: t('payment_methods.stripe_status.unavailable', { defaultValue: 'Not available in Stripe' }),
+    },
+    airwallex: {
+      on: t('payment_methods.airwallex_status.on', { defaultValue: 'On in Airwallex' }),
+      off: t('payment_methods.airwallex_status.off', { defaultValue: 'Off in Airwallex' }),
+      unavailable: t('payment_methods.airwallex_status.unavailable', { defaultValue: 'Not offered by Airwallex' }),
+    },
+  })[provider][status];
+  const providerSync = selected.gateway === 'stripe' || selected.gateway === 'airwallex' ? syncByGateway[selected.gateway] : null;
 
   async function copyWebhookUrl() {
     setCopyStatus(null);
@@ -185,18 +202,18 @@ export function PaymentMethodsPage() {
               <h2 className="font-semibold text-slate-900">{t('payment_methods.checkout_methods.title', { defaultValue: 'Checkout payment methods' })}</h2>
               <p className="mt-1 text-sm text-slate-500">{t('payment_methods.checkout_methods.description', { defaultValue: 'Disabled methods are hidden from checkout.' })}</p>
             </div>
-            {selected.gateway === 'stripe' && (
+            {providerSync && (
               <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
-                <Button type="button" variant="secondary" disabled={syncMutation.isPending} onClick={() => syncMutation.mutate()}>
-                  {syncMutation.isPending
+                <Button type="button" variant="secondary" disabled={providerSync.mutation.isPending} onClick={() => providerSync.mutation.mutate()}>
+                  {providerSync.mutation.isPending
                     ? t('payment_methods.stripe_sync.refreshing', { defaultValue: 'Refreshing…' })
-                    : t('payment_methods.stripe_sync.refresh', { defaultValue: 'Refresh from Stripe' })}
+                    : t(`payment_methods.${providerSync.prefix}_sync.refresh`, { defaultValue: 'Refresh' })}
                 </Button>
                 <p role="status" className="text-xs text-slate-500">
-                  {stripeSync?.ok && stripeSync.checked_at
-                    ? t('payment_methods.stripe_sync.checked', { defaultValue: 'Checked {{time}}', time: new Date(stripeSync.checked_at).toLocaleTimeString() })
-                    : stripeSync && !stripeSync.ok
-                      ? t('payment_methods.stripe_sync.failed', { defaultValue: 'Could not read Stripe; only this site\'s switches apply.' })
+                  {providerSync.sync?.ok && providerSync.sync.checked_at
+                    ? t('payment_methods.stripe_sync.checked', { defaultValue: 'Checked {{time}}', time: new Date(providerSync.sync.checked_at).toLocaleTimeString() })
+                    : providerSync.sync && !providerSync.sync.ok
+                      ? t(`payment_methods.${providerSync.prefix}_sync.failed`, { defaultValue: 'Could not read the provider.' })
                       : null}
                 </p>
               </div>
@@ -215,7 +232,8 @@ export function PaymentMethodsPage() {
                       <p className="text-sm font-semibold text-slate-900">{method.label}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
                         {unsupported && <Badge color="slate">{t('payment_methods.checkout_methods.unsupported', { defaultValue: 'Not supported yet.' })}</Badge>}
-                        {method.stripe_status && <Badge color={STRIPE_STATUS_COLORS[method.stripe_status]}>{stripeStatusLabel(method.stripe_status)}</Badge>}
+                        {method.stripe_status && <Badge color={STRIPE_STATUS_COLORS[method.stripe_status]}>{providerStatusLabel('stripe', method.stripe_status)}</Badge>}
+                        {method.airwallex_status && <Badge color={method.airwallex_status === 'unavailable' ? 'slate' : STRIPE_STATUS_COLORS[method.airwallex_status]}>{providerStatusLabel('airwallex', method.airwallex_status)}</Badge>}
                         {hiddenAtCheckout && <Badge color="amber">{t('payment_methods.hidden_at_checkout', { defaultValue: 'Hidden at checkout' })}</Badge>}
                       </div>
                       {!unsupported && !method.available && !stripeBlocked && (
@@ -262,9 +280,9 @@ export function PaymentMethodsPage() {
               );
             })}
           </ul>
-          {selected.gateway === 'stripe' && (
+          {providerSync && (
             <p className="border-t border-slate-100 bg-slate-50 px-5 py-3 text-xs text-slate-500 sm:px-6">
-              {t('payment_methods.stripe_sync.hint', { defaultValue: 'Read-only: turning a method off in Stripe hides it at checkout. This page never changes your Stripe account.' })}
+              {t(`payment_methods.${providerSync.prefix}_sync.hint`, { defaultValue: 'Read-only: this page never changes your provider account.' })}
             </p>
           )}
         </section>

@@ -1022,6 +1022,82 @@ class PaymentMethodControllerTest extends TestCase
         $this->assertNotNull(Setting::get('stripe_payment_method_sync_at'));
     }
 
+    /**
+     * Pretend the Airwallex account offers these payment method types.
+     *
+     * @param  array<string, bool>  $types  Airwallex type name => active
+     */
+    private function fakeAirwallexAccount(array $types, int $loginStatus = 200): void
+    {
+        Http::swap(new HttpFactory);
+        config()->set('services.airwallex.method_status_sync', true);
+        config()->set('services.airwallex.mode', 'sandbox');
+        config()->set('services.airwallex.client_id', 'awx_client_status');
+        config()->set('services.airwallex.api_key', 'awx_key_status');
+        foreach (['airwallex_client_id', 'airwallex_api_key', 'airwallex_access_token_sandbox', 'airwallex_payment_method_status'] as $key) {
+            Cache::forget($key);
+        }
+
+        $items = [];
+        foreach ($types as $name => $active) {
+            $items[] = ['name' => $name, 'transaction_mode' => 'oneoff', 'active' => $active];
+        }
+
+        Http::fake([
+            'https://api-demo.airwallex.com/api/v1/authentication/login' => $loginStatus === 200
+                ? Http::response(['token' => 'awx_token'])
+                : Http::response(['message' => 'bad credentials'], $loginStatus),
+            'https://api-demo.airwallex.com/api/v1/pa/config/payment_method_types*' => Http::response(['has_more' => false, 'items' => $items]),
+        ]);
+    }
+
+    public function test_airwallex_rows_show_what_the_account_can_offer(): void
+    {
+        $this->fakeAirwallexAccount(['card' => true, 'applepay' => true, 'klarna' => false]);
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $response = $this->getJson('/api/admin/finance/payment-methods')->assertOk();
+        $methods = collect($response->json('methods'))->keyBy('method');
+
+        $this->assertSame('on', $methods['airwallex_card']['airwallex_status']);
+        $this->assertSame('on', $methods['airwallex_apple_pay']['airwallex_status']);
+        $this->assertSame('off', $methods['airwallex_klarna']['airwallex_status']);
+        $this->assertSame('unavailable', $methods['airwallex_affirm']['airwallex_status'], 'A method Airwallex does not list is not offered to this account.');
+        $this->assertNull($methods['airwallex']['airwallex_status']);
+        $this->assertNull($methods['card']['airwallex_status'] ?? null);
+        $response->assertJsonPath('airwallex_sync.ok', true);
+    }
+
+    public function test_an_unreadable_airwallex_account_shows_no_status(): void
+    {
+        $this->fakeAirwallexAccount(['card' => true], 401);
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $response = $this->getJson('/api/admin/finance/payment-methods')->assertOk();
+
+        $this->assertNull(collect($response->json('methods'))->firstWhere('method', 'airwallex_card')['airwallex_status']);
+        $response->assertJsonPath('airwallex_sync.ok', false);
+    }
+
+    public function test_refreshing_the_airwallex_status_rereads_airwallex_and_is_core_admin_only(): void
+    {
+        foreach (['customer', 'Product Manager', 'Order Manager', 'Support'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+            $this->postJson('/api/admin/finance/payment-methods/airwallex-sync')->assertForbidden();
+        }
+
+        $this->fakeAirwallexAccount(['card' => true]);
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $this->assertSame('on', collect($this->getJson('/api/admin/finance/payment-methods')->json('methods'))->firstWhere('method', 'airwallex_card')['airwallex_status']);
+
+        $this->fakeAirwallexAccount(['card' => false]);
+        Cache::put('airwallex_payment_method_status', ['statuses' => ['airwallex_card' => 'on'], 'ok' => true, 'checked_at' => now()->toIso8601String()], 120);
+
+        $response = $this->postJson('/api/admin/finance/payment-methods/airwallex-sync')->assertOk();
+        $this->assertSame('off', collect($response->json('data.methods'))->firstWhere('method', 'airwallex_card')['airwallex_status']);
+        $response->assertJsonPath('data.airwallex_sync.ok', true);
+    }
+
     public function test_only_core_admins_can_refresh_the_stripe_status(): void
     {
         foreach (['customer', 'Product Manager', 'Order Manager', 'Support'] as $role) {

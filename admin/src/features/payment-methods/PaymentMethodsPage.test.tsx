@@ -324,6 +324,35 @@ describe('PaymentMethodsPage', () => {
     expect(screen.queryByText('Hidden at checkout')).not.toBeInTheDocument();
   });
 
+  it('shows what the Airwallex account can offer and re-reads it from the Airwallex tab only', async () => {
+    const methods = [
+      { method: 'card', label: 'Credit card', gateway: 'stripe', enabled: true, available: true, admin_enabled: true, supported: true, stripe_status: 'on' },
+      { method: 'airwallex_klarna', label: 'Klarna', gateway: 'airwallex', enabled: false, available: false, admin_enabled: false, supported: false, airwallex_status: 'on' },
+      { method: 'airwallex_affirm', label: 'Affirm', gateway: 'airwallex', enabled: false, available: false, admin_enabled: false, supported: false, airwallex_status: 'unavailable' },
+    ];
+    mocks.fetchJson.mockImplementation(async (_url: string, options?: { method?: string }) => (
+      options?.method === 'POST'
+        ? { data: { methods: [methods[0], { ...methods[1], airwallex_status: 'off' }, methods[2]], airwallex_sync: { ok: true, checked_at: '2026-10-03T10:00:00Z' } } }
+        : { data: gateways, cod: COD_ENABLED, methods, stripe_sync: { ok: true, checked_at: '2026-10-03T09:00:00Z' }, airwallex_sync: { ok: true, checked_at: '2026-10-03T09:00:00Z' } }
+    ));
+    renderPage();
+
+    await screen.findByText('On in Stripe');
+    expect(screen.getByRole('button', { name: 'Refresh from Stripe' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Refresh from Airwallex' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByTestId('gateway-selector')[2]);
+
+    expect(await screen.findByText('On in Airwallex')).toBeInTheDocument();
+    expect(screen.getByText('Not offered by Airwallex')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Refresh from Stripe' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh from Airwallex' }));
+
+    await waitFor(() => expect(mocks.fetchJson).toHaveBeenCalledWith('/admin/finance/payment-methods/airwallex-sync', { method: 'POST' }));
+    expect(await screen.findByText('Off in Airwallex')).toBeInTheDocument();
+  });
+
   it('says so when Stripe could not be read and offers no Stripe state', async () => {
     mocks.fetchJson.mockResolvedValue({
       data: gateways,

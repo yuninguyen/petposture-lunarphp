@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Models\Setting;
 use App\Payments\Gateways\StripeCardGateway;
 use App\Payments\PaymentGatewayManager;
+use App\Services\AirwallexPaymentMethodStatusService;
 use App\Services\StripePaymentMethodStatusService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Collection;
@@ -129,6 +130,7 @@ class PaymentMethodService
                 'enabled' => false,
                 'supported' => false,
                 'stripe_status' => $info['gateway'] === 'stripe' ? app(StripePaymentMethodStatusService::class)->status($method) : null,
+                'airwallex_status' => $info['gateway'] === 'airwallex' ? app(AirwallexPaymentMethodStatusService::class)->status($method) : null,
             ];
         }
 
@@ -152,6 +154,26 @@ class PaymentMethodService
         $snapshot = app(StripePaymentMethodStatusService::class)->snapshot();
 
         return ['ok' => $snapshot['ok'], 'checked_at' => $snapshot['checked_at']];
+    }
+
+    /**
+     * Whether the last read of the Airwallex account's payment method types worked.
+     *
+     * @return array{ok: bool, checked_at: string|null}
+     */
+    public function airwallexSync(): array
+    {
+        $snapshot = app(AirwallexPaymentMethodStatusService::class)->snapshot();
+
+        return ['ok' => $snapshot['ok'], 'checked_at' => $snapshot['checked_at']];
+    }
+
+    /** Re-read Airwallex now (admin display only; the storefront does not use Airwallex). */
+    public function refreshAirwallexSync(): array
+    {
+        app(AirwallexPaymentMethodStatusService::class)->refresh();
+
+        return $this->airwallexSync();
     }
 
     /** Re-read Stripe now and make the storefront pick the result up. */

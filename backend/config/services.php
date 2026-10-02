@@ -56,6 +56,8 @@ return [
         'client_id' => env('AIRWALLEX_CLIENT_ID'),
         'api_key' => env('AIRWALLEX_API_KEY'),
         'webhook_secret' => env('AIRWALLEX_WEBHOOK_SECRET'),
+        // Read (never write) which payment method types the account can offer, for the admin.
+        'method_status_sync' => (bool) env('AIRWALLEX_PAYMENT_METHOD_SYNC', true),
     ],
 
     'payoneer' => [

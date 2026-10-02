@@ -33,6 +33,7 @@
         <env name="STRIPE_SECRET" value=""/>
         <env name="STRIPE_WEBHOOK_SECRET" value=""/>
         <env name="STRIPE_PAYMENT_METHOD_SYNC" value="false"/>
+        <env name="AIRWALLEX_PAYMENT_METHOD_SYNC" value="false"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

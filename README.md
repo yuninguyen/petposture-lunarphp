@@ -524,6 +524,13 @@ purges the Cloudflare API cache, so the storefront follows within the purge dela
   immediately and saves `stripe_payment_method_sync_at`, which purges the cached public response.
   `STRIPE_PAYMENT_METHOD_SYNC=false` turns the lookup off (tests do this). The secret key needs read
   access to payment method configurations.
+- **Airwallex account state (read-only, admin display only).** `AirwallexPaymentMethodStatusService`
+  reads `GET /api/v1/pa/config/payment_method_types` (USD / US) through `AirwallexService`, and the
+  Airwallex tab shows "On / Off in Airwallex" or "Not offered by Airwallex" (a type the account does
+  not list) on each `airwallex_*` row, with a "Refresh from Airwallex" button
+  (`POST /api/admin/finance/payment-methods/airwallex-sync`). The storefront does not sell through
+  Airwallex, so nothing is hidden or refused because of it. A failed read shows no status.
+  `AIRWALLEX_PAYMENT_METHOD_SYNC=false` turns the lookup off (tests do this).
 - If an admin switches every method off, checkout shows "No payment methods are available right
   now" and disables Complete Order; the built-in fallback list is only used when the payment-methods
   API itself is unreachable.

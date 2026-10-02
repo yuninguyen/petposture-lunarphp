@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Lunar\Models\Order;
 use RuntimeException;
+use Throwable;
 
 /**
  * Airwallex "Payment Links" integration — chosen over the PaymentIntent + Hosted
@@ -77,6 +78,46 @@ class AirwallexService
 
             return (string) $response->json('token');
         });
+    }
+
+    /**
+     * The payment method types this Airwallex account can offer for USD / US (read-only).
+     *
+     * @return array<int, array<string, mixed>>|null null when they could not be read
+     */
+    public function paymentMethodTypes(): ?array
+    {
+        if (! $this->isConfigured()) {
+            return null;
+        }
+
+        try {
+            $token = $this->accessToken();
+            $items = [];
+
+            for ($page = 0; $page < 10; $page++) {
+                $response = Http::withToken($token)->timeout(5)->get($this->baseUrl().'/api/v1/pa/config/payment_method_types', [
+                    'transaction_currency' => 'USD',
+                    'country_code' => 'US',
+                    'page_num' => $page,
+                    'page_size' => 100,
+                ]);
+
+                if (! $response->successful()) {
+                    return null;
+                }
+
+                array_push($items, ...($response->json('items') ?? []));
+
+                if (! $response->json('has_more')) {
+                    break;
+                }
+            }
+
+            return $items;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     private function minorToDecimal(int $amountMinor): string

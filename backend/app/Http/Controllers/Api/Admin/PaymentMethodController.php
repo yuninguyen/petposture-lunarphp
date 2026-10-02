@@ -40,6 +40,15 @@ class PaymentMethodController extends Controller
         ]);
     }
 
+    public function refreshAirwallexSync(PaymentMethodService $paymentMethods, PaymentGatewayManager $gateways): JsonResponse
+    {
+        $sync = $paymentMethods->refreshAirwallexSync();
+
+        return response()->json([
+            'data' => ['methods' => $paymentMethods->checkoutMethods($gateways), 'airwallex_sync' => $sync],
+        ]);
+    }
+
     public function updateCardBrands(Request $request, PaymentMethodService $paymentMethods): JsonResponse
     {
         $validated = $request->validate([
@@ -72,6 +81,7 @@ class PaymentMethodController extends Controller
             'methods' => $paymentMethods->checkoutMethods($gateways),
             'card_brands' => $paymentMethods->cardBrands(),
             'stripe_sync' => $paymentMethods->stripeSync(),
+            'airwallex_sync' => $paymentMethods->airwallexSync(),
         ]);
     }
 }

@@ -357,6 +357,7 @@ Route::prefix('/admin')
         Route::put('/finance/payment-methods/methods/{method}', [PaymentMethodController::class, 'updateMethod']);
         Route::put('/finance/payment-methods/card-brands', [PaymentMethodController::class, 'updateCardBrands']);
         Route::post('/finance/payment-methods/stripe-sync', [PaymentMethodController::class, 'refreshStripeSync']);
+        Route::post('/finance/payment-methods/airwallex-sync', [PaymentMethodController::class, 'refreshAirwallexSync']);
         Route::put('/finance/payment-methods/{gateway}', [PaymentMethodController::class, 'update'])
             ->where('gateway', 'stripe|paypal|airwallex|payoneer');
         Route::post('/finance/payment-methods/{gateway}/test', [PaymentMethodController::class, 'test'])

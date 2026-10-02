@@ -31,6 +31,8 @@ export interface CheckoutPaymentMethodState {
   supported?: boolean;
   // What the Stripe dashboard says (read-only); null/absent = not a Stripe method or unknown.
   stripe_status?: StripeStatus | null;
+  // What the Airwallex account can offer (read-only); same values as stripe_status.
+  airwallex_status?: StripeStatus | null;
 }
 
 export type StripeStatus = 'on' | 'off' | 'unavailable';
@@ -69,6 +71,7 @@ export interface PaymentMethodsResponse {
   methods?: CheckoutPaymentMethodState[];
   card_brands?: CardBrandsState;
   stripe_sync?: StripeSyncState;
+  airwallex_sync?: StripeSyncState;
 }
 
 export function fetchPaymentMethods(): Promise<PaymentMethodsResponse> {
@@ -89,6 +92,11 @@ export function updateCheckoutPaymentMethod(method: string, enabled: boolean): P
 // Re-reads the Stripe dashboard now (read-only on Stripe's side) and refreshes the storefront.
 export function refreshStripeSync(): Promise<{ data: { methods: CheckoutPaymentMethodState[]; stripe_sync: StripeSyncState } }> {
   return fetchJson('/admin/finance/payment-methods/stripe-sync', { method: 'POST' });
+}
+
+// Re-reads what the Airwallex account can offer (read-only on Airwallex's side).
+export function refreshAirwallexSync(): Promise<{ data: { methods: CheckoutPaymentMethodState[]; airwallex_sync: StripeSyncState } }> {
+  return fetchJson('/admin/finance/payment-methods/airwallex-sync', { method: 'POST' });
 }
 
 export function updateCardBrands(brands: string[]): Promise<{ data: CardBrandsState }> {
