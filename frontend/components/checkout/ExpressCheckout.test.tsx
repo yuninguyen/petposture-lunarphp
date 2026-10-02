@@ -115,6 +115,29 @@ describe('ExpressCheckout', () => {
         expect(element.querySelectorAll('div.min-w-0')).toHaveLength(2);
     });
 
+    it('reserves the button height for a wallet only once it is available, so a lone wallet is not squashed and an unavailable one leaves no gap', () => {
+        const availabilityHandlers: Record<string, (event: { paymentMethods?: Record<string, boolean> }) => void> = {};
+        const elementsGroup = {
+            create: vi.fn().mockImplementation((_type: string, options: { paymentMethods: { applePay: string } }) => ({
+                mount: vi.fn(),
+                on: vi.fn((event: string, handler: (event: { paymentMethods?: Record<string, boolean> }) => void) => {
+                    if (event === 'availablepaymentmethodschange') availabilityHandlers[options.paymentMethods.applePay === 'always' ? 'apple_pay' : 'google_pay'] = handler;
+                }),
+            })),
+            submit: vi.fn(),
+            update: vi.fn(),
+        };
+        const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn() };
+
+        const element = render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} />);
+        const slots = () => Array.from(element.querySelectorAll<HTMLDivElement>('div.min-w-0'));
+        expect(slots().map((slot) => slot.style.minHeight)).toEqual(['0', '0']);
+
+        act(() => availabilityHandlers.google_pay({ paymentMethods: { googlePay: true } }));
+
+        expect(slots().map((slot) => [slot.style.visibility, slot.style.minHeight])).toEqual([['hidden', '0'], ['visible', '45px']]);
+    });
+
     it('renders nothing when both wallets are switched off and PayPal is not configured', () => {
         const elementsGroup = { create: vi.fn(), submit: vi.fn(), update: vi.fn() };
         const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn() };

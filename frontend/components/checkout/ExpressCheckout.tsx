@@ -94,6 +94,9 @@ type StripeExpressConfirmEvent = {
     paymentFailed: (payload: { reason?: string; message?: string }) => void;
 };
 
+// Height of an Express Checkout wallet button (matches the PayPal button next to it).
+const WALLET_BUTTON_MIN_HEIGHT = 45;
+
 export interface ExpressCheckoutProps {
     items: Array<{ variantId: number; quantity: number }>;
     couponCode: string | null;
@@ -477,8 +480,11 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             <div className="flex flex-col gap-3 sm:flex-row">
                 {/* A switched-off wallet is not rendered at all, so the remaining buttons share the row. */}
                 {paypalClientId && <div ref={paypalButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canPayPal ? 'visible' : 'hidden' }} />}
-                {applePayEnabled && <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden' }} />}
-                {googlePayEnabled && <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden' }} />}
+                {/* Stripe sizes its iframe to this slot: without the PayPal button next to it giving the
+                    row a height, an auto-height slot collapses the wallet button to 8px. Reserve the
+                    button height only while the wallet is actually available (no blank gap otherwise). */}
+                {applePayEnabled && <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden', minHeight: canApplePay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
+                {googlePayEnabled && <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden', minHeight: canGooglePay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
             </div>
             {anyAvailable && (
                 <div className="flex items-center gap-3">
