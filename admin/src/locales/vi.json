@@ -130,7 +130,7 @@
   "payment_methods.hidden_at_checkout": "Đang ẩn ở trang thanh toán",
   "payment_methods.airwallex_status.on": "Đang bật ở Airwallex",
   "payment_methods.airwallex_status.off": "Đang tắt ở Airwallex",
-  "payment_methods.airwallex_status.unavailable": "Airwallex không cung cấp",
+  "payment_methods.airwallex_status.unavailable": "Chưa active ở Airwallex",
   "payment_methods.airwallex_sync.refresh": "Làm mới từ Airwallex",
   "payment_methods.airwallex_sync.failed": "Không đọc được Airwallex.",
   "payment_methods.airwallex_sync.hint": "Chỉ đọc. Site chưa bán qua Airwallex nên các dòng này chỉ cho biết tài khoản Airwallex của bạn có thể cung cấp những gì.",

@@ -344,7 +344,7 @@ describe('PaymentMethodsPage', () => {
     fireEvent.click(screen.getAllByTestId('gateway-selector')[2]);
 
     expect(await screen.findByText('On in Airwallex')).toBeInTheDocument();
-    expect(screen.getByText('Not offered by Airwallex')).toBeInTheDocument();
+    expect(screen.getByText('Not active in Airwallex')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Refresh from Stripe' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh from Airwallex' }));

@@ -526,8 +526,9 @@ purges the Cloudflare API cache, so the storefront follows within the purge dela
   access to payment method configurations.
 - **Airwallex account state (read-only, admin display only).** `AirwallexPaymentMethodStatusService`
   reads `GET /api/v1/pa/config/payment_method_types` (USD / US) through `AirwallexService`, and the
-  Airwallex tab shows "On / Off in Airwallex" or "Not offered by Airwallex" (a type the account does
-  not list) on each `airwallex_*` row, with a "Refresh from Airwallex" button
+  Airwallex tab shows "On / Off in Airwallex" or "Not active in Airwallex" (a type the account does
+  not list, e.g. under review or not activated yet — the API does not say which) on each
+  `airwallex_*` row, with a "Refresh from Airwallex" button
   (`POST /api/admin/finance/payment-methods/airwallex-sync`). The storefront does not sell through
   Airwallex, so nothing is hidden or refused because of it. A failed read shows no status.
   `AIRWALLEX_PAYMENT_METHOD_SYNC=false` turns the lookup off (tests do this).

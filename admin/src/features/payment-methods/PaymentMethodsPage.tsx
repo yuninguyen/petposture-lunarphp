@@ -134,7 +134,7 @@ export function PaymentMethodsPage() {
     airwallex: {
       on: t('payment_methods.airwallex_status.on', { defaultValue: 'On in Airwallex' }),
       off: t('payment_methods.airwallex_status.off', { defaultValue: 'Off in Airwallex' }),
-      unavailable: t('payment_methods.airwallex_status.unavailable', { defaultValue: 'Not offered by Airwallex' }),
+      unavailable: t('payment_methods.airwallex_status.unavailable', { defaultValue: 'Not active in Airwallex' }),
     },
   })[provider][status];
   const providerSync = selected.gateway === 'stripe' || selected.gateway === 'airwallex' ? syncByGateway[selected.gateway] : null;
