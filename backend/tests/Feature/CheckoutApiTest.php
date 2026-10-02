@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CheckoutSession;
+use App\Models\Setting;
 use App\Models\ShippingMethod;
 use App\Models\StripeWebhookEvent;
 use App\Models\User;
@@ -2015,6 +2016,58 @@ class CheckoutApiTest extends TestCase
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    public function test_place_order_answers_422_not_500_when_the_payment_method_is_switched_off(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        Setting::set('payment_method_paypal_enabled', false, 'boolean', 'payment');
+        Setting::set('cod_enabled', false, 'boolean', 'payment');
+
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, ['payment_method' => 'paypal']))
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'PayPal is unavailable. Please select another payment method.');
+
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, ['payment_method' => 'cod']))
+            ->assertUnprocessable();
+
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, ['payment_method' => 'not-a-method']))
+            ->assertUnprocessable();
+    }
+
+    public function test_wallet_orders_follow_the_wallet_switch_not_the_credit_card_switch(): void
+    {
+        // Wallets only exist once Stripe is configured (placeholder mode has no Stripe.js).
+        config()->set('services.stripe.key', 'pk_test_wallets');
+        config()->set('services.stripe.secret', 'sk_test_wallets');
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+        $variant = $this->createPurchasableVariant();
+        Setting::set('payment_method_card_enabled', false, 'boolean', 'payment');
+
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, ['payment_method' => 'card']))
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Credit or Debit Card is unavailable. Please select another payment method.');
+
+        $response = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'card',
+            'payment_context' => ['wallet' => 'apple_pay'],
+        ]))->assertCreated();
+        $this->assertSame('apple_pay', Order::query()->findOrFail($response->json('order.id'))->meta['payment_wallet']);
+
+        Setting::set('payment_method_apple_pay_enabled', false, 'boolean', 'payment');
+
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'card',
+            'payment_context' => ['wallet' => 'apple_pay'],
+        ]))->assertUnprocessable()
+            ->assertJsonPath('message', 'Apple Pay is unavailable. Please select another payment method.');
+
+        // A malformed wallet value must not crash checkout; it is treated as a plain card order.
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'card',
+            'payment_context' => ['wallet' => ['apple_pay']],
+        ]))->assertUnprocessable();
+    }
 
     private function makeAdmin(): User
     {

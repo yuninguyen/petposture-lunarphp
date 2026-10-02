@@ -139,6 +139,25 @@ class CheckoutController extends Controller
             }
         }
 
+        // A method the admin switched off (or that isn't configured) must answer
+        // like a normal "pick another method" error, not the generic 500 below.
+        $requestedMethod = strtolower(trim((string) ($validated['payment_method'] ?? '') ?: 'cod'));
+        // Express wallets are card payments with their own switch (payment_context.wallet).
+        $wallet = data_get($validated, 'payment_context.wallet');
+        if ($requestedMethod === 'card' && is_string($wallet) && isset(PaymentGatewayManager::WALLETS[strtolower(trim($wallet))])) {
+            $requestedMethod = strtolower(trim($wallet));
+        }
+        $paymentDefinition = collect(app(PaymentGatewayManager::class)->supportedMethods())
+            ->firstWhere('method', $requestedMethod);
+
+        if (! $paymentDefinition || ! ($paymentDefinition['enabled'] ?? false)) {
+            $label = (string) ($paymentDefinition['label'] ?? Str::headline($requestedMethod));
+
+            return response()->json([
+                'message' => "{$label} is unavailable. Please select another payment method.",
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
         try {
             $order = $this->checkoutService->placeOrder($validated, $userId, $request->ip());
             $result = new OrderCreatedResource($order);

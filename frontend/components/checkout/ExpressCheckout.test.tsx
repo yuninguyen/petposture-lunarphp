@@ -100,6 +100,73 @@ describe('ExpressCheckout', () => {
         expect(expressCheckoutElement.mount).toHaveBeenCalledTimes(2);
     });
 
+    it('does not create or render a Stripe wallet the admin switched off', () => {
+        const expressCheckoutElement = { mount: vi.fn(), on: vi.fn() };
+        const elementsGroup = { create: vi.fn().mockReturnValue(expressCheckoutElement), submit: vi.fn(), update: vi.fn() };
+        const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn() };
+
+        const element = render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} paypalClientId="test-client-id" applePayEnabled={false} />);
+
+        expect(elementsGroup.create).toHaveBeenCalledTimes(1);
+        expect(elementsGroup.create).toHaveBeenCalledWith('expressCheckout', expect.objectContaining({
+            paymentMethods: expect.objectContaining({ applePay: 'never', googlePay: 'always' }),
+        }));
+        // Only the PayPal and Google Pay slots exist, so they share the row.
+        expect(element.querySelectorAll('div.min-w-0')).toHaveLength(2);
+    });
+
+    it('renders nothing when both wallets are switched off and PayPal is not configured', () => {
+        const elementsGroup = { create: vi.fn(), submit: vi.fn(), update: vi.fn() };
+        const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn() };
+
+        const element = render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} applePayEnabled={false} googlePayEnabled={false} />);
+
+        expect(element.childElementCount).toBe(0);
+        expect(stripeInstance.elements).not.toHaveBeenCalled();
+    });
+
+    it('tells the backend which wallet paid so the wallet switch, not the card switch, applies to the order', async () => {
+        const fetchMock = vi.mocked(fetchApi);
+        fetchMock.mockReset();
+        fetchMock.mockImplementation((endpoint) => {
+            if (endpoint.includes('/api/checkout/payment-intent')) {
+                return Promise.resolve({ ok: true, json: async () => ({ payment_intent: { client_secret: 'cs_1', intent_id: 'pi_1' } }) } as Response);
+            }
+            return Promise.resolve({ status: 201, json: async () => ({ order: { reference: 'W-1', tracking_access_token: 'tok-1' } }) } as Response);
+        });
+
+        const confirmHandlers: Record<string, (event: unknown) => Promise<void>> = {};
+        const elementsGroup = {
+            create: vi.fn().mockImplementation((_type: string, options: { paymentMethods: { applePay: string } }) => ({
+                mount: vi.fn(),
+                on: vi.fn((event: string, handler: (event: unknown) => Promise<void>) => {
+                    if (event === 'confirm') confirmHandlers[options.paymentMethods.applePay === 'always' ? 'apple_pay' : 'google_pay'] = handler;
+                }),
+            })),
+            submit: vi.fn().mockResolvedValue({}),
+            update: vi.fn(),
+        };
+        const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn().mockResolvedValue({}) };
+
+        render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} paypalClientId="test-client-id" />);
+        const walletEvent = () => ({
+            billingDetails: { email: 'jane@example.com', name: 'Jane Doe' },
+            shippingAddress: { name: 'Jane Doe', address: { line1: '1 Main St', city: 'Austin', state: 'TX', postal_code: '78701', country: 'US' } },
+            paymentFailed: vi.fn(),
+        });
+
+        await act(async () => {
+            await confirmHandlers.apple_pay(walletEvent());
+            await confirmHandlers.google_pay(walletEvent());
+        });
+
+        const wallets = fetchMock.mock.calls
+            .filter(([endpoint]) => endpoint.includes('/api/checkout/place-order'))
+            .map(([, init]) => (init as { body: { payment_method: string; payment_context: { wallet: string } } }).body)
+            .map((body) => [body.payment_method, body.payment_context.wallet]);
+        expect(wallets).toEqual([['card', 'apple_pay'], ['card', 'google_pay']]);
+    });
+
     it('recalculates shipping and tax through the existing endpoints when the wallet reports an address', async () => {
         const fetchMock = vi.mocked(fetchApi);
         fetchMock.mockImplementation((endpoint) => {

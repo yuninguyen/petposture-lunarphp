@@ -5,10 +5,27 @@ namespace App\Payments\Gateways;
 use App\Models\Setting;
 use App\Payments\Contracts\PaymentGatewayInterface;
 use App\Payments\Data\PaymentPreparation;
+use App\Payments\PaymentGatewayManager;
 use Illuminate\Support\Facades\Cache;
 
 class StripeCardGateway implements PaymentGatewayInterface
 {
+    /** Card brand logos the checkout can show, in display order. */
+    public const BRANDS = ['visa', 'mastercard', 'amex', 'discover', 'diners', 'elo', 'jcb', 'unionpay'];
+
+    /**
+     * Brands whose logos the admin has switched on (all of them until the admin
+     * saves a choice). Display only — Stripe's own settings decide what is accepted.
+     *
+     * @return array<int, string>
+     */
+    public static function enabledBrands(): array
+    {
+        $stored = Setting::get('payment_card_brands');
+
+        return is_array($stored) ? array_values(array_intersect(self::BRANDS, $stored)) : self::BRANDS;
+    }
+
     public function method(): string
     {
         return 'card';
@@ -47,6 +64,8 @@ class StripeCardGateway implements PaymentGatewayInterface
                 'payment_intent_id' => $paymentContext['intent_id'] ?? null,
                 'payment_client_secret' => $paymentContext['client_secret'] ?? null,
                 'payment_intent_status' => $paymentContext['status'] ?? null,
+                // Express wallet orders are card payments at Stripe; remember which wallet was used.
+                'payment_wallet' => is_string($paymentContext['wallet'] ?? null) && isset(PaymentGatewayManager::WALLETS[$paymentContext['wallet']]) ? $paymentContext['wallet'] : null,
             ],
         );
     }
@@ -64,7 +83,7 @@ class StripeCardGateway implements PaymentGatewayInterface
             'collection' => 'direct',
             'enabled' => true,
             'mode' => $configured ? 'configured' : 'placeholder',
-            'brands' => ['visa', 'mastercard', 'amex'],
+            'brands' => self::enabledBrands(),
             'publishable_key' => $this->stripeKey(),
         ];
     }

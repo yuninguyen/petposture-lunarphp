@@ -40,8 +40,9 @@ class CheckoutService
     {
         return DB::transaction(function () use ($payload, $userId, $customerIp) {
             $shippingMethod = $payload['shipping_method'] ?? 'standard';
+            $wallet = data_get($payload, 'payment_context.wallet');
             $paymentPreparation = $this->paymentGatewayManager
-                ->forMethod($payload['payment_method'] ?? 'cod')
+                ->forMethod($payload['payment_method'] ?? 'cod', is_string($wallet) ? $wallet : null)
                 ->prepare($payload);
             $customerNote = $this->nullableString($payload['customer_note'] ?? null);
             $shippingInput = $payload['shipping'] ?? [];

@@ -3,6 +3,8 @@
 namespace App\Services\Admin;
 
 use App\Models\Setting;
+use App\Payments\Gateways\StripeCardGateway;
+use App\Payments\PaymentGatewayManager;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -12,6 +14,16 @@ use Throwable;
 
 class PaymentMethodService
 {
+    // Admin list order (grouped by gateway). PingPong is deliberately absent: it isn't
+    // sold on the storefront and the admin API must not expose it.
+    private const PAYMENT_METHODS = ['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'klarna', 'cashapp', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'payoneer'];
+
+    // Listed so the admin can see them, but there is no checkout flow behind them yet.
+    private const UNSUPPORTED_METHODS = [
+        'ach_debit' => ['label' => 'ACH Direct Debit', 'gateway' => 'stripe'],
+        'venmo' => ['label' => 'Venmo', 'gateway' => 'paypal'],
+    ];
+
     private const GATEWAYS = [
         'stripe' => [
             'label' => 'Stripe',
@@ -75,6 +87,76 @@ class PaymentMethodService
         Setting::set('cod_enabled', $enabled, 'boolean', 'payment');
 
         return ['enabled' => $this->codEnabled()];
+    }
+
+    /**
+     * Checkout methods the admin may switch on/off (storefront definitions plus the toggle state).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function checkoutMethods(PaymentGatewayManager $gateways): array
+    {
+        $byMethod = [];
+        foreach ($gateways->supportedMethods() as $definition) {
+            $byMethod[$definition['method']] = [...$definition, 'supported' => true];
+        }
+        foreach (self::UNSUPPORTED_METHODS as $method => $info) {
+            $byMethod[$method] = [
+                'method' => $method,
+                'label' => $info['label'],
+                'gateway' => $info['gateway'],
+                'collection' => 'unsupported',
+                'available' => false,
+                'admin_enabled' => false,
+                'enabled' => false,
+                'supported' => false,
+            ];
+        }
+
+        $methods = [];
+        foreach (self::PAYMENT_METHODS as $method) {
+            if (isset($byMethod[$method])) {
+                $methods[] = $byMethod[$method];
+            }
+        }
+
+        return $methods;
+    }
+
+    /**
+     * Card brand logos shown beside "Credit card" at checkout (display only).
+     *
+     * @return array{enabled: array<int, string>, available: array<int, string>}
+     */
+    public function cardBrands(): array
+    {
+        return ['enabled' => StripeCardGateway::enabledBrands(), 'available' => StripeCardGateway::BRANDS];
+    }
+
+    /**
+     * @param  array<int, string>  $brands
+     * @return array{enabled: array<int, string>, available: array<int, string>}
+     */
+    public function updateCardBrands(array $brands): array
+    {
+        Setting::set('payment_card_brands', array_values(array_intersect(StripeCardGateway::BRANDS, $brands)), 'json', 'payment');
+
+        return $this->cardBrands();
+    }
+
+    public function updateMethodEnabled(string $method, bool $enabled, PaymentGatewayManager $gateways): array
+    {
+        abort_if(isset(self::UNSUPPORTED_METHODS[$method]), 422, 'This payment method is not supported yet.');
+        abort_unless(in_array($method, self::PAYMENT_METHODS, true), 404);
+        abort_unless(collect($this->checkoutMethods($gateways))->contains(fn (array $definition): bool => $definition['method'] === $method), 404);
+
+        $key = $method === 'cod' ? 'cod_enabled' : "payment_method_{$method}_enabled";
+        Setting::set($key, $enabled, 'boolean', 'payment');
+
+        $updated = collect($this->checkoutMethods($gateways))->firstWhere('method', $method);
+        abort_unless(is_array($updated), 404);
+
+        return $updated;
     }
 
     public function describe(string $gateway): array

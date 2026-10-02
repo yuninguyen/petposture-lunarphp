@@ -20,6 +20,22 @@ export interface PaymentMethodState {
   fields: Record<string, PaymentFieldState>;
 }
 
+export interface CheckoutPaymentMethodState {
+  method: string;
+  label: string;
+  gateway: string;
+  enabled: boolean;
+  available: boolean;
+  admin_enabled: boolean;
+  // false for listed-but-unbuilt methods (ACH Direct Debit, Venmo): shown, but locked.
+  supported?: boolean;
+}
+
+export interface CardBrandsState {
+  enabled: string[];
+  available: string[];
+}
+
 export interface PaymentMethodUpdatePayload {
   mode?: string;
   fields?: Record<string, string>;
@@ -38,7 +54,12 @@ export interface PaymentMethodTestResult {
   mode: string;
 }
 
-export interface PaymentMethodsResponse { data: PaymentMethodState[]; cod: { enabled: boolean } }
+export interface PaymentMethodsResponse {
+  data: PaymentMethodState[];
+  cod: { enabled: boolean };
+  methods?: CheckoutPaymentMethodState[];
+  card_brands?: CardBrandsState;
+}
 
 export function fetchPaymentMethods(): Promise<PaymentMethodsResponse> {
   return fetchJson('/admin/finance/payment-methods');
@@ -46,6 +67,17 @@ export function fetchPaymentMethods(): Promise<PaymentMethodsResponse> {
 
 export function updateCodPaymentMethod(enabled: boolean): Promise<{ data: { enabled: boolean } }> {
   return fetchJson('/admin/finance/payment-methods/cod', { method: 'PUT', body: { enabled } });
+}
+
+export function updateCheckoutPaymentMethod(method: string, enabled: boolean): Promise<{ data: CheckoutPaymentMethodState }> {
+  return fetchJson(`/admin/finance/payment-methods/methods/${method}`, {
+    method: 'PUT',
+    body: { enabled },
+  });
+}
+
+export function updateCardBrands(brands: string[]): Promise<{ data: CardBrandsState }> {
+  return fetchJson('/admin/finance/payment-methods/card-brands', { method: 'PUT', body: { brands } });
 }
 
 export function updatePaymentMethod(

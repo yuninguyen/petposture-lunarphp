@@ -868,6 +868,155 @@ class PaymentMethodControllerTest extends TestCase
         $this->assertSame('cod', $manager->forMethod('cod')->method());
     }
 
+    public function test_checkout_method_toggle_requires_core_admin_and_validates_input(): void
+    {
+        foreach (['customer', 'Product Manager', 'Order Manager', 'Support'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+            $this->putJson('/api/admin/finance/payment-methods/methods/card', ['enabled' => false])->assertForbidden();
+        }
+
+        $this->assertTrue((bool) Setting::get('payment_method_card_enabled', true));
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $this->putJson('/api/admin/finance/payment-methods/methods/card', ['enabled' => 'not-a-boolean'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['enabled']);
+        $this->putJson('/api/admin/finance/payment-methods/methods/unknown', ['enabled' => false])->assertNotFound();
+    }
+
+    public function test_disabling_a_checkout_method_hides_it_and_blocks_order_creation_until_re_enabled(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $this->putJson('/api/admin/finance/payment-methods/methods/paypal', ['enabled' => false])
+            ->assertOk()
+            ->assertJsonPath('data.method', 'paypal')
+            ->assertJsonPath('data.admin_enabled', false)
+            ->assertJsonPath('data.enabled', false);
+
+        $paypal = collect($this->getJson('/api/checkout/payment-methods')->assertOk()->json('methods'))->firstWhere('method', 'paypal');
+        $this->assertFalse($paypal['enabled']);
+
+        $card = collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->firstWhere('method', 'card');
+        $this->assertTrue($card['enabled'], 'Disabling PayPal must not touch other methods.');
+
+        try {
+            app(PaymentGatewayManager::class)->forMethod('paypal');
+            $this->fail('A disabled method must be rejected.');
+        } catch (\InvalidArgumentException) {
+            // expected
+        }
+
+        $this->putJson('/api/admin/finance/payment-methods/methods/paypal', ['enabled' => true])
+            ->assertOk()
+            ->assertJsonPath('data.enabled', true);
+        $this->assertSame('paypal', app(PaymentGatewayManager::class)->forMethod('paypal')->method());
+    }
+
+    public function test_admin_checkout_method_list_keeps_gateway_order_and_never_exposes_pingpong(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $methods = array_column($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'), 'method');
+
+        $this->assertSame(['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'klarna', 'cashapp', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'payoneer'], $methods);
+
+        $this->putJson('/api/admin/finance/payment-methods/methods/pingpong', ['enabled' => true])->assertNotFound();
+        $this->assertSame($methods, array_column($this->getJson('/api/admin/finance/payment-methods')->json('methods'), 'method'));
+    }
+
+    public function test_wallets_switch_independently_of_credit_card_and_order_creation_follows_the_wallet_switch(): void
+    {
+        // Wallets only exist once Stripe is configured (placeholder mode has no Stripe.js).
+        config()->set('services.stripe.key', 'pk_test_wallets');
+        config()->set('services.stripe.secret', 'sk_test_wallets');
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $methods = collect($this->getJson('/api/checkout/payment-methods')->assertOk()->json('methods'));
+        foreach (['apple_pay', 'google_pay'] as $wallet) {
+            $definition = $methods->firstWhere('method', $wallet);
+            $this->assertSame('wallet', $definition['collection']);
+            $this->assertTrue($definition['enabled']);
+            $this->assertNotEmpty($definition['publishable_key']);
+        }
+
+        $this->putJson('/api/admin/finance/payment-methods/methods/card', ['enabled' => false])->assertOk();
+
+        $methods = collect($this->getJson('/api/checkout/payment-methods')->json('methods'));
+        $this->assertFalse($methods->firstWhere('method', 'card')['enabled']);
+        $this->assertTrue($methods->firstWhere('method', 'apple_pay')['enabled'], 'Turning the card off must not turn Apple Pay off.');
+
+        $manager = app(PaymentGatewayManager::class);
+        $this->assertSame('card', $manager->forMethod('card', 'apple_pay')->method());
+        try {
+            $manager->forMethod('card');
+            $this->fail('Plain card orders must be rejected while Credit card is off.');
+        } catch (\InvalidArgumentException) {
+            // expected
+        }
+
+        $this->putJson('/api/admin/finance/payment-methods/methods/apple_pay', ['enabled' => false])
+            ->assertOk()
+            ->assertJsonPath('data.enabled', false);
+        $this->putJson('/api/admin/finance/payment-methods/methods/card', ['enabled' => true])->assertOk();
+
+        $this->assertSame('card', $manager->forMethod('card')->method(), 'Card works again once re-enabled.');
+        try {
+            $manager->forMethod('card', 'apple_pay');
+            $this->fail('A switched-off wallet must be rejected even while Credit card is on.');
+        } catch (\InvalidArgumentException) {
+            // expected
+        }
+        $this->assertSame('card', $manager->forMethod('card', 'google_pay')->method());
+        $this->assertSame('card', $manager->forMethod('card', 'bogus-wallet')->method(), 'An unknown wallet value falls back to the Credit card switch.');
+    }
+
+    public function test_ach_and_venmo_are_listed_but_locked_as_not_supported(): void
+    {
+        Sanctum::actingAs($this->userWithRole('admin'));
+
+        $methods = collect($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'));
+        foreach (['ach_debit' => 'stripe', 'venmo' => 'paypal'] as $method => $gateway) {
+            $row = $methods->firstWhere('method', $method);
+            $this->assertSame($gateway, $row['gateway']);
+            $this->assertFalse($row['supported']);
+            $this->assertFalse($row['enabled']);
+            $this->putJson("/api/admin/finance/payment-methods/methods/{$method}", ['enabled' => true])->assertUnprocessable();
+        }
+
+        $this->assertNull(collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->firstWhere('method', 'ach_debit'));
+    }
+
+    public function test_card_brand_logos_follow_the_admin_selection_and_default_to_all(): void
+    {
+        $all = ['visa', 'mastercard', 'amex', 'discover', 'diners', 'elo', 'jcb', 'unionpay'];
+        $brands = fn () => collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->firstWhere('method', 'card')['brands'];
+
+        $this->assertSame($all, $brands());
+
+        foreach (['customer', 'Product Manager', 'Order Manager', 'Support'] as $role) {
+            Sanctum::actingAs($this->userWithRole($role));
+            $this->putJson('/api/admin/finance/payment-methods/card-brands', ['brands' => ['visa']])->assertForbidden();
+        }
+        $this->assertSame($all, $brands());
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $this->putJson('/api/admin/finance/payment-methods/card-brands', ['brands' => ['unionpay', 'visa']])
+            ->assertOk()
+            ->assertJsonPath('data.enabled', ['visa', 'unionpay'])
+            ->assertJsonPath('data.available', $all);
+        $this->assertSame(['visa', 'unionpay'], $brands());
+        $this->getJson('/api/admin/finance/payment-methods')->assertJsonPath('card_brands.enabled', ['visa', 'unionpay']);
+
+        $this->putJson('/api/admin/finance/payment-methods/card-brands', ['brands' => ['visa', 'not-a-brand']])->assertUnprocessable();
+        $this->putJson('/api/admin/finance/payment-methods/card-brands', [])->assertUnprocessable();
+
+        $this->putJson('/api/admin/finance/payment-methods/card-brands', ['brands' => []])->assertOk();
+        $this->assertSame([], $brands());
+    }
+
     private function userWithRole(string $role): User
     {
         $user = User::factory()->create();

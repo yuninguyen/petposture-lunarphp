@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { fetchPaymentMethods, updateCodPaymentMethod, type PaymentGateway, type PaymentMethodState, type PaymentMethodsResponse } from './api';
+import { fetchPaymentMethods, updateCardBrands, updateCheckoutPaymentMethod, updateCodPaymentMethod, type CheckoutPaymentMethodState, type PaymentGateway, type PaymentMethodState, type PaymentMethodsResponse } from './api';
 import { GatewayForm } from './GatewayForm';
 
 const QUERY_KEY = ['admin', 'payment-methods'] as const;
@@ -10,6 +10,12 @@ const APPROVED_GATEWAYS: PaymentGateway[] = ['stripe', 'paypal', 'airwallex', 'p
 function replaceGateway(current: PaymentMethodsResponse | undefined, next: PaymentMethodState): PaymentMethodsResponse | undefined {
   if (!current) return current;
   return { ...current, data: current.data.map((gateway) => gateway.gateway === next.gateway ? next : gateway) };
+}
+
+function replaceMethod(current: PaymentMethodsResponse | undefined, next: CheckoutPaymentMethodState): PaymentMethodsResponse | undefined {
+  if (!current) return current;
+  // Replace in place: filter-then-append would push the toggled row to the end of its group.
+  return { ...current, methods: (current.methods ?? []).map((method) => method.method === next.method ? next : method) };
 }
 
 export function PaymentMethodsPage() {
@@ -24,6 +30,14 @@ export function PaymentMethodsPage() {
     onSuccess: (result) => queryClient.setQueryData<PaymentMethodsResponse>(QUERY_KEY, (current) => current && { ...current, cod: result.data }),
   });
   const codEnabled = paymentMethodsQuery.data?.cod.enabled ?? true;
+  const methodMutation = useMutation({
+    mutationFn: ({ method, enabled }: { method: string; enabled: boolean }) => updateCheckoutPaymentMethod(method, enabled),
+    onSuccess: (result) => queryClient.setQueryData<PaymentMethodsResponse>(QUERY_KEY, (current) => replaceMethod(current, result.data)),
+  });
+  const brandsMutation = useMutation({
+    mutationFn: updateCardBrands,
+    onSuccess: (result) => queryClient.setQueryData<PaymentMethodsResponse>(QUERY_KEY, (current) => current && { ...current, card_brands: result.data }),
+  });
   const gateways = useMemo(() => {
     const byGateway = new Map<PaymentGateway, PaymentMethodState>();
     for (const gateway of paymentMethodsQuery.data?.data ?? []) {
@@ -37,6 +51,12 @@ export function PaymentMethodsPage() {
     });
   }, [paymentMethodsQuery.data]);
   const [selectedGateway, setSelectedGateway] = useState<PaymentGateway>('stripe');
+  // The selected gateway's own checkout methods (COD keeps its dedicated switch below).
+  const selectedMethods = useMemo(
+    () => (paymentMethodsQuery.data?.methods ?? []).filter((method) => method.gateway === selectedGateway && method.method !== 'cod'),
+    [paymentMethodsQuery.data?.methods, selectedGateway],
+  );
+  const cardBrands = paymentMethodsQuery.data?.card_brands;
   const [copyStatus, setCopyStatus] = useState<'copied' | 'error' | null>(null);
 
   useEffect(() => {
@@ -140,6 +160,69 @@ export function PaymentMethodsPage() {
           onSaved={(next) => queryClient.setQueryData<PaymentMethodsResponse>(QUERY_KEY, (current) => replaceGateway(current, next))}
         />
       </section>
+
+      {selectedMethods.length > 0 && (
+        <section aria-label={t('payment_methods.checkout_methods.title', { defaultValue: 'Checkout payment methods' })} className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
+            <h2 className="font-semibold text-slate-900">{t('payment_methods.checkout_methods.title', { defaultValue: 'Checkout payment methods' })}</h2>
+            <p className="mt-1 text-sm text-slate-500">{t('payment_methods.checkout_methods.description', { defaultValue: 'Disabled methods are hidden from checkout.' })}</p>
+          </div>
+          <ul className="divide-y divide-slate-100">
+            {selectedMethods.map((method) => {
+              const unsupported = method.supported === false;
+              return (
+                <li key={method.method} className="px-5 py-4 sm:px-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">{method.label}</p>
+                      {unsupported ? (
+                        <p className="mt-1 text-xs text-slate-500">{t('payment_methods.checkout_methods.unsupported', { defaultValue: 'Not supported yet.' })}</p>
+                      ) : !method.available && (
+                        <p className="mt-1 text-xs text-amber-700">{t('payment_methods.checkout_methods.unavailable', { defaultValue: 'Unavailable with current gateway settings.' })}</p>
+                      )}
+                    </div>
+                    <label className="flex shrink-0 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        aria-label={`${method.label} ${method.admin_enabled
+                          ? t('payment_methods.checkout_methods.enabled', { defaultValue: 'Enabled' })
+                          : t('payment_methods.checkout_methods.disabled', { defaultValue: 'Disabled' })}`}
+                        checked={method.admin_enabled}
+                        disabled={methodMutation.isPending || unsupported}
+                        onChange={(event) => methodMutation.mutate({ method: method.method, enabled: event.target.checked })}
+                      />
+                      {method.admin_enabled
+                        ? t('payment_methods.checkout_methods.enabled', { defaultValue: 'Enabled' })
+                        : t('payment_methods.checkout_methods.disabled', { defaultValue: 'Disabled' })}
+                    </label>
+                  </div>
+                  {method.method === 'card' && cardBrands && (
+                    <fieldset className="mt-3 rounded-lg bg-slate-50 px-4 py-3">
+                      <legend className="px-1 text-xs font-medium text-slate-700">{t('payment_methods.checkout_methods.brands_title', { defaultValue: 'Card logos shown at checkout' })}</legend>
+                      <p className="mb-2 text-xs text-slate-500">{t('payment_methods.checkout_methods.brands_hint', { defaultValue: 'Display only. Which cards are accepted is set in your Stripe account.' })}</p>
+                      <div className="flex flex-wrap gap-x-5 gap-y-2">
+                        {cardBrands.available.map((brand) => (
+                          <label key={brand} className="flex items-center gap-2 text-sm text-slate-800">
+                            <input
+                              type="checkbox"
+                              checked={cardBrands.enabled.includes(brand)}
+                              disabled={brandsMutation.isPending}
+                              onChange={(event) => brandsMutation.mutate(
+                                event.target.checked ? [...cardBrands.enabled, brand] : cardBrands.enabled.filter((item) => item !== brand),
+                              )}
+                            />
+                            {t(`payment_methods.card_brands.${brand}`, { defaultValue: brand })}
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <section className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div>

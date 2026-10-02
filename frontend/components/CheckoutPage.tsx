@@ -128,6 +128,13 @@ const googleMapsScriptId = 'petposture-google-places';
 const stripeJsScriptId = 'petposture-stripe-js';
 const paymentMethodOrder = { card: 0, paypal: 1, cashapp: 2, affirm: 3, klarna: 4, airwallex: 5, payoneer: 6, pingpong: 7, cod: 8 } as const;
 
+// The only methods rendered as radio rows in the Payment section.
+const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'klarna', 'cod']);
+
+function isRadioMethod(method: string): method is PaymentMethod {
+    return radioPaymentMethods.has(method);
+}
+
 type AddressTarget = 'shipping' | 'billing';
 type AddressSuggestion = {
     placeId: string;
@@ -141,8 +148,12 @@ type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'klarna'
 
 const redirectPaymentMethods: ReadonlySet<PaymentMethod> = new Set(['airwallex', 'payoneer', 'pingpong', 'paypal']);
 
+// Express wallets (Stripe) arrive in the same list but are never radio rows -- they
+// only decide which Express Checkout buttons appear.
+type WalletMethod = 'apple_pay' | 'google_pay';
+
 type PaymentMethodOption = {
-    method: PaymentMethod;
+    method: PaymentMethod | WalletMethod;
     label: string;
     gateway: string;
     collection: string;
@@ -308,6 +319,9 @@ export default function CheckoutPage() {
     const [activeAddressTarget, setActiveAddressTarget] = useState<AddressTarget | null>(null);
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>([]);
     const [paymentMethodsLoaded, setPaymentMethodsLoaded] = useState(false);
+    // The built-in fallback list is only for an unreachable/invalid API. An empty list
+    // from a healthy API means the admin switched every method off, and must stay empty.
+    const [paymentMethodsFailed, setPaymentMethodsFailed] = useState(false);
     const [detectedCardBrand, setDetectedCardBrand] = useState<string>('unknown');
     const [preparedPaymentIntent, setPreparedPaymentIntent] = useState<PreparedPaymentIntent | null>(null);
     const [paymentIntentMessage, setPaymentIntentMessage] = useState<string | null>(null);
@@ -348,7 +362,11 @@ export default function CheckoutPage() {
         billingPostalCode: '',
         billingPhone: '',
     });
-    const selectedCardMethod = paymentMethods.find((method) => method.method === 'card') ?? {
+    // Stripe.js also powers the Apple/Google Pay buttons, so a wallet entry can supply
+    // the publishable key while the Credit card method itself is switched off.
+    const selectedCardMethod = paymentMethods.find((method) => method.method === 'card')
+        ?? paymentMethods.find((method) => method.method === 'apple_pay' || method.method === 'google_pay')
+        ?? {
         method: 'card' as const,
         label: 'Credit or Debit Card',
         gateway: 'stripe',
@@ -394,6 +412,7 @@ export default function CheckoutPage() {
                 const data = await response.json();
 
                 if (!response.ok || !Array.isArray(data?.methods)) {
+                    if (!cancelled) setPaymentMethodsFailed(true);
                     return;
                 }
 
@@ -408,11 +427,12 @@ export default function CheckoutPage() {
                     const selectedStillExists = methods.some((method) => method.method === prev.paymentMethod && method.enabled);
                     if (selectedStillExists) return prev;
 
-                    const fallbackMethod = methods.find((method) => method.enabled)?.method ?? 'cod';
-                    return { ...prev, paymentMethod: fallbackMethod };
+                    const fallbackMethod = methods.find((method) => method.enabled && isRadioMethod(method.method))?.method;
+                    return fallbackMethod && isRadioMethod(fallbackMethod) ? { ...prev, paymentMethod: fallbackMethod } : prev;
                 });
             } catch {
                 setPaymentMethods([]);
+                setPaymentMethodsFailed(true);
             } finally {
                 if (!cancelled) setPaymentMethodsLoaded(true);
             }
@@ -780,7 +800,7 @@ export default function CheckoutPage() {
         : getShippingAmount(totalAmount, coupon);
     const shippingAmount = shippingRate ? shippingRate.price : fallbackShippingAmount;
     const finalTotal = Math.max(0, totalAmount - coupon.discountAmount + shippingAmount + taxAmount);
-    const availablePaymentMethods = (paymentMethods.length
+    const availablePaymentMethods = (!paymentMethodsFailed
         ? paymentMethods
         : [
             {
@@ -790,7 +810,7 @@ export default function CheckoutPage() {
                 collection: 'direct',
                 enabled: true,
                 mode: 'placeholder',
-                brands: ['visa', 'mastercard', 'amex'],
+                brands: ['visa', 'mastercard', 'amex', 'discover', 'diners', 'elo', 'jcb', 'unionpay'],
             },
             {
                 method: 'paypal',
@@ -812,7 +832,7 @@ export default function CheckoutPage() {
                 brands: [],
             },
         ] satisfies PaymentMethodOption[])
-        .filter((method) => {
+        .filter((method): method is PaymentMethodOption & { method: PaymentMethod } => {
             if (method.method === 'cashapp' || method.method === 'affirm' || method.method === 'klarna') {
                 return isStripeAltPaymentMethodEligible({
                     method: method.method,
@@ -963,6 +983,7 @@ export default function CheckoutPage() {
         diners: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/diners_club.B9hVEmwz.svg', alt: 'Diners Club' },
         jcb: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/jcb.BgZHqF0u.svg', alt: 'JCB' },
         unionpay: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/unionpay.8M-Boq_z.svg', alt: 'UnionPay' },
+        elo: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/elo.KvOdnY_5.svg', alt: 'Elo' },
     };
 
     const renderPaymentBadges = (method: PaymentMethodOption) => {
@@ -984,89 +1005,51 @@ export default function CheckoutPage() {
                 );
             }
 
+            // Logos follow the admin's selection (display only); the first three sit
+            // inline and the rest collapse into the "+N" tooltip.
+            const visibleBrands = (method.brands ?? []).filter((brand) => cardBrandIcons[brand]);
+            const inlineBrands = visibleBrands.slice(0, 3);
+            const extraBrands = visibleBrands.slice(3);
+
+            if (visibleBrands.length === 0) return null;
+
             return (
                 <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] bg-white overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                            src="https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/visa.sxIq5Dot.svg"
-                            alt="VISA"
-                            width="38"
-                            height="24"
-                            className="h-full w-full object-contain"
-                        />
-                    </div>
-                    <div className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] bg-white overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                            src="https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/mastercard.1c4_lyMp.svg"
-                            alt="MASTERCARD"
-                            width="38"
-                            height="24"
-                            className="h-full w-full object-contain"
-                        />
-                    </div>
-                    <div className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] bg-white overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                            src="https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/amex.Csr7hRoy.svg"
-                            alt="AMEX"
-                            width="38"
-                            height="24"
-                            className="h-full w-full object-contain"
-                        />
-                    </div>
-                    <div className="group relative">
-                        <span className="flex h-[16px] w-[28px] cursor-help items-center justify-center rounded-[4px] border border-[#E1E1E1] bg-[#F2F3F5] text-xs font-bold text-[#121212] transition hover:bg-[#e8e9eb]">
-                            +5
-                        </span>
-                        <div className="invisible absolute bottom-[calc(100%+8px)] right-0 w-auto min-w-[124px] translate-y-1 rounded-[6px] bg-[#1a1a1a] p-2 opacity-0 shadow-2xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 z-[100]">
-                            <p className="mb-2 px-1 text-xs font-medium text-white opacity-70">Supported cards:</p>
-                            <div className="grid grid-cols-2 gap-1.5">
-                                <div className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] bg-white overflow-hidden">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                        src="https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/discover.C7UbFpNb.svg"
-                                        alt="Discover"
-                                        className="h-full w-full object-contain"
-                                    />
-                                </div>
-                                <div className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] bg-white overflow-hidden">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                        src="https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/diners_club.B9hVEmwz.svg"
-                                        alt="Diners Club"
-                                        className="h-full w-full object-contain"
-                                    />
-                                </div>
-                                <div className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] bg-white overflow-hidden">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                        src="https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/elo.KvOdnY_5.svg"
-                                        alt="Elo"
-                                        className="h-full w-full object-contain"
-                                    />
-                                </div>
-                                <div className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] bg-white overflow-hidden">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                        src="https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/jcb.BgZHqF0u.svg"
-                                        alt="JCB"
-                                        className="h-full w-full object-contain"
-                                    />
-                                </div>
-                                <div className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] bg-white overflow-hidden">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                        src="https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/unionpay.8M-Boq_z.svg"
-                                        alt="UnionPay"
-                                        className="h-full w-full object-contain"
-                                    />
-                                </div>
-                            </div>
-                            <div className="absolute right-3.5 -bottom-1 h-2 w-2 rotate-45 bg-[#1a1a1a]"></div>
+                    {inlineBrands.map((brand) => (
+                        <div key={brand} className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] bg-white overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={cardBrandIcons[brand].src}
+                                alt={cardBrandIcons[brand].alt}
+                                width="38"
+                                height="24"
+                                className="h-full w-full object-contain"
+                            />
                         </div>
-                    </div>
+                    ))}
+                    {extraBrands.length > 0 && (
+                        <div className="group relative">
+                            <span className="flex h-[16px] w-[28px] cursor-help items-center justify-center rounded-[4px] border border-[#E1E1E1] bg-[#F2F3F5] text-xs font-bold text-[#121212] transition hover:bg-[#e8e9eb]">
+                                +{extraBrands.length}
+                            </span>
+                            <div className="invisible absolute bottom-[calc(100%+8px)] right-0 w-auto min-w-[124px] translate-y-1 rounded-[6px] bg-[#1a1a1a] p-2 opacity-0 shadow-2xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 z-[100]">
+                                <p className="mb-2 px-1 text-xs font-medium text-white opacity-70">Supported cards:</p>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                    {extraBrands.map((brand) => (
+                                        <div key={brand} className="flex h-[24px] w-[38px] items-center justify-center rounded-[3px] bg-white overflow-hidden">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={cardBrandIcons[brand].src}
+                                                alt={cardBrandIcons[brand].alt}
+                                                className="h-full w-full object-contain"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="absolute right-3.5 -bottom-1 h-2 w-2 rotate-45 bg-[#1a1a1a]"></div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -1750,6 +1733,8 @@ export default function CheckoutPage() {
                             stripeInstance={stripeInstanceRef.current}
                             paypalClientId={selectedPayPalMethod.client_id ?? null}
                             paypalEnvironment={selectedPayPalMethod.environment === 'sandbox' ? 'sandbox' : 'production'}
+                            applePayEnabled={paymentMethods.some((method) => method.method === 'apple_pay')}
+                            googlePayEnabled={paymentMethods.some((method) => method.method === 'google_pay')}
                             onOrderPlaced={redirectToSuccess}
                         />
                     )}
@@ -1927,7 +1912,9 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
                             <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
-                                {paymentMethodsLoaded ? availablePaymentMethods.map((method, index) => (
+                                {paymentMethodsLoaded && availablePaymentMethods.length === 0 ? (
+                                    <div className="bg-white px-4 py-4 text-sm text-[#707070]">No payment methods are available right now. Please try again later or contact us.</div>
+                                ) : paymentMethodsLoaded ? availablePaymentMethods.map((method, index) => (
                                     <React.Fragment key={method.method}>
                                         <label
                                             className={paymentRowClasses(method.method, index)}
@@ -2097,7 +2084,7 @@ export default function CheckoutPage() {
                                 type="submit"
                                 variant="primary"
                                 size="md"
-                                disabled={isLoading || items.length === 0 || paypalPopupWaiting}
+                                disabled={isLoading || items.length === 0 || paypalPopupWaiting || availablePaymentMethods.length === 0}
                                 className="!normal-case !text-base !tracking-normal w-full gap-2 shadow-[0_14px_30px_rgba(223,132,72,0.22)]"
                             >
                                 {paypalPopupWaiting ? (

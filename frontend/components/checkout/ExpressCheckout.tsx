@@ -102,9 +102,12 @@ export interface ExpressCheckoutProps {
     paypalClientId: string | null;
     paypalEnvironment: 'production' | 'sandbox';
     onOrderPlaced: (orderAccess: { reference: string; trackingToken: string }) => void;
+    // Admin on/off switches for the Stripe wallets; a switched-off wallet isn't mounted at all.
+    applePayEnabled?: boolean;
+    googlePayEnabled?: boolean;
 }
 
-export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, paypalEnvironment, onOrderPlaced }: ExpressCheckoutProps) {
+export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, paypalEnvironment, onOrderPlaced, applePayEnabled = true, googlePayEnabled = true }: ExpressCheckoutProps) {
     const [canApplePay, setCanApplePay] = useState(false);
     const [canGooglePay, setCanGooglePay] = useState(false);
     const [canPayPal, setCanPayPal] = useState(false);
@@ -269,7 +272,10 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                         body: {
                             items: itemsRef.current, shipping, billing_same_as_shipping: true,
                             shipping_method: latestShippingRate?.code ?? null, payment_method: 'card',
-                            payment_context: { intent_id: intent.payment_intent.intent_id }, coupon_code: couponCodeRef.current,
+                            // The wallet flag lets the backend apply the wallet's own admin switch
+                            // (the order is a card payment as far as Stripe is concerned).
+                            payment_context: { intent_id: intent.payment_intent.intent_id, wallet: walletKey === 'applePay' ? 'apple_pay' : 'google_pay' },
+                            coupon_code: couponCodeRef.current,
                         },
                     });
                     const order = await orderResponse.json();
@@ -297,13 +303,13 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             }
         };
 
-        mountWallet('applePay', setCanApplePay, appleButtonMountRef);
-        mountWallet('googlePay', setCanGooglePay, googleButtonMountRef);
+        if (applePayEnabled) mountWallet('applePay', setCanApplePay, appleButtonMountRef);
+        if (googlePayEnabled) mountWallet('googlePay', setCanGooglePay, googleButtonMountRef);
 
         return () => { cancelled = true; };
         // items/couponCode/subtotalMinor/onOrderPlaced are read via refs above
         // on purpose -- see the comment where those refs are declared.
-    }, [stripeInstance]);
+    }, [stripeInstance, applePayEnabled, googlePayEnabled]);
 
     // PayPal's v6 Web SDK reports eligibility asynchronously via its own
     // findEligibleMethods() call rather than an event fired only after
@@ -453,7 +459,8 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
     // A client id being configured is the one signal known up front, so it
     // gates whether the component attempts to render at all; anyAvailable
     // only controls the label/divider's visibility once eligibility settles.
-    if (!paypalClientId && !stripeInstance) return null;
+    const hasStripeWallet = Boolean(stripeInstance) && (applePayEnabled || googlePayEnabled);
+    if (!paypalClientId && !hasStripeWallet) return null;
 
     return (
         <div className="mb-8 space-y-4">
@@ -468,9 +475,10 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                 otherwise let any child's intrinsic content width override
                 the equal flex-basis). */}
             <div className="flex flex-col gap-3 sm:flex-row">
-                <div ref={paypalButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canPayPal ? 'visible' : 'hidden' }} />
-                <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden' }} />
-                <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden' }} />
+                {/* A switched-off wallet is not rendered at all, so the remaining buttons share the row. */}
+                {paypalClientId && <div ref={paypalButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canPayPal ? 'visible' : 'hidden' }} />}
+                {applePayEnabled && <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden' }} />}
+                {googlePayEnabled && <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden' }} />}
             </div>
             {anyAvailable && (
                 <div className="flex items-center gap-3">

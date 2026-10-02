@@ -250,4 +250,69 @@ describe('PaymentMethodsPage', () => {
 
     expect(screen.getByRole('checkbox', { name: /Disabled/ })).not.toBeChecked();
   });
+
+  it('keeps checkout method rows in place after toggling one off', async () => {
+    const methods = [
+      { method: 'card', label: 'Credit card', gateway: 'stripe', enabled: true, available: true, admin_enabled: true },
+      { method: 'cashapp', label: 'Cash App Pay', gateway: 'stripe', enabled: true, available: true, admin_enabled: true },
+    ];
+    mocks.fetchJson.mockImplementation(async (_url: string, options?: { method?: string }) => (
+      options?.method === 'PUT'
+        ? { data: { ...methods[0], enabled: false, admin_enabled: false } }
+        : { data: gateways, cod: COD_ENABLED, methods }
+    ));
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Credit card Enabled' }));
+    await screen.findByRole('checkbox', { name: 'Credit card Disabled' });
+
+    expect(mocks.fetchJson).toHaveBeenCalledWith('/admin/finance/payment-methods/methods/card', { method: 'PUT', body: { enabled: false } });
+    expect(
+      screen.getAllByRole('checkbox')
+        .map((checkbox) => checkbox.getAttribute('aria-label'))
+        .filter((label) => /Credit card|Cash App/.test(label ?? '')),
+    ).toEqual(['Credit card Disabled', 'Cash App Pay Enabled']);
+  });
+
+  const catalogue = [
+    { method: 'card', label: 'Credit card', gateway: 'stripe', enabled: true, available: true, admin_enabled: true, supported: true },
+    { method: 'google_pay', label: 'Google Pay', gateway: 'stripe', enabled: true, available: true, admin_enabled: true, supported: true },
+    { method: 'ach_debit', label: 'ACH Direct Debit', gateway: 'stripe', enabled: false, available: false, admin_enabled: false, supported: false },
+    { method: 'paypal', label: 'PayPal', gateway: 'paypal', enabled: true, available: true, admin_enabled: true, supported: true },
+    { method: 'venmo', label: 'Venmo', gateway: 'paypal', enabled: false, available: false, admin_enabled: false, supported: false },
+  ];
+
+  it('lists each gateway\'s own methods inside that gateway and locks the ones that are not supported yet', async () => {
+    mocks.fetchJson.mockResolvedValue({ data: gateways, cod: COD_ENABLED, methods: catalogue });
+    renderPage();
+
+    await screen.findByRole('checkbox', { name: 'Credit card Enabled' });
+    expect(screen.getByRole('checkbox', { name: 'Google Pay Enabled' })).toBeEnabled();
+    expect(screen.queryByRole('checkbox', { name: /^PayPal/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'ACH Direct Debit Disabled' })).toBeDisabled();
+    expect(screen.getByText('Not supported yet.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByTestId('gateway-selector')[1]);
+
+    await screen.findByRole('checkbox', { name: 'PayPal Enabled' });
+    expect(screen.queryByRole('checkbox', { name: /^Credit card/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Venmo Disabled' })).toBeDisabled();
+  });
+
+  it('saves the card logo selection when a brand is ticked or unticked', async () => {
+    const card_brands = { enabled: ['visa', 'mastercard'], available: ['visa', 'mastercard', 'amex'] };
+    mocks.fetchJson.mockImplementation(async (_url: string, options?: { method?: string; body?: { brands: string[] } }) => (
+      options?.method === 'PUT'
+        ? { data: { ...card_brands, enabled: options.body?.brands ?? [] } }
+        : { data: gateways, cod: COD_ENABLED, methods: catalogue, card_brands }
+    ));
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'American Express' }));
+    await waitFor(() => expect(mocks.fetchJson).toHaveBeenCalledWith('/admin/finance/payment-methods/card-brands', { method: 'PUT', body: { brands: ['visa', 'mastercard', 'amex'] } }));
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'American Express' })).toBeChecked());
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Visa' }));
+    await waitFor(() => expect(mocks.fetchJson).toHaveBeenLastCalledWith('/admin/finance/payment-methods/card-brands', { method: 'PUT', body: { brands: ['mastercard', 'amex'] } }));
+  });
 });

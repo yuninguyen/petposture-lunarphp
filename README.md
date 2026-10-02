@@ -488,6 +488,32 @@ existing `payment_intent.*` webhook marks the order paid. Refunds reuse the Stri
 changing `STRIPE_ALT_PAYMENT_METHODS` run `App\Services\CloudflareCacheService::purgeAll()` (via
 `php artisan tinker` on the VPS).
 
+### Admin switches for checkout payment methods
+
+Admin → Payment methods lists, inside each gateway tab, the methods that gateway offers, each with
+an on/off switch (`PUT /api/admin/finance/payment-methods/methods/{method}`, core admin only). Off =
+hidden at checkout in its existing position **and** refused by `POST /api/checkout/place-order`
+(422 "<Label> is unavailable…", never a 500). State lives in `Setting` keys
+`payment_method_{method}_enabled` (default on; COD keeps its own `cod_enabled`); saving a Setting
+purges the Cloudflare API cache, so the storefront follows within the purge delay.
+
+- Stripe: Credit card, Google Pay, Apple Pay, Affirm, Klarna, Cash App Pay, ACH Direct Debit.
+  PayPal: PayPal, Venmo. Airwallex, Payoneer: one switch each. ACH Direct Debit and Venmo are
+  listed but locked ("Not supported yet") — there is no checkout flow behind them. PingPong is
+  intentionally never exposed.
+- **Apple Pay / Google Pay are independent of Credit card.** They are Stripe Express Checkout
+  buttons that charge as `payment_method: 'card'`; the frontend adds `payment_context.wallet`
+  (`apple_pay|google_pay`) to the order so the backend applies the wallet's own switch
+  (`PaymentGatewayManager::forMethod($method, $wallet)`) and stores `meta.payment_wallet`. The flag
+  comes from the browser, so it is a business switch, not a security boundary. Wallets only exist
+  when Stripe is configured; Stripe.js still loads when Credit card is off if a wallet is on.
+- Card logos next to "Credit card" follow `Setting` `payment_card_brands` (json list; default all of
+  visa, mastercard, amex, discover, diners, elo, jcb, unionpay). Display only — Stripe's own
+  settings decide which cards are accepted. `PUT /api/admin/finance/payment-methods/card-brands`.
+- If an admin switches every method off, checkout shows "No payment methods are available right
+  now" and disables Complete Order; the built-in fallback list is only used when the payment-methods
+  API itself is unreachable.
+
 ### PayPal config: DB `Setting` overrides `.env` (same pattern as Stripe)
 
 PayPal credentials follow the exact same DB-first pattern as Stripe: `backend/.env`
