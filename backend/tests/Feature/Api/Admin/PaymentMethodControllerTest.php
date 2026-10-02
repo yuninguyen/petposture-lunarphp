@@ -919,7 +919,7 @@ class PaymentMethodControllerTest extends TestCase
 
         $methods = array_column($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'), 'method');
 
-        $this->assertSame(['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'klarna', 'cashapp', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'payoneer'], $methods);
+        $this->assertSame(['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'afterpay_clearpay', 'klarna', 'cashapp', 'amazon_pay', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'payoneer'], $methods);
 
         $this->putJson('/api/admin/finance/payment-methods/methods/pingpong', ['enabled' => true])->assertNotFound();
         $this->assertSame($methods, array_column($this->getJson('/api/admin/finance/payment-methods')->json('methods'), 'method'));
@@ -973,12 +973,12 @@ class PaymentMethodControllerTest extends TestCase
         $this->assertSame('card', $manager->forMethod('card', 'bogus-wallet')->method(), 'An unknown wallet value falls back to the Credit card switch.');
     }
 
-    public function test_ach_and_venmo_are_listed_but_locked_as_not_supported(): void
+    public function test_unbuilt_methods_are_listed_but_locked_as_not_supported(): void
     {
         Sanctum::actingAs($this->userWithRole('admin'));
 
         $methods = collect($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'));
-        foreach (['ach_debit' => 'stripe', 'venmo' => 'paypal'] as $method => $gateway) {
+        foreach (['ach_debit' => 'stripe', 'afterpay_clearpay' => 'stripe', 'amazon_pay' => 'stripe', 'venmo' => 'paypal'] as $method => $gateway) {
             $row = $methods->firstWhere('method', $method);
             $this->assertSame($gateway, $row['gateway']);
             $this->assertFalse($row['supported']);

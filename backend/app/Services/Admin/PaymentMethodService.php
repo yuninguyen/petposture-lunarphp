@@ -16,11 +16,13 @@ class PaymentMethodService
 {
     // Admin list order (grouped by gateway). PingPong is deliberately absent: it isn't
     // sold on the storefront and the admin API must not expose it.
-    private const PAYMENT_METHODS = ['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'klarna', 'cashapp', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'payoneer'];
+    private const PAYMENT_METHODS = ['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'afterpay_clearpay', 'klarna', 'cashapp', 'amazon_pay', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'payoneer'];
 
     // Listed so the admin can see them, but there is no checkout flow behind them yet.
     private const UNSUPPORTED_METHODS = [
         'ach_debit' => ['label' => 'ACH Direct Debit', 'gateway' => 'stripe'],
+        'afterpay_clearpay' => ['label' => 'Afterpay / Clearpay', 'gateway' => 'stripe'],
+        'amazon_pay' => ['label' => 'Amazon Pay', 'gateway' => 'stripe'],
         'venmo' => ['label' => 'Venmo', 'gateway' => 'paypal'],
     ];
 

@@ -497,10 +497,10 @@ hidden at checkout in its existing position **and** refused by `POST /api/checko
 `payment_method_{method}_enabled` (default on; COD keeps its own `cod_enabled`); saving a Setting
 purges the Cloudflare API cache, so the storefront follows within the purge delay.
 
-- Stripe: Credit card, Google Pay, Apple Pay, Affirm, Klarna, Cash App Pay, ACH Direct Debit.
-  PayPal: PayPal, Venmo. Airwallex, Payoneer: one switch each. ACH Direct Debit and Venmo are
-  listed but locked ("Not supported yet") — there is no checkout flow behind them. PingPong is
-  intentionally never exposed.
+- Stripe: Credit card, Google Pay, Apple Pay, Affirm, Afterpay / Clearpay, Klarna, Cash App Pay,
+  Amazon Pay, ACH Direct Debit. PayPal: PayPal, Venmo. Airwallex, Payoneer: one switch each.
+  Afterpay / Clearpay, Amazon Pay, ACH Direct Debit and Venmo are listed but locked ("Not supported
+  yet") — there is no checkout flow behind them. PingPong is intentionally never exposed.
 - **Apple Pay / Google Pay are independent of Credit card.** They are Stripe Express Checkout
   buttons that charge as `payment_method: 'card'`; the frontend adds `payment_context.wallet`
   (`apple_pay|google_pay`) to the order so the backend applies the wallet's own switch
