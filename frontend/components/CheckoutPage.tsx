@@ -810,7 +810,7 @@ export default function CheckoutPage() {
                 collection: 'direct',
                 enabled: true,
                 mode: 'placeholder',
-                brands: ['visa', 'mastercard', 'amex', 'discover', 'diners', 'elo', 'jcb', 'unionpay'],
+                brands: ['visa', 'mastercard', 'amex', 'discover', 'diners', 'jcb', 'unionpay'],
             },
             {
                 method: 'paypal',
@@ -983,7 +983,6 @@ export default function CheckoutPage() {
         diners: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/diners_club.B9hVEmwz.svg', alt: 'Diners Club' },
         jcb: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/jcb.BgZHqF0u.svg', alt: 'JCB' },
         unionpay: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/unionpay.8M-Boq_z.svg', alt: 'UnionPay' },
-        elo: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/elo.KvOdnY_5.svg', alt: 'Elo' },
     };
 
     const renderPaymentBadges = (method: PaymentMethodOption) => {

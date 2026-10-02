@@ -991,7 +991,7 @@ class PaymentMethodControllerTest extends TestCase
 
     public function test_card_brand_logos_follow_the_admin_selection_and_default_to_all(): void
     {
-        $all = ['visa', 'mastercard', 'amex', 'discover', 'diners', 'elo', 'jcb', 'unionpay'];
+        $all = ['visa', 'mastercard', 'amex', 'discover', 'diners', 'jcb', 'unionpay'];
         $brands = fn () => collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->firstWhere('method', 'card')['brands'];
 
         $this->assertSame($all, $brands());

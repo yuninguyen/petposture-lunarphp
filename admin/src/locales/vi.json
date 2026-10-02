@@ -131,7 +131,6 @@
   "payment_methods.card_brands.amex": "American Express",
   "payment_methods.card_brands.discover": "Discover",
   "payment_methods.card_brands.diners": "Diners Club",
-  "payment_methods.card_brands.elo": "Elo",
   "payment_methods.card_brands.jcb": "JCB",
   "payment_methods.card_brands.unionpay": "UnionPay",
   "payment_methods.fields.stripe_key": "Khóa công khai",

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Cache;
 class StripeCardGateway implements PaymentGatewayInterface
 {
     /** Card brand logos the checkout can show, in display order. */
-    public const BRANDS = ['visa', 'mastercard', 'amex', 'discover', 'diners', 'elo', 'jcb', 'unionpay'];
+    public const BRANDS = ['visa', 'mastercard', 'amex', 'discover', 'diners', 'jcb', 'unionpay'];
 
     /**
      * Brands whose logos the admin has switched on (all of them until the admin

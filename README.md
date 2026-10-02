@@ -508,7 +508,7 @@ purges the Cloudflare API cache, so the storefront follows within the purge dela
   comes from the browser, so it is a business switch, not a security boundary. Wallets only exist
   when Stripe is configured; Stripe.js still loads when Credit card is off if a wallet is on.
 - Card logos next to "Credit card" follow `Setting` `payment_card_brands` (json list; default all of
-  visa, mastercard, amex, discover, diners, elo, jcb, unionpay). Display only — Stripe's own
+  visa, mastercard, amex, discover, diners, jcb, unionpay — the cards Stripe accepts). Display only — Stripe's own
   settings decide which cards are accepted. `PUT /api/admin/finance/payment-methods/card-brands`.
 - If an admin switches every method off, checkout shows "No payment methods are available right
   now" and disables Complete Order; the built-in fallback list is only used when the payment-methods
