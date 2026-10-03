@@ -2144,7 +2144,7 @@ export default function CheckoutPage() {
                                                                 </button>
                                                             </div>
                                                         </div>
-                                                        <input value={form.cardName} onChange={(e) => updateField('cardName', e.target.value)} placeholder="Name on card" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
+                                                        <input value={form.cardName} onChange={(e) => updateField('cardName', e.target.value)} placeholder="Name on card" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition placeholder:text-[#9ca3af] focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
                                                         {stripeError ? (
                                                             <p className="text-sm font-medium text-[#b42318]">{stripeError}</p>
                                                         ) : null}
@@ -2210,7 +2210,11 @@ export default function CheckoutPage() {
                                             <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
                                                 {/* Laid out exactly like the Stripe card form above; the three fields are Airwallex iframes. */}
                                                 <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-[#f4cdb7]">
-                                                    <div id="airwallex-card-number" className="min-w-0 flex-1" />
+                                                    {/* Airwallex draws its own card-brand logos on the right of this field (Stripe's has none): the
+                                                        field is made wider than the box and clipped so only the input remains. */}
+                                                    <div className="min-w-0 flex-1 overflow-hidden">
+                                                        <div id="airwallex-card-number" className="w-[calc(100%+220px)]" />
+                                                    </div>
                                                     <Lock size={15} className="ml-2 flex-shrink-0 text-[#9ca3af]" />
                                                 </div>
                                                 <div className="grid gap-3 md:grid-cols-2">
@@ -2236,8 +2240,9 @@ export default function CheckoutPage() {
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <input value={form.cardName} onChange={(e) => updateField('cardName', e.target.value)} placeholder="Name on card" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
-                                                <div id="airwallex-3ds" />
+                                                <input value={form.cardName} onChange={(e) => updateField('cardName', e.target.value)} placeholder="Name on card" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition placeholder:text-[#9ca3af] focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
+                                                {/* Airwallex puts its 3D Secure challenge here; while empty it must not add a row gap. */}
+                                                <div id="airwallex-3ds" className="empty:hidden" />
                                                 {airwallexError ? (
                                                     <p role="alert" className="text-sm font-medium text-[#b42318]">{airwallexError}</p>
                                                 ) : null}
