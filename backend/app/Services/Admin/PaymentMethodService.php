@@ -24,7 +24,6 @@ class PaymentMethodService
     private const UNSUPPORTED_METHODS = [
         // The storefront does not sell through Airwallex or Payoneer yet, so a switch for them would
         // change nothing visible. These override their registered gateways with a locked row.
-        'airwallex' => ['label' => 'Airwallex', 'gateway' => 'airwallex'],
         'payoneer' => ['label' => 'Payoneer', 'gateway' => 'payoneer'],
         // What Airwallex's hosted page offers; the keys are prefixed so they never clash with Stripe's.
         'airwallex_card' => ['label' => 'Credit or Debit Card', 'gateway' => 'airwallex'],

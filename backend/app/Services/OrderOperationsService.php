@@ -331,19 +331,27 @@ class OrderOperationsService
         $meta = (array) ($order->meta ?? []);
         $gateway = (string) ($meta['payment_gateway'] ?? '');
 
-        if (! in_array($gateway, ['stripe', 'paypal', 'manual-offline'], true)) {
+        if (! in_array($gateway, ['stripe', 'paypal', 'airwallex', 'manual-offline'], true)) {
             throw ValidationException::withMessages([
                 'refund' => ["Refunds are not supported yet for the \"{$gateway}\" payment gateway."],
             ]);
         }
 
         $isPayPal = $gateway === 'paypal';
+        $isAirwallex = $gateway === 'airwallex';
         // Cash on delivery never captures a real electronic payment, so there is no
         // provider charge to reverse — refunding it is a local bookkeeping action only.
         $isManualOffline = $gateway === 'manual-offline';
 
         $paymentIntentId = (string) ($meta['payment_intent_id'] ?? '');
         $paypalCaptureId = (string) ($meta['paypal_capture_id'] ?? '');
+        $airwallexIntentId = (string) ($meta['airwallex_intent_id'] ?? '');
+
+        if ($isAirwallex && ! $airwallexIntentId) {
+            throw ValidationException::withMessages([
+                'refund' => ['This order has no Airwallex payment to refund.'],
+            ]);
+        }
 
         if ($isPayPal && ! $paypalCaptureId) {
             throw ValidationException::withMessages([
@@ -351,7 +359,7 @@ class OrderOperationsService
             ]);
         }
 
-        if (! $isPayPal && ! $isManualOffline && ! $paymentIntentId) {
+        if (! $isPayPal && ! $isAirwallex && ! $isManualOffline && ! $paymentIntentId) {
             throw ValidationException::withMessages([
                 'refund' => ['This order has no Stripe payment intent to refund.'],
             ]);
@@ -374,9 +382,10 @@ class OrderOperationsService
                 : (is_numeric($raw) ? (int) $raw : null);
         }
 
-        $gatewayLabel = $isPayPal ? 'PayPal' : ($isManualOffline ? 'Cash on Delivery' : 'Stripe');
+        $gatewayLabel = $isPayPal ? 'PayPal' : ($isAirwallex ? 'Airwallex' : ($isManualOffline ? 'Cash on Delivery' : 'Stripe'));
         $refund = match (true) {
             $isPayPal => $this->paypal()->refund($paypalCaptureId, $resolvedAmount, (string) ($order->currency_code ?: 'USD')),
+            $isAirwallex => app(AirwallexService::class)->refund($airwallexIntentId, (int) $resolvedAmount, (string) ($order->currency_code ?: 'USD')),
             $isManualOffline => [
                 'refund_id' => 'manual_'.Str::lower(Str::random(14)),
                 'status' => 'succeeded',

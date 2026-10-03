@@ -26,6 +26,7 @@ import { getShippingAmount } from '@/lib/pricing';
 import { getAttributionData } from '@/lib/attribution';
 import { Button } from '@/components/ui/Button';
 import { ExpressCheckout } from './checkout/ExpressCheckout';
+import { redirectToAirwallexCheckout } from './checkout/airwallexCheckout';
 import {
     buildAffirmPaymentData,
     buildAfterpayClearpayPaymentData,
@@ -150,7 +151,7 @@ const stripeJsScriptId = 'petposture-stripe-js';
 const paymentMethodOrder = { card: 0, paypal: 1, cashapp: 2, affirm: 3, afterpay_clearpay: 4, klarna: 5, amazon_pay: 6, ach_debit: 7, airwallex: 8, payoneer: 9, pingpong: 10, cod: 11 } as const;
 
 // The only methods rendered as radio rows in the Payment section.
-const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'ach_debit', 'cod']);
+const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'ach_debit', 'airwallex', 'cod']);
 
 function isRadioMethod(method: string): method is PaymentMethod {
     return radioPaymentMethods.has(method);
@@ -866,7 +867,7 @@ export default function CheckoutPage() {
                 }, Math.round(finalTotal * 100));
             }
 
-            return method.method === 'card' || method.method === 'paypal' || method.method === 'cod';
+            return method.method === 'card' || method.method === 'paypal' || method.method === 'airwallex' || method.method === 'cod';
         })
         .sort((left, right) => paymentMethodOrder[left.method as keyof typeof paymentMethodOrder] - paymentMethodOrder[right.method as keyof typeof paymentMethodOrder]);
 
@@ -1235,7 +1236,7 @@ export default function CheckoutPage() {
         // otherwise a selected last-row method renders its own rounded
         // corners above a square-cornered panel, mismatching the outer
         // container's real bottom edge.
-        const expandsDetailsBelow = isSelected && (method === 'card' || method === 'paypal' || isStripeAltPaymentMethod(method));
+        const expandsDetailsBelow = isSelected && (method === 'card' || method === 'paypal' || method === 'airwallex' || isStripeAltPaymentMethod(method));
         const isFirst = index === 0;
         const isLast = index === availablePaymentMethods.length - 1;
 
@@ -1434,16 +1435,20 @@ export default function CheckoutPage() {
         return data.session;
     };
 
-    const prepareStripeAltSession = async (method: StripeAltPaymentMethod): Promise<{
+    // Also used for Airwallex, whose session endpoint takes the same payload and returns the same
+    // client_secret / intent_id / session_id / return_url (plus env and currency for Airwallex.js).
+    const prepareStripeAltSession = async (method: StripeAltPaymentMethod | 'airwallex'): Promise<{
         client_secret: string;
         intent_id: string;
         session_id: string;
         return_url: string;
         mode: string;
         publishable_key?: string | null;
+        env?: string;
+        currency?: string;
     }> => {
         const { shippingAddress, billingAddress } = buildOrderAddresses();
-        const response = await fetchApi('/api/checkout/stripe-alt-session', {
+        const response = await fetchApi(method === 'airwallex' ? '/api/checkout/airwallex-session' : '/api/checkout/stripe-alt-session', {
             method: 'POST',
             body: {
                 payment_method: method,
@@ -1517,6 +1522,40 @@ export default function CheckoutPage() {
         setPaypalError(null);
 
         try {
+            if (form.paymentMethod === 'airwallex') {
+                const session = await prepareStripeAltSession('airwallex');
+                const orderAccess = await placeOrder({ intent_id: session.intent_id, session_id: session.session_id });
+                sessionStorage.setItem(`petposture_payment_access:${session.session_id}`, JSON.stringify({
+                    email: form.email,
+                    trackingToken: orderAccess.trackingToken,
+                }));
+
+                localStorage.removeItem('petposture_cart');
+                localStorage.removeItem('petposture_cart_coupon');
+                clearCoupon();
+
+                if (session.mode === 'placeholder') {
+                    window.location.href = session.return_url;
+                    return;
+                }
+
+                // The order exists (payment pending); a failure to open Airwallex lands on the
+                // confirmation page, which shows the unpaid order instead of an empty checkout.
+                try {
+                    await redirectToAirwallexCheckout({
+                        env: session.env ?? 'demo',
+                        intent_id: session.intent_id,
+                        client_secret: session.client_secret,
+                        currency: session.currency ?? 'USD',
+                        return_url: session.return_url,
+                    });
+                } catch (airwallexError) {
+                    console.error(airwallexError);
+                    window.location.href = `${session.return_url}&redirect_status=failed`;
+                }
+                return;
+            }
+
             if (isStripeAltPaymentMethod(form.paymentMethod)) {
                 const method = form.paymentMethod;
                 const session = await prepareStripeAltSession(method);
@@ -2082,6 +2121,14 @@ export default function CheckoutPage() {
                                                 {paypalError ? (
                                                     <p className="text-sm font-medium text-[#b42318]">{paypalError}</p>
                                                 ) : null}
+                                            </div>
+                                        )}
+
+                                        {method.method === 'airwallex' && form.paymentMethod === 'airwallex' && (
+                                            <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
+                                                <p className="text-sm leading-[1.45] text-[#6f7782]">
+                                                    You&apos;ll be redirected to Airwallex to complete your purchase
+                                                </p>
                                             </div>
                                         )}
 

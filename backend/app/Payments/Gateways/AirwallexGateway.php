@@ -36,6 +36,7 @@ class AirwallexGateway implements PaymentGatewayInterface
             meta: [
                 'payment_provider_mode' => $this->airwallexService->isConfigured() ? 'configured' : 'placeholder',
                 'airwallex_session_id' => $paymentContext['session_id'] ?? null,
+                'airwallex_intent_id' => $paymentContext['intent_id'] ?? null,
             ],
         );
     }
@@ -50,7 +51,8 @@ class AirwallexGateway implements PaymentGatewayInterface
             'gateway' => 'airwallex',
             'collection' => 'redirect',
             'description' => 'Pay via card, Apple Pay, Google Pay, and more through Airwallex.',
-            'enabled' => true,
+            // Off until AIRWALLEX_CHECKOUT_ENABLED is set, like the Stripe method allowlist.
+            'enabled' => $configured && (bool) config('services.airwallex.checkout_enabled', false),
             'mode' => $configured ? 'configured' : 'placeholder',
             'brands' => ['airwallex'],
         ];

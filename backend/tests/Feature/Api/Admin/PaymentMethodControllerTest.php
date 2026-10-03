@@ -1063,7 +1063,7 @@ class PaymentMethodControllerTest extends TestCase
         $this->assertSame('on', $methods['airwallex_apple_pay']['airwallex_status']);
         $this->assertSame('off', $methods['airwallex_klarna']['airwallex_status']);
         $this->assertSame('unavailable', $methods['airwallex_affirm']['airwallex_status'], 'A method Airwallex does not list is not offered to this account.');
-        $this->assertNull($methods['airwallex']['airwallex_status']);
+        $this->assertTrue($methods['airwallex']['supported'], 'The Airwallex row itself is sold now, so it is no longer a locked, read-only row.');
         $this->assertNull($methods['card']['airwallex_status'] ?? null);
         $response->assertJsonPath('airwallex_sync.ok', true);
     }
@@ -1159,7 +1159,7 @@ class PaymentMethodControllerTest extends TestCase
         Sanctum::actingAs($this->userWithRole('admin'));
 
         $methods = collect($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'));
-        foreach (['venmo' => 'paypal', 'airwallex_klarna' => 'airwallex', 'airwallex_paypal' => 'airwallex', 'airwallex' => 'airwallex', 'payoneer' => 'payoneer'] as $method => $gateway) {
+        foreach (['venmo' => 'paypal', 'airwallex_klarna' => 'airwallex', 'airwallex_paypal' => 'airwallex', 'payoneer' => 'payoneer'] as $method => $gateway) {
             $row = $methods->firstWhere('method', $method);
             $this->assertSame($gateway, $row['gateway']);
             $this->assertFalse($row['supported']);

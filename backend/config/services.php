@@ -56,6 +56,8 @@ return [
         'client_id' => env('AIRWALLEX_CLIENT_ID'),
         'api_key' => env('AIRWALLEX_API_KEY'),
         'webhook_secret' => env('AIRWALLEX_WEBHOOK_SECRET'),
+        // The storefront only offers Airwallex once this is switched on (after the webhook is registered).
+        'checkout_enabled' => (bool) env('AIRWALLEX_CHECKOUT_ENABLED', false),
         // Read (never write) which payment method types the account can offer, for the admin.
         'method_status_sync' => (bool) env('AIRWALLEX_PAYMENT_METHOD_SYNC', true),
     ],

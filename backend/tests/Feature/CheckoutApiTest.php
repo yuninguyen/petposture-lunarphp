@@ -1804,13 +1804,13 @@ class CheckoutApiTest extends TestCase
 
     public function test_refunding_a_gateway_without_a_refund_implementation_is_rejected_by_name_not_misrouted_to_stripe(): void
     {
-        // refundOrder() only implements Stripe, PayPal and Cash on Delivery. Any other
-        // gateway (airwallex, payoneer, pingpong, ...) must be rejected by its own
-        // name — never silently fall into the Stripe branch just because it isn't
-        // PayPal. Real Airwallex/Payoneer refunds are tracked separately.
+        // refundOrder() only implements Stripe, PayPal, Airwallex and Cash on Delivery. Any
+        // other gateway (payoneer, pingpong, ...) must be rejected by its own name — never
+        // silently fall into the Stripe branch just because it isn't PayPal. A real Payoneer
+        // refund is tracked separately.
         $this->makeAdmin();
 
-        foreach (['airwallex', 'payoneer', 'pingpong'] as $gateway) {
+        foreach (['payoneer', 'pingpong'] as $gateway) {
             $order = Order::factory()->create([
                 'status' => 'processing',
                 'total' => 5000,
@@ -1827,6 +1827,125 @@ class CheckoutApiTest extends TestCase
 
             $this->assertSame('paid', $order->fresh()->meta['payment_status']);
         }
+    }
+
+    private function configureAirwallex(): void
+    {
+        config()->set('services.airwallex.client_id', 'awx_client_test');
+        config()->set('services.airwallex.api_key', 'awx_key_test');
+        config()->set('services.airwallex.webhook_secret', null);
+        config()->set('services.airwallex.mode', 'sandbox');
+        config()->set('services.airwallex.checkout_enabled', true);
+        foreach (['airwallex_client_id', 'airwallex_api_key', 'airwallex_webhook_secret', 'airwallex_mode', 'airwallex_access_token_sandbox'] as $key) {
+            Cache::forget($key);
+        }
+    }
+
+    public function test_airwallex_session_creates_a_payment_intent_with_return_url_session_metadata_and_shipping(): void
+    {
+        $this->configureAirwallex();
+        Http::fake([
+            'https://api-demo.airwallex.com/api/v1/authentication/login' => Http::response(['token' => 'awx_token']),
+            'https://api-demo.airwallex.com/api/v1/pa/payment_intents/create' => Http::response([
+                'id' => 'int_awx_1',
+                'client_secret' => 'awx_secret_1',
+            ], 201),
+        ]);
+        $variant = $this->createPurchasableVariant();
+
+        $response = $this->postJson('/api/checkout/airwallex-session', array_replace($this->stripeAltSessionPayload($variant), ['payment_method' => 'airwallex']))
+            ->assertOk()
+            ->assertJsonPath('session.intent_id', 'int_awx_1')
+            ->assertJsonPath('session.client_secret', 'awx_secret_1')
+            ->assertJsonPath('session.env', 'demo');
+
+        $sessionId = $response->json('session.session_id');
+        $this->assertStringStartsWith('AIRWALLEX-', $sessionId);
+        Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/pa/payment_intents/create')
+            && $request['metadata']['session_id'] === $sessionId
+            && $request['merchant_order_id'] === $sessionId
+            && str_contains($request['return_url'], "gateway=airwallex&session_id={$sessionId}")
+            && $request['customer']['email'] === 'guest@petposture.com'
+            && $request['order']['shipping']['address']['city'] === 'Austin'
+            && $request['order']['shipping']['address']['country_code'] === 'US');
+    }
+
+    public function test_airwallex_session_is_refused_until_airwallex_checkout_is_switched_on(): void
+    {
+        $this->configureAirwallex();
+        config()->set('services.airwallex.checkout_enabled', false);
+        $variant = $this->createPurchasableVariant();
+
+        $this->postJson('/api/checkout/airwallex-session', array_replace($this->stripeAltSessionPayload($variant), ['payment_method' => 'airwallex']))
+            ->assertStatus(422);
+    }
+
+    public function test_airwallex_webhook_marks_the_order_paid_by_intent_id_even_though_the_event_has_no_order_reference(): void
+    {
+        $this->configureAirwallex();
+        $variant = $this->createPurchasableVariant();
+        $placed = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_paid_1', 'session_id' => 'AIRWALLEX-PAID'],
+        ]));
+        $placed->assertCreated();
+
+        $this->postJson('/api/webhooks/airwallex', [
+            'id' => 'evt_awx_paid_1',
+            'name' => 'payment_intent.succeeded',
+            'data' => ['object' => ['id' => 'int_awx_paid_1', 'metadata' => ['session_id' => 'AIRWALLEX-PAID']]],
+        ])->assertOk()->assertJsonPath('result.payment_status', 'paid');
+
+        $order = Order::query()->findOrFail($placed->json('order.id'));
+        $this->assertSame('paid', $order->meta['payment_status']);
+        $this->assertSame('payment-received', $order->status);
+    }
+
+    public function test_airwallex_failed_attempt_event_points_at_the_intent_and_marks_the_order_failed(): void
+    {
+        $this->configureAirwallex();
+        $variant = $this->createPurchasableVariant();
+        $placed = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_fail_1', 'session_id' => 'AIRWALLEX-FAIL'],
+        ]));
+        $placed->assertCreated();
+
+        $this->postJson('/api/webhooks/airwallex', [
+            'id' => 'evt_awx_fail_1',
+            'name' => 'payment_attempt.authorization_failed',
+            'data' => ['object' => ['id' => 'att_1', 'payment_intent_id' => 'int_awx_fail_1']],
+        ])->assertOk()->assertJsonPath('result.payment_status', 'failed');
+
+        $this->assertSame('failed', Order::query()->findOrFail($placed->json('order.id'))->meta['payment_status']);
+    }
+
+    public function test_refunding_an_airwallex_order_calls_the_refund_api_with_the_intent_and_amount(): void
+    {
+        $this->configureAirwallex();
+        $this->makeAdmin();
+        Http::fake([
+            'https://api-demo.airwallex.com/api/v1/authentication/login' => Http::response(['token' => 'awx_token']),
+            'https://api-demo.airwallex.com/api/v1/pa/refunds/create' => Http::response(['id' => 'rfd_awx_1', 'status' => 'RECEIVED', 'amount' => 50.0], 201),
+        ]);
+        $order = Order::factory()->create([
+            'status' => 'processing',
+            'total' => 5000,
+            'meta' => [
+                'payment_gateway' => 'airwallex',
+                'payment_status' => 'paid',
+                'airwallex_intent_id' => 'int_awx_refund_1',
+            ],
+        ]);
+
+        $this->postJson("/api/admin/orders/{$order->id}/refund", ['reason' => 'customer_request'])->assertOk();
+
+        Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/pa/refunds/create')
+            && $request['payment_intent_id'] === 'int_awx_refund_1'
+            && (float) $request['amount'] === 50.0);
+        $order = $order->fresh();
+        $this->assertSame('rfd_awx_1', $order->meta['refund_id']);
+        $this->assertSame('refunded', $order->meta['payment_status']);
     }
 
     public function test_refunding_a_cash_on_delivery_order_succeeds_locally_without_a_payment_intent(): void

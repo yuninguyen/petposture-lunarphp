@@ -13,12 +13,11 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Airwallex "Payment Links" integration — chosen over the PaymentIntent + Hosted
- * Payment Page flow because Payment Links return a plain redirect URL from the
- * server, matching this codebase's redirect-checkout contract without needing
- * Airwallex.js client-side. Endpoint/field names here should be re-verified
- * against Airwallex's live API reference before enabling AIRWALLEX_MODE=live —
- * see the payment-gateways plan note on Airwallex confidence.
+ * Airwallex PaymentIntent + Hosted Payment Page integration. The server creates the intent
+ * (with return_url, our session token in metadata and the shipping address); the browser
+ * redirects to Airwallex's page with Airwallex.js; payment_intent.* webhooks mark the order.
+ * Payment Links were tried first but gave no way back to the site and no usable webhook link
+ * to the order. Field names were checked against the sandbox; re-check before AIRWALLEX_MODE=live.
  */
 class AirwallexService
 {
@@ -125,37 +124,96 @@ class AirwallexService
         return number_format($amountMinor / 100, 2, '.', '');
     }
 
-    public function createCheckoutSession(int $amountMinor, string $currency, string $orderReference, string $returnUrl): array
+    /** Airwallex.js environment name for the configured mode ('demo' for sandbox, 'prod' for live). */
+    public function sdkEnvironment(): string
     {
+        return $this->mode() === 'live' ? 'prod' : 'demo';
+    }
+
+    /**
+     * Creates the PaymentIntent the Airwallex Hosted Payment Page pays: the browser redirects
+     * there with Airwallex.js (intent_id + client_secret) and comes back to $returnUrl.
+     * $sessionToken is our own id for this attempt; it is stored on the intent (metadata and
+     * merchant_order_id) and later on the order, so webhooks and the success page can find it.
+     *
+     * @param  array{email?: string, first_name?: string, last_name?: string}  $customer
+     * @param  array{first_name?: string, last_name?: string, address?: array<string, mixed>}  $shipping
+     * @return array{intent_id: string, client_secret: string, currency: string, env: string, mode: string}
+     */
+    public function createPaymentIntent(int $amountMinor, string $currency, string $sessionToken, string $returnUrl, array $customer = [], array $shipping = []): array
+    {
+        $currency = strtoupper($currency);
+
         if (! $this->isConfigured()) {
             return [
-                'session_id' => 'AIRWALLEX-PLACEHOLDER-'.Str::upper(Str::random(14)),
-                'checkout_url' => $returnUrl,
+                'intent_id' => 'int_placeholder_'.Str::lower(Str::random(14)),
+                'client_secret' => 'placeholder_secret_'.Str::lower(Str::random(24)),
+                'currency' => $currency,
+                'env' => $this->sdkEnvironment(),
                 'mode' => 'placeholder',
             ];
         }
 
+        $payload = [
+            'request_id' => $sessionToken,
+            'amount' => (float) $this->minorToDecimal($amountMinor),
+            'currency' => $currency,
+            'merchant_order_id' => $sessionToken,
+            'return_url' => $returnUrl,
+            'metadata' => ['session_id' => $sessionToken],
+            'customer' => array_filter($customer, static fn ($value) => filled($value)),
+            'order' => ['shipping' => $shipping],
+        ];
+
         $response = Http::withToken($this->accessToken())
-            ->post($this->baseUrl().'/api/v1/pa/payment_links/create', [
-                'amount' => $this->minorToDecimal($amountMinor),
-                'currency' => strtoupper($currency),
-                'title' => "Order {$orderReference}",
-                'reusable' => false,
-                'metadata' => [
-                    'order_reference' => $orderReference,
-                ],
-            ]);
+            ->post($this->baseUrl().'/api/v1/pa/payment_intents/create', $payload);
 
         if (! $response->successful()) {
             throw new RuntimeException(
-                $response->json('message') ?? 'Airwallex payment link creation failed.'
+                $response->json('message') ?? 'Airwallex payment intent creation failed.'
             );
         }
 
         return [
-            'session_id' => (string) $response->json('id'),
-            'checkout_url' => (string) $response->json('url'),
+            'intent_id' => (string) $response->json('id'),
+            'client_secret' => (string) $response->json('client_secret'),
+            'currency' => $currency,
+            'env' => $this->sdkEnvironment(),
             'mode' => 'configured',
+        ];
+    }
+
+    /**
+     * @return array{refund_id: string, status: string, amount: int}
+     */
+    public function refund(string $intentId, int $amountMinor, string $currency): array
+    {
+        if (! $this->isConfigured()) {
+            return [
+                'refund_id' => 'rfd_placeholder_'.Str::lower(Str::random(14)),
+                'status' => 'SUCCEEDED',
+                'amount' => $amountMinor,
+            ];
+        }
+
+        $response = Http::withToken($this->accessToken())
+            ->post($this->baseUrl().'/api/v1/pa/refunds/create', [
+                'request_id' => 'refund-'.$intentId.'-'.$amountMinor.'-'.Str::lower(Str::random(8)),
+                'payment_intent_id' => $intentId,
+                'amount' => (float) $this->minorToDecimal($amountMinor),
+                'currency' => strtoupper($currency),
+            ]);
+
+        if (! $response->successful()) {
+            throw new RuntimeException(
+                $response->json('message') ?? 'Airwallex refund failed.'
+            );
+        }
+
+        return [
+            'refund_id' => (string) $response->json('id'),
+            'status' => (string) $response->json('status'),
+            'amount' => (int) round(((float) ($response->json('amount') ?? $this->minorToDecimal($amountMinor))) * 100),
         ];
     }
 
@@ -191,18 +249,19 @@ class AirwallexService
             throw new RuntimeException('Airwallex webhook payload is missing event ID.');
         }
 
-        $sessionId = (string) ($object['id'] ?? '');
-        $orderReference = (string) ($object['metadata']['order_reference'] ?? '');
+        // payment_intent.* events carry the intent itself; payment_attempt.* events point at it.
+        $intentId = (string) ($object['payment_intent_id'] ?? $object['id'] ?? '');
+        $sessionToken = (string) ($object['metadata']['session_id'] ?? '');
 
-        $order = $orderReference !== ''
-            ? Order::query()->where('reference', $orderReference)->first()
+        $order = $intentId !== ''
+            ? Order::query()->where('meta->airwallex_intent_id', $intentId)->first()
             : null;
 
-        if (! $order && $sessionId !== '') {
-            $order = Order::query()->where('meta->airwallex_session_id', $sessionId)->first();
+        if (! $order && $sessionToken !== '') {
+            $order = Order::query()->where('meta->airwallex_session_id', $sessionToken)->first();
         }
 
-        $eventRecord = $this->captureWebhookEvent($eventId, $type, $sessionId, $order?->id, $event);
+        $eventRecord = $this->captureWebhookEvent($eventId, $type, $intentId, $order?->id, $event);
 
         if (! $eventRecord['created']) {
             return ['processed' => false, 'reason' => 'duplicate_event', 'event_type' => $type, 'event_id' => $eventId];
@@ -215,9 +274,9 @@ class AirwallexService
         }
 
         $paymentStatus = match ($type) {
-            'payment_link.paid', 'payment_intent.succeeded' => 'paid',
-            'payment_attempt.failed_to_process', 'payment_intent.payment_failed' => 'failed',
-            'payment_link.expired', 'payment_intent.cancelled' => 'cancelled',
+            'payment_intent.succeeded' => 'paid',
+            'payment_attempt.failed_to_process', 'payment_attempt.authorization_failed', 'payment_attempt.authentication_failed', 'payment_intent.payment_failed' => 'failed',
+            'payment_intent.cancelled' => 'cancelled',
             default => null,
         };
 

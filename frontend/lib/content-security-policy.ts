@@ -1,5 +1,5 @@
 const isDevelopment = process.env.NODE_ENV === "development";
-const scriptOrigins = "https://js.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://maps.googleapis.com https://www.googletagmanager.com https://challenges.cloudflare.com";
+const scriptOrigins = "https://js.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://maps.googleapis.com https://www.googletagmanager.com https://challenges.cloudflare.com https://static.airwallex.com";
 
 function buildPolicy(scriptSource: string, styleSource: string): string {
     return [

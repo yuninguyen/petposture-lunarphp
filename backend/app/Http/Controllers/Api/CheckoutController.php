@@ -823,9 +823,91 @@ class CheckoutController extends Controller
 
     public function prepareAirwallexSession(Request $request)
     {
-        return $this->prepareRedirectSession($request, 'airwallex', function (int $amount, string $currency, string $reference, string $returnUrl) {
-            return $this->airwallexService->createCheckoutSession($amount, $currency, $reference, $returnUrl);
-        });
+        $validated = Validator::make($request->all(), [
+            'payment_method' => 'required|string|in:airwallex',
+            'items' => 'required|array|min:1',
+            'items.*.variantId' => 'required|exists:lunar_product_variants,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'coupon_code' => 'nullable|string',
+            'shipping_method' => 'nullable|string',
+            'email' => 'required|email',
+            'shipping' => 'nullable|array',
+            'shipping.first_name' => 'nullable|string|max:255',
+            'shipping.last_name' => 'nullable|string|max:255',
+            'shipping.line_one' => 'nullable|string|max:255',
+            'shipping.line_two' => 'nullable|string|max:255',
+            'shipping.city' => 'nullable|string|max:255',
+            'shipping.state' => 'nullable|string|max:255',
+            'shipping.postcode' => 'nullable|string|max:32',
+            'shipping.country' => 'nullable|string|max:255',
+            'currency' => 'nullable|string|max:10',
+        ])->validate();
+
+        $definition = collect(app(PaymentGatewayManager::class)->supportedMethods())->firstWhere('method', 'airwallex');
+
+        if (! $definition || ! ($definition['enabled'] ?? false)) {
+            return response()->json([
+                'message' => 'Airwallex is unavailable. Please select another payment method.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        try {
+            $shipping = (array) ($validated['shipping'] ?? []);
+            $amount = $this->checkoutService->calculateTotal(
+                $validated['items'],
+                $validated['coupon_code'] ?? null,
+                $shipping,
+                $validated['shipping_method'] ?? null,
+            );
+
+            // Our own attempt id, baked into the return URL (the success page finds the order
+            // through it) and stored on the intent and, later, on the order.
+            $sessionToken = 'AIRWALLEX-'.Str::upper(Str::random(20));
+            $returnUrl = rtrim((string) config('app.frontend_url'), '/')."/checkout/success?gateway=airwallex&session_id={$sessionToken}";
+            $country = strtoupper(trim((string) ($shipping['country'] ?? 'US')));
+
+            $intent = $this->airwallexService->createPaymentIntent(
+                $amount,
+                $validated['currency'] ?? 'usd',
+                $sessionToken,
+                $returnUrl,
+                [
+                    'email' => $validated['email'],
+                    'first_name' => $shipping['first_name'] ?? null,
+                    'last_name' => $shipping['last_name'] ?? null,
+                ],
+                [
+                    'first_name' => (string) ($shipping['first_name'] ?? ''),
+                    'last_name' => (string) ($shipping['last_name'] ?? ''),
+                    'address' => array_filter([
+                        'country_code' => in_array($country, ['UNITED STATES', 'USA'], true) ? 'US' : $country,
+                        'state' => $shipping['state'] ?? null,
+                        'city' => $shipping['city'] ?? null,
+                        'street' => trim(($shipping['line_one'] ?? '').' '.($shipping['line_two'] ?? '')),
+                        'postcode' => $shipping['postcode'] ?? null,
+                    ], static fn ($value) => filled($value)),
+                ],
+            );
+
+            return response()->json([
+                'success' => true,
+                'session' => $intent + [
+                    'session_id' => $sessionToken,
+                    'return_url' => $returnUrl,
+                    'amount' => $amount,
+                ],
+            ]);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error("Airwallex Session Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code' => ErrorCode::PAYMENT_INTENT_ERROR->value,
+                'success' => false,
+                'message' => 'Unable to prepare payment. Please try again.',
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     public function preparePayoneerSession(Request $request)

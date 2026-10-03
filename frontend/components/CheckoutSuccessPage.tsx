@@ -399,7 +399,7 @@ function OrderSuccessContent() {
         : "—";
 
     const deliveredDone = timeline.find((step) => step.key === "delivered")?.done ?? false;
-    const stripePaymentPending = gateway === "stripe" && order.status === "awaiting-payment";
+    const stripePaymentPending = (gateway === "stripe" || gateway === "airwallex") && order.status === "awaiting-payment";
     // Stripe sends the buyer back with redirect_status=failed when a redirect
     // method (Affirm, Klarna, Cash App Pay) is declined or abandoned.
     // Afterpay returns without redirect_status, so the webhook-derived flag counts too.
@@ -461,7 +461,7 @@ function OrderSuccessContent() {
                                         <span className="font-semibold">Your payment is processing</span><br />
                                         {bankPaymentProcessing
                                             ? "Bank payments can take up to 4 business days to clear. We'll email you and update this order once the payment is confirmed."
-                                            : "We'll update your order once Stripe confirms the payment."}
+                                            : "We'll update your order once the payment is confirmed."}
                                     </>
                                 ) : (
                                     <>
@@ -558,7 +558,7 @@ function OrderSuccessContent() {
                             </div>
                         </div>
 
-                        {trackingToken && email && !bankPaymentProcessing ? (
+                        {trackingToken && email && !bankPaymentProcessing && gateway !== "airwallex" ? (
                             <RetryPaymentPanel trackingToken={trackingToken} email={email} orderStatus={order.status} onCompleted={() => void refreshOrderAfterRetry()} />
                         ) : null}
 
