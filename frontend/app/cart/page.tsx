@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 const Footer = dynamic(() => import('@/components/Footer'));
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
-import { Minus, Plus, X, ChevronRight, ArrowLeft, Tag } from 'lucide-react';
+import { Minus, Plus, X, ArrowLeft, Tag } from 'lucide-react';
 import { getApiBaseUrl } from '@/lib/api';
 import { fetchApi } from '@/lib/fetchApi';
 import { getShippingAmount } from '@/lib/pricing';
@@ -133,28 +133,6 @@ export default function CartPage() {
     return (
         <main className="min-h-screen bg-white font-hanken flex flex-col">
             <Header />
-
-            {/* Stepper Section */}
-            <div className="hidden md:block bg-zinc-50 border-b border-zinc-100 py-12 px-4">
-                <div className="max-w-[1200px] mx-auto">
-                    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm font-black uppercase tracking-[0.05em]">
-                        <div className="flex items-center gap-3 text-rust">
-                            <span className="w-6 h-6 rounded-full bg-secondary text-ink flex items-center justify-center text-xs">1</span>
-                            <span>Shopping Cart</span>
-                        </div>
-                        <ChevronRight size={16} className="text-zinc-300" />
-                        <div className="flex items-center gap-3 text-zinc-400">
-                            <span className="w-6 h-6 rounded-full bg-zinc-200 text-white flex items-center justify-center text-xs">2</span>
-                            <span>Checkout Details</span>
-                        </div>
-                        <ChevronRight size={16} className="text-zinc-300" />
-                        <div className="flex items-center gap-3 text-zinc-400">
-                            <span className="w-6 h-6 rounded-full bg-zinc-200 text-white flex items-center justify-center text-xs">3</span>
-                            <span>Order Complete</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <div className="flex-1 max-w-[1200px] w-full mx-auto p-4 md:p-8 lg:p-12 my-12">
                 {items.length === 0 ? (
