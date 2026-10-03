@@ -920,7 +920,7 @@ class PaymentMethodControllerTest extends TestCase
 
         $methods = array_column($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'), 'method');
 
-        $this->assertSame(['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'afterpay_clearpay', 'klarna', 'cashapp', 'amazon_pay', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'airwallex_card', 'airwallex_ach_debit', 'airwallex_affirm', 'airwallex_afterpay_clearpay', 'airwallex_apple_pay', 'airwallex_cashapp', 'airwallex_google_pay', 'airwallex_klarna', 'airwallex_venmo', 'airwallex_paypal', 'payoneer'], $methods);
+        $this->assertSame(['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'afterpay_clearpay', 'klarna', 'cashapp', 'amazon_pay', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'airwallex_ach_debit', 'airwallex_affirm', 'airwallex_afterpay_clearpay', 'airwallex_apple_pay', 'airwallex_cashapp', 'airwallex_google_pay', 'airwallex_klarna', 'airwallex_venmo', 'airwallex_paypal', 'payoneer'], $methods);
 
         $this->putJson('/api/admin/finance/payment-methods/methods/pingpong', ['enabled' => true])->assertNotFound();
         $this->assertSame($methods, array_column($this->getJson('/api/admin/finance/payment-methods')->json('methods'), 'method'));
@@ -1059,7 +1059,6 @@ class PaymentMethodControllerTest extends TestCase
         $response = $this->getJson('/api/admin/finance/payment-methods')->assertOk();
         $methods = collect($response->json('methods'))->keyBy('method');
 
-        $this->assertSame('on', $methods['airwallex_card']['airwallex_status']);
         $this->assertSame('on', $methods['airwallex_apple_pay']['airwallex_status']);
         $this->assertSame('off', $methods['airwallex_klarna']['airwallex_status']);
         $this->assertSame('unavailable', $methods['airwallex_affirm']['airwallex_status'], 'A method Airwallex does not list is not offered to this account.');
@@ -1070,12 +1069,12 @@ class PaymentMethodControllerTest extends TestCase
 
     public function test_an_unreadable_airwallex_account_shows_no_status(): void
     {
-        $this->fakeAirwallexAccount(['card' => true], 401);
+        $this->fakeAirwallexAccount(['applepay' => true], 401);
         Sanctum::actingAs($this->userWithRole('admin'));
 
         $response = $this->getJson('/api/admin/finance/payment-methods')->assertOk();
 
-        $this->assertNull(collect($response->json('methods'))->firstWhere('method', 'airwallex_card')['airwallex_status']);
+        $this->assertNull(collect($response->json('methods'))->firstWhere('method', 'airwallex_apple_pay')['airwallex_status']);
         $response->assertJsonPath('airwallex_sync.ok', false);
     }
 
@@ -1086,15 +1085,15 @@ class PaymentMethodControllerTest extends TestCase
             $this->postJson('/api/admin/finance/payment-methods/airwallex-sync')->assertForbidden();
         }
 
-        $this->fakeAirwallexAccount(['card' => true]);
+        $this->fakeAirwallexAccount(['applepay' => true]);
         Sanctum::actingAs($this->userWithRole('admin'));
-        $this->assertSame('on', collect($this->getJson('/api/admin/finance/payment-methods')->json('methods'))->firstWhere('method', 'airwallex_card')['airwallex_status']);
+        $this->assertSame('on', collect($this->getJson('/api/admin/finance/payment-methods')->json('methods'))->firstWhere('method', 'airwallex_apple_pay')['airwallex_status']);
 
-        $this->fakeAirwallexAccount(['card' => false]);
-        Cache::put('airwallex_payment_method_status', ['statuses' => ['airwallex_card' => 'on'], 'ok' => true, 'checked_at' => now()->toIso8601String()], 120);
+        $this->fakeAirwallexAccount(['applepay' => false]);
+        Cache::put('airwallex_payment_method_status', ['statuses' => ['airwallex_apple_pay' => 'on'], 'ok' => true, 'checked_at' => now()->toIso8601String()], 120);
 
         $response = $this->postJson('/api/admin/finance/payment-methods/airwallex-sync')->assertOk();
-        $this->assertSame('off', collect($response->json('data.methods'))->firstWhere('method', 'airwallex_card')['airwallex_status']);
+        $this->assertSame('off', collect($response->json('data.methods'))->firstWhere('method', 'airwallex_apple_pay')['airwallex_status']);
         $response->assertJsonPath('data.airwallex_sync.ok', true);
     }
 

@@ -19,7 +19,7 @@ class AirwallexGateway implements PaymentGatewayInterface
 
     public function label(): string
     {
-        return 'Airwallex';
+        return 'Credit or Debit Card (Airwallex)';
     }
 
     public function prepare(array $payload = []): PaymentPreparation

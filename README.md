@@ -534,10 +534,11 @@ hidden at checkout in its existing position **and** refused by `POST /api/checko
 purges the Cloudflare API cache, so the storefront follows within the purge delay.
 
 - Stripe: Credit card, Google Pay, Apple Pay, Affirm, Afterpay / Clearpay, Klarna, Cash App Pay,
-  Amazon Pay, ACH Direct Debit. PayPal: PayPal, Venmo. Airwallex: a locked "Airwallex"
-  row plus locked rows for what its hosted page offers (Credit or Debit Card, ACH Direct Debit,
-  Affirm, Afterpay / Clearpay, Apple Pay, Cash App Pay, Google Pay, Klarna, Venmo, PayPal; no Amazon
-  Pay; keys are `airwallex_*`). Payoneer: a locked row. Venmo, Airwallex, Payoneer and every `airwallex_*` row are listed but locked ("Not
+  Amazon Pay, ACH Direct Debit. PayPal: PayPal, Venmo. Airwallex: a "Credit or Debit Card (Airwallex)" row, a real switch for the in-page
+  Airwallex card form (see "Airwallex (card fields in the checkout)"), plus read-only rows for what the
+  Airwallex account offers (ACH Direct Debit, Affirm, Afterpay / Clearpay, Apple Pay, Cash App Pay, Google
+  Pay, Klarna, Venmo, PayPal; no Amazon Pay; keys are `airwallex_*`; the card itself is the row above).
+  Payoneer: a locked row. Venmo, Payoneer and every `airwallex_*` row are listed but locked ("Not
   supported yet") — the storefront does not sell through them, so a switch would change nothing.
   PingPong is intentionally never exposed.
 - **Apple Pay / Google Pay are independent of Credit card.** They are Stripe Express Checkout
