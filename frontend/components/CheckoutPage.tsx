@@ -2006,7 +2006,21 @@ export default function CheckoutPage() {
                                                             </div>
                                                             <div className={`flex h-[48px] items-center rounded-[8px] border bg-white px-3.5 transition ${focusedStripeField === 'cvc' ? 'border-secondary ring-2 ring-[#f4cdb7]' : 'border-[#d9d9d9]'}`}>
                                                                 <div ref={stripeCardCvcMountRef} className="flex-1" />
-                                                                <HelpCircle size={15} className="ml-2 flex-shrink-0 text-[#9ca3af]" />
+                                                                <button
+                                                                    type="button"
+                                                                    aria-label="Security code information"
+                                                                    aria-describedby="checkout-security-code-tooltip"
+                                                                    className="group relative ml-2 inline-flex flex-shrink-0 items-center rounded-full text-[#9ca3af] transition hover:text-[#707070] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
+                                                                >
+                                                                    <HelpCircle size={15} />
+                                                                    <span
+                                                                        id="checkout-security-code-tooltip"
+                                                                        role="tooltip"
+                                                                        className="invisible absolute bottom-[calc(100%+8px)] right-0 z-[100] w-[220px] translate-y-1 rounded-[6px] bg-[#1a1a1a] px-3 py-2 text-center text-xs font-normal leading-[1.4] text-white opacity-0 shadow-2xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 after:absolute after:-bottom-1 after:right-2 after:h-2 after:w-2 after:rotate-45 after:bg-[#1a1a1a]"
+                                                                    >
+                                                                        3-digit security code usually found on the back of your card. American Express cards have a 4-digit code located on the front.
+                                                                    </span>
+                                                                </button>
                                                             </div>
                                                         </div>
                                                         <input value={form.cardName} onChange={(e) => updateField('cardName', e.target.value)} placeholder="Name on card" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
