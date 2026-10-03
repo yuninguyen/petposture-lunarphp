@@ -2210,11 +2210,9 @@ export default function CheckoutPage() {
                                             <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
                                                 {/* Laid out exactly like the Stripe card form above; the three fields are Airwallex iframes. */}
                                                 <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-[#f4cdb7]">
-                                                    {/* Airwallex draws its own card-brand logos on the right of this field (Stripe's has none): the
-                                                        field is made wider than the box and clipped so only the input remains. */}
-                                                    <div className="min-w-0 flex-1 overflow-hidden">
-                                                        <div id="airwallex-card-number" className="w-[calc(100%+220px)]" />
-                                                    </div>
+                                                    {/* Airwallex draws the card-brand logos itself on the right of this field (all of them while empty,
+                                                        the detected one while typing); the page cannot read the brand, so they are left visible. */}
+                                                    <div id="airwallex-card-number" className="min-w-0 flex-1" />
                                                     <Lock size={15} className="ml-2 flex-shrink-0 text-[#9ca3af]" />
                                                 </div>
                                                 <div className="grid gap-3 md:grid-cols-2">
