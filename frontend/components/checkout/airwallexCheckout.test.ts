@@ -37,19 +37,6 @@ describe('mountAirwallexCardFields', () => {
         expect(cvc.destroy).toHaveBeenCalled();
     });
 
-    it('reports whether the card number field is empty so the page can show Airwallex\'s detected-brand logo', async () => {
-        let changeHandler: ((event: { detail?: { empty?: boolean } }) => void) | undefined;
-        const cardNumber = { mount: vi.fn(), on: vi.fn((_event: string, handler: typeof changeHandler) => { changeHandler = handler; }) };
-        installSdk({ cardNumber, expiry: { mount: vi.fn() }, cvc: { mount: vi.fn() } });
-        const onEmptyChange = vi.fn();
-
-        await mountAirwallexCardFields('demo-empty', containers, onEmptyChange);
-        changeHandler?.({ detail: { empty: false } });
-        changeHandler?.({ detail: { empty: true } });
-
-        expect(onEmptyChange.mock.calls).toEqual([[false], [true]]);
-    });
-
     it('fails with a readable message when Airwallex does not create an element', async () => {
         installSdk({ cardNumber: { mount: vi.fn() }, expiry: null, cvc: { mount: vi.fn() } });
 

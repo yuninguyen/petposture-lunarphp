@@ -5,8 +5,6 @@ type AirwallexIntent = { id?: string; status?: string };
 
 type AirwallexElement = {
     mount: (containerId: string) => unknown;
-    // 'change' reports whether the input is empty/complete; Airwallex does not expose the card brand.
-    on?: (event: 'change', handler: (event: { detail?: { empty?: boolean } }) => void) => unknown;
     destroy?: () => void;
     confirm?: (data: { intent_id: string; client_secret: string; payment_method?: Record<string, unknown> }) => Promise<AirwallexIntent>;
 };
@@ -69,11 +67,7 @@ function initAirwallexSdk(env: string): Promise<void> {
 
 // Split card fields (number, expiry, CVC) rendered by Airwallex inside our own checkout page. The
 // PaymentIntent does not exist yet at this point; its id and secret are passed to confirm() later.
-export async function mountAirwallexCardFields(
-    env: string,
-    containers: AirwallexCardContainers,
-    onCardNumberEmptyChange?: (empty: boolean) => void,
-): Promise<AirwallexCardFields> {
+export async function mountAirwallexCardFields(env: string, containers: AirwallexCardContainers): Promise<AirwallexCardFields> {
     await initAirwallexSdk(env);
 
     const sdk = window.AirwallexComponentsSDK;
@@ -95,7 +89,6 @@ export async function mountAirwallexCardFields(
         throw new Error('The card form could not be started. Please try again.');
     }
 
-    cardNumber.on?.('change', (event) => onCardNumberEmptyChange?.(event.detail?.empty ?? true));
     cardNumber.mount(containers.cardNumber);
     expiry.mount(containers.expiry);
     cvc.mount(containers.cvc);
