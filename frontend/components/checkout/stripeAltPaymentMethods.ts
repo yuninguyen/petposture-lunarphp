@@ -35,8 +35,10 @@ export type StripeAltConfirmers = {
     confirmPayment: (options: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
     confirmKlarnaPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
     confirmCashappPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
-    // Opens Stripe's Financial Connections modal (bank login + mandate) inside the page; no redirect.
-    confirmUsBankAccountPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
+    // ACH is two calls: collectBankAccountForPayment opens Stripe's Financial Connections modal (bank
+    // login) inside the page and attaches the account, then confirmUsBankAccountPayment submits it.
+    collectBankAccountForPayment: (options: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
+    confirmUsBankAccountPayment: (clientSecret: string, data?: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
 };
 
 type StripeAltPaymentMethodOption = {
@@ -97,14 +99,28 @@ export function buildAmazonPayPaymentData(returnUrl: string) {
     };
 }
 
-// Shipping is already on the PaymentIntent (server-side); the bank account itself is collected by
-// Stripe's modal, so only the account holder's name and email travel from here.
+// `params` for stripe.collectBankAccountForPayment. Shipping is already on the PaymentIntent
+// (server-side); the bank account itself is collected by Stripe's modal, so only the account
+// holder's name and email travel from here.
 export function buildAchDebitPaymentData({ email, name }: { email: string; name: string }) {
     return {
-        payment_method: {
+        payment_method_type: 'us_bank_account',
+        payment_method_data: {
             billing_details: { name, email },
         },
     };
+}
+
+async function confirmAchDebitPayment(stripe: StripeAltConfirmers, clientSecret: string, params: Record<string, unknown>) {
+    const collected = await stripe.collectBankAccountForPayment({ clientSecret, params });
+    if (collected.error) {
+        return collected;
+    }
+    // Closing the modal (or not finishing the bank login) leaves the intent without a bank account.
+    if (collected.paymentIntent?.status !== 'requires_confirmation') {
+        return { error: { message: 'No bank account was linked.' } } satisfies StripeAltConfirmationResult;
+    }
+    return stripe.confirmUsBankAccountPayment(clientSecret);
 }
 
 export function buildKlarnaPaymentData(returnUrl: string) {
@@ -134,7 +150,7 @@ export function confirmStripeAltPayment(
         return stripe.confirmPayment({ clientSecret, confirmParams: data });
     }
     if (method === 'ach_debit') {
-        return stripe.confirmUsBankAccountPayment(clientSecret, data);
+        return confirmAchDebitPayment(stripe, clientSecret, data);
     }
     if (method === 'klarna') {
         return stripe.confirmKlarnaPayment(clientSecret, data);

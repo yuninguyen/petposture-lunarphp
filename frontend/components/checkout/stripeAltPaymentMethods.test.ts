@@ -111,26 +111,52 @@ describe('isStripeAltPaymentMethodEligible', () => {
         expect(stripe.confirmAffirmPayment).not.toHaveBeenCalled();
     });
 
-    it('confirms ACH Direct Debit through confirmUsBankAccountPayment with only the account holder name and email', async () => {
+    it('links the bank account first and only then confirms ACH Direct Debit', async () => {
         const stripe = {
             confirmAffirmPayment: vi.fn(),
             confirmPayment: vi.fn(),
-            confirmUsBankAccountPayment: vi.fn().mockResolvedValue({}),
+            collectBankAccountForPayment: vi.fn().mockResolvedValue({ paymentIntent: { status: 'requires_confirmation' } }),
+            confirmUsBankAccountPayment: vi.fn().mockResolvedValue({ paymentIntent: { status: 'processing' } }),
         };
         vi.stubGlobal('Stripe', vi.fn().mockReturnValue(stripe));
         const stripeInstance = window.Stripe?.('pk_test');
 
-        await confirmStripeAltPayment(
+        const result = await confirmStripeAltPayment(
             stripeInstance as NonNullable<typeof stripeInstance>,
             'ach_debit',
             'pi_ach_secret',
             buildAchDebitPaymentData({ email: 'jane@example.com', name: 'Jane Doe' }),
         );
 
-        expect(stripe.confirmUsBankAccountPayment).toHaveBeenCalledWith('pi_ach_secret', {
-            payment_method: { billing_details: { name: 'Jane Doe', email: 'jane@example.com' } },
+        expect(stripe.collectBankAccountForPayment).toHaveBeenCalledWith({
+            clientSecret: 'pi_ach_secret',
+            params: {
+                payment_method_type: 'us_bank_account',
+                payment_method_data: { billing_details: { name: 'Jane Doe', email: 'jane@example.com' } },
+            },
         });
+        expect(stripe.confirmUsBankAccountPayment).toHaveBeenCalledWith('pi_ach_secret');
+        expect(result.paymentIntent?.status).toBe('processing');
         expect(stripe.confirmPayment).not.toHaveBeenCalled();
+    });
+
+    it('does not confirm ACH Direct Debit when the bank modal is closed without linking an account', async () => {
+        const stripe = {
+            collectBankAccountForPayment: vi.fn().mockResolvedValue({ paymentIntent: { status: 'requires_payment_method' } }),
+            confirmUsBankAccountPayment: vi.fn(),
+        };
+        vi.stubGlobal('Stripe', vi.fn().mockReturnValue(stripe));
+        const stripeInstance = window.Stripe?.('pk_test');
+
+        const result = await confirmStripeAltPayment(
+            stripeInstance as NonNullable<typeof stripeInstance>,
+            'ach_debit',
+            'pi_ach_secret',
+            buildAchDebitPaymentData({ email: 'jane@example.com', name: 'Jane Doe' }),
+        );
+
+        expect(result.error?.message).toBeTruthy();
+        expect(stripe.confirmUsBankAccountPayment).not.toHaveBeenCalled();
     });
 
     it('recognises exactly the Stripe alternative methods', () => {
