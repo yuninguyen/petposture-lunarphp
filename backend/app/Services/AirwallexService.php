@@ -285,7 +285,7 @@ class AirwallexService
                 'payment_status' => $paymentStatus,
                 'event_type' => $type,
                 'event_id' => $eventId,
-            ]);
+            ] + $this->cardDetails($object));
         }
 
         $eventRecord['model']->update([
@@ -300,6 +300,31 @@ class AirwallexService
             'event_id' => $eventId,
             'order_reference' => $order->reference,
             'payment_status' => $paymentStatus,
+        ];
+    }
+
+    /**
+     * The card brand / last 4 / funding the shopper paid with, when the event carries them: a
+     * payment_attempt.* event holds it as payment_method.card, a payment_intent.* event under
+     * latest_payment_attempt. Empty when absent so an event without a card never wipes what is stored.
+     *
+     * @param  array<string, mixed>  $object
+     * @return array<string, string|null>
+     */
+    private function cardDetails(array $object): array
+    {
+        $card = $object['payment_method']['card'] ?? $object['latest_payment_attempt']['payment_method']['card'] ?? null;
+
+        if (! is_array($card) || empty($card['brand'])) {
+            return [];
+        }
+
+        $funding = strtolower((string) ($card['card_type'] ?? ''));
+
+        return [
+            'card_brand' => strtolower((string) $card['brand']),
+            'card_last4' => isset($card['last4']) ? (string) $card['last4'] : null,
+            'card_funding' => in_array($funding, ['credit', 'debit', 'prepaid'], true) ? $funding : null,
         ];
     }
 

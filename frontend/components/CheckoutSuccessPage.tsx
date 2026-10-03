@@ -369,6 +369,16 @@ function OrderSuccessContent() {
         }
     };
 
+    // The card is confirmed in the browser before Airwallex's webhook reaches us, so the order can still
+    // read "awaiting payment" for a moment; look again a few times instead of leaving "processing" up.
+    const awaitingAirwallexConfirmation = gateway === "airwallex" && redirectStatus === "succeeded" && order?.status === "awaiting-payment";
+    useEffect(() => {
+        if (awaitingAirwallexConfirmation) {
+            void refreshOrderAfterRetry();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [awaitingAirwallexConfirmation]);
+
     if (loading) {
         return (
             <main className="flex min-h-screen items-center justify-center bg-[#fcfcfd]">

@@ -529,6 +529,14 @@ class OrderOperationsService
         $meta['payment_last_event_id'] = $eventId;
         $meta['payment_webhook_processed_at'] = now()->toDateTimeString();
 
+        // Gateways that take the card themselves (Airwallex) report the brand/last4 the same way Stripe does,
+        // so receipts and the admin show a card payment identically.
+        if (array_key_exists('card_brand', $paymentData)) {
+            $meta['card_brand'] = $paymentData['card_brand'];
+            $meta['card_last4'] = $paymentData['card_last4'] ?? null;
+            $meta['card_funding'] = $paymentData['card_funding'] ?? null;
+        }
+
         return $this->applyPaymentStatusTransition($order, $meta, $paymentStatus, $eventType, $gatewayLabel);
     }
 

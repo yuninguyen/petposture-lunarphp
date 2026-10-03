@@ -28,7 +28,8 @@ class AirwallexGateway implements PaymentGatewayInterface
 
         return new PaymentPreparation(
             method: $this->method(),
-            label: $this->label(),
+            // Customers see a card payment, exactly like Stripe's card orders (the gateway stays Airwallex).
+            label: 'Card',
             gateway: 'airwallex',
             collectionType: 'redirect',
             paymentStatus: 'pending',

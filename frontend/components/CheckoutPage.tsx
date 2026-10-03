@@ -1580,7 +1580,7 @@ export default function CheckoutPage() {
 
                 // Reuse the previous attempt (same order, same intent) when the shopper only has to fix
                 // the card; anything that changes what is being bought starts a fresh order.
-                const { shippingAddress } = buildOrderAddresses();
+                const { shippingAddress, billingAddress } = buildOrderAddresses();
                 const attemptKey = JSON.stringify([
                     items.map((item) => [item.variantId, item.quantity]),
                     form.shippingMethod,
@@ -1618,7 +1618,16 @@ export default function CheckoutPage() {
                 }
 
                 try {
-                    await confirmAirwallexCardPayment(fields, { intent_id: session.intent_id, client_secret: session.client_secret });
+                    await confirmAirwallexCardPayment(
+                        fields,
+                        { intent_id: session.intent_id, client_secret: session.client_secret },
+                        {
+                            name: form.cardName.trim() || `${form.firstName} ${form.lastName}`.trim(),
+                            email: form.email,
+                            phone: form.phone || undefined,
+                            billing: billingAddress,
+                        },
+                    );
                 } catch (cardError) {
                     // Stay on the checkout so the card can be corrected; the cart is kept until the payment is accepted.
                     setAirwallexError(cardError instanceof Error ? cardError.message : 'Your card could not be processed.');
@@ -2199,25 +2208,59 @@ export default function CheckoutPage() {
 
                                         {method.method === 'airwallex' && form.paymentMethod === 'airwallex' && (
                                             <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
-                                                {/* The three fields below are rendered by Airwallex (secure iframes) once mounted. */}
-                                                <div>
-                                                    <p className="mb-1.5 text-[13px] font-medium text-[#555555]">Card number</p>
-                                                    <div id="airwallex-card-number" className="min-h-[46px] rounded-[6px] border border-[#d9d9d9] bg-white px-3.5 py-2.5" />
+                                                {/* Laid out exactly like the Stripe card form above; the three fields are Airwallex iframes. */}
+                                                <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-[#f4cdb7]">
+                                                    <div id="airwallex-card-number" className="min-w-0 flex-1" />
+                                                    <Lock size={15} className="ml-2 flex-shrink-0 text-[#9ca3af]" />
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <p className="mb-1.5 text-[13px] font-medium text-[#555555]">Expiration date (MM / YY)</p>
-                                                        <div id="airwallex-card-expiry" className="min-h-[46px] rounded-[6px] border border-[#d9d9d9] bg-white px-3.5 py-2.5" />
+                                                <div className="grid gap-3 md:grid-cols-2">
+                                                    <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-[#f4cdb7]">
+                                                        <div id="airwallex-card-expiry" className="min-w-0 flex-1" />
                                                     </div>
-                                                    <div>
-                                                        <p className="mb-1.5 text-[13px] font-medium text-[#555555]">Security code</p>
-                                                        <div id="airwallex-card-cvc" className="min-h-[46px] rounded-[6px] border border-[#d9d9d9] bg-white px-3.5 py-2.5" />
+                                                    <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-[#f4cdb7]">
+                                                        <div id="airwallex-card-cvc" className="min-w-0 flex-1" />
+                                                        <button
+                                                            type="button"
+                                                            aria-label="Security code information"
+                                                            aria-describedby="airwallex-security-code-tooltip"
+                                                            className="group relative ml-2 inline-flex flex-shrink-0 items-center rounded-full text-[#9ca3af] transition hover:text-[#707070] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
+                                                        >
+                                                            <HelpCircle size={15} />
+                                                            <span
+                                                                id="airwallex-security-code-tooltip"
+                                                                role="tooltip"
+                                                                className="invisible absolute bottom-[calc(100%+8px)] right-0 z-[100] w-[220px] translate-y-1 rounded-[6px] bg-[#1a1a1a] px-3 py-2 text-center text-xs font-normal leading-[1.4] text-white opacity-0 shadow-2xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 after:absolute after:-bottom-1 after:right-2 after:h-2 after:w-2 after:rotate-45 after:bg-[#1a1a1a]"
+                                                            >
+                                                                3-digit security code usually found on the back of your card. American Express cards have a 4-digit code located on the front.
+                                                            </span>
+                                                        </button>
                                                     </div>
                                                 </div>
+                                                <input value={form.cardName} onChange={(e) => updateField('cardName', e.target.value)} placeholder="Name on card" className="h-[48px] w-full rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 text-[14px] outline-none transition focus:border-secondary focus:ring-2 focus:ring-[#f4cdb7]" />
                                                 <div id="airwallex-3ds" />
                                                 {airwallexError ? (
                                                     <p role="alert" className="text-sm font-medium text-[#b42318]">{airwallexError}</p>
                                                 ) : null}
+                                                <div className="rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 py-3">
+                                                    <label htmlFor="airwallexBillingSameAsShipping" className="flex cursor-pointer items-start gap-3 text-[14px] text-[#333333]">
+                                                        <input
+                                                            id="airwallexBillingSameAsShipping"
+                                                            type="checkbox"
+                                                            checked={form.billingAddress === 'same'}
+                                                            onChange={(e) => updateField('billingAddress', e.target.checked ? 'same' : 'different')}
+                                                            className="mt-0.5 h-4 w-4 rounded border-[#bfc6ce] accent-[#1a1a1a] text-[#1a1a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] focus-visible:ring-offset-2"
+                                                        />
+                                                        <span>Use shipping address as billing address</span>
+                                                    </label>
+                                                </div>
+                                                {form.billingAddress === 'different' && (
+                                                    <>
+                                                        <p className="text-[16px] font-semibold text-[#2d3742]">Billing address</p>
+                                                        <div className="grid gap-3 rounded-[8px] border border-[#d9d9d9] bg-white p-4">
+                                                            {renderBillingAddressFields()}
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
                                         )}
 
@@ -2245,7 +2288,7 @@ export default function CheckoutPage() {
                             </div>
                         </section>
 
-                        {form.paymentMethod !== 'card' && (
+                        {form.paymentMethod !== 'card' && form.paymentMethod !== 'airwallex' && (
                             <section className="pt-6">
                                 <h2 className="mb-3 text-[18px] font-semibold text-[#333333]">Billing address</h2>
                                 <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">

@@ -519,7 +519,9 @@ cleared once the payment is accepted. The order is marked paid **only** by the `
 webhook (`POST /api/webhooks/airwallex`, signature `x-signature`/`x-timestamp`); register that URL in the
 Airwallex Dashboard → Developer → Webhooks (sandbox and live separately) with the `payment_intent.*` and
 `payment_attempt.*` events. The order is found by `meta.airwallex_intent_id` (fallback
-`metadata.session_id`). Admin full refunds call `/pa/refunds/create`. Not covered yet: a retry payment for an
+`metadata.session_id`); the same webhook stores `card_brand`/`card_last4`/`card_funding`, so receipts and the admin show
+it like a Stripe card order. The form mirrors Stripe's card form (Name on card, "Use shipping address as billing
+address"), and the cardholder name and billing details go to Airwallex in `confirm()`. Admin full refunds call `/pa/refunds/create`. Not covered yet: a retry payment for an
 Airwallex order the shopper left unpaid (the confirmation page hides the retry panel for them).
 
 ### Admin switches for checkout payment methods

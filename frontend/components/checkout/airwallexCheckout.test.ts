@@ -55,6 +55,31 @@ describe('confirmAirwallexCardPayment', () => {
         expect(confirm).toHaveBeenCalledWith(payment);
     });
 
+    it('sends the cardholder name and billing details the way Stripe gets billing_details', async () => {
+        const confirm = vi.fn().mockResolvedValue({ id: 'int_1', status: 'SUCCEEDED' });
+
+        await confirmAirwallexCardPayment(fieldsWith(confirm), payment, {
+            name: 'Jane Q Doe',
+            email: 'jane@example.com',
+            phone: '5125550100',
+            billing: { first_name: 'Jane', last_name: 'Doe', line_one: '1 Main St', line_two: 'Apt 2', city: 'Austin', state: 'TX', postcode: '78701', country: 'United States' },
+        });
+
+        expect(confirm).toHaveBeenCalledWith({
+            ...payment,
+            payment_method: {
+                card: { name: 'Jane Q Doe' },
+                billing: {
+                    first_name: 'Jane',
+                    last_name: 'Doe',
+                    email: 'jane@example.com',
+                    phone_number: '5125550100',
+                    address: { country_code: 'US', state: 'TX', city: 'Austin', street: '1 Main St Apt 2', postcode: '78701' },
+                },
+            },
+        });
+    });
+
     it('surfaces the decline message from Airwallex', async () => {
         const confirm = vi.fn().mockRejectedValue({ code: 'card_declined', message: 'Your card was declined.' });
 

@@ -1893,12 +1893,21 @@ class CheckoutApiTest extends TestCase
         $this->postJson('/api/webhooks/airwallex', [
             'id' => 'evt_awx_paid_1',
             'name' => 'payment_intent.succeeded',
-            'data' => ['object' => ['id' => 'int_awx_paid_1', 'metadata' => ['session_id' => 'AIRWALLEX-PAID']]],
+            'data' => ['object' => [
+                'id' => 'int_awx_paid_1',
+                'metadata' => ['session_id' => 'AIRWALLEX-PAID'],
+                'latest_payment_attempt' => ['payment_method' => ['type' => 'card', 'card' => ['brand' => 'visa', 'last4' => '0008', 'card_type' => 'DEBIT']]],
+            ]],
         ])->assertOk()->assertJsonPath('result.payment_status', 'paid');
 
         $order = Order::query()->findOrFail($placed->json('order.id'));
         $this->assertSame('paid', $order->meta['payment_status']);
         $this->assertSame('payment-received', $order->status);
+        // Same card fields Stripe stores, so receipts show the brand and last 4 like a Stripe card order.
+        $this->assertSame('visa', $order->meta['card_brand']);
+        $this->assertSame('0008', $order->meta['card_last4']);
+        $this->assertSame('debit', $order->meta['card_funding']);
+        $this->assertSame('Card', $order->meta['payment_label']);
     }
 
     public function test_airwallex_failed_attempt_event_points_at_the_intent_and_marks_the_order_failed(): void
