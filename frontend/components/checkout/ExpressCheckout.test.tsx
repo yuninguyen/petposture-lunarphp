@@ -190,6 +190,66 @@ describe('ExpressCheckout', () => {
         expect(wallets).toEqual([['card', 'apple_pay'], ['card', 'google_pay']]);
     });
 
+    it('adds an Amazon Pay-only Express Checkout Element only when Amazon Pay is enabled', () => {
+        const expressCheckoutElement = { mount: vi.fn(), on: vi.fn() };
+        const elementsGroup = { create: vi.fn().mockReturnValue(expressCheckoutElement), submit: vi.fn(), update: vi.fn() };
+        const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn() };
+
+        render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} applePayEnabled={false} googlePayEnabled={false} amazonPayEnabled />);
+
+        expect(elementsGroup.create).toHaveBeenCalledTimes(1);
+        expect(elementsGroup.create).toHaveBeenCalledWith('expressCheckout', expect.objectContaining({
+            paymentMethods: expect.objectContaining({ amazonPay: 'always', applePay: 'never', googlePay: 'never', paypal: 'never' }),
+        }));
+    });
+
+    it('places an amazon_pay order from the wallet address, then confirms the intent and redirects through Stripe', async () => {
+        const fetchMock = vi.mocked(fetchApi);
+        fetchMock.mockReset();
+        fetchMock.mockImplementation((endpoint) => {
+            if (endpoint.includes('/api/checkout/stripe-alt-session')) {
+                return Promise.resolve({ ok: true, json: async () => ({ session: { client_secret: 'cs_amazon', intent_id: 'pi_amazon', session_id: 'STRIPE-AMZ', return_url: 'https://shop.example/checkout/success?gateway=stripe&session_id=STRIPE-AMZ' } }) } as Response);
+            }
+            return Promise.resolve({ status: 201, json: async () => ({ order: { reference: 'A-1', tracking_access_token: 'tok-amz' } }) } as Response);
+        });
+
+        let confirmHandler: ((event: unknown) => Promise<void>) | undefined;
+        const elementsGroup = {
+            create: vi.fn().mockReturnValue({
+                mount: vi.fn(),
+                on: vi.fn((event: string, handler: (event: unknown) => Promise<void>) => {
+                    if (event === 'confirm') confirmHandler = handler;
+                }),
+            }),
+            submit: vi.fn().mockResolvedValue({}),
+            update: vi.fn(),
+        };
+        const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn().mockResolvedValue({}) };
+        const onRedirectStart = vi.fn();
+        const onOrderPlaced = vi.fn();
+
+        render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} applePayEnabled={false} googlePayEnabled={false} amazonPayEnabled onRedirectStart={onRedirectStart} onOrderPlaced={onOrderPlaced} />);
+        await act(async () => {
+            await confirmHandler?.({
+                billingDetails: { email: 'jane@example.com', name: 'Jane Doe' },
+                shippingAddress: { name: 'Jane Doe', address: { line1: '1 Main St', city: 'Austin', state: 'TX', postal_code: '78701', country: 'US' } },
+                paymentFailed: vi.fn(),
+            });
+        });
+
+        const endpoints = fetchMock.mock.calls.map(([endpoint]) => endpoint);
+        expect(endpoints.some((endpoint) => endpoint.includes('/api/checkout/payment-intent'))).toBe(false);
+        const placeOrderBody = fetchMock.mock.calls.find(([endpoint]) => endpoint.includes('/api/checkout/place-order'))?.[1] as { body: { payment_method: string; payment_context: unknown } };
+        expect(placeOrderBody.body.payment_method).toBe('amazon_pay');
+        expect(placeOrderBody.body.payment_context).toEqual({ intent_id: 'pi_amazon', session_id: 'STRIPE-AMZ' });
+        expect(onRedirectStart).toHaveBeenCalledTimes(1);
+        expect(stripeInstance.confirmPayment).toHaveBeenCalledWith(expect.objectContaining({
+            clientSecret: 'cs_amazon',
+            confirmParams: { return_url: 'https://shop.example/checkout/success?gateway=stripe&session_id=STRIPE-AMZ' },
+        }));
+        expect(onOrderPlaced).not.toHaveBeenCalled();
+    });
+
     it('recalculates shipping and tax through the existing endpoints when the wallet reports an address', async () => {
         const fetchMock = vi.mocked(fetchApi);
         fetchMock.mockImplementation((endpoint) => {

@@ -108,15 +108,22 @@ export interface ExpressCheckoutProps {
     // Admin on/off switches for the Stripe wallets; a switched-off wallet isn't mounted at all.
     applePayEnabled?: boolean;
     googlePayEnabled?: boolean;
+    // Amazon Pay is a redirect method: the order is placed first, then the shopper leaves for Amazon.
+    // Off by default; onRedirectStart lets the page clear the cart right before that redirect.
+    amazonPayEnabled?: boolean;
+    onRedirectStart?: () => void;
 }
 
-export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, paypalEnvironment, onOrderPlaced, applePayEnabled = true, googlePayEnabled = true }: ExpressCheckoutProps) {
+export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, paypalEnvironment, onOrderPlaced, applePayEnabled = true, googlePayEnabled = true, amazonPayEnabled = false, onRedirectStart }: ExpressCheckoutProps) {
     const [canApplePay, setCanApplePay] = useState(false);
     const [canGooglePay, setCanGooglePay] = useState(false);
+    const [canAmazonPay, setCanAmazonPay] = useState(false);
     const [canPayPal, setCanPayPal] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const appleButtonMountRef = useRef<HTMLDivElement>(null);
     const googleButtonMountRef = useRef<HTMLDivElement>(null);
+    const amazonButtonMountRef = useRef<HTMLDivElement>(null);
+    const onRedirectStartRef = useRef(onRedirectStart);
     const paypalButtonMountRef = useRef<HTMLDivElement>(null);
     const paypalSdkInstanceRef = useRef<PayPalSdkInstance | null>(null);
 
@@ -135,7 +142,8 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         couponCodeRef.current = couponCode;
         subtotalMinorRef.current = subtotalMinor;
         onOrderPlacedRef.current = onOrderPlaced;
-    }, [items, couponCode, subtotalMinor, onOrderPlaced]);
+        onRedirectStartRef.current = onRedirectStart;
+    }, [items, couponCode, subtotalMinor, onOrderPlaced, onRedirectStart]);
 
     useEffect(() => {
         if (!stripeInstance || typeof (stripeInstance as unknown as Partial<StripeElementsInstance>).elements !== 'function') return;
@@ -151,7 +159,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         // into one shared mount point sized as a unit, not as N equal
         // buttons.
         const mountWallet = (
-            walletKey: 'applePay' | 'googlePay',
+            walletKey: 'applePay' | 'googlePay' | 'amazonPay',
             setCanPay: (value: boolean) => void,
             mountRef: React.RefObject<HTMLDivElement | null>,
         ) => {
@@ -170,7 +178,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                     applePay: walletKey === 'applePay' ? 'always' : 'never',
                     googlePay: walletKey === 'googlePay' ? 'always' : 'never',
                     paypal: 'never',
-                    amazonPay: 'never',
+                    amazonPay: walletKey === 'amazonPay' ? 'always' : 'never',
                     klarna: 'never',
                     link: 'never',
                 },
@@ -244,6 +252,58 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                         phone: event.billingDetails?.phone ?? null,
                     };
 
+                    if (walletKey === 'amazonPay') {
+                        // Redirect method: same session + place-order calls as the normal checkout form
+                        // (the intent is amazon_pay-typed, not a card), then Stripe sends the shopper to Amazon.
+                        const sessionResponse = await fetchApi('/api/checkout/stripe-alt-session', {
+                            method: 'POST',
+                            body: {
+                                payment_method: 'amazon_pay', items: itemsRef.current, coupon_code: couponCodeRef.current,
+                                shipping_method: latestShippingRate?.code ?? null, email: shipping.email,
+                                shipping, billing_same_as_shipping: true,
+                            },
+                        });
+                        const sessionData = await sessionResponse.json();
+                        const session = sessionData?.session;
+                        if (!sessionResponse.ok || !session?.client_secret) {
+                            event.paymentFailed({ reason: 'fail', message: sessionData?.message || 'Unable to prepare payment. Please try again.' });
+                            return;
+                        }
+
+                        const amazonOrderResponse = await fetchApi('/api/checkout/place-order', {
+                            method: 'POST', headers: { 'Idempotency-Key': session.intent_id },
+                            body: {
+                                items: itemsRef.current, shipping, billing_same_as_shipping: true,
+                                shipping_method: latestShippingRate?.code ?? null, payment_method: 'amazon_pay',
+                                payment_context: { intent_id: session.intent_id, session_id: session.session_id },
+                                coupon_code: couponCodeRef.current,
+                            },
+                        });
+                        const amazonOrder = await amazonOrderResponse.json();
+                        if (amazonOrderResponse.status !== 201 || !amazonOrder?.order?.tracking_access_token) {
+                            event.paymentFailed({ reason: 'fail', message: amazonOrder?.message || 'Order could not be created. Please try again.' });
+                            return;
+                        }
+
+                        sessionStorage.setItem(`petposture_payment_access:${session.session_id}`, JSON.stringify({
+                            email: shipping.email,
+                            trackingToken: amazonOrder.order.tracking_access_token,
+                        }));
+                        onRedirectStartRef.current?.();
+
+                        const { error: amazonConfirmError } = await stripe.confirmPayment({
+                            elements,
+                            clientSecret: session.client_secret,
+                            confirmParams: { return_url: session.return_url },
+                        });
+                        if (amazonConfirmError) {
+                            // The order is saved and the cart is gone: land on the confirmation page,
+                            // which offers a retry, instead of leaving the shopper on an empty checkout.
+                            window.location.href = `${session.return_url}&redirect_status=failed`;
+                        }
+                        return;
+                    }
+
                     const intentResponse = await fetchApi('/api/checkout/payment-intent', {
                         method: 'POST',
                         body: {
@@ -308,11 +368,12 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
 
         if (applePayEnabled) mountWallet('applePay', setCanApplePay, appleButtonMountRef);
         if (googlePayEnabled) mountWallet('googlePay', setCanGooglePay, googleButtonMountRef);
+        if (amazonPayEnabled) mountWallet('amazonPay', setCanAmazonPay, amazonButtonMountRef);
 
         return () => { cancelled = true; };
         // items/couponCode/subtotalMinor/onOrderPlaced are read via refs above
         // on purpose -- see the comment where those refs are declared.
-    }, [stripeInstance, applePayEnabled, googlePayEnabled]);
+    }, [stripeInstance, applePayEnabled, googlePayEnabled, amazonPayEnabled]);
 
     // PayPal's v6 Web SDK reports eligibility asynchronously via its own
     // findEligibleMethods() call rather than an event fired only after
@@ -453,7 +514,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         // -- see the comment where those refs are declared.
     }, [canPayPal]);
 
-    const anyAvailable = canApplePay || canGooglePay || canPayPal;
+    const anyAvailable = canApplePay || canGooglePay || canAmazonPay || canPayPal;
     // Gating the initial render itself on anyAvailable would mean the mount
     // <div>s below never attach to real DOM nodes until something is
     // already known available -- but nothing is known synchronously any
@@ -462,7 +523,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
     // A client id being configured is the one signal known up front, so it
     // gates whether the component attempts to render at all; anyAvailable
     // only controls the label/divider's visibility once eligibility settles.
-    const hasStripeWallet = Boolean(stripeInstance) && (applePayEnabled || googlePayEnabled);
+    const hasStripeWallet = Boolean(stripeInstance) && (applePayEnabled || googlePayEnabled || amazonPayEnabled);
     if (!paypalClientId && !hasStripeWallet) return null;
 
     return (
@@ -485,6 +546,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                     button height only while the wallet is actually available (no blank gap otherwise). */}
                 {applePayEnabled && <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden', minHeight: canApplePay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
                 {googlePayEnabled && <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden', minHeight: canGooglePay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
+                {amazonPayEnabled && <div ref={amazonButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canAmazonPay ? 'visible' : 'hidden', minHeight: canAmazonPay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
             </div>
             {anyAvailable && (
                 <div className="flex items-center gap-3">

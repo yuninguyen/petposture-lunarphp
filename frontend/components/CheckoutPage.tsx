@@ -150,7 +150,7 @@ const stripeJsScriptId = 'petposture-stripe-js';
 const paymentMethodOrder = { card: 0, paypal: 1, cashapp: 2, affirm: 3, afterpay_clearpay: 4, klarna: 5, amazon_pay: 6, ach_debit: 7, airwallex: 8, payoneer: 9, pingpong: 10, cod: 11 } as const;
 
 // The only methods rendered as radio rows in the Payment section.
-const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay', 'ach_debit', 'cod']);
+const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'ach_debit', 'cod']);
 
 function isRadioMethod(method: string): method is PaymentMethod {
     return radioPaymentMethods.has(method);
@@ -854,6 +854,9 @@ export default function CheckoutPage() {
             },
         ] satisfies PaymentMethodOption[])
         .filter((method): method is PaymentMethodOption & { method: PaymentMethod } => {
+            // Amazon Pay lives in the Express checkout row at the top, not in this list.
+            if (method.method === 'amazon_pay') return false;
+
             if (isStripeAltPaymentMethod(method.method)) {
                 return isStripeAltPaymentMethodEligible({
                     method: method.method,
@@ -1770,6 +1773,12 @@ export default function CheckoutPage() {
                             paypalEnvironment={selectedPayPalMethod.environment === 'sandbox' ? 'sandbox' : 'production'}
                             applePayEnabled={paymentMethods.some((method) => method.method === 'apple_pay')}
                             googlePayEnabled={paymentMethods.some((method) => method.method === 'google_pay')}
+                            amazonPayEnabled={paymentMethods.some((method) => method.method === 'amazon_pay')}
+                            onRedirectStart={() => {
+                                localStorage.removeItem('petposture_cart');
+                                localStorage.removeItem('petposture_cart_coupon');
+                                clearCoupon();
+                            }}
                             onOrderPlaced={redirectToSuccess}
                         />
                     )}
