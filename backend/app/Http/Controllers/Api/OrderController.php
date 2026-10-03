@@ -161,7 +161,7 @@ class OrderController extends Controller
         $paymentMethod = (string) (($order->meta['payment_method'] ?? '') ?: '');
         $paymentStatus = (string) (($order->meta['payment_status'] ?? '') ?: 'awaiting-payment');
 
-        $retryEligible = in_array($paymentMethod, ['card', 'cashapp', 'affirm', 'klarna'], true)
+        $retryEligible = in_array($paymentMethod, ['card', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna'], true)
             && ! in_array($paymentStatus, ['paid', 'cancelled'], true)
             && in_array($order->status, ['awaiting-payment', 'payment-offline'], true)
             && $order->created_at?->greaterThan(now()->subHours(24));

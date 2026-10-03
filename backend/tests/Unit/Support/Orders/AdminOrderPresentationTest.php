@@ -85,6 +85,9 @@ class AdminOrderPresentationTest extends TestCase
         $this->assertSame('Affirm', AdminOrderPresentation::paymentMethod([
             'payment_method' => 'affirm',
         ]));
+        $this->assertSame('Afterpay / Clearpay', AdminOrderPresentation::paymentMethod([
+            'payment_method' => 'afterpay_clearpay',
+        ]));
         $this->assertSame('Klarna', AdminOrderPresentation::paymentMethod([
             'payment_method' => 'klarna',
         ]));

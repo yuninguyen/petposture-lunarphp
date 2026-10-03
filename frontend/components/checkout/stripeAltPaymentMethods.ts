@@ -1,4 +1,10 @@
-export type StripeAltPaymentMethod = 'cashapp' | 'affirm' | 'klarna';
+export type StripeAltPaymentMethod = 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna';
+
+const stripeAltPaymentMethods: ReadonlySet<string> = new Set<StripeAltPaymentMethod>(['cashapp', 'affirm', 'afterpay_clearpay', 'klarna']);
+
+export function isStripeAltPaymentMethod(method: string): method is StripeAltPaymentMethod {
+    return stripeAltPaymentMethods.has(method);
+}
 
 type CheckoutAddress = {
     first_name: string;
@@ -24,6 +30,7 @@ type StripeAltConfirmationResult = {
 
 export type StripeAltConfirmers = {
     confirmAffirmPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
+    confirmAfterpayClearpayPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
     confirmKlarnaPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
     confirmCashappPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
 };
@@ -72,6 +79,12 @@ export function buildAffirmPaymentData({ email, billing, returnUrl }: AffirmConf
     };
 }
 
+// Same reasoning as Affirm: the server already set `shipping` on the PaymentIntent, so only
+// the billing details travel from the client.
+export function buildAfterpayClearpayPaymentData(input: AffirmConfirmationInput) {
+    return buildAffirmPaymentData(input);
+}
+
 export function buildKlarnaPaymentData(returnUrl: string) {
     return { return_url: returnUrl };
 }
@@ -91,6 +104,9 @@ export function confirmStripeAltPayment(
 ) {
     if (method === 'affirm') {
         return stripe.confirmAffirmPayment(clientSecret, data);
+    }
+    if (method === 'afterpay_clearpay') {
+        return stripe.confirmAfterpayClearpayPayment(clientSecret, data);
     }
     if (method === 'klarna') {
         return stripe.confirmKlarnaPayment(clientSecret, data);

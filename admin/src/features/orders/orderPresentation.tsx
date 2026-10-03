@@ -203,10 +203,11 @@ export function getOrderPaymentPresentation(order?: OrderPresentationPaymentSour
     };
   }
 
-  if (rawMethod === 'cashapp' || rawMethod === 'affirm' || rawMethod === 'klarna') {
+  if (rawMethod === 'cashapp' || rawMethod === 'affirm' || rawMethod === 'afterpay_clearpay' || rawMethod === 'klarna') {
     const labels = {
       cashapp: 'Cash App Pay',
       affirm: 'Affirm',
+      afterpay_clearpay: 'Afterpay / Clearpay',
       klarna: 'Klarna',
     } as const;
 

@@ -192,6 +192,7 @@ describe('orderPresentation helpers', () => {
     it.each([
       ['cashapp', 'Cash App Pay'],
       ['affirm', 'Affirm'],
+      ['afterpay_clearpay', 'Afterpay / Clearpay'],
       ['klarna', 'Klarna'],
     ])('resolves %s with a readable label', (paymentMethod, label) => {
       const presentation = getOrderPaymentPresentation({ payment_method: paymentMethod });

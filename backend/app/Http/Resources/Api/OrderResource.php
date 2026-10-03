@@ -272,10 +272,11 @@ class OrderResource extends JsonResource
             return 'Payment';
         }
 
-        if (in_array($paymentMethod, ['cashapp', 'affirm', 'klarna'], true)) {
+        if (in_array($paymentMethod, ['cashapp', 'affirm', 'afterpay_clearpay', 'klarna'], true)) {
             return [
                 'cashapp' => 'Cash App Pay',
                 'affirm' => 'Affirm',
+                'afterpay_clearpay' => 'Afterpay / Clearpay',
                 'klarna' => 'Klarna',
             ][$paymentMethod];
         }

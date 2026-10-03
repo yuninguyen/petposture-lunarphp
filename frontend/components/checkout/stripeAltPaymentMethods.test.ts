@@ -2,6 +2,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     buildAffirmPaymentData,
+    buildAfterpayClearpayPaymentData,
+    isStripeAltPaymentMethod,
     buildCashAppPaymentData,
     buildKlarnaPaymentData,
     confirmStripeAltPayment,
@@ -55,6 +57,44 @@ describe('isStripeAltPaymentMethodEligible', () => {
             return_url: returnUrl,
         });
         expect(stripe.confirmAffirmPayment.mock.calls[0][1]).not.toHaveProperty('shipping');
+    });
+
+    it('sends only billing details and the return URL to confirmAfterpayClearpayPayment', async () => {
+        const stripe = {
+            confirmAffirmPayment: vi.fn(),
+            confirmAfterpayClearpayPayment: vi.fn().mockResolvedValue({}),
+            confirmKlarnaPayment: vi.fn(),
+            confirmCashappPayment: vi.fn(),
+        };
+        vi.stubGlobal('Stripe', vi.fn().mockReturnValue(stripe));
+        const stripeInstance = window.Stripe?.('pk_test');
+        const returnUrl = 'https://shop.example/checkout/success?gateway=stripe&session_id=STRIPE-TEST';
+
+        await confirmStripeAltPayment(stripeInstance as NonNullable<typeof stripeInstance>, 'afterpay_clearpay', 'pi_secret', buildAfterpayClearpayPaymentData({
+            email: 'jane@example.com',
+            billing: { first_name: 'Jane', last_name: 'Doe', line_one: '1 Main St', city: 'Austin', state: 'TX', postcode: '78701', country: 'United States' },
+            returnUrl,
+        }));
+
+        expect(stripe.confirmAfterpayClearpayPayment).toHaveBeenCalledWith('pi_secret', {
+            payment_method: { billing_details: {
+                email: 'jane@example.com',
+                name: 'Jane Doe',
+                address: { line1: '1 Main St', city: 'Austin', state: 'TX', country: 'US', postal_code: '78701' },
+            } },
+            return_url: returnUrl,
+        });
+        expect(stripe.confirmAfterpayClearpayPayment.mock.calls[0][1]).not.toHaveProperty('shipping');
+        expect(stripe.confirmAffirmPayment).not.toHaveBeenCalled();
+    });
+
+    it('recognises exactly the Stripe alternative methods', () => {
+        for (const method of ['cashapp', 'affirm', 'afterpay_clearpay', 'klarna']) {
+            expect(isStripeAltPaymentMethod(method)).toBe(true);
+        }
+        for (const method of ['card', 'paypal', 'cod', 'apple_pay', 'afterpay']) {
+            expect(isStripeAltPaymentMethod(method)).toBe(false);
+        }
     });
 
     it('passes the Klarna and Cash App Pay argument shapes to their Stripe.js methods', async () => {

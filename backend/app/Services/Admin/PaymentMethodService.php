@@ -23,7 +23,6 @@ class PaymentMethodService
     // Listed so the admin can see them, but there is no checkout flow behind them yet.
     private const UNSUPPORTED_METHODS = [
         'ach_debit' => ['label' => 'ACH Direct Debit', 'gateway' => 'stripe'],
-        'afterpay_clearpay' => ['label' => 'Afterpay / Clearpay', 'gateway' => 'stripe'],
         'amazon_pay' => ['label' => 'Amazon Pay', 'gateway' => 'stripe'],
         // The storefront does not sell through Airwallex or Payoneer yet, so a switch for them would
         // change nothing visible. These override their registered gateways with a locked row.

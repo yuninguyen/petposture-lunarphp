@@ -281,6 +281,7 @@ class OrderResource extends Resource
                         'paypal' => 'PayPal',
                         'cashapp' => 'Cash App Pay',
                         'affirm' => 'Affirm',
+                        'afterpay_clearpay' => 'Afterpay / Clearpay',
                         'klarna' => 'Klarna',
                         default => $state ? str($state)->headline()->toString() : '—',
                     }),

@@ -28,10 +28,13 @@ import { Button } from '@/components/ui/Button';
 import { ExpressCheckout } from './checkout/ExpressCheckout';
 import {
     buildAffirmPaymentData,
+    buildAfterpayClearpayPaymentData,
     buildCashAppPaymentData,
     buildKlarnaPaymentData,
     confirmStripeAltPayment,
+    isStripeAltPaymentMethod,
     isStripeAltPaymentMethodEligible,
+    type StripeAltPaymentMethod,
 } from './checkout/stripeAltPaymentMethods';
 
 declare global {
@@ -57,6 +60,10 @@ declare global {
                 paymentIntent?: { status?: string };
             }>;
             confirmAffirmPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<{
+                error?: { message?: string };
+                paymentIntent?: { status?: string };
+            }>;
+            confirmAfterpayClearpayPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<{
                 error?: { message?: string };
                 paymentIntent?: { status?: string };
             }>;
@@ -126,10 +133,10 @@ const countryOptions = ['United States'];
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const googleMapsScriptId = 'petposture-google-places';
 const stripeJsScriptId = 'petposture-stripe-js';
-const paymentMethodOrder = { card: 0, paypal: 1, cashapp: 2, affirm: 3, klarna: 4, airwallex: 5, payoneer: 6, pingpong: 7, cod: 8 } as const;
+const paymentMethodOrder = { card: 0, paypal: 1, cashapp: 2, affirm: 3, afterpay_clearpay: 4, klarna: 5, airwallex: 6, payoneer: 7, pingpong: 8, cod: 9 } as const;
 
 // The only methods rendered as radio rows in the Payment section.
-const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'klarna', 'cod']);
+const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'cod']);
 
 function isRadioMethod(method: string): method is PaymentMethod {
     return radioPaymentMethods.has(method);
@@ -144,7 +151,7 @@ type AddressSuggestion = {
     target: AddressTarget;
 };
 
-type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'klarna' | 'airwallex' | 'payoneer' | 'pingpong';
+type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'airwallex' | 'payoneer' | 'pingpong';
 
 const redirectPaymentMethods: ReadonlySet<PaymentMethod> = new Set(['airwallex', 'payoneer', 'pingpong', 'paypal']);
 
@@ -833,7 +840,7 @@ export default function CheckoutPage() {
             },
         ] satisfies PaymentMethodOption[])
         .filter((method): method is PaymentMethodOption & { method: PaymentMethod } => {
-            if (method.method === 'cashapp' || method.method === 'affirm' || method.method === 'klarna') {
+            if (isStripeAltPaymentMethod(method.method)) {
                 return isStripeAltPaymentMethodEligible({
                     method: method.method,
                     enabled: method.enabled,
@@ -848,7 +855,7 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         const selectedMethod = form.paymentMethod;
-        const isStripeAltMethod = selectedMethod === 'cashapp' || selectedMethod === 'affirm' || selectedMethod === 'klarna';
+        const isStripeAltMethod = isStripeAltPaymentMethod(selectedMethod);
 
         if (isStripeAltMethod && !availablePaymentMethods.some((method) => method.method === selectedMethod)) {
             const fallbackMethod = availablePaymentMethods[0]?.method ?? 'cod';
@@ -1066,10 +1073,11 @@ export default function CheckoutPage() {
             );
         }
 
-        if (method.method === 'cashapp' || method.method === 'affirm' || method.method === 'klarna') {
-            const logos = {
+        if (isStripeAltPaymentMethod(method.method)) {
+            const logos: Record<StripeAltPaymentMethod, { src: string; alt: string }> = {
                 cashapp: { src: '/assets/payment/cashapp.svg', alt: 'Cash App Pay' },
                 affirm: { src: '/assets/payment/affirm.svg', alt: 'Affirm' },
+                afterpay_clearpay: { src: '/assets/payment/afterpay.svg', alt: 'Afterpay / Clearpay' },
                 klarna: { src: '/assets/payment/klarna.svg', alt: 'Klarna' },
             };
             const logo = logos[method.method];
@@ -1208,7 +1216,7 @@ export default function CheckoutPage() {
         // otherwise a selected last-row method renders its own rounded
         // corners above a square-cornered panel, mismatching the outer
         // container's real bottom edge.
-        const expandsDetailsBelow = isSelected && (method === 'card' || method === 'paypal' || method === 'cashapp' || method === 'affirm' || method === 'klarna');
+        const expandsDetailsBelow = isSelected && (method === 'card' || method === 'paypal' || isStripeAltPaymentMethod(method));
         const isFirst = index === 0;
         const isLast = index === availablePaymentMethods.length - 1;
 
@@ -1407,7 +1415,7 @@ export default function CheckoutPage() {
         return data.session;
     };
 
-    const prepareStripeAltSession = async (method: 'cashapp' | 'affirm' | 'klarna'): Promise<{
+    const prepareStripeAltSession = async (method: StripeAltPaymentMethod): Promise<{
         client_secret: string;
         intent_id: string;
         session_id: string;
@@ -1490,7 +1498,7 @@ export default function CheckoutPage() {
         setPaypalError(null);
 
         try {
-            if (form.paymentMethod === 'cashapp' || form.paymentMethod === 'affirm' || form.paymentMethod === 'klarna') {
+            if (isStripeAltPaymentMethod(form.paymentMethod)) {
                 const method = form.paymentMethod;
                 const session = await prepareStripeAltSession(method);
                 let stripe = stripeInstanceRef.current;
@@ -1526,15 +1534,14 @@ export default function CheckoutPage() {
                 }
 
                 const { billingAddress } = buildOrderAddresses();
+                const billingConfirmation = { email: form.email, billing: billingAddress, returnUrl: session.return_url };
                 const confirmationData = method === 'affirm'
-                    ? buildAffirmPaymentData({
-                        email: form.email,
-                        billing: billingAddress,
-                        returnUrl: session.return_url,
-                    })
-                    : method === 'klarna'
-                        ? buildKlarnaPaymentData(session.return_url)
-                        : buildCashAppPaymentData(session.return_url);
+                    ? buildAffirmPaymentData(billingConfirmation)
+                    : method === 'afterpay_clearpay'
+                        ? buildAfterpayClearpayPaymentData(billingConfirmation)
+                        : method === 'klarna'
+                            ? buildKlarnaPaymentData(session.return_url)
+                            : buildCashAppPaymentData(session.return_url);
                 const confirmation = await confirmStripeAltPayment(stripe, method, session.client_secret, confirmationData);
 
                 if (confirmation.error?.message) {
@@ -2026,14 +2033,16 @@ export default function CheckoutPage() {
                                             </div>
                                         )}
 
-                                        {(method.method === 'cashapp' || method.method === 'affirm' || method.method === 'klarna') && form.paymentMethod === method.method && (
+                                        {isStripeAltPaymentMethod(method.method) && form.paymentMethod === method.method && (
                                             <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
                                                 <p className="text-sm leading-[1.45] text-[#6f7782]">
                                                     {method.method === 'cashapp'
                                                         ? "You'll be redirected to Cash App Pay to complete your purchase"
                                                         : method.method === 'affirm'
                                                             ? "You'll be redirected to Affirm - Pay Over Time to complete your purchase"
-                                                            : "You'll be redirected to Pay with Klarna to complete your purchase"}
+                                                            : method.method === 'afterpay_clearpay'
+                                                                ? "You'll be redirected to Afterpay / Clearpay to complete your purchase"
+                                                                : "You'll be redirected to Pay with Klarna to complete your purchase"}
                                                 </p>
                                             </div>
                                         )}

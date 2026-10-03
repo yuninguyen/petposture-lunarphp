@@ -25,6 +25,7 @@ use App\Observers\SettingCacheObserver;
 use App\Observers\SiteMediaCacheObserver;
 use App\Observers\SiteMediaLibraryCacheObserver;
 use App\Payments\Gateways\AffirmGateway;
+use App\Payments\Gateways\AfterpayClearpayGateway;
 use App\Payments\Gateways\AirwallexGateway;
 use App\Payments\Gateways\CashAppPayGateway;
 use App\Payments\Gateways\CashOnDeliveryGateway;
@@ -74,6 +75,7 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(PayPalGateway::class),
                 new CashAppPayGateway,
                 new AffirmGateway,
+                new AfterpayClearpayGateway,
                 new KlarnaGateway,
                 $app->make(AirwallexGateway::class),
                 $app->make(PayoneerGateway::class),

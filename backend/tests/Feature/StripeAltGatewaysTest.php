@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Payments\Gateways\AffirmGateway;
+use App\Payments\Gateways\AfterpayClearpayGateway;
 use App\Payments\Gateways\CashAppPayGateway;
 use App\Payments\Gateways\KlarnaGateway;
 use App\Payments\PaymentGatewayManager;
@@ -33,7 +34,7 @@ class StripeAltGatewaysTest extends TestCase
         $response->assertOk();
         $methods = collect($response->json('methods'))->keyBy('method');
 
-        foreach (['cashapp', 'affirm', 'klarna'] as $method) {
+        foreach (['cashapp', 'affirm', 'afterpay_clearpay', 'klarna'] as $method) {
             $this->assertFalse($methods->get($method)['enabled'] ?? true);
             $this->assertSame('stripe', $methods->get($method)['gateway'] ?? null);
             $this->assertSame('redirect', $methods->get($method)['collection'] ?? null);
@@ -85,9 +86,11 @@ class StripeAltGatewaysTest extends TestCase
 
     public function test_each_alternative_gateway_prepares_stripe_redirect_meta_from_the_session_context(): void
     {
-        config()->set('services.stripe.alt_methods', ['cashapp', 'affirm', 'klarna']);
+        config()->set('services.stripe.alt_methods', ['cashapp', 'affirm', 'afterpay_clearpay', 'klarna']);
         $manager = app(PaymentGatewayManager::class);
         $definitions = collect($manager->supportedMethods())->keyBy('method');
+        $this->assertSame(100, $definitions->get('afterpay_clearpay')['min_amount_minor']);
+        $this->assertSame(400_000, $definitions->get('afterpay_clearpay')['max_amount_minor']);
         $this->assertSame(50, $definitions->get('cashapp')['min_amount_minor']);
         $this->assertNull($definitions->get('cashapp')['max_amount_minor']);
         $this->assertSame(3500, $definitions->get('affirm')['min_amount_minor']);
@@ -98,6 +101,7 @@ class StripeAltGatewaysTest extends TestCase
         foreach ([
             'cashapp' => CashAppPayGateway::class,
             'affirm' => AffirmGateway::class,
+            'afterpay_clearpay' => AfterpayClearpayGateway::class,
             'klarna' => KlarnaGateway::class,
         ] as $method => $class) {
             $gateway = $manager->forMethod($method);

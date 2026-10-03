@@ -1978,7 +1978,7 @@ class CheckoutApiTest extends TestCase
         $cardMethod = collect($methodsResponse->json('methods'))
             ->firstWhere('method', 'card');
         $this->assertNotNull($cardMethod);
-        $this->assertSame('Credit card', $cardMethod['label']);
+        $this->assertSame('Credit or Debit Card', $cardMethod['label']);
 
         $this->makeAdmin();
         $variant = $this->createPurchasableVariant();
@@ -2415,6 +2415,37 @@ class CheckoutApiTest extends TestCase
             // Stripe also rejects payment_method_data[...] without a type.
             && ! array_key_exists('payment_method_data[type]', $request->data())
             && ! array_key_exists('payment_method_data[billing_details][email]', $request->data()));
+    }
+
+    public function test_stripe_alt_session_supports_afterpay_clearpay_and_sends_shipping_but_no_payment_method_data(): void
+    {
+        config()->set('services.stripe.key', 'pk_test_alt_checkout');
+        config()->set('services.stripe.secret', 'sk_test_alt_checkout');
+        config()->set('services.stripe.alt_methods', ['afterpay_clearpay']);
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+        Http::fake([
+            'https://api.stripe.com/v1/payment_intents' => Http::response([
+                'id' => 'pi_alt_afterpay_1',
+                'client_secret' => 'pi_alt_afterpay_1_secret',
+                'amount' => 8999,
+                'currency' => 'usd',
+                'status' => 'requires_action',
+            ]),
+        ]);
+        $variant = $this->createPurchasableVariant();
+
+        $this->postJson('/api/checkout/stripe-alt-session', array_replace($this->stripeAltSessionPayload($variant), ['payment_method' => 'afterpay_clearpay']))
+            ->assertOk()
+            ->assertJsonPath('session.intent_id', 'pi_alt_afterpay_1');
+
+        // Afterpay needs the shipping address on the intent (set with the secret key); its
+        // billing details are sent by the client at confirm time, like Affirm.
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://api.stripe.com/v1/payment_intents'
+            && $request['payment_method_types[0]'] === 'afterpay_clearpay'
+            && $request['shipping[name]'] === 'Jane Doe'
+            && $request['shipping[address][line1]'] === '123 Congress Ave'
+            && ! array_key_exists('payment_method_data[type]', $request->data()));
     }
 
     public function test_stripe_alt_session_attaches_billing_details_only_for_klarna(): void
