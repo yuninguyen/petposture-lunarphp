@@ -355,6 +355,7 @@ export default function CheckoutPage() {
     // intent and order as long as nothing in the cart, address or total changed.
     const airwallexAttemptRef = useRef<{ key: string; session: AirwallexSession; orderAccess: { reference: string; trackingToken: string } } | null>(null);
     const [airwallexError, setAirwallexError] = useState<string | null>(null);
+    const [airwallexCardEmpty, setAirwallexCardEmpty] = useState(true);
     const airwallexEnv = paymentMethods.find((method) => method.method === 'airwallex')?.env ?? null;
     const [paymentMethodsLoaded, setPaymentMethodsLoaded] = useState(false);
     // The built-in fallback list is only for an unreachable/invalid API. An empty list
@@ -491,12 +492,15 @@ export default function CheckoutPage() {
         let cancelled = false;
         let mounted: AirwallexCardFields | null = null;
         setAirwallexError(null);
+        setAirwallexCardEmpty(true);
 
         mountAirwallexCardFields(airwallexEnv, {
             cardNumber: 'airwallex-card-number',
             expiry: 'airwallex-card-expiry',
             cvc: 'airwallex-card-cvc',
             authForm: 'airwallex-3ds',
+        }, ({ empty }) => {
+            if (!cancelled) setAirwallexCardEmpty(empty);
         }).then((fields) => {
             if (cancelled) {
                 fields.destroy();
@@ -2210,9 +2214,12 @@ export default function CheckoutPage() {
                                             <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
                                                 {/* Laid out exactly like the Stripe card form above; the three fields are Airwallex iframes. */}
                                                 <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-[#f4cdb7]">
-                                                    {/* Airwallex draws the card-brand logos itself on the right of this field (all of them while empty,
-                                                        the detected one while typing); the page cannot read the brand, so they are left visible. */}
-                                                    <div id="airwallex-card-number" className="min-w-0 flex-1" />
+                                                    {/* Airwallex draws card-brand logos on the right of this field: every brand while it is empty,
+                                                        only the detected one once the shopper types. Only the latter is wanted, so while empty the
+                                                        field is made wider than the box and clipped; the iframe reports empty/non-empty to the page. */}
+                                                    <div className="min-w-0 flex-1 overflow-hidden">
+                                                        <div id="airwallex-card-number" className={airwallexCardEmpty ? 'w-[calc(100%+220px)]' : 'w-full'} />
+                                                    </div>
                                                     <Lock size={15} className="ml-2 flex-shrink-0 text-[#9ca3af]" />
                                                 </div>
                                                 <div className="grid gap-3 md:grid-cols-2">

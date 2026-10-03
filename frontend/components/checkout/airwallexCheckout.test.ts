@@ -37,6 +37,24 @@ describe('mountAirwallexCardFields', () => {
         expect(cvc.destroy).toHaveBeenCalled();
     });
 
+    it('reports empty/brand from the card number iframe messages and ignores other origins', async () => {
+        installSdk({ cardNumber: { mount: vi.fn(), destroy: vi.fn() }, expiry: { mount: vi.fn() }, cvc: { mount: vi.fn() } });
+        const onState = vi.fn();
+
+        const fields = await mountAirwallexCardFields('demo-state', containers, onState);
+        const post = (origin: string, data: unknown) => window.dispatchEvent(new MessageEvent('message', { origin, data }));
+        post('https://checkout-demo.airwallex.com', { type: 'cardNumber', code: 'onChange', empty: false, brand: 'mastercard' });
+        post('https://checkout-demo.airwallex.com', JSON.stringify({ type: 'cardNumber', code: 'onChange', empty: true, brand: 'default' }));
+        post('https://checkout-demo.airwallex.com', { type: 'cvc', code: 'onReady' });
+        post('https://evil.example.com', { type: 'cardNumber', code: 'onChange', empty: false, brand: 'visa' });
+
+        expect(onState.mock.calls).toEqual([[{ empty: false, brand: 'mastercard' }], [{ empty: true, brand: 'default' }]]);
+
+        fields.destroy();
+        post('https://checkout-demo.airwallex.com', { type: 'cardNumber', code: 'onChange', empty: false, brand: 'visa' });
+        expect(onState).toHaveBeenCalledTimes(2);
+    });
+
     it('fails with a readable message when Airwallex does not create an element', async () => {
         installSdk({ cardNumber: { mount: vi.fn() }, expiry: null, cvc: { mount: vi.fn() } });
 

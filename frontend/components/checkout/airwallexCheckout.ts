@@ -67,7 +67,39 @@ function initAirwallexSdk(env: string): Promise<void> {
 
 // Split card fields (number, expiry, CVC) rendered by Airwallex inside our own checkout page. The
 // PaymentIntent does not exist yet at this point; its id and secret are passed to confirm() later.
-export async function mountAirwallexCardFields(env: string, containers: AirwallexCardContainers): Promise<AirwallexCardFields> {
+export type AirwallexCardNumberState = { empty: boolean; brand: string };
+
+// The card number iframe tells the page about every change by posting {type:'cardNumber', code:'onChange',
+// empty, brand, ...} to the parent window (the SDK's own element.on() never fired in testing), so the
+// page listens for those messages from Airwallex's origin.
+function listenForCardNumberState(onState: (state: AirwallexCardNumberState) => void): () => void {
+    const handler = (event: MessageEvent) => {
+        if (!/^https:\/\/[a-z0-9.-]+\.airwallex\.com$/i.test(event.origin)) return;
+
+        let data: unknown = event.data;
+        if (typeof data === 'string') {
+            try {
+                data = JSON.parse(data);
+            } catch {
+                return;
+            }
+        }
+
+        const message = data as { type?: string; code?: string; empty?: boolean; brand?: string } | null;
+        if (message?.type === 'cardNumber' && typeof message.empty === 'boolean') {
+            onState({ empty: message.empty, brand: message.brand ?? 'default' });
+        }
+    };
+
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+}
+
+export async function mountAirwallexCardFields(
+    env: string,
+    containers: AirwallexCardContainers,
+    onCardNumberState?: (state: AirwallexCardNumberState) => void,
+): Promise<AirwallexCardFields> {
     await initAirwallexSdk(env);
 
     const sdk = window.AirwallexComponentsSDK;
@@ -89,6 +121,8 @@ export async function mountAirwallexCardFields(env: string, containers: Airwalle
         throw new Error('The card form could not be started. Please try again.');
     }
 
+    const stopListening = onCardNumberState ? listenForCardNumberState(onCardNumberState) : () => undefined;
+
     cardNumber.mount(containers.cardNumber);
     expiry.mount(containers.expiry);
     cvc.mount(containers.cvc);
@@ -96,6 +130,7 @@ export async function mountAirwallexCardFields(env: string, containers: Airwalle
     return {
         cardNumber,
         destroy: () => {
+            stopListening();
             for (const element of [cardNumber, expiry, cvc]) element.destroy?.();
         },
     };
