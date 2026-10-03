@@ -26,7 +26,7 @@ import { getShippingAmount } from '@/lib/pricing';
 import { getAttributionData } from '@/lib/attribution';
 import { Button } from '@/components/ui/Button';
 import { ExpressCheckout } from './checkout/ExpressCheckout';
-import { redirectToAirwallexCheckout } from './checkout/airwallexCheckout';
+import { confirmAirwallexCardPayment, mountAirwallexCardFields, type AirwallexCardFields } from './checkout/airwallexCheckout';
 import {
     buildAffirmPaymentData,
     buildAfterpayClearpayPaymentData,
@@ -188,6 +188,16 @@ type PaymentMethodOption = {
     publishable_key?: string | null;
     client_id?: string | null;
     environment?: string | null;
+    // Airwallex.js environment ('demo' | 'prod'), sent with the Airwallex method.
+    env?: string | null;
+};
+
+type AirwallexSession = {
+    client_secret: string;
+    intent_id: string;
+    session_id: string;
+    return_url: string;
+    mode: string;
 };
 
 type PreparedPaymentIntent = {
@@ -340,6 +350,12 @@ export default function CheckoutPage() {
     const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
     const [activeAddressTarget, setActiveAddressTarget] = useState<AddressTarget | null>(null);
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>([]);
+    const airwallexFieldsRef = useRef<AirwallexCardFields | null>(null);
+    // The order and PaymentIntent of the last Airwallex attempt: a declined card is retried on the same
+    // intent and order as long as nothing in the cart, address or total changed.
+    const airwallexAttemptRef = useRef<{ key: string; session: AirwallexSession; orderAccess: { reference: string; trackingToken: string } } | null>(null);
+    const [airwallexError, setAirwallexError] = useState<string | null>(null);
+    const airwallexEnv = paymentMethods.find((method) => method.method === 'airwallex')?.env ?? null;
     const [paymentMethodsLoaded, setPaymentMethodsLoaded] = useState(false);
     // The built-in fallback list is only for an unreachable/invalid API. An empty list
     // from a healthy API means the admin switched every method off, and must stay empty.
@@ -466,6 +482,38 @@ export default function CheckoutPage() {
             cancelled = true;
         };
     }, []);
+
+    // Airwallex's card fields live inside this page: mount them while Airwallex is the selected method
+    // and tear them down when the shopper picks something else.
+    useEffect(() => {
+        if (form.paymentMethod !== 'airwallex' || !airwallexEnv) return;
+
+        let cancelled = false;
+        let mounted: AirwallexCardFields | null = null;
+        setAirwallexError(null);
+
+        mountAirwallexCardFields(airwallexEnv, {
+            cardNumber: 'airwallex-card-number',
+            expiry: 'airwallex-card-expiry',
+            cvc: 'airwallex-card-cvc',
+            authForm: 'airwallex-3ds',
+        }).then((fields) => {
+            if (cancelled) {
+                fields.destroy();
+                return;
+            }
+            mounted = fields;
+            airwallexFieldsRef.current = fields;
+        }).catch((error) => {
+            if (!cancelled) setAirwallexError(error instanceof Error ? error.message : 'The card form could not be loaded.');
+        });
+
+        return () => {
+            cancelled = true;
+            mounted?.destroy();
+            airwallexFieldsRef.current = null;
+        };
+    }, [form.paymentMethod, airwallexEnv]);
 
     useEffect(() => {
         setForm((prev) => ({
@@ -1011,8 +1059,9 @@ export default function CheckoutPage() {
     };
 
     const renderPaymentBadges = (method: PaymentMethodOption) => {
-        if (method.method === 'card') {
-            const detectedIcon = form.paymentMethod === 'card' ? cardBrandIcons[detectedCardBrand] : undefined;
+        if (method.method === 'card' || method.method === 'airwallex') {
+            // Only the Stripe card form can tell which brand is being typed; Airwallex's fields are cross-origin.
+            const detectedIcon = method.method === 'card' && form.paymentMethod === 'card' ? cardBrandIcons[detectedCardBrand] : undefined;
 
             if (detectedIcon) {
                 return (
@@ -1523,36 +1572,60 @@ export default function CheckoutPage() {
 
         try {
             if (form.paymentMethod === 'airwallex') {
-                const session = await prepareStripeAltSession('airwallex');
-                const orderAccess = await placeOrder({ intent_id: session.intent_id, session_id: session.session_id });
-                sessionStorage.setItem(`petposture_payment_access:${session.session_id}`, JSON.stringify({
-                    email: form.email,
-                    trackingToken: orderAccess.trackingToken,
-                }));
+                const fields = airwallexFieldsRef.current;
+                if (!fields) {
+                    throw new Error('The card form is still loading. Please try again in a moment.');
+                }
+                setAirwallexError(null);
 
-                localStorage.removeItem('petposture_cart');
-                localStorage.removeItem('petposture_cart_coupon');
-                clearCoupon();
+                // Reuse the previous attempt (same order, same intent) when the shopper only has to fix
+                // the card; anything that changes what is being bought starts a fresh order.
+                const { shippingAddress } = buildOrderAddresses();
+                const attemptKey = JSON.stringify([
+                    items.map((item) => [item.variantId, item.quantity]),
+                    form.shippingMethod,
+                    form.email,
+                    shippingAddress,
+                    coupon.discountAmount > 0 ? coupon.code : null,
+                    Math.round(finalTotal * 100),
+                ]);
+                let attempt = airwallexAttemptRef.current;
+
+                if (!attempt || attempt.key !== attemptKey) {
+                    const session = await prepareStripeAltSession('airwallex');
+                    const orderAccess = await placeOrder({ intent_id: session.intent_id, session_id: session.session_id });
+                    sessionStorage.setItem(`petposture_payment_access:${session.session_id}`, JSON.stringify({
+                        email: form.email,
+                        trackingToken: orderAccess.trackingToken,
+                    }));
+                    attempt = { key: attemptKey, session, orderAccess };
+                    airwallexAttemptRef.current = attempt;
+                }
+
+                const { session } = attempt;
+                const finishAirwallex = () => {
+                    localStorage.removeItem('petposture_cart');
+                    localStorage.removeItem('petposture_cart_coupon');
+                    clearCoupon();
+                    window.location.href = session.mode === 'placeholder'
+                        ? session.return_url
+                        : `${session.return_url}&redirect_status=succeeded`;
+                };
 
                 if (session.mode === 'placeholder') {
-                    window.location.href = session.return_url;
+                    finishAirwallex();
                     return;
                 }
 
-                // The order exists (payment pending); a failure to open Airwallex lands on the
-                // confirmation page, which shows the unpaid order instead of an empty checkout.
                 try {
-                    await redirectToAirwallexCheckout({
-                        env: session.env ?? 'demo',
-                        intent_id: session.intent_id,
-                        client_secret: session.client_secret,
-                        currency: session.currency ?? 'USD',
-                        return_url: session.return_url,
-                    });
-                } catch (airwallexError) {
-                    console.error(airwallexError);
-                    window.location.href = `${session.return_url}&redirect_status=failed`;
+                    await confirmAirwallexCardPayment(fields, { intent_id: session.intent_id, client_secret: session.client_secret });
+                } catch (cardError) {
+                    // Stay on the checkout so the card can be corrected; the cart is kept until the payment is accepted.
+                    setAirwallexError(cardError instanceof Error ? cardError.message : 'Your card could not be processed.');
+                    return;
                 }
+
+                finishAirwallex();
                 return;
             }
 
@@ -2014,13 +2087,13 @@ export default function CheckoutPage() {
                                                         }}
                                                         className="h-4 w-4 rounded-full accent-[#1a1a1a] border-[#1a1a1a] text-[#1a1a1a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a1a1a] focus-visible:ring-offset-2"
                                                     />
-                                                    <span className="text-[14px] font-semibold text-[#2d3742]">{method.label}</span>
+                                                    <span className="text-[14px] font-semibold text-[#2d3742]">{method.method === 'airwallex' ? 'Credit or Debit Card' : method.label}</span>
                                                 </div>
                                                 <div className="flex flex-shrink-0 items-center">
                                                     {renderPaymentBadges(method)}
                                                 </div>
                                             </div>
-                                            {method.description ? (
+                                            {method.description && method.method !== 'airwallex' ? (
                                                 <p className="mt-1 pl-8 pr-2 text-sm leading-[1.45] text-[#6f7782]">{method.description}</p>
                                             ) : null}
                                             {method.mode === 'placeholder' && method.method === 'paypal' ? (
@@ -2126,9 +2199,25 @@ export default function CheckoutPage() {
 
                                         {method.method === 'airwallex' && form.paymentMethod === 'airwallex' && (
                                             <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
-                                                <p className="text-sm leading-[1.45] text-[#6f7782]">
-                                                    You&apos;ll be redirected to Airwallex to complete your purchase
-                                                </p>
+                                                {/* The three fields below are rendered by Airwallex (secure iframes) once mounted. */}
+                                                <div>
+                                                    <p className="mb-1.5 text-[13px] font-medium text-[#555555]">Card number</p>
+                                                    <div id="airwallex-card-number" className="min-h-[46px] rounded-[6px] border border-[#d9d9d9] bg-white px-3.5 py-2.5" />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <p className="mb-1.5 text-[13px] font-medium text-[#555555]">Expiration date (MM / YY)</p>
+                                                        <div id="airwallex-card-expiry" className="min-h-[46px] rounded-[6px] border border-[#d9d9d9] bg-white px-3.5 py-2.5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="mb-1.5 text-[13px] font-medium text-[#555555]">Security code</p>
+                                                        <div id="airwallex-card-cvc" className="min-h-[46px] rounded-[6px] border border-[#d9d9d9] bg-white px-3.5 py-2.5" />
+                                                    </div>
+                                                </div>
+                                                <div id="airwallex-3ds" />
+                                                {airwallexError ? (
+                                                    <p role="alert" className="text-sm font-medium text-[#b42318]">{airwallexError}</p>
+                                                ) : null}
                                             </div>
                                         )}
 

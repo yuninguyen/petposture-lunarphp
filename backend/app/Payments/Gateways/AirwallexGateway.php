@@ -32,7 +32,7 @@ class AirwallexGateway implements PaymentGatewayInterface
             gateway: 'airwallex',
             collectionType: 'redirect',
             paymentStatus: 'pending',
-            instructions: 'You will be redirected to Airwallex to complete payment.',
+            instructions: 'Pay by card through Airwallex.',
             meta: [
                 'payment_provider_mode' => $this->airwallexService->isConfigured() ? 'configured' : 'placeholder',
                 'airwallex_session_id' => $paymentContext['session_id'] ?? null,
@@ -50,11 +50,13 @@ class AirwallexGateway implements PaymentGatewayInterface
             'label' => $this->label(),
             'gateway' => 'airwallex',
             'collection' => 'redirect',
-            'description' => 'Pay via card, Apple Pay, Google Pay, and more through Airwallex.',
+            'description' => 'Pay by card through Airwallex.',
+            // Airwallex.js environment ('demo' or 'prod'); the card fields are mounted before any intent exists.
+            'env' => $this->airwallexService->sdkEnvironment(),
             // Off until AIRWALLEX_CHECKOUT_ENABLED is set, like the Stripe method allowlist.
             'enabled' => $configured && (bool) config('services.airwallex.checkout_enabled', false),
             'mode' => $configured ? 'configured' : 'placeholder',
-            'brands' => ['airwallex'],
+            'brands' => ['visa', 'mastercard', 'amex', 'discover', 'diners', 'jcb', 'unionpay'],
         ];
     }
 }

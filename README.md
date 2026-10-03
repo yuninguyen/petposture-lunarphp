@@ -499,22 +499,28 @@ and answers 409 while it is `processing`/`succeeded`, so a second payment cannot
 are full-amount only. Optional: subscribe the Stripe webhook endpoint to `payment_intent.processing`
 too (the handler already records it as pending).
 
-### Airwallex (Hosted Payment Page)
+### Airwallex (card fields in the checkout)
 
-The "Airwallex" row is a checkout method that sends the shopper to Airwallex's hosted payment page
-(card and whatever wallets the Airwallex account has switched on). It is shown only when Airwallex is
-configured **and** `AIRWALLEX_CHECKOUT_ENABLED=true` in `backend/.env` (leave it off until the webhook
-below is registered; changing it needs a backend container recreate and a Cloudflare cache purge, like
-`STRIPE_ALT_PAYMENT_METHODS`). Flow: `POST /api/checkout/airwallex-session` creates a PaymentIntent
-(`/pa/payment_intents/create`, with `return_url`, `metadata.session_id`, `merchant_order_id` and the
-shipping address) → the frontend creates the pending order with `payment_context {intent_id, session_id}`
-→ Airwallex.js `redirectToCheckout` (script from `static.airwallex.com`, allowed in the CSP) → the shopper
-returns to `/checkout/success?gateway=airwallex&session_id=…`. The order is marked paid only by the
-`payment_intent.succeeded` webhook (`POST /api/webhooks/airwallex`, signature `x-signature`/`x-timestamp`);
-register that URL in the Airwallex Dashboard → Developer → Webhooks (sandbox and live separately) with
-the `payment_intent.*` and `payment_attempt.*` events. The order is found by `meta.airwallex_intent_id`
-(fallback `metadata.session_id`). Admin full refunds call `/pa/refunds/create`. Not covered yet: a retry
-payment for failed Airwallex orders (the confirmation page hides the retry panel for them).
+The "Airwallex" method shows as "Credit or Debit Card" and takes the card **inside the checkout page**
+with Airwallex's split card elements (card number, expiry, CVC, rendered by Airwallex.js from
+`static.airwallex.com`, allowed in the CSP), so the shopper never leaves the site. It is offered only when
+Airwallex is configured **and** `AIRWALLEX_CHECKOUT_ENABLED=true` in `backend/.env` (changing it needs a
+backend container recreate and a Cloudflare cache purge, like `STRIPE_ALT_PAYMENT_METHODS`). Turning
+Stripe's "Credit or Debit Card" off in the admin and Airwallex on swaps the card gateway; Apple Pay /
+Google Pay in the Express row still run on Stripe (their own switches). Flow: the fields are mounted when
+the method is selected (the intent does not exist yet) → on "Complete order",
+`POST /api/checkout/airwallex-session` creates a PaymentIntent (`/pa/payment_intents/create`, with
+`return_url`, `metadata.session_id`, `merchant_order_id`, customer and shipping address) → the frontend
+creates the pending order with `payment_context {intent_id, session_id}` → `confirm()` on the card number
+element (3D Secure renders in `#airwallex-3ds`) → the shopper lands on
+`/checkout/success?gateway=airwallex&session_id=…`. A declined card shows the error under the fields and is
+retried on the same order and intent while the cart, address and total are unchanged; the cart is only
+cleared once the payment is accepted. The order is marked paid **only** by the `payment_intent.succeeded`
+webhook (`POST /api/webhooks/airwallex`, signature `x-signature`/`x-timestamp`); register that URL in the
+Airwallex Dashboard → Developer → Webhooks (sandbox and live separately) with the `payment_intent.*` and
+`payment_attempt.*` events. The order is found by `meta.airwallex_intent_id` (fallback
+`metadata.session_id`). Admin full refunds call `/pa/refunds/create`. Not covered yet: a retry payment for an
+Airwallex order the shopper left unpaid (the confirmation page hides the retry panel for them).
 
 ### Admin switches for checkout payment methods
 
