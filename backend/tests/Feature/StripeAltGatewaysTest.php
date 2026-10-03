@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Payments\Gateways\AchDebitGateway;
 use App\Payments\Gateways\AffirmGateway;
 use App\Payments\Gateways\AfterpayClearpayGateway;
 use App\Payments\Gateways\AmazonPayGateway;
@@ -35,7 +36,7 @@ class StripeAltGatewaysTest extends TestCase
         $response->assertOk();
         $methods = collect($response->json('methods'))->keyBy('method');
 
-        foreach (['cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay'] as $method) {
+        foreach (['cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay', 'ach_debit'] as $method) {
             $this->assertFalse($methods->get($method)['enabled'] ?? true);
             $this->assertSame('stripe', $methods->get($method)['gateway'] ?? null);
             $this->assertSame('redirect', $methods->get($method)['collection'] ?? null);
@@ -87,9 +88,11 @@ class StripeAltGatewaysTest extends TestCase
 
     public function test_each_alternative_gateway_prepares_stripe_redirect_meta_from_the_session_context(): void
     {
-        config()->set('services.stripe.alt_methods', ['cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay']);
+        config()->set('services.stripe.alt_methods', ['cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay', 'ach_debit']);
         $manager = app(PaymentGatewayManager::class);
         $definitions = collect($manager->supportedMethods())->keyBy('method');
+        $this->assertSame(50, $definitions->get('ach_debit')['min_amount_minor']);
+        $this->assertNull($definitions->get('ach_debit')['max_amount_minor']);
         $this->assertSame(50, $definitions->get('amazon_pay')['min_amount_minor']);
         $this->assertNull($definitions->get('amazon_pay')['max_amount_minor']);
         $this->assertSame(100, $definitions->get('afterpay_clearpay')['min_amount_minor']);
@@ -107,6 +110,7 @@ class StripeAltGatewaysTest extends TestCase
             'afterpay_clearpay' => AfterpayClearpayGateway::class,
             'klarna' => KlarnaGateway::class,
             'amazon_pay' => AmazonPayGateway::class,
+            'ach_debit' => AchDebitGateway::class,
         ] as $method => $class) {
             $gateway = $manager->forMethod($method);
             $this->assertInstanceOf($class, $gateway);

@@ -2476,6 +2476,35 @@ class CheckoutApiTest extends TestCase
             && ! array_key_exists('payment_method_data[type]', $request->data()));
     }
 
+    public function test_stripe_alt_session_maps_ach_debit_to_us_bank_account_with_instant_verification(): void
+    {
+        config()->set('services.stripe.key', 'pk_test_alt_checkout');
+        config()->set('services.stripe.secret', 'sk_test_alt_checkout');
+        config()->set('services.stripe.alt_methods', ['ach_debit']);
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+        Http::fake([
+            'https://api.stripe.com/v1/payment_intents' => Http::response([
+                'id' => 'pi_alt_ach_1',
+                'client_secret' => 'pi_alt_ach_1_secret',
+                'amount' => 8999,
+                'currency' => 'usd',
+                'status' => 'requires_payment_method',
+            ]),
+        ]);
+        $variant = $this->createPurchasableVariant();
+
+        $this->postJson('/api/checkout/stripe-alt-session', array_replace($this->stripeAltSessionPayload($variant), ['payment_method' => 'ach_debit']))
+            ->assertOk()
+            ->assertJsonPath('session.intent_id', 'pi_alt_ach_1');
+
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://api.stripe.com/v1/payment_intents'
+            && $request['payment_method_types[0]'] === 'us_bank_account'
+            && $request['payment_method_options[us_bank_account][verification_method]'] === 'instant'
+            && $request['metadata[payment_method]'] === 'ach_debit'
+            && ! array_key_exists('payment_method_data[type]', $request->data()));
+    }
+
     public function test_stripe_alt_session_attaches_billing_details_only_for_klarna(): void
     {
         config()->set('services.stripe.key', 'pk_test_alt_checkout');
@@ -2654,6 +2683,40 @@ class CheckoutApiTest extends TestCase
         $order->refresh();
         $this->assertSame('card', $order->meta['payment_method']);
         $this->assertSame('paid', $order->meta['payment_status']);
+    }
+
+    public function test_ach_order_cannot_open_a_second_payment_while_stripe_is_still_processing_the_first(): void
+    {
+        config()->set('services.stripe.alt_methods', ['ach_debit']);
+        config()->set('services.stripe.key', 'pk_test_alt_checkout');
+        config()->set('services.stripe.secret', 'sk_test_alt_checkout');
+        config()->set('services.stripe.webhook_secret', null);
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+
+        $variant = $this->createPurchasableVariant();
+        $placeResponse = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'ach_debit',
+            'payment_context' => ['intent_id' => 'pi_ach_processing_1', 'session_id' => 'STRIPE-ACH-PROCESSING'],
+        ]));
+        $placeResponse->assertCreated();
+
+        Http::fake([
+            'https://api.stripe.com/v1/payment_intents/pi_ach_processing_1' => Http::response([
+                'id' => 'pi_ach_processing_1',
+                'status' => 'processing',
+                'amount' => 8999,
+                'currency' => 'usd',
+            ]),
+        ]);
+
+        $this->postJson('/api/orders/retry-payment', [
+            'tracking_token' => $placeResponse->json('order.tracking_access_token'),
+            'email' => 'guest@petposture.com',
+        ])->assertStatus(409);
+
+        $order = Order::query()->findOrFail($placeResponse->json('order.id'));
+        $this->assertSame('pi_ach_processing_1', $order->meta['payment_intent_id'], 'The in-flight payment intent must not be replaced.');
     }
 
     private function checkoutPayload(ProductVariant $variant, array $overrides = []): array

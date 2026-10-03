@@ -203,13 +203,14 @@ export function getOrderPaymentPresentation(order?: OrderPresentationPaymentSour
     };
   }
 
-  if (rawMethod === 'cashapp' || rawMethod === 'affirm' || rawMethod === 'afterpay_clearpay' || rawMethod === 'klarna' || rawMethod === 'amazon_pay') {
+  if (rawMethod === 'cashapp' || rawMethod === 'affirm' || rawMethod === 'afterpay_clearpay' || rawMethod === 'klarna' || rawMethod === 'amazon_pay' || rawMethod === 'ach_debit') {
     const labels = {
       cashapp: 'Cash App Pay',
       affirm: 'Affirm',
       afterpay_clearpay: 'Afterpay / Clearpay',
       klarna: 'Klarna',
       amazon_pay: 'Amazon Pay',
+      ach_debit: 'ACH Direct Debit',
     } as const;
 
     return {

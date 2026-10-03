@@ -94,6 +94,9 @@ class AdminOrderPresentationTest extends TestCase
         $this->assertSame('Amazon Pay', AdminOrderPresentation::paymentMethod([
             'payment_method' => 'amazon_pay',
         ]));
+        $this->assertSame('ACH Direct Debit', AdminOrderPresentation::paymentMethod([
+            'payment_method' => 'ach_debit',
+        ]));
     }
 
     public function test_money_formatting_with_usd_fallback_and_explicit_currency(): void

@@ -161,13 +161,31 @@ class OrderController extends Controller
         $paymentMethod = (string) (($order->meta['payment_method'] ?? '') ?: '');
         $paymentStatus = (string) (($order->meta['payment_status'] ?? '') ?: 'awaiting-payment');
 
-        $retryEligible = in_array($paymentMethod, ['card', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay'], true)
+        $retryEligible = in_array($paymentMethod, ['card', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay', 'ach_debit'], true)
             && ! in_array($paymentStatus, ['paid', 'cancelled'], true)
             && in_array($order->status, ['awaiting-payment', 'payment-offline'], true)
             && $order->created_at?->greaterThan(now()->subHours(24));
 
         if (! $retryEligible) {
             return response()->json(['message' => 'Payment retry is unavailable.'], 422);
+        }
+
+        // A bank debit (ACH) stays "processing" for days while the order is still awaiting
+        // payment, and the webhook for that state is not guaranteed to be subscribed, so
+        // ask Stripe directly before opening a second payment attempt on the same order.
+        $intentId = (string) ($order->meta['payment_intent_id'] ?? '');
+        if ($intentId !== '') {
+            try {
+                $currentIntentStatus = (string) ($this->stripePaymentIntentService->retrieve($intentId)['status'] ?? '');
+            } catch (\Throwable) {
+                $currentIntentStatus = '';
+            }
+
+            if (in_array($currentIntentStatus, ['processing', 'succeeded'], true)) {
+                return response()->json([
+                    'message' => 'Your payment is already being processed. We will update this order once it is confirmed.',
+                ], 409);
+            }
         }
 
         $paymentIntent = $this->stripePaymentIntentService->prepareRetryIntent($order);

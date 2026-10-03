@@ -195,6 +195,7 @@ describe('orderPresentation helpers', () => {
       ['afterpay_clearpay', 'Afterpay / Clearpay'],
       ['klarna', 'Klarna'],
       ['amazon_pay', 'Amazon Pay'],
+      ['ach_debit', 'ACH Direct Debit'],
     ])('resolves %s with a readable label', (paymentMethod, label) => {
       const presentation = getOrderPaymentPresentation({ payment_method: paymentMethod });
       expect(presentation.label).toBe(label);

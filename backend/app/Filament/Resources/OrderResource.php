@@ -284,6 +284,7 @@ class OrderResource extends Resource
                         'afterpay_clearpay' => 'Afterpay / Clearpay',
                         'klarna' => 'Klarna',
                         'amazon_pay' => 'Amazon Pay',
+                        'ach_debit' => 'ACH Direct Debit',
                         default => $state ? str($state)->headline()->toString() : '—',
                     }),
                 Tables\Columns\TextColumn::make('created_at')

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+    buildAchDebitPaymentData,
     buildAffirmPaymentData,
     buildAfterpayClearpayPaymentData,
     buildAmazonPayPaymentData,
@@ -110,8 +111,30 @@ describe('isStripeAltPaymentMethodEligible', () => {
         expect(stripe.confirmAffirmPayment).not.toHaveBeenCalled();
     });
 
+    it('confirms ACH Direct Debit through confirmUsBankAccountPayment with only the account holder name and email', async () => {
+        const stripe = {
+            confirmAffirmPayment: vi.fn(),
+            confirmPayment: vi.fn(),
+            confirmUsBankAccountPayment: vi.fn().mockResolvedValue({}),
+        };
+        vi.stubGlobal('Stripe', vi.fn().mockReturnValue(stripe));
+        const stripeInstance = window.Stripe?.('pk_test');
+
+        await confirmStripeAltPayment(
+            stripeInstance as NonNullable<typeof stripeInstance>,
+            'ach_debit',
+            'pi_ach_secret',
+            buildAchDebitPaymentData({ email: 'jane@example.com', name: 'Jane Doe' }),
+        );
+
+        expect(stripe.confirmUsBankAccountPayment).toHaveBeenCalledWith('pi_ach_secret', {
+            payment_method: { billing_details: { name: 'Jane Doe', email: 'jane@example.com' } },
+        });
+        expect(stripe.confirmPayment).not.toHaveBeenCalled();
+    });
+
     it('recognises exactly the Stripe alternative methods', () => {
-        for (const method of ['cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay']) {
+        for (const method of ['cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay', 'ach_debit']) {
             expect(isStripeAltPaymentMethod(method)).toBe(true);
         }
         for (const method of ['card', 'paypal', 'cod', 'apple_pay', 'afterpay']) {

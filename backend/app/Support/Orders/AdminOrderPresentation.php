@@ -42,13 +42,14 @@ final class AdminOrderPresentation
             return 'COD';
         }
 
-        if (in_array($method, ['cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay'], true)) {
+        if (in_array($method, ['cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay', 'ach_debit'], true)) {
             return [
                 'cashapp' => 'Cash App Pay',
                 'affirm' => 'Affirm',
                 'afterpay_clearpay' => 'Afterpay / Clearpay',
                 'klarna' => 'Klarna',
                 'amazon_pay' => 'Amazon Pay',
+                'ach_debit' => 'ACH Direct Debit',
             ][$method];
         }
 

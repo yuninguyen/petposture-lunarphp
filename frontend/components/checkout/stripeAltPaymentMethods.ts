@@ -1,6 +1,6 @@
-export type StripeAltPaymentMethod = 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'amazon_pay';
+export type StripeAltPaymentMethod = 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'amazon_pay' | 'ach_debit';
 
-const stripeAltPaymentMethods: ReadonlySet<string> = new Set<StripeAltPaymentMethod>(['cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay']);
+const stripeAltPaymentMethods: ReadonlySet<string> = new Set<StripeAltPaymentMethod>(['cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay', 'ach_debit']);
 
 export function isStripeAltPaymentMethod(method: string): method is StripeAltPaymentMethod {
     return stripeAltPaymentMethods.has(method);
@@ -35,6 +35,8 @@ export type StripeAltConfirmers = {
     confirmPayment: (options: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
     confirmKlarnaPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
     confirmCashappPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
+    // Opens Stripe's Financial Connections modal (bank login + mandate) inside the page; no redirect.
+    confirmUsBankAccountPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
 };
 
 type StripeAltPaymentMethodOption = {
@@ -95,6 +97,16 @@ export function buildAmazonPayPaymentData(returnUrl: string) {
     };
 }
 
+// Shipping is already on the PaymentIntent (server-side); the bank account itself is collected by
+// Stripe's modal, so only the account holder's name and email travel from here.
+export function buildAchDebitPaymentData({ email, name }: { email: string; name: string }) {
+    return {
+        payment_method: {
+            billing_details: { name, email },
+        },
+    };
+}
+
 export function buildKlarnaPaymentData(returnUrl: string) {
     return { return_url: returnUrl };
 }
@@ -120,6 +132,9 @@ export function confirmStripeAltPayment(
     }
     if (method === 'amazon_pay') {
         return stripe.confirmPayment({ clientSecret, confirmParams: data });
+    }
+    if (method === 'ach_debit') {
+        return stripe.confirmUsBankAccountPayment(clientSecret, data);
     }
     if (method === 'klarna') {
         return stripe.confirmKlarnaPayment(clientSecret, data);

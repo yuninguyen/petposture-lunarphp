@@ -403,6 +403,9 @@ function OrderSuccessContent() {
     // Stripe sends the buyer back with redirect_status=failed when a redirect
     // method (Affirm, Klarna, Cash App Pay) is declined or abandoned.
     // Afterpay returns without redirect_status, so the webhook-derived flag counts too.
+    // A bank debit (ACH) comes back with redirect_status=processing and stays that way for days:
+    // hide the retry panel so the shopper can't pay a second time while the first is in flight.
+    const bankPaymentProcessing = stripePaymentPending && redirectStatus === "processing";
     const stripePaymentFailed = stripePaymentPending && (redirectStatus === "failed" || redirectStatus === "canceled" || order.payment_failed === true);
 
     return (
@@ -456,7 +459,9 @@ function OrderSuccessContent() {
                                 ) : stripePaymentPending ? (
                                     <>
                                         <span className="font-semibold">Your payment is processing</span><br />
-                                        We&apos;ll update your order once Stripe confirms the payment.
+                                        {bankPaymentProcessing
+                                            ? "Bank payments can take up to 4 business days to clear. We'll email you and update this order once the payment is confirmed."
+                                            : "We'll update your order once Stripe confirms the payment."}
                                     </>
                                 ) : (
                                     <>
@@ -553,7 +558,7 @@ function OrderSuccessContent() {
                             </div>
                         </div>
 
-                        {trackingToken && email ? (
+                        {trackingToken && email && !bankPaymentProcessing ? (
                             <RetryPaymentPanel trackingToken={trackingToken} email={email} orderStatus={order.status} onCompleted={() => void refreshOrderAfterRetry()} />
                         ) : null}
 

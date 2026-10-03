@@ -29,6 +29,7 @@ import { ExpressCheckout } from './checkout/ExpressCheckout';
 import {
     buildAffirmPaymentData,
     buildAfterpayClearpayPaymentData,
+    buildAchDebitPaymentData,
     buildAmazonPayPaymentData,
     buildCashAppPaymentData,
     buildKlarnaPaymentData,
@@ -77,6 +78,10 @@ declare global {
                 paymentIntent?: { status?: string };
             }>;
             confirmCashappPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<{
+                error?: { message?: string };
+                paymentIntent?: { status?: string };
+            }>;
+            confirmUsBankAccountPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<{
                 error?: { message?: string };
                 paymentIntent?: { status?: string };
             }>;
@@ -138,10 +143,10 @@ const countryOptions = ['United States'];
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const googleMapsScriptId = 'petposture-google-places';
 const stripeJsScriptId = 'petposture-stripe-js';
-const paymentMethodOrder = { card: 0, paypal: 1, cashapp: 2, affirm: 3, afterpay_clearpay: 4, klarna: 5, amazon_pay: 6, airwallex: 7, payoneer: 8, pingpong: 9, cod: 10 } as const;
+const paymentMethodOrder = { card: 0, paypal: 1, cashapp: 2, affirm: 3, afterpay_clearpay: 4, klarna: 5, amazon_pay: 6, ach_debit: 7, airwallex: 8, payoneer: 9, pingpong: 10, cod: 11 } as const;
 
 // The only methods rendered as radio rows in the Payment section.
-const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay', 'cod']);
+const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay', 'ach_debit', 'cod']);
 
 function isRadioMethod(method: string): method is PaymentMethod {
     return radioPaymentMethods.has(method);
@@ -156,7 +161,7 @@ type AddressSuggestion = {
     target: AddressTarget;
 };
 
-type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'amazon_pay' | 'airwallex' | 'payoneer' | 'pingpong';
+type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'amazon_pay' | 'ach_debit' | 'airwallex' | 'payoneer' | 'pingpong';
 
 const redirectPaymentMethods: ReadonlySet<PaymentMethod> = new Set(['airwallex', 'payoneer', 'pingpong', 'paypal']);
 
@@ -1085,6 +1090,7 @@ export default function CheckoutPage() {
                 afterpay_clearpay: { src: '/assets/payment/afterpay.svg', alt: 'Afterpay / Clearpay' },
                 klarna: { src: '/assets/payment/klarna.svg', alt: 'Klarna' },
                 amazon_pay: { src: '/assets/payment/amazonpay.svg', alt: 'Amazon Pay' },
+                ach_debit: { src: '/assets/payment/achdebit.svg', alt: 'ACH Direct Debit' },
             };
             const logo = logos[method.method];
             return (
@@ -1541,7 +1547,9 @@ export default function CheckoutPage() {
 
                 const { billingAddress } = buildOrderAddresses();
                 const billingConfirmation = { email: form.email, billing: billingAddress, returnUrl: session.return_url };
-                const confirmationData = method === 'affirm'
+                const confirmationData = method === 'ach_debit'
+                    ? buildAchDebitPaymentData({ email: form.email, name: `${billingAddress.first_name} ${billingAddress.last_name}`.trim() })
+                    : method === 'affirm'
                     ? buildAffirmPaymentData(billingConfirmation)
                     : method === 'afterpay_clearpay'
                         ? buildAfterpayClearpayPaymentData(billingConfirmation)
@@ -1551,6 +1559,15 @@ export default function CheckoutPage() {
                                 ? buildAmazonPayPaymentData(session.return_url)
                                 : buildCashAppPaymentData(session.return_url);
                 const confirmation = await confirmStripeAltPayment(stripe, method, session.client_secret, confirmationData);
+
+                if (method === 'ach_debit') {
+                    // The bank is linked in Stripe's modal, so there is no redirect. A debit that goes
+                    // through stays "processing" for days; a closed modal or failed link leaves the
+                    // order unpaid. Either way the confirmation page explains what happens next.
+                    const accepted = !confirmation.error && ['processing', 'succeeded'].includes(confirmation.paymentIntent?.status ?? '');
+                    window.location.href = `${session.return_url}&redirect_status=${accepted ? 'processing' : 'failed'}`;
+                    return;
+                }
 
                 if (confirmation.error?.message) {
                     throw new Error(confirmation.error.message);
@@ -2052,7 +2069,9 @@ export default function CheckoutPage() {
                                                                 ? "You'll be redirected to Afterpay / Clearpay to complete your purchase"
                                                                 : method.method === 'amazon_pay'
                                                                     ? "You'll be redirected to Amazon Pay to complete your purchase"
-                                                                    : "You'll be redirected to Pay with Klarna to complete your purchase"}
+                                                                    : method.method === 'ach_debit'
+                                                                        ? "You'll connect your US bank account securely through Stripe. By placing this order you authorize PetPosture to debit that account for the order total. Bank payments can take up to 4 business days to clear, and your order is processed once the payment is confirmed."
+                                                                        : "You'll be redirected to Pay with Klarna to complete your purchase"}
                                                 </p>
                                             </div>
                                         )}

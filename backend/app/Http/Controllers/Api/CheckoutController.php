@@ -453,7 +453,7 @@ class CheckoutController extends Controller
     public function prepareStripeAltSession(Request $request)
     {
         $validated = Validator::make($request->all(), [
-            'payment_method' => 'required|string|in:cashapp,affirm,klarna,afterpay_clearpay,amazon_pay',
+            'payment_method' => 'required|string|in:cashapp,affirm,klarna,afterpay_clearpay,amazon_pay,ach_debit',
             'items' => 'required|array|min:1',
             'items.*.variantId' => 'required|exists:lunar_product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -540,7 +540,13 @@ class CheckoutController extends Controller
                 'amount' => $amount,
                 'currency' => 'usd',
                 'email' => $validated['email'],
-                'payment_method_types' => [$method],
+                // Our method key differs from Stripe's type for bank debits.
+                'payment_method_types' => [$method === 'ach_debit' ? 'us_bank_account' : $method],
+                // Instant bank verification only: the micro-deposit fallback needs a
+                // separate hosted verification step this checkout does not implement.
+                ...($method === 'ach_debit' ? ['payment_method_options' => [
+                    'us_bank_account' => ['verification_method' => 'instant'],
+                ]] : []),
                 'shipping' => [
                     'name' => $stripeName($shipping),
                     'address' => $stripeAddress($shipping),

@@ -24,6 +24,7 @@ use App\Observers\SanitizeRichTextObserver;
 use App\Observers\SettingCacheObserver;
 use App\Observers\SiteMediaCacheObserver;
 use App\Observers\SiteMediaLibraryCacheObserver;
+use App\Payments\Gateways\AchDebitGateway;
 use App\Payments\Gateways\AffirmGateway;
 use App\Payments\Gateways\AfterpayClearpayGateway;
 use App\Payments\Gateways\AirwallexGateway;
@@ -79,6 +80,7 @@ class AppServiceProvider extends ServiceProvider
                 new AfterpayClearpayGateway,
                 new KlarnaGateway,
                 new AmazonPayGateway,
+                new AchDebitGateway,
                 $app->make(AirwallexGateway::class),
                 $app->make(PayoneerGateway::class),
                 $app->make(PingPongGateway::class),

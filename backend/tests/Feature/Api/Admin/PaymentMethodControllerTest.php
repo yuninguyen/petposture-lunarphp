@@ -1159,7 +1159,7 @@ class PaymentMethodControllerTest extends TestCase
         Sanctum::actingAs($this->userWithRole('admin'));
 
         $methods = collect($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'));
-        foreach (['ach_debit' => 'stripe', 'venmo' => 'paypal', 'airwallex_klarna' => 'airwallex', 'airwallex_paypal' => 'airwallex', 'airwallex' => 'airwallex', 'payoneer' => 'payoneer'] as $method => $gateway) {
+        foreach (['venmo' => 'paypal', 'airwallex_klarna' => 'airwallex', 'airwallex_paypal' => 'airwallex', 'airwallex' => 'airwallex', 'payoneer' => 'payoneer'] as $method => $gateway) {
             $row = $methods->firstWhere('method', $method);
             $this->assertSame($gateway, $row['gateway']);
             $this->assertFalse($row['supported']);
@@ -1167,7 +1167,7 @@ class PaymentMethodControllerTest extends TestCase
             $this->putJson("/api/admin/finance/payment-methods/methods/{$method}", ['enabled' => true])->assertUnprocessable();
         }
 
-        $this->assertNull(collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->firstWhere('method', 'ach_debit'));
+        $this->assertNull(collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->firstWhere('method', 'venmo'));
     }
 
     public function test_card_brand_logos_follow_the_admin_selection_and_default_to_all(): void

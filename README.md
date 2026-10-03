@@ -469,10 +469,10 @@ used to read `config()` directly, which meant `/api/checkout/payment-methods` re
 in the DB and payment-intent creation succeeded, breaking checkout with "Stripe card form is not
 ready yet." If you add another Stripe-touching class, follow the same DB-first pattern.
 
-### Stripe alternative methods: Cash App Pay, Affirm, Afterpay / Clearpay, Klarna, Amazon Pay
+### Stripe alternative methods: Cash App Pay, Affirm, Afterpay / Clearpay, Klarna, Amazon Pay, ACH Direct Debit
 
 Three extra checkout methods are paid through the same Stripe account and are switched on by
-`STRIPE_ALT_PAYMENT_METHODS` in `backend/.env` (comma list, e.g. `cashapp,affirm,afterpay_clearpay,klarna,amazon_pay`; empty =
+`STRIPE_ALT_PAYMENT_METHODS` in `backend/.env` (comma list, e.g. `cashapp,affirm,afterpay_clearpay,klarna,amazon_pay,ach_debit`; empty =
 none shown). A method appears only if it is listed **and** Stripe is configured; each one must
 also be activated in the Stripe Dashboard (Settings → Payment methods), separately for test and
 live mode. Order amounts outside a method's range hide it (Affirm $35–$30,000, Afterpay / Clearpay $1–$4,000, Klarna up to $4,000
@@ -488,6 +488,17 @@ existing `payment_intent.*` webhook marks the order paid. Refunds reuse the Stri
 changing `STRIPE_ALT_PAYMENT_METHODS` run `App\Services\CloudflareCacheService::purgeAll()` (via
 `php artisan tinker` on the VPS).
 
+**ACH Direct Debit (`ach_debit`)** uses the same session endpoint but a PaymentIntent of type
+`us_bank_account` with `verification_method=instant` (instant bank login only; the micro-deposit
+fallback is not implemented). Stripe.js `confirmUsBankAccountPayment` opens the bank-link modal
+in the page (no redirect), then the shopper lands on the confirmation page with
+`redirect_status=processing`. A debit stays `processing` for up to ~4 business days; the order
+stays `awaiting-payment` until `payment_intent.succeeded` arrives, and a bank return arrives as
+`payment_intent.payment_failed`. `POST /api/orders/retry-payment` asks Stripe for the intent status
+and answers 409 while it is `processing`/`succeeded`, so a second payment cannot be opened. Refunds
+are full-amount only. Optional: subscribe the Stripe webhook endpoint to `payment_intent.processing`
+too (the handler already records it as pending).
+
 ### Admin switches for checkout payment methods
 
 Admin → Payment methods lists, inside each gateway tab, the methods that gateway offers, each with
@@ -501,8 +512,7 @@ purges the Cloudflare API cache, so the storefront follows within the purge dela
   Amazon Pay, ACH Direct Debit. PayPal: PayPal, Venmo. Airwallex: a locked "Airwallex"
   row plus locked rows for what its hosted page offers (Credit or Debit Card, ACH Direct Debit,
   Affirm, Afterpay / Clearpay, Apple Pay, Cash App Pay, Google Pay, Klarna, Venmo, PayPal; no Amazon
-  Pay; keys are `airwallex_*`). Payoneer: a locked row. Afterpay / Clearpay, Amazon Pay, ACH Direct
-  Debit, Venmo, Airwallex, Payoneer and every `airwallex_*` row are listed but locked ("Not
+  Pay; keys are `airwallex_*`). Payoneer: a locked row. Venmo, Airwallex, Payoneer and every `airwallex_*` row are listed but locked ("Not
   supported yet") — the storefront does not sell through them, so a switch would change nothing.
   PingPong is intentionally never exposed.
 - **Apple Pay / Google Pay are independent of Credit card.** They are Stripe Express Checkout

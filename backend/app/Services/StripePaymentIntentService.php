@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Setting;
 use App\Models\StripeWebhookEvent;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -84,6 +85,11 @@ class StripePaymentIntentService
             foreach (array_values($paymentMethodTypes) as $index => $paymentMethodType) {
                 $parameters["payment_method_types[{$index}]"] = $paymentMethodType;
             }
+        }
+
+        // Nested method options (e.g. us_bank_account.verification_method) flattened to Stripe's bracket syntax.
+        foreach (Arr::dot((array) ($payload['payment_method_options'] ?? [])) as $path => $value) {
+            $parameters['payment_method_options['.str_replace('.', '][', $path).']'] = $value;
         }
 
         foreach ([
