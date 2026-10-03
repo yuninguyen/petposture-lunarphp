@@ -545,9 +545,9 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                 {/* Stripe sizes its iframe to this slot: without the PayPal button next to it giving the
                     row a height, an auto-height slot collapses the wallet button to 8px. Reserve the
                     button height only while the wallet is actually available (no blank gap otherwise). */}
-                {amazonPayEnabled && <div ref={amazonButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canAmazonPay ? 'visible' : 'hidden', minHeight: canAmazonPay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
-                {applePayEnabled && <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden', minHeight: canApplePay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
-                {googlePayEnabled && <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden', minHeight: canGooglePay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}            </div>
+                {amazonPayEnabled && <div ref={amazonButtonMountRef} className="min-w-0 overflow-hidden transition-opacity hover:opacity-85 sm:flex-1" style={{ visibility: canAmazonPay ? 'visible' : 'hidden', minHeight: canAmazonPay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
+                {applePayEnabled && <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden transition-opacity hover:opacity-85 sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden', minHeight: canApplePay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
+                {googlePayEnabled && <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden transition-opacity hover:opacity-85 sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden', minHeight: canGooglePay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}            </div>
             {anyAvailable && (
                 <div className="flex items-center gap-3">
                     <div className="h-px flex-1 bg-[#e8e8ea]" />
