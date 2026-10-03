@@ -203,12 +203,13 @@ export function getOrderPaymentPresentation(order?: OrderPresentationPaymentSour
     };
   }
 
-  if (rawMethod === 'cashapp' || rawMethod === 'affirm' || rawMethod === 'afterpay_clearpay' || rawMethod === 'klarna') {
+  if (rawMethod === 'cashapp' || rawMethod === 'affirm' || rawMethod === 'afterpay_clearpay' || rawMethod === 'klarna' || rawMethod === 'amazon_pay') {
     const labels = {
       cashapp: 'Cash App Pay',
       affirm: 'Affirm',
       afterpay_clearpay: 'Afterpay / Clearpay',
       klarna: 'Klarna',
+      amazon_pay: 'Amazon Pay',
     } as const;
 
     return {

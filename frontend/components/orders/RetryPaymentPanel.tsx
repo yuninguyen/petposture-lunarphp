@@ -34,6 +34,10 @@ declare global {
                 error?: { message?: string };
                 paymentIntent?: { status?: string };
             }>;
+            confirmPayment: (options: Record<string, unknown>) => Promise<{
+                error?: { message?: string };
+                paymentIntent?: { status?: string };
+            }>;
             confirmKlarnaPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<{
                 error?: { message?: string };
                 paymentIntent?: { status?: string };

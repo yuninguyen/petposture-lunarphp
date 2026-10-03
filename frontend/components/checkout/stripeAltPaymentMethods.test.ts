@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     buildAffirmPaymentData,
     buildAfterpayClearpayPaymentData,
+    buildAmazonPayPaymentData,
     isStripeAltPaymentMethod,
     buildCashAppPaymentData,
     buildKlarnaPaymentData,
@@ -88,8 +89,29 @@ describe('isStripeAltPaymentMethodEligible', () => {
         expect(stripe.confirmAffirmPayment).not.toHaveBeenCalled();
     });
 
+    it('confirms Amazon Pay through confirmPayment with the client secret and a payment_method_data type', async () => {
+        const stripe = {
+            confirmAffirmPayment: vi.fn(),
+            confirmAfterpayClearpayPayment: vi.fn(),
+            confirmKlarnaPayment: vi.fn(),
+            confirmCashappPayment: vi.fn(),
+            confirmPayment: vi.fn().mockResolvedValue({}),
+        };
+        vi.stubGlobal('Stripe', vi.fn().mockReturnValue(stripe));
+        const stripeInstance = window.Stripe?.('pk_test');
+        const returnUrl = 'https://shop.example/checkout/success?gateway=stripe&session_id=STRIPE-TEST';
+
+        await confirmStripeAltPayment(stripeInstance as NonNullable<typeof stripeInstance>, 'amazon_pay', 'pi_amazon_secret', buildAmazonPayPaymentData(returnUrl));
+
+        expect(stripe.confirmPayment).toHaveBeenCalledWith({
+            clientSecret: 'pi_amazon_secret',
+            confirmParams: { payment_method_data: { type: 'amazon_pay' }, return_url: returnUrl },
+        });
+        expect(stripe.confirmAffirmPayment).not.toHaveBeenCalled();
+    });
+
     it('recognises exactly the Stripe alternative methods', () => {
-        for (const method of ['cashapp', 'affirm', 'afterpay_clearpay', 'klarna']) {
+        for (const method of ['cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay']) {
             expect(isStripeAltPaymentMethod(method)).toBe(true);
         }
         for (const method of ['card', 'paypal', 'cod', 'apple_pay', 'afterpay']) {

@@ -2448,6 +2448,34 @@ class CheckoutApiTest extends TestCase
             && ! array_key_exists('payment_method_data[type]', $request->data()));
     }
 
+    public function test_stripe_alt_session_supports_amazon_pay_with_its_own_payment_method_type(): void
+    {
+        config()->set('services.stripe.key', 'pk_test_alt_checkout');
+        config()->set('services.stripe.secret', 'sk_test_alt_checkout');
+        config()->set('services.stripe.alt_methods', ['amazon_pay']);
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+        Http::fake([
+            'https://api.stripe.com/v1/payment_intents' => Http::response([
+                'id' => 'pi_alt_amazon_1',
+                'client_secret' => 'pi_alt_amazon_1_secret',
+                'amount' => 8999,
+                'currency' => 'usd',
+                'status' => 'requires_action',
+            ]),
+        ]);
+        $variant = $this->createPurchasableVariant();
+
+        $this->postJson('/api/checkout/stripe-alt-session', array_replace($this->stripeAltSessionPayload($variant), ['payment_method' => 'amazon_pay']))
+            ->assertOk()
+            ->assertJsonPath('session.intent_id', 'pi_alt_amazon_1');
+
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://api.stripe.com/v1/payment_intents'
+            && $request['payment_method_types[0]'] === 'amazon_pay'
+            && $request['metadata[payment_method]'] === 'amazon_pay'
+            && ! array_key_exists('payment_method_data[type]', $request->data()));
+    }
+
     public function test_stripe_alt_session_attaches_billing_details_only_for_klarna(): void
     {
         config()->set('services.stripe.key', 'pk_test_alt_checkout');

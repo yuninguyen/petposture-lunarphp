@@ -1,6 +1,6 @@
-export type StripeAltPaymentMethod = 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna';
+export type StripeAltPaymentMethod = 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'amazon_pay';
 
-const stripeAltPaymentMethods: ReadonlySet<string> = new Set<StripeAltPaymentMethod>(['cashapp', 'affirm', 'afterpay_clearpay', 'klarna']);
+const stripeAltPaymentMethods: ReadonlySet<string> = new Set<StripeAltPaymentMethod>(['cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay']);
 
 export function isStripeAltPaymentMethod(method: string): method is StripeAltPaymentMethod {
     return stripeAltPaymentMethods.has(method);
@@ -31,6 +31,8 @@ type StripeAltConfirmationResult = {
 export type StripeAltConfirmers = {
     confirmAffirmPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
     confirmAfterpayClearpayPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
+    // Amazon Pay has no method-specific confirm function; it goes through confirmPayment with the client secret.
+    confirmPayment: (options: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
     confirmKlarnaPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
     confirmCashappPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<StripeAltConfirmationResult>;
 };
@@ -85,6 +87,14 @@ export function buildAfterpayClearpayPaymentData(input: AffirmConfirmationInput)
     return buildAffirmPaymentData(input);
 }
 
+// confirmParams for stripe.confirmPayment({ clientSecret, confirmParams }).
+export function buildAmazonPayPaymentData(returnUrl: string) {
+    return {
+        payment_method_data: { type: 'amazon_pay' },
+        return_url: returnUrl,
+    };
+}
+
 export function buildKlarnaPaymentData(returnUrl: string) {
     return { return_url: returnUrl };
 }
@@ -107,6 +117,9 @@ export function confirmStripeAltPayment(
     }
     if (method === 'afterpay_clearpay') {
         return stripe.confirmAfterpayClearpayPayment(clientSecret, data);
+    }
+    if (method === 'amazon_pay') {
+        return stripe.confirmPayment({ clientSecret, confirmParams: data });
     }
     if (method === 'klarna') {
         return stripe.confirmKlarnaPayment(clientSecret, data);

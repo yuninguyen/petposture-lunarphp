@@ -283,6 +283,7 @@ class OrderResource extends Resource
                         'affirm' => 'Affirm',
                         'afterpay_clearpay' => 'Afterpay / Clearpay',
                         'klarna' => 'Klarna',
+                        'amazon_pay' => 'Amazon Pay',
                         default => $state ? str($state)->headline()->toString() : '—',
                     }),
                 Tables\Columns\TextColumn::make('created_at')

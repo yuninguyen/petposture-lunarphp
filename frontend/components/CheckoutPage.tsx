@@ -29,6 +29,7 @@ import { ExpressCheckout } from './checkout/ExpressCheckout';
 import {
     buildAffirmPaymentData,
     buildAfterpayClearpayPaymentData,
+    buildAmazonPayPaymentData,
     buildCashAppPaymentData,
     buildKlarnaPaymentData,
     confirmStripeAltPayment,
@@ -64,6 +65,10 @@ declare global {
                 paymentIntent?: { status?: string };
             }>;
             confirmAfterpayClearpayPayment: (clientSecret: string, data: Record<string, unknown>) => Promise<{
+                error?: { message?: string };
+                paymentIntent?: { status?: string };
+            }>;
+            confirmPayment: (options: Record<string, unknown>) => Promise<{
                 error?: { message?: string };
                 paymentIntent?: { status?: string };
             }>;
@@ -133,10 +138,10 @@ const countryOptions = ['United States'];
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const googleMapsScriptId = 'petposture-google-places';
 const stripeJsScriptId = 'petposture-stripe-js';
-const paymentMethodOrder = { card: 0, paypal: 1, cashapp: 2, affirm: 3, afterpay_clearpay: 4, klarna: 5, airwallex: 6, payoneer: 7, pingpong: 8, cod: 9 } as const;
+const paymentMethodOrder = { card: 0, paypal: 1, cashapp: 2, affirm: 3, afterpay_clearpay: 4, klarna: 5, amazon_pay: 6, airwallex: 7, payoneer: 8, pingpong: 9, cod: 10 } as const;
 
 // The only methods rendered as radio rows in the Payment section.
-const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'cod']);
+const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay', 'cod']);
 
 function isRadioMethod(method: string): method is PaymentMethod {
     return radioPaymentMethods.has(method);
@@ -151,7 +156,7 @@ type AddressSuggestion = {
     target: AddressTarget;
 };
 
-type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'airwallex' | 'payoneer' | 'pingpong';
+type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'amazon_pay' | 'airwallex' | 'payoneer' | 'pingpong';
 
 const redirectPaymentMethods: ReadonlySet<PaymentMethod> = new Set(['airwallex', 'payoneer', 'pingpong', 'paypal']);
 
@@ -1079,6 +1084,7 @@ export default function CheckoutPage() {
                 affirm: { src: '/assets/payment/affirm.svg', alt: 'Affirm' },
                 afterpay_clearpay: { src: '/assets/payment/afterpay.svg', alt: 'Afterpay / Clearpay' },
                 klarna: { src: '/assets/payment/klarna.svg', alt: 'Klarna' },
+                amazon_pay: { src: '/assets/payment/amazonpay.svg', alt: 'Amazon Pay' },
             };
             const logo = logos[method.method];
             return (
@@ -1541,7 +1547,9 @@ export default function CheckoutPage() {
                         ? buildAfterpayClearpayPaymentData(billingConfirmation)
                         : method === 'klarna'
                             ? buildKlarnaPaymentData(session.return_url)
-                            : buildCashAppPaymentData(session.return_url);
+                            : method === 'amazon_pay'
+                                ? buildAmazonPayPaymentData(session.return_url)
+                                : buildCashAppPaymentData(session.return_url);
                 const confirmation = await confirmStripeAltPayment(stripe, method, session.client_secret, confirmationData);
 
                 if (confirmation.error?.message) {
@@ -2042,7 +2050,9 @@ export default function CheckoutPage() {
                                                             ? "You'll be redirected to Affirm - Pay Over Time to complete your purchase"
                                                             : method.method === 'afterpay_clearpay'
                                                                 ? "You'll be redirected to Afterpay / Clearpay to complete your purchase"
-                                                                : "You'll be redirected to Pay with Klarna to complete your purchase"}
+                                                                : method.method === 'amazon_pay'
+                                                                    ? "You'll be redirected to Amazon Pay to complete your purchase"
+                                                                    : "You'll be redirected to Pay with Klarna to complete your purchase"}
                                                 </p>
                                             </div>
                                         )}

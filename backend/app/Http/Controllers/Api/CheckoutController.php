@@ -453,7 +453,7 @@ class CheckoutController extends Controller
     public function prepareStripeAltSession(Request $request)
     {
         $validated = Validator::make($request->all(), [
-            'payment_method' => 'required|string|in:cashapp,affirm,klarna,afterpay_clearpay',
+            'payment_method' => 'required|string|in:cashapp,affirm,klarna,afterpay_clearpay,amazon_pay',
             'items' => 'required|array|min:1',
             'items.*.variantId' => 'required|exists:lunar_product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
