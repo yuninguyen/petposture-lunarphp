@@ -2556,6 +2556,37 @@ class CheckoutApiTest extends TestCase
         $this->assertSame('paid', $order->meta['payment_status']);
     }
 
+    public function test_a_declined_afterpay_order_reports_payment_failed_to_the_success_page(): void
+    {
+        config()->set('services.stripe.alt_methods', ['afterpay_clearpay']);
+        config()->set('services.stripe.key', 'pk_test_alt_checkout');
+        config()->set('services.stripe.secret', 'sk_test_alt_checkout');
+        config()->set('services.stripe.webhook_secret', null);
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+
+        $variant = $this->createPurchasableVariant();
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'afterpay_clearpay',
+            'payment_context' => ['intent_id' => 'pi_afterpay_fail_123', 'session_id' => 'STRIPE-AFTERPAY-FAIL'],
+        ]))->assertCreated();
+
+        $lookup = '/api/orders/by-payment-session?gateway=stripe&session_id=STRIPE-AFTERPAY-FAIL';
+        $this->getJson($lookup)->assertOk()
+            ->assertJsonPath('data.payment_label', 'Afterpay / Clearpay')
+            ->assertJsonPath('data.payment_failed', false);
+
+        $this->postJson('/api/webhooks/stripe', [
+            'id' => 'evt_afterpay_fail_123',
+            'type' => 'payment_intent.payment_failed',
+            'data' => ['object' => ['id' => 'pi_afterpay_fail_123', 'status' => 'requires_payment_method']],
+        ])->assertOk();
+
+        $this->getJson($lookup)->assertOk()
+            ->assertJsonPath('data.status', 'awaiting-payment')
+            ->assertJsonPath('data.payment_failed', true);
+    }
+
     public function test_affirm_order_can_retry_with_card_and_updates_its_payment_method(): void
     {
         config()->set('services.stripe.alt_methods', ['affirm']);

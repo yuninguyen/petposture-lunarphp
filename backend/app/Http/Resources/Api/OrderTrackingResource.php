@@ -60,6 +60,9 @@ class OrderTrackingResource extends JsonResource
                 'phone' => $billing?->contact_phone,
             ],
             'payment_label' => $meta['payment_label'] ?? null,
+            // The last payment attempt was declined/abandoned (Stripe's payment_intent.payment_failed).
+            // Some redirect methods (Afterpay) return without a redirect_status, so the page needs this.
+            'payment_failed' => ($meta['payment_status'] ?? null) === 'failed',
             'card_brand' => $meta['card_brand'] ?? null,
             'card_last4' => $meta['card_last4'] ?? null,
             'payment_confirmed_before_cancellation' => $this->when(

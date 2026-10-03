@@ -15,6 +15,8 @@ type TrackingOrder = {
     reference: string;
     tracking_access_token?: string;
     status: string;
+    // The last payment attempt was declined/abandoned (set from Stripe's webhook).
+    payment_failed?: boolean;
     fulfillment_status: string;
     carrier: string | null;
     tracking_number: string | null;
@@ -400,7 +402,8 @@ function OrderSuccessContent() {
     const stripePaymentPending = gateway === "stripe" && order.status === "awaiting-payment";
     // Stripe sends the buyer back with redirect_status=failed when a redirect
     // method (Affirm, Klarna, Cash App Pay) is declined or abandoned.
-    const stripePaymentFailed = stripePaymentPending && (redirectStatus === "failed" || redirectStatus === "canceled");
+    // Afterpay returns without redirect_status, so the webhook-derived flag counts too.
+    const stripePaymentFailed = stripePaymentPending && (redirectStatus === "failed" || redirectStatus === "canceled" || order.payment_failed === true);
 
     return (
         <main className="min-h-screen bg-[#fcfcfd] font-hanken text-[#333333]">
