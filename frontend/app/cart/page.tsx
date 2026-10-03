@@ -134,7 +134,7 @@ export default function CartPage() {
         <main className="min-h-screen bg-white font-hanken flex flex-col">
             <Header />
 
-            <div className="flex-1 max-w-[1200px] w-full mx-auto p-4 md:p-8 lg:p-12 my-12">
+            <div className="flex-1 max-w-[1200px] w-full mx-auto p-4 md:p-8 lg:p-12 my-6 md:my-12">
                 {items.length === 0 ? (
                     <div className="text-center py-20 flex flex-col items-center">
                         <div className="w-24 h-24 bg-zinc-50 rounded-full flex items-center justify-center mb-8">
@@ -159,7 +159,7 @@ export default function CartPage() {
                                     <div className="w-[20%] text-center">Quantity</div>
                                     <div className="w-[15%] text-right pr-6">Total</div>
                                 </div>
-                                
+
                                 <div className="divide-y divide-zinc-100">
                                     {items.map((item, index) => (
                                         <div key={item.variantId} className="py-6 flex flex-col md:flex-row md:items-center relative group">
@@ -175,21 +175,21 @@ export default function CartPage() {
                                                     <X size={16} strokeWidth={2.5} aria-hidden="true" />
                                                 </Button>
                                             </div>
-                                            
+
                                             {/* Product Info (Image + Name) */}
                                             <div className="flex items-start md:items-center gap-4 flex-1 pr-10 md:pr-4">
                                                 <div className="relative w-[80px] h-[80px] md:w-[56px] md:h-[56px] bg-zinc-50 rounded-[6px] overflow-hidden flex-shrink-0 border border-zinc-100">
                                                     <Image src={item.image} alt={item.name} fill sizes="(max-width: 768px) 80px, 56px" className="object-cover mix-blend-multiply" priority={index === 0} />
                                                 </div>
                                                 <div className="flex-1 flex flex-col justify-center min-h-[80px] md:min-h-0">
-                                                    <h3 className="text-[14px] font-semibold text-primary hover:text-rust transition-colors leading-snug">
+                                                    <h3 className="text-[14px] font-medium text-primary hover:text-rust transition-colors leading-snug">
                                                         {item.name}
                                                     </h3>
                                                     {/* Mobile Price */}
                                                     <div className="md:hidden text-[14px] font-medium text-zinc-500 mt-1">
                                                         ${item.price.toFixed(2)}
                                                     </div>
-                                                    
+
                                                     {/* Mobile Quantity & Total */}
                                                     <div className="md:hidden flex items-center justify-between mt-3">
                                                         <div className="inline-flex items-center bg-white border border-zinc-200 rounded-[4px] overflow-hidden shadow-sm">
@@ -219,12 +219,12 @@ export default function CartPage() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
                                             {/* Desktop Price */}
                                             <div className="hidden md:block w-[15%] text-center text-[15px] font-medium text-zinc-500">
                                                 ${item.price.toFixed(2)}
                                             </div>
-                                            
+
                                             {/* Desktop Quantity */}
                                             <div className="hidden md:flex items-center justify-center w-[20%]">
                                                 <div className="inline-flex items-center bg-white border border-zinc-200 rounded-[4px] overflow-hidden shadow-sm">
@@ -249,7 +249,7 @@ export default function CartPage() {
                                                     </Button>
                                                 </div>
                                             </div>
-                                            
+
                                             {/* Desktop Total */}
                                             <div className="hidden md:block w-[15%] text-right pr-6 text-[16px] font-black text-rust">
                                                 ${(item.price * item.quantity).toFixed(2)}
@@ -269,18 +269,18 @@ export default function CartPage() {
 
                         {/* Sidebar Totals */}
                         <div className="w-full lg:w-[400px]">
-                            <div className="bg-zinc-50 border border-zinc-100 rounded-[8px] p-8 md:p-10 sticky top-[130px]">
-                                <h2 className="text-[14px] font-black text-primary uppercase tracking-[0.05em] mb-10 pb-6 border-b border-zinc-200">
-                                    Cart Totals
+                            <div className="bg-zinc-50 border border-zinc-100 rounded-[8px] p-8 md:p-10 lg:sticky lg:top-[130px]">
+                                <h2 className="text-[14px] font-bold text-primary uppercase tracking-[0.05em] mb-10 pb-6 border-b border-zinc-200">
+                                    Summary
                                 </h2>
 
                                 <div className="space-y-6 mb-10">
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="text-zinc-500 font-bold uppercase tracking-wider">Subtotal</span>
+                                        <span className="text-zinc-500 font-medium">Subtotal</span>
                                         <span className="font-bold text-primary">${totalAmount.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between items-start text-sm">
-                                        <span className="text-zinc-500 font-bold uppercase tracking-wider">Shipping</span>
+                                        <span className="text-zinc-500 font-medium">Shipping</span>
                                         <div className="text-right">
                                             <p className="font-bold text-primary">{shippingPrice === 0 ? 'FREE' : `$${shippingPrice.toFixed(2)}`}</p>
                                             <p className="text-xs text-zinc-400 mt-1">Free shipping on orders over $50</p>
@@ -293,9 +293,12 @@ export default function CartPage() {
                                         </div>
                                     )}
                                     <div className="h-[1px] bg-zinc-200 my-6" />
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-primary font-black uppercase tracking-wider text-[14px]">Total</span>
-                                        <span className="text-[24px] font-black text-rust">${finalTotal.toFixed(2)}</span>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-primary font-medium uppercase tracking-wide text-[14px]">Estimated Total</span>
+                                            <span className="text-[20px] font-semibold text-rust">${finalTotal.toFixed(2)}</span>
+                                        </div>
+                                        <p className="text-right text-xs text-zinc-400">Taxes calculated at checkout</p>
                                     </div>
                                 </div>
 
