@@ -355,7 +355,8 @@ export default function CheckoutPage() {
     // intent and order as long as nothing in the cart, address or total changed.
     const airwallexAttemptRef = useRef<{ key: string; session: AirwallexSession; orderAccess: { reference: string; trackingToken: string } } | null>(null);
     const [airwallexError, setAirwallexError] = useState<string | null>(null);
-    const [airwallexCardEmpty, setAirwallexCardEmpty] = useState(true);
+    // Card brand reported by Airwallex's card number iframe ('mastercard', 'visa', ...); null while empty/unknown.
+    const [airwallexCardBrand, setAirwallexCardBrand] = useState<string | null>(null);
     const airwallexEnv = paymentMethods.find((method) => method.method === 'airwallex')?.env ?? null;
     const [paymentMethodsLoaded, setPaymentMethodsLoaded] = useState(false);
     // The built-in fallback list is only for an unreachable/invalid API. An empty list
@@ -492,15 +493,15 @@ export default function CheckoutPage() {
         let cancelled = false;
         let mounted: AirwallexCardFields | null = null;
         setAirwallexError(null);
-        setAirwallexCardEmpty(true);
+        setAirwallexCardBrand(null);
 
         mountAirwallexCardFields(airwallexEnv, {
             cardNumber: 'airwallex-card-number',
             expiry: 'airwallex-card-expiry',
             cvc: 'airwallex-card-cvc',
             authForm: 'airwallex-3ds',
-        }, ({ empty }) => {
-            if (!cancelled) setAirwallexCardEmpty(empty);
+        }, ({ empty, brand }) => {
+            if (!cancelled) setAirwallexCardBrand(empty || brand === 'default' ? null : brand);
         }).then((fields) => {
             if (cancelled) {
                 fields.destroy();
@@ -2214,12 +2215,22 @@ export default function CheckoutPage() {
                                             <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
                                                 {/* Laid out exactly like the Stripe card form above; the three fields are Airwallex iframes. */}
                                                 <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-[#f4cdb7]">
-                                                    {/* Airwallex draws card-brand logos on the right of this field: every brand while it is empty,
-                                                        only the detected one once the shopper types. Only the latter is wanted, so while empty the
-                                                        field is made wider than the box and clipped; the iframe reports empty/non-empty to the page. */}
+                                                    {/* Airwallex draws its own card-brand logos on the right of this field (every brand while empty,
+                                                        which flashes when the number is cleared), so that part is always clipped off and the page
+                                                        draws the detected brand itself from the brand the iframe reports. */}
                                                     <div className="min-w-0 flex-1 overflow-hidden">
-                                                        <div id="airwallex-card-number" className={airwallexCardEmpty ? 'w-[calc(100%+220px)]' : 'w-full'} />
+                                                        <div id="airwallex-card-number" className="w-[calc(100%+220px)]" />
                                                     </div>
+                                                    {airwallexCardBrand && cardBrandIcons[airwallexCardBrand] ? (
+                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                        <img
+                                                            src={cardBrandIcons[airwallexCardBrand].src}
+                                                            alt={cardBrandIcons[airwallexCardBrand].alt}
+                                                            width="32"
+                                                            height="20"
+                                                            className="ml-2 h-[20px] w-[32px] flex-shrink-0 object-contain"
+                                                        />
+                                                    ) : null}
                                                     <Lock size={15} className="ml-2 flex-shrink-0 text-[#9ca3af]" />
                                                 </div>
                                                 <div className="grid gap-3 md:grid-cols-2">
