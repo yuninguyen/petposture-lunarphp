@@ -178,7 +178,8 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                     applePay: walletKey === 'applePay' ? 'always' : 'never',
                     googlePay: walletKey === 'googlePay' ? 'always' : 'never',
                     paypal: 'never',
-                    amazonPay: walletKey === 'amazonPay' ? 'always' : 'never',
+                    // Stripe only accepts 'auto' | 'never' for amazonPay (applePay/googlePay also take 'always').
+                    amazonPay: walletKey === 'amazonPay' ? 'auto' : 'never',
                     klarna: 'never',
                     link: 'never',
                 },

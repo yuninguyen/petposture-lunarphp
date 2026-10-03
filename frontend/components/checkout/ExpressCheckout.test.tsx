@@ -199,7 +199,7 @@ describe('ExpressCheckout', () => {
 
         expect(elementsGroup.create).toHaveBeenCalledTimes(1);
         expect(elementsGroup.create).toHaveBeenCalledWith('expressCheckout', expect.objectContaining({
-            paymentMethods: expect.objectContaining({ amazonPay: 'always', applePay: 'never', googlePay: 'never', paypal: 'never' }),
+            paymentMethods: expect.objectContaining({ amazonPay: 'auto', applePay: 'never', googlePay: 'never', paypal: 'never' }),
         }));
     });
 
