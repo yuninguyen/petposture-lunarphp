@@ -562,7 +562,7 @@ function OrderSuccessContent() {
                                 Need help? <Link href="/contact" className="font-semibold text-[#1a1a1a] underline underline-offset-2 hover:text-[#df8448]">Contact us</Link>
                             </p>
                             <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
-                                <ButtonLink href="/shop" variant="primary" className="w-full capitalize tracking-normal sm:w-auto">
+                                <ButtonLink href="/shop" variant="primary" className="w-full !capitalize !tracking-normal sm:w-auto">
                                     Continue shopping
                                 </ButtonLink>
                                 {deliveredDone ? (
@@ -589,7 +589,7 @@ function OrderSuccessContent() {
                             Need help? <Link href="/contact" className="font-semibold text-[#1a1a1a] underline underline-offset-2 hover:text-[#df8448]">Contact us</Link>
                         </p>
                         <div className="flex w-full flex-col items-center gap-3 sm:flex-row">
-                            <ButtonLink href="/shop" variant="primary" className="w-full capitalize tracking-normal sm:w-auto">
+                            <ButtonLink href="/shop" variant="primary" className="w-full !capitalize !tracking-normal sm:w-auto">
                                 Continue shopping
                             </ButtonLink>
                             {deliveredDone ? (
