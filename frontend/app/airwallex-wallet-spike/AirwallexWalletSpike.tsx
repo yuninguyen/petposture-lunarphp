@@ -66,7 +66,7 @@ export default function AirwallexWalletSpike() {
                     emailRequired: true,
                     shippingAddressRequired: true,
                     shippingAddressParameters: { phoneNumberRequired: true, format: 'FULL', allowedCountryCodes: ['US'] },
-                    callbackIntents: ['SHIPPING_ADDRESS', 'SHIPPING_OPTION', 'PAYMENT_AUTHORIZATION'],
+                    callbackIntents: ['SHIPPING_ADDRESS', 'PAYMENT_AUTHORIZATION'],
                     paymentDataCallbacks: {
                         onPaymentDataChanged: async (data: unknown) => {
                             log('onPaymentDataChanged', data);
