@@ -429,10 +429,11 @@ export default function CheckoutPage() {
     // The Airwallex wallet radio currently selected (null for any other method) and its method entry.
     const activeAirwallexWallet = airwallexWalletOf(form.paymentMethod);
     const activeAirwallexWalletEntry = activeAirwallexWallet === 'apple_pay' ? airwallexApplePay : airwallexGooglePay;
-    // Stripe.js also powers the Apple/Google Pay buttons, so a wallet entry can supply
-    // the publishable key while the Credit card method itself is switched off.
+    // Stripe.js also powers the Apple/Google/Amazon Pay buttons, so a wallet entry -- or any other enabled Stripe
+    // method -- can supply the publishable key while the Credit card method itself is switched off.
     const selectedCardMethod = paymentMethods.find((method) => method.method === 'card')
         ?? paymentMethods.find((method) => method.method === 'apple_pay' || method.method === 'google_pay')
+        ?? paymentMethods.find((method) => method.gateway === 'stripe' && Boolean(method.publishable_key))
         ?? {
         method: 'card' as const,
         label: 'Credit or Debit Card',
