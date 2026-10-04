@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Airwallex Google Pay spike</title>
+<style>body{font-family:system-ui,sans-serif;max-width:560px;margin:24px auto;padding:0 16px}pre{background:#f4f4f5;padding:12px;overflow:auto;font-size:12px}#gp{min-height:48px;margin:16px 0}</style>
+</head>
+<body>
+<h1>Airwallex Google Pay spike ($5.00 sandbox)</h1>
+<p>Throwaway page: tap the button, pay with a Google Pay test card, then read what Airwallex returns.</p>
+<div id="gp"></div>
+<div id="auth"></div>
+<pre id="log">starting...</pre>
+<script src="https://static.airwallex.com/components/sdk/v1/index.js"></script>
+<script>
+const API = 'https://api.petposture.com/api';
+const MERCHANT = 'acct_ONfkTFRFM8i5yvA-i-zAcQ';
+const log = (label, value) => { document.getElementById('log').textContent += '\n\n' + label + ': ' + (typeof value === 'string' ? value : JSON.stringify(value, null, 2)); };
+
+(async () => {
+  try {
+    const created = await (await fetch(API + '/checkout/airwallex-wallet-spike', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: '{}' })).json();
+    const intent = created.intent;
+    log('intent', intent);
+    await window.AirwallexComponentsSDK.init({ env: intent.env, enabledElements: ['payments'] });
+    const element = await window.AirwallexComponentsSDK.createElement('googlePayButton', {
+      intent_id: intent.intent_id,
+      client_secret: intent.client_secret,
+      amount: { value: 5, currency: 'USD' },
+      countryCode: 'US',
+      gatewayMerchantId: MERCHANT,
+      emailRequired: true,
+      shippingAddressRequired: true,
+      billingAddressRequired: true,
+      billingAddressParameters: { format: 'FULL', phoneNumberRequired: true },
+      authFormContainer: 'auth',
+      buttonType: 'plain',
+      buttonColor: 'black',
+    });
+    ['ready', 'cancel', 'error', 'success', 'shippingMethodChange', 'shippingAddressChange', 'click'].forEach((name) => {
+      element.on(name, (event) => log('event ' + name, event && event.detail ? event.detail : (event || '')));
+    });
+    element.on('success', async () => {
+      const result = await (await fetch(API + '/checkout/airwallex-wallet-spike/' + intent.intent_id, { headers: { Accept: 'application/json' } })).json();
+      log('INTENT AFTER PAYMENT', result);
+    });
+    element.mount('gp');
+  } catch (e) { log('ERROR', String(e && e.message || e)); }
+})();
+</script>
+</body>
+</html>

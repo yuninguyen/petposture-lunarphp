@@ -260,6 +260,26 @@ class AirwallexService
     }
 
     /**
+     * The full PaymentIntent as Airwallex returns it, or [] when it cannot be read.
+     *
+     * @return array<string, mixed>
+     */
+    public function retrieveIntent(string $intentId): array
+    {
+        if (! $this->isConfigured()) {
+            return [];
+        }
+
+        try {
+            $response = Http::withToken($this->accessToken())->timeout(5)->get($this->baseUrl().'/api/v1/pa/payment_intents/'.$intentId);
+
+            return $response->successful() ? (array) $response->json() : [];
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * @return array{refund_id: string, status: string, amount: int}
      */
     public function refund(string $intentId, int $amountMinor, string $currency): array
