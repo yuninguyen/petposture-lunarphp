@@ -162,8 +162,11 @@ class AirwallexService
             'return_url' => $returnUrl,
             'metadata' => ['session_id' => $sessionToken],
             'customer' => array_filter($customer, static fn ($value) => filled($value)),
-            'order' => ['shipping' => $shipping],
         ];
+
+        if ($shipping !== []) {
+            $payload['order'] = ['shipping' => $shipping];
+        }
 
         $response = Http::withToken($this->accessToken())
             ->post($this->baseUrl().'/api/v1/pa/payment_intents/create', $payload);
