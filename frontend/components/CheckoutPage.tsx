@@ -1175,10 +1175,10 @@ export default function CheckoutPage() {
 
         if (method.method === 'airwallex_google_pay') {
             return (
-                <div className="flex h-[24px] items-center justify-center overflow-hidden">
-                    {/* The official Google Pay logo is wider (64:24) than the 38px card badges. */}
+                <div className="flex h-[24px] w-[38px] items-center justify-center overflow-hidden rounded-[3px]">
+                    {/* The official logo is 64:24; object-contain fits it into the same 38x24 box as every other badge. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/assets/payment/googlepay.svg" alt="Google Pay" width="64" height="24" className="h-full w-auto" />
+                    <img src="/assets/payment/googlepay.svg" alt="Google Pay" width="38" height="24" className="h-full w-full object-contain" />
                 </div>
             );
         }
