@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { confirmAirwallexCardPayment, mountAirwallexCardFields, mountAirwallexGooglePay } from './airwallexCheckout';
+import { confirmAirwallexCardPayment, mountAirwallexCardFields, mountAirwallexWallet } from './airwallexCheckout';
 
 const containers = { cardNumber: 'awx-card-number', expiry: 'awx-expiry', cvc: 'awx-cvc', authForm: 'awx-3ds' };
 
@@ -62,7 +62,7 @@ describe('mountAirwallexCardFields', () => {
     });
 });
 
-describe('mountAirwallexGooglePay', () => {
+describe('mountAirwallexWallet', () => {
     const handlers = () => ({ onClick: vi.fn(), onSuccess: vi.fn(), onCancel: vi.fn(), onError: vi.fn() });
     const base = { merchantId: 'acct_1', intentId: 'int_1', clientSecret: 'secret_1', amountMinor: 4599, currency: 'usd', authFormContainer: 'awx-3ds' };
 
@@ -77,7 +77,7 @@ describe('mountAirwallexGooglePay', () => {
         const { createElement } = installSdk({ googlePayButton: element });
         const events = handlers();
 
-        const button = await mountAirwallexGooglePay('demo-gp', 'awx-google-pay', { ...base, ...events });
+        const button = await mountAirwallexWallet('demo-gp', 'google_pay', 'awx-google-pay', { ...base, ...events });
 
         expect(createElement).toHaveBeenCalledWith('googlePayButton', expect.objectContaining({
             intent_id: 'int_1',
@@ -109,7 +109,31 @@ describe('mountAirwallexGooglePay', () => {
     it('fails with a readable message when Airwallex does not create the button', async () => {
         installSdk({ googlePayButton: null });
 
-        await expect(mountAirwallexGooglePay('demo-gp-fail', 'awx-google-pay', { ...base, ...handlers() })).rejects.toThrow('Google Pay could not be started');
+        await expect(mountAirwallexWallet('demo-gp-fail', 'google_pay', 'awx-google-pay', { ...base, ...handlers() })).rejects.toThrow('Google Pay could not be started');
+    });
+
+    it('creates an Apple Pay button without a merchant id, asking only for the billing postal address', async () => {
+        const listeners: Record<string, (event?: unknown) => void> = {};
+        const element = {
+            mount: vi.fn(),
+            destroy: vi.fn(),
+            on: vi.fn((name: string, handler: (event?: unknown) => void) => { listeners[name] = handler; }),
+        };
+        const { createElement } = installSdk({ applePayButton: element });
+        const events = handlers();
+
+        await mountAirwallexWallet('demo-ap', 'apple_pay', 'awx-apple-pay', { ...base, merchantId: undefined, ...events });
+
+        const options = createElement.mock.calls[0][1] as Record<string, unknown>;
+        expect(createElement.mock.calls[0][0]).toBe('applePayButton');
+        expect(options).toMatchObject({ intent_id: 'int_1', amount: { value: 45.99, currency: 'USD' }, countryCode: 'US', requiredBillingContactFields: ['postalAddress'] });
+        expect(options).not.toHaveProperty('gatewayMerchantId');
+        expect(element.mount).toHaveBeenCalledWith('awx-apple-pay');
+
+        listeners.click();
+        listeners.error();
+        expect(events.onClick).toHaveBeenCalledTimes(1);
+        expect(events.onError.mock.calls[0][0]).toContain('Apple Pay could not complete');
     });
 });
 

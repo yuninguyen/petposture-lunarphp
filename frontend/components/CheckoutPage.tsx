@@ -26,8 +26,8 @@ import { getShippingAmount } from '@/lib/pricing';
 import { getAttributionData } from '@/lib/attribution';
 import { Button } from '@/components/ui/Button';
 import { ExpressCheckout } from './checkout/ExpressCheckout';
-import { confirmAirwallexCardPayment, mountAirwallexCardFields, preloadAirwallexSdk, type AirwallexCardFields } from './checkout/airwallexCheckout';
-import { AirwallexGooglePayPanel, type AirwallexWalletOrder, type AirwallexWalletSession } from './checkout/AirwallexGooglePayPanel';
+import { confirmAirwallexCardPayment, mountAirwallexCardFields, preloadAirwallexSdk, type AirwallexCardFields, type AirwallexWallet } from './checkout/airwallexCheckout';
+import { AirwallexWalletPanel, type AirwallexWalletOrder, type AirwallexWalletSession } from './checkout/AirwallexWalletPanel';
 import {
     buildAffirmPaymentData,
     buildAfterpayClearpayPaymentData,
@@ -149,7 +149,7 @@ const countryOptions = ['United States'];
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const googleMapsScriptId = 'petposture-google-places';
 const stripeJsScriptId = 'petposture-stripe-js';
-const paymentMethodOrder = { card: 0, airwallex_google_pay: 0.5, paypal: 1, cashapp: 2, affirm: 3, afterpay_clearpay: 4, klarna: 5, amazon_pay: 6, ach_debit: 7, airwallex: 8, payoneer: 9, pingpong: 10, cod: 11 } as const;
+const paymentMethodOrder = { card: 0, airwallex_google_pay: 0.5, airwallex_apple_pay: 0.6, paypal: 1, cashapp: 2, affirm: 3, afterpay_clearpay: 4, klarna: 5, amazon_pay: 6, ach_debit: 7, airwallex: 8, payoneer: 9, pingpong: 10, cod: 11 } as const;
 
 // The only methods rendered as radio rows in the Payment section.
 const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'ach_debit', 'airwallex', 'cod']);
@@ -167,9 +167,13 @@ type AddressSuggestion = {
     target: AddressTarget;
 };
 
-// 'airwallex_google_pay' is Airwallex's own Google Pay button, shown as a row of its own only when Stripe's
-// Google Pay is not available (it is deliberately not in radioPaymentMethods, so it is never pre-selected).
-type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'amazon_pay' | 'ach_debit' | 'airwallex' | 'airwallex_google_pay' | 'payoneer' | 'pingpong';
+// 'airwallex_google_pay' / 'airwallex_apple_pay' are Airwallex's own wallet buttons, each a row of its own only when
+// Stripe's matching wallet is not available (deliberately not in radioPaymentMethods, so never pre-selected).
+type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'amazon_pay' | 'ach_debit' | 'airwallex' | 'airwallex_google_pay' | 'airwallex_apple_pay' | 'payoneer' | 'pingpong';
+
+const airwallexWalletOf = (method: string): AirwallexWallet | null => (
+    method === 'airwallex_google_pay' ? 'google_pay' : method === 'airwallex_apple_pay' ? 'apple_pay' : null
+);
 
 const redirectPaymentMethods: ReadonlySet<PaymentMethod> = new Set(['airwallex', 'payoneer', 'pingpong', 'paypal']);
 
@@ -363,13 +367,28 @@ export default function CheckoutPage() {
     // Card brand reported by Airwallex's card number iframe ('mastercard', 'visa', ...); null while empty/unknown.
     const [airwallexCardBrand, setAirwallexCardBrand] = useState<string | null>(null);
     const airwallexEnv = paymentMethods.find((method) => method.method === 'airwallex')?.env ?? null;
-    const airwallexWallet = paymentMethods.find((method) => method.method === 'airwallex_google_pay');
-    // Whether Stripe's own Google Pay button is usable here (null until Stripe says). Airwallex's Google Pay is
+    const airwallexGooglePay = paymentMethods.find((method) => method.method === 'airwallex_google_pay');
+    const airwallexApplePay = paymentMethods.find((method) => method.method === 'airwallex_apple_pay');
+    // Whether Stripe's own Google / Apple Pay button is usable here (null until Stripe says). Airwallex's wallet is
     // only the fallback for when it is not: switched off in the admin, or Stripe reports it unavailable.
     const [stripeGooglePayAvailable, setStripeGooglePayAvailable] = useState<boolean | null>(null);
+    const [stripeApplePayAvailable, setStripeApplePayAvailable] = useState<boolean | null>(null);
     const stripeGooglePayOffered = paymentMethods.some((method) => method.method === 'google_pay');
-    const airwallexWalletOffered = Boolean(airwallexWallet?.env && airwallexWallet.merchant_id)
+    const stripeApplePayOffered = paymentMethods.some((method) => method.method === 'apple_pay');
+    // Apple Pay buttons only work in Safari / Apple devices that can pay with it.
+    const [applePaySupported, setApplePaySupported] = useState(false);
+    useEffect(() => {
+        try {
+            const session = (window as unknown as { ApplePaySession?: { canMakePayments: () => boolean } }).ApplePaySession;
+            setApplePaySupported(Boolean(session?.canMakePayments()));
+        } catch {
+            setApplePaySupported(false);
+        }
+    }, []);
+    const airwallexGooglePayOffered = Boolean(airwallexGooglePay?.env && airwallexGooglePay.merchant_id)
         && (!stripeGooglePayOffered || stripeGooglePayAvailable === false);
+    const airwallexApplePayOffered = Boolean(airwallexApplePay?.env) && applePaySupported
+        && (!stripeApplePayOffered || stripeApplePayAvailable === false);
     const [paymentMethodsLoaded, setPaymentMethodsLoaded] = useState(false);
     // The built-in fallback list is only for an unreachable/invalid API. An empty list
     // from a healthy API means the admin switched every method off, and must stay empty.
@@ -414,6 +433,9 @@ export default function CheckoutPage() {
         billingPostalCode: '',
         billingPhone: '',
     });
+    // The Airwallex wallet radio currently selected (null for any other method) and its method entry.
+    const activeAirwallexWallet = airwallexWalletOf(form.paymentMethod);
+    const activeAirwallexWalletEntry = activeAirwallexWallet === 'apple_pay' ? airwallexApplePay : airwallexGooglePay;
     // Stripe.js also powers the Apple/Google Pay buttons, so a wallet entry can supply
     // the publishable key while the Credit card method itself is switched off.
     const selectedCardMethod = paymentMethods.find((method) => method.method === 'card')
@@ -933,7 +955,8 @@ export default function CheckoutPage() {
                 }, Math.round(finalTotal * 100));
             }
 
-            if (method.method === 'airwallex_google_pay') return airwallexWalletOffered;
+            if (method.method === 'airwallex_google_pay') return airwallexGooglePayOffered;
+            if (method.method === 'airwallex_apple_pay') return airwallexApplePayOffered;
 
             return method.method === 'card' || method.method === 'paypal' || method.method === 'airwallex' || method.method === 'cod';
         })
@@ -941,22 +964,30 @@ export default function CheckoutPage() {
 
     // Airwallex's Google Pay button is slow to appear mostly because its SDK only starts loading when the button is
     // first needed; load it as soon as the method is on offer.
-    const airwallexWalletEnv = airwallexWalletOffered ? airwallexWallet?.env ?? null : null;
+    const airwallexWalletEnv = (airwallexGooglePayOffered ? airwallexGooglePay?.env : null)
+        ?? (airwallexApplePayOffered ? airwallexApplePay?.env : null)
+        ?? null;
     useEffect(() => {
         if (airwallexWalletEnv) preloadAirwallexSdk(airwallexWalletEnv);
     }, [airwallexWalletEnv]);
 
-    // Stripe reports its Google Pay button asynchronously; if it never does (Stripe blocked or slow), stop waiting.
+    // Stripe reports its Google / Apple Pay buttons asynchronously; if one never does (Stripe blocked or slow), stop waiting.
     useEffect(() => {
         if (!stripeGooglePayOffered || stripeGooglePayAvailable !== null) return;
 
         const timer = window.setTimeout(() => setStripeGooglePayAvailable((current) => current ?? false), 6000);
         return () => window.clearTimeout(timer);
     }, [stripeGooglePayOffered, stripeGooglePayAvailable]);
+    useEffect(() => {
+        if (!stripeApplePayOffered || stripeApplePayAvailable !== null) return;
+
+        const timer = window.setTimeout(() => setStripeApplePayAvailable((current) => current ?? false), 6000);
+        return () => window.clearTimeout(timer);
+    }, [stripeApplePayOffered, stripeApplePayAvailable]);
 
     useEffect(() => {
         const selectedMethod = form.paymentMethod;
-        const isStripeAltMethod = isStripeAltPaymentMethod(selectedMethod) || selectedMethod === 'airwallex_google_pay';
+        const isStripeAltMethod = isStripeAltPaymentMethod(selectedMethod) || airwallexWalletOf(selectedMethod) !== null;
 
         if (isStripeAltMethod && !availablePaymentMethods.some((method) => method.method === selectedMethod)) {
             const fallbackMethod = availablePaymentMethods[0]?.method ?? 'cod';
@@ -1180,12 +1211,13 @@ export default function CheckoutPage() {
             );
         }
 
-        if (method.method === 'airwallex_google_pay') {
+        if (method.method === 'airwallex_google_pay' || method.method === 'airwallex_apple_pay') {
+            const isApple = method.method === 'airwallex_apple_pay';
             return (
                 <div className="flex h-[24px] w-[38px] items-center justify-center overflow-hidden rounded-[3px]">
-                    {/* The official logo is 64:24; object-contain fits it into the same 38x24 box as every other badge. */}
+                    {/* The official Google Pay logo is 64:24; object-contain fits it into the same 38x24 box as every other badge. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/assets/payment/googlepay.svg" alt="Google Pay" width="38" height="24" className="h-full w-full object-contain" />
+                    <img src={isApple ? '/assets/payment/applepay.svg' : '/assets/payment/googlepay.svg'} alt={isApple ? 'Apple Pay' : 'Google Pay'} width="38" height="24" className="h-full w-full object-contain" />
                 </div>
             );
         }
@@ -1335,7 +1367,7 @@ export default function CheckoutPage() {
         // otherwise a selected last-row method renders its own rounded
         // corners above a square-cornered panel, mismatching the outer
         // container's real bottom edge.
-        const expandsDetailsBelow = isSelected && (method === 'card' || method === 'paypal' || method === 'airwallex' || method === 'airwallex_google_pay' || isStripeAltPaymentMethod(method));
+        const expandsDetailsBelow = isSelected && (method === 'card' || method === 'paypal' || method === 'airwallex' || airwallexWalletOf(method) !== null || isStripeAltPaymentMethod(method));
         const isFirst = index === 0;
         const isLast = index === availablePaymentMethods.length - 1;
 
@@ -1476,7 +1508,7 @@ export default function CheckoutPage() {
                 billing: billingAddress,
                 shipping_method: form.shippingMethod,
                 // Airwallex's Google Pay button is an Airwallex card payment; the wallet rides in payment_context.
-                payment_method: form.paymentMethod === 'airwallex_google_pay' ? 'airwallex' : form.paymentMethod,
+                payment_method: airwallexWalletOf(form.paymentMethod) ? 'airwallex' : form.paymentMethod,
                 payment_context: paymentContext,
                 totalAmount: finalTotal,
                 coupon_code: coupon.discountAmount > 0 ? coupon.code : null,
@@ -1537,7 +1569,7 @@ export default function CheckoutPage() {
 
     // Also used for Airwallex, whose session endpoint takes the same payload and returns the same
     // client_secret / intent_id / session_id / return_url (plus env and currency for Airwallex.js).
-    const prepareStripeAltSession = async (method: StripeAltPaymentMethod | 'airwallex', wallet?: 'google_pay'): Promise<{
+    const prepareStripeAltSession = async (method: StripeAltPaymentMethod | 'airwallex', wallet?: AirwallexWallet): Promise<{
         client_secret: string;
         intent_id: string;
         session_id: string;
@@ -1974,6 +2006,7 @@ export default function CheckoutPage() {
                             googlePayEnabled={paymentMethods.some((method) => method.method === 'google_pay')}
                             amazonPayEnabled={paymentMethods.some((method) => method.method === 'amazon_pay')}
                             onGooglePayAvailability={setStripeGooglePayAvailable}
+                            onApplePayAvailability={setStripeApplePayAvailable}
                             onRedirectStart={() => {
                                 localStorage.removeItem('petposture_cart');
                                 localStorage.removeItem('petposture_cart_coupon');
@@ -2356,9 +2389,9 @@ export default function CheckoutPage() {
                                             </div>
                                         )}
 
-                                        {method.method === 'airwallex_google_pay' && form.paymentMethod === 'airwallex_google_pay' && airwallexWallet?.env && airwallexWallet.merchant_id && (
+                                        {airwallexWalletOf(method.method) !== null && form.paymentMethod === method.method && (
                                             <div className={`border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
-                                                <p className="text-sm leading-[1.45] text-[#6f7782]">Pay with the Google Pay button below, in place of &ldquo;Complete order&rdquo;.</p>
+                                                <p className="text-sm leading-[1.45] text-[#6f7782]">Pay with the {method.label} button below, in place of &ldquo;Complete order&rdquo;.</p>
                                             </div>
                                         )}
 
@@ -2386,7 +2419,7 @@ export default function CheckoutPage() {
                             </div>
                         </section>
 
-                        {form.paymentMethod !== 'card' && form.paymentMethod !== 'airwallex' && form.paymentMethod !== 'airwallex_google_pay' && (
+                        {form.paymentMethod !== 'card' && form.paymentMethod !== 'airwallex' && activeAirwallexWallet === null && (
                             <section className="pt-6">
                                 <h2 className="mb-3 text-[18px] font-semibold text-[#333333]">Billing address</h2>
                                 <div className="overflow-visible rounded-[8px] shadow-[0_0_0_1px_#d9d9d9,0_8px_24px_rgba(17,24,39,0.03)]">
@@ -2420,16 +2453,19 @@ export default function CheckoutPage() {
                             </section>
                         )}
 
-                        {/* Google Pay (Airwallex) pays with its own official button, which takes the place of "Complete order":
-                            only a tap inside Airwallex's iframe opens the Google Pay sheet, and Google requires its real button. */}
-                        {form.paymentMethod === 'airwallex_google_pay' && airwallexWallet?.env && airwallexWallet.merchant_id ? (
+                        {/* Google Pay / Apple Pay (Airwallex) pay with their own official button, which takes the place of
+                            "Complete order": only a tap inside Airwallex's iframe opens the wallet sheet, and Google and Apple
+                            require their real buttons. */}
+                        {activeAirwallexWallet && activeAirwallexWalletEntry?.env && (activeAirwallexWallet === 'apple_pay' || activeAirwallexWalletEntry.merchant_id) ? (
                             <div className="pt-6">
-                                <AirwallexGooglePayPanel
-                                    env={airwallexWallet.env}
-                                    merchantId={airwallexWallet.merchant_id}
+                                <AirwallexWalletPanel
+                                    key={activeAirwallexWallet}
+                                    wallet={activeAirwallexWallet}
+                                    env={activeAirwallexWalletEntry.env}
+                                    merchantId={activeAirwallexWalletEntry.merchant_id ?? undefined}
                                     ready={airwallexWalletReady}
                                     attemptKey={airwallexWalletAttemptKey}
-                                    prepareSession={() => prepareStripeAltSession('airwallex', 'google_pay')}
+                                    prepareSession={() => prepareStripeAltSession('airwallex', activeAirwallexWallet)}
                                     placeOrder={(context) => placeOrder(context)}
                                     onPaid={finishAirwallexWallet}
                                 />

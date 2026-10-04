@@ -1988,6 +1988,40 @@ class CheckoutApiTest extends TestCase
         ]))->assertStatus(422);
     }
 
+    public function test_airwallex_apple_pay_needs_no_merchant_id_and_follows_its_own_switch(): void
+    {
+        $this->configureAirwallex();
+        config()->set('services.airwallex.merchant_id', null);
+        Http::fake([
+            'https://api-demo.airwallex.com/api/v1/authentication/login' => Http::response(['token' => 'awx_token']),
+            'https://api-demo.airwallex.com/api/v1/pa/payment_intents/create' => Http::response(['id' => 'int_awx_ap_1', 'client_secret' => 'awx_secret_ap'], 201),
+        ]);
+        $variant = $this->createPurchasableVariant();
+        $wallet = fn (string $method) => collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->first(fn (array $entry): bool => $entry['method'] === $method && $entry['enabled']);
+
+        // Google Pay needs the account id, Apple Pay does not (Airwallex validates the merchant for the web itself).
+        $this->assertNull($wallet('airwallex_google_pay'));
+        $this->assertNotNull($wallet('airwallex_apple_pay'));
+
+        $this->postJson('/api/checkout/airwallex-session', array_replace($this->stripeAltSessionPayload($variant), ['payment_method' => 'airwallex', 'wallet' => 'apple_pay']))
+            ->assertOk()
+            ->assertJsonPath('session.intent_id', 'int_awx_ap_1');
+
+        $placed = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_ap_1', 'session_id' => 'AIRWALLEX-AP', 'wallet' => 'apple_pay'],
+        ]))->assertCreated();
+        $this->assertSame('apple_pay', Order::query()->findOrFail($placed->json('order.id'))->meta['payment_wallet']);
+
+        Setting::set('payment_method_airwallex_apple_pay_enabled', false, 'boolean', 'payment');
+        $this->assertNull($wallet('airwallex_apple_pay'));
+        $this->postJson('/api/checkout/airwallex-session', array_replace($this->stripeAltSessionPayload($variant), ['payment_method' => 'airwallex', 'wallet' => 'apple_pay']))->assertStatus(422);
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_ap_2', 'session_id' => 'AIRWALLEX-AP2', 'wallet' => 'apple_pay'],
+        ]))->assertStatus(422);
+    }
+
     public function test_airwallex_webhook_reads_the_card_of_a_google_pay_payment(): void
     {
         $this->configureAirwallex();

@@ -21,7 +21,7 @@ class PaymentGatewayManager
      * Stripe wallets they are card payments of the 'airwallex' gateway with a switch of their own,
      * 'airwallex_<wallet>'.
      */
-    public const AIRWALLEX_WALLETS = ['google_pay' => 'Google Pay'];
+    public const AIRWALLEX_WALLETS = ['google_pay' => 'Google Pay', 'apple_pay' => 'Apple Pay'];
 
     /**
      * @param  iterable<PaymentGatewayInterface>  $gateways
@@ -97,7 +97,9 @@ class PaymentGatewayManager
                         'admin_enabled' => $adminEnabled,
                         'stripe_status' => null,
                         'airwallex_status' => $airwallexStatus,
-                        'enabled' => $available && $adminEnabled && filled(config('services.airwallex.merchant_id')),
+                        // Google Pay needs our Airwallex account id (gatewayMerchantId); Apple Pay on the web is validated by
+                        // Airwallex with its own certificates, so it only needs the domain registered in their dashboard.
+                        'enabled' => $available && $adminEnabled && ($wallet !== 'google_pay' || filled(config('services.airwallex.merchant_id'))),
                     ];
                 }
             }

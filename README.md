@@ -540,6 +540,16 @@ webhook marks it paid and stores the card (`googlepay.tokenized_card`) with `met
 A cancelled sheet leaves an unpaid order that can be paid later like any abandoned Airwallex order.
 Changing `AIRWALLEX_MERCHANT_ID` needs a backend container recreate and a Cloudflare cache purge.
 
+**Apple Pay through Airwallex (fallback).** Same pattern as Google Pay (`applePayButton` element, switch
+`airwallex_apple_pay`, order created on the tap with `payment_context.wallet=apple_pay`), with these
+differences: it needs no merchant id (Airwallex validates the merchant with Apple using its own
+certificates for the web), but the domain must be registered in the Airwallex dashboard (Payments →
+Apple Pay → Web domains, which asks for the Apple verification file served at
+`/.well-known/apple-developer-merchantid-domain-association` from `frontend/public/.well-known/`), and the
+radio only shows in a browser where `ApplePaySession.canMakePayments()` is true (Safari / Apple devices). It
+is offered only when Stripe's Apple Pay is off or unavailable. Its shipping address also comes from our own
+form, not from the Apple Pay sheet.
+
 ### Admin switches for checkout payment methods
 
 Admin → Payment methods lists, inside each gateway tab, the methods that gateway offers, each with

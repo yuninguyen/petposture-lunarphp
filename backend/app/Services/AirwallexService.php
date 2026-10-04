@@ -400,8 +400,9 @@ class AirwallexService
         $card = null;
 
         foreach ([$object['payment_method'] ?? [], $object['latest_payment_attempt']['payment_method'] ?? []] as $method) {
-            // Google Pay holds the card as a tokenized one ({brand, type: DEBIT, last4}), a plain card as {brand, card_type, last4}.
-            $card = $method['card'] ?? $method['googlepay']['tokenized_card'] ?? null;
+            // Google Pay holds the card as a tokenized one ({brand, type: DEBIT, last4}), a plain card as
+            // {brand, card_type, last4}; Apple Pay is read the same way as Google Pay.
+            $card = $method['card'] ?? $method['googlepay']['tokenized_card'] ?? $method['applepay']['tokenized_card'] ?? null;
 
             if (is_array($card)) {
                 break;

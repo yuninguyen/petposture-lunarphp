@@ -142,11 +142,14 @@ export async function mountAirwallexCardFields(
     };
 }
 
-export type AirwallexGooglePayOptions = {
-    merchantId: string;
+export type AirwallexWallet = 'google_pay' | 'apple_pay';
+
+export type AirwallexWalletOptions = {
+    // Google Pay only: our Airwallex account id (gatewayMerchantId). Apple Pay on the web needs none.
+    merchantId?: string;
     intentId: string;
     clientSecret: string;
-    // The PaymentIntent's amount in minor units and its currency; Google Pay shows it in the sheet.
+    // The PaymentIntent's amount in minor units and its currency; the wallet sheet shows it.
     amountMinor: number;
     currency: string;
     authFormContainer: string;
@@ -157,38 +160,62 @@ export type AirwallexGooglePayOptions = {
     onError: (message: string) => void;
 };
 
-// Airwallex's own Google Pay button. Tapping it pays the PaymentIntent given here straight away, so the intent
-// has to exist (with the right amount) before the button is mounted. Its events are only delivered when they
-// are registered AFTER mount().
-export async function mountAirwallexGooglePay(env: string, containerId: string, options: AirwallexGooglePayOptions): Promise<{ destroy: () => void }> {
+const walletLabels: Record<AirwallexWallet, string> = { google_pay: 'Google Pay', apple_pay: 'Apple Pay' };
+
+// Same size and corners as the "Complete order" button these buttons stand in for.
+const walletButtonStyle = { height: '49px', borderRadius: '3px' };
+
+function walletElementOptions(wallet: AirwallexWallet, options: AirwallexWalletOptions): Record<string, unknown> {
+    const common = {
+        intent_id: options.intentId,
+        client_secret: options.clientSecret,
+        amount: { value: options.amountMinor / 100, currency: options.currency.toUpperCase() },
+        countryCode: 'US',
+        buttonType: 'plain',
+        buttonColor: 'black',
+    };
+
+    if (wallet === 'apple_pay') {
+        // Airwallex validates the merchant with Apple itself (its own certificates) for the web, so the
+        // validateMerchant step is not ours. The shipping address comes from our own form, not from the sheet.
+        return {
+            ...common,
+            totalPriceLabel: 'PetPosture',
+            requiredBillingContactFields: ['postalAddress'],
+            appearance: { rules: { '.ApplePayButton': walletButtonStyle } },
+        };
+    }
+
+    return {
+        ...common,
+        gatewayMerchantId: options.merchantId,
+        billingAddressRequired: true,
+        billingAddressParameters: { format: 'FULL' },
+        authFormContainer: options.authFormContainer,
+        buttonSizeMode: 'fill',
+        appearance: { rules: { '.GooglePayButton': walletButtonStyle } },
+    };
+}
+
+// Airwallex's own Google Pay / Apple Pay button. Tapping it pays the PaymentIntent given here straight away, so
+// the intent has to exist (with the right amount) before the button is mounted. Its events are only delivered
+// when they are registered AFTER mount().
+export async function mountAirwallexWallet(env: string, wallet: AirwallexWallet, containerId: string, options: AirwallexWalletOptions): Promise<{ destroy: () => void }> {
     await initAirwallexSdk(env);
 
     const sdk = window.AirwallexComponentsSDK;
     if (!sdk) throw new Error('Airwallex could not be loaded. Please try again.');
 
-    const element = await sdk.createElement('googlePayButton', {
-        intent_id: options.intentId,
-        client_secret: options.clientSecret,
-        amount: { value: options.amountMinor / 100, currency: options.currency.toUpperCase() },
-        countryCode: 'US',
-        gatewayMerchantId: options.merchantId,
-        billingAddressRequired: true,
-        billingAddressParameters: { format: 'FULL' },
-        authFormContainer: options.authFormContainer,
-        buttonType: 'plain',
-        buttonColor: 'black',
-        buttonSizeMode: 'fill',
-        // Same size and corners as the "Complete order" button this one stands in for.
-        appearance: { rules: { '.GooglePayButton': { height: '49px', borderRadius: '3px' } } },
-    });
+    const label = walletLabels[wallet];
+    const element = await sdk.createElement(wallet === 'apple_pay' ? 'applePayButton' : 'googlePayButton', walletElementOptions(wallet, options));
 
-    if (!element) throw new Error('Google Pay could not be started. Please try again.');
+    if (!element) throw new Error(`${label} could not be started. Please try again.`);
 
     element.mount(containerId);
     element.on?.('click', () => options.onClick());
     element.on?.('success', () => options.onSuccess());
     element.on?.('cancel', () => options.onCancel());
-    element.on?.('error', (event) => options.onError(event?.detail?.error?.message || 'Google Pay could not complete the payment. Please try again.'));
+    element.on?.('error', (event) => options.onError(event?.detail?.error?.message || `${label} could not complete the payment. Please try again.`));
 
     return { destroy: () => element.destroy?.() };
 }
