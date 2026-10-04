@@ -375,19 +375,11 @@ export default function CheckoutPage() {
     const [stripeApplePayAvailable, setStripeApplePayAvailable] = useState<boolean | null>(null);
     const stripeGooglePayOffered = paymentMethods.some((method) => method.method === 'google_pay');
     const stripeApplePayOffered = paymentMethods.some((method) => method.method === 'apple_pay');
-    // Apple Pay buttons only work in Safari / Apple devices that can pay with it.
-    const [applePaySupported, setApplePaySupported] = useState(false);
-    useEffect(() => {
-        try {
-            const session = (window as unknown as { ApplePaySession?: { canMakePayments: () => boolean } }).ApplePaySession;
-            setApplePaySupported(Boolean(session?.canMakePayments()));
-        } catch {
-            setApplePaySupported(false);
-        }
-    }, []);
+    // Airwallex's Apple Pay button is drawn in every browser (Apple lets other browsers pay by scanning a QR code
+    // with an iPhone), so it is not limited to Safari.
     const airwallexGooglePayOffered = Boolean(airwallexGooglePay?.env && airwallexGooglePay.merchant_id)
         && (!stripeGooglePayOffered || stripeGooglePayAvailable === false);
-    const airwallexApplePayOffered = Boolean(airwallexApplePay?.env) && applePaySupported
+    const airwallexApplePayOffered = Boolean(airwallexApplePay?.env)
         && (!stripeApplePayOffered || stripeApplePayAvailable === false);
     const [paymentMethodsLoaded, setPaymentMethodsLoaded] = useState(false);
     // The built-in fallback list is only for an unreachable/invalid API. An empty list
