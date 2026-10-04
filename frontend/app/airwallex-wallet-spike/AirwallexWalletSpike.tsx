@@ -65,6 +65,7 @@ export default function AirwallexWalletSpike() {
                     gatewayMerchantId: MERCHANT_ID,
                     emailRequired: true,
                     shippingAddressRequired: true,
+                    shippingAddressParameters: { phoneNumberRequired: true, format: 'FULL' },
                     billingAddressRequired: true,
                     billingAddressParameters: { format: 'FULL', phoneNumberRequired: true },
                     authFormContainer: 'spike-auth',
@@ -72,7 +73,7 @@ export default function AirwallexWalletSpike() {
                     buttonColor: 'black',
                 });
                 if (!element || cancelled) return;
-                ['ready', 'cancel', 'error', 'success', 'shippingMethodChange', 'shippingAddressChange', 'click'].forEach((name) => {
+                ['ready', 'cancel', 'error', 'success', 'authorized', 'shippingMethodChange', 'shippingAddressChange', 'click'].forEach((name) => {
                     element.on(name, (event) => log(`event ${name}`, event?.detail ?? ''));
                 });
                 element.on('success', async () => {
