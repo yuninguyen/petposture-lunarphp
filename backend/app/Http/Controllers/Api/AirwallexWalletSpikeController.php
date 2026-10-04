@@ -9,14 +9,14 @@ use Illuminate\Support\Str;
 
 /**
  * THROWAWAY spike: finds out what the Airwallex Google Pay element leaves us after a payment
- * (shipping address / email / name). Delete together with its two routes and public/airwallex-wallet-spike.html.
+ * (shipping address / email / name). Delete together with its two routes and frontend/app/airwallex-wallet-spike.
  */
 class AirwallexWalletSpikeController extends Controller
 {
     public function create(AirwallexService $airwallex): JsonResponse
     {
         $token = 'SPIKE-'.Str::upper(Str::random(16));
-        $intent = $airwallex->createPaymentIntent(500, 'USD', $token, rtrim((string) config('app.frontend_url'), '/').'/airwallex-wallet-spike.html');
+        $intent = $airwallex->createPaymentIntent(500, 'USD', $token, rtrim((string) config('app.frontend_url'), '/').'/airwallex-wallet-spike');
 
         return response()->json(['intent' => $intent]);
     }

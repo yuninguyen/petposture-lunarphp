@@ -133,7 +133,7 @@ Route::post('/checkout/paypal-order/shipping', [CheckoutController::class, 'getP
 Route::post('/checkout/paypal-capture', [CheckoutController::class, 'capturePayPalOrder'])->middleware('throttle:api-write');
 Route::post('/checkout/tax-quote', [CheckoutController::class, 'taxQuote'])->middleware('throttle:api-write');
 Route::post('/checkout/airwallex-session', [CheckoutController::class, 'prepareAirwallexSession'])->middleware('throttle:api-write');
-// THROWAWAY spike (Airwallex Google Pay): remove with AirwallexWalletSpikeController and public/airwallex-wallet-spike.html.
+// THROWAWAY spike (Airwallex Google Pay): remove with AirwallexWalletSpikeController and frontend/app/airwallex-wallet-spike.
 Route::post('/checkout/airwallex-wallet-spike', [AirwallexWalletSpikeController::class, 'create'])->middleware('throttle:api-write');
 Route::get('/checkout/airwallex-wallet-spike/{intentId}', [AirwallexWalletSpikeController::class, 'show'])->middleware('throttle:api-write');
 Route::post('/checkout/payoneer-session', [CheckoutController::class, 'preparePayoneerSession'])->middleware('throttle:api-write');
