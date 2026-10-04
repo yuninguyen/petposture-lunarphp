@@ -161,8 +161,13 @@ class AirwallexService
             'merchant_order_id' => $sessionToken,
             'return_url' => $returnUrl,
             'metadata' => ['session_id' => $sessionToken],
-            'customer' => array_filter($customer, static fn ($value) => filled($value)),
         ];
+
+        $customer = array_filter($customer, static fn ($value) => filled($value));
+
+        if ($customer !== []) {
+            $payload['customer'] = $customer;
+        }
 
         if ($shipping !== []) {
             $payload['order'] = ['shipping' => $shipping];
