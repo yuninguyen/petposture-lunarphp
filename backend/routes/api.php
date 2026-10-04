@@ -37,7 +37,6 @@ use App\Http\Controllers\Api\Admin\ShippingMethodController;
 use App\Http\Controllers\Api\Admin\SystemUserController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AfterShipWebhookController;
-use App\Http\Controllers\Api\AirwallexWalletSpikeController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\BreedController;
@@ -133,9 +132,6 @@ Route::post('/checkout/paypal-order/shipping', [CheckoutController::class, 'getP
 Route::post('/checkout/paypal-capture', [CheckoutController::class, 'capturePayPalOrder'])->middleware('throttle:api-write');
 Route::post('/checkout/tax-quote', [CheckoutController::class, 'taxQuote'])->middleware('throttle:api-write');
 Route::post('/checkout/airwallex-session', [CheckoutController::class, 'prepareAirwallexSession'])->middleware('throttle:api-write');
-// THROWAWAY spike (Airwallex Google Pay): remove with AirwallexWalletSpikeController and frontend/app/airwallex-wallet-spike.
-Route::post('/checkout/airwallex-wallet-spike', [AirwallexWalletSpikeController::class, 'create'])->middleware('throttle:api-write');
-Route::get('/checkout/airwallex-wallet-spike/{intentId}', [AirwallexWalletSpikeController::class, 'show'])->middleware('throttle:api-write');
 Route::post('/checkout/payoneer-session', [CheckoutController::class, 'preparePayoneerSession'])->middleware('throttle:api-write');
 Route::post('/checkout/pingpong-session', [CheckoutController::class, 'preparePingPongSession'])->middleware('throttle:api-write');
 Route::post('/checkout/paypal-session', [CheckoutController::class, 'preparePayPalSession'])->middleware('throttle:api-write');
