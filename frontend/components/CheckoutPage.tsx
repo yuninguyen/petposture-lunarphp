@@ -2350,15 +2350,7 @@ export default function CheckoutPage() {
 
                                         {method.method === 'airwallex_google_pay' && form.paymentMethod === 'airwallex_google_pay' && airwallexWallet?.env && airwallexWallet.merchant_id && (
                                             <div className={`border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
-                                                <AirwallexGooglePayPanel
-                                                    env={airwallexWallet.env}
-                                                    merchantId={airwallexWallet.merchant_id}
-                                                    ready={airwallexWalletReady}
-                                                    attemptKey={airwallexWalletAttemptKey}
-                                                    prepareSession={() => prepareStripeAltSession('airwallex', 'google_pay')}
-                                                    placeOrder={(context) => placeOrder(context)}
-                                                    onPaid={finishAirwallexWallet}
-                                                />
+                                                <p className="text-sm leading-[1.45] text-[#6f7782]">Pay with the Google Pay button below, in place of &ldquo;Complete order&rdquo;.</p>
                                             </div>
                                         )}
 
@@ -2420,8 +2412,22 @@ export default function CheckoutPage() {
                             </section>
                         )}
 
-                        {/* Google Pay (Airwallex) pays with its own button inside the Payment section. */}
-                        <div className={`pt-6 ${form.paymentMethod === 'airwallex_google_pay' ? 'hidden' : ''}`}>
+                        {/* Google Pay (Airwallex) pays with its own official button, which takes the place of "Complete order":
+                            only a tap inside Airwallex's iframe opens the Google Pay sheet, and Google requires its real button. */}
+                        {form.paymentMethod === 'airwallex_google_pay' && airwallexWallet?.env && airwallexWallet.merchant_id ? (
+                            <div className="pt-6">
+                                <AirwallexGooglePayPanel
+                                    env={airwallexWallet.env}
+                                    merchantId={airwallexWallet.merchant_id}
+                                    ready={airwallexWalletReady}
+                                    attemptKey={airwallexWalletAttemptKey}
+                                    prepareSession={() => prepareStripeAltSession('airwallex', 'google_pay')}
+                                    placeOrder={(context) => placeOrder(context)}
+                                    onPaid={finishAirwallexWallet}
+                                />
+                            </div>
+                        ) : (
+                        <div className="pt-6">
                             <Button
                                 type="submit"
                                 variant="primary"
@@ -2441,6 +2447,7 @@ export default function CheckoutPage() {
                                 )}
                             </Button>
                         </div>
+                        )}
                     </form>
 
                     <footer className="mt-16 border-t border-[#e6e6e6] pt-8">

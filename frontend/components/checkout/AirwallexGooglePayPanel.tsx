@@ -131,7 +131,7 @@ export function AirwallexGooglePayPanel({ env, merchantId, ready, attemptKey, pr
             ) : status === 'preparing' || status === 'idle' ? (
                 <p className="text-sm leading-[1.45] text-[#6f7782]" role="status">Loading Google Pay…</p>
             ) : null}
-            <div id={BUTTON_ID} className={ready ? 'min-h-[48px] w-full' : 'hidden'} />
+            <div id={BUTTON_ID} className={ready ? 'min-h-[49px] w-full' : 'hidden'} />
             <div id={AUTH_FORM_ID} className="empty:hidden" />
             {message ? <p role="alert" className="text-sm font-medium text-[#b42318]">{message}</p> : null}
         </div>

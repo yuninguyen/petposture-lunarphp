@@ -173,6 +173,8 @@ export async function mountAirwallexGooglePay(env: string, containerId: string, 
         buttonType: 'plain',
         buttonColor: 'black',
         buttonSizeMode: 'fill',
+        // Same size and corners as the "Complete order" button this one stands in for.
+        appearance: { rules: { '.GooglePayButton': { height: '49px', borderRadius: '3px' } } },
     });
 
     if (!element) throw new Error('Google Pay could not be started. Please try again.');
