@@ -1063,6 +1063,8 @@ class PaymentMethodControllerTest extends TestCase
         $this->assertSame('off', $methods['airwallex_klarna']['airwallex_status']);
         $this->assertSame('unavailable', $methods['airwallex_affirm']['airwallex_status'], 'A method Airwallex does not list is not offered to this account.');
         $this->assertTrue($methods['airwallex']['supported'], 'The Airwallex row itself is sold now, so it is no longer a locked, read-only row.');
+        $this->assertSame('Credit or Debit Card', $methods['airwallex']['label']);
+        $this->assertSame('on', $methods['airwallex']['airwallex_status'], 'The Airwallex card shows its dashboard state like the other Airwallex rows.');
         $this->assertNull($methods['card']['airwallex_status'] ?? null);
         $response->assertJsonPath('airwallex_sync.ok', true);
     }

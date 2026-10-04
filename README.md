@@ -550,7 +550,7 @@ hidden at checkout in its existing position **and** refused by `POST /api/checko
 purges the Cloudflare API cache, so the storefront follows within the purge delay.
 
 - Stripe: Credit card, Google Pay, Apple Pay, Affirm, Afterpay / Clearpay, Klarna, Cash App Pay,
-  Amazon Pay, ACH Direct Debit. PayPal: PayPal, Venmo. Airwallex: a "Credit or Debit Card (Airwallex)" row, a real switch for the in-page
+  Amazon Pay, ACH Direct Debit. PayPal: PayPal, Venmo. Airwallex: a "Credit or Debit Card" row (with an "On in Airwallex" badge from the Airwallex dashboard, like the other Airwallex rows), a real switch for the in-page
   Airwallex card form (see "Airwallex (card fields in the checkout)"), plus read-only rows for what the
   Airwallex account offers (ACH Direct Debit, Affirm, Afterpay / Clearpay, Apple Pay, Cash App Pay,
   Klarna, Venmo, PayPal; no Amazon Pay; keys are `airwallex_*`; the card itself is the row above). Airwallex

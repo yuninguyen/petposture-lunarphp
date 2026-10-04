@@ -69,6 +69,8 @@ class PaymentGatewayManager
                 'available' => $available,
                 'admin_enabled' => $adminEnabled,
                 'stripe_status' => $stripeStatus,
+                // The admin shows what the Airwallex dashboard says about its card, like Stripe's "On in Stripe".
+                ...($gateway->method() === 'airwallex' ? ['airwallex_status' => app(AirwallexPaymentMethodStatusService::class)->status('airwallex')] : []),
                 'enabled' => $available && $adminEnabled,
             ];
 

@@ -15,6 +15,7 @@ class AirwallexPaymentMethodStatusService
 
     /** Our admin method key => the payment method type name Airwallex uses. */
     public const AIRWALLEX_NAMES = [
+        'airwallex' => 'card',
         'airwallex_ach_debit' => 'ach_direct_debit',
         'airwallex_affirm' => 'affirm',
         'airwallex_afterpay_clearpay' => 'afterpay',
