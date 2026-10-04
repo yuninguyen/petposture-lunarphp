@@ -138,6 +138,35 @@ describe('ExpressCheckout', () => {
         expect(slots().map((slot) => [slot.style.visibility, slot.style.minHeight])).toEqual([['hidden', '0'], ['visible', '45px']]);
     });
 
+    it('lets only the available buttons share the row, parking the others out of the flow', () => {
+        const availabilityHandlers: Record<string, (event: { paymentMethods?: Record<string, boolean> }) => void> = {};
+        const elementsGroup = {
+            create: vi.fn().mockImplementation((_type: string, options: { paymentMethods: { applePay: string } }) => ({
+                mount: vi.fn(),
+                on: vi.fn((event: string, handler: (event: { paymentMethods?: Record<string, boolean> }) => void) => {
+                    if (event === 'availablepaymentmethodschange') availabilityHandlers[options.paymentMethods.applePay === 'always' ? 'apple_pay' : 'google_pay'] = handler;
+                }),
+            })),
+            submit: vi.fn(),
+            update: vi.fn(),
+        };
+        const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn() };
+
+        const element = render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} />);
+        const slots = () => Array.from(element.querySelectorAll<HTMLDivElement>('div.min-w-0'));
+        const inRow = () => slots().map((slot) => slot.classList.contains('sm:flex-1'));
+
+        // Nothing is available yet: nobody holds a share of the row.
+        expect(inRow()).toEqual([false, false]);
+        expect(slots().every((slot) => slot.classList.contains('absolute'))).toBe(true);
+
+        act(() => availabilityHandlers.google_pay({ paymentMethods: { googlePay: true } }));
+        expect(inRow()).toEqual([false, true]);
+
+        act(() => availabilityHandlers.apple_pay({ paymentMethods: { applePay: true } }));
+        expect(inRow()).toEqual([true, true]);
+    });
+
     it('reports whether Stripe Google Pay is usable so the checkout can fall back to Airwallex Google Pay', () => {
         const availabilityHandlers: Record<string, (event: { paymentMethods: Record<string, boolean> | null }) => void> = {};
         const elementsGroup = {

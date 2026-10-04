@@ -97,6 +97,12 @@ type StripeExpressConfirmEvent = {
 // Height of an Express Checkout wallet button (matches the PayPal button next to it).
 const WALLET_BUTTON_MIN_HEIGHT = 45;
 
+// An available button takes an equal share of the row; one that is not available is parked out of the flow
+// (still laid out at a real width, so the wallet SDK can measure it) instead of holding an empty share.
+const slotClass = (available: boolean) => available
+    ? 'min-w-0 overflow-hidden sm:flex-1'
+    : 'pointer-events-none absolute left-0 top-0 -z-10 w-[280px] min-w-0 overflow-hidden';
+
 export interface ExpressCheckoutProps {
     items: Array<{ variantId: number; quantity: number }>;
     couponCode: string | null;
@@ -545,15 +551,19 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                 min-w-0 (flex items default to min-width: auto, which would
                 otherwise let any child's intrinsic content width override
                 the equal flex-basis). */}
-            <div className="flex flex-col gap-3 sm:flex-row">
-                {/* A switched-off wallet is not rendered at all, so the remaining buttons share the row. */}
-                {paypalClientId && <div ref={paypalButtonMountRef} className="min-w-0 overflow-hidden sm:flex-1" style={{ visibility: canPayPal ? 'visible' : 'hidden' }} />}
+            <div className="relative flex flex-col gap-3 sm:flex-row">
+                {/* A switched-off wallet is not rendered at all, so the remaining buttons share the row. A wallet that is
+                    rendered but not (yet) available stays mounted -- Stripe has to lay its element out to report
+                    availability -- but is taken out of the flow (slotClass), so it neither reserves a share of the row
+                    nor adds a gap: one available button spans the row, two split it, three share it equally. */}
+                {paypalClientId && <div ref={paypalButtonMountRef} className={slotClass(canPayPal)} style={{ visibility: canPayPal ? 'visible' : 'hidden' }} />}
                 {/* Stripe sizes its iframe to this slot: without the PayPal button next to it giving the
                     row a height, an auto-height slot collapses the wallet button to 8px. Reserve the
                     button height only while the wallet is actually available (no blank gap otherwise). */}
-                {amazonPayEnabled && <div ref={amazonButtonMountRef} className="min-w-0 overflow-hidden transition-opacity hover:opacity-85 sm:flex-1" style={{ visibility: canAmazonPay ? 'visible' : 'hidden', minHeight: canAmazonPay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
-                {applePayEnabled && <div ref={appleButtonMountRef} className="min-w-0 overflow-hidden transition-opacity hover:opacity-85 sm:flex-1" style={{ visibility: canApplePay ? 'visible' : 'hidden', minHeight: canApplePay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
-                {googlePayEnabled && <div ref={googleButtonMountRef} className="min-w-0 overflow-hidden transition-opacity hover:opacity-85 sm:flex-1" style={{ visibility: canGooglePay ? 'visible' : 'hidden', minHeight: canGooglePay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}            </div>
+                {amazonPayEnabled && <div ref={amazonButtonMountRef} className={`${slotClass(canAmazonPay)} transition-opacity hover:opacity-85`} style={{ visibility: canAmazonPay ? 'visible' : 'hidden', minHeight: canAmazonPay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
+                {applePayEnabled && <div ref={appleButtonMountRef} className={`${slotClass(canApplePay)} transition-opacity hover:opacity-85`} style={{ visibility: canApplePay ? 'visible' : 'hidden', minHeight: canApplePay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
+                {googlePayEnabled && <div ref={googleButtonMountRef} className={`${slotClass(canGooglePay)} transition-opacity hover:opacity-85`} style={{ visibility: canGooglePay ? 'visible' : 'hidden', minHeight: canGooglePay ? WALLET_BUTTON_MIN_HEIGHT : 0 }} />}
+            </div>
             {anyAvailable && (
                 <div className="flex items-center gap-3">
                     <div className="h-px flex-1 bg-[#e8e8ea]" />
