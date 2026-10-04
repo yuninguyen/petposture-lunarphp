@@ -485,10 +485,11 @@ export default function CheckoutPage() {
         };
     }, []);
 
-    // Airwallex's card fields live inside this page: mount them while Airwallex is the selected method
-    // and tear them down when the shopper picks something else.
+    // Airwallex's card fields live inside this page. They are mounted as soon as the method is on offer (into
+    // the panel below, which stays laid out but hidden until the method is selected) because the iframes take
+    // about a second to load: mounting on selection left the shopper looking at empty fields.
     useEffect(() => {
-        if (form.paymentMethod !== 'airwallex' || !airwallexEnv) return;
+        if (!airwallexEnv || !paymentMethodsLoaded || !document.getElementById('airwallex-card-number')) return;
 
         let cancelled = false;
         let mounted: AirwallexCardFields | null = null;
@@ -518,7 +519,7 @@ export default function CheckoutPage() {
             mounted?.destroy();
             airwallexFieldsRef.current = null;
         };
-    }, [form.paymentMethod, airwallexEnv]);
+    }, [airwallexEnv, paymentMethodsLoaded]);
 
     useEffect(() => {
         setForm((prev) => ({
@@ -2216,8 +2217,15 @@ export default function CheckoutPage() {
                                             </div>
                                         )}
 
-                                        {method.method === 'airwallex' && form.paymentMethod === 'airwallex' && (
-                                            <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
+                                        {method.method === 'airwallex' && (
+                                            // Always rendered so the Airwallex fields can load in advance; until selected it keeps its width
+                                            // (the iframes size themselves from it) but has no height, is invisible and cannot take focus.
+                                            <div
+                                                inert={form.paymentMethod !== 'airwallex'}
+                                                className={form.paymentMethod === 'airwallex'
+                                                    ? `grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`
+                                                    : 'invisible grid h-0 gap-3 overflow-hidden px-4'}
+                                            >
                                                 {/* Laid out exactly like the Stripe card form above; the three fields are Airwallex iframes. */}
                                                 <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-[#f4cdb7]">
                                                     {/* Airwallex draws its own card-brand logos on the right of this field (every brand while empty,
