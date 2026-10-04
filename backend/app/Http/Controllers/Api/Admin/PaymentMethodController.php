@@ -52,11 +52,12 @@ class PaymentMethodController extends Controller
     public function updateCardBrands(Request $request, PaymentMethodService $paymentMethods): JsonResponse
     {
         $validated = $request->validate([
+            'gateway' => ['sometimes', 'string', Rule::in(['stripe', 'airwallex'])],
             'brands' => ['present', 'array'],
             'brands.*' => ['string', Rule::in(StripeCardGateway::BRANDS)],
         ]);
 
-        return response()->json(['data' => $paymentMethods->updateCardBrands($validated['brands'])]);
+        return response()->json(['data' => $paymentMethods->updateCardBrands($validated['brands'], $validated['gateway'] ?? 'stripe')]);
     }
 
     public function test(TestPaymentMethodRequest $request, string $gateway, PaymentMethodService $paymentMethods): JsonResponse
@@ -80,6 +81,7 @@ class PaymentMethodController extends Controller
             'cod' => ['enabled' => $paymentMethods->codEnabled()],
             'methods' => $paymentMethods->checkoutMethods($gateways),
             'card_brands' => $paymentMethods->cardBrands(),
+            'airwallex_card_brands' => $paymentMethods->cardBrands('airwallex'),
             'stripe_sync' => $paymentMethods->stripeSync(),
             'airwallex_sync' => $paymentMethods->airwallexSync(),
         ]);

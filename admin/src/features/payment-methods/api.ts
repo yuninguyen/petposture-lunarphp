@@ -70,6 +70,7 @@ export interface PaymentMethodsResponse {
   cod: { enabled: boolean };
   methods?: CheckoutPaymentMethodState[];
   card_brands?: CardBrandsState;
+  airwallex_card_brands?: CardBrandsState;
   stripe_sync?: StripeSyncState;
   airwallex_sync?: StripeSyncState;
 }
@@ -99,8 +100,9 @@ export function refreshAirwallexSync(): Promise<{ data: { methods: CheckoutPayme
   return fetchJson('/admin/finance/payment-methods/airwallex-sync', { method: 'POST' });
 }
 
-export function updateCardBrands(brands: string[]): Promise<{ data: CardBrandsState }> {
-  return fetchJson('/admin/finance/payment-methods/card-brands', { method: 'PUT', body: { brands } });
+// The Stripe card's logos by default; pass 'airwallex' for the Airwallex card's own selection.
+export function updateCardBrands(brands: string[], gateway?: 'airwallex'): Promise<{ data: CardBrandsState }> {
+  return fetchJson('/admin/finance/payment-methods/card-brands', { method: 'PUT', body: gateway ? { gateway, brands } : { brands } });
 }
 
 export function updatePaymentMethod(

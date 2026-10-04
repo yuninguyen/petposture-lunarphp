@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Models\Setting;
+use App\Payments\Gateways\AirwallexGateway;
 use App\Payments\Gateways\StripeCardGateway;
 use App\Payments\PaymentGatewayManager;
 use App\Services\AirwallexPaymentMethodStatusService;
@@ -181,24 +182,30 @@ class PaymentMethodService
     }
 
     /**
-     * Card brand logos shown beside "Credit card" at checkout (display only).
+     * Card brand logos shown beside "Credit card" at checkout (display only): the Stripe card's by default,
+     * or the Airwallex card's ($gateway = 'airwallex').
      *
      * @return array{enabled: array<int, string>, available: array<int, string>}
      */
-    public function cardBrands(): array
+    public function cardBrands(string $gateway = 'stripe'): array
     {
-        return ['enabled' => StripeCardGateway::enabledBrands(), 'available' => StripeCardGateway::BRANDS];
+        return $gateway === 'airwallex'
+            ? ['enabled' => AirwallexGateway::enabledBrands(), 'available' => AirwallexGateway::BRANDS]
+            : ['enabled' => StripeCardGateway::enabledBrands(), 'available' => StripeCardGateway::BRANDS];
     }
 
     /**
      * @param  array<int, string>  $brands
      * @return array{enabled: array<int, string>, available: array<int, string>}
      */
-    public function updateCardBrands(array $brands): array
+    public function updateCardBrands(array $brands, string $gateway = 'stripe'): array
     {
-        Setting::set('payment_card_brands', array_values(array_intersect(StripeCardGateway::BRANDS, $brands)), 'json', 'payment');
+        $key = $gateway === 'airwallex' ? 'payment_card_brands_airwallex' : 'payment_card_brands';
+        $available = $gateway === 'airwallex' ? AirwallexGateway::BRANDS : StripeCardGateway::BRANDS;
 
-        return $this->cardBrands();
+        Setting::set($key, array_values(array_intersect($available, $brands)), 'json', 'payment');
+
+        return $this->cardBrands($gateway);
     }
 
     public function updateMethodEnabled(string $method, bool $enabled, PaymentGatewayManager $gateways): array

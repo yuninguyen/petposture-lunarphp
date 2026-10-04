@@ -52,8 +52,11 @@ export function PaymentMethodsPage() {
     onSuccess: (result) => queryClient.setQueryData<PaymentMethodsResponse>(QUERY_KEY, (current) => replaceMethod(current, result.data)),
   });
   const brandsMutation = useMutation({
-    mutationFn: updateCardBrands,
-    onSuccess: (result) => queryClient.setQueryData<PaymentMethodsResponse>(QUERY_KEY, (current) => current && { ...current, card_brands: result.data }),
+    mutationFn: ({ brands, gateway }: { brands: string[]; gateway?: 'airwallex' }) => updateCardBrands(brands, gateway),
+    onSuccess: (result, { gateway }) => queryClient.setQueryData<PaymentMethodsResponse>(
+      QUERY_KEY,
+      (current) => current && { ...current, [gateway === 'airwallex' ? 'airwallex_card_brands' : 'card_brands']: result.data },
+    ),
   });
   const syncMutation = useMutation({
     mutationFn: refreshStripeSync,
@@ -82,6 +85,7 @@ export function PaymentMethodsPage() {
     [paymentMethodsQuery.data?.methods, selectedGateway],
   );
   const cardBrands = paymentMethodsQuery.data?.card_brands;
+  const airwallexCardBrands = paymentMethodsQuery.data?.airwallex_card_brands;
   // Gateways whose method states are read (read-only) from the provider's own API.
   const syncByGateway = {
     stripe: { sync: paymentMethodsQuery.data?.stripe_sync, mutation: syncMutation, prefix: 'stripe' },
@@ -248,34 +252,46 @@ export function PaymentMethodsPage() {
                       onChange={(enabled) => methodMutation.mutate({ method: method.method, enabled })}
                     />
                   </div>
-                  {method.method === 'card' && cardBrands && (
-                    <fieldset className="mt-3 rounded-lg bg-slate-50 px-4 py-3 sm:ml-[4.5rem]">
-                      <legend className="px-1 text-xs font-medium text-slate-700">{t('payment_methods.checkout_methods.brands_title', { defaultValue: 'Card logos shown at checkout' })}</legend>
-                      <p className="mb-2 text-xs text-slate-500">{t('payment_methods.checkout_methods.brands_hint', { defaultValue: 'Display only. Which cards are accepted is set in your Stripe account.' })}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {cardBrands.available.map((brand) => {
-                          const on = cardBrands.enabled.includes(brand);
-                          return (
-                            <label
-                              key={brand}
-                              className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${on ? 'border-secondary bg-secondary/10 text-slate-900' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-100'}`}
-                            >
-                              <input
-                                type="checkbox"
-                                className="sr-only"
-                                checked={on}
-                                disabled={brandsMutation.isPending}
-                                onChange={(event) => brandsMutation.mutate(
-                                  event.target.checked ? [...cardBrands.enabled, brand] : cardBrands.enabled.filter((item) => item !== brand),
-                                )}
-                              />
-                              {t(`payment_methods.card_brands.${brand}`, { defaultValue: brand })}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </fieldset>
-                  )}
+                  {(() => {
+                    // The Stripe card and the Airwallex card each keep their own logo selection.
+                    const isAirwallexCard = method.method === 'airwallex';
+                    const brandsState = method.method === 'card' ? cardBrands : isAirwallexCard ? airwallexCardBrands : undefined;
+                    if (!brandsState) return null;
+
+                    return (
+                      <fieldset className="mt-3 rounded-lg bg-slate-50 px-4 py-3 sm:ml-[4.5rem]">
+                        <legend className="px-1 text-xs font-medium text-slate-700">{t('payment_methods.checkout_methods.brands_title', { defaultValue: 'Card logos shown at checkout' })}</legend>
+                        <p className="mb-2 text-xs text-slate-500">
+                          {isAirwallexCard
+                            ? t('payment_methods.checkout_methods.brands_hint_airwallex', { defaultValue: 'Display only. Which cards are accepted is set in your Airwallex account.' })
+                            : t('payment_methods.checkout_methods.brands_hint', { defaultValue: 'Display only. Which cards are accepted is set in your Stripe account.' })}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {brandsState.available.map((brand) => {
+                            const on = brandsState.enabled.includes(brand);
+                            return (
+                              <label
+                                key={brand}
+                                className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${on ? 'border-secondary bg-secondary/10 text-slate-900' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-100'}`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="sr-only"
+                                  checked={on}
+                                  disabled={brandsMutation.isPending}
+                                  onChange={(event) => brandsMutation.mutate({
+                                    brands: event.target.checked ? [...brandsState.enabled, brand] : brandsState.enabled.filter((item) => item !== brand),
+                                    gateway: isAirwallexCard ? 'airwallex' : undefined,
+                                  })}
+                                />
+                                {t(`payment_methods.card_brands.${brand}`, { defaultValue: brand })}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </fieldset>
+                    );
+                  })()}
                 </li>
               );
             })}

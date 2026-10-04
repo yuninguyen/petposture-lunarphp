@@ -2,6 +2,7 @@
 
 namespace App\Payments\Gateways;
 
+use App\Models\Setting;
 use App\Payments\Contracts\PaymentGatewayInterface;
 use App\Payments\Data\PaymentPreparation;
 use App\Payments\PaymentGatewayManager;
@@ -9,6 +10,22 @@ use App\Services\AirwallexService;
 
 class AirwallexGateway implements PaymentGatewayInterface
 {
+    /** Card brand logos the checkout can show, in display order (the same set as the Stripe card). */
+    public const BRANDS = StripeCardGateway::BRANDS;
+
+    /**
+     * Brands whose logos the admin has switched on for the Airwallex card (all of them until the admin saves a
+     * choice). Display only — the Airwallex account decides which cards are accepted.
+     *
+     * @return array<int, string>
+     */
+    public static function enabledBrands(): array
+    {
+        $stored = Setting::get('payment_card_brands_airwallex');
+
+        return is_array($stored) ? array_values(array_intersect(self::BRANDS, $stored)) : self::BRANDS;
+    }
+
     public function __construct(
         private readonly AirwallexService $airwallexService,
     ) {}
@@ -60,7 +77,7 @@ class AirwallexGateway implements PaymentGatewayInterface
             // Off until AIRWALLEX_CHECKOUT_ENABLED is set, like the Stripe method allowlist.
             'enabled' => $configured && (bool) config('services.airwallex.checkout_enabled', false),
             'mode' => $configured ? 'configured' : 'placeholder',
-            'brands' => ['visa', 'mastercard', 'amex', 'discover', 'diners', 'jcb', 'unionpay'],
+            'brands' => self::enabledBrands(),
         ];
     }
 }

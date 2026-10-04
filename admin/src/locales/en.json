@@ -142,6 +142,7 @@
   "payment_methods.credentials.title": "Connection & credentials",
   "payment_methods.checkout_methods.brands_title": "Card logos shown at checkout",
   "payment_methods.checkout_methods.brands_hint": "Display only. Which cards are accepted is set in your Stripe account.",
+  "payment_methods.checkout_methods.brands_hint_airwallex": "Display only. Which cards are accepted is set in your Airwallex account.",
   "payment_methods.card_brands.visa": "Visa",
   "payment_methods.card_brands.mastercard": "Mastercard",
   "payment_methods.card_brands.amex": "American Express",

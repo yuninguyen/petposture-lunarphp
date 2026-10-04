@@ -382,4 +382,32 @@ describe('PaymentMethodsPage', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Visa' }));
     await waitFor(() => expect(mocks.fetchJson).toHaveBeenLastCalledWith('/admin/finance/payment-methods/card-brands', { method: 'PUT', body: { brands: ['mastercard', 'amex'] } }));
   });
+
+  it('gives the Airwallex card its own logo selection, saved for the Airwallex gateway only', async () => {
+    const card_brands = { enabled: ['visa', 'mastercard', 'amex'], available: ['visa', 'mastercard', 'amex'] };
+    const airwallex_card_brands = { enabled: ['visa'], available: ['visa', 'mastercard', 'amex'] };
+    const methods = [
+      { method: 'card', label: 'Credit card', gateway: 'stripe', enabled: true, available: true, admin_enabled: true, supported: true },
+      { method: 'airwallex', label: 'Credit or Debit Card (Airwallex)', gateway: 'airwallex', enabled: true, available: true, admin_enabled: true, supported: true },
+    ];
+    mocks.fetchJson.mockImplementation(async (_url: string, options?: { method?: string; body?: { brands: string[] } }) => (
+      options?.method === 'PUT'
+        ? { data: { ...airwallex_card_brands, enabled: options.body?.brands ?? [] } }
+        : { data: gateways, cod: COD_ENABLED, methods, card_brands, airwallex_card_brands }
+    ));
+    renderPage();
+
+    await screen.findByRole('checkbox', { name: 'American Express' });
+    expect(screen.getByText(/set in your Stripe account/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByTestId('gateway-selector')[2]);
+
+    expect(await screen.findByText(/set in your Airwallex account/)).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Visa' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Mastercard' })).not.toBeChecked();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Mastercard' }));
+    await waitFor(() => expect(mocks.fetchJson).toHaveBeenCalledWith('/admin/finance/payment-methods/card-brands', { method: 'PUT', body: { gateway: 'airwallex', brands: ['visa', 'mastercard'] } }));
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Mastercard' })).toBeChecked());
+  });
 });

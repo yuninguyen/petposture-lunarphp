@@ -554,7 +554,10 @@ purges the Cloudflare API cache, so the storefront follows within the purge dela
   Airwallex card form (see "Airwallex (card fields in the checkout)"), plus read-only rows for what the
   Airwallex account offers (ACH Direct Debit, Affirm, Afterpay / Clearpay, Apple Pay, Cash App Pay,
   Klarna, Venmo, PayPal; no Amazon Pay; keys are `airwallex_*`; the card itself is the row above). Airwallex
-  Google Pay (`airwallex_google_pay`) is a real switch too (see "Google Pay through Airwallex").
+  Google Pay (`airwallex_google_pay`) is a real switch too (see "Google Pay through Airwallex"). The Stripe
+  card and the Airwallex card each have a "Card logos shown at checkout" box (display only) with its own
+  selection: `payment_card_brands` for Stripe, `payment_card_brands_airwallex` for Airwallex
+  (`PUT /api/admin/finance/payment-methods/card-brands`, `gateway: airwallex` for the latter).
   Payoneer: a locked row. Venmo, Payoneer and every other `airwallex_*` row are listed but locked ("Not
   supported yet") — the storefront does not sell through them, so a switch would change nothing.
   PingPong is intentionally never exposed.

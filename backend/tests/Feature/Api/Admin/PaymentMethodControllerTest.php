@@ -1197,6 +1197,38 @@ class PaymentMethodControllerTest extends TestCase
         $this->assertSame([], $brands());
     }
 
+    public function test_airwallex_card_logos_have_their_own_admin_selection_apart_from_stripes(): void
+    {
+        $all = ['visa', 'mastercard', 'amex', 'discover', 'diners', 'jcb', 'unionpay'];
+        $brandsOf = fn (string $method) => collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->firstWhere('method', $method)['brands'];
+
+        $this->assertSame($all, $brandsOf('airwallex'));
+
+        Sanctum::actingAs($this->userWithRole('Support'));
+        $this->putJson('/api/admin/finance/payment-methods/card-brands', ['gateway' => 'airwallex', 'brands' => ['visa']])->assertForbidden();
+
+        Sanctum::actingAs($this->userWithRole('admin'));
+        $this->putJson('/api/admin/finance/payment-methods/card-brands', ['gateway' => 'airwallex', 'brands' => ['unionpay', 'visa']])
+            ->assertOk()
+            ->assertJsonPath('data.enabled', ['visa', 'unionpay'])
+            ->assertJsonPath('data.available', $all);
+
+        // Saved for Airwallex only: Stripe's card keeps showing everything.
+        $this->assertSame(['visa', 'unionpay'], $brandsOf('airwallex'));
+        $this->assertSame($all, $brandsOf('card'));
+        $this->getJson('/api/admin/finance/payment-methods')
+            ->assertJsonPath('airwallex_card_brands.enabled', ['visa', 'unionpay'])
+            ->assertJsonPath('card_brands.enabled', $all);
+
+        // And the other way round.
+        $this->putJson('/api/admin/finance/payment-methods/card-brands', ['brands' => ['amex']])->assertOk();
+        $this->assertSame(['amex'], $brandsOf('card'));
+        $this->assertSame(['visa', 'unionpay'], $brandsOf('airwallex'));
+
+        $this->putJson('/api/admin/finance/payment-methods/card-brands', ['gateway' => 'payoneer', 'brands' => ['visa']])->assertUnprocessable();
+        $this->putJson('/api/admin/finance/payment-methods/card-brands', ['gateway' => 'airwallex', 'brands' => ['visa', 'not-a-brand']])->assertUnprocessable();
+    }
+
     private function userWithRole(string $role): User
     {
         $user = User::factory()->create();

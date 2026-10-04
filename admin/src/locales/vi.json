@@ -142,6 +142,7 @@
   "payment_methods.credentials.title": "Kết nối & thông tin xác thực",
   "payment_methods.checkout_methods.brands_title": "Logo thẻ hiển thị ở trang thanh toán",
   "payment_methods.checkout_methods.brands_hint": "Chỉ điều khiển phần hiển thị. Loại thẻ được chấp nhận do cấu hình tài khoản Stripe quyết định.",
+  "payment_methods.checkout_methods.brands_hint_airwallex": "Chỉ điều khiển phần hiển thị. Loại thẻ được chấp nhận do cấu hình tài khoản Airwallex quyết định.",
   "payment_methods.card_brands.visa": "Visa",
   "payment_methods.card_brands.mastercard": "Mastercard",
   "payment_methods.card_brands.amex": "American Express",
