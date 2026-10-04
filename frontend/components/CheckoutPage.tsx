@@ -26,7 +26,7 @@ import { getShippingAmount } from '@/lib/pricing';
 import { getAttributionData } from '@/lib/attribution';
 import { Button } from '@/components/ui/Button';
 import { ExpressCheckout } from './checkout/ExpressCheckout';
-import { confirmAirwallexCardPayment, mountAirwallexCardFields, type AirwallexCardFields } from './checkout/airwallexCheckout';
+import { confirmAirwallexCardPayment, mountAirwallexCardFields, preloadAirwallexSdk, type AirwallexCardFields } from './checkout/airwallexCheckout';
 import { AirwallexGooglePayPanel, type AirwallexWalletOrder, type AirwallexWalletSession } from './checkout/AirwallexGooglePayPanel';
 import {
     buildAffirmPaymentData,
@@ -938,6 +938,13 @@ export default function CheckoutPage() {
             return method.method === 'card' || method.method === 'paypal' || method.method === 'airwallex' || method.method === 'cod';
         })
         .sort((left, right) => paymentMethodOrder[left.method as keyof typeof paymentMethodOrder] - paymentMethodOrder[right.method as keyof typeof paymentMethodOrder]);
+
+    // Airwallex's Google Pay button is slow to appear mostly because its SDK only starts loading when the button is
+    // first needed; load it as soon as the method is on offer.
+    const airwallexWalletEnv = airwallexWalletOffered ? airwallexWallet?.env ?? null : null;
+    useEffect(() => {
+        if (airwallexWalletEnv) preloadAirwallexSdk(airwallexWalletEnv);
+    }, [airwallexWalletEnv]);
 
     // Stripe reports its Google Pay button asynchronously; if it never does (Stripe blocked or slow), stop waiting.
     useEffect(() => {

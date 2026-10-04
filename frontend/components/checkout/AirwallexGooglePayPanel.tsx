@@ -31,7 +31,7 @@ export interface AirwallexGooglePayPanelProps {
 const BUTTON_ID = 'airwallex-google-pay-button';
 const AUTH_FORM_ID = 'airwallex-google-pay-3ds';
 // Typing an address changes the key on every keystroke; wait for it to settle before opening an intent.
-const SETTLE_MS = 700;
+const SETTLE_MS = 350;
 
 type Status = 'idle' | 'preparing' | 'ready' | 'error';
 
@@ -128,10 +128,14 @@ export function AirwallexGooglePayPanel({ env, merchantId, ready, attemptKey, pr
         <div className="grid gap-3">
             {!ready ? (
                 <p className="text-sm leading-[1.45] text-[#6f7782]">Enter your contact and shipping details above, then pay with Google Pay here.</p>
-            ) : status === 'preparing' || status === 'idle' ? (
-                <p className="text-sm leading-[1.45] text-[#6f7782]" role="status">Loading Google Pay…</p>
             ) : null}
-            <div id={BUTTON_ID} className={ready ? 'min-h-[49px] w-full' : 'hidden'} />
+            <div className={ready ? 'relative' : 'hidden'}>
+                <div id={BUTTON_ID} className="min-h-[49px] w-full" />
+                {/* A dimmed stand-in for the button while the intent and the Airwallex iframe load, so the spot is not empty. */}
+                {status !== 'ready' && status !== 'error' ? (
+                    <div role="status" aria-label="Loading Google Pay" className="pointer-events-none absolute inset-0 animate-pulse rounded-[3px] bg-[#202124]/70" />
+                ) : null}
+            </div>
             <div id={AUTH_FORM_ID} className="empty:hidden" />
             {message ? <p role="alert" className="text-sm font-medium text-[#b42318]">{message}</p> : null}
         </div>

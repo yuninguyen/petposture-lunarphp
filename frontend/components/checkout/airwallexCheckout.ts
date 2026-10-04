@@ -66,6 +66,11 @@ function initAirwallexSdk(env: string): Promise<void> {
     });
 }
 
+// Starts loading and initialising Airwallex.js in the background, so a button mounted later does not wait for it.
+export function preloadAirwallexSdk(env: string): void {
+    initAirwallexSdk(env).catch(() => undefined);
+}
+
 // Split card fields (number, expiry, CVC) rendered by Airwallex inside our own checkout page. The
 // PaymentIntent does not exist yet at this point; its id and secret are passed to confirm() later.
 export type AirwallexCardNumberState = { empty: boolean; brand: string };
