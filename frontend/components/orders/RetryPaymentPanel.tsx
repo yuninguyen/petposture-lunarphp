@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CreditCard, Loader2 } from "lucide-react";
 import { fetchApi } from "@/lib/fetchApi";
+import { confirmAirwallexCardPayment, mountAirwallexCardFields, type AirwallexCardFields } from "@/components/checkout/airwallexCheckout";
 
 declare global {
     interface Window {
@@ -67,6 +68,10 @@ type PreparedPaymentIntent = {
     mode: string;
     gateway: string;
     publishable_key?: string | null;
+    // Airwallex retries: Airwallex.js environment and the page the shopper returns to afterwards.
+    env?: string;
+    session_id?: string;
+    return_url?: string;
 };
 
 const stripeJsScriptId = "petposture-stripe-js";
@@ -93,6 +98,41 @@ export default function RetryPaymentPanel({
     const stripeInstanceRef = useRef<ReturnType<NonNullable<typeof window.Stripe>> | null>(null);
     const stripeElementsRef = useRef<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>["elements"]> | null>(null);
     const stripeCardElementRef = useRef<ReturnType<ReturnType<ReturnType<NonNullable<typeof window.Stripe>>["elements"]>["create"]> | null>(null);
+    const airwallexFieldsRef = useRef<AirwallexCardFields | null>(null);
+    const [airwallexReady, setAirwallexReady] = useState(false);
+    const isAirwallexRetry = intent?.gateway === "airwallex" && intent.mode === "configured";
+
+    // An Airwallex order is paid again with Airwallex's own card fields, not Stripe's.
+    useEffect(() => {
+        if (!isAirwallexRetry || !intent?.env) return;
+
+        let cancelled = false;
+        let mounted: AirwallexCardFields | null = null;
+        setAirwallexReady(false);
+
+        mountAirwallexCardFields(intent.env, {
+            cardNumber: "retry-airwallex-card-number",
+            expiry: "retry-airwallex-card-expiry",
+            cvc: "retry-airwallex-card-cvc",
+            authForm: "retry-airwallex-3ds",
+        }).then((fields) => {
+            if (cancelled) {
+                fields.destroy();
+                return;
+            }
+            mounted = fields;
+            airwallexFieldsRef.current = fields;
+            setAirwallexReady(true);
+        }).catch((err) => {
+            if (!cancelled) setError(err instanceof Error ? err.message : "The card form could not be loaded.");
+        });
+
+        return () => {
+            cancelled = true;
+            mounted?.destroy();
+            airwallexFieldsRef.current = null;
+        };
+    }, [isAirwallexRetry, intent?.env]);
 
     useEffect(() => {
         if (!intent || intent.mode !== "configured" || !intent.publishable_key || typeof window === "undefined") {
@@ -199,7 +239,37 @@ export default function RetryPaymentPanel({
         }
     };
 
+    const handleConfirmAirwallexRetry = async () => {
+        const fields = airwallexFieldsRef.current;
+        if (!intent || !fields || !intent.return_url || !intent.session_id) {
+            return;
+        }
+
+        setIsConfirming(true);
+        setError(null);
+
+        try {
+            await confirmAirwallexCardPayment(fields, { intent_id: intent.intent_id, client_secret: intent.client_secret });
+
+            // The retry has its own session id, so the confirmation page is reopened under it.
+            try {
+                sessionStorage.setItem(`petposture_payment_access:${intent.session_id}`, JSON.stringify({ email, trackingToken }));
+            } catch {
+                // The page can still find the order through the session id alone.
+            }
+            window.location.href = `${intent.return_url}&redirect_status=succeeded`;
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Payment retry failed.");
+            setIsConfirming(false);
+        }
+    };
+
     const handleConfirmRetry = async () => {
+        if (isAirwallexRetry) {
+            await handleConfirmAirwallexRetry();
+            return;
+        }
+
         if (!intent || intent.mode !== "configured" || !stripeInstanceRef.current || !stripeCardElementRef.current) {
             return;
         }
@@ -267,13 +337,26 @@ export default function RetryPaymentPanel({
 
                 {intent?.mode === "configured" ? (
                     <div className="space-y-3 rounded-[8px] border border-[#d9d9d9] bg-[#faf9f8] p-4">
-                        <div className="rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 py-[15px]">
-                            <div ref={stripeMountRef} />
-                        </div>
+                        {isAirwallexRetry ? (
+                            <>
+                                <div className="rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 py-[15px]">
+                                    <div className="overflow-hidden"><div id="retry-airwallex-card-number" className="w-[calc(100%+220px)]" /></div>
+                                </div>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    <div className="rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 py-[15px]"><div id="retry-airwallex-card-expiry" /></div>
+                                    <div className="rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 py-[15px]"><div id="retry-airwallex-card-cvc" /></div>
+                                </div>
+                                <div id="retry-airwallex-3ds" className="empty:hidden" />
+                            </>
+                        ) : (
+                            <div className="rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 py-[15px]">
+                                <div ref={stripeMountRef} />
+                            </div>
+                        )}
                         <button
                             type="button"
                             onClick={handleConfirmRetry}
-                            disabled={!stripeReady || isConfirming}
+                            disabled={(isAirwallexRetry ? !airwallexReady : !stripeReady) || isConfirming}
                             className="inline-flex h-11 items-center justify-center gap-2 rounded-[3px] bg-[#111827] px-5 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-60"
                         >
                             {isConfirming ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}

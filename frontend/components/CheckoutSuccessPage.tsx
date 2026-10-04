@@ -568,7 +568,7 @@ function OrderSuccessContent() {
                             </div>
                         </div>
 
-                        {trackingToken && email && !bankPaymentProcessing && gateway !== "airwallex" ? (
+                        {trackingToken && email && !bankPaymentProcessing ? (
                             <RetryPaymentPanel trackingToken={trackingToken} email={email} orderStatus={order.status} onCompleted={() => void refreshOrderAfterRetry()} />
                         ) : null}
 

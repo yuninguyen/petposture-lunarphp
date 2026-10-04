@@ -2813,6 +2813,59 @@ class CheckoutApiTest extends TestCase
         $this->assertSame('paid', $order->meta['payment_status']);
     }
 
+    public function test_an_unpaid_airwallex_order_retries_on_airwallex_with_a_fresh_intent_for_the_same_order(): void
+    {
+        $this->configureAirwallex();
+        $variant = $this->createPurchasableVariant();
+        $placed = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_old', 'session_id' => 'AIRWALLEX-OLD'],
+        ]));
+        $placed->assertCreated();
+        Http::fake([
+            'https://api-demo.airwallex.com/api/v1/authentication/login' => Http::response(['token' => 'awx_token']),
+            'https://api-demo.airwallex.com/api/v1/pa/payment_intents/int_awx_old' => Http::response(['id' => 'int_awx_old', 'status' => 'REQUIRES_PAYMENT_METHOD']),
+            'https://api-demo.airwallex.com/api/v1/pa/payment_intents/create' => Http::response(['id' => 'int_awx_new', 'client_secret' => 'awx_secret_new'], 201),
+        ]);
+
+        $response = $this->postJson('/api/orders/retry-payment', [
+            'tracking_token' => $placed->json('order.tracking_access_token'),
+            'email' => 'guest@petposture.com',
+        ])->assertOk()
+            ->assertJsonPath('payment_intent.gateway', 'airwallex')
+            ->assertJsonPath('payment_intent.intent_id', 'int_awx_new')
+            ->assertJsonPath('payment_intent.client_secret', 'awx_secret_new');
+
+        $order = Order::query()->findOrFail($placed->json('order.id'));
+        $this->assertSame('int_awx_new', $order->meta['airwallex_intent_id']);
+        $this->assertSame($response->json('payment_intent.session_id'), $order->meta['airwallex_session_id']);
+        $this->assertSame('airwallex', $order->meta['payment_gateway'], 'A retry must not turn the order into a Stripe card order.');
+        Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/pa/payment_intents/create')
+            && $request['metadata']['session_id'] === $response->json('payment_intent.session_id'));
+    }
+
+    public function test_an_airwallex_order_whose_payment_already_succeeded_cannot_be_retried(): void
+    {
+        $this->configureAirwallex();
+        $variant = $this->createPurchasableVariant();
+        $placed = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_done', 'session_id' => 'AIRWALLEX-DONE'],
+        ]));
+        $placed->assertCreated();
+        Http::fake([
+            'https://api-demo.airwallex.com/api/v1/authentication/login' => Http::response(['token' => 'awx_token']),
+            'https://api-demo.airwallex.com/api/v1/pa/payment_intents/int_awx_done' => Http::response(['id' => 'int_awx_done', 'status' => 'SUCCEEDED']),
+        ]);
+
+        $this->postJson('/api/orders/retry-payment', [
+            'tracking_token' => $placed->json('order.tracking_access_token'),
+            'email' => 'guest@petposture.com',
+        ])->assertStatus(409);
+
+        Http::assertNotSent(fn ($request): bool => str_ends_with($request->url(), '/pa/payment_intents/create'));
+    }
+
     public function test_ach_order_cannot_open_a_second_payment_while_stripe_is_still_processing_the_first(): void
     {
         config()->set('services.stripe.alt_methods', ['ach_debit']);

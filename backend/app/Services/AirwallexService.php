@@ -184,6 +184,82 @@ class AirwallexService
     }
 
     /**
+     * The shopper left an Airwallex order unpaid: open a fresh PaymentIntent for the same order and point the
+     * order at it (new intent id and session token, so the webhook and the confirmation page find it).
+     *
+     * @return array{intent_id: string, client_secret: string, currency: string, env: string, mode: string, gateway: string, session_id: string, return_url: string}
+     */
+    public function prepareRetryIntent(Order $order): array
+    {
+        $total = $order->total;
+        $amount = is_object($total) && isset($total->value) ? (int) $total->value : (int) $total;
+
+        if ($amount <= 0) {
+            throw new RuntimeException('Order total must be positive to retry payment.');
+        }
+
+        $address = $order->shippingAddress;
+        $country = $address?->country?->iso2 ?: 'US';
+        $sessionToken = 'AIRWALLEX-'.Str::upper(Str::random(20));
+        $returnUrl = rtrim((string) config('app.frontend_url'), '/')."/checkout/success?gateway=airwallex&session_id={$sessionToken}";
+
+        $intent = $this->createPaymentIntent(
+            $amount,
+            (string) ($order->currency_code ?: 'USD'),
+            $sessionToken,
+            $returnUrl,
+            [
+                'email' => (string) ($order->customer_reference ?? ''),
+                'first_name' => $address?->first_name,
+                'last_name' => $address?->last_name,
+            ],
+            [
+                'first_name' => (string) ($address?->first_name ?? ''),
+                'last_name' => (string) ($address?->last_name ?? ''),
+                'address' => array_filter([
+                    'country_code' => $country,
+                    'state' => $address?->state,
+                    'city' => $address?->city,
+                    'street' => trim((string) $address?->line_one.' '.(string) $address?->line_two),
+                    'postcode' => $address?->postcode,
+                ], static fn ($value) => filled($value)),
+            ],
+        );
+
+        $meta = (array) ($order->meta ?? []);
+        $meta['airwallex_intent_id'] = $intent['intent_id'];
+        $meta['airwallex_session_id'] = $sessionToken;
+        $meta['payment_status'] = 'pending';
+        $meta['payment_provider_mode'] = $intent['mode'];
+        $order->update(['meta' => $meta]);
+
+        app(OrderEventService::class)->record(
+            $order,
+            'payment.retry_prepared',
+            'Payment retry prepared',
+            'A new payment attempt was prepared for this order.'
+        );
+
+        return $intent + ['gateway' => 'airwallex', 'session_id' => $sessionToken, 'return_url' => $returnUrl];
+    }
+
+    /** Airwallex's status for a PaymentIntent (e.g. SUCCEEDED), or '' when it cannot be read. */
+    public function intentStatus(string $intentId): string
+    {
+        if (! $this->isConfigured()) {
+            return '';
+        }
+
+        try {
+            $response = Http::withToken($this->accessToken())->timeout(5)->get($this->baseUrl().'/api/v1/pa/payment_intents/'.$intentId);
+
+            return $response->successful() ? (string) $response->json('status') : '';
+        } catch (Throwable) {
+            return '';
+        }
+    }
+
+    /**
      * @return array{refund_id: string, status: string, amount: int}
      */
     public function refund(string $intentId, int $amountMinor, string $currency): array

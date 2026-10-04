@@ -8,6 +8,7 @@ use App\Http\Resources\Api\OrderResource;
 use App\Http\Resources\Api\OrderTrackingResource;
 use App\Mail\TrackingLinkResend;
 use App\Models\OrderReturnRequest;
+use App\Services\AirwallexService;
 use App\Services\CheckoutService;
 use App\Services\OrderOperationsService;
 use App\Services\OrderTrackingAccessService;
@@ -28,6 +29,7 @@ class OrderController extends Controller
         private readonly CheckoutService $checkoutService,
         private readonly OrderOperationsService $orderOperationsService,
         private readonly StripePaymentIntentService $stripePaymentIntentService,
+        private readonly AirwallexService $airwallexService,
         private readonly OrderTrackingAccessService $orderTrackingAccessService,
     ) {}
 
@@ -161,13 +163,30 @@ class OrderController extends Controller
         $paymentMethod = (string) (($order->meta['payment_method'] ?? '') ?: '');
         $paymentStatus = (string) (($order->meta['payment_status'] ?? '') ?: 'awaiting-payment');
 
-        $retryEligible = in_array($paymentMethod, ['card', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay', 'ach_debit'], true)
+        $retryEligible = in_array($paymentMethod, ['card', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'amazon_pay', 'ach_debit', 'airwallex'], true)
             && ! in_array($paymentStatus, ['paid', 'cancelled'], true)
             && in_array($order->status, ['awaiting-payment', 'payment-offline'], true)
             && $order->created_at?->greaterThan(now()->subHours(24));
 
         if (! $retryEligible) {
             return response()->json(['message' => 'Payment retry is unavailable.'], 422);
+        }
+
+        // Airwallex orders retry on Airwallex (a fresh intent for the same order), never on Stripe.
+        if (($order->meta['payment_gateway'] ?? '') === 'airwallex') {
+            $airwallexIntentId = (string) ($order->meta['airwallex_intent_id'] ?? '');
+
+            if ($airwallexIntentId !== '' && in_array($this->airwallexService->intentStatus($airwallexIntentId), ['SUCCEEDED', 'REQUIRES_CAPTURE'], true)) {
+                return response()->json([
+                    'message' => 'Your payment is already being processed. We will update this order once it is confirmed.',
+                ], 409);
+            }
+
+            return response()->json([
+                'success' => true,
+                'payment_intent' => $this->airwallexService->prepareRetryIntent($order),
+                'order' => new OrderTrackingResource($order->refresh()->loadMissing('shippingAddress')),
+            ]);
         }
 
         // A bank debit (ACH) stays "processing" for days while the order is still awaiting

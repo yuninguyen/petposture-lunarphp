@@ -1065,8 +1065,13 @@ export default function CheckoutPage() {
 
     const renderPaymentBadges = (method: PaymentMethodOption) => {
         if (method.method === 'card' || method.method === 'airwallex') {
-            // Only the Stripe card form can tell which brand is being typed; Airwallex's fields are cross-origin.
-            const detectedIcon = method.method === 'card' && form.paymentMethod === 'card' ? cardBrandIcons[detectedCardBrand] : undefined;
+            // Like Stripe's card form, the row narrows to the brand being typed; for Airwallex the brand
+            // comes from the card number iframe's messages.
+            const detectedIcon = method.method === 'card' && form.paymentMethod === 'card'
+                ? cardBrandIcons[detectedCardBrand]
+                : method.method === 'airwallex' && form.paymentMethod === 'airwallex' && airwallexCardBrand
+                    ? cardBrandIcons[airwallexCardBrand]
+                    : undefined;
 
             if (detectedIcon) {
                 return (
@@ -2216,21 +2221,11 @@ export default function CheckoutPage() {
                                                 {/* Laid out exactly like the Stripe card form above; the three fields are Airwallex iframes. */}
                                                 <div className="flex h-[48px] items-center rounded-[8px] border border-[#d9d9d9] bg-white px-3.5 transition focus-within:border-secondary focus-within:ring-2 focus-within:ring-[#f4cdb7]">
                                                     {/* Airwallex draws its own card-brand logos on the right of this field (every brand while empty,
-                                                        which flashes when the number is cleared), so that part is always clipped off and the page
-                                                        draws the detected brand itself from the brand the iframe reports. */}
+                                                        which flashes when the number is cleared), so that part is always clipped off; like Stripe,
+                                                        the detected brand is shown on the payment method row instead. */}
                                                     <div className="min-w-0 flex-1 overflow-hidden">
                                                         <div id="airwallex-card-number" className="w-[calc(100%+220px)]" />
                                                     </div>
-                                                    {airwallexCardBrand && cardBrandIcons[airwallexCardBrand] ? (
-                                                        // eslint-disable-next-line @next/next/no-img-element
-                                                        <img
-                                                            src={cardBrandIcons[airwallexCardBrand].src}
-                                                            alt={cardBrandIcons[airwallexCardBrand].alt}
-                                                            width="32"
-                                                            height="20"
-                                                            className="ml-2 h-[20px] w-[32px] flex-shrink-0 object-contain"
-                                                        />
-                                                    ) : null}
                                                     <Lock size={15} className="ml-2 flex-shrink-0 text-[#9ca3af]" />
                                                 </div>
                                                 <div className="grid gap-3 md:grid-cols-2">
