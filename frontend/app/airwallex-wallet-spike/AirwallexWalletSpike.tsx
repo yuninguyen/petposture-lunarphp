@@ -66,7 +66,6 @@ export default function AirwallexWalletSpike() {
                     emailRequired: true,
                     shippingAddressRequired: true,
                     shippingAddressParameters: { phoneNumberRequired: true, format: 'FULL', allowedCountryCodes: ['US'] },
-                    callbackIntents: ['SHIPPING_ADDRESS', 'PAYMENT_AUTHORIZATION'],
                     billingAddressRequired: true,
                     billingAddressParameters: { format: 'FULL', phoneNumberRequired: true },
                     authFormContainer: 'spike-auth',
