@@ -84,14 +84,12 @@ export default function AirwallexWalletSpike() {
                     buttonColor: 'black',
                 });
                 if (!element || cancelled) return;
+                // Registered AFTER mount: handlers set before it never fired in earlier runs.
+                element.mount('spike-google-pay');
                 ['ready', 'cancel', 'error', 'success', 'authorized', 'shippingMethodChange', 'shippingAddressChange', 'click'].forEach((name) => {
                     element.on(name, (event) => log(`event ${name}`, event?.detail ?? ''));
                 });
-                element.on('success', async () => {
-                    const result = await (await fetchApi(`/api/checkout/airwallex-wallet-spike/${intent.intent_id}`)).json();
-                    log('INTENT AFTER PAYMENT', result);
-                });
-                element.mount('spike-google-pay');
+                log('on() registered', typeof element.on);
             } catch (error) {
                 log('ERROR', error instanceof Error ? error.message : String(error));
             }
