@@ -914,13 +914,13 @@ class PaymentMethodControllerTest extends TestCase
         $this->assertSame('paypal', app(PaymentGatewayManager::class)->forMethod('paypal')->method());
     }
 
-    public function test_admin_checkout_method_list_keeps_gateway_order_and_never_exposes_pingpong(): void
+    public function test_admin_checkout_method_list_lists_in_priority_order_and_never_exposes_pingpong(): void
     {
         Sanctum::actingAs($this->userWithRole('admin'));
 
         $methods = array_column($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'), 'method');
 
-        $this->assertSame(['cod', 'card', 'google_pay', 'apple_pay', 'affirm', 'afterpay_clearpay', 'klarna', 'cashapp', 'amazon_pay', 'ach_debit', 'paypal', 'venmo', 'airwallex', 'airwallex_ach_debit', 'airwallex_affirm', 'airwallex_afterpay_clearpay', 'airwallex_apple_pay', 'airwallex_cashapp', 'airwallex_google_pay', 'airwallex_klarna', 'airwallex_venmo', 'airwallex_paypal', 'payoneer'], $methods);
+        $this->assertSame(['card', 'airwallex', 'paypal', 'airwallex_paypal', 'apple_pay', 'airwallex_apple_pay', 'google_pay', 'airwallex_google_pay', 'affirm', 'airwallex_affirm', 'klarna', 'airwallex_klarna', 'afterpay_clearpay', 'airwallex_afterpay_clearpay', 'cashapp', 'airwallex_cashapp', 'amazon_pay', 'ach_debit', 'airwallex_ach_debit', 'venmo', 'airwallex_venmo', 'payoneer', 'cod'], $methods);
 
         $this->putJson('/api/admin/finance/payment-methods/methods/pingpong', ['enabled' => true])->assertNotFound();
         $this->assertSame($methods, array_column($this->getJson('/api/admin/finance/payment-methods')->json('methods'), 'method'));

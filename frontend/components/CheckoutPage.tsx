@@ -149,7 +149,8 @@ const countryOptions = ['United States'];
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const googleMapsScriptId = 'petposture-google-places';
 const stripeJsScriptId = 'petposture-stripe-js';
-const paymentMethodOrder = { card: 0, airwallex_google_pay: 0.5, airwallex_apple_pay: 0.6, paypal: 1, cashapp: 2, affirm: 3, afterpay_clearpay: 4, klarna: 5, amazon_pay: 6, ach_debit: 7, airwallex: 8, payoneer: 9, pingpong: 10, cod: 11 } as const;
+// Card first (Stripe's or Airwallex's, never both), then PayPal, Apple Pay, Google Pay, Affirm, Klarna and the rest.
+const paymentMethodOrder = { card: 0, airwallex: 0.5, paypal: 1, airwallex_apple_pay: 2, airwallex_google_pay: 3, affirm: 4, klarna: 5, cashapp: 6, afterpay_clearpay: 7, amazon_pay: 8, ach_debit: 9, payoneer: 10, pingpong: 11, cod: 12 } as const;
 
 // The only methods rendered as radio rows in the Payment section.
 const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'ach_debit', 'airwallex', 'cod']);

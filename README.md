@@ -553,6 +553,10 @@ form, not from the Apple Pay sheet.
 
 ### Admin switches for checkout payment methods
 
+The checkout radios and the admin lists share one priority order: card (Stripe's or Airwallex's) first, then
+PayPal, Apple Pay, Google Pay, Affirm, Klarna, then the rest (`paymentMethodOrder` in `CheckoutPage.tsx`,
+`PAYMENT_METHODS` in `PaymentMethodService.php`).
+
 Admin → Payment methods lists, inside each gateway tab, the methods that gateway offers, each with
 an on/off switch (`PUT /api/admin/finance/payment-methods/methods/{method}`, core admin only). Off =
 hidden at checkout in its existing position **and** refused by `POST /api/checkout/place-order`
