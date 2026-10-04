@@ -7,6 +7,7 @@ type AirwallexElement = {
     mount: (containerId: string) => unknown;
     destroy?: () => void;
     confirm?: (data: { intent_id: string; client_secret: string; payment_method?: Record<string, unknown> }) => Promise<AirwallexIntent>;
+    on?: (event: string, handler: (event?: { detail?: { error?: { message?: string } } }) => void) => void;
 };
 
 declare global {
@@ -134,6 +135,55 @@ export async function mountAirwallexCardFields(
             for (const element of [cardNumber, expiry, cvc]) element.destroy?.();
         },
     };
+}
+
+export type AirwallexGooglePayOptions = {
+    merchantId: string;
+    intentId: string;
+    clientSecret: string;
+    // The PaymentIntent's amount in minor units and its currency; Google Pay shows it in the sheet.
+    amountMinor: number;
+    currency: string;
+    authFormContainer: string;
+    // Fires when the shopper taps the button, before the payment is sent: the order is created here.
+    onClick: () => void;
+    onSuccess: () => void;
+    onCancel: () => void;
+    onError: (message: string) => void;
+};
+
+// Airwallex's own Google Pay button. Tapping it pays the PaymentIntent given here straight away, so the intent
+// has to exist (with the right amount) before the button is mounted. Its events are only delivered when they
+// are registered AFTER mount().
+export async function mountAirwallexGooglePay(env: string, containerId: string, options: AirwallexGooglePayOptions): Promise<{ destroy: () => void }> {
+    await initAirwallexSdk(env);
+
+    const sdk = window.AirwallexComponentsSDK;
+    if (!sdk) throw new Error('Airwallex could not be loaded. Please try again.');
+
+    const element = await sdk.createElement('googlePayButton', {
+        intent_id: options.intentId,
+        client_secret: options.clientSecret,
+        amount: { value: options.amountMinor / 100, currency: options.currency.toUpperCase() },
+        countryCode: 'US',
+        gatewayMerchantId: options.merchantId,
+        billingAddressRequired: true,
+        billingAddressParameters: { format: 'FULL' },
+        authFormContainer: options.authFormContainer,
+        buttonType: 'plain',
+        buttonColor: 'black',
+        buttonSizeMode: 'fill',
+    });
+
+    if (!element) throw new Error('Google Pay could not be started. Please try again.');
+
+    element.mount(containerId);
+    element.on?.('click', () => options.onClick());
+    element.on?.('success', () => options.onSuccess());
+    element.on?.('cancel', () => options.onCancel());
+    element.on?.('error', (event) => options.onError(event?.detail?.error?.message || 'Google Pay could not complete the payment. Please try again.'));
+
+    return { destroy: () => element.destroy?.() };
 }
 
 const acceptedStatuses = new Set(['SUCCEEDED', 'REQUIRES_CAPTURE']);

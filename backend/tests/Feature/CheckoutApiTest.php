@@ -1929,6 +1929,91 @@ class CheckoutApiTest extends TestCase
         $this->assertSame('failed', Order::query()->findOrFail($placed->json('order.id'))->meta['payment_status']);
     }
 
+    public function test_airwallex_google_pay_is_offered_only_with_a_merchant_id_and_its_own_switch(): void
+    {
+        $this->configureAirwallex();
+        // The endpoint lists every method with an `enabled` flag; what is not enabled is not offered.
+        $wallet = fn () => collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->first(fn (array $method): bool => $method['method'] === 'airwallex_google_pay' && $method['enabled']);
+
+        // No account id: Google Pay cannot identify the merchant, so it is not offered.
+        config()->set('services.airwallex.merchant_id', null);
+        $this->assertNull($wallet());
+
+        config()->set('services.airwallex.merchant_id', 'acct_test_1');
+        $this->assertSame('acct_test_1', $wallet()['merchant_id']);
+        $this->assertSame('demo', $wallet()['env']);
+
+        // Independent of the card switch...
+        Setting::set('payment_method_airwallex_enabled', false, 'boolean', 'payment');
+        $this->assertNotNull($wallet());
+
+        // ...and governed by its own.
+        Setting::set('payment_method_airwallex_google_pay_enabled', false, 'boolean', 'payment');
+        $this->assertNull($wallet());
+    }
+
+    public function test_airwallex_google_pay_session_and_order_follow_the_wallet_switch(): void
+    {
+        $this->configureAirwallex();
+        config()->set('services.airwallex.merchant_id', 'acct_test_1');
+        Http::fake([
+            'https://api-demo.airwallex.com/api/v1/authentication/login' => Http::response(['token' => 'awx_token']),
+            'https://api-demo.airwallex.com/api/v1/pa/payment_intents/create' => Http::response(['id' => 'int_awx_gp_1', 'client_secret' => 'awx_secret_gp'], 201),
+        ]);
+        $variant = $this->createPurchasableVariant();
+        Setting::set('payment_method_airwallex_enabled', false, 'boolean', 'payment');
+
+        $this->postJson('/api/checkout/airwallex-session', array_replace($this->stripeAltSessionPayload($variant), ['payment_method' => 'airwallex', 'wallet' => 'google_pay']))
+            ->assertOk()
+            ->assertJsonPath('session.intent_id', 'int_awx_gp_1');
+
+        $placed = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_gp_1', 'session_id' => 'AIRWALLEX-GP', 'wallet' => 'google_pay'],
+        ]))->assertCreated();
+        $order = Order::query()->findOrFail($placed->json('order.id'));
+        $this->assertSame('google_pay', $order->meta['payment_wallet']);
+        $this->assertSame('airwallex', $order->meta['payment_gateway']);
+
+        // The card form stays refused while its own switch is off.
+        $this->postJson('/api/checkout/airwallex-session', array_replace($this->stripeAltSessionPayload($variant), ['payment_method' => 'airwallex']))
+            ->assertStatus(422);
+
+        Setting::set('payment_method_airwallex_google_pay_enabled', false, 'boolean', 'payment');
+        $this->postJson('/api/checkout/airwallex-session', array_replace($this->stripeAltSessionPayload($variant), ['payment_method' => 'airwallex', 'wallet' => 'google_pay']))
+            ->assertStatus(422);
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_gp_2', 'session_id' => 'AIRWALLEX-GP2', 'wallet' => 'google_pay'],
+        ]))->assertStatus(422);
+    }
+
+    public function test_airwallex_webhook_reads_the_card_of_a_google_pay_payment(): void
+    {
+        $this->configureAirwallex();
+        config()->set('services.airwallex.merchant_id', 'acct_test_1');
+        $variant = $this->createPurchasableVariant();
+        $placed = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_gp_paid', 'session_id' => 'AIRWALLEX-GPPAID', 'wallet' => 'google_pay'],
+        ]));
+        $placed->assertCreated();
+
+        $this->postJson('/api/webhooks/airwallex', [
+            'id' => 'evt_awx_gp_paid',
+            'name' => 'payment_intent.succeeded',
+            'data' => ['object' => [
+                'id' => 'int_awx_gp_paid',
+                'latest_payment_attempt' => ['payment_method' => ['type' => 'googlepay', 'googlepay' => ['tokenized_card' => ['brand' => 'visa', 'type' => 'DEBIT', 'last4' => '0008']]]],
+            ]],
+        ])->assertOk()->assertJsonPath('result.payment_status', 'paid');
+
+        $order = Order::query()->findOrFail($placed->json('order.id'));
+        $this->assertSame('visa', $order->meta['card_brand']);
+        $this->assertSame('0008', $order->meta['card_last4']);
+        $this->assertSame('debit', $order->meta['card_funding']);
+    }
+
     public function test_refunding_an_airwallex_order_calls_the_refund_api_with_the_intent_and_amount(): void
     {
         $this->configureAirwallex();

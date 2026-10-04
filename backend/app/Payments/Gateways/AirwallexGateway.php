@@ -4,6 +4,7 @@ namespace App\Payments\Gateways;
 
 use App\Payments\Contracts\PaymentGatewayInterface;
 use App\Payments\Data\PaymentPreparation;
+use App\Payments\PaymentGatewayManager;
 use App\Services\AirwallexService;
 
 class AirwallexGateway implements PaymentGatewayInterface
@@ -38,6 +39,8 @@ class AirwallexGateway implements PaymentGatewayInterface
                 'payment_provider_mode' => $this->airwallexService->isConfigured() ? 'configured' : 'placeholder',
                 'airwallex_session_id' => $paymentContext['session_id'] ?? null,
                 'airwallex_intent_id' => $paymentContext['intent_id'] ?? null,
+                // A Google Pay button order is still a card payment at Airwallex; remember which wallet was used.
+                'payment_wallet' => is_string($paymentContext['wallet'] ?? null) && isset(PaymentGatewayManager::AIRWALLEX_WALLETS[$paymentContext['wallet']]) ? $paymentContext['wallet'] : null,
             ],
         );
     }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { confirmAirwallexCardPayment, mountAirwallexCardFields } from './airwallexCheckout';
+import { confirmAirwallexCardPayment, mountAirwallexCardFields, mountAirwallexGooglePay } from './airwallexCheckout';
 
 const containers = { cardNumber: 'awx-card-number', expiry: 'awx-expiry', cvc: 'awx-cvc', authForm: 'awx-3ds' };
 
@@ -59,6 +59,57 @@ describe('mountAirwallexCardFields', () => {
         installSdk({ cardNumber: { mount: vi.fn() }, expiry: null, cvc: { mount: vi.fn() } });
 
         await expect(mountAirwallexCardFields('demo-fail', containers)).rejects.toThrow('card form could not be started');
+    });
+});
+
+describe('mountAirwallexGooglePay', () => {
+    const handlers = () => ({ onClick: vi.fn(), onSuccess: vi.fn(), onCancel: vi.fn(), onError: vi.fn() });
+    const base = { merchantId: 'acct_1', intentId: 'int_1', clientSecret: 'secret_1', amountMinor: 4599, currency: 'usd', authFormContainer: 'awx-3ds' };
+
+    it('creates the button for the intent in major units and registers its events only after mount', async () => {
+        const calls: string[] = [];
+        const listeners: Record<string, (event?: unknown) => void> = {};
+        const element = {
+            mount: vi.fn(() => calls.push('mount')),
+            destroy: vi.fn(),
+            on: vi.fn((name: string, handler: (event?: unknown) => void) => { calls.push(`on:${name}`); listeners[name] = handler; }),
+        };
+        const { createElement } = installSdk({ googlePayButton: element });
+        const events = handlers();
+
+        const button = await mountAirwallexGooglePay('demo-gp', 'awx-google-pay', { ...base, ...events });
+
+        expect(createElement).toHaveBeenCalledWith('googlePayButton', expect.objectContaining({
+            intent_id: 'int_1',
+            client_secret: 'secret_1',
+            amount: { value: 45.99, currency: 'USD' },
+            countryCode: 'US',
+            gatewayMerchantId: 'acct_1',
+            authFormContainer: 'awx-3ds',
+        }));
+        expect(element.mount).toHaveBeenCalledWith('awx-google-pay');
+        // Events set before mount() never fire in Airwallex's SDK.
+        expect(calls[0]).toBe('mount');
+
+        listeners.click();
+        listeners.success();
+        listeners.cancel();
+        listeners.error({ detail: { error: { message: 'Declined' } } });
+        listeners.error();
+        expect(events.onClick).toHaveBeenCalledTimes(1);
+        expect(events.onSuccess).toHaveBeenCalledTimes(1);
+        expect(events.onCancel).toHaveBeenCalledTimes(1);
+        expect(events.onError.mock.calls[0]).toEqual(['Declined']);
+        expect(events.onError.mock.calls[1][0]).toContain('Google Pay could not complete');
+
+        button.destroy();
+        expect(element.destroy).toHaveBeenCalled();
+    });
+
+    it('fails with a readable message when Airwallex does not create the button', async () => {
+        installSdk({ googlePayButton: null });
+
+        await expect(mountAirwallexGooglePay('demo-gp-fail', 'awx-google-pay', { ...base, ...handlers() })).rejects.toThrow('Google Pay could not be started');
     });
 });
 

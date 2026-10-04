@@ -147,6 +147,10 @@ class CheckoutController extends Controller
         if ($requestedMethod === 'card' && is_string($wallet) && isset(PaymentGatewayManager::WALLETS[strtolower(trim($wallet))])) {
             $requestedMethod = strtolower(trim($wallet));
         }
+        // Airwallex wallets (the Google Pay button inside the checkout) have their own switch too.
+        if ($requestedMethod === 'airwallex' && is_string($wallet) && isset(PaymentGatewayManager::AIRWALLEX_WALLETS[strtolower(trim($wallet))])) {
+            $requestedMethod = 'airwallex_'.strtolower(trim($wallet));
+        }
         $paymentDefinition = collect(app(PaymentGatewayManager::class)->supportedMethods())
             ->firstWhere('method', $requestedMethod);
 
@@ -825,6 +829,7 @@ class CheckoutController extends Controller
     {
         $validated = Validator::make($request->all(), [
             'payment_method' => 'required|string|in:airwallex',
+            'wallet' => 'nullable|string|in:'.implode(',', array_keys(PaymentGatewayManager::AIRWALLEX_WALLETS)),
             'items' => 'required|array|min:1',
             'items.*.variantId' => 'required|exists:lunar_product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -843,7 +848,9 @@ class CheckoutController extends Controller
             'currency' => 'nullable|string|max:10',
         ])->validate();
 
-        $definition = collect(app(PaymentGatewayManager::class)->supportedMethods())->firstWhere('method', 'airwallex');
+        // A wallet (Google Pay button) is governed by its own switch, the card form by the card one.
+        $method = isset($validated['wallet']) ? 'airwallex_'.$validated['wallet'] : 'airwallex';
+        $definition = collect(app(PaymentGatewayManager::class)->supportedMethods())->firstWhere('method', $method);
 
         if (! $definition || ! ($definition['enabled'] ?? false)) {
             return response()->json([

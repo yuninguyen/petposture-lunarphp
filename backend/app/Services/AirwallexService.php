@@ -397,13 +397,22 @@ class AirwallexService
      */
     private function cardDetails(array $object): array
     {
-        $card = $object['payment_method']['card'] ?? $object['latest_payment_attempt']['payment_method']['card'] ?? null;
+        $card = null;
+
+        foreach ([$object['payment_method'] ?? [], $object['latest_payment_attempt']['payment_method'] ?? []] as $method) {
+            // Google Pay holds the card as a tokenized one ({brand, type: DEBIT, last4}), a plain card as {brand, card_type, last4}.
+            $card = $method['card'] ?? $method['googlepay']['tokenized_card'] ?? null;
+
+            if (is_array($card)) {
+                break;
+            }
+        }
 
         if (! is_array($card) || empty($card['brand'])) {
             return [];
         }
 
-        $funding = strtolower((string) ($card['card_type'] ?? ''));
+        $funding = strtolower((string) ($card['card_type'] ?? $card['type'] ?? ''));
 
         return [
             'card_brand' => strtolower((string) $card['brand']),

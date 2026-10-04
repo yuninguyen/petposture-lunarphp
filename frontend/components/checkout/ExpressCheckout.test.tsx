@@ -138,6 +138,32 @@ describe('ExpressCheckout', () => {
         expect(slots().map((slot) => [slot.style.visibility, slot.style.minHeight])).toEqual([['hidden', '0'], ['visible', '45px']]);
     });
 
+    it('reports whether Stripe Google Pay is usable so the checkout can fall back to Airwallex Google Pay', () => {
+        const availabilityHandlers: Record<string, (event: { paymentMethods: Record<string, boolean> | null }) => void> = {};
+        const elementsGroup = {
+            create: vi.fn().mockImplementation((_type: string, options: { paymentMethods: { applePay: string } }) => ({
+                mount: vi.fn(),
+                on: vi.fn((event: string, handler: (event: { paymentMethods: Record<string, boolean> | null }) => void) => {
+                    if (event === 'availablepaymentmethodschange') availabilityHandlers[options.paymentMethods.applePay === 'always' ? 'apple_pay' : 'google_pay'] = handler;
+                }),
+            })),
+            submit: vi.fn(),
+            update: vi.fn(),
+        };
+        const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn() };
+        const onGooglePayAvailability = vi.fn();
+
+        render(<ExpressCheckout {...baseProps} stripeInstance={stripeInstance as never} onGooglePayAvailability={onGooglePayAvailability} />);
+
+        // Apple Pay's report is not Google Pay's.
+        act(() => availabilityHandlers.apple_pay({ paymentMethods: { applePay: true } }));
+        expect(onGooglePayAvailability).not.toHaveBeenCalled();
+
+        act(() => availabilityHandlers.google_pay({ paymentMethods: null }));
+        act(() => availabilityHandlers.google_pay({ paymentMethods: { googlePay: true } }));
+        expect(onGooglePayAvailability.mock.calls).toEqual([[false], [true]]);
+    });
+
     it('renders nothing when both wallets are switched off and PayPal is not configured', () => {
         const elementsGroup = { create: vi.fn(), submit: vi.fn(), update: vi.fn() };
         const stripeInstance = { elements: vi.fn().mockReturnValue(elementsGroup), confirmPayment: vi.fn() };

@@ -112,9 +112,12 @@ export interface ExpressCheckoutProps {
     // Off by default; onRedirectStart lets the page clear the cart right before that redirect.
     amazonPayEnabled?: boolean;
     onRedirectStart?: () => void;
+    // Told whether Stripe's Google Pay button is actually usable in this browser; the checkout offers
+    // Airwallex's Google Pay as a fallback when it is not.
+    onGooglePayAvailability?: (available: boolean) => void;
 }
 
-export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, paypalEnvironment, onOrderPlaced, applePayEnabled = true, googlePayEnabled = true, amazonPayEnabled = false, onRedirectStart }: ExpressCheckoutProps) {
+export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstance, paypalClientId, paypalEnvironment, onOrderPlaced, applePayEnabled = true, googlePayEnabled = true, amazonPayEnabled = false, onRedirectStart, onGooglePayAvailability }: ExpressCheckoutProps) {
     const [canApplePay, setCanApplePay] = useState(false);
     const [canGooglePay, setCanGooglePay] = useState(false);
     const [canAmazonPay, setCanAmazonPay] = useState(false);
@@ -124,6 +127,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
     const googleButtonMountRef = useRef<HTMLDivElement>(null);
     const amazonButtonMountRef = useRef<HTMLDivElement>(null);
     const onRedirectStartRef = useRef(onRedirectStart);
+    const onGooglePayAvailabilityRef = useRef(onGooglePayAvailability);
     const paypalButtonMountRef = useRef<HTMLDivElement>(null);
     const paypalSdkInstanceRef = useRef<PayPalSdkInstance | null>(null);
 
@@ -143,7 +147,8 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
         subtotalMinorRef.current = subtotalMinor;
         onOrderPlacedRef.current = onOrderPlaced;
         onRedirectStartRef.current = onRedirectStart;
-    }, [items, couponCode, subtotalMinor, onOrderPlaced, onRedirectStart]);
+        onGooglePayAvailabilityRef.current = onGooglePayAvailability;
+    }, [items, couponCode, subtotalMinor, onOrderPlaced, onRedirectStart, onGooglePayAvailability]);
 
     useEffect(() => {
         if (!stripeInstance || typeof (stripeInstance as unknown as Partial<StripeElementsInstance>).elements !== 'function') return;
@@ -192,6 +197,7 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             expressCheckoutElement.on('availablepaymentmethodschange', (event) => {
                 if (cancelled) return;
                 setCanPay(Boolean(event.paymentMethods));
+                if (walletKey === 'googlePay') onGooglePayAvailabilityRef.current?.(Boolean(event.paymentMethods));
             });
 
             expressCheckoutElement.on('shippingaddresschange', async (event) => {

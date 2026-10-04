@@ -4,6 +4,7 @@ namespace App\Payments;
 
 use App\Models\Setting;
 use App\Payments\Contracts\PaymentGatewayInterface;
+use App\Services\AirwallexPaymentMethodStatusService;
 use App\Services\StripePaymentMethodStatusService;
 use InvalidArgumentException;
 
@@ -14,6 +15,13 @@ class PaymentGatewayManager
      * are not gateways of their own — only separately switchable methods.
      */
     public const WALLETS = ['google_pay' => 'Google Pay', 'apple_pay' => 'Apple Pay'];
+
+    /**
+     * Wallets that can also be paid through Airwallex (the fallback when Stripe's wallet is off). Like the
+     * Stripe wallets they are card payments of the 'airwallex' gateway with a switch of their own,
+     * 'airwallex_<wallet>'.
+     */
+    public const AIRWALLEX_WALLETS = ['google_pay' => 'Google Pay'];
 
     /**
      * @param  iterable<PaymentGatewayInterface>  $gateways
@@ -28,6 +36,9 @@ class PaymentGatewayManager
         $requestedWallet = strtolower(trim((string) $wallet));
         // A wallet order is governed by the wallet's own switch, not the Credit card one.
         $switch = $requestedMethod === 'card' && isset(self::WALLETS[$requestedWallet]) ? $requestedWallet : $requestedMethod;
+        if ($requestedMethod === 'airwallex' && isset(self::AIRWALLEX_WALLETS[$requestedWallet])) {
+            $switch = 'airwallex_'.$requestedWallet;
+        }
 
         foreach ($this->gateways as $gateway) {
             if ($gateway->method() === $requestedMethod) {
@@ -63,6 +74,30 @@ class PaymentGatewayManager
 
             if ($gateway->method() === 'card') {
                 $card = $definition;
+            }
+
+            if ($gateway->method() === 'airwallex') {
+                foreach (self::AIRWALLEX_WALLETS as $wallet => $label) {
+                    $adminEnabled = $this->adminEnabled('airwallex_'.$wallet);
+                    // What the Airwallex dashboard says ('on'/'off'/'unavailable'/null unknown): off or not offered hides it.
+                    $airwallexStatus = app(AirwallexPaymentMethodStatusService::class)->status('airwallex_'.$wallet);
+                    $available = (bool) ($definition['enabled'] ?? false) && ! in_array($airwallexStatus, ['off', 'unavailable'], true);
+                    $methods[] = [
+                        'method' => 'airwallex_'.$wallet,
+                        'label' => $label,
+                        'gateway' => 'airwallex',
+                        'collection' => 'wallet',
+                        'env' => $definition['env'] ?? null,
+                        'merchant_id' => config('services.airwallex.merchant_id'),
+                        'mode' => $definition['mode'] ?? 'placeholder',
+                        'brands' => [$wallet],
+                        'available' => $available,
+                        'admin_enabled' => $adminEnabled,
+                        'stripe_status' => null,
+                        'airwallex_status' => $airwallexStatus,
+                        'enabled' => $available && $adminEnabled && filled(config('services.airwallex.merchant_id')),
+                    ];
+                }
             }
         }
 

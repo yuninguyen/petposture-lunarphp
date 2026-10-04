@@ -31,7 +31,6 @@ class PaymentMethodService
         'airwallex_afterpay_clearpay' => ['label' => 'Afterpay / Clearpay', 'gateway' => 'airwallex'],
         'airwallex_apple_pay' => ['label' => 'Apple Pay', 'gateway' => 'airwallex'],
         'airwallex_cashapp' => ['label' => 'Cash App Pay', 'gateway' => 'airwallex'],
-        'airwallex_google_pay' => ['label' => 'Google Pay', 'gateway' => 'airwallex'],
         'airwallex_klarna' => ['label' => 'Klarna', 'gateway' => 'airwallex'],
         'airwallex_venmo' => ['label' => 'Venmo', 'gateway' => 'airwallex'],
         'airwallex_paypal' => ['label' => 'PayPal', 'gateway' => 'airwallex'],

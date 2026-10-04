@@ -524,6 +524,22 @@ it like a Stripe card order. The form mirrors Stripe's card form (Name on card, 
 address"), and the cardholder name and billing details go to Airwallex in `confirm()`. Admin full refunds call `/pa/refunds/create`. Not covered yet: a retry payment for an
 Airwallex order the shopper left unpaid (the confirmation page hides the retry panel for them).
 
+**Google Pay through Airwallex (fallback).** The Airwallex Google Pay button (`googlePayButton` element)
+pays its PaymentIntent the instant it is tapped and returns only the *billing* details after payment (no
+shipping address, no `authorized` event, tested in the sandbox), so it cannot be an Express button. It is a
+"Google Pay" radio row in the Payment section instead, offered only when Stripe's Google Pay is **not**
+usable (switched off in the admin, or Stripe's button reports it unavailable in that browser) and
+`AIRWALLEX_MERCHANT_ID` (the public `acct_…` account id, different per mode; Google's `gatewayMerchantId`)
+is set. It has its own admin switch (`airwallex_google_pay`, independent of the card switch) and is hidden
+when the Airwallex dashboard has Google Pay off. Flow: once the contact and shipping details are complete
+(debounced) → `POST /api/checkout/airwallex-session` with `wallet: google_pay` opens an intent priced from
+the address → the button is mounted (its events are only delivered when registered *after* `mount()`) → on
+the tap the frontend creates the pending order with `payment_context {intent_id, session_id, wallet}` (the
+order must exist before the payment is sent) → on success it redirects to the confirmation page; the
+webhook marks it paid and stores the card (`googlepay.tokenized_card`) with `meta.payment_wallet=google_pay`.
+A cancelled sheet leaves an unpaid order that can be paid later like any abandoned Airwallex order.
+Changing `AIRWALLEX_MERCHANT_ID` needs a backend container recreate and a Cloudflare cache purge.
+
 ### Admin switches for checkout payment methods
 
 Admin → Payment methods lists, inside each gateway tab, the methods that gateway offers, each with
@@ -536,9 +552,10 @@ purges the Cloudflare API cache, so the storefront follows within the purge dela
 - Stripe: Credit card, Google Pay, Apple Pay, Affirm, Afterpay / Clearpay, Klarna, Cash App Pay,
   Amazon Pay, ACH Direct Debit. PayPal: PayPal, Venmo. Airwallex: a "Credit or Debit Card (Airwallex)" row, a real switch for the in-page
   Airwallex card form (see "Airwallex (card fields in the checkout)"), plus read-only rows for what the
-  Airwallex account offers (ACH Direct Debit, Affirm, Afterpay / Clearpay, Apple Pay, Cash App Pay, Google
-  Pay, Klarna, Venmo, PayPal; no Amazon Pay; keys are `airwallex_*`; the card itself is the row above).
-  Payoneer: a locked row. Venmo, Payoneer and every `airwallex_*` row are listed but locked ("Not
+  Airwallex account offers (ACH Direct Debit, Affirm, Afterpay / Clearpay, Apple Pay, Cash App Pay,
+  Klarna, Venmo, PayPal; no Amazon Pay; keys are `airwallex_*`; the card itself is the row above). Airwallex
+  Google Pay (`airwallex_google_pay`) is a real switch too (see "Google Pay through Airwallex").
+  Payoneer: a locked row. Venmo, Payoneer and every other `airwallex_*` row are listed but locked ("Not
   supported yet") — the storefront does not sell through them, so a switch would change nothing.
   PingPong is intentionally never exposed.
 - **Apple Pay / Google Pay are independent of Credit card.** They are Stripe Express Checkout
