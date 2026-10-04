@@ -1,5 +1,5 @@
 const isDevelopment = process.env.NODE_ENV === "development";
-const scriptOrigins = "https://js.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://maps.googleapis.com https://www.googletagmanager.com https://challenges.cloudflare.com https://*.airwallex.com";
+const scriptOrigins = "https://js.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://maps.googleapis.com https://www.googletagmanager.com https://challenges.cloudflare.com https://*.airwallex.com https://applepay.cdn-apple.com";
 
 function buildPolicy(scriptSource: string, styleSource: string): string {
     return [
@@ -10,7 +10,7 @@ function buildPolicy(scriptSource: string, styleSource: string): string {
         "img-src 'self' data: blob: https:",
         "font-src 'self' data: https://fonts.gstatic.com",
         `connect-src 'self' https: wss:${isDevelopment ? " http: ws:" : ""}`,
-        "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://challenges.cloudflare.com https://*.airwallex.com",
+        "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://challenges.cloudflare.com https://*.airwallex.com https://applepay.cdn-apple.com",
         "media-src 'self' https:",
         "worker-src 'self' blob:",
         "object-src 'none'",

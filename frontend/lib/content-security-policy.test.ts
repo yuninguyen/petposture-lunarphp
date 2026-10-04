@@ -10,7 +10,7 @@ const preservedDirectives = [
   "style-src-attr 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
-  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://challenges.cloudflare.com https://*.airwallex.com",
+  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://challenges.cloudflare.com https://*.airwallex.com https://applepay.cdn-apple.com",
   "media-src 'self' https:",
   "worker-src 'self' blob:",
   "object-src 'none'",
@@ -27,6 +27,7 @@ const preservedScriptOrigins = [
   'https://www.googletagmanager.com',
   'https://challenges.cloudflare.com',
   'https://*.airwallex.com',
+  'https://applepay.cdn-apple.com',
 ];
 
 function extractDirective(policy: string, directive: string): string {
