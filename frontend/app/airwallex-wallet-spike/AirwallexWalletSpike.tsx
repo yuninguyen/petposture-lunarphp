@@ -30,17 +30,31 @@ function loadSdk(): Promise<SpikeSdk> {
 
 export default function AirwallexWalletSpike() {
     const [lines, setLines] = useState<string[]>(['starting...']);
+    const [intentId, setIntentId] = useState<string | null>(null);
+
+    const fetchIntent = async (id: string) => {
+        const result = await (await fetchApi(`/api/checkout/airwallex-wallet-spike/${id}`)).json();
+        setLines((previous) => [...previous, `INTENT NOW: ${JSON.stringify(result, null, 2)}`]);
+    };
 
     useEffect(() => {
         let cancelled = false;
         const log = (label: string, value: unknown) =>
             setLines((previous) => [...previous, `${label}: ${typeof value === 'string' ? value : JSON.stringify(value, null, 2)}`]);
 
+        // element.on() never fires for Airwallex's iframes; whatever they tell the page arrives as window messages.
+        const onMessage = (event: MessageEvent) => {
+            if (!/airwallex\.com$/.test(new URL(event.origin).hostname)) return;
+            log('message', event.data);
+        };
+        window.addEventListener('message', onMessage);
+
         (async () => {
             try {
                 const created = await (await fetchApi('/api/checkout/airwallex-wallet-spike', { method: 'POST', body: {} })).json();
                 const intent = created.intent;
-                log('intent', intent);
+                setIntentId(intent.intent_id);
+                log('intent', { intent_id: intent.intent_id, env: intent.env, mode: intent.mode });
                 const sdk = await loadSdk();
                 await sdk.init({ env: intent.env, enabledElements: ['payments'] });
                 const element = await sdk.createElement('googlePayButton', {
@@ -71,7 +85,10 @@ export default function AirwallexWalletSpike() {
             }
         })();
 
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+            window.removeEventListener('message', onMessage);
+        };
     }, []);
 
     return (
@@ -80,6 +97,9 @@ export default function AirwallexWalletSpike() {
             <p className="text-sm">Throwaway page: tap the button, pay with a Google Pay test card, then read what Airwallex returns.</p>
             <div id="spike-google-pay" className="my-4 min-h-12" />
             <div id="spike-auth" />
+            <button type="button" disabled={!intentId} onClick={() => intentId && fetchIntent(intentId)} className="mb-3 rounded border px-3 py-1 text-sm">
+                Fetch intent now
+            </button>
             <pre className="overflow-auto bg-gray-100 p-3 text-xs">{lines.join('\n\n')}</pre>
         </main>
     );
