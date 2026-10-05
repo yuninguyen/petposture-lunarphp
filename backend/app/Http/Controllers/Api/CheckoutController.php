@@ -950,6 +950,8 @@ class CheckoutController extends Controller
                 'code' => ErrorCode::PAYMENT_INTENT_ERROR->value,
                 'success' => false,
                 'message' => 'Unable to start this payment. Please try again or choose another payment method.',
+                // Airwallex's own reason (e.g. a missing field), so a rejected method can be diagnosed without server logs.
+                'detail' => $e instanceof \RuntimeException ? Str::limit($e->getMessage(), 300) : null,
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
