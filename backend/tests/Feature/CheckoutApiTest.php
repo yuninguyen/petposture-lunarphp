@@ -2092,6 +2092,35 @@ class CheckoutApiTest extends TestCase
         }
     }
 
+    public function test_paypal_express_has_its_own_switch_apart_from_the_paypal_radio(): void
+    {
+        $variant = $this->createPurchasableVariant();
+        $offered = fn (string $method) => collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->first(fn (array $entry): bool => $entry['method'] === $method && $entry['enabled']);
+        $placeFrom = fn (string $paypalOrderId, ?string $wallet) => $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'paypal',
+            'payment_context' => array_filter(['paypal_order_id' => $paypalOrderId, 'wallet' => $wallet]),
+        ]));
+
+        $this->assertNotNull($offered('paypal'));
+        $this->assertNotNull($offered('paypal_express'));
+
+        // Radio off: the Express button (with its connection details) and its orders still work, the radio's do not.
+        Setting::set('payment_method_paypal_enabled', false, 'boolean', 'payment');
+        $this->assertNull($offered('paypal'));
+        $this->assertNotNull($offered('paypal_express'));
+        $this->assertArrayHasKey('client_id', $offered('paypal_express'));
+        $placeFrom('PP-EXPRESS-1', 'express')->assertCreated();
+        $placeFrom('PP-RADIO-1', null)->assertStatus(422);
+
+        // The other way round.
+        Setting::set('payment_method_paypal_enabled', true, 'boolean', 'payment');
+        Setting::set('payment_method_paypal_express_enabled', false, 'boolean', 'payment');
+        $this->assertNotNull($offered('paypal'));
+        $this->assertNull($offered('paypal_express'));
+        $placeFrom('PP-RADIO-2', null)->assertCreated();
+        $placeFrom('PP-EXPRESS-2', 'express')->assertStatus(422);
+    }
+
     public function test_airwallex_confirm_refuses_unknown_card_and_paid_orders_and_a_switched_off_method(): void
     {
         $this->configureAirwallex();

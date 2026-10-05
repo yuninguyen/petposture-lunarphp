@@ -148,6 +148,10 @@ class CheckoutController extends Controller
         if ($requestedMethod === 'card' && is_string($wallet) && isset(PaymentGatewayManager::WALLETS[strtolower(trim($wallet))])) {
             $requestedMethod = strtolower(trim($wallet));
         }
+        // The Express checkout's PayPal button has its own switch, apart from the PayPal radio's.
+        if ($requestedMethod === 'paypal' && is_string($wallet) && strtolower(trim($wallet)) === 'express') {
+            $requestedMethod = 'paypal_express';
+        }
         // Airwallex wallets (the Google Pay button inside the checkout) have their own switch too.
         if ($requestedMethod === 'airwallex' && is_string($wallet) && PaymentGatewayManager::isAirwallexVariant($wallet)) {
             $requestedMethod = 'airwallex_'.strtolower(trim($wallet));

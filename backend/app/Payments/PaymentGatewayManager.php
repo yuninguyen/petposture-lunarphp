@@ -55,6 +55,11 @@ class PaymentGatewayManager
         if ($requestedMethod === 'airwallex' && self::isAirwallexVariant($requestedWallet)) {
             $switch = 'airwallex_'.$requestedWallet;
         }
+        // An order placed from the Express checkout's PayPal button follows the "PayPal Express" switch, so the
+        // PayPal radio can be off while the Express button stays on (and the other way round).
+        if ($requestedMethod === 'paypal' && $requestedWallet === 'express') {
+            $switch = 'paypal_express';
+        }
 
         foreach ($this->gateways as $gateway) {
             if ($gateway->method() === $requestedMethod) {
@@ -92,6 +97,26 @@ class PaymentGatewayManager
 
             if ($gateway->method() === 'card') {
                 $card = $definition;
+            }
+
+            if ($gateway->method() === 'paypal') {
+                $adminEnabled = $this->adminEnabled('paypal_express');
+                $available = (bool) ($definition['enabled'] ?? true);
+                $methods[] = [
+                    'method' => 'paypal_express',
+                    'label' => 'PayPal Express',
+                    'gateway' => 'paypal',
+                    'collection' => 'express',
+                    'mode' => $definition['mode'] ?? 'placeholder',
+                    'brands' => ['paypal'],
+                    // The Express button needs the connection details even while the PayPal radio is switched off.
+                    'client_id' => $definition['client_id'] ?? null,
+                    'environment' => $definition['environment'] ?? null,
+                    'available' => $available,
+                    'admin_enabled' => $adminEnabled,
+                    'stripe_status' => null,
+                    'enabled' => $available && $adminEnabled,
+                ];
             }
 
             if ($gateway->method() === 'airwallex') {

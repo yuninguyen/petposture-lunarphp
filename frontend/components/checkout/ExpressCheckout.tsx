@@ -468,7 +468,8 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
                         method: 'POST', headers: { 'Idempotency-Key': data.orderId },
                         body: {
                             items: itemsRef.current, shipping: shippingData.shipping, billing_same_as_shipping: true,
-                            payment_method: 'paypal', payment_context: { paypal_order_id: data.orderId }, coupon_code: couponCodeRef.current,
+                            // wallet: 'express' makes the backend apply the "PayPal Express" switch, not the PayPal radio's.
+                            payment_method: 'paypal', payment_context: { paypal_order_id: data.orderId, wallet: 'express' }, coupon_code: couponCodeRef.current,
                         },
                     });
                     const order = await orderResponse.json();

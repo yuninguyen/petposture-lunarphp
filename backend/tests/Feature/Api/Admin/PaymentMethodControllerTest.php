@@ -920,7 +920,7 @@ class PaymentMethodControllerTest extends TestCase
 
         $methods = array_column($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'), 'method');
 
-        $this->assertSame(['card', 'airwallex', 'paypal', 'airwallex_paypal', 'apple_pay', 'airwallex_apple_pay', 'google_pay', 'airwallex_google_pay', 'affirm', 'airwallex_affirm', 'klarna', 'airwallex_klarna', 'afterpay_clearpay', 'airwallex_afterpay_clearpay', 'cashapp', 'airwallex_cashapp', 'amazon_pay', 'ach_debit', 'airwallex_ach_debit', 'venmo', 'airwallex_venmo', 'payoneer', 'cod'], $methods);
+        $this->assertSame(['card', 'airwallex', 'paypal', 'paypal_express', 'airwallex_paypal', 'apple_pay', 'airwallex_apple_pay', 'google_pay', 'airwallex_google_pay', 'affirm', 'airwallex_affirm', 'klarna', 'airwallex_klarna', 'afterpay_clearpay', 'airwallex_afterpay_clearpay', 'cashapp', 'airwallex_cashapp', 'amazon_pay', 'ach_debit', 'airwallex_ach_debit', 'venmo', 'airwallex_venmo', 'payoneer', 'cod'], $methods);
 
         $this->putJson('/api/admin/finance/payment-methods/methods/pingpong', ['enabled' => true])->assertNotFound();
         $this->assertSame($methods, array_column($this->getJson('/api/admin/finance/payment-methods')->json('methods'), 'method'));

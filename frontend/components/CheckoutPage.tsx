@@ -187,7 +187,7 @@ const redirectPaymentMethods: ReadonlySet<PaymentMethod> = new Set(['airwallex',
 
 // Express wallets (Stripe) arrive in the same list but are never radio rows -- they
 // only decide which Express Checkout buttons appear.
-type WalletMethod = 'apple_pay' | 'google_pay';
+type WalletMethod = 'apple_pay' | 'google_pay' | 'paypal_express';
 
 type PaymentMethodOption = {
     method: PaymentMethod | WalletMethod;
@@ -464,7 +464,11 @@ export default function CheckoutPage() {
     const stripeConfigured = selectedCardMethod.mode === 'configured'
         && Boolean(selectedCardMethod.publishable_key);
     const stripeLiveMode = form.paymentMethod === 'card' && stripeConfigured;
-    const selectedPayPalMethod = paymentMethods.find((method) => method.method === 'paypal') ?? {
+    // The PayPal radio and the Express button each have their own switch, but share the connection details, so
+    // either entry can supply them.
+    const selectedPayPalMethod = paymentMethods.find((method) => method.method === 'paypal')
+        ?? paymentMethods.find((method) => method.method === 'paypal_express')
+        ?? {
         method: 'paypal' as const,
         label: 'PayPal',
         gateway: 'paypal',
@@ -2052,7 +2056,7 @@ export default function CheckoutPage() {
                             couponCode={coupon.discountAmount > 0 ? coupon.code : null}
                             subtotalMinor={Math.round(totalAmount * 100)}
                             stripeInstance={stripeInstanceRef.current}
-                            paypalClientId={selectedPayPalMethod.client_id ?? null}
+                            paypalClientId={paymentMethods.some((method) => method.method === 'paypal_express') ? selectedPayPalMethod.client_id ?? null : null}
                             paypalEnvironment={selectedPayPalMethod.environment === 'sandbox' ? 'sandbox' : 'production'}
                             applePayEnabled={paymentMethods.some((method) => method.method === 'apple_pay')}
                             googlePayEnabled={paymentMethods.some((method) => method.method === 'google_pay')}

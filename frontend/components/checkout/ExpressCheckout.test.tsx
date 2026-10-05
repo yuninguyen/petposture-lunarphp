@@ -467,5 +467,9 @@ describe('ExpressCheckout', () => {
         expect(calls.some((endpoint) => endpoint.includes('/api/checkout/place-order'))).toBe(true);
         expect(calls.some((endpoint) => endpoint.includes('/api/checkout/paypal-capture'))).toBe(true);
         expect(onOrderPlaced).toHaveBeenCalledWith({ reference: 'PP-1', trackingToken: 'tok-1' });
+
+        // The order says it came from the Express button, so the backend applies the "PayPal Express" switch.
+        const placeOrderCall = fetchMock.mock.calls.filter(([endpoint]) => String(endpoint).includes('/api/checkout/place-order')).at(-1);
+        expect((placeOrderCall?.[1] as { body: { payment_context: unknown } }).body.payment_context).toEqual({ paypal_order_id: 'PAYPAL-1', wallet: 'express' });
     });
 });
