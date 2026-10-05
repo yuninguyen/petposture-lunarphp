@@ -140,7 +140,7 @@ class AirwallexService
      * @param  array{first_name?: string, last_name?: string, address?: array<string, mixed>}  $shipping
      * @return array{intent_id: string, client_secret: string, currency: string, env: string, mode: string}
      */
-    public function createPaymentIntent(int $amountMinor, string $currency, string $sessionToken, string $returnUrl, array $customer = [], array $shipping = []): array
+    public function createPaymentIntent(int $amountMinor, string $currency, string $sessionToken, string $returnUrl, array $customer = [], array $shipping = [], array $products = []): array
     {
         $currency = strtoupper($currency);
 
@@ -169,8 +169,11 @@ class AirwallexService
             $payload['customer'] = $customer;
         }
 
-        if ($shipping !== []) {
-            $payload['order'] = ['shipping' => $shipping];
+        // Klarna refuses an intent without the order's products.
+        $order = array_filter(['shipping' => $shipping, 'products' => $products], static fn ($value) => $value !== []);
+
+        if ($order !== []) {
+            $payload['order'] = $order;
         }
 
         $response = Http::withToken($this->accessToken())
@@ -325,7 +328,8 @@ class AirwallexService
         $url = (string) $response->json('next_action.url');
 
         if (! $response->successful() || $url === '') {
-            throw new RuntimeException($response->json('message') ?? 'Airwallex could not start this payment.');
+            // Not a redirect (e.g. Venmo may answer with a QR code): say what came back so it can be handled.
+            throw new RuntimeException($response->json('message') ?? 'Airwallex could not start this payment: '.Str::limit((string) json_encode($response->json('next_action') ?? $response->json()), 400));
         }
 
         return ['url' => $url];

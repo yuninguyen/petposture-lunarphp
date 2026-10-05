@@ -30,6 +30,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Lunar\Models\Discount;
 use Lunar\Models\Order;
+use Lunar\Models\ProductVariant;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
@@ -860,12 +861,29 @@ class CheckoutController extends Controller
 
         try {
             $shipping = (array) ($validated['shipping'] ?? []);
-            $amount = $this->checkoutService->calculateTotal(
+            $totals = $this->checkoutService->calculateTotals(
                 $validated['items'],
                 $validated['coupon_code'] ?? null,
                 $shipping,
                 $validated['shipping_method'] ?? null,
             );
+            $amount = max(1, $totals['total_minor']);
+
+            // Klarna wants the order's lines on the intent, and the shipping fee next to the address.
+            $products = [];
+            if (($validated['wallet'] ?? null) === 'klarna') {
+                foreach ($validated['items'] as $item) {
+                    $variant = ProductVariant::with(['product', 'prices'])->findOrFail($item['variantId']);
+                    $price = $variant->prices->sortBy('min_quantity')->first();
+                    $products[] = array_filter([
+                        'name' => Str::limit((string) ($variant->product?->translateAttribute('name') ?? $variant->sku ?? 'Item'), 250, ''),
+                        'sku' => (string) $variant->sku,
+                        'quantity' => (int) $item['quantity'],
+                        'unit_price' => round(((int) ($price?->price?->value ?? 0)) / 100, 2),
+                        'type' => 'physical_good',
+                    ], static fn ($value) => $value !== '');
+                }
+            }
 
             // Our own attempt id, baked into the return URL (the success page finds the order
             // through it) and stored on the intent and, later, on the order.
@@ -893,7 +911,9 @@ class CheckoutController extends Controller
                         'street' => trim(($shipping['line_one'] ?? '').' '.($shipping['line_two'] ?? '')),
                         'postcode' => $shipping['postcode'] ?? null,
                     ], static fn ($value) => filled($value)),
+                    ...($products !== [] ? ['fee_amount' => round($totals['shipping_minor'] / 100, 2)] : []),
                 ],
+                $products,
             );
 
             return response()->json([
