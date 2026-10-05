@@ -118,13 +118,16 @@ class OrderOperationsService
         if ($targetStatus === 'cancelled') {
             $refreshedMeta = (array) ($refreshed->meta ?? []);
             $isPayPal = ($refreshedMeta['payment_gateway'] ?? '') === 'paypal';
-            $paymentReference = $isPayPal
-                ? (string) ($refreshedMeta['paypal_capture_id'] ?? '')
-                : (string) ($refreshedMeta['payment_intent_id'] ?? '');
+            $isAirwallex = ($refreshedMeta['payment_gateway'] ?? '') === 'airwallex';
+            $paymentReference = match (true) {
+                $isPayPal => (string) ($refreshedMeta['paypal_capture_id'] ?? ''),
+                $isAirwallex => (string) ($refreshedMeta['airwallex_intent_id'] ?? ''),
+                default => (string) ($refreshedMeta['payment_intent_id'] ?? ''),
+            };
             $wasRefunded = ($refreshedMeta['refund_status'] ?? '') === 'refunded';
 
             if ($paymentReference && ! $wasRefunded && ($refreshedMeta['payment_status'] ?? '') === 'paid') {
-                $gatewayLabel = $isPayPal ? 'PayPal' : 'Stripe';
+                $gatewayLabel = $isPayPal ? 'PayPal' : ($isAirwallex ? 'Airwallex' : 'Stripe');
 
                 try {
                     $orderTotal = $refreshed->total;
@@ -132,9 +135,12 @@ class OrderOperationsService
                         ? (int) $orderTotal->value
                         : (is_numeric($orderTotal) ? (int) $orderTotal : null);
 
-                    $refund = $isPayPal
-                        ? $this->paypal()->refund($paymentReference, $orderTotalMinor, (string) ($refreshed->currency_code ?: 'USD'))
-                        : $this->stripe()->refund($paymentReference, $orderTotalMinor);
+                    $refund = match (true) {
+                        $isPayPal => $this->paypal()->refund($paymentReference, $orderTotalMinor, (string) ($refreshed->currency_code ?: 'USD')),
+                        $isAirwallex => app(AirwallexService::class)->refund($paymentReference, (int) $orderTotalMinor, (string) ($refreshed->currency_code ?: 'USD')),
+                        default => $this->stripe()->refund($paymentReference, $orderTotalMinor),
+                    };
+                    $refreshedMeta['payment_status'] = 'refunded';
                     $refreshedMeta['refund_status'] = 'refunded';
                     $refreshedMeta['refund_id'] = $refund['refund_id'];
                     $refreshedMeta['refunded_at'] = now()->toDateTimeString();

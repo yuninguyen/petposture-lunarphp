@@ -9,6 +9,7 @@ use App\Models\StripeWebhookEvent;
 use App\Models\User;
 use App\Models\UserAddress;
 use App\Services\CheckoutService;
+use App\Services\OrderOperationsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -2195,6 +2196,35 @@ class CheckoutApiTest extends TestCase
         $order = $order->fresh();
         $this->assertSame('rfd_awx_1', $order->meta['refund_id']);
         $this->assertSame('refunded', $order->meta['payment_status']);
+    }
+
+    public function test_cancelling_a_paid_airwallex_order_auto_refunds_it_and_marks_it_refunded(): void
+    {
+        $this->configureAirwallex();
+        Http::fake([
+            'https://api-demo.airwallex.com/api/v1/authentication/login' => Http::response(['token' => 'awx_token']),
+            'https://api-demo.airwallex.com/api/v1/pa/refunds/create' => Http::response(['id' => 'rfd_awx_cancel', 'status' => 'RECEIVED', 'amount' => 50.0], 201),
+        ]);
+        $order = Order::factory()->create([
+            'status' => 'processing',
+            'total' => 5000,
+            'meta' => [
+                'payment_gateway' => 'airwallex',
+                'payment_status' => 'paid',
+                'airwallex_intent_id' => 'int_awx_cancel_1',
+            ],
+        ]);
+
+        app(OrderOperationsService::class)->update($order, ['status' => 'cancelled']);
+
+        Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/pa/refunds/create')
+            && $request['payment_intent_id'] === 'int_awx_cancel_1'
+            && (float) $request['amount'] === 50.0);
+        $order = $order->fresh();
+        $this->assertSame('cancelled', $order->status);
+        $this->assertSame('refunded', $order->meta['payment_status']);
+        $this->assertSame('refunded', $order->meta['refund_status']);
+        $this->assertSame('rfd_awx_cancel', $order->meta['refund_id']);
     }
 
     public function test_refunding_a_cash_on_delivery_order_succeeds_locally_without_a_payment_intent(): void
