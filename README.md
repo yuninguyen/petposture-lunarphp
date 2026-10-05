@@ -567,6 +567,10 @@ collected in the form), and Cash App Pay / Afterpay / Affirm (not active on the 
 
 ### Admin switches for checkout payment methods
 
+PayPal has two switches: "PayPal" (the radio row, and the Airwallex PayPal row takes over when it is off) and "PayPal
+Express" (the button in the Express checkout row, `paypal_express`; its orders carry `payment_context.wallet:
+express`). Both default to on and share the connection details, so the radio can be off while the Express button stays.
+
 The checkout radios and the admin lists share one priority order: card (Stripe's or Airwallex's) first, then
 PayPal, Apple Pay, Google Pay, Affirm, Klarna, then the rest (`paymentMethodOrder` in `CheckoutPage.tsx`,
 `PAYMENT_METHODS` in `PaymentMethodService.php`).
