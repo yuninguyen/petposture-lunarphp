@@ -1240,10 +1240,11 @@ export default function CheckoutPage() {
         if (method.method === 'airwallex_google_pay' || method.method === 'airwallex_apple_pay') {
             const isApple = method.method === 'airwallex_apple_pay';
             return (
-                <div className="flex h-[24px] w-[38px] items-center justify-center overflow-hidden rounded-[3px]">
-                    {/* The official Google Pay logo is 64:24; object-contain fits it into the same 38x24 box as every other badge. */}
+                // Apple Pay's logo already draws its own outline; Google Pay's is the wordmark inside the usual grey
+                // rounded frame (the "G Pay" acceptance mark).
+                <div className={`flex h-[24px] w-[38px] items-center justify-center overflow-hidden ${isApple ? 'rounded-[3px]' : 'rounded-[4px] border border-[#dadce0] bg-white'}`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={isApple ? '/assets/payment/applepay.svg' : '/assets/payment/googlepay.svg'} alt={isApple ? 'Apple Pay' : 'Google Pay'} width="38" height="24" className="h-full w-full object-contain" />
+                    <img src={isApple ? '/assets/payment/applepay.svg' : '/assets/payment/googlepay.svg'} alt={isApple ? 'Apple Pay' : 'Google Pay'} width={isApple ? 38 : 28} height={isApple ? 24 : 11} className={isApple ? 'h-full w-full object-contain' : 'h-auto w-[28px]'} />
                 </div>
             );
         }
