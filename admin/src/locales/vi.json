@@ -931,6 +931,8 @@
   "orders.refund_success": "Đã hoàn tiền đơn hàng.",
   "orders.return_success": "Đã đánh dấu đơn hàng được trả.",
   "orders.refund_full_amount_hint": "Để trống để hoàn toàn bộ số tiền.",
+  "orders.refund_type_full": "Hoàn tiền toàn phần: {{amount}}",
+  "orders.refund_type_partial": "Hoàn tiền một phần",
   "orders.return_confirm": "Đánh dấu đơn hàng này đã được trả?",
   "orders.product": "Sản phẩm",
   "orders.qty": "SL",

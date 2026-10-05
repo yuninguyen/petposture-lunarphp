@@ -931,6 +931,8 @@
   "orders.refund_success": "Order refunded.",
   "orders.return_success": "Order marked returned.",
   "orders.refund_full_amount_hint": "Leave empty to refund the full amount.",
+  "orders.refund_type_full": "Full refund: {{amount}}",
+  "orders.refund_type_partial": "Partial refund",
   "orders.return_confirm": "Mark this order as returned?",
   "orders.product": "Product",
   "orders.qty": "Qty",

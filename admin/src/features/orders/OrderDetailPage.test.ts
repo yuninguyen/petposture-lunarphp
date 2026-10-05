@@ -193,6 +193,24 @@ describe('OrderDetailPage', () => {
     host.remove();
   });
 
+  it('labels the refund as full when the amount is empty or covers the order total, partial otherwise', () => {
+    const { host, root } = renderPage();
+    openMoreActions(host);
+    act(() => button(host, 'orders.refund').click());
+    const input = host.querySelector('input[type="number"]') as HTMLInputElement;
+
+    expect(input.placeholder).toBe('12.5');
+    expect(host.textContent).toContain('orders.refund_type_full');
+    act(() => changeValue(input, '4.25'));
+    expect(host.textContent).toContain('orders.refund_type_partial');
+    expect(host.textContent).not.toContain('orders.refund_type_full');
+    act(() => changeValue(input, '12.5'));
+    expect(host.textContent).toContain('orders.refund_type_full');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
   it('submits a positive refund amount and closes the successful confirmation', async () => {
     const { host, root } = renderPage();
     openMoreActions(host);
