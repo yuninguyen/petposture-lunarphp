@@ -68,6 +68,7 @@ type StripeElementsGroup = {
 
 type StripeExpressCheckoutElement = {
     mount: (element: HTMLElement) => void;
+    destroy?: () => void;
     on(event: 'availablepaymentmethodschange', handler: (event: { paymentMethods: Record<string, unknown> | null }) => void): void;
     on(event: 'shippingaddresschange', handler: (event: StripeExpressShippingAddressChangeEvent) => void): void;
     on(event: 'shippingratechange', handler: (event: StripeExpressShippingRateChangeEvent) => void): void;
@@ -381,14 +382,22 @@ export function ExpressCheckout({ items, couponCode, subtotalMinor, stripeInstan
             if (mountRef.current) {
                 mountRef.current.innerHTML = '';
                 expressCheckoutElement.mount(mountRef.current);
+                // When this effect runs again (a prop changed) the old element must go, or Stripe can leave the new
+                // one in the same slot without ever reporting its availability.
+                mountedElements.push(expressCheckoutElement);
             }
         };
+
+        const mountedElements: StripeExpressCheckoutElement[] = [];
 
         if (applePayEnabled) mountWallet('applePay', setCanApplePay, appleButtonMountRef);
         if (googlePayEnabled) mountWallet('googlePay', setCanGooglePay, googleButtonMountRef);
         if (amazonPayEnabled) mountWallet('amazonPay', setCanAmazonPay, amazonButtonMountRef);
 
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+            for (const element of mountedElements) element.destroy?.();
+        };
         // items/couponCode/subtotalMinor/onOrderPlaced are read via refs above
         // on purpose -- see the comment where those refs are declared.
     }, [stripeInstance, applePayEnabled, googlePayEnabled, amazonPayEnabled]);
