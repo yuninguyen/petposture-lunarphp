@@ -2198,6 +2198,31 @@ class CheckoutApiTest extends TestCase
         $this->assertSame('refunded', $order->meta['payment_status']);
     }
 
+    public function test_refund_with_an_explicit_amount_equal_to_the_order_total_counts_as_a_full_refund(): void
+    {
+        $this->configureAirwallex();
+        $this->makeAdmin();
+        Http::fake([
+            'https://api-demo.airwallex.com/api/v1/authentication/login' => Http::response(['token' => 'awx_token']),
+            'https://api-demo.airwallex.com/api/v1/pa/refunds/create' => Http::response(['id' => 'rfd_awx_full', 'status' => 'RECEIVED', 'amount' => 50.0], 201),
+        ]);
+        $order = Order::factory()->create([
+            'status' => 'processing',
+            'total' => 5000,
+            'meta' => [
+                'payment_gateway' => 'airwallex',
+                'payment_status' => 'paid',
+                'airwallex_intent_id' => 'int_awx_full_1',
+            ],
+        ]);
+
+        $this->postJson("/api/admin/orders/{$order->id}/refund", ['reason' => 'other', 'amount' => 50.00])->assertOk();
+
+        $order = $order->fresh();
+        $this->assertSame('refunded', $order->meta['payment_status']);
+        $this->assertSame('Full refund issued', $order->orderEvents()->latest('id')->first()->title);
+    }
+
     public function test_cancelling_a_paid_airwallex_order_auto_refunds_it_and_marks_it_refunded(): void
     {
         $this->configureAirwallex();

@@ -377,16 +377,17 @@ class OrderOperationsService
             ]);
         }
 
-        $isFullRefund = $amountMinor === null;
+        $raw = $order->total;
+        $orderTotalMinor = is_object($raw) && property_exists($raw, 'value')
+            ? (int) $raw->value
+            : (is_numeric($raw) ? (int) $raw : null);
+
+        // An explicit amount that covers the whole order total is still a full refund —
+        // the admin form always sends the amount, so null alone can't mean "full".
+        $isFullRefund = $amountMinor === null || ($orderTotalMinor !== null && $amountMinor >= $orderTotalMinor);
 
         // Resolve order total for full-refund so placeholder mode records the correct amount.
-        $resolvedAmount = $amountMinor;
-        if ($isFullRefund) {
-            $raw = $order->total;
-            $resolvedAmount = is_object($raw) && property_exists($raw, 'value')
-                ? (int) $raw->value
-                : (is_numeric($raw) ? (int) $raw : null);
-        }
+        $resolvedAmount = $isFullRefund ? $orderTotalMinor : $amountMinor;
 
         $gatewayLabel = $isPayPal ? 'PayPal' : ($isAirwallex ? 'Airwallex' : ($isManualOffline ? 'Cash on Delivery' : 'Stripe'));
         $refund = match (true) {
