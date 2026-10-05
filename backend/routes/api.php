@@ -132,6 +132,7 @@ Route::post('/checkout/paypal-order/shipping', [CheckoutController::class, 'getP
 Route::post('/checkout/paypal-capture', [CheckoutController::class, 'capturePayPalOrder'])->middleware('throttle:api-write');
 Route::post('/checkout/tax-quote', [CheckoutController::class, 'taxQuote'])->middleware('throttle:api-write');
 Route::post('/checkout/airwallex-session', [CheckoutController::class, 'prepareAirwallexSession'])->middleware('throttle:api-write');
+Route::post('/checkout/airwallex-confirm', [CheckoutController::class, 'confirmAirwallexPayment'])->middleware('throttle:api-write');
 Route::post('/checkout/payoneer-session', [CheckoutController::class, 'preparePayoneerSession'])->middleware('throttle:api-write');
 Route::post('/checkout/pingpong-session', [CheckoutController::class, 'preparePingPongSession'])->middleware('throttle:api-write');
 Route::post('/checkout/paypal-session', [CheckoutController::class, 'preparePayPalSession'])->middleware('throttle:api-write');

@@ -148,7 +148,7 @@ class CheckoutController extends Controller
             $requestedMethod = strtolower(trim($wallet));
         }
         // Airwallex wallets (the Google Pay button inside the checkout) have their own switch too.
-        if ($requestedMethod === 'airwallex' && is_string($wallet) && isset(PaymentGatewayManager::AIRWALLEX_WALLETS[strtolower(trim($wallet))])) {
+        if ($requestedMethod === 'airwallex' && is_string($wallet) && PaymentGatewayManager::isAirwallexVariant($wallet)) {
             $requestedMethod = 'airwallex_'.strtolower(trim($wallet));
         }
         $paymentDefinition = collect(app(PaymentGatewayManager::class)->supportedMethods())
@@ -829,7 +829,7 @@ class CheckoutController extends Controller
     {
         $validated = Validator::make($request->all(), [
             'payment_method' => 'required|string|in:airwallex',
-            'wallet' => 'nullable|string|in:'.implode(',', array_keys(PaymentGatewayManager::AIRWALLEX_WALLETS)),
+            'wallet' => 'nullable|string|in:'.implode(',', array_merge(array_keys(PaymentGatewayManager::AIRWALLEX_WALLETS), array_keys(PaymentGatewayManager::AIRWALLEX_REDIRECTS))),
             'items' => 'required|array|min:1',
             'items.*.variantId' => 'required|exists:lunar_product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -913,6 +913,43 @@ class CheckoutController extends Controller
                 'code' => ErrorCode::PAYMENT_INTENT_ERROR->value,
                 'success' => false,
                 'message' => 'Unable to prepare payment. Please try again.',
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Klarna / PayPal / Venmo through Airwallex: the order and its PaymentIntent already exist; this confirms the
+     * intent with the method the shopper picked and returns the page to send them to. The intent id and our session
+     * token (both unguessable, handed out by airwallex-session) identify the order.
+     */
+    public function confirmAirwallexPayment(Request $request)
+    {
+        $validated = $request->validate([
+            'intent_id' => 'required|string|max:100',
+            'session_id' => 'required|string|max:100',
+        ]);
+
+        $order = Order::query()
+            ->where('meta->airwallex_intent_id', $validated['intent_id'])
+            ->where('meta->airwallex_session_id', $validated['session_id'])
+            ->first();
+        $method = (string) ($order?->meta['airwallex_method'] ?? '');
+
+        if (! $order || ! isset(PaymentGatewayManager::AIRWALLEX_REDIRECTS[$method]) || ($order->meta['payment_status'] ?? '') === 'paid') {
+            return response()->json(['message' => 'This payment cannot be started.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        try {
+            $result = $this->airwallexService->confirmRedirectPayment($order, $method);
+
+            return response()->json(['success' => true, 'redirect_url' => $result['url']]);
+        } catch (\Throwable $e) {
+            Log::error("Airwallex Confirm Error: {$e->getMessage()} in {$e->getFile()}:{$e->getLine()}");
+
+            return response()->json([
+                'code' => ErrorCode::PAYMENT_INTENT_ERROR->value,
+                'success' => false,
+                'message' => 'Unable to start this payment. Please try again or choose another payment method.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

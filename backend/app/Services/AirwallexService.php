@@ -268,6 +268,70 @@ class AirwallexService
     }
 
     /**
+     * Confirms the PaymentIntent of $order with a redirect method ('klarna', 'paypal' or 'venmo') and returns
+     * the page to send the shopper to. The shopper's name, address and email come from the saved order, not
+     * from the browser. The order is marked paid later, by the payment_intent.* webhook.
+     *
+     * @return array{url: string}
+     */
+    public function confirmRedirectPayment(Order $order, string $method): array
+    {
+        $intentId = (string) ($order->meta['airwallex_intent_id'] ?? '');
+        $sessionToken = (string) ($order->meta['airwallex_session_id'] ?? '');
+
+        if ($intentId === '' || ! in_array($method, ['klarna', 'paypal', 'venmo'], true)) {
+            throw new RuntimeException('This order has no Airwallex payment to confirm.');
+        }
+
+        if (! $this->isConfigured()) {
+            // Placeholder mode: nothing to pay, send the shopper straight back to the confirmation page.
+            return ['url' => rtrim((string) config('app.frontend_url'), '/')."/checkout/success?gateway=airwallex&session_id={$sessionToken}"];
+        }
+
+        $address = $order->billingAddress ?? $order->shippingAddress;
+        $country = strtoupper(trim((string) ($address?->country?->iso2 ?: 'US')));
+        $name = trim((string) $address?->first_name.' '.(string) $address?->last_name);
+        $billing = [
+            'email' => (string) ($address?->contact_email ?: $order->customer_reference),
+            'first_name' => (string) $address?->first_name,
+            'last_name' => (string) $address?->last_name,
+            'phone_number' => (string) $address?->contact_phone,
+            'address' => array_filter([
+                'country_code' => $country,
+                'state' => $address?->state,
+                'city' => $address?->city,
+                'street' => trim((string) $address?->line_one.' '.(string) $address?->line_two),
+                'postcode' => $address?->postcode,
+            ], static fn ($value) => filled($value)),
+        ];
+
+        $payload = [
+            'request_id' => (string) Str::uuid(),
+            'return_url' => rtrim((string) config('app.frontend_url'), '/')."/checkout/success?gateway=airwallex&session_id={$sessionToken}",
+            'payment_method' => match ($method) {
+                'klarna' => ['type' => 'klarna', 'klarna' => ['country_code' => $country, 'language' => 'en', 'billing' => array_filter($billing, static fn ($value) => filled($value))]],
+                'paypal' => ['type' => 'paypal', 'paypal' => ['shopper_name' => $name, 'country_code' => $country]],
+                'venmo' => ['type' => 'venmo', 'venmo' => ['shopper_name' => $name]],
+            },
+        ];
+
+        if ($method === 'klarna') {
+            // Without this Klarna only authorizes and the payment waits for a manual capture.
+            $payload['payment_method_options'] = ['klarna' => ['auto_capture' => true]];
+        }
+
+        $response = Http::withToken($this->accessToken())
+            ->post($this->baseUrl().'/api/v1/pa/payment_intents/'.$intentId.'/confirm', $payload);
+        $url = (string) $response->json('next_action.url');
+
+        if (! $response->successful() || $url === '') {
+            throw new RuntimeException($response->json('message') ?? 'Airwallex could not start this payment.');
+        }
+
+        return ['url' => $url];
+    }
+
+    /**
      * @return array{refund_id: string, status: string, amount: int}
      */
     public function refund(string $intentId, int $amountMinor, string $currency): array

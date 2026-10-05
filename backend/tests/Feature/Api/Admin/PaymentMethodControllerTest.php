@@ -1160,7 +1160,7 @@ class PaymentMethodControllerTest extends TestCase
         Sanctum::actingAs($this->userWithRole('admin'));
 
         $methods = collect($this->getJson('/api/admin/finance/payment-methods')->assertOk()->json('methods'));
-        foreach (['venmo' => 'paypal', 'airwallex_klarna' => 'airwallex', 'airwallex_paypal' => 'airwallex', 'payoneer' => 'payoneer'] as $method => $gateway) {
+        foreach (['venmo' => 'paypal', 'airwallex_affirm' => 'airwallex', 'airwallex_cashapp' => 'airwallex', 'payoneer' => 'payoneer'] as $method => $gateway) {
             $row = $methods->firstWhere('method', $method);
             $this->assertSame($gateway, $row['gateway']);
             $this->assertFalse($row['supported']);

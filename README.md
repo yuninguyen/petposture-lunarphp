@@ -551,6 +551,18 @@ asks the shopper to scan a QR code with an iPhone). It is offered only when Stri
 unavailable. Its shipping address also comes from our own
 form, not from the Apple Pay sheet.
 
+**Klarna / PayPal / Venmo through Airwallex (fallback).** Plain radio rows paid with the normal "Complete order"
+button (switches `airwallex_klarna`, `airwallex_paypal`, `airwallex_venmo`; each is hidden when the Airwallex
+dashboard has it off). Klarna is offered when Stripe's Klarna is off, PayPal when the PayPal gateway is off, Venmo
+whenever its switch is on. Flow: `POST /api/checkout/airwallex-session` with `wallet: klarna|paypal|venmo` opens
+the intent → the order is created with `payment_context {intent_id, session_id, wallet}` (stored as
+`meta.airwallex_method`, label Klarna/PayPal/Venmo) → `POST /api/checkout/airwallex-confirm {intent_id,
+session_id}` confirms the intent on the server (`/pa/payment_intents/{id}/confirm`, the shopper's name, address and
+email come from the saved order; Klarna also gets `auto_capture: true`) and returns `next_action.url` → the browser
+goes there and returns to `/checkout/success?gateway=airwallex&session_id=…`; the `payment_intent.succeeded`
+webhook marks the order paid. Not done yet: ACH Direct Debit (needs bank details collected in the form), and Cash
+App Pay / Afterpay / Affirm (not active on the Airwallex account).
+
 ### Admin switches for checkout payment methods
 
 The checkout radios and the admin lists share one priority order: card (Stripe's or Airwallex's) first, then

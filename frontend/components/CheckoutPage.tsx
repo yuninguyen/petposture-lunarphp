@@ -150,7 +150,7 @@ const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const googleMapsScriptId = 'petposture-google-places';
 const stripeJsScriptId = 'petposture-stripe-js';
 // Card first (Stripe's or Airwallex's, never both), then PayPal, Apple Pay, Google Pay, Affirm, Klarna and the rest.
-const paymentMethodOrder = { card: 0, airwallex: 0.5, paypal: 1, airwallex_apple_pay: 2, airwallex_google_pay: 3, affirm: 4, klarna: 5, cashapp: 6, afterpay_clearpay: 7, amazon_pay: 8, ach_debit: 9, payoneer: 10, pingpong: 11, cod: 12 } as const;
+const paymentMethodOrder = { card: 0, airwallex: 0.5, paypal: 1, airwallex_paypal: 1.5, airwallex_apple_pay: 2, airwallex_google_pay: 3, affirm: 4, klarna: 5, airwallex_klarna: 5.5, cashapp: 6, afterpay_clearpay: 7, amazon_pay: 8, ach_debit: 9, airwallex_venmo: 9.5, payoneer: 10, pingpong: 11, cod: 12 } as const;
 
 // The only methods rendered as radio rows in the Payment section.
 const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'ach_debit', 'airwallex', 'cod']);
@@ -170,10 +170,17 @@ type AddressSuggestion = {
 
 // 'airwallex_google_pay' / 'airwallex_apple_pay' are Airwallex's own wallet buttons, each a row of its own only when
 // Stripe's matching wallet is not available (deliberately not in radioPaymentMethods, so never pre-selected).
-type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'amazon_pay' | 'ach_debit' | 'airwallex' | 'airwallex_google_pay' | 'airwallex_apple_pay' | 'payoneer' | 'pingpong';
+type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'amazon_pay' | 'ach_debit' | 'airwallex' | 'airwallex_google_pay' | 'airwallex_apple_pay' | 'airwallex_klarna' | 'airwallex_paypal' | 'airwallex_venmo' | 'payoneer' | 'pingpong';
 
 const airwallexWalletOf = (method: string): AirwallexWallet | null => (
     method === 'airwallex_google_pay' ? 'google_pay' : method === 'airwallex_apple_pay' ? 'apple_pay' : null
+);
+
+// Klarna / PayPal / Venmo through Airwallex: ordinary radio rows paid with "Complete order", which creates the order,
+// confirms its PaymentIntent with that method and sends the shopper to the method's own page.
+type AirwallexRedirectMethod = 'klarna' | 'paypal' | 'venmo';
+const airwallexRedirectOf = (method: string): AirwallexRedirectMethod | null => (
+    method === 'airwallex_klarna' ? 'klarna' : method === 'airwallex_paypal' ? 'paypal' : method === 'airwallex_venmo' ? 'venmo' : null
 );
 
 const redirectPaymentMethods: ReadonlySet<PaymentMethod> = new Set(['airwallex', 'payoneer', 'pingpong', 'paypal']);
@@ -382,6 +389,13 @@ export default function CheckoutPage() {
         && (!stripeGooglePayOffered || stripeGooglePayAvailable === false);
     const airwallexApplePayOffered = Boolean(airwallexApplePay?.env)
         && (!stripeApplePayOffered || stripeApplePayAvailable === false);
+    // Klarna / PayPal through Airwallex are the fallback for Stripe's Klarna / the PayPal gateway being off; Venmo has
+    // no other way to be paid here, so it is offered whenever its switch is on.
+    const airwallexRedirectOffered: Record<AirwallexRedirectMethod, boolean> = {
+        klarna: paymentMethods.some((method) => method.method === 'airwallex_klarna') && !paymentMethods.some((method) => method.method === 'klarna'),
+        paypal: paymentMethods.some((method) => method.method === 'airwallex_paypal') && !paymentMethods.some((method) => method.method === 'paypal'),
+        venmo: paymentMethods.some((method) => method.method === 'airwallex_venmo'),
+    };
     const [paymentMethodsLoaded, setPaymentMethodsLoaded] = useState(false);
     // The built-in fallback list is only for an unreachable/invalid API. An empty list
     // from a healthy API means the admin switched every method off, and must stay empty.
@@ -952,6 +966,9 @@ export default function CheckoutPage() {
             if (method.method === 'airwallex_google_pay') return airwallexGooglePayOffered;
             if (method.method === 'airwallex_apple_pay') return airwallexApplePayOffered;
 
+            const airwallexRedirect = airwallexRedirectOf(method.method);
+            if (airwallexRedirect) return airwallexRedirectOffered[airwallexRedirect];
+
             return method.method === 'card' || method.method === 'paypal' || method.method === 'airwallex' || method.method === 'cod';
         })
         .sort((left, right) => paymentMethodOrder[left.method as keyof typeof paymentMethodOrder] - paymentMethodOrder[right.method as keyof typeof paymentMethodOrder]);
@@ -981,7 +998,7 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         const selectedMethod = form.paymentMethod;
-        const isStripeAltMethod = isStripeAltPaymentMethod(selectedMethod) || airwallexWalletOf(selectedMethod) !== null;
+        const isStripeAltMethod = isStripeAltPaymentMethod(selectedMethod) || airwallexWalletOf(selectedMethod) !== null || airwallexRedirectOf(selectedMethod) !== null;
 
         if (isStripeAltMethod && !availablePaymentMethods.some((method) => method.method === selectedMethod)) {
             const fallbackMethod = availablePaymentMethods[0]?.method ?? 'cod';
@@ -1205,6 +1222,20 @@ export default function CheckoutPage() {
             );
         }
 
+        const redirectLogo = {
+            klarna: { src: '/assets/payment/klarna.svg', alt: 'Klarna' },
+            paypal: { src: 'https://www.paypalobjects.com/webstatic/mktg/Logo/pp-logo-100px.png', alt: 'PayPal' },
+            venmo: { src: '/assets/payment/venmo.svg', alt: 'Venmo' },
+        }[airwallexRedirectOf(method.method) ?? 'klarna'];
+        if (airwallexRedirectOf(method.method)) {
+            return (
+                <div className="flex h-[24px] w-[38px] items-center justify-center overflow-hidden rounded-[3px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={redirectLogo.src} alt={redirectLogo.alt} width="38" height="24" className="h-full w-full object-contain" />
+                </div>
+            );
+        }
+
         if (method.method === 'airwallex_google_pay' || method.method === 'airwallex_apple_pay') {
             const isApple = method.method === 'airwallex_apple_pay';
             return (
@@ -1361,7 +1392,7 @@ export default function CheckoutPage() {
         // otherwise a selected last-row method renders its own rounded
         // corners above a square-cornered panel, mismatching the outer
         // container's real bottom edge.
-        const expandsDetailsBelow = isSelected && (method === 'card' || method === 'paypal' || method === 'airwallex' || airwallexWalletOf(method) !== null || isStripeAltPaymentMethod(method));
+        const expandsDetailsBelow = isSelected && (method === 'card' || method === 'paypal' || method === 'airwallex' || airwallexWalletOf(method) !== null || airwallexRedirectOf(method) !== null || isStripeAltPaymentMethod(method));
         const isFirst = index === 0;
         const isLast = index === availablePaymentMethods.length - 1;
 
@@ -1502,7 +1533,7 @@ export default function CheckoutPage() {
                 billing: billingAddress,
                 shipping_method: form.shippingMethod,
                 // Airwallex's Google Pay button is an Airwallex card payment; the wallet rides in payment_context.
-                payment_method: airwallexWalletOf(form.paymentMethod) ? 'airwallex' : form.paymentMethod,
+                payment_method: airwallexWalletOf(form.paymentMethod) || airwallexRedirectOf(form.paymentMethod) ? 'airwallex' : form.paymentMethod,
                 payment_context: paymentContext,
                 totalAmount: finalTotal,
                 coupon_code: coupon.discountAmount > 0 ? coupon.code : null,
@@ -1563,7 +1594,7 @@ export default function CheckoutPage() {
 
     // Also used for Airwallex, whose session endpoint takes the same payload and returns the same
     // client_secret / intent_id / session_id / return_url (plus env and currency for Airwallex.js).
-    const prepareStripeAltSession = async (method: StripeAltPaymentMethod | 'airwallex', wallet?: AirwallexWallet): Promise<{
+    const prepareStripeAltSession = async (method: StripeAltPaymentMethod | 'airwallex', wallet?: AirwallexWallet | AirwallexRedirectMethod): Promise<{
         client_secret: string;
         intent_id: string;
         session_id: string;
@@ -1675,6 +1706,36 @@ export default function CheckoutPage() {
         setPaypalError(null);
 
         try {
+            const airwallexRedirect = airwallexRedirectOf(form.paymentMethod);
+            if (airwallexRedirect) {
+                // The same three steps as the other redirect methods: price the cart into a PaymentIntent, save the
+                // order, then have Airwallex confirm the intent with this method and send the shopper to its page.
+                const session = await prepareStripeAltSession('airwallex', airwallexRedirect);
+                const orderAccess = await placeOrder({ intent_id: session.intent_id, session_id: session.session_id, wallet: airwallexRedirect });
+                sessionStorage.setItem(`petposture_payment_access:${session.session_id}`, JSON.stringify({
+                    email: form.email,
+                    trackingToken: orderAccess.trackingToken,
+                }));
+
+                const confirmResponse = await fetchApi('/api/checkout/airwallex-confirm', {
+                    method: 'POST',
+                    body: { intent_id: session.intent_id, session_id: session.session_id },
+                });
+                const confirmData = await confirmResponse.json();
+
+                if (!confirmResponse.ok || !confirmData?.redirect_url) {
+                    // The order is saved: the confirmation page lets the shopper retry or pick another method.
+                    window.location.href = `${session.return_url}&redirect_status=failed`;
+                    return;
+                }
+
+                localStorage.removeItem('petposture_cart');
+                localStorage.removeItem('petposture_cart_coupon');
+                clearCoupon();
+                window.location.href = confirmData.redirect_url;
+                return;
+            }
+
             if (form.paymentMethod === 'airwallex') {
                 const fields = airwallexFieldsRef.current;
                 if (!fields) {
@@ -2386,6 +2447,12 @@ export default function CheckoutPage() {
                                         {airwallexWalletOf(method.method) !== null && form.paymentMethod === method.method && (
                                             <div className={`border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
                                                 <p className="text-sm leading-[1.45] text-[#6f7782]">Pay with the {method.label} button below, in place of &ldquo;Complete order&rdquo;.</p>
+                                            </div>
+                                        )}
+
+                                        {airwallexRedirectOf(method.method) !== null && form.paymentMethod === method.method && (
+                                            <div className={`grid gap-3 border-b border-[#d9d9d9] bg-[#f8fafc] px-4 pb-4 pt-3 ${index === availablePaymentMethods.length - 1 ? 'rounded-bl-[8px] rounded-br-[8px]' : ''}`}>
+                                                <p className="text-sm leading-[1.45] text-[#6f7782]">You&apos;ll be redirected to {method.label} to complete your purchase</p>
                                             </div>
                                         )}
 

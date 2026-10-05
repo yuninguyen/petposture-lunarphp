@@ -24,6 +24,21 @@ class PaymentGatewayManager
     public const AIRWALLEX_WALLETS = ['google_pay' => 'Google Pay', 'apple_pay' => 'Apple Pay'];
 
     /**
+     * Redirect methods Airwallex can take (the fallback when Stripe's / PayPal's own is off): the order is
+     * created first, then the PaymentIntent is confirmed with the method and the shopper is sent to its page.
+     * Also 'airwallex' gateway orders, with a switch of their own, 'airwallex_<method>'.
+     */
+    public const AIRWALLEX_REDIRECTS = ['klarna' => 'Klarna', 'paypal' => 'PayPal', 'venmo' => 'Venmo'];
+
+    /** Whether $variant (a payment_context.wallet value) names an Airwallex wallet or redirect method. */
+    public static function isAirwallexVariant(?string $variant): bool
+    {
+        $variant = strtolower(trim((string) $variant));
+
+        return isset(self::AIRWALLEX_WALLETS[$variant]) || isset(self::AIRWALLEX_REDIRECTS[$variant]);
+    }
+
+    /**
      * @param  iterable<PaymentGatewayInterface>  $gateways
      */
     public function __construct(
@@ -36,7 +51,7 @@ class PaymentGatewayManager
         $requestedWallet = strtolower(trim((string) $wallet));
         // A wallet order is governed by the wallet's own switch, not the Credit card one.
         $switch = $requestedMethod === 'card' && isset(self::WALLETS[$requestedWallet]) ? $requestedWallet : $requestedMethod;
-        if ($requestedMethod === 'airwallex' && isset(self::AIRWALLEX_WALLETS[$requestedWallet])) {
+        if ($requestedMethod === 'airwallex' && self::isAirwallexVariant($requestedWallet)) {
             $switch = 'airwallex_'.$requestedWallet;
         }
 
@@ -79,7 +94,7 @@ class PaymentGatewayManager
             }
 
             if ($gateway->method() === 'airwallex') {
-                foreach (self::AIRWALLEX_WALLETS as $wallet => $label) {
+                foreach (self::AIRWALLEX_WALLETS + self::AIRWALLEX_REDIRECTS as $wallet => $label) {
                     $adminEnabled = $this->adminEnabled('airwallex_'.$wallet);
                     // What the Airwallex dashboard says ('on'/'off'/'unavailable'/null unknown): off or not offered hides it.
                     $airwallexStatus = app(AirwallexPaymentMethodStatusService::class)->status('airwallex_'.$wallet);
@@ -88,7 +103,7 @@ class PaymentGatewayManager
                         'method' => 'airwallex_'.$wallet,
                         'label' => $label,
                         'gateway' => 'airwallex',
-                        'collection' => 'wallet',
+                        'collection' => isset(self::AIRWALLEX_WALLETS[$wallet]) ? 'wallet' : 'redirect_method',
                         'env' => $definition['env'] ?? null,
                         'merchant_id' => config('services.airwallex.merchant_id'),
                         'mode' => $definition['mode'] ?? 'placeholder',

@@ -33,6 +33,7 @@ use Lunar\Models\TaxClass;
 use Lunar\Models\TaxRate;
 use Lunar\Models\TaxRateAmount;
 use Lunar\Models\TaxZone;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -2019,6 +2020,85 @@ class CheckoutApiTest extends TestCase
         $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
             'payment_method' => 'airwallex',
             'payment_context' => ['intent_id' => 'int_awx_ap_2', 'session_id' => 'AIRWALLEX-AP2', 'wallet' => 'apple_pay'],
+        ]))->assertStatus(422);
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function airwallexRedirectMethods(): array
+    {
+        return ['klarna' => ['klarna', 'Klarna'], 'paypal' => ['paypal', 'PayPal'], 'venmo' => ['venmo', 'Venmo']];
+    }
+
+    #[DataProvider('airwallexRedirectMethods')]
+    public function test_airwallex_redirect_methods_create_the_order_then_confirm_the_intent_and_return_the_page_to_redirect_to(string $method, string $label): void
+    {
+        $this->configureAirwallex();
+        $sent = [];
+        Http::fake([
+            'https://api-demo.airwallex.com/api/v1/authentication/login' => Http::response(['token' => 'awx_token']),
+            'https://api-demo.airwallex.com/api/v1/pa/payment_intents/create' => Http::response(['id' => "int_awx_{$method}", 'client_secret' => 'awx_secret'], 201),
+            'https://api-demo.airwallex.com/api/v1/pa/payment_intents/*/confirm' => Http::response(['next_action' => ['type' => 'redirect', 'method' => 'GET', 'url' => "https://pay.example.test/{$method}"]]),
+        ]);
+        $variant = $this->createPurchasableVariant();
+        $listed = fn () => collect($this->getJson('/api/checkout/payment-methods')->json('methods'))->first(fn (array $entry): bool => $entry['method'] === "airwallex_{$method}" && $entry['enabled']);
+        $this->assertNotNull($listed());
+        $this->assertSame('redirect_method', $listed()['collection']);
+
+        $session = $this->postJson('/api/checkout/airwallex-session', array_replace($this->stripeAltSessionPayload($variant), ['payment_method' => 'airwallex', 'wallet' => $method]))
+            ->assertOk()
+            ->assertJsonPath('session.intent_id', "int_awx_{$method}");
+        $sessionId = $session->json('session.session_id');
+
+        $placed = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => "int_awx_{$method}", 'session_id' => $sessionId, 'wallet' => $method],
+        ]))->assertCreated();
+        $order = Order::query()->findOrFail($placed->json('order.id'));
+        $this->assertSame($method, $order->meta['airwallex_method']);
+        $this->assertSame($label, $order->meta['payment_label']);
+        $this->assertSame('airwallex', $order->meta['payment_gateway']);
+
+        $this->postJson('/api/checkout/airwallex-confirm', ['intent_id' => "int_awx_{$method}", 'session_id' => $sessionId])
+            ->assertOk()
+            ->assertJsonPath('redirect_url', "https://pay.example.test/{$method}");
+
+        Http::assertSent(function ($request) use ($method, &$sent): bool {
+            if (! str_ends_with($request->url(), '/confirm')) {
+                return false;
+            }
+            $sent = $request->data();
+
+            return str_contains($request->url(), "/payment_intents/int_awx_{$method}/confirm") && ($request['payment_method']['type'] ?? null) === $method;
+        });
+        if ($method === 'klarna') {
+            $this->assertTrue($sent['payment_method_options']['klarna']['auto_capture']);
+            $this->assertSame('guest@petposture.com', $sent['payment_method']['klarna']['billing']['email']);
+        } else {
+            $this->assertNotSame('', $sent['payment_method'][$method]['shopper_name']);
+        }
+    }
+
+    public function test_airwallex_confirm_refuses_unknown_card_and_paid_orders_and_a_switched_off_method(): void
+    {
+        $this->configureAirwallex();
+        $variant = $this->createPurchasableVariant();
+
+        $this->postJson('/api/checkout/airwallex-confirm', ['intent_id' => 'int_nope', 'session_id' => 'AIRWALLEX-NOPE'])->assertStatus(422);
+
+        // A plain card order has no redirect method to confirm.
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_card', 'session_id' => 'AIRWALLEX-CARD'],
+        ]))->assertCreated();
+        $this->postJson('/api/checkout/airwallex-confirm', ['intent_id' => 'int_awx_card', 'session_id' => 'AIRWALLEX-CARD'])->assertStatus(422);
+
+        // A switched-off method cannot start an order at all.
+        Setting::set('payment_method_airwallex_klarna_enabled', false, 'boolean', 'payment');
+        $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_k', 'session_id' => 'AIRWALLEX-K', 'wallet' => 'klarna'],
         ]))->assertStatus(422);
     }
 

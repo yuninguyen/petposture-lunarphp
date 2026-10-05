@@ -43,16 +43,19 @@ class AirwallexGateway implements PaymentGatewayInterface
     public function prepare(array $payload = []): PaymentPreparation
     {
         $paymentContext = (array) ($payload['payment_context'] ?? []);
+        // 'klarna' / 'paypal' / 'venmo' when the shopper picked one of those instead of the card.
+        $redirectMethod = is_string($paymentContext['wallet'] ?? null) && isset(PaymentGatewayManager::AIRWALLEX_REDIRECTS[$paymentContext['wallet']]) ? $paymentContext['wallet'] : null;
 
         return new PaymentPreparation(
             method: $this->method(),
             // Customers see a card payment, exactly like Stripe's card orders (the gateway stays Airwallex).
-            label: 'Card',
+            label: $redirectMethod ? PaymentGatewayManager::AIRWALLEX_REDIRECTS[$redirectMethod] : 'Card',
             gateway: 'airwallex',
             collectionType: 'redirect',
             paymentStatus: 'pending',
-            instructions: 'Pay by card through Airwallex.',
+            instructions: 'Pay through Airwallex.',
             meta: [
+                'airwallex_method' => $redirectMethod,
                 'payment_provider_mode' => $this->airwallexService->isConfigured() ? 'configured' : 'placeholder',
                 'airwallex_session_id' => $paymentContext['session_id'] ?? null,
                 'airwallex_intent_id' => $paymentContext['intent_id'] ?? null,
