@@ -28,7 +28,8 @@ class PaymentGatewayManager
      * created first, then the PaymentIntent is confirmed with the method and the shopper is sent to its page.
      * Also 'airwallex' gateway orders, with a switch of their own, 'airwallex_<method>'.
      */
-    public const AIRWALLEX_REDIRECTS = ['klarna' => 'Klarna', 'paypal' => 'PayPal', 'venmo' => 'Venmo'];
+    // Venmo is not here: Airwallex answers it with next_action "call_sdk" (a browser SDK flow), not a redirect.
+    public const AIRWALLEX_REDIRECTS = ['klarna' => 'Klarna', 'paypal' => 'PayPal'];
 
     /** Whether $variant (a payment_context.wallet value) names an Airwallex wallet or redirect method. */
     public static function isAirwallexVariant(?string $variant): bool

@@ -2028,7 +2028,7 @@ class CheckoutApiTest extends TestCase
      */
     public static function airwallexRedirectMethods(): array
     {
-        return ['klarna' => ['klarna', 'Klarna'], 'paypal' => ['paypal', 'PayPal'], 'venmo' => ['venmo', 'Venmo']];
+        return ['klarna' => ['klarna', 'Klarna'], 'paypal' => ['paypal', 'PayPal']];
     }
 
     #[DataProvider('airwallexRedirectMethods')]
@@ -2071,6 +2071,18 @@ class CheckoutApiTest extends TestCase
             $sent = $request->data();
 
             return str_contains($request->url(), "/payment_intents/int_awx_{$method}/confirm") && ($request['payment_method']['type'] ?? null) === $method;
+        });
+        // Klarna refuses an intent whose order lines do not add up to the amount, and the other methods need no lines.
+        Http::assertSent(function ($request) use ($method): bool {
+            if (! str_ends_with($request->url(), '/payment_intents/create')) {
+                return false;
+            }
+            if ($method !== 'klarna') {
+                return ! isset($request['order']['products']);
+            }
+            $lines = collect($request['order']['products'] ?? [])->sum(fn (array $line): float => $line['unit_price'] * $line['quantity']);
+
+            return abs($lines + ($request['order']['shipping']['fee_amount'] ?? 0) - $request['amount']) < 0.005;
         });
         if ($method === 'klarna') {
             $this->assertTrue($sent['payment_method_options']['klarna']['auto_capture']);

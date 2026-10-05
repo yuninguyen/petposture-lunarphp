@@ -150,7 +150,7 @@ const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const googleMapsScriptId = 'petposture-google-places';
 const stripeJsScriptId = 'petposture-stripe-js';
 // Card first (Stripe's or Airwallex's, never both), then PayPal, Apple Pay, Google Pay, Affirm, Klarna and the rest.
-const paymentMethodOrder = { card: 0, airwallex: 0.5, paypal: 1, airwallex_paypal: 1.5, airwallex_apple_pay: 2, airwallex_google_pay: 3, affirm: 4, klarna: 5, airwallex_klarna: 5.5, cashapp: 6, afterpay_clearpay: 7, amazon_pay: 8, ach_debit: 9, airwallex_venmo: 9.5, payoneer: 10, pingpong: 11, cod: 12 } as const;
+const paymentMethodOrder = { card: 0, airwallex: 0.5, paypal: 1, airwallex_paypal: 1.5, airwallex_apple_pay: 2, airwallex_google_pay: 3, affirm: 4, klarna: 5, airwallex_klarna: 5.5, cashapp: 6, afterpay_clearpay: 7, amazon_pay: 8, ach_debit: 9, payoneer: 10, pingpong: 11, cod: 12 } as const;
 
 // The only methods rendered as radio rows in the Payment section.
 const radioPaymentMethods: ReadonlySet<string> = new Set(['card', 'paypal', 'cashapp', 'affirm', 'afterpay_clearpay', 'klarna', 'ach_debit', 'airwallex', 'cod']);
@@ -170,17 +170,17 @@ type AddressSuggestion = {
 
 // 'airwallex_google_pay' / 'airwallex_apple_pay' are Airwallex's own wallet buttons, each a row of its own only when
 // Stripe's matching wallet is not available (deliberately not in radioPaymentMethods, so never pre-selected).
-type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'amazon_pay' | 'ach_debit' | 'airwallex' | 'airwallex_google_pay' | 'airwallex_apple_pay' | 'airwallex_klarna' | 'airwallex_paypal' | 'airwallex_venmo' | 'payoneer' | 'pingpong';
+type PaymentMethod = 'cod' | 'card' | 'paypal' | 'cashapp' | 'affirm' | 'afterpay_clearpay' | 'klarna' | 'amazon_pay' | 'ach_debit' | 'airwallex' | 'airwallex_google_pay' | 'airwallex_apple_pay' | 'airwallex_klarna' | 'airwallex_paypal' | 'payoneer' | 'pingpong';
 
 const airwallexWalletOf = (method: string): AirwallexWallet | null => (
     method === 'airwallex_google_pay' ? 'google_pay' : method === 'airwallex_apple_pay' ? 'apple_pay' : null
 );
 
-// Klarna / PayPal / Venmo through Airwallex: ordinary radio rows paid with "Complete order", which creates the order,
+// Klarna / PayPal through Airwallex: ordinary radio rows paid with "Complete order", which creates the order,
 // confirms its PaymentIntent with that method and sends the shopper to the method's own page.
-type AirwallexRedirectMethod = 'klarna' | 'paypal' | 'venmo';
+type AirwallexRedirectMethod = 'klarna' | 'paypal';
 const airwallexRedirectOf = (method: string): AirwallexRedirectMethod | null => (
-    method === 'airwallex_klarna' ? 'klarna' : method === 'airwallex_paypal' ? 'paypal' : method === 'airwallex_venmo' ? 'venmo' : null
+    method === 'airwallex_klarna' ? 'klarna' : method === 'airwallex_paypal' ? 'paypal' : null
 );
 
 const redirectPaymentMethods: ReadonlySet<PaymentMethod> = new Set(['airwallex', 'payoneer', 'pingpong', 'paypal']);
@@ -389,12 +389,10 @@ export default function CheckoutPage() {
         && (!stripeGooglePayOffered || stripeGooglePayAvailable === false);
     const airwallexApplePayOffered = Boolean(airwallexApplePay?.env)
         && (!stripeApplePayOffered || stripeApplePayAvailable === false);
-    // Klarna / PayPal through Airwallex are the fallback for Stripe's Klarna / the PayPal gateway being off; Venmo has
-    // no other way to be paid here, so it is offered whenever its switch is on.
+    // Klarna / PayPal through Airwallex are the fallback for Stripe's Klarna / the PayPal gateway being off.
     const airwallexRedirectOffered: Record<AirwallexRedirectMethod, boolean> = {
         klarna: paymentMethods.some((method) => method.method === 'airwallex_klarna') && !paymentMethods.some((method) => method.method === 'klarna'),
         paypal: paymentMethods.some((method) => method.method === 'airwallex_paypal') && !paymentMethods.some((method) => method.method === 'paypal'),
-        venmo: paymentMethods.some((method) => method.method === 'airwallex_venmo'),
     };
     const [paymentMethodsLoaded, setPaymentMethodsLoaded] = useState(false);
     // The built-in fallback list is only for an unreachable/invalid API. An empty list
@@ -1225,7 +1223,6 @@ export default function CheckoutPage() {
         const redirectLogo = {
             klarna: { src: '/assets/payment/klarna.svg', alt: 'Klarna' },
             paypal: { src: 'https://www.paypalobjects.com/webstatic/mktg/Logo/pp-logo-100px.png', alt: 'PayPal' },
-            venmo: { src: '/assets/payment/venmo.svg', alt: 'Venmo' },
         }[airwallexRedirectOf(method.method) ?? 'klarna'];
         if (airwallexRedirectOf(method.method)) {
             return (

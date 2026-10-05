@@ -883,6 +883,15 @@ class CheckoutController extends Controller
                         'type' => 'physical_good',
                     ], static fn ($value) => $value !== '');
                 }
+
+                // Airwallex checks that the lines add up to the amount (shipping is the fee_amount below), so tax
+                // and any discount go in as lines of their own.
+                if ($totals['tax_minor'] > 0) {
+                    $products[] = ['name' => 'Sales tax', 'quantity' => 1, 'unit_price' => round($totals['tax_minor'] / 100, 2), 'type' => 'service'];
+                }
+                if ($totals['discount_minor'] > 0) {
+                    $products[] = ['name' => 'Discount', 'quantity' => 1, 'unit_price' => -round($totals['discount_minor'] / 100, 2), 'type' => 'service'];
+                }
             }
 
             // Our own attempt id, baked into the return URL (the success page finds the order

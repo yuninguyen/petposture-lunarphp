@@ -33,6 +33,7 @@ class PaymentMethodService
         'airwallex_affirm' => ['label' => 'Affirm', 'gateway' => 'airwallex'],
         'airwallex_afterpay_clearpay' => ['label' => 'Afterpay / Clearpay', 'gateway' => 'airwallex'],
         'airwallex_cashapp' => ['label' => 'Cash App Pay', 'gateway' => 'airwallex'],
+        'airwallex_venmo' => ['label' => 'Venmo', 'gateway' => 'airwallex'],
         'venmo' => ['label' => 'Venmo', 'gateway' => 'paypal'],
     ];
 

@@ -282,7 +282,7 @@ class AirwallexService
         $intentId = (string) ($order->meta['airwallex_intent_id'] ?? '');
         $sessionToken = (string) ($order->meta['airwallex_session_id'] ?? '');
 
-        if ($intentId === '' || ! in_array($method, ['klarna', 'paypal', 'venmo'], true)) {
+        if ($intentId === '' || ! in_array($method, ['klarna', 'paypal'], true)) {
             throw new RuntimeException('This order has no Airwallex payment to confirm.');
         }
 
@@ -314,7 +314,6 @@ class AirwallexService
             'payment_method' => match ($method) {
                 'klarna' => ['type' => 'klarna', 'klarna' => ['country_code' => $country, 'language' => 'en', 'billing' => array_filter($billing, static fn ($value) => filled($value))]],
                 'paypal' => ['type' => 'paypal', 'paypal' => ['shopper_name' => $name, 'country_code' => $country]],
-                'venmo' => ['type' => 'venmo', 'venmo' => ['shopper_name' => $name]],
             },
         ];
 
