@@ -1306,7 +1306,7 @@ class CheckoutApiTest extends TestCase
         sort($lineKeys);
         $this->assertSame([
             'description', 'discount_total', 'id', 'image', 'quantity', 'sub_total',
-            'tax_total', 'total', 'type', 'unit_price',
+            'tax_total', 'total', 'type', 'unit_price', 'variant_label',
         ], $lineKeys);
         $shippingAddressKeys = array_keys($response->json('data.0.shipping_address'));
         sort($shippingAddressKeys);
@@ -1484,7 +1484,7 @@ class CheckoutApiTest extends TestCase
         sort($lineKeys);
         $this->assertSame([
             'description', 'discount_total', 'id', 'image', 'quantity', 'sub_total',
-            'tax_total', 'total', 'type', 'unit_price',
+            'tax_total', 'total', 'type', 'unit_price', 'variant_label',
         ], $lineKeys);
         $shippingAddressKeys = array_keys($response->json('data.shipping_address'));
         sort($shippingAddressKeys);
