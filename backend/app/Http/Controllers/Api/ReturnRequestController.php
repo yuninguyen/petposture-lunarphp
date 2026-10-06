@@ -7,6 +7,7 @@ use App\Http\Resources\Api\OrderReturnRequestResource;
 use App\Models\OrderReturnRequest;
 use App\Services\OrderTrackingAccessService;
 use App\Services\ReturnRequestService;
+use App\Support\Orders\VariantLabel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -83,6 +84,7 @@ class ReturnRequestController extends Controller
                         'id' => (string) $line->id,
                         'type' => $line->type,
                         'description' => $line->description,
+                        'variant_label' => VariantLabel::forLine($line),
                         'quantity' => (int) $line->quantity,
                         'image' => null,
                     ])->values(),

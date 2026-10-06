@@ -13,6 +13,7 @@ type OrderLine = {
     id: number;
     type: string;
     description: string;
+    variant_label?: string | null;
     quantity: number;
     image: string | null;
 };
@@ -408,6 +409,7 @@ function RequestReturnContent() {
                                                     )}
                                                     <div className="flex-1">
                                                         <p className="text-[14px] font-semibold text-primary">{line.description}</p>
+                                                        {line.variant_label && <p className="text-xs text-zinc-500">{line.variant_label}</p>}
                                                         <p className="text-xs text-zinc-400">Ordered: {line.quantity}</p>
                                                     </div>
                                                     {isSelected && line.quantity > 1 && (

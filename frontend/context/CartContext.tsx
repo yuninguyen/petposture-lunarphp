@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useSyncExternalStore } from 'react';
 import { Product } from '@/types/shop';
-import { variantLabelOf } from '@/lib/variantLabel';
+import { variantLabelOf, withVariantLabel } from '@/lib/variantLabel';
 import { fetchApi } from '@/lib/fetchApi';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -58,7 +58,7 @@ function readStoredCart(): CartItem[] {
     const raw = localStorage.getItem(CART_STORAGE_KEY);
     if (raw === cachedCartRaw) return cachedCartValue;
     if (!raw) { cachedCartRaw = null; cachedCartValue = emptyCartState; return cachedCartValue; }
-    try { cachedCartRaw = raw; cachedCartValue = JSON.parse(raw); return cachedCartValue; }
+    try { cachedCartRaw = raw; cachedCartValue = (JSON.parse(raw) as CartItem[]).map(withVariantLabel); return cachedCartValue; }
     catch { cachedCartRaw = null; cachedCartValue = emptyCartState; return cachedCartValue; }
 }
 

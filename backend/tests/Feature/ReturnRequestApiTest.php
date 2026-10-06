@@ -257,6 +257,7 @@ class ReturnRequestApiTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.status', 'delivered')
             ->assertJsonPath('data.lines.0.id', (string) $lineId)
+            ->assertJsonPath('data.lines.0.variant_label', null)
             ->assertJsonMissingPath('data.customer_email')
             ->assertJsonMissingPath('data.shipping_address')
             ->assertJsonMissingPath('data.payment_status')

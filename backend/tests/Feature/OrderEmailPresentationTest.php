@@ -31,6 +31,16 @@ class OrderEmailPresentationTest extends TestCase
         }
     }
 
+    public function test_a_line_option_still_prints_when_the_variant_is_gone(): void
+    {
+        $order = $this->makeOrder();
+        $order->lines()->where('description', 'Pet Posture Harness')->update(['option' => 'Medium']);
+
+        foreach (['confirmation', 'new-admin', 'cancelled-admin', 'cancelled', 'delivered'] as $key) {
+            $this->assertStringContainsString('Medium', $this->renderView($key, $order), "View '{$key}' should still show the stored option.");
+        }
+    }
+
     public function test_order_confirmation_locks_existing_behavior(): void
     {
         $order = $this->makeOrder();

@@ -10,7 +10,7 @@ class VariantLabel
      */
     public static function forLine(mixed $line): ?string
     {
-        if (($line->type ?? null) === 'shipping') {
+        if (! is_object($line) || ($line->type ?? null) === 'shipping') {
             return null;
         }
 
