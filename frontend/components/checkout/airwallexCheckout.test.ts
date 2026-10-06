@@ -55,6 +55,41 @@ describe('mountAirwallexCardFields', () => {
         expect(onState).toHaveBeenCalledTimes(2);
     });
 
+    it('moves the focus between the three card fields on Tab / Shift+Tab, and out of the form at its ends', async () => {
+        document.body.innerHTML = '<button id="before">before</button><div id="awx-card-number"></div><div id="awx-expiry"></div><div id="awx-cvc"></div><button id="after">after</button>';
+        const handlers: Record<string, (event?: { detail?: { shiftKey?: boolean } }) => void> = {};
+        const field = (name: string) => ({
+            mount: vi.fn(),
+            destroy: vi.fn(),
+            focus: vi.fn(),
+            on: vi.fn((event: string, handler: (event?: { detail?: { shiftKey?: boolean } }) => void) => {
+                if (event === 'pressTabKey') handlers[name] = handler;
+            }),
+        });
+        const cardNumber = field('cardNumber');
+        const expiry = field('expiry');
+        const cvc = field('cvc');
+        installSdk({ cardNumber, expiry, cvc });
+
+        await mountAirwallexCardFields('demo-tab', containers);
+
+        handlers.cardNumber({ detail: { shiftKey: false } });
+        expect(expiry.focus).toHaveBeenCalledTimes(1);
+        handlers.expiry({ detail: { shiftKey: false } });
+        expect(cvc.focus).toHaveBeenCalledTimes(1);
+        handlers.cvc({ detail: { shiftKey: true } });
+        expect(expiry.focus).toHaveBeenCalledTimes(2);
+        handlers.expiry({ detail: { shiftKey: true } });
+        expect(cardNumber.focus).toHaveBeenCalledTimes(1);
+
+        handlers.cvc({ detail: { shiftKey: false } });
+        expect(document.activeElement?.id).toBe('after');
+        handlers.cardNumber({ detail: { shiftKey: true } });
+        expect(document.activeElement?.id).toBe('before');
+
+        document.body.innerHTML = '';
+    });
+
     it('fails with a readable message when Airwallex does not create an element', async () => {
         installSdk({ cardNumber: { mount: vi.fn() }, expiry: null, cvc: { mount: vi.fn() } });
 

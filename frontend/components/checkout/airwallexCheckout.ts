@@ -7,7 +7,8 @@ type AirwallexElement = {
     mount: (containerId: string) => unknown;
     destroy?: () => void;
     confirm?: (data: { intent_id: string; client_secret: string; payment_method?: Record<string, unknown> }) => Promise<AirwallexIntent>;
-    on?: (event: string, handler: (event?: { detail?: { error?: { message?: string } } }) => void) => void;
+    on?: (event: string, handler: (event?: { detail?: { error?: { message?: string }; shiftKey?: boolean } }) => void) => void;
+    focus?: () => void;
 };
 
 declare global {
@@ -101,6 +102,26 @@ function listenForCardNumberState(onState: (state: AirwallexCardNumberState) => 
     return () => window.removeEventListener('message', handler);
 }
 
+const focusableSelector = 'a[href], button, input, select, textarea, [tabindex]';
+
+// Moves the focus to the first focusable element after (or before) the card form, as Tab / Shift+Tab would.
+function focusBeyondCardForm(containerIds: string[], edgeIndex: number, backward: boolean): void {
+    const edge = document.getElementById(containerIds[edgeIndex]);
+    if (!edge) return;
+
+    const insideForm = (element: Element) => containerIds.some((id) => document.getElementById(id)?.contains(element));
+    const candidates = Array.from(document.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+        (element) => !insideForm(element) && element.tabIndex >= 0 && !(element as HTMLInputElement).disabled
+            && Boolean(edge.compareDocumentPosition(element) & (backward ? Node.DOCUMENT_POSITION_PRECEDING : Node.DOCUMENT_POSITION_FOLLOWING)),
+    );
+
+    // The nearest candidate that takes the focus (a hidden one does not).
+    for (const element of backward ? candidates.reverse() : candidates) {
+        element.focus();
+        if (document.activeElement === element) return;
+    }
+}
+
 export async function mountAirwallexCardFields(
     env: string,
     containers: AirwallexCardContainers,
@@ -132,6 +153,20 @@ export async function mountAirwallexCardFields(
     cardNumber.mount(containers.cardNumber);
     expiry.mount(containers.expiry);
     cvc.mount(containers.cvc);
+
+    // Each field is its own iframe and swallows Tab: Airwallex reports it as 'pressTabKey' (after mount, like
+    // its other events) so the page moves the focus itself — next field, or out of the card form at its ends.
+    const fieldOrder = [cardNumber, expiry, cvc];
+    const containerOrder = [containers.cardNumber, containers.expiry, containers.cvc];
+    fieldOrder.forEach((field, index) => {
+        field.on?.('pressTabKey', (event) => {
+            const backward = Boolean(event?.detail?.shiftKey ?? (event as { shiftKey?: boolean } | undefined)?.shiftKey);
+            const neighbour = fieldOrder[index + (backward ? -1 : 1)];
+
+            if (neighbour) neighbour.focus?.();
+            else focusBeyondCardForm(containerOrder, backward ? 0 : containerOrder.length - 1, backward);
+        });
+    });
 
     return {
         cardNumber,
