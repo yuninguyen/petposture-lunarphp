@@ -555,6 +555,12 @@ p:has(> a.pp-cta-pill) {
   border-bottom: 0;
 }
 
+/* Center and emphasize row labels in editorial quick-comparison tables. */
+.rich-content h2#quick-comparison + .rich-table-scroll tbody td:first-child {
+  text-align: center;
+  font-weight: 600;
+}
+
 @media (max-width: 640px) {
   .rich-content .rich-table-scroll thead th,
   .rich-content .rich-table-scroll tbody th {

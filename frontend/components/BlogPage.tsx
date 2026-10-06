@@ -44,6 +44,7 @@ type BlogPost = {
     author?: string | null;
     read_time?: string | null;
     created_at?: string | null;
+    published_at?: string | null;
     blog_category?: BlogCategory | null;
 };
 
@@ -379,7 +380,9 @@ export default function BlogPage() {
                                                 </span>
                                                 <span className="h-1 w-1 rounded-full bg-zinc-200" />
                                                 <span>
-                                                    {post.created_at ? formatDate(post.created_at) : "Recently published"}
+                                                    {post.published_at || post.created_at
+                                                        ? formatDate(post.published_at || post.created_at || "")
+                                                        : "Recently published"}
                                                 </span>
                                             </div>
                                             <Link href={`/blog/${post.slug || post.id}`}>
@@ -506,7 +509,9 @@ export default function BlogPage() {
                                                     {post.title}
                                                 </h6>
                                                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                                                    {post.created_at ? formatDate(post.created_at) : "Recently published"}
+                                                    {post.published_at || post.created_at
+                                                        ? formatDate(post.published_at || post.created_at || "")
+                                                        : "Recently published"}
                                                 </span>
                                             </div>
                                         </Link>

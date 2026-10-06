@@ -22,6 +22,7 @@ type ApiPost = {
     author?: string | null;
     read_time?: string | null;
     created_at?: string | null;
+    published_at?: string | null;
     blog_category?: {
         id: string;
         name: string;
@@ -72,7 +73,11 @@ function toViewModel(post: ApiPost): BlogPostViewModel {
         image: post.featured_image || '/assets/blog/placeholder-post.webp',
         imageAlt: post.featured_image_alt || undefined,
         author: post.author || 'PetPosture Editorial',
-        date: post.created_at ? formatDate(post.created_at) : 'Recently published',
+        date: post.published_at
+            ? formatDate(post.published_at)
+            : post.created_at
+                ? formatDate(post.created_at)
+                : 'Recently published',
         readTime: post.read_time || '5 min read',
         tags: post.tags || [],
     };
@@ -184,7 +189,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         headline: post.title,
         description,
         ...(post.featured_image ? { image: post.featured_image } : {}),
-        ...(post.created_at ? { datePublished: post.created_at } : {}),
+        ...((post.published_at || post.created_at)
+            ? { datePublished: post.published_at || post.created_at }
+            : {}),
         author: {
             '@type': 'Organization',
             name: post.author || 'PetPosture',
