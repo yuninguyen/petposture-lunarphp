@@ -559,6 +559,7 @@ class OrderOperationsService
         ];
 
         $currentStatus = (string) $order->status;
+        $previousMeta = (array) ($order->meta ?? []);
 
         if ($paymentStatus === 'paid' && in_array($currentStatus, ['awaiting-payment', 'payment-offline'], true)) {
             $updates['status'] = 'payment-received';
@@ -611,6 +612,21 @@ class OrderOperationsService
 
             // No customer email for payment-failed by design — see the note above the
             // targetStatus match() earlier in this class.
+        }
+
+        // A declined/abandoned attempt on an order that never reached Payment Received leaves the
+        // status at Awaiting payment (the customer can retry) — still leave a trace in the history.
+        // The same webhook delivered twice must not log twice.
+        $alreadyLoggedFailure = ($previousMeta['payment_status'] ?? '') === 'failed'
+            && ($previousMeta['payment_last_event_id'] ?? null) === ($meta['payment_last_event_id'] ?? null);
+
+        if ($paymentStatus === 'failed' && $currentStatus === 'awaiting-payment' && ! $alreadyLoggedFailure) {
+            $this->orderEventService->record(
+                $order,
+                'payment.failed',
+                'Payment failed',
+                $eventType ?: "{$gatewayLabel} reported a failed payment."
+            );
         }
 
         if ($paymentStatus === 'cancelled' && in_array($currentStatus, ['awaiting-payment', 'payment-offline'], true)) {

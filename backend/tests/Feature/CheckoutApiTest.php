@@ -3065,6 +3065,11 @@ class CheckoutApiTest extends TestCase
         $this->getJson($lookup)->assertOk()
             ->assertJsonPath('data.status', 'awaiting-payment')
             ->assertJsonPath('data.payment_failed', true);
+
+        // The history records the failed attempt even though the order stays Awaiting payment.
+        $failures = Order::query()->latest('id')->firstOrFail()->orderEvents()->where('type', 'payment.failed')->get();
+        $this->assertCount(1, $failures);
+        $this->assertSame('Payment failed', $failures->first()->title);
     }
 
     public function test_affirm_order_can_retry_with_card_and_updates_its_payment_method(): void
