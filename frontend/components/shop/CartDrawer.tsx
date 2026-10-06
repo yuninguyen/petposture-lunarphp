@@ -84,6 +84,9 @@ export function CartDrawer() {
                                             >
                                                 {item.name}
                                             </h3>
+                                            {item.variantLabel && (
+                                                <p className="mt-0.5 truncate text-xs text-zinc-500">{item.variantLabel}</p>
+                                            )}
 
                                             <div className="flex justify-between items-center mt-2">
                                                 <div className="flex items-center bg-zinc-50 rounded-[4px] w-fit border border-zinc-100">
