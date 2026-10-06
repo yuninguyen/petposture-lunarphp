@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useSyncExternalStore } from 'react';
 import { Product } from '@/types/shop';
+import { variantLabelOf } from '@/lib/variantLabel';
 import { fetchApi } from '@/lib/fetchApi';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -200,10 +201,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const addItem = (product: Product) => {
         // Optimistic update (instant UI)
         const existing = items.find(i => i.variantId === product.variantId);
+        const variantLabel = variantLabelOf(product.variants?.find(v => v.id === product.variantId));
         writeCartStorage({
             items: existing
                 ? items.map(i => i.variantId === product.variantId ? { ...i, quantity: i.quantity + 1 } : i)
-                : [...items, { ...product, quantity: 1 }],
+                : [...items, { ...product, variantLabel, quantity: 1 }],
             coupon: defaultCouponState,
         });
         setCartOpen(true);

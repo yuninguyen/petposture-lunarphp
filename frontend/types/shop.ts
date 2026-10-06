@@ -72,6 +72,8 @@ export interface Product {
     id: number;
     productId: number;
     variantId: number;
+    /** "Size: M · Color: Black" for the variant added to the cart; absent when it has no options. */
+    variantLabel?: string | null;
     slug: string;
     name: string;
     category: string;

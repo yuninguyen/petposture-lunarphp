@@ -61,6 +61,7 @@ type TrackingOrder = {
     lines: Array<{
         id: number;
         description: string;
+        variant_label?: string | null;
         quantity: number;
         unit_price: number;
         sub_total: number;
@@ -128,6 +129,7 @@ function OrderSummaryBody({ order }: { order: TrackingOrder }) {
                         </div>
                         <div className="min-w-0 flex-1">
                             <p className="line-clamp-1 text-sm font-medium text-[#1a1a1a]">{line.description}</p>
+                            {line.variant_label && <p className="mt-0.5 text-xs text-[#707070]">{line.variant_label}</p>}
                         </div>
                         <span className="flex-shrink-0 text-[14px] font-medium text-[#1a1a1a]">{formatMoney(line.sub_total)}</span>
                     </div>

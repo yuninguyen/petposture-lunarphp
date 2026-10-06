@@ -17,6 +17,8 @@ use Lunar\Models\Language;
 use Lunar\Models\Order;
 use Lunar\Models\Price;
 use Lunar\Models\Product;
+use Lunar\Models\ProductOption;
+use Lunar\Models\ProductOptionValue;
 use Lunar\Models\ProductType;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
@@ -137,6 +139,32 @@ class OrderPublicResourceTest extends TestCase
 
         Sanctum::actingAs(User::factory()->create());
         $this->postJson("/api/orders/{$orderId}/tracking-access")->assertNotFound();
+    }
+
+    public function test_order_lines_carry_the_variant_option_label_only_when_the_variant_has_options(): void
+    {
+        $variant = $this->createPurchasableVariant();
+
+        $color = ProductOption::query()->create(['name' => ['en' => 'Color'], 'label' => ['en' => 'Color'], 'handle' => 'color', 'shared' => true]);
+        $size = ProductOption::query()->create(['name' => ['en' => 'Size'], 'label' => ['en' => 'Size'], 'handle' => 'size', 'shared' => true]);
+        $black = ProductOptionValue::query()->create(['product_option_id' => $color->id, 'name' => ['en' => 'Black'], 'position' => 1]);
+        $medium = ProductOptionValue::query()->create(['product_option_id' => $size->id, 'name' => ['en' => 'M'], 'position' => 1]);
+
+        $withoutOptions = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $withoutOptions->assertCreated();
+        $this->postJson('/api/orders/track', [
+            'tracking_token' => $withoutOptions->json('order.tracking_access_token'),
+            'email' => 'guest@petposture.com',
+        ])->assertOk()->assertJsonPath('data.lines.0.variant_label', null);
+
+        $variant->values()->attach([$black->id, $medium->id]);
+
+        $withOptions = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant));
+        $withOptions->assertCreated();
+        $this->postJson('/api/orders/track', [
+            'tracking_token' => $withOptions->json('order.tracking_access_token'),
+            'email' => 'guest@petposture.com',
+        ])->assertOk()->assertJsonPath('data.lines.0.variant_label', 'Color: Black · Size: M');
     }
 
     public function test_track_endpoint_never_leaks_internal_or_staff_only_fields(): void

@@ -185,6 +185,9 @@ export default function CartPage() {
                                                     <h3 className="text-[14px] font-medium text-primary hover:text-rust transition-colors leading-snug">
                                                         {item.name}
                                                     </h3>
+                                                    {item.variantLabel && (
+                                                        <p className="mt-0.5 text-[13px] text-zinc-500">{item.variantLabel}</p>
+                                                    )}
                                                     {/* Mobile Price */}
                                                     <div className="md:hidden text-[14px] font-medium text-zinc-500 mt-1">
                                                         ${item.price.toFixed(2)}

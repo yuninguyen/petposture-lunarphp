@@ -4,6 +4,7 @@ namespace App\Http\Resources\Api;
 
 use App\Services\ProductSyncService;
 use App\Support\Orders\OrderStateMachine;
+use App\Support\Orders\VariantLabel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Lang;
@@ -56,6 +57,7 @@ class CustomerOrderResource extends JsonResource
                 'id' => $line->id,
                 'type' => $line->type,
                 'description' => $line->description,
+                'variant_label' => VariantLabel::forLine($line),
                 'quantity' => $line->quantity,
                 'unit_price' => round($this->moneyValue($line->unit_price), 2),
                 'sub_total' => round($this->moneyValue($line->sub_total), 2),

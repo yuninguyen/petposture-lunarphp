@@ -8,6 +8,7 @@ interface CartItem {
     variantId: number;
     name: string;
     category: string;
+    variantLabel?: string | null;
     image: string;
     price: number;
     quantity: number;
@@ -92,7 +93,7 @@ export function OrderSummary({
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <h3 className="line-clamp-1 text-sm font-medium text-[#333333]">{item.name}</h3>
-                                    <p className="mt-0.5 text-xs text-[#707070]">{item.category}</p>
+                                    <p className="mt-0.5 text-xs text-[#707070]">{item.variantLabel ?? item.category}</p>
                                 </div>
                                 <span className="text-[14px] font-medium text-[#333333]">
                                     ${(item.price * item.quantity).toFixed(2)}

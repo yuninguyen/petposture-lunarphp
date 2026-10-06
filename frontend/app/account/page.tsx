@@ -14,6 +14,7 @@ interface OrderLine {
     id: number;
     type: string;
     description: string;
+    variant_label?: string | null;
     quantity: number;
     unit_price: number;
     sub_total: number;
@@ -401,7 +402,7 @@ export default function AccountPage() {
                                                             <div className="space-y-2 pt-3 border-t border-zinc-100">
                                                                 {order.lines.filter((line) => line.type !== 'shipping').map((line) => (
                                                                     <div key={line.id} className="flex items-center justify-between text-sm">
-                                                                        <span className="text-primary">{line.description} <span className="text-zinc-400">&times;{line.quantity}</span></span>
+                                                                        <span className="text-primary">{line.description} <span className="text-zinc-400">&times;{line.quantity}</span>{line.variant_label && <span className="block text-xs text-zinc-500">{line.variant_label}</span>}</span>
                                                                         <span className="font-medium text-primary">${line.sub_total.toFixed(2)}</span>
                                                                     </div>
                                                                 ))}
