@@ -1,23 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useReactTable, getCoreRowModel, createColumnHelper, flexRender, type RowSelectionState } from '@tanstack/react-table';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { usePosts, useDeletePost, useBulkDeletePosts, useDuplicatePost, Post } from './postsApi';
+import { usePosts, useDeletePost, useBulkDeletePosts, useDuplicatePost, useBlogCategoryOptions, Post } from './postsApi';
 import { PostRowActions } from './PostRowActions';
-import { fetchJson } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
 import { Badge, type BadgeColor } from '@/components/ui/badge';
 
 const columnHelper = createColumnHelper<Post>();
-
-interface BlogCategoryOption {
-  id: number;
-  name: string;
-  slug: string;
-}
 
 const TYPE_BADGE_COLORS: Record<Post['type'], BadgeColor> = {
   article: 'slate',
@@ -46,13 +38,7 @@ export function PostsListPage() {
     setPage(1);
   }, [search, status, category, type]);
 
-  const { data: categories } = useQuery({
-    queryKey: ['blog-categories'],
-    queryFn: async () => {
-      const res = await fetchJson<BlogCategoryOption[]>('/admin/blog/categories');
-      return Array.isArray(res) ? res : [];
-    },
-  });
+  const { data: categories } = useBlogCategoryOptions();
 
   const { data: postsPage, isLoading } = usePosts({
     search: search || undefined,

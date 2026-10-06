@@ -107,10 +107,7 @@ export function useSolutions() {
 export function useBlogTags() {
   return useQuery({
     queryKey: ['blog-tags'],
-    queryFn: async () => {
-      const res = await fetchJson<TaxonomyOption[]>('/admin/blog/tags');
-      return Array.isArray(res) ? res : [];
-    },
+    queryFn: async () => extractList<TaxonomyOption>(await fetchJson<unknown>('/admin/blog/tags?per_page=100')),
   });
 }
 
@@ -165,6 +162,26 @@ export function useUsers() {
       const res = await fetchJson<UserOption[]>('/admin/users');
       return Array.isArray(res) ? res : [];
     },
+  });
+}
+
+export interface BlogCategoryOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+/** The blog categories/tags endpoints are paginated ({ data, meta }); accept a bare array too. */
+export function extractList<T>(res: unknown): T[] {
+  if (Array.isArray(res)) return res;
+  const data = (res as { data?: unknown } | null)?.data;
+  return Array.isArray(data) ? data : [];
+}
+
+export function useBlogCategoryOptions() {
+  return useQuery({
+    queryKey: ['blog-categories', 'options'],
+    queryFn: async () => extractList<BlogCategoryOption>(await fetchJson<unknown>('/admin/blog/categories?per_page=100')),
   });
 }
 

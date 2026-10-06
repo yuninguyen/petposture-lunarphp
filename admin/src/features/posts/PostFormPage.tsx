@@ -51,6 +51,7 @@ import { getPostFormSchema, PostFormValues } from './postSchema';
 import {
   useAffiliateNetworks,
   useBreeds,
+  useBlogCategoryOptions,
   useBlogTags,
   useCreateCategory,
   useCreateTag,
@@ -62,11 +63,6 @@ import { ComparisonDetailsSection } from './ComparisonDetailsSection';
 import { SeoSettingsSection } from './SeoSettingsSection';
 import { TipTapToolbar } from './TipTapToolbar';
 import toast from 'react-hot-toast';
-
-interface BlogCategory {
-  id: number;
-  name: string;
-}
 
 interface ComparisonItemApiItem {
   product_name: string;
@@ -134,13 +130,7 @@ export function PostFormPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: categories } = useQuery({
-    queryKey: ['blog-categories'],
-    queryFn: async () => {
-      const res = await fetchJson<BlogCategory[]>('/admin/blog/categories');
-      return Array.isArray(res) ? res : [];
-    },
-  });
+  const { data: categories } = useBlogCategoryOptions();
 
   const { data: mediaLibrary } = useQuery({
     queryKey: ['media'],

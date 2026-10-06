@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { buildPostsQuery } from './postsApi';
+import { buildPostsQuery, extractList } from './postsApi';
+
+describe('extractList', () => {
+  const categories = [{ id: '1', name: 'Nutrition', slug: 'nutrition' }];
+
+  it('reads the paginated { data, meta } response of the categories and tags endpoints', () => {
+    expect(extractList({ data: categories, meta: { total: 1 } })).toEqual(categories);
+  });
+
+  it('accepts a bare array', () => {
+    expect(extractList(categories)).toEqual(categories);
+  });
+
+  it('returns an empty list for anything else', () => {
+    expect(extractList(null)).toEqual([]);
+    expect(extractList({})).toEqual([]);
+  });
+});
 
 describe('buildPostsQuery', () => {
   it('returns the base endpoint when no filters are set', () => {
