@@ -37,11 +37,19 @@
     ];
 
     $hasCardIcon = $cardBrand !== '' && isset($cardBrandIcons[$cardBrand]);
+
+    // Apple Pay / Google Pay orders are card payments at the gateway (label "Card"), but the
+    // customer paid with the wallet — say so, with the underlying card once it is known.
+    $walletLabel = \App\Payments\PaymentGatewayManager::WALLETS[(string) ($meta['payment_wallet'] ?? '')] ?? '';
 @endphp
 
 @if($paymentMethod === 'paypal' || $paymentGateway === 'paypal')
     <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#1a2128;">
         PayPal{{ $paypalEmail !== '' ? ' (' . e($paypalEmail) . ')' : '' }}
+    </p>
+@elseif($walletLabel !== '')
+    <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:14px; color:#1a2128;">
+        {{ $walletLabel }}@if($cardBrand !== '' && $cardLast4 !== '') &middot; {{ ucwords(e($cardBrand)) }} &bull;&bull;&bull;&bull; {{ e($cardLast4) }} &middot; ${{ number_format($amountValue, 2) }} {{ e($currencyCode) }}@endif
     </p>
 @elseif($paymentMethod === 'card' || $cardBrand !== '' || $cardLast4 !== '' || $cardFunding !== '')
     @if($hasCardIcon && $cardLast4 !== '')
