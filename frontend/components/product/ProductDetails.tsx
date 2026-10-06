@@ -7,6 +7,7 @@ import { Star, ShieldCheck, Truck, RotateCcw, Plus, Minus } from 'lucide-react';
 import { Product } from '@/types/shop';
 import { useCart } from '@/context/CartContext';
 import { sanitizeRichHtml } from '@/lib/sanitize-rich-html';
+import { selectionOf, variantFor, type VariantSelection } from '@/lib/variantSelection';
 import { Button } from '@/components/ui/Button';
 import { Breadcrumbs } from './Breadcrumbs';
 
@@ -44,16 +45,9 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     const variants = product.variants ?? [];
 
     const initialVariant = variants.find((v) => v.id === product.variantId) ?? variants[0] ?? null;
-    const initialSelections: Record<string, number> = {};
-    initialVariant?.options.forEach((opt) => {
-        if (opt.option) initialSelections[opt.option] = opt.valueId;
-    });
+    const [selectedValues, setSelectedValues] = useState<VariantSelection>(selectionOf(initialVariant));
 
-    const [selectedValues, setSelectedValues] = useState<Record<string, number>>(initialSelections);
-
-    const selectedVariant = variants.find((v) =>
-        v.options.every((opt) => !opt.option || selectedValues[opt.option] === opt.valueId)
-    ) ?? initialVariant;
+    const selectedVariant = variantFor(variants, selectedValues) ?? initialVariant;
 
     const displayPrice = selectedVariant?.price ?? product.price;
     const displayOldPrice = selectedVariant?.comparePrice ?? product.oldPrice;

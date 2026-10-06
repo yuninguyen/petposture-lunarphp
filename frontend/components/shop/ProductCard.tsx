@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Star, ArrowUpRight, Heart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -8,11 +8,14 @@ import { Button, ButtonLink } from '@/components/ui/Button';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import type { Product } from '@/types/shop';
+import { VariantPickerModal } from './VariantPickerModal';
 
 export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" }: { product: Product; sizes?: string }) {
     const { addItem } = useCart();
     const { isWishlisted, toggle } = useWishlist();
     const wishlisted = isWishlisted(product.id);
+    const [pickerOpen, setPickerOpen] = useState(false);
+    const hasChoices = (product.variants?.length ?? 0) > 1 && (product.options?.length ?? 0) > 0;
 
     return (
         <article className="group overflow-hidden rounded-[20px] border border-[#eee3d7] bg-[#fcfbf8] shadow-[0_12px_28px_rgba(34,33,33,0.04)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(34,33,33,0.08)]">
@@ -113,12 +116,25 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
                 <Button
                     type="button"
                     variant="primary"
-                    onClick={() => addItem(product)}
+                    // A product with several variants (size, color…) needs a choice first, not the default one.
+                    onClick={() => (hasChoices ? setPickerOpen(true) : addItem(product))}
                     className="mt-4 w-full"
                 >
                     Add to Cart
                 </Button>
             </div>
+
+            {hasChoices && (
+                <VariantPickerModal
+                    product={product}
+                    open={pickerOpen}
+                    onClose={() => setPickerOpen(false)}
+                    onAdd={(item) => {
+                        addItem(item);
+                        setPickerOpen(false);
+                    }}
+                />
+            )}
         </article>
     );
 }
