@@ -968,6 +968,7 @@
   "orders.three_ds_frictionless": "Không cần xác thực thêm",
   "orders.three_ds_challenge": "Có yêu cầu xác thực",
   "orders.three_ds_summary": "{{mode}} · v{{version}} · chuyển trách nhiệm {{shift}}",
+  "orders.three_ds_summary_short": "{{mode}} · v{{version}}",
   "orders.risk_level": "Mức độ rủi ro",
   "orders.risk_score": "Điểm rủi ro",
   "orders.note": "Ghi chú",

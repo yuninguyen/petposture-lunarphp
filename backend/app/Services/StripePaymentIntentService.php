@@ -205,6 +205,33 @@ class StripePaymentIntentService
      * (risk_level/risk_score, populated automatically on every charge, free on any
      * Stripe account) and the card brand/last4 shown on the order receipt.
      */
+    /**
+     * The AVS / CVC / 3-D Secure results of a card charge, in the shape the admin Fraud & Risk card reads
+     * (the same one Airwallex's are stored in). Stripe checks street and postal code separately.
+     *
+     * @param  array<string, mixed>  $card  payment_method_details.card
+     * @return array<string, mixed>
+     */
+    private function cardChecks(array $card): array
+    {
+        $checks = (array) ($card['checks'] ?? []);
+        $address = array_values(array_filter([$checks['address_line1_check'] ?? null, $checks['address_postal_code_check'] ?? null]));
+        $avs = in_array('fail', $address, true) ? 'fail' : (in_array('pass', $address, true) ? 'pass' : ($address[0] ?? null));
+        $secure = is_array($card['three_d_secure'] ?? null) ? $card['three_d_secure'] : null;
+
+        return [
+            'avs' => $avs,
+            'cvc' => $checks['cvc_check'] ?? null,
+            'three_ds' => $secure === null ? null : [
+                'type' => '3ds',
+                'version' => $secure['version'] ?? null,
+                'status' => $secure['result'] ?? null,
+                'liability_shift' => null,
+                'frictionless' => isset($secure['authentication_flow']) ? $secure['authentication_flow'] === 'frictionless' : null,
+            ],
+        ];
+    }
+
     private function fetchCharge(string $chargeId): ?array
     {
         $secret = $this->stripeSecret();
@@ -346,6 +373,7 @@ class StripePaymentIntentService
                     $paymentData['card_brand'] = $card['brand'] ?? null;
                     $paymentData['card_last4'] = $card['last4'] ?? null;
                     $paymentData['card_funding'] = $card['funding'] ?? null;
+                    $paymentData['fraud_checks'] = $this->cardChecks($card);
                 }
 
                 if (isset($charge['amount'])) {

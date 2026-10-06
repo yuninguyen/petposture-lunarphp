@@ -385,6 +385,15 @@ describe('OrderDetailPage', () => {
 
     act(() => without.root.unmount());
     without.host.remove();
+
+    // Stripe reports no liability shift: the short summary is used.
+    order.fraud_checks = { avs: 'pass', cvc: 'pass', three_ds: { type: '3ds', version: '2.2.0', status: 'authenticated', liability_shift: null, frictionless: true } };
+    const stripe = renderPage();
+
+    expect(stripe.host.textContent).toContain('orders.three_ds_summary_short');
+
+    act(() => stripe.root.unmount());
+    stripe.host.remove();
     order.fraud_risk_level = null;
     order.fraud_risk_score = null;
     delete order.fraud_checks;

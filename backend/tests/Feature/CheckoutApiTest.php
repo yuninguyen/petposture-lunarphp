@@ -3155,6 +3155,49 @@ class CheckoutApiTest extends TestCase
         $this->assertSame('Payment failed', $failures->first()->title);
     }
 
+    public function test_stripe_webhook_stores_avs_cvc_and_3ds_checks_from_the_charge(): void
+    {
+        config()->set('services.stripe.key', 'pk_test_checks');
+        config()->set('services.stripe.secret', 'sk_test_checks');
+        config()->set('services.stripe.webhook_secret', null);
+        Cache::forget('stripe_key');
+        Cache::forget('stripe_secret');
+        Http::fake([
+            'https://api.stripe.com/v1/charges/ch_checks_1' => Http::response([
+                'id' => 'ch_checks_1',
+                'amount' => 5000,
+                'currency' => 'usd',
+                'outcome' => ['risk_level' => 'normal', 'risk_score' => 12, 'seller_message' => 'Payment complete.'],
+                'payment_method_details' => ['card' => [
+                    'brand' => 'visa', 'last4' => '4242', 'funding' => 'credit',
+                    'checks' => ['address_line1_check' => 'pass', 'address_postal_code_check' => 'fail', 'cvc_check' => 'pass'],
+                    'three_d_secure' => ['authentication_flow' => 'challenge', 'result' => 'authenticated', 'version' => '2.2.0'],
+                ]],
+            ]),
+        ]);
+
+        $variant = $this->createPurchasableVariant();
+        $placed = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'card',
+            'payment_context' => ['intent_id' => 'pi_checks_1', 'session_id' => 'STRIPE-CHECKS'],
+        ]));
+        $placed->assertCreated();
+
+        $this->postJson('/api/webhooks/stripe', [
+            'id' => 'evt_checks_1',
+            'type' => 'payment_intent.succeeded',
+            'data' => ['object' => ['id' => 'pi_checks_1', 'status' => 'succeeded', 'latest_charge' => 'ch_checks_1']],
+        ])->assertOk();
+
+        $checks = Order::query()->findOrFail($placed->json('order.id'))->meta['fraud_checks'];
+        $this->assertSame('fail', $checks['avs']);
+        $this->assertSame('pass', $checks['cvc']);
+        $this->assertSame(
+            ['type' => '3ds', 'version' => '2.2.0', 'status' => 'authenticated', 'liability_shift' => null, 'frictionless' => false],
+            $checks['three_ds'],
+        );
+    }
+
     public function test_affirm_order_can_retry_with_card_and_updates_its_payment_method(): void
     {
         config()->set('services.stripe.alt_methods', ['affirm']);

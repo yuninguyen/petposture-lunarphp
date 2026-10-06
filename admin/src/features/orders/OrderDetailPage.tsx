@@ -102,7 +102,10 @@ function hasCustomerIpData(order: Order) { return order.customer_ip != null || o
 function riskBadgeColor(riskLevel?: string | null) { return ['highest', 'block', 'reject', 'deny'].includes(riskLevel ?? '') ? 'red' : ['elevated', 'verify', 'review', 'challenge'].includes(riskLevel ?? '') ? 'amber' : 'emerald'; }
 function threeDsSummary(threeDs: NonNullable<Order['fraud_checks']>['three_ds'], t: (key: string, options?: Record<string, unknown>) => string) {
   if (!threeDs) return t('orders.three_ds_not_used');
-  return t('orders.three_ds_summary', { version: threeDs.version ?? '—', mode: threeDs.frictionless ? t('orders.three_ds_frictionless') : t('orders.three_ds_challenge'), shift: threeDs.liability_shift ?? '—' });
+  const mode = threeDs.frictionless ? t('orders.three_ds_frictionless') : t('orders.three_ds_challenge');
+  // Stripe does not report the liability shift; Airwallex does.
+  if (threeDs.liability_shift == null) return t('orders.three_ds_summary_short', { version: threeDs.version ?? '—', mode });
+  return t('orders.three_ds_summary', { version: threeDs.version ?? '—', mode, shift: threeDs.liability_shift });
 }
 function TotalRow({ label, value, bold = false }: { label: string; value: string; bold?: boolean }) { return <div className={`flex justify-between gap-4 ${bold ? 'border-t pt-2 font-bold text-slate-900' : 'text-slate-600'}`}><span>{label}</span><span>{value}</span></div>; }
 function Detail({ label, value }: { label: string; value: React.ReactNode }) { return <div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</dt><dd className="mt-1 text-sm text-slate-900">{value}</dd></div>; }

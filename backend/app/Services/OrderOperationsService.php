@@ -488,6 +488,10 @@ class OrderOperationsService
             $meta['card_funding'] = $paymentData['card_funding'] ?? null;
         }
 
+        if (array_key_exists('fraud_checks', $paymentData)) {
+            $meta['fraud_checks'] = $paymentData['fraud_checks'];
+        }
+
         if (array_key_exists('amount_charged', $paymentData)) {
             $meta['amount_charged'] = $paymentData['amount_charged'];
             $meta['amount_charged_currency'] = $paymentData['amount_charged_currency'] ?? null;

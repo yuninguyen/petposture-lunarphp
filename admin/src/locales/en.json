@@ -968,6 +968,7 @@
   "orders.three_ds_frictionless": "Frictionless",
   "orders.three_ds_challenge": "Challenge",
   "orders.three_ds_summary": "{{mode}} · v{{version}} · liability shift {{shift}}",
+  "orders.three_ds_summary_short": "{{mode}} · v{{version}}",
   "orders.risk_level": "Risk Level",
   "orders.risk_score": "Risk Score",
   "orders.note": "Note",
