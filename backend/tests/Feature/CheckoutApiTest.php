@@ -2170,6 +2170,89 @@ class CheckoutApiTest extends TestCase
         $this->assertSame('debit', $order->meta['card_funding']);
     }
 
+    public function test_airwallex_webhook_stores_the_risk_verdict_and_avs_cvc_3ds_checks(): void
+    {
+        $this->configureAirwallex();
+        $this->makeAdmin();
+        $variant = $this->createPurchasableVariant();
+        $placed = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_risk', 'session_id' => 'AIRWALLEX-RISK'],
+        ]));
+        $placed->assertCreated();
+
+        $this->postJson('/api/webhooks/airwallex', [
+            'id' => 'evt_awx_risk',
+            'name' => 'payment_intent.succeeded',
+            'data' => ['object' => [
+                'id' => 'int_awx_risk',
+                'latest_payment_attempt' => ['authentication_data' => [
+                    'authentication_type' => '3ds',
+                    'ds_data' => ['version' => '2.2.0', 'liability_shift_indicator' => 'Y', 'pa_res_status' => 'Y', 'frictionless' => 'N', 'cavv' => 'secret-cavv'],
+                    'fraud_data' => ['action' => 'VERIFY', 'score' => '12', 'risk_factors' => ['ip_mismatch', ['name' => 'velocity']]],
+                    'avs_result' => 'not_attempted',
+                    'cvc_result' => 'matched',
+                ]],
+            ]],
+        ])->assertOk();
+
+        $order = Order::query()->findOrFail($placed->json('order.id'));
+        $this->assertSame('verify', $order->meta['fraud_risk_level']);
+        $this->assertSame(12, $order->meta['fraud_risk_score']);
+        $this->assertSame('ip_mismatch, velocity', $order->meta['fraud_seller_message']);
+        $this->assertSame('matched', $order->meta['fraud_checks']['cvc']);
+        $this->assertSame('not_attempted', $order->meta['fraud_checks']['avs']);
+        $this->assertSame(
+            ['type' => '3ds', 'version' => '2.2.0', 'status' => 'Y', 'liability_shift' => 'Y', 'frictionless' => false],
+            $order->meta['fraud_checks']['three_ds'],
+        );
+        $this->assertStringNotContainsString('secret-cavv', json_encode($order->meta));
+
+        $this->getJson("/api/admin/orders/{$order->id}")
+            ->assertOk()
+            ->assertJsonPath('data.fraud_risk_level', 'verify')
+            ->assertJsonPath('data.fraud_checks.three_ds.version', '2.2.0');
+
+        // A later event without authentication_data must not wipe what is stored.
+        $this->postJson('/api/webhooks/airwallex', [
+            'id' => 'evt_awx_risk_later',
+            'name' => 'payment_intent.succeeded',
+            'data' => ['object' => ['id' => 'int_awx_risk']],
+        ])->assertOk();
+        $this->assertSame('verify', $order->fresh()->meta['fraud_risk_level']);
+    }
+
+    public function test_airwallex_webhook_without_3ds_stores_no_three_ds_block(): void
+    {
+        $this->configureAirwallex();
+        $variant = $this->createPurchasableVariant();
+        $placed = $this->postJson('/api/checkout/place-order', $this->checkoutPayload($variant, [
+            'payment_method' => 'airwallex',
+            'payment_context' => ['intent_id' => 'int_awx_no3ds', 'session_id' => 'AIRWALLEX-NO3DS'],
+        ]));
+        $placed->assertCreated();
+
+        $this->postJson('/api/webhooks/airwallex', [
+            'id' => 'evt_awx_no3ds',
+            'name' => 'payment_intent.succeeded',
+            'data' => ['object' => [
+                'id' => 'int_awx_no3ds',
+                'latest_payment_attempt' => ['authentication_data' => [
+                    'ds_data' => ['retry_count_for_auth_decline' => 0],
+                    'fraud_data' => ['action' => 'ACCEPT', 'score' => '0', 'risk_factors' => []],
+                    'avs_result' => 'not_attempted',
+                    'cvc_result' => 'matched',
+                ]],
+            ]],
+        ])->assertOk();
+
+        $meta = Order::query()->findOrFail($placed->json('order.id'))->meta;
+        $this->assertSame('accept', $meta['fraud_risk_level']);
+        $this->assertSame(0, $meta['fraud_risk_score']);
+        $this->assertNull($meta['fraud_seller_message']);
+        $this->assertNull($meta['fraud_checks']['three_ds']);
+    }
+
     public function test_refunding_an_airwallex_order_calls_the_refund_api_with_the_intent_and_amount(): void
     {
         $this->configureAirwallex();

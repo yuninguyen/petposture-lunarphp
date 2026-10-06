@@ -436,7 +436,7 @@ class AirwallexService
                 'payment_status' => $paymentStatus,
                 'event_type' => $type,
                 'event_id' => $eventId,
-            ] + $this->cardDetails($object));
+            ] + $this->cardDetails($object) + $this->fraudDetails($object));
         }
 
         $eventRecord['model']->update([
@@ -487,6 +487,58 @@ class AirwallexService
             'card_last4' => isset($card['last4']) ? (string) $card['last4'] : null,
             'card_funding' => in_array($funding, ['credit', 'debit', 'prepaid'], true) ? $funding : null,
         ];
+    }
+
+    /**
+     * Airwallex's own risk verdict for the attempt (the counterpart of Stripe Radar's outcome) plus the
+     * AVS / CVC / 3-D Secure results, from authentication_data — held by a payment_attempt.* event itself
+     * or under latest_payment_attempt of a payment_intent.* one. Empty when absent so an event without it
+     * never wipes what is stored.
+     *
+     * @param  array<string, mixed>  $object
+     * @return array<string, mixed>
+     */
+    private function fraudDetails(array $object): array
+    {
+        $auth = $object['latest_payment_attempt']['authentication_data'] ?? $object['authentication_data'] ?? null;
+
+        if (! is_array($auth) || $auth === []) {
+            return [];
+        }
+
+        $details = [];
+        $fraud = is_array($auth['fraud_data'] ?? null) ? $auth['fraud_data'] : [];
+
+        if ($fraud !== []) {
+            $factors = collect((array) ($fraud['risk_factors'] ?? []))
+                ->map(fn ($factor) => is_array($factor) ? ($factor['name'] ?? $factor['code'] ?? null) : $factor)
+                ->filter(fn ($factor) => is_scalar($factor) && $factor !== '')
+                ->implode(', ');
+
+            // The action is shown as Airwallex reports it (ACCEPT / VERIFY / …), not mapped onto Stripe's scale.
+            $details['fraud_risk_level'] = isset($fraud['action']) ? strtolower((string) $fraud['action']) : null;
+            $details['fraud_risk_score'] = isset($fraud['score']) && is_numeric($fraud['score']) ? $fraud['score'] + 0 : null;
+            $details['fraud_seller_message'] = $factors !== '' ? $factors : null;
+        }
+
+        $ds = is_array($auth['ds_data'] ?? null) ? $auth['ds_data'] : [];
+        $threeDs = isset($auth['authentication_type']) || isset($ds['version'])
+            ? [
+                'type' => $auth['authentication_type'] ?? null,
+                'version' => $ds['version'] ?? null,
+                'status' => $ds['pa_res_status'] ?? null,
+                'liability_shift' => $ds['liability_shift_indicator'] ?? null,
+                'frictionless' => isset($ds['frictionless']) ? $ds['frictionless'] === 'Y' : null,
+            ]
+            : null;
+
+        $details['fraud_checks'] = [
+            'avs' => $auth['avs_result'] ?? null,
+            'cvc' => $auth['cvc_result'] ?? null,
+            'three_ds' => $threeDs,
+        ];
+
+        return $details;
     }
 
     /**

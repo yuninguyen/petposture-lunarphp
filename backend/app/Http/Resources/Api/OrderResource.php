@@ -59,6 +59,7 @@ class OrderResource extends JsonResource
             'fraud_risk_level' => $meta['fraud_risk_level'] ?? null,
             'fraud_risk_score' => $meta['fraud_risk_score'] ?? null,
             'fraud_seller_message' => $meta['fraud_seller_message'] ?? null,
+            'fraud_checks' => $meta['fraud_checks'] ?? null,
             'customer_ip' => $meta['customer_ip'] ?? null,
             'customer_ip_location' => $meta['customer_ip_location'] ?? null,
             'customer_ip_isp' => $meta['customer_ip_isp'] ?? null,

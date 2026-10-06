@@ -544,6 +544,18 @@ class OrderOperationsService
             $meta['card_funding'] = $paymentData['card_funding'] ?? null;
         }
 
+        // Airwallex's risk verdict lands in the same fields Stripe Radar's does (the admin Fraud & Risk card),
+        // plus the AVS / CVC / 3-D Secure results.
+        if (array_key_exists('fraud_risk_level', $paymentData)) {
+            $meta['fraud_risk_level'] = $paymentData['fraud_risk_level'];
+            $meta['fraud_risk_score'] = $paymentData['fraud_risk_score'] ?? null;
+            $meta['fraud_seller_message'] = $paymentData['fraud_seller_message'] ?? null;
+        }
+
+        if (array_key_exists('fraud_checks', $paymentData)) {
+            $meta['fraud_checks'] = $paymentData['fraud_checks'];
+        }
+
         return $this->applyPaymentStatusTransition($order, $meta, $paymentStatus, $eventType, $gatewayLabel);
     }
 

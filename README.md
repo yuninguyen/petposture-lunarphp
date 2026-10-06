@@ -133,6 +133,7 @@ petposture/
 - Order Attribution tracking (UTM/referrer origin, device type, session page views) — self-hosted,
   no third-party analytics service required
 - Stripe Radar fraud/risk scoring surfaced on the order view (automatic on every card payment)
+- Airwallex's fraud engine surfaced in the same admin Fraud & Risk card: the `payment_intent.succeeded` / `payment_attempt.*` webhook carries `latest_payment_attempt.authentication_data` (`fraud_data` action/score/risk_factors, `avs_result`, `cvc_result`, `ds_data` for 3-D Secure). `AirwallexService::fraudDetails` stores the verdict in `meta.fraud_risk_level` (the action as Airwallex reports it — accept / verify / …, not mapped onto Stripe's scale), `fraud_risk_score`, `fraud_seller_message`, and the checks in `meta.fraud_checks` (`avs`, `cvc`, `three_ds`); an event without `authentication_data` never wipes what is stored. Orders paid before this shipped have no data
 - Customer IP intelligence on the order view (location, ISP, connection type via ip-api.com,
   captured asynchronously at checkout so it never blocks the checkout request)
 - Shipping Cost management (Sales > Shipping Cost): full CRUD over shipping methods (price,

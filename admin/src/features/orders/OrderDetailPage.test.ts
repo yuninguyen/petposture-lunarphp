@@ -362,6 +362,34 @@ describe('OrderDetailPage', () => {
     mocks.order.fraud_seller_message = null;
   });
 
+  it('shows the AVS, CVC and 3-D Secure checks of an Airwallex order, and 3-D Secure as not used when absent', () => {
+    const order = mocks.order as Record<string, unknown>;
+    order.fraud_risk_level = 'verify';
+    order.fraud_risk_score = 12;
+    order.fraud_checks = { avs: 'not_attempted', cvc: 'matched', three_ds: { type: '3ds', version: '2.2.0', status: 'Y', liability_shift: 'Y', frictionless: false } };
+    const withThreeDs = renderPage();
+
+    expect(withThreeDs.host.textContent).toContain('orders.fraud_avs');
+    expect(withThreeDs.host.textContent).toContain('Not Attempted');
+    expect(withThreeDs.host.textContent).toContain('Matched');
+    expect(withThreeDs.host.textContent).toContain('orders.three_ds_summary');
+    expect(withThreeDs.host.querySelector('.bg-amber-50')).not.toBeNull();
+
+    act(() => withThreeDs.root.unmount());
+    withThreeDs.host.remove();
+
+    order.fraud_checks = { avs: 'not_attempted', cvc: 'matched', three_ds: null };
+    const without = renderPage();
+
+    expect(without.host.textContent).toContain('orders.three_ds_not_used');
+
+    act(() => without.root.unmount());
+    without.host.remove();
+    order.fraud_risk_level = null;
+    order.fraud_risk_score = null;
+    delete order.fraud_checks;
+  });
+
   it('shows return confirmation and submits the return action', async () => {
     const { host, root } = renderPage();
     openMoreActions(host);
