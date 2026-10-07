@@ -1665,7 +1665,7 @@ export default function CheckoutPage() {
         localStorage.removeItem('petposture_cart_coupon');
         clearCoupon();
 
-        router.push(`/checkout/success?token=${encodeURIComponent(orderAccess.trackingToken)}&email=${encodeURIComponent(form.email)}`);
+        router.push(`/checkout/success?token=${encodeURIComponent(orderAccess.trackingToken)}&email=${encodeURIComponent(form.email)}&placed=1`);
     };
 
     // Airwallex's Google Pay button prices its PaymentIntent from the address typed above, so it only
@@ -1697,7 +1697,7 @@ export default function CheckoutPage() {
         localStorage.removeItem('petposture_cart');
         localStorage.removeItem('petposture_cart_coupon');
         clearCoupon();
-        router.push(`/checkout/success?token=${encodeURIComponent(orderAccess.trackingToken)}&email=${encodeURIComponent('')}`);
+        router.push(`/checkout/success?token=${encodeURIComponent(orderAccess.trackingToken)}&email=${encodeURIComponent('')}&placed=1`);
     };
 
     const handleCheckout = async (e: React.FormEvent) => {
@@ -2576,6 +2576,7 @@ export default function CheckoutPage() {
                     onApplyCoupon={handleApplyCoupon}
                     totalAmount={totalAmount}
                     shippingAmount={shippingAmount}
+                    shippingLabel={shippingRate?.name ?? (form.shippingMethod === 'express' ? 'Express Shipping' : 'Standard Shipping')}
                     taxAmount={taxAmount}
                     taxRate={taxRate}
                     taxQuote={taxQuote}

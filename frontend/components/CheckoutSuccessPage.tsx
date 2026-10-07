@@ -4,12 +4,13 @@ import React, { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { AlertCircle, CheckCircle, Loader2, Mail, Package, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
+import { AlertCircle, ArrowUpRight, CheckCircle, Loader2, Mail, Package, ShieldCheck, ShoppingBag } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api";
 import { fetchApi } from "@/lib/fetchApi";
 import { useCart } from "@/context/CartContext";
 import RetryPaymentPanel from "@/components/orders/RetryPaymentPanel";
-import { ButtonLink } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { ShippingSummaryRow } from "@/components/checkout/ShippingSummaryRow";
 
 type TrackingOrder = {
     reference: string;
@@ -17,6 +18,7 @@ type TrackingOrder = {
     status: string;
     // The last payment attempt was declined/abandoned (set from Stripe's webhook).
     payment_failed?: boolean;
+    return_window_open?: boolean;
     fulfillment_status: string;
     carrier: string | null;
     tracking_number: string | null;
@@ -87,6 +89,13 @@ function formatStatus(value: string) {
     return value.replace(/[_-]/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
+// Carriers are brands: UPS / USPS / DHL are acronyms and FedEx has its own casing.
+const carrierLabels: Record<string, string> = { ups: "UPS", usps: "USPS", dhl: "DHL", fedex: "FedEx" };
+
+function carrierLabel(carrier: string) {
+    return carrierLabels[carrier.toLowerCase()] ?? formatStatus(carrier);
+}
+
 function AddressBlock({ title, address }: { title: string; address: TrackingOrder["shipping_address"] }) {
     const name = `${address.first_name ?? ""} ${address.last_name ?? ""}`.trim();
     const cityLine = [address.city, address.state, address.postcode].filter(Boolean).join(" ");
@@ -147,10 +156,7 @@ function OrderSummaryBody({ order }: { order: TrackingOrder }) {
                         <span className="font-medium">&minus;{formatMoney(order.discount_total)}</span>
                     </div>
                 ) : null}
-                <div className="flex items-center justify-between text-[14px] text-[#333333]">
-                    <span>Shipping</span>
-                    <span className="font-medium">{order.shipping_total > 0 ? formatMoney(order.shipping_total) : "Free"}</span>
-                </div>
+                <ShippingSummaryRow amount={order.shipping_total > 0 ? formatMoney(order.shipping_total) : "Free"} method={order.shipping_method} />
                 <div className="flex items-center justify-between text-[14px] text-[#333333]">
                     <span>Estimated taxes</span>
                     <span className="font-medium">{formatMoney(order.tax_total)}</span>
@@ -220,6 +226,9 @@ function OrderSuccessContent() {
     const queryEmail = searchParams.get("email") ?? "";
     const gateway = searchParams.get("gateway") ?? "";
     const sessionId = searchParams.get("session_id") ?? "";
+    // Right after paying (a payment redirect, or a card order sent here with placed=1) the shopper may keep
+    // shopping; opening the order again from an email or Track Order has no use for that button.
+    const justPlaced = Boolean(gateway) || searchParams.get("placed") === "1";
     const redirectStatus = searchParams.get("redirect_status") ?? "";
     const [trackingToken, setTrackingToken] = useState(initialToken);
     const [email, setEmail] = useState(queryEmail);
@@ -411,6 +420,8 @@ function OrderSuccessContent() {
         : "—";
 
     const deliveredDone = timeline.find((step) => step.key === "delivered")?.done ?? false;
+    // The link only makes sense while the 30-day return window (counted from delivery) is open.
+    const canRequestReturn = deliveredDone && order.return_window_open !== false;
     const stripePaymentPending = (gateway === "stripe" || gateway === "airwallex") && order.status === "awaiting-payment";
     // Stripe sends the buyer back with redirect_status=failed when a redirect
     // method (Affirm, Klarna, Cash App Pay) is declined or abandoned.
@@ -502,17 +513,25 @@ function OrderSuccessContent() {
                                             </span>
                                             <div className="pb-1">
                                                 <p className="text-[13.5px] font-semibold text-[#1a1a1a]">{step.label}</p>
-                                                {step.key === "shipped" && step.done && order.tracking_url ? (
-                                                    <div className="mt-2 flex flex-wrap items-center gap-3 rounded-[8px] border border-[#e8e8ea] bg-[#faf9f8] px-3.5 py-3">
-                                                        <div>
-                                                            <p className="text-[12.5px] font-medium text-[#555555]">{order.carrier ? formatStatus(order.carrier) : "Carrier"}</p>
-                                                            {order.tracking_number ? (
-                                                                <p className="mt-0.5 text-[12px] leading-[1.6] text-[#707070]">Tracking number: {order.tracking_number}</p>
-                                                            ) : null}
-                                                        </div>
-                                                    <a href={order.tracking_url} target="_blank" rel="noreferrer" className="ml-auto inline-flex h-9 items-center justify-center gap-2 rounded-[3px] border border-[#df8448] px-3.5 text-[12px] font-semibold text-[#df8448] transition hover:bg-[#fff4ec]">
-                                                            <Truck size={14} /> Open tracking
-                                                        </a>
+                                                {step.key === "shipped" && step.done && (order.tracking_number || order.tracking_url) ? (
+                                                    <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-[8px] border border-[#e8e8ea] bg-[#faf9f8] px-3.5 py-3 text-[13px] leading-[1.6]">
+                                                        <span className="text-[#707070]">
+                                                            {order.tracking_number ? "Tracking number" : "Tracking"}
+                                                            {order.carrier && order.carrier.toLowerCase() !== "manual" ? ` (${carrierLabel(order.carrier)})` : ""}:
+                                                        </span>
+                                                        {order.tracking_url ? (
+                                                            <a
+                                                                href={order.tracking_url}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                aria-label={`Track package${order.tracking_number ? ` ${order.tracking_number}` : ""} (opens in a new tab)`}
+                                                                className="group inline-flex items-center gap-1 font-semibold tabular-nums text-[#df8448] underline-offset-4 transition hover:text-[#c9743a] hover:underline"
+                                                            >
+                                                                {order.tracking_number ?? "Track package"} <ArrowUpRight size={14} aria-hidden="true" className="transition-transform group-hover:-translate-y-px group-hover:translate-x-px" />
+                                                            </a>
+                                                        ) : (
+                                                            <span className="font-semibold tabular-nums text-[#1a1a1a]">{order.tracking_number}</span>
+                                                        )}
                                                     </div>
                                                 ) : null}
                                                 {step.key === "cancelled" && order.payment_confirmed_before_cancellation ? (
@@ -574,18 +593,27 @@ function OrderSuccessContent() {
                             <RetryPaymentPanel trackingToken={trackingToken} email={email} orderStatus={order.status} onCompleted={() => void refreshOrderAfterRetry()} />
                         ) : null}
 
-                        <div className="hidden flex-col items-center justify-between gap-4 pb-2 pt-1 sm:flex-row lg:flex">
-                            <p className="text-[14px] text-[#555555]">
+                        <div className="hidden flex-col items-center justify-between gap-4 pb-2 pt-1 sm:flex-row sm:items-start lg:flex">
+                            <p className="text-[14px] text-[#555555] sm:leading-[49px]">
                                 Need help? <Link href="/contact" className="font-semibold text-[#1a1a1a] underline underline-offset-2 hover:text-[#df8448]">Contact us</Link>
                             </p>
-                            <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
-                                <ButtonLink href="/shop" variant="primary" className="w-full !capitalize !tracking-normal sm:w-auto">
-                                    Continue shopping
-                                </ButtonLink>
-                                {deliveredDone ? (
-                                    <ButtonLink href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} variant="secondary" className="w-full sm:w-auto">
+                            <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row sm:items-start">
+                                {justPlaced ? (
+                                    <ButtonLink href="/shop" variant="primary" className="w-full !normal-case !tracking-normal sm:w-auto">
+                                        Continue shopping
+                                    </ButtonLink>
+                                ) : null}
+                                {canRequestReturn ? (
+                                    <ButtonLink href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} variant="secondary" className="w-full !normal-case !tracking-normal sm:w-auto">
                                         Request a return
                                     </ButtonLink>
+                                ) : deliveredDone ? (
+                                    <div className="flex w-full flex-col items-center gap-1 sm:w-auto">
+                                        <Button type="button" variant="secondary" disabled className="w-full !normal-case !tracking-normal sm:w-auto">
+                                            Request a return
+                                        </Button>
+                                        <p className="text-[12px] text-[#707070]">The 30-day return window has ended.</p>
+                                    </div>
                                 ) : null}
                             </div>
                         </div>
@@ -605,14 +633,23 @@ function OrderSuccessContent() {
                         <p className="text-[14px] text-[#555555]">
                             Need help? <Link href="/contact" className="font-semibold text-[#1a1a1a] underline underline-offset-2 hover:text-[#df8448]">Contact us</Link>
                         </p>
-                        <div className="flex w-full flex-col items-center gap-3 sm:flex-row">
-                            <ButtonLink href="/shop" variant="primary" className="w-full !capitalize !tracking-normal sm:w-auto">
-                                Continue shopping
-                            </ButtonLink>
-                            {deliveredDone ? (
-                                <ButtonLink href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} variant="secondary" className="w-full sm:w-auto">
+                        <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:items-start">
+                            {justPlaced ? (
+                                <ButtonLink href="/shop" variant="primary" className="w-full !normal-case !tracking-normal sm:w-auto">
+                                    Continue shopping
+                                </ButtonLink>
+                            ) : null}
+                            {canRequestReturn ? (
+                                <ButtonLink href={`/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}`} variant="secondary" className="w-full !normal-case !tracking-normal sm:w-auto">
                                     Request a return
                                 </ButtonLink>
+                            ) : deliveredDone ? (
+                                <div className="flex w-full flex-col items-center gap-1 sm:w-auto">
+                                    <Button type="button" variant="secondary" disabled className="w-full !normal-case !tracking-normal sm:w-auto">
+                                        Request a return
+                                    </Button>
+                                    <p className="text-[12px] text-[#707070]">The 30-day return window has ended.</p>
+                                </div>
                             ) : null}
                         </div>
                     </div>
