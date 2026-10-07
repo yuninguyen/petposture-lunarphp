@@ -37,6 +37,21 @@ class ReturnRequestService
     /**
      * @param  array<int, array{order_line_id: int, quantity: int}>  $items
      */
+    /**
+     * Whether a return can still be requested: within RETURN_WINDOW_DAYS of delivery. An order with no
+     * delivery date on record is not blocked (same as before the check was shared).
+     */
+    public function isWithinReturnWindow(Order $order): bool
+    {
+        $deliveredAt = $order->meta['delivered_at'] ?? null;
+
+        if (! $deliveredAt) {
+            return true;
+        }
+
+        return ! now()->greaterThan(Carbon::parse($deliveredAt)->addDays(self::RETURN_WINDOW_DAYS));
+    }
+
     public function create(Order $order, array $items, string $reason, ?string $customerNote): OrderReturnRequest
     {
         if ((string) $order->status !== 'delivered') {
@@ -45,18 +60,10 @@ class ReturnRequestService
             ]);
         }
 
-        $deliveredAt = (array_key_exists('delivered_at', (array) ($order->meta ?? [])))
-            ? ($order->meta['delivered_at'] ?? null)
-            : null;
-
-        if ($order->status === 'delivered' && $deliveredAt) {
-            $deadline = Carbon::parse($deliveredAt)->addDays(self::RETURN_WINDOW_DAYS);
-
-            if (now()->greaterThan($deadline)) {
-                throw ValidationException::withMessages([
-                    'order' => ['This order is outside our '.self::RETURN_WINDOW_DAYS.'-day return window.'],
-                ]);
-            }
+        if (! $this->isWithinReturnWindow($order)) {
+            throw ValidationException::withMessages([
+                'order' => ['This order is outside our '.self::RETURN_WINDOW_DAYS.'-day return window.'],
+            ]);
         }
 
         $hasActiveRequest = OrderReturnRequest::query()

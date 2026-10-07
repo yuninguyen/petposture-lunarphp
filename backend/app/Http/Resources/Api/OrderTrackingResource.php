@@ -4,6 +4,7 @@ namespace App\Http\Resources\Api;
 
 use App\Models\ShippingMethod;
 use App\Services\ProductSyncService;
+use App\Services\ReturnRequestService;
 use App\Support\Orders\VariantLabel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -64,6 +65,8 @@ class OrderTrackingResource extends JsonResource
             // The last payment attempt was declined/abandoned (Stripe's payment_intent.payment_failed).
             // Some redirect methods (Afterpay) return without a redirect_status, so the page needs this.
             'payment_failed' => ($meta['payment_status'] ?? null) === 'failed',
+            // Whether a return can still be requested (30 days from delivery) — the page hides the link after that.
+            'return_window_open' => app(ReturnRequestService::class)->isWithinReturnWindow($order),
             'card_brand' => $meta['card_brand'] ?? null,
             'card_last4' => $meta['card_last4'] ?? null,
             'payment_confirmed_before_cancellation' => $this->when(

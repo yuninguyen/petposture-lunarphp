@@ -192,6 +192,18 @@ class ReturnRequestApiTest extends TestCase
             ->assertJsonValidationErrors(['order']);
     }
 
+    public function test_the_tracking_response_says_whether_the_return_window_is_still_open(): void
+    {
+        ['order_id' => $orderId, 'tracking_token' => $trackingToken] = $this->placeDeliveredOrder();
+        $track = fn () => $this->postJson('/api/orders/track', ['tracking_token' => $trackingToken, 'email' => 'guest@petposture.com']);
+
+        $this->setDeliveredAt($orderId, now()->subDays(10));
+        $track()->assertOk()->assertJsonPath('data.return_window_open', true);
+
+        $this->setDeliveredAt($orderId, now()->subDays(31));
+        $track()->assertOk()->assertJsonPath('data.return_window_open', false);
+    }
+
     public function test_return_request_requires_tracking_token_instead_of_order_reference(): void
     {
         ['reference' => $reference, 'tracking_token' => $trackingToken, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();
