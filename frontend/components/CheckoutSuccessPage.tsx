@@ -608,7 +608,7 @@ function OrderSuccessContent() {
                                         Request a return
                                     </ButtonLink>
                                 ) : deliveredDone ? (
-                                    <div className="flex w-full flex-col items-center gap-1 sm:w-auto">
+                                    <div className="flex w-full flex-col items-center gap-1 sm:w-auto sm:items-end">
                                         <Button type="button" variant="secondary" disabled className="w-full !normal-case !tracking-normal sm:w-auto">
                                             Request a return
                                         </Button>
@@ -633,7 +633,7 @@ function OrderSuccessContent() {
                         <p className="text-[14px] text-[#555555]">
                             Need help? <Link href="/contact" className="font-semibold text-[#1a1a1a] underline underline-offset-2 hover:text-[#df8448]">Contact us</Link>
                         </p>
-                        <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:items-start">
+                        <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-end">
                             {justPlaced ? (
                                 <ButtonLink href="/shop" variant="primary" className="w-full !normal-case !tracking-normal sm:w-auto">
                                     Continue shopping
@@ -644,7 +644,7 @@ function OrderSuccessContent() {
                                     Request a return
                                 </ButtonLink>
                             ) : deliveredDone ? (
-                                <div className="flex w-full flex-col items-center gap-1 sm:w-auto">
+                                <div className="flex w-full flex-col items-center gap-1 sm:w-auto sm:items-end">
                                     <Button type="button" variant="secondary" disabled className="w-full !normal-case !tracking-normal sm:w-auto">
                                         Request a return
                                     </Button>
