@@ -204,6 +204,46 @@ class ReturnRequestApiTest extends TestCase
         $track()->assertOk()->assertJsonPath('data.return_window_open', false);
     }
 
+    public function test_the_tracking_response_carries_the_stage_dates_and_a_safe_summary_of_the_return_request(): void
+    {
+        ['order_id' => $orderId, 'tracking_token' => $trackingToken] = $this->placeDeliveredOrder();
+        $track = fn () => $this->postJson('/api/orders/track', ['tracking_token' => $trackingToken, 'email' => 'guest@petposture.com']);
+
+        $none = $track()->assertOk()->assertJsonPath('data.return_request', null);
+        $this->assertArrayHasKey('confirmed_at', $none->json('data'));
+        $this->assertArrayHasKey('cancelled_at', $none->json('data'));
+        $this->assertNotNull($none->json('data.shipped_at'));
+        $this->assertNotNull($none->json('data.delivered_at'));
+        $this->assertNotNull($none->json('data.return_window_ends_at'));
+
+        OrderReturnRequest::query()->create([
+            'order_id' => $orderId,
+            'status' => OrderReturnRequest::STATUS_APPROVED,
+            'reason' => 'changed_mind',
+            'admin_note' => 'INTERNAL-NOTE',
+            'rma_address' => 'PetPosture Returns, 1 Test St',
+            'requested_at' => now()->subDays(2),
+            'approved_at' => now()->subDay(),
+            'return_carrier' => 'ups',
+            'return_tracking_number' => '1ZRETURN',
+            'refund_amount_minor' => 3000,
+            'restocking_fee_minor' => 500,
+        ]);
+
+        $approved = $track()->assertOk()
+            ->assertJsonPath('data.return_request.status', 'approved')
+            ->assertJsonPath('data.return_request.rma_address', 'PetPosture Returns, 1 Test St')
+            ->assertJsonPath('data.return_request.return_tracking_number', '1ZRETURN')
+            ->assertJsonPath('data.return_request.refund_amount', 30)
+            ->assertJsonPath('data.return_request.restocking_fee', 5);
+        $this->assertNotNull($approved->json('data.return_request.tracking_deadline_at'));
+        $this->assertStringNotContainsString('INTERNAL-NOTE', $approved->getContent());
+
+        // Once the request is closed the return address is no longer shown.
+        OrderReturnRequest::query()->where('order_id', $orderId)->update(['status' => OrderReturnRequest::STATUS_COMPLETED]);
+        $track()->assertOk()->assertJsonPath('data.return_request.rma_address', null);
+    }
+
     public function test_return_request_requires_tracking_token_instead_of_order_reference(): void
     {
         ['reference' => $reference, 'tracking_token' => $trackingToken, 'order_line_id' => $lineId] = $this->placeDeliveredOrder();

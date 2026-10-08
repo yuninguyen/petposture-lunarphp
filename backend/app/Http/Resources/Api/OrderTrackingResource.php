@@ -2,10 +2,12 @@
 
 namespace App\Http\Resources\Api;
 
+use App\Models\OrderReturnRequest;
 use App\Models\ShippingMethod;
 use App\Services\ProductSyncService;
 use App\Services\ReturnRequestService;
 use App\Support\Orders\VariantLabel;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Str;
@@ -26,6 +28,7 @@ class OrderTrackingResource extends JsonResource
         $address = $order->shippingAddress;
         $billing = $order->billingAddress ?? $address;
         $trackingToken = $order->getAttribute('tracking_access_token');
+        $returns = app(ReturnRequestService::class);
 
         return [
             'reference' => $order->reference,
@@ -65,8 +68,15 @@ class OrderTrackingResource extends JsonResource
             // The last payment attempt was declined/abandoned (Stripe's payment_intent.payment_failed).
             // Some redirect methods (Afterpay) return without a redirect_status, so the page needs this.
             'payment_failed' => ($meta['payment_status'] ?? null) === 'failed',
-            // Whether a return can still be requested (30 days from delivery) — the page hides the link after that.
-            'return_window_open' => app(ReturnRequestService::class)->isWithinReturnWindow($order),
+            // Whether a return can still be requested (30 days from delivery) — the page dims the button after that.
+            'return_window_open' => $returns->isWithinReturnWindow($order),
+            'return_window_ends_at' => $returns->returnWindowEndsAt($order)?->toIso8601String(),
+            // When each stage happened, for the headline of the confirmation page.
+            'confirmed_at' => $this->isoDate($meta['payment_received_at'] ?? null),
+            'shipped_at' => $this->isoDate($meta['shipped_at'] ?? null),
+            'delivered_at' => $this->isoDate($meta['delivered_at'] ?? null),
+            'cancelled_at' => $this->isoDate($meta['cancelled_at'] ?? null),
+            'return_request' => $this->returnRequestSummary($order, $returns),
             'card_brand' => $meta['card_brand'] ?? null,
             'card_last4' => $meta['card_last4'] ?? null,
             'payment_confirmed_before_cancellation' => $this->when(
@@ -94,6 +104,49 @@ class OrderTrackingResource extends JsonResource
                     'image' => $this->resolveLineImage($line),
                 ])
                 ->values(),
+        ];
+    }
+
+    private function isoDate(mixed $value): ?string
+    {
+        if (! $value) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value)->toIso8601String();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * What the customer needs to follow their latest return request. The admin's internal note is never exposed,
+     * and the return address only while the request is approved and waiting for the parcel.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function returnRequestSummary(Order $order, ReturnRequestService $returns): ?array
+    {
+        $request = OrderReturnRequest::query()->where('order_id', $order->id)->latest('id')->first();
+
+        if (! $request) {
+            return null;
+        }
+
+        return [
+            'status' => $request->status,
+            'requested_at' => $request->requested_at?->toIso8601String(),
+            'approved_at' => $request->approved_at?->toIso8601String(),
+            'package_received_at' => $request->package_received_at?->toIso8601String(),
+            'completed_at' => $request->completed_at?->toIso8601String(),
+            'tracking_deadline_at' => $returns->trackingDeadline($request)?->toIso8601String(),
+            'rma_address' => $request->status === OrderReturnRequest::STATUS_APPROVED ? $request->rma_address : null,
+            'return_carrier' => $request->return_carrier,
+            'return_tracking_number' => $request->return_tracking_number,
+            'return_tracking_url' => $request->return_tracking_url,
+            'refund_amount' => $request->refund_amount_minor !== null ? $request->refund_amount_minor / 100 : null,
+            'restocking_fee' => $request->restocking_fee_minor !== null ? $request->restocking_fee_minor / 100 : null,
         ];
     }
 

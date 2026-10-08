@@ -43,13 +43,23 @@ class ReturnRequestService
      */
     public function isWithinReturnWindow(Order $order): bool
     {
+        $endsAt = $this->returnWindowEndsAt($order);
+
+        return $endsAt === null || ! now()->greaterThan($endsAt);
+    }
+
+    /** The last moment a return can be requested, or null when the order has no delivery date yet. */
+    public function returnWindowEndsAt(Order $order): ?Carbon
+    {
         $deliveredAt = $order->meta['delivered_at'] ?? null;
 
-        if (! $deliveredAt) {
-            return true;
-        }
+        return $deliveredAt ? Carbon::parse($deliveredAt)->addDays(self::RETURN_WINDOW_DAYS) : null;
+    }
 
-        return ! now()->greaterThan(Carbon::parse($deliveredAt)->addDays(self::RETURN_WINDOW_DAYS));
+    /** Until when the customer can still add the tracking number of the parcel they send back. */
+    public function trackingDeadline(OrderReturnRequest $request): ?Carbon
+    {
+        return $request->approved_at?->copy()->addDays(self::TRACKING_SUBMISSION_WINDOW_DAYS);
     }
 
     public function create(Order $order, array $items, string $reason, ?string $customerNote): OrderReturnRequest
