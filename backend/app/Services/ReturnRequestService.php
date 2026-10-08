@@ -59,7 +59,7 @@ class ReturnRequestService
     /** Until when the customer can still add the tracking number of the parcel they send back. */
     public function trackingDeadline(OrderReturnRequest $request): ?Carbon
     {
-        return $request->approved_at?->copy()->addDays(self::TRACKING_SUBMISSION_WINDOW_DAYS);
+        return $request->approved_at ? Carbon::instance($request->approved_at)->addDays(self::TRACKING_SUBMISSION_WINDOW_DAYS) : null;
     }
 
     public function create(Order $order, array $items, string $reason, ?string $customerNote): OrderReturnRequest
