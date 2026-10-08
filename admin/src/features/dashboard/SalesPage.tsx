@@ -272,13 +272,19 @@ export function SalesPage() {
           <div className="order-5 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm lg:col-span-2">
             <h2 className="text-base font-bold text-slate-900 mb-4">{t('dashboard.top_products', 'Top Products')}</h2>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full min-w-[880px] table-fixed text-left text-sm">
+                <colgroup>
+                  <col className="w-[42%]" />
+                  <col className="w-[37%]" />
+                  <col className="w-[8%]" />
+                  <col className="w-[13%]" />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-slate-100 text-xs font-semibold uppercase text-slate-500">
-                    <th className="pb-3">{t('dashboard.product', 'Product')}</th>
-                    <th className="pb-3">{t('dashboard.sku', 'SKU')}</th>
+                    <th className="pb-3 pr-4">{t('dashboard.product', 'Product')}</th>
+                    <th className="pb-3 pr-2">{t('dashboard.sku', 'SKU')}</th>
                     <th className="pb-3 text-right">{t('dashboard.units_sold', 'Sold')}</th>
-                    <th className="pb-3 text-right">{t('dashboard.revenue', 'Revenue')}</th>
+                    <th className="pb-3 pl-5 text-right">{t('dashboard.revenue', 'Revenue')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -291,10 +297,12 @@ export function SalesPage() {
                   ) : (
                     top_products.map((p) => (
                       <tr key={p.id} className="hover:bg-slate-50/50">
-                        <td className="py-3 font-medium text-slate-900">{p.description}</td>
-                        <td className="py-3 text-slate-500">{p.sku}</td>
+                        <td className="py-3 pr-4 align-top font-medium text-slate-900">
+                          <div className="line-clamp-2">{p.description}</div>
+                        </td>
+                        <td className="py-3 pr-2 align-top text-slate-500 whitespace-nowrap">{p.sku}</td>
                         <td className="py-3 text-right font-semibold text-slate-700">{p.quantity}</td>
-                        <td className="py-3 text-right font-semibold text-[#df8448]">
+                        <td className="py-3 pl-5 text-right font-semibold text-[#df8448]">
                           {formatOrderAmount(p.revenue.decimal, p.revenue.currency, false)}
                         </td>
                       </tr>
