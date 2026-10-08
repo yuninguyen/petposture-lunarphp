@@ -4,13 +4,14 @@ import React, { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowUpRight, CheckCircle, Loader2, Mail, Package, ShieldCheck, ShoppingBag } from "lucide-react";
+import { AlertCircle, ArrowUpRight, CheckCircle, Loader2, Mail, Package, ShieldCheck, ShoppingBag, XCircle } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api";
 import { fetchApi } from "@/lib/fetchApi";
 import { useCart } from "@/context/CartContext";
 import RetryPaymentPanel from "@/components/orders/RetryPaymentPanel";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { ShippingSummaryRow } from "@/components/checkout/ShippingSummaryRow";
+import { buildOrderHeader, carrierLabel, formatShortDate, type HeaderPart, type HeaderTone, type ReturnRequestSummary } from "@/lib/orderHeader";
 
 type TrackingOrder = {
     reference: string;
@@ -19,6 +20,12 @@ type TrackingOrder = {
     // The last payment attempt was declined/abandoned (set from Stripe's webhook).
     payment_failed?: boolean;
     return_window_open?: boolean;
+    return_window_ends_at?: string | null;
+    confirmed_at?: string | null;
+    shipped_at?: string | null;
+    delivered_at?: string | null;
+    cancelled_at?: string | null;
+    return_request?: ReturnRequestSummary | null;
     fulfillment_status: string;
     carrier: string | null;
     tracking_number: string | null;
@@ -85,15 +92,38 @@ const cardBrandIcons: Record<string, { src: string; alt: string }> = {
     unionpay: { src: 'https://cdn.shopifycloud.com/checkout-web/assets/c1/assets/unionpay.8M-Boq_z.svg', alt: 'UnionPay' },
 };
 
-function formatStatus(value: string) {
-    return value.replace(/[_-]/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
-}
+const headerTones: Record<HeaderTone, { circle: string; icon: string; banner: string }> = {
+    orange: { circle: "bg-[#fff3eb]", icon: "text-[#df8448]", banner: "border-[#f0ddd0] bg-[#fff8f4] text-[#7a4020]" },
+    green: { circle: "bg-[#e8f5ee]", icon: "text-[#2f9e63]", banner: "border-[#d7ecdd] bg-[#f6fbf7] text-[#2f5a3e]" },
+    amber: { circle: "bg-[#fbf1dc]", icon: "text-[#c98a1f]", banner: "border-[#f3e3bf] bg-[#fffaf0] text-[#7a5a1e]" },
+    red: { circle: "bg-[#fbe9e9]", icon: "text-[#d14b4b]", banner: "border-[#f1d4d4] bg-[#fdf3f3] text-[#7a3030]" },
+};
 
-// Carriers are brands: UPS / USPS / DHL are acronyms and FedEx has its own casing.
-const carrierLabels: Record<string, string> = { ups: "UPS", usps: "USPS", dhl: "DHL", fedex: "FedEx" };
-
-function carrierLabel(carrier: string) {
-    return carrierLabels[carrier.toLowerCase()] ?? formatStatus(carrier);
+// The notice under the title: plain text with the occasional link (tracking numbers open in a new tab).
+function HeaderBody({ parts }: { parts: HeaderPart[] }) {
+    return (
+        <>
+            {parts.map((part, index) => {
+                if (typeof part === "string") return <React.Fragment key={index}>{part}</React.Fragment>;
+                if (!part.href) return <span key={index} className="font-semibold tabular-nums">{part.link}</span>;
+                if (!part.external) {
+                    return <Link key={index} href={part.href} className="font-semibold text-[#df8448] underline underline-offset-4 hover:text-[#c9743a]">{part.link}</Link>;
+                }
+                return (
+                    <a
+                        key={index}
+                        href={part.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Track package ${part.link} (opens in a new tab)`}
+                        className="group inline-flex items-center gap-1 font-semibold tabular-nums text-[#df8448] underline-offset-4 transition hover:text-[#c9743a] hover:underline"
+                    >
+                        {part.link} <ArrowUpRight size={14} aria-hidden="true" className="transition-transform group-hover:-translate-y-px group-hover:translate-x-px" />
+                    </a>
+                );
+            })}
+        </>
+    );
 }
 
 function AddressBlock({ title, address }: { title: string; address: TrackingOrder["shipping_address"] }) {
@@ -414,7 +444,6 @@ function OrderSuccessContent() {
     }
 
     const timeline = buildTimeline(order);
-    const customerName = order.shipping_address.first_name ?? "";
     const orderDate = order.created_at
         ? new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(new Date(order.created_at))
         : "—";
@@ -422,6 +451,8 @@ function OrderSuccessContent() {
     const deliveredDone = timeline.find((step) => step.key === "delivered")?.done ?? false;
     // The link only makes sense while the 30-day return window (counted from delivery) is open.
     const canRequestReturn = deliveredDone && order.return_window_open !== false;
+    const header = buildOrderHeader(order, { justPlaced, returnHref: `/returns?token=${encodeURIComponent(trackingToken)}&email=${encodeURIComponent(email)}` });
+    const tone = headerTones[header.tone];
     const stripePaymentPending = (gateway === "stripe" || gateway === "airwallex") && order.status === "awaiting-payment";
     // Stripe sends the buyer back with redirect_status=failed when a redirect
     // method (Affirm, Klarna, Cash App Pay) is declined or abandoned.
@@ -459,20 +490,22 @@ function OrderSuccessContent() {
             <div className="mx-auto flex min-h-screen max-w-[1100px] flex-col lg:flex-row">
                 <div className="flex-1 border-r border-[#e8e8ea] bg-white px-4 pt-4 pb-8 md:px-8 lg:px-12 lg:pt-6 lg:pb-12">
                     <div className="flex items-center gap-4">
-                        <div className="flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-full bg-[#fff3eb]">
+                        <div className={`flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-full ${stripePaymentFailed ? headerTones.orange.circle : tone.circle}`}>
                             {stripePaymentFailed
                                 ? <AlertCircle size={28} strokeWidth={2} className="text-[#df8448]" />
-                                : <CheckCircle size={28} strokeWidth={2} className="text-[#df8448]" />}
+                                : header.tone === "red"
+                                    ? <XCircle size={28} strokeWidth={2} className={tone.icon} />
+                                    : <CheckCircle size={28} strokeWidth={2} className={tone.icon} />}
                         </div>
                         <div>
-                            <p className="text-[14px] font-semibold text-[#df8448]">{stripePaymentFailed ? "Order" : "Confirmation"} #{order.reference}</p>
-                            <h1 className="mt-0.5 text-[22px] font-bold leading-tight tracking-tight text-[#2f3d46]">{stripePaymentFailed ? "Your payment didn't go through" : `Thank you${customerName ? `, ${customerName}` : ""}!`}</h1>
+                            <p className="text-[14px] font-semibold text-[#df8448]">{stripePaymentFailed ? `Order #${order.reference}` : header.label}</p>
+                            <h1 className="mt-0.5 text-[22px] font-bold leading-tight tracking-tight text-[#2f3d46]">{stripePaymentFailed ? "Your payment didn't go through" : header.title}</h1>
                         </div>
                     </div>
 
-                    <div className="mt-6 rounded-[8px] border border-[#f0ddd0] bg-[#fff8f4] px-5 py-4">
-                        <p className="flex items-start gap-2.5 text-[14px] leading-[1.65] text-[#7a4020]">
-                            <Mail size={15} className="mt-0.5 flex-shrink-0 text-[#df8448]" />
+                    <div className={`mt-6 rounded-[8px] border px-5 py-4 ${stripePaymentFailed || stripePaymentPending ? headerTones.orange.banner : tone.banner}`}>
+                        <p className="flex items-start gap-2.5 text-[14px] leading-[1.65]">
+                            {stripePaymentFailed || stripePaymentPending || header.mail ? <Mail size={15} className="mt-0.5 flex-shrink-0 text-[#df8448]" /> : null}
                             <span>
                                 {stripePaymentFailed ? (
                                     <>
@@ -488,8 +521,8 @@ function OrderSuccessContent() {
                                     </>
                                 ) : (
                                     <>
-                                        <span className="font-semibold">Your order is confirmed</span><br />
-                                        You&apos;ll receive a confirmation email soon
+                                        <span className="font-semibold">{header.headline}</span>
+                                        {header.body.length > 0 ? <><br /><HeaderBody parts={header.body} /></> : null}
                                     </>
                                 )}
                             </span>
@@ -513,7 +546,12 @@ function OrderSuccessContent() {
                                             </span>
                                             <div className="pb-1">
                                                 <p className="text-[13.5px] font-semibold text-[#1a1a1a]">{step.label}</p>
-                                                {step.key === "shipped" && step.done && (order.tracking_number || order.tracking_url) ? (
+                                                {step.key === "shipped" && step.done && order.status === "shipped" && (order.shipped_at || order.carrier) ? (
+                                                    <p className="mt-0.5 text-[12.5px] text-[#707070]">
+                                                        {[formatShortDate(order.shipped_at, new Date()), order.carrier && order.carrier.toLowerCase() !== "manual" ? carrierLabel(order.carrier) : ""].filter(Boolean).join(" · ")}
+                                                    </p>
+                                                ) : null}
+                                                {step.key === "shipped" && step.done && order.status !== "shipped" && (order.tracking_number || order.tracking_url) ? (
                                                     <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-[8px] border border-[#e8e8ea] bg-[#faf9f8] px-3.5 py-3 text-[13px] leading-[1.6]">
                                                         <span className="text-[#707070]">
                                                             {order.tracking_number ? "Tracking number" : "Tracking"}
