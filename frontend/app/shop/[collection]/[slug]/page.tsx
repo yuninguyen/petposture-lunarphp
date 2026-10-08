@@ -33,10 +33,10 @@ function serializeSearchParams(searchParams: Record<string, string | string[] | 
     return query.toString();
 }
 
-async function fetchProduct(slug: string, category: string, previewQuery?: string): Promise<ProductLookup> {
+async function fetchProduct(slug: string, collection: string, previewQuery?: string): Promise<ProductLookup> {
     try {
         const query = new URLSearchParams(previewQuery ?? '');
-        query.set('category', category);
+        query.set('category', collection);
         const url = `${API_BASE_URL}/api/products/${slug}?${query.toString()}`;
         const response = await fetch(url, {
             cache: previewQuery ? 'no-store' : undefined,
@@ -78,10 +78,10 @@ async function fetchProducts(): Promise<Product[]> {
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-export async function generateMetadata({ params, searchParams }: { params: Promise<{ category: string; slug: string }>; searchParams: SearchParams }): Promise<Metadata> {
-    const { category, slug } = await params;
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ collection: string; slug: string }>; searchParams: SearchParams }): Promise<Metadata> {
+    const { collection, slug } = await params;
     const originalQuery = serializeSearchParams(await searchParams);
-    const lookup = await fetchProduct(slug, category, buildPreviewQuery(await searchParams));
+    const lookup = await fetchProduct(slug, collection, buildPreviewQuery(await searchParams));
 
     if (lookup.redirectPath) {
         permanentRedirect(originalQuery ? `${lookup.redirectPath}?${originalQuery}` : lookup.redirectPath);
@@ -125,14 +125,14 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
     };
 }
 
-export default async function Page({ params, searchParams }: { params: Promise<{ category: string; slug: string }>; searchParams: SearchParams }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ collection: string; slug: string }>; searchParams: SearchParams }) {
     const nonce = (await headers()).get('x-nonce') ?? undefined;
-    const { category, slug } = await params;
+    const { collection, slug } = await params;
     const originalQuery = serializeSearchParams(await searchParams);
     const previewQuery = buildPreviewQuery(await searchParams);
 
     const [lookup, allProducts] = await Promise.all([
-        fetchProduct(slug, category, previewQuery),
+        fetchProduct(slug, collection, previewQuery),
         fetchProducts(),
     ]);
 
