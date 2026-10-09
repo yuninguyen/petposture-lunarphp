@@ -98,7 +98,7 @@ jobs:
           NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
 
   admin:
-    name: Admin (Node 20)
+    name: Admin (Node 22)
     runs-on: ubuntu-latest
 
     defaults:
@@ -111,7 +111,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: admin/package-lock.json
 
