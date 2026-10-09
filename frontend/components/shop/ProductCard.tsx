@@ -35,7 +35,7 @@ export function ProductCard({
                         alt={product.name}
                         fill
                         sizes={sizes}
-                        className={`object-contain transition duration-500 group-hover:scale-[1.03] ${isHomepage ? 'p-6' : 'p-8'}`}
+                        className={`object-contain transition duration-500 group-hover:scale-[1.03] ${isHomepage ? 'p-6 mix-blend-multiply' : 'p-8'}`}
                     />
 
                     <div className="absolute left-2 top-2 max-w-[45%] sm:left-3 sm:top-3">
