@@ -24,6 +24,17 @@ services:
       - ./backend/storage/app/public:/app/storage/app/public
       - ./backend/storage/logs:/app/storage/logs
 
+  background-removal:
+    build:
+      context: ./backend/background-removal
+      dockerfile: Dockerfile
+    image: petposture-background-removal:prod
+    container_name: petposture-background-removal
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      U2NET_HOME: /models
+
   frontend:
     build:
       context: ./frontend

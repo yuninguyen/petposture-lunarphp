@@ -5,7 +5,9 @@ namespace Tests\Feature\Api\Admin;
 use App\Models\CuratorMedia;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
@@ -99,6 +101,73 @@ class MediaControllerTest extends TestCase
         $this->assertStringEndsWith('.gif', $response->json('data.url'));
     }
 
+    public function test_product_upload_can_save_and_return_a_transparent_webp_copy(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+        Sanctum::actingAs($user);
+
+        $transparentPng = $this->transparentPng();
+        Http::fake([
+            '127.0.0.1:8002/remove' => Http::response($transparentPng, 200, ['Content-Type' => 'image/png']),
+        ]);
+
+        $response = $this->postJson('/api/admin/media', [
+            'file' => UploadedFile::fake()->image('product.jpg', 40, 30),
+            'folder' => CuratorMedia::FOLDER_PRODUCT,
+            'remove_background' => true,
+        ])->assertCreated()
+            ->assertJsonPath('data.folder', CuratorMedia::FOLDER_PRODUCT)
+            ->assertJsonPath('processed.folder', CuratorMedia::FOLDER_PRODUCT);
+
+        $this->assertStringEndsWith('.webp', $response->json('processed.url'));
+        $this->assertDatabaseCount('curator_media', 2);
+        Http::assertSent(fn (HttpRequest $request) => $request->url() === 'http://127.0.0.1:8002/remove'
+            && $request->hasFile('file'));
+
+        $processed = CuratorMedia::findOrFail($response->json('processed.id'));
+        $image = imagecreatefromwebp(Storage::disk('public')->path($processed->path));
+        $this->assertNotFalse($image);
+        $this->assertSame(127, (imagecolorat($image, 0, 0) >> 24) & 0x7F, 'Transparent pixels should remain transparent after WebP optimization.');
+        imagedestroy($image);
+    }
+
+    public function test_background_removal_failure_does_not_store_or_select_an_unprocessed_image(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+        Sanctum::actingAs($user);
+
+        Http::fake(['127.0.0.1:8002/remove' => Http::response(['detail' => 'failed'], 500)]);
+
+        $this->postJson('/api/admin/media', [
+            'file' => UploadedFile::fake()->image('product.jpg', 40, 30),
+            'folder' => CuratorMedia::FOLDER_PRODUCT,
+            'remove_background' => true,
+        ])->assertStatus(502);
+
+        $this->assertDatabaseCount('curator_media', 0);
+        $this->assertSame([], Storage::disk('public')->allFiles('media'));
+    }
+
+    public function test_remove_background_option_is_ignored_outside_product_folder(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+        Sanctum::actingAs($user);
+
+        Http::fake();
+
+        $this->postJson('/api/admin/media', [
+            'file' => UploadedFile::fake()->image('article.jpg', 40, 30),
+            'folder' => CuratorMedia::FOLDER_BLOG,
+            'remove_background' => true,
+        ])->assertCreated()->assertJsonMissingPath('processed');
+
+        Http::assertNothingSent();
+        $this->assertDatabaseCount('curator_media', 1);
+    }
+
     public function test_admin_can_list_media(): void
     {
         $user = User::factory()->create();
@@ -164,5 +233,20 @@ class MediaControllerTest extends TestCase
         $this->patchJson("/api/admin/media/{$id}", ['folder' => 'all'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('folder');
+    }
+
+    private function transparentPng(): string
+    {
+        $image = imagecreatetruecolor(40, 30);
+        imagealphablending($image, false);
+        imagesavealpha($image, true);
+        imagefill($image, 0, 0, imagecolorallocatealpha($image, 0, 0, 0, 127));
+        imagefilledrectangle($image, 10, 5, 30, 25, imagecolorallocatealpha($image, 220, 80, 60, 0));
+        ob_start();
+        imagepng($image);
+        $contents = ob_get_clean();
+        imagedestroy($image);
+
+        return $contents;
     }
 }
