@@ -104,6 +104,10 @@ return [
         'turnstile_secret' => env('TURNSTILE_SECRET_KEY'),
     ],
 
+    'background_removal' => [
+        'url' => env('BACKGROUND_REMOVAL_URL', 'http://127.0.0.1:8002'),
+    ],
+
     'anthropic' => [
         'key' => env('ANTHROPIC_API_KEY'),
         'model' => env('ANTHROPIC_MODEL'),

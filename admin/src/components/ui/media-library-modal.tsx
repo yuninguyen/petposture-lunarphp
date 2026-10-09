@@ -36,10 +36,13 @@ export function MediaLibraryModal({ open, onClose, onSelect, context = 'general'
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [removeBackground, setRemoveBackground] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [imagePreview, setImagePreview] = useState<{ original: MediaItem; processed: MediaItem } | null>(null);
   const [folder, setFolder] = useState<FolderFilter>(context);
   const [search, setSearch] = useState('');
 
-  useEffect(() => { if (open) { setFolder(context); setSearch(''); } }, [context, open]);
+  useEffect(() => { if (open) { setFolder(context); setSearch(''); setRemoveBackground(false); setUploadError(''); setImagePreview(null); } }, [context, open]);
 
   const { data: library = [] } = useQuery({
     queryKey: ['media', folder],
@@ -58,15 +61,24 @@ export function MediaLibraryModal({ open, onClose, onSelect, context = 'general'
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setUploadError('');
     try {
       const uploadFolder = folder === 'all' ? context : folder;
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', uploadFolder);
-      const res = await fetchJson<{ data: MediaItem }>('/admin/media', { method: 'POST', body: formData });
-      queryClient.setQueryData<MediaItem[]>(['media'], (old) => [res.data, ...(old ?? [])]);
+      if (removeBackground && uploadFolder === 'product') formData.append('remove_background', '1');
+      const res = await fetchJson<{ data: MediaItem; processed?: MediaItem }>('/admin/media', { method: 'POST', body: formData });
+      if (res.processed) {
+        queryClient.setQueryData<MediaItem[]>(['media', uploadFolder], (old) => [res.processed!, res.data, ...(old ?? [])]);
+        setImagePreview({ original: res.data, processed: res.processed });
+        return;
+      }
+      queryClient.setQueryData<MediaItem[]>(['media', uploadFolder], (old) => [res.data, ...(old ?? [])]);
       queryClient.invalidateQueries({ queryKey: ['media'] });
       onSelect({ id: res.data.id, url: res.data.url });
+    } catch {
+      setUploadError(t(removeBackground ? 'media.background_remove_failed' : 'media.upload_failed'));
     } finally {
       setUploading(false);
       if (fileInput.current) fileInput.current.value = '';
@@ -78,5 +90,11 @@ export function MediaLibraryModal({ open, onClose, onSelect, context = 'general'
     queryClient.invalidateQueries({ queryKey: ['media'] });
   }
 
-  return createPortal(<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}><div className="w-full max-w-6xl rounded-xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true"><div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-semibold text-ink">{t('media.select_title')}</h3><button type="button" onClick={onClose} className="text-2xl leading-none text-gray-400 hover:text-ink" aria-label={t('media.button_close')}>×</button></div><div className="flex min-h-[28rem] gap-5"><aside className="w-40 shrink-0 border-r border-gray-200 pr-4"><p className="mb-2 text-xs font-semibold uppercase text-gray-400">{t('media.folders')}</p>{(['all', ...MEDIA_FOLDERS] as FolderFilter[]).map((item) => <button key={item} type="button" onClick={() => setFolder(item)} className={`mb-1 w-full rounded px-3 py-2 text-left text-sm capitalize ${folder === item ? 'bg-primary text-white' : 'hover:bg-gray-100'}`}>{t(`media.folder_${item}`)}</button>)}</aside><main className="min-w-0 flex-1"><div className="mb-4 flex flex-wrap items-center gap-3"><input ref={fileInput} type="file" accept="image/*" onChange={handleUpload} className="hidden"/><Button type="button" variant="secondary" disabled={uploading} onClick={() => fileInput.current?.click()}>{uploading ? t('media.button_uploading') : t('media.button_upload')}</Button><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('media.search_placeholder')} className="h-10 min-w-64 flex-1 rounded-lg border border-gray-300 px-3 text-sm"/><span className="text-xs text-gray-400">{t('media.upload_folder', { folder: t(`media.folder_${folder === 'all' ? context : folder}`) })}</span></div>{filteredLibrary.length ? <div className="grid max-h-[24rem] grid-cols-3 gap-3 overflow-y-auto sm:grid-cols-4 lg:grid-cols-5">{filteredLibrary.map((item) => <div key={item.id} className="group overflow-hidden rounded border border-gray-200"><button type="button" onClick={() => onSelect({ id: item.id, url: item.url })} className="block w-full hover:opacity-90"><img src={item.thumbnail_url} alt={item.alt || item.name} className="h-28 w-full object-cover"/></button><div className="space-y-1 p-2"><p className="truncate text-xs" title={item.name}>{item.name}</p><select aria-label={t('media.move_folder')} value={item.folder ?? 'general'} onChange={(event) => moveToFolder(item, event.target.value as MediaContext)} className="h-7 w-full rounded border border-gray-200 bg-white px-1 text-xs">{MEDIA_FOLDERS.map((option) => <option key={option} value={option}>{t(`media.folder_${option}`)}</option>)}</select></div></div>)}</div> : <p className="py-8 text-center text-sm text-gray-400">{search ? t('media.no_search_results') : t('media.empty_state')}</p>}</main></div></div></div>, document.body);
+  function selectUploadedImage(item: MediaItem) {
+    setImagePreview(null);
+    queryClient.invalidateQueries({ queryKey: ['media'] });
+    onSelect({ id: item.id, url: item.url });
+  }
+
+  return createPortal(<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}><div className="w-full max-w-6xl rounded-xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true"><div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-semibold text-ink">{imagePreview ? t('media.background_preview_title') : t('media.select_title')}</h3><button type="button" onClick={onClose} className="text-2xl leading-none text-gray-400 hover:text-ink" aria-label={t('media.button_close')}>×</button></div>{imagePreview ? <div><p className="mb-4 text-sm text-gray-600">{t('media.background_preview_help')}</p><div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2"><figure><img src={imagePreview.original.url} alt={imagePreview.original.name} className="h-72 w-full rounded-lg border border-gray-200 bg-slate-50 object-contain"/><figcaption className="mt-2 text-sm font-medium">{t('media.background_original')}</figcaption></figure><figure><img src={imagePreview.processed.url} alt={imagePreview.processed.name} className="h-72 w-full rounded-lg border border-gray-200 bg-[linear-gradient(45deg,#eee_25%,transparent_25%),linear-gradient(-45deg,#eee_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#eee_75%),linear-gradient(-45deg,transparent_75%,#eee_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0px] object-contain"/><figcaption className="mt-2 text-sm font-medium">{t('media.background_removed')}</figcaption></figure></div><div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setImagePreview(null)}>{t('media.cancel_background_preview')}</Button><Button type="button" variant="secondary" onClick={() => selectUploadedImage(imagePreview.original)}>{t('media.use_original')}</Button><Button type="button" onClick={() => selectUploadedImage(imagePreview.processed)}>{t('media.use_background_removed')}</Button></div></div> : <div className="flex min-h-[28rem] gap-5"><aside className="w-40 shrink-0 border-r border-gray-200 pr-4"><p className="mb-2 text-xs font-semibold uppercase text-gray-400">{t('media.folders')}</p>{(['all', ...MEDIA_FOLDERS] as FolderFilter[]).map((item) => <button key={item} type="button" onClick={() => setFolder(item)} className={`mb-1 w-full rounded px-3 py-2 text-left text-sm capitalize ${folder === item ? 'bg-primary text-white' : 'hover:bg-gray-100'}`}>{t(`media.folder_${item}`)}</button>)}</aside><main className="min-w-0 flex-1"><div className="mb-4 flex flex-wrap items-center gap-3"><input ref={fileInput} type="file" accept="image/*" onChange={handleUpload} className="hidden"/><Button type="button" variant="secondary" disabled={uploading} onClick={() => fileInput.current?.click()}>{uploading ? t('media.button_uploading') : t('media.button_upload')}</Button><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('media.search_placeholder')} className="h-10 min-w-64 flex-1 rounded-lg border border-gray-300 px-3 text-sm"/><span className="text-xs text-gray-400">{t('media.upload_folder', { folder: t(`media.folder_${folder === 'all' ? context : folder}`) })}</span></div>{context === 'product' && folder === 'product' && <label className="mb-4 flex items-start gap-2 text-sm text-gray-700"><input type="checkbox" checked={removeBackground} onChange={(event) => setRemoveBackground(event.target.checked)} disabled={uploading} className="mt-0.5 rounded border-gray-300 text-primary focus:ring-primary"/><span><span className="font-medium">{t('media.remove_background')}</span><span className="block text-xs text-gray-500">{t('media.remove_background_help')}</span></span></label>}{uploadError && <p role="alert" className="mb-3 text-sm text-red-600">{uploadError}</p>}{filteredLibrary.length ? <div className="grid max-h-[24rem] grid-cols-3 gap-3 overflow-y-auto sm:grid-cols-4 lg:grid-cols-5">{filteredLibrary.map((item) => <div key={item.id} className="group overflow-hidden rounded border border-gray-200"><button type="button" onClick={() => onSelect({ id: item.id, url: item.url })} className="block w-full hover:opacity-90"><img src={item.thumbnail_url} alt={item.alt || item.name} className="h-28 w-full object-cover"/></button><div className="space-y-1 p-2"><p className="truncate text-xs" title={item.name}>{item.name}</p><select aria-label={t('media.move_folder')} value={item.folder ?? 'general'} onChange={(event) => moveToFolder(item, event.target.value as MediaContext)} className="h-7 w-full rounded border border-gray-200 bg-white px-1 text-xs">{MEDIA_FOLDERS.map((option) => <option key={option} value={option}>{t(`media.folder_${option}`)}</option>)}</select></div></div>)}</div> : <p className="py-8 text-center text-sm text-gray-400">{search ? t('media.no_search_results') : t('media.empty_state')}</p>}</main></div>}</div></div>, document.body);
 }

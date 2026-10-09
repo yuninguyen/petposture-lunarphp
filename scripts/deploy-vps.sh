@@ -70,8 +70,8 @@ docker compose -f docker-compose.prod.yml -p petposture build
 # `admin` was missing from this list entirely until 2026-09-13: the image
 # was rebuilt every deploy but the container was never recreated, so admin
 # changes silently never went live. Always include it.
-docker rm -f petposture-backend petposture-frontend petposture-admin >/dev/null 2>&1 || true
-docker compose -f docker-compose.prod.yml -p petposture up -d --force-recreate backend frontend admin
+docker rm -f petposture-backend petposture-frontend petposture-admin petposture-background-removal >/dev/null 2>&1 || true
+docker compose -f docker-compose.prod.yml -p petposture up -d --force-recreate backend frontend admin background-removal
 
 # `curl ... || echo 000` was wrong: on a connection failure curl's -w still
 # writes "000" itself *and* the || branch fires too, concatenating into
@@ -95,11 +95,13 @@ check_status() {
 backend_status="$(check_status http://127.0.0.1:8001/)"
 frontend_status="$(check_status http://127.0.0.1:3001/)"
 admin_status="$(check_status http://127.0.0.1:3002/)"
+background_removal_status="$(check_status http://127.0.0.1:8002/health)"
 echo "backend local status: $backend_status"
 echo "frontend local status: $frontend_status"
 echo "admin local status: $admin_status"
+echo "background removal local status: $background_removal_status"
 
-if [ "$backend_status" = "000" ] || [ "$frontend_status" = "000" ] || [ "$admin_status" = "000" ]; then
+if [ "$backend_status" = "000" ] || [ "$frontend_status" = "000" ] || [ "$admin_status" = "000" ] || [ "$background_removal_status" != "200" ]; then
     echo "Health check failed -- NOT updating DEPLOYED_COMMIT/DEPLOYED_RELEASE." >&2
     echo "Investigate before retrying; the previous release is still what those markers point to." >&2
     exit 1
