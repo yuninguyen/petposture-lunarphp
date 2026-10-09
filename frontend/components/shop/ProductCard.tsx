@@ -1,16 +1,25 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Star, ArrowUpRight, Heart } from 'lucide-react';
+import { Star, Heart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Button, ButtonLink } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import type { Product } from '@/types/shop';
 import { VariantPickerModal } from './VariantPickerModal';
 
-export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" }: { product: Product; sizes?: string }) {
+export function ProductCard({
+    product,
+    sizes = "(max-width: 768px) 100vw, 33vw",
+    presentation = 'default',
+}: {
+    product: Product;
+    sizes?: string;
+    presentation?: 'default' | 'homepage';
+}) {
+    const isHomepage = presentation === 'homepage';
     const { addItem } = useCart();
     const { isWishlisted, toggle } = useWishlist();
     const wishlisted = isWishlisted(product.id);
@@ -18,15 +27,15 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
     const hasChoices = (product.variants?.length ?? 0) > 1 && (product.options?.length ?? 0) > 0;
 
     return (
-        <article className="group overflow-hidden rounded-[20px] border border-[#eee3d7] bg-[#fcfbf8] shadow-[0_12px_28px_rgba(34,33,33,0.04)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_36px_rgba(34,33,33,0.08)]">
+        <article className={`group overflow-hidden border transition duration-300 hover:-translate-y-1 ${isHomepage ? 'rounded-[15px] border-[#e8e1d8] bg-white shadow-[0_8px_24px_rgba(34,33,33,0.035)] hover:shadow-[0_18px_36px_rgba(34,33,33,0.08)]' : 'rounded-[20px] border-[#eee3d7] bg-[#fcfbf8] shadow-[0_12px_28px_rgba(34,33,33,0.04)] hover:shadow-[0_18px_36px_rgba(34,33,33,0.08)]'}`}>
             <Link href={`/shop/${product.categorySlug}/${product.slug}`} className="block">
-                <div className="relative aspect-square overflow-hidden border-b border-[#efe5dc] bg-white">
+                <div className={`relative aspect-square overflow-hidden border-b ${isHomepage ? 'border-[#eee8e0] bg-[#f8f6f2]' : 'border-[#efe5dc] bg-white'}`}>
                     <Image
                         src={product.image}
                         alt={product.name}
                         fill
                         sizes={sizes}
-                        className="object-contain p-8 transition duration-500 group-hover:scale-[1.03]"
+                        className={`object-contain transition duration-500 group-hover:scale-[1.03] ${isHomepage ? 'p-6' : 'p-8'}`}
                     />
 
                     <div className="absolute left-2 top-2 max-w-[45%] sm:left-3 sm:top-3">
@@ -46,7 +55,7 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
                         }}
                         aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                         aria-pressed={wishlisted}
-                        className="absolute right-3 bottom-3 z-10 h-11 w-11 rounded-full bg-white/92 text-[#56616a] shadow-sm hover:text-rust"
+                        className={`absolute z-10 h-11 w-11 rounded-full bg-white/92 text-[#56616a] shadow-sm hover:text-rust ${isHomepage ? 'right-3 top-3' : 'right-3 bottom-3'}`}
                     >
                         <Heart size={16} className={wishlisted ? 'fill-secondary text-rust' : ''} />
                     </Button>
@@ -76,7 +85,7 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
                 </div>
             </Link>
 
-            <div className="p-4">
+            <div className={isHomepage ? 'p-[18px]' : 'p-4'}>
                 <div className="mb-2 flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
                         <Star
@@ -91,7 +100,7 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
                 </div>
 
                 <Link href={`/shop/${product.categorySlug}/${product.slug}`} className="block">
-                    <h3 className="line-clamp-2 min-h-[48px] text-[16px] font-semibold leading-6 text-[#2d3a43] transition-colors group-hover:text-[#2c3840]">
+                    <h3 className={`line-clamp-2 font-semibold leading-6 text-[#2d3a43] transition-colors group-hover:text-[#2c3840] ${isHomepage ? 'min-h-[46px] text-[15px]' : 'min-h-[48px] text-[16px]'}`}>
                         {product.name}
                     </h3>
                 </Link>
@@ -104,13 +113,14 @@ export function ProductCard({ product, sizes = "(max-width: 768px) 100vw, 33vw" 
                         )}
                     </div>
 
-                    <ButtonLink
-                        href={`/shop/${product.categorySlug}/${product.slug}`}
-                        variant="quiet"
-                        className="h-auto gap-1 rounded-none px-0 text-xs normal-case tracking-normal text-[#1a2128b8] hover:text-[#2c3840]"
-                    >
-                        View <ArrowUpRight size={12} />
-                    </ButtonLink>
+                    {!isHomepage && (
+                        <Link
+                            href={`/shop/${product.categorySlug}/${product.slug}`}
+                            className="inline-flex items-center gap-1 text-xs normal-case tracking-normal text-[#1a2128b8] hover:text-[#2c3840]"
+                        >
+                            View <span aria-hidden="true">↗</span>
+                        </Link>
+                    )}
                 </div>
 
                 <Button
