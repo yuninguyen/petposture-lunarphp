@@ -75,16 +75,17 @@ export function ShippingMethodsPage() {
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('shipping.eta')}</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('shipping.price')}</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('shipping.free_over')}</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{t('shipping.price_over_threshold')}</th>
                 <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">{t('shipping.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {shippingMethodsQuery.isLoading ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">{t('shipping.loading')}</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">{t('shipping.loading')}</td></tr>
               ) : shippingMethodsQuery.isError ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-red-600">{shippingMethodsQuery.error instanceof Error ? shippingMethodsQuery.error.message : t('shipping.error')}</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-red-600">{shippingMethodsQuery.error instanceof Error ? shippingMethodsQuery.error.message : t('shipping.error')}</td></tr>
               ) : methods.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-500">{t('shipping.empty')}</td></tr>
+                <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-500">{t('shipping.empty')}</td></tr>
               ) : methods.map((method) => (
                 <tr key={method.id} className="hover:bg-slate-50">
                   <td className="px-6 py-3 text-sm font-semibold text-slate-900">{method.code}</td>
@@ -92,6 +93,7 @@ export function ShippingMethodsPage() {
                   <td className="px-6 py-3 text-sm text-slate-700">{displayValue(method.eta)}</td>
                   <td className="px-6 py-3 text-sm text-slate-700">{displayMoney(method.price)}</td>
                   <td className="px-6 py-3 text-sm text-slate-700">{displayMoney(method.free_over)}</td>
+                  <td className="px-6 py-3 text-sm text-slate-700">{method.free_over == null || method.free_over === '' ? '—' : method.price_over_threshold == null || method.price_over_threshold === '' ? t('shipping.free') : displayMoney(method.price_over_threshold)}</td>
                   <td className="px-6 py-3 text-right text-sm">
                     <ShippingRowActions method={method} onEdit={openEdit} onDelete={setDeletingMethod} />
 

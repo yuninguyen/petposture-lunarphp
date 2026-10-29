@@ -56,8 +56,25 @@ describe('ShippingMethodsPage', () => {
     expect(host.textContent).toContain('shipping.eta');
     expect(host.textContent).toContain('shipping.price');
     expect(host.textContent).toContain('shipping.free_over');
+    expect(host.textContent).toContain('shipping.price_over_threshold');
     expect(host.textContent).toContain('shipping.live_checkout_warning');
     expect(host.textContent).toContain('shipping.empty');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('shows the over-limit price, Free when it is blank, and a dash when there is no free-over limit', () => {
+    const noLimit = { ...method, id: 8, code: 'flat', free_over: null, price_over_threshold: null };
+    const freeAtLimit = { ...method, id: 9, code: 'std', price_over_threshold: null };
+    mocks.useShippingMethods.mockReturnValue({ isLoading: false, isError: false, data: [method, freeAtLimit, noLimit] });
+    mocks.useDeleteShippingMethod.mockReturnValue({ mutate: vi.fn(), isPending: false });
+    mocks.useCreateShippingMethod.mockReturnValue({ mutate: vi.fn(), isPending: false });
+    mocks.useUpdateShippingMethod.mockReturnValue({ mutate: vi.fn(), isPending: false });
+    const { host, root } = renderPage();
+
+    const cells = Array.from(host.querySelectorAll('tbody tr')).map((row) => row.querySelectorAll('td')[5]?.textContent);
+    expect(cells).toEqual(['$12.00', 'shipping.free', '—']);
 
     act(() => root.unmount());
     host.remove();
