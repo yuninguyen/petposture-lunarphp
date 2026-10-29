@@ -1071,7 +1071,7 @@
   "shipping.name": "Tên",
   "shipping.eta": "Thời gian giao dự kiến",
   "shipping.price": "Phí vận chuyển",
-  "shipping.free_over": "Miễn phí từ",
+  "shipping.free_over": "Mốc áp dụng",
   "shipping.free": "Miễn phí",
   "shipping.price_over_threshold": "Giá khi vượt mốc",
   "shipping.price_over_threshold_hint": "Phí tính khi tạm tính đạt mức \"Miễn phí từ\". Để trống nếu muốn miễn phí hoàn toàn.",

@@ -362,7 +362,7 @@ class LegalPagesSeeder extends Seeder
                 <p>We charge flat rates based on the delivery method you select at checkout:</p>
                 <ul>
                 <li><strong>Standard Shipping:</strong> $15.00. <strong>Free on orders with a merchandise subtotal of $50.00 or more</strong> (calculated before discounts, taxes, and shipping).</li>
-                <li><strong>Express Shipping:</strong> $25.00, or <strong>$12.00 on orders with a merchandise subtotal of $50.00 or more</strong>. Express shortens transit time only; it does not shorten order processing time (see Section 1). The free shipping offer on orders of $50.00 or more applies to Standard Shipping only.</li>
+                <li><strong>Express Shipping:</strong> $25.00, or <strong>$10.00 on orders with a merchandise subtotal of $50.00 or more</strong>. Express shortens transit time only; it does not shorten order processing time (see Section 1). The free shipping offer on orders of $50.00 or more applies to Standard Shipping only.</li>
                 </ul>
                 <p>Promotional codes may offer free shipping where the offer says so. The shipping cost for your order is always shown at checkout before you pay.</p>
 

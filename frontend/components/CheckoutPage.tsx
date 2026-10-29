@@ -915,8 +915,8 @@ export default function CheckoutPage() {
     const taxRate = (taxQuote?.rate_percentage ?? 0) / 100;
     const taxAmount = (taxQuote?.tax_amount ?? 0) / 100;
     const shippingRate = shippingRates.find((rate) => rate.id === form.shippingMethod);
-    // Used only when the shipping-rates API returned nothing; mirrors the server: Express is $12 once the subtotal passes the free-shipping threshold, $25 below it.
-    const fallbackExpressAmount = coupon.freeShipping ? 0 : (totalAmount > 50 ? 12 : 25);
+    // Used only when the shipping-rates API returned nothing; mirrors the server: Express is $10 once the subtotal passes the free-shipping threshold, $25 below it.
+    const fallbackExpressAmount = coupon.freeShipping ? 0 : (totalAmount > 50 ? 10 : 25);
     const fallbackShippingAmount = form.shippingMethod === 'express'
         ? fallbackExpressAmount
         : getShippingAmount(totalAmount, coupon);

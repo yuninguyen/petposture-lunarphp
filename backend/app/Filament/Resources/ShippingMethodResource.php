@@ -57,19 +57,19 @@ class ShippingMethodResource extends Resource
                     ->minValue(0)
                     ->required(),
                 Forms\Components\TextInput::make('free_over')
-                    ->label(__('Free Shipping Over'))
+                    ->label(__('Limit'))
                     ->prefix('$')
                     ->numeric()
                     ->minValue(0)
                     ->nullable()
-                    ->helperText(__('Order subtotal at which this becomes free. Leave blank to disable.')),
+                    ->helperText(__('Order subtotal at which the Over-limit price applies (free when that price is blank). Leave blank for no limit.')),
                 Forms\Components\TextInput::make('price_over_threshold')
                     ->label(__('Over-limit price'))
                     ->prefix('$')
                     ->numeric()
                     ->minValue(0)
                     ->nullable()
-                    ->helperText(__('Price charged once the order subtotal reaches the Free Shipping Over amount. Leave blank for free.')),
+                    ->helperText(__('Price charged once the order subtotal reaches the Limit amount. Leave blank for free.')),
             ]);
     }
 
@@ -87,7 +87,7 @@ class ShippingMethodResource extends Resource
                     ->label(__('Price'))
                     ->money('usd'),
                 Tables\Columns\TextColumn::make('free_over')
-                    ->label(__('Free Shipping Over'))
+                    ->label(__('Limit'))
                     ->money('usd')
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('price_over_threshold')

@@ -299,7 +299,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                                                         <ul className="space-y-3 text-[15px] leading-[1.8] text-zinc-500">
                                                             <li className="flex items-start gap-3">
                                                                 <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" />
-                                                                <span>Free standard shipping on US orders of $50 or more. Express available at checkout ($25, or $12 on orders of $50 or more).</span>
+                                                                <span>Free standard shipping on US orders of $50 or more. Express available at checkout ($25, or $10 on orders of $50 or more).</span>
                                                             </li>
                                                             <li className="flex items-start gap-3">
                                                                 <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-secondary" />
