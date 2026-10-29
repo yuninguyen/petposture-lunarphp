@@ -21,7 +21,7 @@ return [
 
     'allowed_origins' => array_values(array_unique(array_filter(array_merge(
         [env('FRONTEND_URL', 'https://petposture.vercel.app'), 'http://localhost:3000'],
-        array_map('trim', explode(',', env('ADMIN_URL', 'http://localhost:5173')))
+        array_map('trim', explode(',', env('ADMIN_URL', 'http://localhost:5173,http://localhost:5174')))
     )))),
 
     'allowed_origins_patterns' => [],
