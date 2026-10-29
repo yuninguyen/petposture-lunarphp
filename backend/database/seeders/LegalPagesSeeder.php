@@ -354,12 +354,17 @@ class LegalPagesSeeder extends Seeder
                 <h2>2. SHIPPING TIME & ZONES</h2>
                 <p>Currently, PetPosture ships exclusively to the <strong>48 contiguous United States</strong>. We do not ship to Alaska, Hawaii, P.O. Boxes, or APO/FPO addresses at this time.</p>
                 <ul>
-                <li><strong>Transit Time:</strong> Typically <strong>3 – 8 business days</strong> for domestic shipping within the US.</li>
-                <li><strong>Total Estimated Delivery:</strong> You can expect your ergonomic pet essentials to arrive within <strong>7 – 10 business days</strong> from the date of your order.</li>
+                <li><strong>Transit Time:</strong> Typically <strong>5 – 7 business days</strong> with Standard Shipping or <strong>1 – 2 business days</strong> with Express Shipping, counted after your order has been processed.</li>
+                <li><strong>Total Estimated Delivery:</strong> You can expect your ergonomic pet essentials to arrive within <strong>7 – 11 business days</strong> with Standard Shipping or <strong>3 – 6 business days</strong> with Express Shipping, from the date of your order.</li>
                 </ul>
 
                 <h2>3. SHIPPING RATES</h2>
-                <p>Shipping costs are calculated dynamically at checkout based on the total weight of the items in your cart and the specific delivery destination. We work with major carriers to ensure common-sense pricing and safe delivery of your products.</p>
+                <p>We charge flat rates based on the delivery method you select at checkout:</p>
+                <ul>
+                <li><strong>Standard Shipping:</strong> $15.00. <strong>Free on orders with a merchandise subtotal of $50.00 or more</strong> (calculated before discounts, taxes, and shipping).</li>
+                <li><strong>Express Shipping:</strong> $25.00. Express shortens transit time only; it does not shorten order processing time (see Section 1). The free shipping offer on orders of $50.00 or more applies to Standard Shipping only.</li>
+                </ul>
+                <p>Promotional codes may offer free shipping where the offer says so. The shipping cost for your order is always shown at checkout before you pay.</p>
 
                 <h2>4. TRACKING & WAREHOUSES</h2>
                 <p>As soon as your package leaves our warehouse, we will send you a shipping confirmation email containing a tracking number so you can follow its journey.</p>
@@ -385,7 +390,7 @@ class LegalPagesSeeder extends Seeder
                 <h3>Why did I only receive part of my order?</h3>
                 <p>PetPosture partners with specialized manufacturers and warehouses across the US. Because of this, your items may be shipped from different locations and arrive at different times in separate packages. Each package will have its own tracking number.</p>
                 <h3>How long will it really take to get my order?</h3>
-                <p>Please allow 2-4 business days for processing plus 3-8 business days for shipping. In total, most customers receive their order within 7-10 business days.</p>
+                <p>Please allow 2-4 business days for processing plus 5-7 business days for Standard Shipping (1-2 business days for Express Shipping). In total, most Standard orders arrive within 7-11 business days.</p>
                 <h3>Do you ship to Alaska, Hawaii, or P.O. Boxes?</h3>
                 <p>Currently, we only ship to the 48 contiguous United States. We do not ship to Alaska, Hawaii, P.O. Boxes, or APO/FPO addresses.</p>
                 HTML,
