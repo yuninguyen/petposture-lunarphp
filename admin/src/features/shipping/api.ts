@@ -8,6 +8,7 @@ export interface ShippingMethod {
   eta: string | null;
   price: string | number;
   free_over: string | number | null;
+  price_over_threshold: string | number | null;
   created_at: string;
   updated_at: string;
 }
@@ -18,6 +19,7 @@ export interface ShippingMethodFormValues {
   eta: string;
   price: string;
   free_over: string;
+  price_over_threshold: string;
 }
 
 export interface ShippingMethodCreatePayload extends Record<string, unknown> {
@@ -26,6 +28,7 @@ export interface ShippingMethodCreatePayload extends Record<string, unknown> {
   eta: string | null;
   price: number;
   free_over: number | null;
+  price_over_threshold: number | null;
 }
 
 export interface ShippingMethodUpdatePayload extends Record<string, unknown> {
@@ -33,6 +36,7 @@ export interface ShippingMethodUpdatePayload extends Record<string, unknown> {
   eta: string | null;
   price: number;
   free_over: number | null;
+  price_over_threshold: number | null;
 }
 
 type ShippingMethodResponse = ShippingMethod | { data: ShippingMethod };
@@ -57,6 +61,7 @@ export function buildShippingMethodCreatePayload(values: ShippingMethodFormValue
     eta: values.eta.trim() || null,
     price: Number(values.price),
     free_over: optionalNumber(values.free_over),
+    price_over_threshold: optionalNumber(values.price_over_threshold),
   };
 }
 
@@ -66,6 +71,7 @@ export function buildShippingMethodUpdatePayload(values: ShippingMethodFormValue
     eta: values.eta.trim() || null,
     price: Number(values.price),
     free_over: optionalNumber(values.free_over),
+    price_over_threshold: optionalNumber(values.price_over_threshold),
   };
 }
 

@@ -1072,6 +1072,8 @@
   "shipping.eta": "ETA",
   "shipping.price": "Price",
   "shipping.free_over": "Free Over",
+  "shipping.price_over_threshold": "Price Once Free-Over Is Reached",
+  "shipping.price_over_threshold_hint": "Charged when the subtotal reaches the Free Over amount. Leave blank to make it free.",
   "shipping.actions": "Actions",
   "shipping.create": "New shipping method",
   "shipping.create_title": "Create shipping method",

@@ -32,7 +32,7 @@ class ShippingMethodControllerTest extends TestCase
         $list = $this->getJson('/api/admin/shipping-methods')->assertOk();
         $this->assertSame([$first->id, $second->id], array_column($list->json('data'), 'id'));
         $this->assertSame(
-            ['id', 'code', 'name', 'eta', 'price', 'free_over', 'created_at', 'updated_at'],
+            ['id', 'code', 'name', 'eta', 'price', 'free_over', 'price_over_threshold', 'created_at', 'updated_at'],
             array_keys($list->json('data.0')),
         );
 
@@ -42,9 +42,11 @@ class ShippingMethodControllerTest extends TestCase
             'eta' => 'Next business day',
             'price' => 29.99,
             'free_over' => 150,
+            'price_over_threshold' => 12,
         ])->assertCreated()
             ->assertJsonPath('data.code', 'next-day')
-            ->assertJsonPath('data.price', '29.99');
+            ->assertJsonPath('data.price', '29.99')
+            ->assertJsonPath('data.price_over_threshold', '12.00');
 
         $id = $created->json('data.id');
         $this->getJson("/api/admin/shipping-methods/{$id}")
@@ -56,7 +58,9 @@ class ShippingMethodControllerTest extends TestCase
             'eta' => null,
             'price' => 34.50,
             'free_over' => null,
+            'price_over_threshold' => null,
         ])->assertOk()
+            ->assertJsonPath('data.price_over_threshold', null)
             ->assertJsonPath('data.code', 'next-day')
             ->assertJsonPath('data.name', 'Priority Delivery')
             ->assertJsonPath('data.price', '34.50');
@@ -91,8 +95,9 @@ class ShippingMethodControllerTest extends TestCase
             'name' => '',
             'price' => -0.01,
             'free_over' => -1,
+            'price_over_threshold' => -1,
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['code', 'name', 'price', 'free_over']);
+            ->assertJsonValidationErrors(['code', 'name', 'price', 'free_over', 'price_over_threshold']);
 
         $this->postJson('/api/admin/shipping-methods', [
             'code' => 'standard',

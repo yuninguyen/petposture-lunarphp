@@ -789,11 +789,35 @@ class CheckoutApiTest extends TestCase
             ->assertJsonPath('rates.0.price_minor', 0)
             ->assertJsonPath('rates.0.free_over', 50)
             ->assertJsonPath('rates.1.id', 'express')
-            ->assertJsonPath('rates.1.price_minor', 2500);
+            ->assertJsonPath('rates.1.price_minor', 1200)
+            ->assertJsonPath('rates.1.price', 12);
 
-        // Below threshold: standard should cost the configured rate ($15).
+        // Below threshold: standard and express cost their configured rates ($15 / $25).
         $below = $this->getJson('/api/checkout/shipping-rates?subtotal_minor=4999');
-        $below->assertOk()->assertJsonPath('rates.0.price_minor', 1500);
+        $below->assertOk()
+            ->assertJsonPath('rates.0.price_minor', 1500)
+            ->assertJsonPath('rates.1.price_minor', 2500);
+    }
+
+    public function test_shipping_method_without_price_over_threshold_is_free_once_threshold_is_met(): void
+    {
+        ShippingMethod::where('code', 'express')->update(['price_over_threshold' => null]);
+
+        $this->getJson('/api/checkout/shipping-rates?subtotal_minor=5000')
+            ->assertOk()
+            ->assertJsonPath('rates.1.price_minor', 0);
+    }
+
+    public function test_shipping_price_over_threshold_is_not_applied_below_the_threshold(): void
+    {
+        ShippingMethod::where('code', 'express')->update(['price_over_threshold' => 8.00]);
+
+        $this->getJson('/api/checkout/shipping-rates?subtotal_minor=5000')
+            ->assertOk()
+            ->assertJsonPath('rates.1.price_minor', 800);
+        $this->getJson('/api/checkout/shipping-rates?subtotal_minor=4999')
+            ->assertOk()
+            ->assertJsonPath('rates.1.price_minor', 2500);
     }
 
     public function test_shipping_rates_returns_zero_for_all_when_coupon_has_free_shipping(): void

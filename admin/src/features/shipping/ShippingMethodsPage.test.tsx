@@ -30,6 +30,7 @@ const method = {
   eta: '1-2 business days',
   price: '19.99',
   free_over: '100.00',
+  price_over_threshold: '12.00',
   created_at: '2026-08-30T00:00:00Z',
   updated_at: '2026-08-30T00:00:00Z',
 };

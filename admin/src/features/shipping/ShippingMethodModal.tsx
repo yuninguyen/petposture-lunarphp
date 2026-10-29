@@ -18,7 +18,7 @@ interface ShippingMethodModalProps {
   onClose: () => void;
 }
 
-const emptyValues: ShippingMethodFormValues = { code: '', name: '', eta: '', price: '', free_over: '' };
+const emptyValues: ShippingMethodFormValues = { code: '', name: '', eta: '', price: '', free_over: '', price_over_threshold: '' };
 
 export function ShippingMethodModal({ open, method, onClose }: ShippingMethodModalProps) {
   const { t } = useTranslation();
@@ -37,6 +37,7 @@ export function ShippingMethodModal({ open, method, onClose }: ShippingMethodMod
       eta: method.eta ?? '',
       price: String(method.price),
       free_over: method.free_over == null ? '' : String(method.free_over),
+      price_over_threshold: method.price_over_threshold == null ? '' : String(method.price_over_threshold),
     } : emptyValues);
     setErrors({});
   }, [method, open]);
@@ -48,6 +49,7 @@ export function ShippingMethodModal({ open, method, onClose }: ShippingMethodMod
     if (!values.name.trim()) nextErrors.name = t('shipping.validation.name_required');
     if (values.price.trim() === '' || !Number.isFinite(Number(values.price)) || Number(values.price) < 0) nextErrors.price = t('shipping.validation.non_negative_required');
     if (values.free_over.trim() !== '' && (!Number.isFinite(Number(values.free_over)) || Number(values.free_over) < 0)) nextErrors.free_over = t('shipping.validation.non_negative');
+    if (values.price_over_threshold.trim() !== '' && (!Number.isFinite(Number(values.price_over_threshold)) || Number(values.price_over_threshold) < 0)) nextErrors.price_over_threshold = t('shipping.validation.non_negative');
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   }
@@ -103,6 +105,12 @@ export function ShippingMethodModal({ open, method, onClose }: ShippingMethodMod
               <label htmlFor="shipping-free-over" className="mb-1 block text-sm font-medium text-slate-700">{t('shipping.free_over')}</label>
               <Input id="shipping-free-over" type="number" min="0" step="0.01" value={values.free_over} onChange={(event) => setValues({ ...values, free_over: event.target.value })} />
               {errors.free_over && <p className="mt-1 text-xs text-red-600">{errors.free_over}</p>}
+            </div>
+            <div>
+              <label htmlFor="shipping-price-over-threshold" className="mb-1 block text-sm font-medium text-slate-700">{t('shipping.price_over_threshold')}</label>
+              <Input id="shipping-price-over-threshold" type="number" min="0" step="0.01" value={values.price_over_threshold} onChange={(event) => setValues({ ...values, price_over_threshold: event.target.value })} />
+              <p className="mt-1 text-xs text-slate-500">{t('shipping.price_over_threshold_hint')}</p>
+              {errors.price_over_threshold && <p className="mt-1 text-xs text-red-600">{errors.price_over_threshold}</p>}
             </div>
           </div>
           <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4">

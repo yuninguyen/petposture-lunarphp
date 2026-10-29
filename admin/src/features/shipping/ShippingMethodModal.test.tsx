@@ -22,6 +22,7 @@ const method = {
   eta: '1-2 business days',
   price: '19.99',
   free_over: '100.00',
+  price_over_threshold: '12.00',
   created_at: '2026-08-30T00:00:00Z',
   updated_at: '2026-08-30T00:00:00Z',
 };
@@ -68,9 +69,10 @@ describe('ShippingMethodModal', () => {
     setInput(created.host, 'shipping-eta', 'Tomorrow');
     setInput(created.host, 'shipping-price', '29.99');
     setInput(created.host, 'shipping-free-over', '150');
+    setInput(created.host, 'shipping-price-over-threshold', '12');
     await act(async () => created.host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
 
-    expect(createMutate).toHaveBeenCalledWith({ code: 'next-day', name: 'Next Day', eta: 'Tomorrow', price: 29.99, free_over: 150 }, expect.any(Object));
+    expect(createMutate).toHaveBeenCalledWith({ code: 'next-day', name: 'Next Day', eta: 'Tomorrow', price: 29.99, free_over: 150, price_over_threshold: 12 }, expect.any(Object));
     act(() => created.root.unmount());
     created.host.remove();
 
@@ -79,11 +81,12 @@ describe('ShippingMethodModal', () => {
     setInput(edited.host, 'shipping-eta', '');
     setInput(edited.host, 'shipping-price', '24.50');
     setInput(edited.host, 'shipping-free-over', '');
+    setInput(edited.host, 'shipping-price-over-threshold', '');
     await act(async () => edited.host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
 
     expect(updateMutate).toHaveBeenCalledWith({
       id: 7,
-      payload: { name: 'Priority Delivery', eta: null, price: 24.5, free_over: null },
+      payload: { name: 'Priority Delivery', eta: null, price: 24.5, free_over: null, price_over_threshold: null },
     }, expect.any(Object));
     act(() => edited.root.unmount());
     edited.host.remove();

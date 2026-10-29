@@ -915,8 +915,10 @@ export default function CheckoutPage() {
     const taxRate = (taxQuote?.rate_percentage ?? 0) / 100;
     const taxAmount = (taxQuote?.tax_amount ?? 0) / 100;
     const shippingRate = shippingRates.find((rate) => rate.id === form.shippingMethod);
+    // Used only when the shipping-rates API returned nothing; mirrors the server: Express is $12 once the subtotal passes the free-shipping threshold, $25 below it.
+    const fallbackExpressAmount = coupon.freeShipping ? 0 : (totalAmount > 50 ? 12 : 25);
     const fallbackShippingAmount = form.shippingMethod === 'express'
-        ? (coupon.freeShipping ? 0 : 25)
+        ? fallbackExpressAmount
         : getShippingAmount(totalAmount, coupon);
     const shippingAmount = shippingRate ? shippingRate.price : fallbackShippingAmount;
     const finalTotal = Math.max(0, totalAmount - coupon.discountAmount + shippingAmount + taxAmount);
@@ -2215,7 +2217,7 @@ export default function CheckoutPage() {
                             onChange={(method) => updateField('shippingMethod', method)}
                             options={(shippingRates.length ? shippingRates : [
                                 { id: 'standard', name: 'Standard', description: '4 to 7 business days', price: getShippingAmount(totalAmount, coupon) },
-                                { id: 'express', name: 'Express', description: '1 to 2 business days', price: coupon.freeShipping ? 0 : 25 },
+                                { id: 'express', name: 'Express', description: '1 to 2 business days', price: fallbackExpressAmount },
                             ]).map((rate) => ({
                                 id: rate.id,
                                 name: rate.name,

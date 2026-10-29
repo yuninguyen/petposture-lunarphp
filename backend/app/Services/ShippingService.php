@@ -36,7 +36,9 @@ class ShippingService
         $freeOverMinor = $shippingMethod->free_over !== null ? (int) round($shippingMethod->free_over * 100) : 0;
 
         if ($freeOverMinor > 0 && $subtotalMinor >= $freeOverMinor) {
-            return 0;
+            return $shippingMethod->price_over_threshold !== null
+                ? (int) round($shippingMethod->price_over_threshold * 100)
+                : 0;
         }
 
         return (int) round($shippingMethod->price * 100);

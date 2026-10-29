@@ -19,6 +19,7 @@ const method = {
   eta: '1-2 business days',
   price: '19.99',
   free_over: '100.00',
+  price_over_threshold: '12.00',
   created_at: '2026-08-30T00:00:00Z',
   updated_at: '2026-08-30T00:00:00Z',
 };
@@ -31,8 +32,8 @@ describe('shipping method API', () => {
 
   it('sends create, update, and delete requests to the shipping endpoint with the required methods and payloads', async () => {
     fetchJson.mockResolvedValueOnce({ data: method }).mockResolvedValueOnce({ data: method }).mockResolvedValueOnce(null);
-    const createPayload = { code: 'express', name: 'Express Delivery', eta: '1-2 business days', price: 19.99, free_over: 100 };
-    const updatePayload = { name: 'Priority Delivery', eta: null, price: 24.5, free_over: null };
+    const createPayload = { code: 'express', name: 'Express Delivery', eta: '1-2 business days', price: 19.99, free_over: 100, price_over_threshold: 12 };
+    const updatePayload = { name: 'Priority Delivery', eta: null, price: 24.5, free_over: null, price_over_threshold: null };
 
     await createShippingMethod(createPayload);
     await updateShippingMethod(method.id, updatePayload);
@@ -50,11 +51,13 @@ describe('shipping method API', () => {
       eta: '',
       price: '24.50',
       free_over: '',
+      price_over_threshold: '',
     })).toEqual({
       name: 'Priority Delivery',
       eta: null,
       price: 24.5,
       free_over: null,
+      price_over_threshold: null,
     });
   });
 });

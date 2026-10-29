@@ -79,6 +79,7 @@ class ShippingMethodController extends Controller
             'eta' => ['nullable', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0'],
             'free_over' => ['nullable', 'numeric', 'min:0'],
+            'price_over_threshold' => ['nullable', 'numeric', 'min:0'],
         ]);
     }
 
@@ -89,6 +90,7 @@ class ShippingMethodController extends Controller
             'eta' => ['nullable', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0'],
             'free_over' => ['nullable', 'numeric', 'min:0'],
+            'price_over_threshold' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $validator->after(function ($validator) use ($request): void {
@@ -109,6 +111,7 @@ class ShippingMethodController extends Controller
             'eta' => $shippingMethod->eta,
             'price' => $shippingMethod->price,
             'free_over' => $shippingMethod->free_over,
+            'price_over_threshold' => $shippingMethod->price_over_threshold,
             'created_at' => $shippingMethod->created_at,
             'updated_at' => $shippingMethod->updated_at,
         ];
