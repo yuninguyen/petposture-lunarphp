@@ -37,8 +37,8 @@ export const FAQ_ITEMS = [
     },
     {
         category: "orders",
-        question: "How do I start a return? (30-Day Guarantee)",
-        answer: "We stand behind our 30-Day Guarantee. If you're not satisfied within 30 days of delivery, simply email support@petposture.com with your order number. Our team will provide you with a Return Merchandise Authorization (RMA) and instructions."
+        question: "How do I start a return? (30-Day Returns)",
+        answer: "You can return eligible items within 30 days of delivery. Items must be new, unused, and free of pet hair, in original packaging, and a 25% restocking fee applies. To start, email support@petposture.com with your order number. Our team will provide you with a Return Merchandise Authorization (RMA) and instructions."
     },
     {
         category: "orders",

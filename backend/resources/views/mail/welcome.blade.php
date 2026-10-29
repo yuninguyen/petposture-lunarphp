@@ -100,7 +100,7 @@ Your {{ config('app.name') }} account has been created with the email <strong st
 <tr>
 <td align="center" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; width:33.33%; padding:20px 8px;">
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; width:44px; height:44px; line-height:44px; border-radius:50%; background-color:#fdf1e7; color:#df8448; font-size:18px; margin:0 auto 10px auto;">&#128666;</div>
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#3e4c57;">Free Express<br>Shipping</p>
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#3e4c57;">Free Shipping<br>Over $50</p>
 </td>
 <td align="center" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; width:33.33%; padding:20px 8px; border-left:1px solid #f0ede8; border-right:1px solid #f0ede8;">
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; width:44px; height:44px; line-height:44px; border-radius:50%; background-color:#fdf1e7; color:#df8448; font-size:18px; margin:0 auto 10px auto;">&#128274;</div>
@@ -108,7 +108,7 @@ Your {{ config('app.name') }} account has been created with the email <strong st
 </td>
 <td align="center" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; width:33.33%; padding:20px 8px;">
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; width:44px; height:44px; line-height:44px; border-radius:50%; background-color:#fdf1e7; color:#df8448; font-size:18px; margin:0 auto 10px auto;">&#10084;</div>
-<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#3e4c57;">30-Day<br>Health Trial</p>
+<p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:#3e4c57;">30-Day<br>Returns</p>
 </td>
 </tr>
 </table>

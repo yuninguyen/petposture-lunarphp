@@ -131,8 +131,8 @@ function SocialProofStrip() {
       img: '/assets/icons/Trust-Curated-Selection.webp',
     },
     {
-      value: '30-Day Guarantee',
-      label: 'Love it or return it within 30 days of delivery.',
+      value: '30-Day Returns',
+      label: 'Return unused items within 30 days of delivery. See our policy.',
       accent: '#38c68b',
       img: '/assets/icons/Trust-30-Day-Guarantee.webp',
     },

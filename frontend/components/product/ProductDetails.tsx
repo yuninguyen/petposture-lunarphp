@@ -246,10 +246,10 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-zinc-400">
-                                    <Truck size={14} className="text-rust" /> Free Express Shipping
+                                    <Truck size={14} className="text-rust" /> Free Shipping $50+
                                 </div>
                                 <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-zinc-400">
-                                    <RotateCcw size={14} className="text-rust" /> 30-Day Health Trial
+                                    <RotateCcw size={14} className="text-rust" /> 30-Day Returns
                                 </div>
                             </div>
                         </div>
