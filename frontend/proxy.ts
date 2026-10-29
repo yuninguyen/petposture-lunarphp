@@ -38,6 +38,8 @@ async function fetchNavigationUser(request: NextRequest): Promise<NavigationUser
     }
 }
 
+const GONE_PATHS = new Set(['/shop/solutions/eating-digestion']);
+
 export async function proxy(request: NextRequest) {
     // Confirmed (2026-09-07, `next start` + curl, not just a unit-test
     // harness): Next.js's own server unconditionally strips `rsc`,
@@ -128,6 +130,12 @@ export async function proxy(request: NextRequest) {
     }));
 
     const { pathname } = request.nextUrl;
+
+    // Retired URLs that Google still crawls. 410 (not 404) tells it the page
+    // is gone for good, so it drops out of Search Console sooner.
+    if (GONE_PATHS.has(pathname)) {
+        return secure(new NextResponse('Gone', { status: 410 }));
+    }
 
     // /account's own client-side AuthContext check already gates this route
     // reliably (confirmed working) — this middleware previously duplicated

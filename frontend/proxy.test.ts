@@ -278,4 +278,17 @@ describe('proxy storefront policy', () => {
     expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
     expect(response.headers.get('content-security-policy')).toContain('nonce-');
   });
+
+  it('answers 410 Gone for a retired URL that Google still crawls', async () => {
+    const response = await proxy(new NextRequest('https://petposture.com/shop/solutions/eating-digestion'));
+
+    expect(response.status).toBe(410);
+    expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
+  });
+
+  it('does not touch a live solution page', async () => {
+    const response = await proxy(new NextRequest('https://petposture.com/shop/solutions/feeding'));
+
+    expect(response.status).toBe(200);
+  });
 });
