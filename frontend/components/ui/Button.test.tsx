@@ -55,7 +55,7 @@ it("migrates hero and product conversion controls to the shared primitive", () =
   expect(detailsSource).toMatch(/aria-label="Decrease quantity"/);
   expect(detailsSource).toMatch(/aria-label="Increase quantity"/);
 
-  expect(cardSource).toMatch(/<ButtonLink[\s\S]*variant="quiet"/);
+  expect(cardSource).toMatch(/<Button\s+type="button"\s+variant="quiet"\s+size="icon"/);
   expect(cardSource).toMatch(/<Button\s+type="button"\s+variant="primary"/);
   expect(cardSource).toMatch(/<Button[\s\S]*size="icon"[\s\S]*aria-label=\{wishlisted/);
 });
@@ -103,8 +103,8 @@ it("migrates checkout completion and success navigation to the shared primitive"
     "utf8",
   );
 
-  expect(checkoutSource).toMatch(/<Button\s+type="submit"\s+variant="primary"\s+size="lg"/);
-  expect(checkoutSource).toMatch(/disabled=\{isLoading \|\| items\.length === 0 \|\| paypalPopupWaiting\}/);
+  expect(checkoutSource).toMatch(/<Button\s+type="submit"\s+variant="primary"\s+size="md"/);
+  expect(checkoutSource).toMatch(/disabled=\{isLoading \|\| items\.length === 0 \|\| paypalPopupWaiting \|\| availablePaymentMethods\.length === 0\}/);
   expect(successSource).toMatch(/href="\/shop"[\s\S]*variant="primary"/);
   expect(successSource).toMatch(/returns\?token=/);
   expect(successSource).toMatch(/variant="secondary"/);
