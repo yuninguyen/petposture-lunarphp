@@ -437,6 +437,10 @@ class AirwallexService
             ] + $this->cardDetails($object) + $this->fraudDetails($object));
         }
 
+        if (in_array($type, ['refund.failed', 'refund.settled'], true)) {
+            $this->syncRefundOutcome($order, $type, (string) ($object['id'] ?? ''));
+        }
+
         $eventRecord['model']->update([
             'order_id' => $order->id,
             'status' => 'processed',
@@ -450,6 +454,46 @@ class AirwallexService
             'order_reference' => $order->reference,
             'payment_status' => $paymentStatus,
         ];
+    }
+
+    /**
+     * Airwallex answers a refund request with RECEIVED and settles it later, so the order is only
+     * provisionally "refunded" until refund.settled; refund.failed means the customer was never
+     * paid back. Only the refund recorded on the order counts: an event about another refund of
+     * the same payment must not undo it.
+     */
+    private function syncRefundOutcome(Order $order, string $type, string $refundId): void
+    {
+        $meta = (array) ($order->meta ?? []);
+
+        if ($refundId === '' || ($meta['refund_id'] ?? '') !== $refundId) {
+            return;
+        }
+
+        if ($type === 'refund.settled') {
+            // refund_status stays 'refunded': the storefront, emails and admin all read that value.
+            $meta['refund_settled_at'] = now()->toDateTimeString();
+            $order->update(['meta' => $meta]);
+
+            return;
+        }
+
+        $meta['refund_status'] = 'failed';
+
+        // A failed full refund leaves the customer's money with us; a failed partial one cannot be
+        // rolled back here because earlier partial refunds are not tracked.
+        if (($meta['payment_status'] ?? '') === 'refunded') {
+            $meta['payment_status'] = 'paid';
+        }
+
+        $order->update(['meta' => $meta]);
+
+        app(OrderEventService::class)->record(
+            $order,
+            'payment.refund_failed',
+            'Refund failed',
+            "Airwallex could not complete refund {$refundId}. The customer has not been paid back: refund manually."
+        );
     }
 
     /**

@@ -2305,6 +2305,69 @@ class CheckoutApiTest extends TestCase
         $this->assertSame('refunded', $order->meta['payment_status']);
     }
 
+    public function test_airwallex_refund_failed_webhook_reopens_the_order_for_a_manual_refund(): void
+    {
+        $this->configureAirwallex();
+        $order = Order::factory()->create([
+            'status' => 'cancelled',
+            'total' => 5000,
+            'meta' => [
+                'payment_gateway' => 'airwallex',
+                'payment_status' => 'refunded',
+                'refund_status' => 'refunded',
+                'refund_id' => 'rfd_awx_bad',
+                'refund_amount' => 5000,
+                'airwallex_intent_id' => 'int_awx_rf_1',
+            ],
+        ]);
+
+        $this->postJson('/api/webhooks/airwallex', [
+            'id' => 'evt_awx_rf_failed_1',
+            'name' => 'refund.failed',
+            'data' => ['object' => ['id' => 'rfd_awx_bad', 'payment_intent_id' => 'int_awx_rf_1', 'status' => 'FAILED']],
+        ])->assertOk();
+
+        $order = $order->fresh();
+        $this->assertSame('paid', $order->meta['payment_status']);
+        $this->assertSame('failed', $order->meta['refund_status']);
+        $this->assertTrue($order->orderEvents()->where('type', 'payment.refund_failed')->exists());
+    }
+
+    public function test_airwallex_refund_webhooks_for_another_refund_or_a_settled_one_leave_the_order_alone(): void
+    {
+        $this->configureAirwallex();
+        $order = Order::factory()->create([
+            'status' => 'cancelled',
+            'total' => 5000,
+            'meta' => [
+                'payment_gateway' => 'airwallex',
+                'payment_status' => 'refunded',
+                'refund_status' => 'refunded',
+                'refund_id' => 'rfd_awx_good',
+                'airwallex_intent_id' => 'int_awx_rf_2',
+            ],
+        ]);
+
+        // A failed refund that is not the one recorded on the order must not undo it.
+        $this->postJson('/api/webhooks/airwallex', [
+            'id' => 'evt_awx_rf_other',
+            'name' => 'refund.failed',
+            'data' => ['object' => ['id' => 'rfd_awx_other', 'payment_intent_id' => 'int_awx_rf_2', 'status' => 'FAILED']],
+        ])->assertOk();
+        $this->postJson('/api/webhooks/airwallex', [
+            'id' => 'evt_awx_rf_settled',
+            'name' => 'refund.settled',
+            'data' => ['object' => ['id' => 'rfd_awx_good', 'payment_intent_id' => 'int_awx_rf_2', 'status' => 'SETTLED']],
+        ])->assertOk();
+
+        $order = $order->fresh();
+        $this->assertSame('refunded', $order->meta['payment_status']);
+        // Customer pages and emails read refund_status === 'refunded', so settling must not change it.
+        $this->assertSame('refunded', $order->meta['refund_status']);
+        $this->assertArrayHasKey('refund_settled_at', $order->meta);
+        $this->assertFalse($order->orderEvents()->where('type', 'payment.refund_failed')->exists());
+    }
+
     public function test_refunding_an_airwallex_order_without_credentials_fails_instead_of_recording_a_fake_refund(): void
     {
         config()->set('services.airwallex.client_id', null);
