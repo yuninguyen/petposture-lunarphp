@@ -2305,6 +2305,33 @@ class CheckoutApiTest extends TestCase
         $this->assertSame('refunded', $order->meta['payment_status']);
     }
 
+    public function test_refunding_an_airwallex_order_without_credentials_fails_instead_of_recording_a_fake_refund(): void
+    {
+        config()->set('services.airwallex.client_id', null);
+        config()->set('services.airwallex.api_key', null);
+        foreach (['airwallex_client_id', 'airwallex_api_key'] as $key) {
+            Setting::set($key, '', 'string', 'payment');
+        }
+        $this->makeAdmin();
+        Http::fake();
+        $order = Order::factory()->create([
+            'status' => 'processing',
+            'total' => 5000,
+            'meta' => [
+                'payment_gateway' => 'airwallex',
+                'payment_status' => 'paid',
+                'airwallex_intent_id' => 'int_awx_no_keys',
+            ],
+        ]);
+
+        $response = $this->postJson("/api/admin/orders/{$order->id}/refund", ['reason' => 'customer_request']);
+
+        $this->assertNotSame(200, $response->status());
+        $order = $order->fresh();
+        $this->assertSame('paid', $order->meta['payment_status']);
+        $this->assertArrayNotHasKey('refund_id', $order->meta);
+    }
+
     public function test_refund_with_an_explicit_amount_equal_to_the_order_total_counts_as_a_full_refund(): void
     {
         $this->configureAirwallex();

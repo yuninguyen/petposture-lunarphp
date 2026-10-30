@@ -339,12 +339,10 @@ class AirwallexService
      */
     public function refund(string $intentId, int $amountMinor, string $currency): array
     {
+        // Unlike creating a payment, a refund moves real money back: pretending it worked
+        // would mark the order refunded while the customer is never paid.
         if (! $this->isConfigured()) {
-            return [
-                'refund_id' => 'rfd_placeholder_'.Str::lower(Str::random(14)),
-                'status' => 'SUCCEEDED',
-                'amount' => $amountMinor,
-            ];
+            throw new RuntimeException('Airwallex is not configured, so this payment cannot be refunded.');
         }
 
         $response = Http::withToken($this->accessToken())
