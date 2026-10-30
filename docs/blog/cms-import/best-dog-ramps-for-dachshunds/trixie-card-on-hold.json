@@ -1,0 +1,59 @@
+{
+  "_note": "ON HOLD: not in the publish payload. Specs came from a retailer search snippet only; Chewy returned 429 and the card URL (dp/146115) differs from the page found (dp/146114). Verify before restoring.",
+  "current_card_in_cms": {
+    "product_name": "TRIXIE Short Safety Cat & Dog Ramp",
+    "image_url": "https://api.petposture.com/storage/comparisons/01M0CE0THEM4AD7W7HGW77VDFF.webp",
+    "image_alt": null,
+    "retailer": "chewy",
+    "highlight": "budget_pick",
+    "in_stock": true,
+    "price_display": "45.99",
+    "price_cents": 4599,
+    "rating": 3.8,
+    "metadata": {
+      "source_url": "https://www.chewy.com/trixie-short-safety-cat-dog-ramp/dp/146115",
+      "checked_at": "2026-09-13T09:10:01Z"
+    },
+    "affiliate_url": "https://www.chewy.com/trixie-short-safety-cat-dog-ramp/dp/146115",
+    "pros": [
+      "Lightweight hard plastic build (8 lbs)",
+      "High-traction sandpaper grip surface",
+      "Built-in protective side rails",
+      "Supports up to 110 lbs",
+      "Easy-to-clean material (no carpet)",
+      "Non-slip rubber feet underneath"
+    ],
+    "cons": [
+      "Can be too steep for couch use",
+      "Rough surface can wear down claws",
+      "Lacks aesthetic appeal (plain black)",
+      "Top ledge lacks traction coating",
+      "Not ideal for taller vehicles"
+    ],
+    "retailer_label": "Chewy",
+    "retailer_logo": null,
+    "redirect_url": "https://api.petposture.com/go/4/1"
+  },
+  "proposed_if_verified": {
+    "product_name": "TRIXIE Short Safety Cat & Dog Ramp",
+    "image_url": "https://api.petposture.com/storage/comparisons/01M0CE0THEM4AD7W7HGW77VDFF.webp",
+    "image_alt": null,
+    "retailer": "chewy",
+    "highlight": null,
+    "in_stock": true,
+    "price_display": null,
+    "price_cents": null,
+    "rating": null,
+    "affiliate_url": "https://www.chewy.com/trixie-short-safety-cat-dog-ramp/dp/146115",
+    "pros": [
+      "Hard plastic, listed at 8 lb",
+      "High-traction surface",
+      "Side rails",
+      "Listed capacity: 110 lb",
+      "Listed size: 39.25\" L × 14.75\" W"
+    ],
+    "cons": [
+      "At 39.25\" long, the incline depends on your furniture height: measure first"
+    ]
+  }
+}
