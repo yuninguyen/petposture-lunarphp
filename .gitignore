@@ -44,3 +44,10 @@ library/
 .env
 
 # LƯU Ý: KHÔNG chặn .agent/ để đồng bộ kỹ năng cá nhân
+
+# Local working files (not part of the product)
+artifacts/cloudflare/
+artifacts/social/
+artifacts/ui-preview-top-products.svg
+frontend/scratch/
+backend/storage/media-library/
