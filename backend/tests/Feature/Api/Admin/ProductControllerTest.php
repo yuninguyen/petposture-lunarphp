@@ -784,6 +784,24 @@ class ProductControllerTest extends TestCase
         $this->assertNull($variant->fresh()->cost);
     }
 
+    public function test_variant_update_accepts_empty_attributes_and_lbs_weight(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->product('Empty attrs');
+        $variant = $this->variant($product, 'EMPTY-1', 5000, 10);
+
+        $payload = $this->variantPayload('EMPTY-1');
+        $payload['stock'] = 42;
+        $payload['weight_value'] = '2';
+        $payload['weight_unit'] = 'lbs';
+        $payload['attributes'] = [];
+
+        $this->putJson("/api/admin/products/{$product->id}/variants/{$variant->id}", $payload)
+            ->assertOk();
+        $this->assertSame(42, $variant->fresh()->stock);
+        $this->assertSame('lbs', $variant->fresh()->weight_unit);
+    }
+
     public function test_variant_update_rejects_variant_owned_by_another_product(): void
     {
         $this->actingAsAdmin();

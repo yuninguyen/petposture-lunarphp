@@ -39,9 +39,9 @@ class UpdateProductVariantRequest extends FormRequest
             'height_value' => ['nullable', 'numeric', 'min:0', 'required_with:height_unit'],
             'height_unit' => ['nullable', 'required_with:height_value', Rule::in(['mm', 'cm', 'm', 'in', 'ft'])],
             'weight_value' => ['nullable', 'numeric', 'min:0', 'required_with:weight_unit'],
-            'weight_unit' => ['nullable', 'required_with:weight_value', Rule::in(['g', 'kg', 'lb', 'oz'])],
+            'weight_unit' => ['nullable', 'required_with:weight_value', Rule::in(['g', 'kg', 'lbs'])],
             'base_price' => ['required', $this->currencyDecimalRule()],
-            'attributes' => ['required', 'array'],
+            'attributes' => ['present', 'array'],
         ];
     }
 

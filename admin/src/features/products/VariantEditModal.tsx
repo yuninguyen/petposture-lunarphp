@@ -8,7 +8,7 @@ import { DynamicAttributeFields } from './DynamicAttributeFields';
 import { variantDefaults, variantFormSchema, variantPayload, validateRequiredAttributes, type VariantFormOutput, type VariantFormValues } from './ProductSchema';
 import type { ProductVariant, TaxClass, UpdateVariantPayload } from './api';
 
-const dimensionUnits = ['mm', 'cm', 'm', 'in', 'ft']; const weightUnits = ['g', 'kg', 'lb', 'oz'];
+const dimensionUnits = ['mm', 'cm', 'm', 'in', 'ft']; const weightUnits = ['g', 'kg', 'lbs'];
 export function VariantEditModal({ variant, taxClasses, isSaving, onClose, onSave, inline = false }: { variant: ProductVariant | null; taxClasses: TaxClass[]; isSaving: boolean; onClose: () => void; onSave: (payload: UpdateVariantPayload) => Promise<void>; inline?: boolean }) {
   const { t } = useTranslation();
   const { register, control, handleSubmit, reset, setError, formState: { errors } } = useForm<VariantFormValues, unknown, VariantFormOutput>({ resolver: zodResolver(variantFormSchema) });
