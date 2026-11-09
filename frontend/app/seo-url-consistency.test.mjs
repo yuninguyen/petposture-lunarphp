@@ -22,7 +22,7 @@ function loadGenerateMetadata(path, fixture, kind) {
     }).outputText;
     const context = vm.createContext({ Promise, URLSearchParams, String, Boolean });
     vm.runInContext(output, context);
-    return context.generateMetadata({ params: Promise.resolve(kind === 'product' ? { category: fixture.categorySlug, slug: fixture.slug } : { slug: fixture.slug }), searchParams: Promise.resolve({}) });
+    return context.generateMetadata({ params: Promise.resolve(kind === 'product' ? { collection: fixture.categorySlug, slug: fixture.slug } : { slug: fixture.slug }), searchParams: Promise.resolve({}) });
 }
 
 function loadSitemap(fetchImpl) {
@@ -44,7 +44,7 @@ test('Product canonical, OG, JSON-LD, and sitemap URLs stay identical', async ()
         name: 'Test Product', categorySlug: 'dog-beds', slug: 'test-product', description: 'Test', image: null,
         seo: { '@context': 'https://schema.org', '@type': 'Product', name: 'Test Product', url: `${siteUrl}/shop/dog-beds/test-product` },
     };
-    const metadata = await loadGenerateMetadata('./shop/[category]/[slug]/page.tsx', product, 'product');
+    const metadata = await loadGenerateMetadata('./shop/[collection]/[slug]/page.tsx', product, 'product');
     const expectedAbsolute = `${siteUrl}/shop/${product.categorySlug}/${product.slug}`;
     assert.equal(metadata.alternates.canonical, `/shop/${product.categorySlug}/${product.slug}`);
     assert.equal(metadata.openGraph.url, expectedAbsolute);
