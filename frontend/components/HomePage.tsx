@@ -10,8 +10,7 @@ const Footer = dynamic(() => import('@/components/Footer'));
 import { ProductCard } from '@/components/shop/ProductCard';
 import type { Product } from '@/types/shop';
 import { API_BASE_URL as apiBaseUrl } from '@/lib/api';
-import { formatDate } from '@/lib/date';
-import { stripHtml } from '@/lib/text';
+import { toInsightPost, type InsightPost } from '@/lib/storefront-content';
 
 /* ─────────────────────────────────────────────────────────────────
    DESIGN TOKENS
@@ -453,12 +452,14 @@ function WhyChoose() {
 /* ─────────────────────────────────────────────────────────────────
    OUR BEST SELLERS
  ───────────────────────────────────────────────────────────────── */
-function BestSellers() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+function BestSellers({ initialProducts }: { initialProducts?: Product[] | null }) {
+  const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
+  const [loading, setLoading] = useState(!initialProducts);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialProducts) return;
+
     const fetchProducts = async () => {
       try {
         const response = await fetch(`${apiBaseUrl}/api/products?category=best-sellers`);
@@ -474,7 +475,7 @@ function BestSellers() {
       }
     };
     fetchProducts();
-  }, []);
+  }, [initialProducts]);
 
   if (loading) {
     return (
@@ -832,10 +833,10 @@ function PostCard({ post }: { post: BlogPost }) {
   );
 }
 
-function Insights() {
+function Insights({ initialPosts }: { initialPosts?: InsightPost[] | null }) {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState<BlogPost[]>(initialPosts ?? []);
+  const [loading, setLoading] = useState(!initialPosts);
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     const index = Math.round(el.scrollLeft / (el.clientWidth * 0.85));
@@ -843,6 +844,8 @@ function Insights() {
   };
 
   useEffect(() => {
+    if (initialPosts) return;
+
     let cancelled = false;
 
     fetch(`${apiBaseUrl}/api/posts`)
@@ -850,26 +853,7 @@ function Insights() {
       .then((data) => {
         if (cancelled) return;
         const rows = Array.isArray(data?.data) ? data.data : [];
-        setPosts(
-          rows.slice(0, 3).map((p: {
-            slug: string;
-            title: string;
-            content?: string;
-            featured_image?: string | null;
-            read_time?: string | null;
-            published_at?: string | null;
-            created_at?: string | null;
-            blog_category?: { name?: string } | null;
-          }) => ({
-            slug: p.slug,
-            cat: p.blog_category?.name || 'Insights',
-            title: p.title,
-            excerpt: stripHtml(p.content || '').slice(0, 140),
-            date: formatDate(p.published_at || p.created_at || new Date().toISOString()),
-            readTime: p.read_time || '5 min read',
-            img: p.featured_image || null,
-          }))
-        );
+        setPosts(rows.slice(0, 3).map(toInsightPost));
       })
       .catch(() => {
         if (!cancelled) setPosts([]);
@@ -881,7 +865,7 @@ function Insights() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initialPosts]);
 
   if (!loading && posts.length === 0) {
     return null;
@@ -935,7 +919,11 @@ function Insights() {
 /* ─────────────────────────────────────────────────────────────────
    PAGE ROOT
  ───────────────────────────────────────────────────────────────── */
-export default function HomePage({ heroImage }: { heroImage?: string | null }) {
+export default function HomePage({ heroImage, initialProducts, initialPosts }: {
+  heroImage?: string | null;
+  initialProducts?: Product[] | null;
+  initialPosts?: InsightPost[] | null;
+}) {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Header />
@@ -944,10 +932,10 @@ export default function HomePage({ heroImage }: { heroImage?: string | null }) {
         <SocialProofStrip />
         <ShopCategories />
         <WhyChoose />
-        <BestSellers />
+        <BestSellers initialProducts={initialProducts} />
         <MealtimeDiff />
         <BreedBanners />
-        <Insights />
+        <Insights initialPosts={initialPosts} />
       </main>
       <Footer />
     </div>

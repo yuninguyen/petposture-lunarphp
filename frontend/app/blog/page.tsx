@@ -1,4 +1,5 @@
 import BlogPage from "@/components/BlogPage";
+import { fetchBlogIndex } from "@/lib/storefront-content";
 
 export const metadata = {
     title: "Blog - Practical Pet Care Guides & Stories",
@@ -6,6 +7,6 @@ export const metadata = {
     alternates: { canonical: '/blog' },
 };
 
-export default function Page() {
-    return <BlogPage />;
+export default async function Page() {
+    return <BlogPage initialData={await fetchBlogIndex()} />;
 }

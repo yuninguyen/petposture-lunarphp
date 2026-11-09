@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import HomePage from "@/components/HomePage";
 import { getApiBaseUrl } from "@/lib/api";
 import { buildSiteSchema, serializeJsonLd } from "@/lib/site-schema";
+import { fetchBestSellers, fetchInsightPosts } from "@/lib/storefront-content";
 import { STOREFRONT_SETTINGS_TAG, STOREFRONT_SITE_MEDIA_TAG } from '@/lib/storefront-cache-tags';
 
 export const metadata: Metadata = {
@@ -47,7 +48,12 @@ async function fetchSiteSettings() {
 }
 
 export default async function Home() {
-  const [heroImage, settings] = await Promise.all([fetchHeroImage(), fetchSiteSettings()]);
+  const [heroImage, settings, initialProducts, initialPosts] = await Promise.all([
+    fetchHeroImage(),
+    fetchSiteSettings(),
+    fetchBestSellers(),
+    fetchInsightPosts(),
+  ]);
   const siteSchema = buildSiteSchema(settings);
 
   return (
@@ -57,7 +63,7 @@ export default async function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(siteSchema) }}
       />
-      <HomePage heroImage={heroImage} />
+      <HomePage heroImage={heroImage} initialProducts={initialProducts} initialPosts={initialPosts} />
     </>
   );
 }

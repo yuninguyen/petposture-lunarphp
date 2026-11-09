@@ -28,13 +28,13 @@ import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
 import { useSettings } from "@/context/SettingsContext";
 import { stripHtml } from "@/lib/text";
 
-type BlogCategory = {
+export type BlogCategory = {
     id: string;
     name: string;
     slug: string;
 };
 
-type BlogPost = {
+export type BlogPost = {
     id: string;
     slug: string;
     title: string;
@@ -61,12 +61,15 @@ const fadeUp = {
     animate: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
-export default function BlogPage() {
+// `initialData` is fetched on the server so the posts are already in the HTML
+// Google reads. It is null when that fetch failed, and the page then loads the
+// data in the browser as it always did.
+export default function BlogPage({ initialData }: { initialData?: { posts: BlogPost[]; categories: BlogCategory[] } | null }) {
     const { social: socialLinks } = useSettings();
     const [activeTab, setActiveTab] = useState("All");
-    const [posts, setPosts] = useState<BlogPost[]>([]);
-    const [categories, setCategories] = useState<BlogCategory[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [posts, setPosts] = useState<BlogPost[]>(initialData?.posts ?? []);
+    const [categories, setCategories] = useState<BlogCategory[]>(initialData?.categories ?? []);
+    const [isLoading, setIsLoading] = useState(!initialData);
     const [error, setError] = useState<string | null>(null);
     const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
     const tabsScrollRef = useRef<HTMLDivElement>(null);
@@ -90,6 +93,8 @@ export default function BlogPage() {
     }, [categories]);
 
     useEffect(() => {
+        if (initialData) return;
+
         const fetchData = async () => {
             try {
                 const apiBase = getApiBaseUrl();
@@ -117,7 +122,7 @@ export default function BlogPage() {
         };
 
         void fetchData();
-    }, []);
+    }, [initialData]);
 
     // Debounced re-fetch of posts on search input (300ms)
     useEffect(() => {
@@ -379,7 +384,7 @@ export default function BlogPage() {
                                                     {post.author || "PetPosture Editorial"}
                                                 </span>
                                                 <span className="h-1 w-1 rounded-full bg-zinc-200" />
-                                                <span>
+                                                <span suppressHydrationWarning>
                                                     {post.published_at || post.created_at
                                                         ? formatDate(post.published_at || post.created_at || "")
                                                         : "Recently published"}
@@ -508,7 +513,7 @@ export default function BlogPage() {
                                                 <h6 className="mb-1 line-clamp-2 text-sm font-bold leading-snug text-primary transition-colors group-hover:text-[#2c3840]">
                                                     {post.title}
                                                 </h6>
-                                                <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                                                <span suppressHydrationWarning className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                                                     {post.published_at || post.created_at
                                                         ? formatDate(post.published_at || post.created_at || "")
                                                         : "Recently published"}
