@@ -14,6 +14,7 @@ function loadSitemap(fetchImpl) {
             .replace("import type { MetadataRoute } from 'next';", '')
             .replace("import { API_BASE_URL } from '@/lib/api';", "const API_BASE_URL = 'https://api.test';")
             .replace("import { SITE_URL } from '@/lib/site';", "const SITE_URL = 'https://petposture.test';")
+            .replace("export const dynamic = 'force-dynamic';", '')
             .replace('export default async function sitemap', 'async function sitemap'),
         { compilerOptions: { module: ts.ModuleKind.Script, target: ts.ScriptTarget.ES2022 } },
     ).outputText + '\nthis.sitemap = sitemap;';

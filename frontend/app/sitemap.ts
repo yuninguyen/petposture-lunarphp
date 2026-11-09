@@ -2,6 +2,12 @@ import type { MetadataRoute } from 'next';
 import { API_BASE_URL } from '@/lib/api';
 import { SITE_URL } from '@/lib/site';
 
+// Render at request time, not during `next build`: the build container can only
+// reach the API through Cloudflare, which challenges the VPS with a 403, so the
+// prerendered sitemap came out with no products or posts. At runtime the
+// INTERNAL_API_URL is available.
+export const dynamic = 'force-dynamic';
+
 type ApiProduct = { slug?: string; categorySlug?: string; updated_at?: string };
 type ApiPost = { slug?: string; updated_at?: string };
 
