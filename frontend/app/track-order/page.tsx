@@ -4,6 +4,7 @@ export const metadata = {
     title: "Track Your Order",
     description: "Want to check the status of your order? Enter your details below to see its journey.",
     alternates: { canonical: '/track-order' },
+    robots: { index: false, follow: true },
 };
 
 export default function Page() {

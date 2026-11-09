@@ -75,7 +75,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${SITE_URL}/shop/solutions/walking`, changeFrequency: 'weekly', priority: 0.7 },
         { url: `${SITE_URL}/contact`, changeFrequency: 'monthly', priority: 0.5 },
         { url: `${SITE_URL}/faqs`, changeFrequency: 'monthly', priority: 0.5 },
-        { url: `${SITE_URL}/track-order`, changeFrequency: 'monthly', priority: 0.3 },
         { url: `${SITE_URL}/returns`, changeFrequency: 'monthly', priority: 0.3 },
         { url: `${SITE_URL}/privacy-policy`, changeFrequency: 'yearly', priority: 0.2 },
         { url: `${SITE_URL}/terms-and-conditions`, changeFrequency: 'yearly', priority: 0.2 },
