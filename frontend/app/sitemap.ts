@@ -17,19 +17,19 @@ function validLastModified(value?: string): Date | undefined {
     return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
-async function fetchProducts(): Promise<ApiProduct[]> {
-    const products: ApiProduct[] = [];
+async function fetchAllPages<T>(path: string, extraParams: Record<string, string> = {}): Promise<T[]> {
+    const rows: T[] = [];
     let page = 1;
     let lastPage = 1;
 
     while (page <= lastPage) {
         try {
-            const params = new URLSearchParams({ page: String(page), per_page: '100' });
-            const res = await fetch(`${API_BASE_URL}/api/products?${params}`, { next: { revalidate: 3600 } });
+            const params = new URLSearchParams({ page: String(page), ...extraParams });
+            const res = await fetch(`${API_BASE_URL}${path}?${params}`, { next: { revalidate: 3600 } });
             if (!res.ok) break;
             const payload = await res.json();
             if (!Array.isArray(payload?.data)) break;
-            products.push(...payload.data);
+            rows.push(...payload.data);
             const reportedLastPage = payload?.meta?.last_page;
             lastPage = Number.isInteger(reportedLastPage) && reportedLastPage >= page
                 ? reportedLastPage
@@ -40,19 +40,11 @@ async function fetchProducts(): Promise<ApiProduct[]> {
         }
     }
 
-    return products;
+    return rows;
 }
 
-async function fetchPosts(): Promise<ApiPost[]> {
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/posts`, { next: { revalidate: 3600 } });
-        if (!res.ok) return [];
-        const payload = await res.json();
-        return Array.isArray(payload?.data) ? payload.data : [];
-    } catch {
-        return [];
-    }
-}
+const fetchProducts = () => fetchAllPages<ApiProduct>('/api/products', { per_page: '100' });
+const fetchPosts = () => fetchAllPages<ApiPost>('/api/posts');
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const staticPages: MetadataRoute.Sitemap = [

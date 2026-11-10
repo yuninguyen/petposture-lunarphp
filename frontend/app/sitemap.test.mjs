@@ -24,6 +24,47 @@ function loadSitemap(fetchImpl) {
     return context.sitemap;
 }
 
+test('sitemap follows every page of posts instead of stopping at the first', async () => {
+    const requests = [];
+    const posts = Array.from({ length: 25 }, (_, index) => ({ slug: `guide-${index + 1}` }));
+
+    const sitemap = loadSitemap(async (url) => {
+        requests.push(String(url));
+        const parsed = new URL(url);
+        if (!parsed.pathname.endsWith('/posts')) {
+            return { ok: true, async json() { return { data: [], meta: { last_page: 1 } }; } };
+        }
+        const page = Number(parsed.searchParams.get('page'));
+        return {
+            ok: true,
+            async json() {
+                return { data: posts.slice((page - 1) * 12, page * 12), meta: { current_page: page, last_page: 3 } };
+            },
+        };
+    });
+
+    const entries = await sitemap();
+    assert.equal(entries.filter((entry) => entry.url.includes('/blog/guide-')).length, 25);
+    assert.deepEqual(
+        requests.filter((url) => url.includes('/posts')),
+        [1, 2, 3].map((page) => `https://api.test/api/posts?page=${page}`),
+    );
+});
+
+test('sitemap keeps the posts it already fetched when a later page fails', async () => {
+    const sitemap = loadSitemap(async (url) => {
+        const parsed = new URL(url);
+        if (!parsed.pathname.endsWith('/posts')) {
+            return { ok: true, async json() { return { data: [], meta: { last_page: 1 } }; } };
+        }
+        if (parsed.searchParams.get('page') === '2') return { ok: false, async json() { return {}; } };
+        return { ok: true, async json() { return { data: [{ slug: 'guide-1' }], meta: { last_page: 2 } }; } };
+    });
+
+    const entries = await sitemap();
+    assert.equal(entries.filter((entry) => entry.url.includes('/blog/guide-')).length, 1);
+});
+
 test('sitemap paginates products and carries valid updated timestamps', async () => {
     const requests = [];
     const products = Array.from({ length: 201 }, (_, index) => ({
