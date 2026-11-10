@@ -25,6 +25,11 @@ import {
   buildNextImageRule,
   buildNextImageRules,
   auditNextImageRuleset,
+  BLOG_EXPRESSION,
+  BLOG_RULE_DESCRIPTION,
+  buildBlogRule,
+  buildBlogRules,
+  auditBlogRuleset,
 } from './cloudflare-storefront-rules.mjs';
 
 const fixture = JSON.parse(await readFile(new URL('./fixtures/cloudflare-cache-ruleset.json', import.meta.url), 'utf8'));
@@ -107,6 +112,88 @@ test('apply-next-image dry-run and execute use one trusted export and one atomic
     assert.deepEqual(candidate.slice(0, 4), liveV16Fixture.rules);
     assert.equal(candidate[4].expression, NEXT_IMAGE_EXPRESSION);
   }
+});
+
+const liveWithNextImage = { ...liveV16Fixture, rules: buildNextImageRules(liveV16Fixture).rules };
+
+test('blog rule is the homepage rule with only the path changed to exactly /blog', () => {
+  assert.equal(
+    BLOG_EXPRESSION,
+    HOME_EXPRESSION.replace('(http.request.uri.path eq "/")', '(http.request.uri.path eq "/blog")'),
+  );
+  assert.notEqual(BLOG_EXPRESSION, HOME_EXPRESSION);
+  assert.match(BLOG_EXPRESSION, /\(http\.request\.uri\.path eq "\/blog"\)/);
+  assert.match(BLOG_EXPRESSION, /\(http\.request\.uri\.query eq ""\)/);
+  assert.doesNotMatch(BLOG_EXPRESSION, /matches|contains|wildcard|starts_with|ends_with/);
+  for (const header of ['purpose', 'sec-purpose', 'next-router-prefetch', 'rsc', 'next-router-state-tree', 'next-router-segment-prefetch', 'cookie']) {
+    assert.ok(BLOG_EXPRESSION.includes(`(not any(lower(http.request.headers.names[*])[*] eq "${header}"))`), `missing lower() exclusion for ${header}`);
+  }
+  const rule = buildBlogRule();
+  assert.equal(rule.description, BLOG_RULE_DESCRIPTION);
+  assert.equal(rule.expression, BLOG_EXPRESSION);
+  assert.equal(rule.action, 'set_cache_settings');
+  assert.deepEqual(rule.action_parameters, { browser_ttl: { mode: 'respect_origin' }, cache: true, edge_ttl: { mode: 'respect_origin' } });
+});
+
+test('blog builder appends only the reviewed rule after the Next image topology and is idempotent', () => {
+  const update = buildBlogRules(liveWithNextImage);
+  assert.equal(update.changed, true);
+  assert.equal(update.rules.length, 6);
+  assert.deepEqual(update.rules.slice(0, 5), liveWithNextImage.rules);
+  assert.deepEqual(update.rules[5], buildBlogRule());
+  assert.equal(auditBlogRuleset({ ...liveWithNextImage, rules: update.rules }).pass, true);
+  assert.equal(buildBlogRules({ ...liveWithNextImage, rules: update.rules }).changed, false);
+});
+
+test('blog audit fails closed on drift, wrong order, or a missing Next image rule', () => {
+  const six = [...liveWithNextImage.rules, buildBlogRule()];
+  assert.throws(() => auditBlogRuleset({ ...liveWithNextImage, rules: [...liveWithNextImage.rules, { ...buildBlogRule(), expression: '(http.host eq "petposture.com")' }] }), /expression drift/i);
+  assert.throws(() => auditBlogRuleset({ ...liveWithNextImage, rules: [...liveWithNextImage.rules, { ...buildBlogRule(), enabled: false }] }), /enabled/i);
+  assert.throws(() => auditBlogRuleset({ ...liveWithNextImage, rules: [...liveWithNextImage.rules, { ...buildBlogRule(), action_parameters: { cache: true, edge_ttl: { mode: 'override_origin', default: 86400 } } }] }), /action_parameters drift/i);
+  assert.throws(() => auditBlogRuleset({ ...liveWithNextImage, rules: [...six, buildBlogRule()] }), /permitted|duplicate/i);
+  assert.throws(() => buildBlogRules(liveV16Fixture), /Next image|permitted/i);
+  const tampered = structuredClone(six);
+  tampered[3].expression = tampered[3].expression.replace('"/"', '"/blog"');
+  assert.throws(() => auditBlogRuleset({ ...liveWithNextImage, rules: tampered }), /expression drift/i);
+});
+
+test('apply-blog dry-run and execute use one trusted export and one atomic PUT', async () => {
+  for (const execute of [false, true]) {
+    const artifactDir = await mkdtemp(path.join(os.tmpdir(), `cloudflare-blog-${execute ? 'execute' : 'dry'}-`));
+    const exportPath = path.join(artifactDir, 'fresh.json');
+    await writeFile(exportPath, JSON.stringify(createExportArtifact(liveWithNextImage)));
+    const requests = [];
+    const result = await runCommand(['apply-blog', '--from-export', exportPath, ...(execute ? ['--execute'] : [])], {
+      env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+      fetchImpl: async (_url, options) => {
+        requests.push(options);
+        return cloudflareResponse(options.method === 'PUT' ? { ...liveWithNextImage, version: '18', rules: JSON.parse(options.body).rules } : liveWithNextImage);
+      },
+      stdout: output().stream,
+      artifactDir,
+    });
+    assert.deepEqual(requests.map(({ method }) => method), execute ? ['GET', 'PUT'] : ['GET']);
+    const candidate = execute ? JSON.parse(requests[1].body).rules : result.request.rules;
+    assert.deepEqual(candidate.slice(0, 5), liveWithNextImage.rules);
+    assert.equal(candidate.length, 6);
+    assert.equal(candidate[5].expression, BLOG_EXPRESSION);
+  }
+});
+
+test('apply-blog is a no-op when the reviewed blog rule is already live', async () => {
+  const live = { ...liveWithNextImage, rules: [...liveWithNextImage.rules, buildBlogRule()] };
+  const artifactDir = await mkdtemp(path.join(os.tmpdir(), 'cloudflare-blog-noop-'));
+  const exportPath = path.join(artifactDir, 'fresh.json');
+  await writeFile(exportPath, JSON.stringify(createExportArtifact(live)));
+  const requests = [];
+  const result = await runCommand(['apply-blog', '--from-export', exportPath, '--execute'], {
+    env: { CLOUDFLARE_API_TOKEN: 'secret', CLOUDFLARE_ZONE_ID: 'zone' },
+    fetchImpl: async (_url, options) => { requests.push(options); return cloudflareResponse(live); },
+    stdout: output().stream,
+    artifactDir,
+  });
+  assert.equal(result.changed, false);
+  assert.deepEqual(requests.map(({ method }) => method), ['GET']);
 });
 
 test('buildApplyRules accepts exact broad HTML and path-only API legacy candidates together', () => {

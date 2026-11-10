@@ -434,6 +434,35 @@ Laravel on every request.
   Without them set, `CloudflareCacheService` no-ops safely.
 - **Never add a personalized/authenticated endpoint to this Cache Rule.**
 
+**HTML pages: the anonymous homepage `/` and the blog index `/blog`.** These two exact paths get
+their own Cache Rules ("Cache anonymous petposture.com homepage" and "…blog index"), managed with
+`scripts/cloudflare-storefront-rules.mjs` (strict "fail closed" audits: an unreviewed rule set is
+refused, not patched). The origin is the second gate: `frontend/proxy.ts` +
+`frontend/lib/storefront-request-policy.ts` only mark a request `public, s-maxage=300` when it is
+an anonymous `GET`/`HEAD` for an allowlisted exact path with no query string, cookie, RSC or
+prefetch header. The rules use `respect_origin`, so Cloudflare can never cache more than the
+origin marked public. `/blog/<slug>` posts are rendered on demand and are never cached.
+
+- Changing a rule needs a token with **Zone → Cache Rules → Edit** scoped to `petposture.com`.
+  Set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ZONE_ID` (32 hex characters, not the Account ID) in
+  the shell only. Never put them in a committed file.
+- Procedure, always from a fresh export:
+  ```bash
+  node scripts/cloudflare-storefront-rules.mjs export                         # read-only
+  node scripts/cloudflare-storefront-rules.mjs apply-blog --from-export <file>              # dry run
+  node scripts/cloudflare-storefront-rules.mjs apply-blog --from-export <file> --execute    # one atomic PUT + rollback export
+  ```
+  Then purge the zone and run
+  `STOREFRONT_BASE_URL=https://petposture.com VERIFY_EXPECTATION=cloudflare node scripts/verify-storefront-cache.mjs`.
+  Roll back with `restore --from-export <rollback file> --confirm-restore`. Deploy the origin
+  change first, then apply the rule: with the origin still sending `private, no-store`,
+  `respect_origin` caches nothing, so that order is always safe.
+- Post saves purge the whole zone (`purgeAll()`), but Next.js keeps its own ISR copy of `/blog`
+  for up to 5 minutes, so a new post can take that long to appear.
+- After a deploy the homepage and `/blog` HTML can show the client-side fallback for about
+  5 minutes: `next build` on the VPS is blocked by Cloudflare (403) when it calls the public API,
+  and ISR regenerates the pages from the internal API afterwards.
+
 ### Backend container processes (supervisord)
 
 The backend container runs three processes side by side:

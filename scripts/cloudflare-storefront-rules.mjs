@@ -21,22 +21,33 @@ const SAFE_EARLIER_CACHE_EXPRESSIONS = new Set([
   LIVE_API_EXPRESSION,
   LEGACY_API_EXPRESSION,
 ]);
-export const HOME_EXPRESSION = [
-  '(http.host eq "petposture.com")',
-  '(http.request.method in {"GET" "HEAD"})',
-  '(http.request.uri.path eq "/")',
-  '(http.request.uri.query eq "")',
-  // Header names arrive in whatever case the client sent (Cloudflare only
-  // lowercases them on HTTP/2). Every clause here must run through lower()
-  // or a same-cased browser/Next.js request silently skips the exclusion.
-  '(not any(lower(http.request.headers.names[*])[*] eq "purpose"))',
-  '(not any(lower(http.request.headers.names[*])[*] eq "sec-purpose"))',
-  '(not any(lower(http.request.headers.names[*])[*] eq "next-router-prefetch"))',
-  '(not any(lower(http.request.headers.names[*])[*] eq "rsc"))',
-  '(not any(lower(http.request.headers.names[*])[*] eq "next-router-state-tree"))',
-  '(not any(lower(http.request.headers.names[*])[*] eq "next-router-segment-prefetch"))',
-  '(not any(lower(http.request.headers.names[*])[*] eq "cookie"))',
-].join(' and ');
+// Every anonymous-page cache rule shares these clauses; only the exact path differs.
+function anonymousPageExpression(pathClause) {
+  return [
+    '(http.host eq "petposture.com")',
+    '(http.request.method in {"GET" "HEAD"})',
+    pathClause,
+    '(http.request.uri.query eq "")',
+    // Header names arrive in whatever case the client sent (Cloudflare only
+    // lowercases them on HTTP/2). Every clause here must run through lower()
+    // or a same-cased browser/Next.js request silently skips the exclusion.
+    '(not any(lower(http.request.headers.names[*])[*] eq "purpose"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "sec-purpose"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "next-router-prefetch"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "rsc"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "next-router-state-tree"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "next-router-segment-prefetch"))',
+    '(not any(lower(http.request.headers.names[*])[*] eq "cookie"))',
+  ].join(' and ');
+}
+
+export const HOME_EXPRESSION = anonymousPageExpression('(http.request.uri.path eq "/")');
+
+// The prerendered /blog index. Exact path only: individual posts (/blog/<slug>) are
+// rendered on demand and must stay uncached.
+export const BLOG_RULE_DESCRIPTION = 'Cache anonymous petposture.com blog index';
+export const BLOG_EXPRESSION = anonymousPageExpression('(http.request.uri.path eq "/blog")');
+const BLOG_REF = 'cache_anonymous_petposture_blog';
 
 export const HOME_BYPASS_DESCRIPTION = 'Bypass excluded petposture.com homepage requests';
 export const HOME_BYPASS_EXPRESSION = `(http.host eq "petposture.com") and (http.request.uri.path eq "/") and (not (${HOME_EXPRESSION}))`;
@@ -110,6 +121,51 @@ export function buildNextImageRules(ruleset) {
   if (!audit.imageRulePresent) rules.push(buildNextImageRule());
   auditNextImageRuleset({ ...ruleset, rules });
   return { rules, changed: !audit.imageRulePresent };
+}
+
+export function buildBlogRule() {
+  return {
+    ref: BLOG_REF,
+    description: BLOG_RULE_DESCRIPTION,
+    expression: BLOG_EXPRESSION,
+    enabled: true,
+    action: 'set_cache_settings',
+    action_parameters: { browser_ttl: { mode: 'respect_origin' }, cache: true, edge_ttl: { mode: 'respect_origin' } },
+  };
+}
+
+// The blog rule is the sixth rule, after the reviewed baseline + Next image topology
+// (rules 1-5, audited unchanged). The origin sends `private, no-store` unless a
+// request is anonymous, so `respect_origin` keeps the origin as the second gate.
+export function auditBlogRuleset(ruleset, { throwOnFailure = true } = {}) {
+  assertRulesetShape(ruleset);
+  const base = auditNextImageRuleset({ ...ruleset, rules: ruleset.rules.slice(0, 5) }, { throwOnFailure: false });
+  const failures = [...base.failures];
+  if (![5, 6].includes(ruleset.rules.length)) failures.push('Only the reviewed five-rule Next image topology or six-rule blog topology is permitted; apply-next-image must run first');
+  const blog = ruleset.rules[5];
+  if (blog) {
+    const expected = buildBlogRule();
+    for (const field of ['ref', 'description', 'enabled', 'action']) {
+      if (blog[field] !== expected[field]) failures.push(`Rule 6 ${field} differs from the reviewed blog rule`);
+    }
+    if (!exactExpression(blog.expression, expected.expression)) failures.push('Rule 6 expression drift');
+    if (stableJson(blog.action_parameters) !== stableJson(expected.action_parameters)) failures.push('Rule 6 action_parameters drift');
+  }
+  const report = {
+    pass: failures.length === 0, failures,
+    rules: ruleset.rules.map((rule, index) => ({ order: index + 1, ...clone(rule) })),
+    blogPresent: ruleset.rules.length === 6,
+  };
+  if (!report.pass && throwOnFailure) throw new Error(`Blog ruleset audit failed closed:\n- ${failures.join('\n- ')}`);
+  return report;
+}
+
+export function buildBlogRules(ruleset) {
+  const audit = auditBlogRuleset(ruleset);
+  const rules = clone(ruleset.rules);
+  if (!audit.blogPresent) rules.push(buildBlogRule());
+  auditBlogRuleset({ ...ruleset, rules });
+  return { rules, changed: !audit.blogPresent };
 }
 
 export function auditHomeBypassRuleset(ruleset, { throwOnFailure = true } = {}) {
@@ -427,8 +483,8 @@ export async function runCommand(argv, {
   artifactWriter = saveArtifact,
 } = {}) {
   const { command, options } = parseArgs(argv);
-  if (!['export', 'audit', 'apply-home', 'apply-home-bypass', 'apply-next-image', 'restore'].includes(command)) {
-    throw new Error('Usage: cloudflare-storefront-rules.mjs export|audit|apply-home|apply-home-bypass|apply-next-image|restore [--from-export path] [--execute] [--confirm-restore]');
+  if (!['export', 'audit', 'apply-home', 'apply-home-bypass', 'apply-next-image', 'apply-blog', 'restore'].includes(command)) {
+    throw new Error('Usage: cloudflare-storefront-rules.mjs export|audit|apply-home|apply-home-bypass|apply-next-image|apply-blog|restore [--from-export path] [--execute] [--confirm-restore]');
   }
   const credentials = requireEnvironment(env);
   const live = await cloudflareRequest({ ...credentials, fetchImpl });
@@ -449,10 +505,11 @@ export async function runCommand(argv, {
   if (!options.fromExport) throw new Error(`${command} requires --from-export <path>`);
   const supplied = JSON.parse(await readFile(options.fromExport, 'utf8'));
 
-  if (command === 'apply-home' || command === 'apply-home-bypass' || command === 'apply-next-image') {
+  if (command === 'apply-home' || command === 'apply-home-bypass' || command === 'apply-next-image' || command === 'apply-blog') {
     parseExport(supplied, live, { requireTrusted: true });
     const bypass = command === 'apply-home-bypass';
     const nextImage = command === 'apply-next-image';
+    const blog = command === 'apply-blog';
     let update;
     if (bypass) {
       update = buildHomeBypassRules(live);
@@ -474,6 +531,16 @@ export async function runCommand(argv, {
         stdout.write('NO OP: reviewed Next image cache rule already present; no Cloudflare mutation performed\n');
         return { command, changed: false, dryRun: !options.execute, result: clone(live) };
       }
+    } else if (blog) {
+      update = buildBlogRules(live);
+      const report = auditBlogRuleset({ ...live, rules: update.rules });
+      for (const rule of report.rules) {
+        stdout.write(`${rule.order}. ${rule.description}\n   enabled=${rule.enabled} action=${rule.action}\n   ${rule.expression}\n   ${JSON.stringify(rule.action_parameters)}\n`);
+      }
+      if (!update.changed) {
+        stdout.write('NO OP: reviewed blog cache rule already present; no Cloudflare mutation performed\n');
+        return { command, changed: false, dryRun: !options.execute, result: clone(live) };
+      }
     } else {
       rejectSeparateHomepage(live);
       const audit = auditRuleset(live, { throwOnFailure: false });
@@ -488,6 +555,7 @@ export async function runCommand(argv, {
     const request = buildMutationRequest(live, update.rules);
     if (bypass) auditHomeBypassRuleset({ ...live, rules: request.rules });
     if (nextImage) auditNextImageRuleset({ ...live, rules: request.rules });
+    if (blog) auditBlogRuleset({ ...live, rules: request.rules });
     if (!options.execute) {
       stdout.write(`DRY RUN: no Cloudflare mutation performed\nRollback export ${rollbackFile}\nWould atomically PUT ${update.rules.length} rules\n`);
       return { command, dryRun: true, rollbackFile, request };

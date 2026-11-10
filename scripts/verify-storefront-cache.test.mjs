@@ -166,6 +166,40 @@ test('cloudflare verification makes one cold and exactly ten warm requests and r
   assert.equal(median(publicDurations.slice(1)), 55);
 });
 
+test('cloudflare verification warms the blog index like the homepage and keeps every other blog request private', async () => {
+  const requests = [];
+  const fetchImpl = async (url, options) => {
+    const parsed = new URL(url);
+    requests.push(`${parsed.pathname}${parsed.search}${options?.headers ? ' +headers' : ''}`);
+    const anonymous = parsed.search === '' && !options?.headers;
+    if (anonymous && (parsed.pathname === '/' || parsed.pathname === '/blog')) {
+      return response({ 'cf-cache-status': 'HIT', 'cache-control': 'public, s-maxage=300' });
+    }
+    return response({ 'cf-cache-status': 'BYPASS', 'cache-control': 'private, no-store' });
+  };
+
+  const report = await verifyStorefront({ baseUrl: 'https://example.test', expectation: 'cloudflare', fetchImpl });
+  const blog = report.results.find((result) => result.scenario === 'public-blog');
+
+  assert.equal(blog.pass, true);
+  assert.equal(blog.warmRequests, 10);
+  assert.equal(requests.filter((entry) => entry === '/blog').length, 11, 'one cold and ten warm anonymous requests');
+  for (const name of ['query-blog', 'rsc-blog', 'prefetch-blog', 'session-cookie-blog', 'blog-post']) {
+    assert.equal(report.results.find((result) => result.scenario === name).pass, true, `${name} must stay private`);
+  }
+  assert.equal(report.pass, true);
+});
+
+test('cloudflare verification fails when the blog index is served private', async () => {
+  const fetchImpl = async () => response({ 'cf-cache-status': 'DYNAMIC', 'cache-control': 'private, no-store' });
+
+  const report = await verifyStorefront({ baseUrl: 'https://example.test', expectation: 'cloudflare', fetchImpl });
+  const blog = report.results.find((result) => result.scenario === 'public-blog');
+
+  assert.equal(blog.pass, false);
+  assert.match(blog.reasons.join('\n'), /public and s-maxage|must be HIT/);
+});
+
 test('reports redact Set-Cookie values and do not expose query signatures', async () => {
   const fetchImpl = async () => response({
     'cf-cache-status': 'BYPASS',

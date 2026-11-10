@@ -23,7 +23,9 @@ export const PUBLIC_HTML_CACHE_CONTROL =
 export const PRIVATE_HTML_CACHE_CONTROL =
   'private, no-cache, no-store, max-age=0, must-revalidate';
 
-const PHASE_ONE_PUBLIC_PATHS = new Set(['/']);
+// Exact paths only. `/blog` is the prerendered index (listed in STATIC_NO_NONCE_PATHS
+// in proxy.ts, so it never carries a nonce); individual posts stay private.
+const PHASE_ONE_PUBLIC_PATHS = new Set(['/', '/blog']);
 const SENSITIVE_COOKIES = new Set(['petposture-session', 'XSRF-TOKEN']);
 
 function hasSensitiveCookie(cookieHeader: string): boolean {

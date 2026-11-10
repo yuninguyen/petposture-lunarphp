@@ -25,6 +25,29 @@ describe('proxy storefront policy', () => {
     expect(policy).not.toContain('nonce-');
   });
 
+  it('makes the anonymous blog index shared-cacheable with the public CSP and no nonce', async () => {
+    const response = await proxy(new NextRequest('https://petposture.com/blog'));
+    const policy = response.headers.get('content-security-policy');
+
+    expect(response.headers.get('cache-control')).toBe(PUBLIC_HTML_CACHE_CONTROL);
+    expect(policy).toBe(buildPublicContentSecurityPolicy());
+    expect(policy).not.toContain('nonce-');
+  });
+
+  it('keeps the blog index uncached for a visitor with a session cookie', async () => {
+    const response = await proxy(new NextRequest('https://petposture.com/blog', {
+      headers: { cookie: 'petposture-session=x' },
+    }));
+
+    expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
+  });
+
+  it('keeps an individual blog post uncached', async () => {
+    const response = await proxy(new NextRequest('https://petposture.com/blog/how-to-choose-a-dog-ramp'));
+
+    expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
+  });
+
   it('uses the request Host header when Next URL retains the local browser origin', async () => {
     const response = await proxy(new NextRequest('http://127.0.0.1:3101/', {
       headers: { host: 'petposture.com:3101' },

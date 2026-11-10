@@ -21,14 +21,40 @@ const home = {
 };
 
 describe('classifyStorefrontRequest', () => {
-  it('allows only the anonymous canonical homepage in phase 1', () => {
+  it('allows only the anonymous canonical homepage and blog index', () => {
     expect(classifyStorefrontRequest(home)).toEqual({
+      kind: 'public-cacheable',
+      reason: 'allowlisted',
+    });
+    expect(classifyStorefrontRequest({ ...home, pathname: '/blog' })).toEqual({
       kind: 'public-cacheable',
       reason: 'allowlisted',
     });
     expect(classifyStorefrontRequest({ ...home, pathname: '/our-mission' })).toEqual({
       kind: 'private',
       reason: 'not-allowlisted',
+    });
+  });
+
+  it.each(['/blog/how-to-choose-a-dog-ramp', '/blog/', '/blogs', '/Blog'])(
+    'keeps %s private because only the exact /blog path is allowlisted',
+    (pathname) => {
+      expect(classifyStorefrontRequest({ ...home, pathname })).toEqual({
+        kind: 'private',
+        reason: 'not-allowlisted',
+      });
+    },
+  );
+
+  it.each([
+    { name: 'a search query', facts: { search: '?q=ramp' }, reason: 'query-string' },
+    { name: 'a session cookie', facts: { cookieHeader: 'petposture-session=x', cookieHeaderPresent: true }, reason: 'sensitive-cookie' },
+    { name: 'an RSC request', facts: { rsc: '1' }, reason: 'navigation' },
+    { name: 'a prefetch', facts: { purpose: 'prefetch' }, reason: 'prefetch' },
+  ])('keeps /blog private for $name', ({ facts, reason }) => {
+    expect(classifyStorefrontRequest({ ...home, pathname: '/blog', ...facts })).toEqual({
+      kind: 'private',
+      reason,
     });
   });
 

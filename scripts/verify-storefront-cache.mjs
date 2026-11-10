@@ -11,6 +11,12 @@ export const scenarios = [
   { name: 'prefetch-next-router', path: '/', expectedCacheable: false, headers: { 'Next-Router-Prefetch': '1' } },
   { name: 'session-cookie', path: '/', expectedCacheable: false, headers: { Cookie: 'petposture-session=test' } },
   { name: 'xsrf-cookie', path: '/', expectedCacheable: false, headers: { Cookie: 'XSRF-TOKEN=test' } },
+  { name: 'public-blog', path: '/blog', expectedCacheable: true },
+  { name: 'query-blog', path: '/blog?q=ramp', expectedCacheable: false },
+  { name: 'rsc-blog', path: '/blog?_rsc=cache-test', expectedCacheable: false },
+  { name: 'prefetch-blog', path: '/blog', expectedCacheable: false, headers: { Purpose: 'prefetch' } },
+  { name: 'session-cookie-blog', path: '/blog', expectedCacheable: false, headers: { Cookie: 'petposture-session=test' } },
+  { name: 'blog-post', path: '/blog/how-to-choose-a-dog-ramp', expectedCacheable: false },
 ];
 
 function hasNonce(value) {
@@ -143,7 +149,7 @@ export async function verifyStorefront({
   const results = [];
 
   for (const scenario of scenarios) {
-    if (scenario.name === 'public-home' && expectation === 'cloudflare') {
+    if (scenario.expectedCacheable && expectation === 'cloudflare') {
       const cold = await requestScenario(baseUrl, scenario, fetchImpl, now);
       const warm = [];
       for (let request = 0; request < 10; request += 1) {
