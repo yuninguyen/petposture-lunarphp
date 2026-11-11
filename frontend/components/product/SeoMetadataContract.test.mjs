@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const productTypes = readFileSync(new URL('../../types/shop.ts', import.meta.url), 'utf8');
-const productPage = readFileSync(new URL('../../app/shop/[category]/[slug]/page.tsx', import.meta.url), 'utf8');
+const productPage = readFileSync(new URL('../../app/shop/[collection]/[slug]/page.tsx', import.meta.url), 'utf8');
 const blogPage = readFileSync(new URL('../../app/blog/[slug]/page.tsx', import.meta.url), 'utf8');
 
 test('product type exposes optional SEO metadata overrides', () => {

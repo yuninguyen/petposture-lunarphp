@@ -4,11 +4,11 @@ import test from 'node:test';
 import vm from 'node:vm';
 import ts from 'typescript';
 
-const source = readFileSync(new URL('../../app/shop/[category]/[slug]/page.tsx', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../../app/shop/[collection]/[slug]/page.tsx', import.meta.url), 'utf8');
 const productTypes = readFileSync(new URL('../../types/shop.ts', import.meta.url), 'utf8');
 
 function loadHelpers() {
-  const helpers = readFileSync(new URL('../../app/shop/[category]/[slug]/json-ld.ts', import.meta.url), 'utf8');
+  const helpers = readFileSync(new URL('../../app/shop/[collection]/[slug]/json-ld.ts', import.meta.url), 'utf8');
   const helperSource = helpers.split('\n').filter((line) => !line.trimStart().startsWith('import ')).join('\n')
     .replaceAll('export function ', 'function ')
     + '\nthis.helpers = { buildProductBreadcrumbJsonLd, serializeProductJsonLd };';

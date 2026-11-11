@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-const source = readFileSync(new URL('../../app/shop/[category]/[slug]/page.tsx', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../../app/shop/[collection]/[slug]/page.tsx', import.meta.url), 'utf8');
 
 test('product detail passes requested category to the API', () => {
-    assert.match(source, /query\.set\(['"]category['"], category\)/);
-    assert.match(source, /fetchProduct\(slug, category,/);
+    assert.match(source, /query\.set\(['"]category['"], collection\)/);
+    assert.match(source, /fetchProduct\(slug, collection,/);
 });
 
 test('product detail uses permanent redirects and preserves the original query string', () => {
