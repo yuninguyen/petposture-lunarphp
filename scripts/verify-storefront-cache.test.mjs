@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateResponse, median, verifyStorefront } from './verify-storefront-cache.mjs';
+import { evaluateResponse, median, scenarios, verifyStorefront } from './verify-storefront-cache.mjs';
 
 function response(headers = {}, body = '<html></html>', status = 200) {
   return new Response(body, { status, headers });
@@ -53,6 +53,52 @@ test('rejects contradictory public cache directives in origin and cloudflare mod
     assert.equal(result.pass, false);
     assert.match(result.reasons.join('\n'), /must not use private, no-store, or no-cache/);
   }
+});
+
+test('edge-only exclusions pass with a public origin policy as long as Cloudflare never serves a HIT', () => {
+  for (const expectation of ['baseline', 'origin', 'cloudflare']) {
+    const result = evaluateResponse({
+      scenario: 'rsc-blog',
+      expectedCacheable: false,
+      edgeOnlyExclusion: true,
+      expectation,
+      headers: new Headers({ 'cf-cache-status': 'DYNAMIC', 'cache-control': 'public, s-maxage=300' }),
+      body: '<html></html>',
+    });
+    assert.equal(result.pass, true, `${expectation}: ${result.reasons.join('; ')}`);
+  }
+});
+
+test('edge-only exclusions still fail when Cloudflare serves them from cache', () => {
+  const result = evaluateResponse({
+    scenario: 'rsc-blog',
+    expectedCacheable: false,
+    edgeOnlyExclusion: true,
+    expectation: 'cloudflare',
+    headers: new Headers({ 'cf-cache-status': 'HIT', 'cache-control': 'public, s-maxage=300' }),
+    body: '<html></html>',
+  });
+  assert.equal(result.pass, false);
+  assert.match(result.reasons.join('\n'), /must never be HIT/);
+});
+
+test('edge-only exclusions still require CF-Cache-Status in cloudflare mode', () => {
+  const result = evaluateResponse({
+    scenario: 'rsc-blog',
+    expectedCacheable: false,
+    edgeOnlyExclusion: true,
+    expectation: 'cloudflare',
+    headers: new Headers({ 'cache-control': 'public, s-maxage=300' }),
+    body: '<html></html>',
+  });
+  assert.equal(result.pass, false);
+  assert.match(result.reasons.join('\n'), /CF-Cache-Status/);
+});
+
+test('only the signals Next.js strips before the proxy are marked edge-only', () => {
+  const edgeOnly = scenarios.filter((scenario) => scenario.edgeOnlyExclusion).map((scenario) => scenario.name).sort();
+  assert.deepEqual(edgeOnly, ['prefetch-next-router', 'rsc-blog', 'rsc-query']);
+  assert.ok(scenarios.filter((scenario) => scenario.edgeOnlyExclusion).every((scenario) => scenario.expectedCacheable === false));
 });
 
 test('rejects public cache policy on private scenarios even in baseline mode', () => {

@@ -6,14 +6,18 @@ export const scenarios = [
   { name: 'private-account', path: '/account', expectedCacheable: false },
   { name: 'query-home', path: '/?utm_source=cache-test', expectedCacheable: false },
   { name: 'preview-shape', path: '/?expires=4102444800&signature=invalid-test-signature', expectedCacheable: false },
-  { name: 'rsc-query', path: '/?_rsc=cache-test', expectedCacheable: false },
+  // `edgeOnlyExclusion`: Next.js strips these signals (the `_rsc` query, the RSC and
+  // prefetch headers) before proxy.ts runs, so the origin cannot see them and still
+  // answers `public, s-maxage`. Only the Cloudflare rule excludes them, so the check
+  // is "never a HIT", not "the origin says private". See the comment in proxy.ts.
+  { name: 'rsc-query', path: '/?_rsc=cache-test', expectedCacheable: false, edgeOnlyExclusion: true },
   { name: 'prefetch-purpose', path: '/', expectedCacheable: false, headers: { Purpose: 'prefetch' } },
-  { name: 'prefetch-next-router', path: '/', expectedCacheable: false, headers: { 'Next-Router-Prefetch': '1' } },
+  { name: 'prefetch-next-router', path: '/', expectedCacheable: false, edgeOnlyExclusion: true, headers: { 'Next-Router-Prefetch': '1' } },
   { name: 'session-cookie', path: '/', expectedCacheable: false, headers: { Cookie: 'petposture-session=test' } },
   { name: 'xsrf-cookie', path: '/', expectedCacheable: false, headers: { Cookie: 'XSRF-TOKEN=test' } },
   { name: 'public-blog', path: '/blog', expectedCacheable: true },
   { name: 'query-blog', path: '/blog?q=ramp', expectedCacheable: false },
-  { name: 'rsc-blog', path: '/blog?_rsc=cache-test', expectedCacheable: false },
+  { name: 'rsc-blog', path: '/blog?_rsc=cache-test', expectedCacheable: false, edgeOnlyExclusion: true },
   { name: 'prefetch-blog', path: '/blog', expectedCacheable: false, headers: { Purpose: 'prefetch' } },
   { name: 'session-cookie-blog', path: '/blog', expectedCacheable: false, headers: { Cookie: 'petposture-session=test' } },
   { name: 'blog-post', path: '/blog/how-to-choose-a-dog-ramp', expectedCacheable: false },
@@ -38,6 +42,7 @@ export function evaluateResponse({
   expectation = 'baseline',
   sample = 'response',
   requireCloudflareHit = expectation === 'cloudflare' && expectedCacheable,
+  edgeOnlyExclusion = false,
 }) {
   const cacheControl = headers.get('cache-control');
   const directives = cacheDirectives(cacheControl);
@@ -53,6 +58,12 @@ export function evaluateResponse({
 
   if (!expectedCacheable && cfCacheStatus?.toUpperCase() === 'HIT') {
     reasons.push(`${label} must never be HIT`);
+  }
+
+  // The origin cannot tell these requests apart (see `scenarios`), so its
+  // Cache-Control is not part of the contract; staying out of the edge cache is.
+  if (edgeOnlyExclusion) {
+    return { pass: reasons.length === 0, reasons };
   }
 
   if (expectedCacheable && setCookie) {
@@ -119,6 +130,7 @@ function reportResponse(scenario, sample, expectation, ttfbMs = sample.ttfbMs, s
     expectation,
     sample: sampleName,
     requireCloudflareHit,
+    edgeOnlyExclusion: scenario.edgeOnlyExclusion,
   });
 
   return {
