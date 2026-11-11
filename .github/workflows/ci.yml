@@ -92,6 +92,16 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: Unit tests (vitest)
+        run: npm test
+
+      - name: Contract tests (node:test, SEO / sitemap / JSON-LD)
+        run: npm run test:node
+
+      - name: Cloudflare cache script tests
+        working-directory: .
+        run: node --test scripts/cloudflare-storefront-rules.test.mjs scripts/verify-storefront-cache.test.mjs
+
       - name: Build
         run: npm run build
         env:

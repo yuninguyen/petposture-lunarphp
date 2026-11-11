@@ -776,7 +776,18 @@ here, treat it as a real regression, not pre-existing noise.
 cd frontend
 npm run lint       # ESLint (no Prettier — see RULES.md)
 npx tsc --noEmit    # TypeScript strict-mode check
+npm test            # vitest: proxy/cache policy, CSP, content fetchers, Button
+npm run test:node   # node:test contract tests: sitemap, SEO/canonical, JSON-LD, rich content
+cd .. && node --test scripts/cloudflare-storefront-rules.test.mjs scripts/verify-storefront-cache.test.mjs
 ```
+
+CI (`.github/workflows/ci.yml`, job "Frontend") runs all three test commands before the build.
+Both `npm test` and `npm run test:node` list their files explicitly, so **a new test file must be
+added to the matching script in `frontend/package.json`**, or it silently never runs. Two
+`node:test` files are deliberately left out because they fail today for reasons that need a
+decision, not a mechanical fix: `components/blog/BlogPostingJsonLd.test.mjs` (asserts the post page
+must not use `post.published_at`, which it now does on purpose) and `lib/fetchApi.test.mjs` (plain
+`node` cannot resolve the `@/lib/api` alias; it needs to move to vitest).
 
 ---
 
