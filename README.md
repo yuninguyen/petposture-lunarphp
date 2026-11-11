@@ -781,7 +781,11 @@ npm run test:node   # node:test contract tests: sitemap, SEO/canonical, JSON-LD,
 cd .. && node --test scripts/cloudflare-storefront-rules.test.mjs scripts/verify-storefront-cache.test.mjs
 ```
 
-CI (`.github/workflows/ci.yml`, job "Frontend") runs all three test commands before the build.
+CI (`.github/workflows/ci.yml`) runs `npm test` in the "Frontend" job (Node 20, same as production)
+and `npm run test:node` plus the Cloudflare script tests in "Frontend contract tests" on **Node 24**:
+several `node:test` files import `.ts` source directly, and only Node 22.18+/24 strips the types
+without a flag. Run `test:node` on a recent Node locally too, or it fails with
+`Unknown file extension ".ts"`.
 Both `npm test` and `npm run test:node` list their files explicitly, so **a new test file must be
 added to the matching script in `frontend/package.json`**, or it silently never runs. Two
 `node:test` files are deliberately left out because they fail today for reasons that need a

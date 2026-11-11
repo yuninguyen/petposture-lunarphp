@@ -95,17 +95,41 @@ jobs:
       - name: Unit tests (vitest)
         run: npm test
 
-      - name: Contract tests (node:test, SEO / sitemap / JSON-LD)
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+
+  # The node:test contract tests import .ts files directly, which Node strips types
+  # from by default only from v22.18/v24. The app itself runs on Node 20, so this is
+  # a separate job and does not change the Node version used to lint, check or build.
+  frontend-contract-tests:
+    name: Frontend contract tests (Node 24)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Contract tests (SEO / sitemap / JSON-LD / rich content)
         run: npm run test:node
 
       - name: Cloudflare cache script tests
         working-directory: .
         run: node --test scripts/cloudflare-storefront-rules.test.mjs scripts/verify-storefront-cache.test.mjs
-
-      - name: Build
-        run: npm run build
-        env:
-          NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
 
   admin:
     name: Admin (Node 22)
