@@ -787,11 +787,9 @@ several `node:test` files import `.ts` source directly, and only Node 22.18+/24 
 without a flag. Run `test:node` on a recent Node locally too, or it fails with
 `Unknown file extension ".ts"`.
 Both `npm test` and `npm run test:node` list their files explicitly, so **a new test file must be
-added to the matching script in `frontend/package.json`**, or it silently never runs. Two
-`node:test` files are deliberately left out because they fail today for reasons that need a
-decision, not a mechanical fix: `components/blog/BlogPostingJsonLd.test.mjs` (asserts the post page
-must not use `post.published_at`, which it now does on purpose) and `lib/fetchApi.test.mjs` (plain
-`node` cannot resolve the `@/lib/api` alias; it needs to move to vitest).
+added to the matching script in `frontend/package.json`**, or it silently never runs. A test that
+imports a module using the `@/` alias belongs in vitest (`frontend/vitest.config.ts` maps `@`),
+not in `node:test`, which cannot resolve it.
 
 ---
 

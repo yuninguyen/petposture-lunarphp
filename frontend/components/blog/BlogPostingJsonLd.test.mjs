@@ -8,8 +8,9 @@ test('Blog page renders nonce-bearing BlogPosting JSON-LD from post fields', () 
   assert.match(source, /application\/ld\+json/);
   assert.match(source, /@type.*BlogPosting/);
   assert.match(source, /post\.title/);
-  assert.match(source, /post\.created_at/);
-  assert.doesNotMatch(source, /post\.published_at/);
+  // datePublished prefers the real publication date and falls back to the creation
+  // date (86828275 "use publication dates").
+  assert.match(source, /datePublished:\s*post\.published_at\s*\|\|\s*post\.created_at/);
   assert.match(source, /SITE_URL.*blog/);
   assert.match(source, /nonce=\{nonce\}/);
 });
