@@ -727,8 +727,8 @@ committed to Git) and are mounted into the containers via `env_file:` in
   `2026_11_15_000001_create_content_writer_role.php`; the entrypoint runs migrations but **swallows
   failures**, so check the role exists after a deploy); and the admin app (`lib/auth.ts`,
   `systemUserSchema.ts`, the home-route and "Filament hand-off" checks in `App.tsx`).
-- New system users default to the `staff` role in the admin form (`SystemUserModal`), i.e. full access:
-  pick the role deliberately.
+- The admin's Create User form pre-selects no role (it used to pre-select `staff`, i.e. full access) and
+  refuses to save until one is chosen, so full access is never granted by default.
 
 ---
 

@@ -34,7 +34,9 @@ const emptyValues: SystemUserFormValues = {
   name: '',
   email: '',
   password: '',
-  roles: ['staff'],
+  // No role is pre-selected: "staff" is a core role with full access, so the person
+  // creating the account has to choose one on purpose.
+  roles: [],
   is_active: true,
 };
 

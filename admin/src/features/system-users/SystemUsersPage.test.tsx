@@ -120,6 +120,27 @@ describe('SystemUsersPage', () => {
     expect(screen.getByRole('heading', { name: 'New User' })).toBeInTheDocument();
   });
 
+  it('does not pre-select any role for a new user, so full access is never granted by default', async () => {
+    renderWithClient(<SystemUsersPage />);
+
+    await screen.findByText('Super Admin');
+    fireEvent.click(screen.getByRole('button', { name: /New User/i }));
+
+    const dialog = screen.getByRole('dialog');
+    const checkboxes = Array.from(dialog.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+    expect(checkboxes.length).toBeGreaterThanOrEqual(7);
+    expect(checkboxes.filter((box) => box.checked)).toHaveLength(0);
+
+    fireEvent.change(dialog.querySelector('#user-name')!, { target: { value: 'New Person' } });
+    fireEvent.change(dialog.querySelector('#user-email')!, { target: { value: 'new.person@example.com' } });
+    fireEvent.change(dialog.querySelector('#user-password')!, { target: { value: 'a-long-test-password' } });
+    fireEvent.click(screen.getByRole('button', { name: /Create User/i }));
+
+    // Translations are not loaded in tests, so the message shows as its key.
+    expect(await screen.findByText('system_users.validation.roles_required')).toBeInTheDocument();
+    expect(vi.mocked(fetchJson).mock.calls.some(([, options]) => (options as { method?: string } | undefined)?.method === 'POST')).toBe(false);
+  });
+
   it('lets the person creating a user see the password they type, and hide it again', async () => {
     renderWithClient(<SystemUsersPage />);
 
