@@ -21,7 +21,7 @@ class User extends Authenticatable implements FilamentUser, LunarUserInterface
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, LunarUser, Notifiable;
 
-    public const ADMIN_PANEL_ROLES = ['super_admin', 'admin', 'staff', 'Product Manager', 'Order Manager', 'Support'];
+    public const ADMIN_PANEL_ROLES = ['super_admin', 'admin', 'staff', 'Product Manager', 'Order Manager', 'Support', 'Content Writer'];
 
     public function canAccessPanel(Panel $panel): bool
     {

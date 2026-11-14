@@ -51,7 +51,7 @@ class RoleControllerTest extends TestCase
         }
     }
 
-    public function test_index_returns_six_admin_roles_with_editable_flags_and_filters_out_junk_permissions(): void
+    public function test_index_returns_seven_admin_roles_with_editable_flags_and_filters_out_junk_permissions(): void
     {
         // Seed a junk permission and give it to Product Manager
         $junkPermission = Permission::firstOrCreate([
@@ -65,7 +65,7 @@ class RoleControllerTest extends TestCase
         $response = $this->getJson('/api/admin/system/roles')->assertOk();
 
         $data = $response->json('data');
-        $this->assertCount(6, $data);
+        $this->assertCount(7, $data);
 
         $roleNames = collect($data)->pluck('name')->all();
         $this->assertEqualsCanonicalizing(User::ADMIN_PANEL_ROLES, $roleNames);
@@ -79,6 +79,7 @@ class RoleControllerTest extends TestCase
         $this->assertTrue($rolesByName['Product Manager']['editable']);
         $this->assertTrue($rolesByName['Order Manager']['editable']);
         $this->assertTrue($rolesByName['Support']['editable']);
+        $this->assertTrue($rolesByName['Content Writer']['editable']);
 
         // Check junk permission is filtered out from response
         $this->assertNotContains('settings:core', $rolesByName['Product Manager']['permissions']);

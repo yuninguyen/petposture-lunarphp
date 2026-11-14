@@ -72,6 +72,7 @@ final class AdminPermissionMatrix
                 'view_review',
                 'update_review',
             ],
+            'Content Writer' => AdminAbilityRegistry::CONTENT_WRITER,
             default => [],
         };
     }

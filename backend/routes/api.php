@@ -162,7 +162,7 @@ Route::delete('/cart/lines/{lineId}', [CartController::class, 'removeLine'])->mi
 Route::delete('/cart', [CartController::class, 'clear'])->middleware('throttle:api-write');
 
 Route::prefix('/admin')
-    ->middleware(['auth:sanctum', 'role:super_admin|admin|staff|Product Manager|Order Manager|Support', 'admin.permission'])
+    ->middleware(['auth:sanctum', 'role:super_admin|admin|staff|Product Manager|Order Manager|Support|Content Writer', 'admin.permission'])
     ->group(function () {
         Route::get('/dashboard/sales', [DashboardSalesController::class, 'index']);
         Route::get('/dashboard/conversion', [DashboardConversionController::class, 'index']);

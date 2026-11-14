@@ -241,6 +241,29 @@ final class AdminAbilityRegistry
         'view_user',
     ];
 
+    // Content Writer: drafts posts for an admin to review and publish. Deliberately has no
+    // publish_post, delete_*, generate_post_seo (paid AI), duplicate_post, category changes,
+    // tag edits, or view_any_user (that list includes customers' names).
+    public const CONTENT_WRITER = [
+        'view_any_post',
+        'view_post',
+        'create_post',
+        'update_post',
+        'view_any_blog_tag',
+        'view_blog_tag',
+        'create_blog_tag',
+        'view_any_blog_category',
+        'view_blog_category',
+        'view_any_media',
+        'view_media',
+        'create_media',
+        'view_any_breed',
+        'view_breed',
+        'view_any_solution',
+        'view_solution',
+        'view_affiliate_network_selector',
+    ];
+
     // 26. Orders (matches OrderPolicy & AdminPermissionMatrix::ORDER)
     public const ORDERS = [
         'view_any_order',
@@ -527,7 +550,7 @@ final class AdminAbilityRegistry
                 'route_prefix' => 'breeds',
                 'access_type' => 'mw-ability',
                 'abilities' => self::BREEDS,
-                'allowed_roles' => ['super_admin', 'admin', 'staff', 'Product Manager'],
+                'allowed_roles' => ['super_admin', 'admin', 'staff', 'Product Manager', 'Content Writer'],
             ],
             19 => [
                 'id' => 19,
@@ -535,7 +558,7 @@ final class AdminAbilityRegistry
                 'route_prefix' => 'solutions',
                 'access_type' => 'mw-ability',
                 'abilities' => self::SOLUTIONS,
-                'allowed_roles' => ['super_admin', 'admin', 'staff', 'Product Manager'],
+                'allowed_roles' => ['super_admin', 'admin', 'staff', 'Product Manager', 'Content Writer'],
             ],
             20 => [
                 'id' => 20,
@@ -549,17 +572,17 @@ final class AdminAbilityRegistry
                 'id' => 21,
                 'key' => 'posts',
                 'route_prefix' => 'posts',
-                'access_type' => 'fast-path-only',
+                'access_type' => 'mw-ability',
                 'abilities' => self::POSTS,
-                'allowed_roles' => ['super_admin', 'admin', 'staff'],
+                'allowed_roles' => ['super_admin', 'admin', 'staff', 'Content Writer'],
             ],
             22 => [
                 'id' => 22,
                 'key' => 'blog/categories',
                 'route_prefix' => 'blog/categories',
-                'access_type' => 'fast-path-only',
+                'access_type' => 'mw-ability',
                 'abilities' => self::BLOG_CATEGORIES,
-                'allowed_roles' => ['super_admin', 'admin', 'staff'],
+                'allowed_roles' => ['super_admin', 'admin', 'staff', 'Content Writer'],
             ],
             23 => [
                 'id' => 23,
@@ -573,9 +596,9 @@ final class AdminAbilityRegistry
                 'id' => 24,
                 'key' => 'blog/tags',
                 'route_prefix' => 'blog/tags',
-                'access_type' => 'fast-path-only',
+                'access_type' => 'mw-ability',
                 'abilities' => self::BLOG_TAGS,
-                'allowed_roles' => ['super_admin', 'admin', 'staff'],
+                'allowed_roles' => ['super_admin', 'admin', 'staff', 'Content Writer'],
             ],
             25 => [
                 'id' => 25,
@@ -605,17 +628,17 @@ final class AdminAbilityRegistry
                 'id' => 28,
                 'key' => 'media',
                 'route_prefix' => 'media',
-                'access_type' => 'fast-path-only',
+                'access_type' => 'mw-ability',
                 'abilities' => self::MEDIA,
-                'allowed_roles' => ['super_admin', 'admin', 'staff'],
+                'allowed_roles' => ['super_admin', 'admin', 'staff', 'Content Writer'],
             ],
             29 => [
                 'id' => 29,
                 'key' => 'affiliate-networks',
                 'route_prefix' => 'affiliate-networks',
-                'access_type' => 'fast-path-only',
+                'access_type' => 'mw-ability',
                 'abilities' => self::AFFILIATE_NETWORKS_SELECTOR,
-                'allowed_roles' => ['super_admin', 'admin', 'staff'],
+                'allowed_roles' => ['super_admin', 'admin', 'staff', 'Content Writer'],
             ],
             30 => [
                 'id' => 30,
@@ -729,7 +752,7 @@ final class AdminAbilityRegistry
      */
     public static function nonCoreRoles(): array
     {
-        return ['Product Manager', 'Order Manager', 'Support'];
+        return ['Product Manager', 'Order Manager', 'Support', 'Content Writer'];
     }
 
     /**
@@ -849,6 +872,15 @@ final class AdminAbilityRegistry
                 'update_order',
                 // Domain 27: Return Requests
                 ...self::RETURN_REQUESTS,
+            ],
+
+            'Content Writer' => [
+                // Domain 4: Profile
+                ...self::PROFILE,
+                // Domain 9: Notifications
+                ...self::NOTIFICATIONS,
+                // Posts, tags, categories (view only), media, breed/solution pickers
+                ...self::CONTENT_WRITER,
             ],
 
             default => [],

@@ -136,6 +136,13 @@ class PostController extends Controller
     {
         $this->authorizeAdmin('update_post');
 
+        // A live post is edited, or taken back to draft, only by someone who may publish:
+        // update_post alone is not tied to authorship, so without this a writer could change
+        // an article under its readers.
+        if ($post->status === 'published') {
+            $this->authorizeAdmin('publish_post');
+        }
+
         $validated = $request->validate($this->validationRules(forUpdate: true));
         if (($validated['status'] ?? null) === 'published' && $post->status !== 'published') {
             $this->authorizeAdmin('publish_post');

@@ -66,7 +66,7 @@ class AdminAbilityRegistryTest extends TestCase
     public function test_it_identifies_core_and_non_core_roles_correctly(): void
     {
         $this->assertSame(['super_admin', 'admin', 'staff'], AdminAbilityRegistry::coreRoles());
-        $this->assertSame(['Product Manager', 'Order Manager', 'Support'], AdminAbilityRegistry::nonCoreRoles());
+        $this->assertSame(['Product Manager', 'Order Manager', 'Support', 'Content Writer'], AdminAbilityRegistry::nonCoreRoles());
         $this->assertSame(User::ADMIN_PANEL_ROLES, AdminAbilityRegistry::adminRoles());
 
         $this->assertTrue(AdminAbilityRegistry::isCoreAdminRole('super_admin'));
