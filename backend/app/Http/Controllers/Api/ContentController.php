@@ -52,7 +52,9 @@ class ContentController extends Controller
      */
     private function hasValidPreviewToken(Request $request, string $slug): bool
     {
-        return $request->hasValidSignature();
+        // The admin signs on the path alone; links made by the older Filament admin are
+        // signed on the full URL, so both are still accepted.
+        return $request->hasValidRelativeSignature() || $request->hasValidSignature();
     }
 
     public function page($slug)

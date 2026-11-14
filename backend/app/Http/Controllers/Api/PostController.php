@@ -273,9 +273,12 @@ class PostController extends Controller
     {
         $this->authorizeAdmin();
 
+        // Signed on the path alone (absolute: false): the storefront renders on the server and
+        // calls this API over an internal address, so a signature that also covered the public
+        // host and scheme would never match and every draft preview would 404.
         $signedUrl = URL::temporarySignedRoute('posts.show', now()->addDay(), [
             'slug' => $post->slug,
-        ]);
+        ], absolute: false);
         $url = rtrim(config('app.frontend_url'), '/')
             ."/blog/{$post->slug}?"
             .parse_url($signedUrl, PHP_URL_QUERY);

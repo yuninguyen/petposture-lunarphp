@@ -71,6 +71,48 @@ class PostControllerParityTest extends TestCase
             ->assertJsonPath('data.slug', 'native-preview-post');
     }
 
+    public function test_preview_link_still_works_when_the_api_is_reached_under_another_host_and_scheme(): void
+    {
+        // The storefront renders on the server and calls the API over an internal address
+        // (http://127.0.0.1:8001), not the public https host the link was created under.
+        $post = Post::query()->create($this->basePayload(['slug' => 'internal-host-preview']));
+
+        $url = $this->getJson("/api/admin/posts/{$post->id}/preview-url")->assertOk()->json('url');
+        parse_str(parse_url($url, PHP_URL_QUERY) ?? '', $query);
+
+        $this->getJson('http://127.0.0.1:8001/api/posts/internal-host-preview?'.http_build_query($query))
+            ->assertOk()
+            ->assertJsonPath('data.slug', 'internal-host-preview');
+    }
+
+    public function test_preview_link_is_rejected_under_another_host_when_the_signature_is_tampered_with(): void
+    {
+        $post = Post::query()->create($this->basePayload(['slug' => 'tampered-preview']));
+
+        $url = $this->getJson("/api/admin/posts/{$post->id}/preview-url")->assertOk()->json('url');
+        parse_str(parse_url($url, PHP_URL_QUERY) ?? '', $query);
+        $signature = (string) $query['signature'];
+        $query['signature'] = ($signature[0] === '0' ? '1' : '0').substr($signature, 1);
+
+        $this->getJson('http://127.0.0.1:8001/api/posts/tampered-preview?'.http_build_query($query))
+            ->assertNotFound();
+        $this->getJson('http://127.0.0.1:8001/api/posts/tampered-preview')->assertNotFound();
+    }
+
+    public function test_preview_link_signed_for_one_post_cannot_open_another_draft_or_outlive_its_expiry(): void
+    {
+        $post = Post::query()->create($this->basePayload(['slug' => 'first-draft']));
+        Post::query()->create($this->basePayload(['slug' => 'second-draft']));
+
+        $url = $this->getJson("/api/admin/posts/{$post->id}/preview-url")->assertOk()->json('url');
+        parse_str(parse_url($url, PHP_URL_QUERY) ?? '', $query);
+
+        $this->getJson('http://127.0.0.1:8001/api/posts/second-draft?'.http_build_query($query))->assertNotFound();
+
+        $this->travel(2)->days();
+        $this->getJson('http://127.0.0.1:8001/api/posts/first-draft?'.http_build_query($query))->assertNotFound();
+    }
+
     // --- Section C: published_at ---
 
     public function test_store_respects_explicit_published_at_when_publishing(): void
