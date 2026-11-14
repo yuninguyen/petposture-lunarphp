@@ -24,6 +24,20 @@ function loadSitemap(fetchImpl) {
     return context.sitemap;
 }
 
+test('sitemap lists the breed and solution guides as well as the shop pages', async () => {
+    const sitemap = loadSitemap(async () => ({ ok: true, async json() { return { data: [], meta: { last_page: 1 } }; } }));
+    const urls = new Set((await sitemap()).map((entry) => entry.url));
+
+    for (const path of [
+        '/dogs', '/dogs/dachshund', '/dogs/french-bulldog', '/dogs/pug', '/dogs/corgi', '/dogs/english-bulldog',
+        '/solutions', '/solutions/feeding', '/solutions/comfort', '/solutions/mobility', '/solutions/walking',
+        '/shop/breeds', '/shop/breeds/corgi', '/shop/solutions', '/shop/solutions/feeding',
+    ]) {
+        assert.ok(urls.has(`https://petposture.test${path}`), `sitemap should contain ${path}`);
+    }
+    assert.ok(!urls.has('https://petposture.test/track-order'));
+});
+
 test('sitemap follows every page of posts instead of stopping at the first', async () => {
     const requests = [];
     const posts = Array.from({ length: 25 }, (_, index) => ({ slug: `guide-${index + 1}` }));
