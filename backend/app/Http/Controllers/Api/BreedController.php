@@ -29,7 +29,7 @@ class BreedController extends Controller
 
     public function show(string $slug)
     {
-        $breed = Breed::where('slug', $slug)->firstOrFail();
+        $breed = Breed::with('seo')->where('slug', $slug)->firstOrFail();
 
         $products = $breed->products()
             ->where('status', 'published')
@@ -61,6 +61,7 @@ class BreedController extends Controller
                 'slug' => $breed->slug,
                 'body_type' => $breed->body_type,
                 'description' => $breed->description,
+                'seo' => $breed->seo,
                 'products' => ProductResource::collection($products),
                 'posts' => PostResource::collection($posts),
             ],

@@ -47,10 +47,12 @@ class PostResource extends JsonResource
             'breeds' => $this->breeds->map(fn ($breed) => [
                 'id' => (string) $breed->id,
                 'name' => $breed->name,
+                'slug' => $breed->slug,
             ])->values(),
             'solutions' => $this->solutions->map(fn ($solution) => [
                 'id' => (string) $solution->id,
                 'name' => $solution->name,
+                'slug' => $solution->slug,
             ])->values(),
             'tags' => $this->tags->map(fn ($tag) => [
                 'id' => (string) $tag->id,
