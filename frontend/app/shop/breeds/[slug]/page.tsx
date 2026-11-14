@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Product } from '@/types/shop';
 import { API_BASE_URL } from '@/lib/api';
+import { toMetaDescription } from '@/lib/meta-description';
 import { SITE_URL } from '@/lib/site';
 import { headers } from 'next/headers';
 
@@ -65,7 +66,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
     return {
         title: `Shop ${breed.name}`,
-        description: breed.description || `Breed-focused products selected for fit and everyday comfort for ${breed.name}.`,
+        description: toMetaDescription(breed.description) ?? `Breed-focused products selected for fit and everyday comfort for ${breed.name}.`,
         alternates: { canonical: `/shop/breeds/${slug}` },
     };
 }
@@ -124,6 +125,7 @@ export default async function Page({ params }: { params: Promise<Params> }) {
                 heroEyebrow="Shop by Breed"
                 heroTitle={`Built for ${breed.name}`}
                 heroDescription={breed.description || `Breed-focused products selected for fit and everyday comfort for ${breed.name}.`}
+                heroLink={{ href: `/dogs/${slug}`, label: `Read the ${breed.name} guide` }}
             />
             </Suspense>
         </>

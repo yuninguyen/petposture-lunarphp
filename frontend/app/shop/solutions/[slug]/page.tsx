@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Product } from '@/types/shop';
 import { API_BASE_URL } from '@/lib/api';
+import { toMetaDescription } from '@/lib/meta-description';
 import { SITE_URL } from '@/lib/site';
 import { headers } from 'next/headers';
 
@@ -65,7 +66,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
     return {
         title: `Shop ${solution.name}`,
-        description: solution.description || `Practical, carefully selected products for ${solution.name.toLowerCase()}.`,
+        description: toMetaDescription(solution.description) ?? `Practical, carefully selected products for ${solution.name.toLowerCase()}.`,
         alternates: { canonical: `/shop/solutions/${slug}` },
     };
 }
@@ -124,6 +125,7 @@ export default async function Page({ params }: { params: Promise<Params> }) {
                 heroEyebrow="Shop by Solution"
                 heroTitle={solution.name}
                 heroDescription={solution.description || `Practical, carefully selected products for ${solution.name.toLowerCase()}.`}
+                heroLink={{ href: `/solutions/${slug}`, label: `Read the ${solution.name.toLowerCase()} guide` }}
             />
             </Suspense>
         </>

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import { SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
+import Link from 'next/link';
+import { SlidersHorizontal, ChevronDown, ChevronUp, ArrowUpRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useShopLogic } from '@/hooks/useShopLogic';
@@ -20,6 +21,7 @@ interface ShopPageProps {
     heroEyebrow?: string;
     heroTitle?: string;
     heroDescription?: string;
+    heroLink?: { href: string; label: string };
 }
 
 export default function ShopPage({
@@ -33,6 +35,7 @@ export default function ShopPage({
     heroEyebrow = 'PetPosture Shop',
     heroTitle = 'Practical products, organized like a real catalog.',
     heroDescription = "Shop bowls, ramps, beds and harnesses chosen to fit your dog's breed, body type and everyday habits.",
+    heroLink,
 }: ShopPageProps) {
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
     const shopLogic = useShopLogic(initialProducts, initialBreed, initialSolution, initialSearch, allBreeds, allSolutions, initialProductsError);
@@ -62,6 +65,14 @@ export default function ShopPage({
                             <p className="mt-2 max-w-[640px] text-[13px] leading-6 text-[#62666a]">
                                 {heroDescription}
                             </p>
+                            {heroLink && (
+                                <Link
+                                    href={heroLink.href}
+                                    className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-rust hover:underline"
+                                >
+                                    {heroLink.label} <ArrowUpRight size={13} />
+                                </Link>
+                            )}
                         </div>
 
                         <button

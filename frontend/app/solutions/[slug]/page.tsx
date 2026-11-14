@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { ProductCard } from '@/components/shop/ProductCard';
 import { API_BASE_URL } from '@/lib/api';
+import { firstMetaDescription } from '@/lib/meta-description';
 import { Product } from '@/types/shop';
 
 type Params = { slug: string };
@@ -25,6 +26,7 @@ type SolutionDetail = {
     name: string;
     slug: string;
     description: string | null;
+    seo?: { description?: string | null } | null;
     products: Product[];
     posts: SolutionPost[];
 };
@@ -196,7 +198,12 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
     return {
         title: `${solution.name} Solutions for Dogs`,
-        description: solution.description ?? `Guides and gear for ${solution.name.toLowerCase()} — organized by breed and everyday use.`,
+        // The shop page for the same solution (/shop/solutions/<slug>) uses `solution.description`,
+        // so the guide prefers the admin SEO field, then the editorial intro, to read differently.
+        description: firstMetaDescription(
+            [solution.seo?.description, SOLUTION_CONTENT[slug]?.intro, solution.description],
+            `Guides and gear for ${solution.name.toLowerCase()} — organized by breed and everyday use.`,
+        ),
         alternates: { canonical: `/solutions/${slug}` },
     };
 }

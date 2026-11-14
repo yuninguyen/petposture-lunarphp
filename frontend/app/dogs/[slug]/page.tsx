@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { ProductCard } from '@/components/shop/ProductCard';
 import { API_BASE_URL } from '@/lib/api';
+import { firstMetaDescription } from '@/lib/meta-description';
 import { Product } from '@/types/shop';
 
 type Params = { slug: string };
@@ -26,6 +27,7 @@ type BreedDetail = {
     slug: string;
     body_type: string | null;
     description: string | null;
+    seo?: { description?: string | null } | null;
     products: Product[];
     posts: BreedPost[];
 };
@@ -131,7 +133,12 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 
     return {
         title: `${breed.name} Product Guide`,
-        description: breed.description ?? `Products and buying guides selected for ${breed.name}.`,
+        // The shop page for the same breed (/shop/breeds/<slug>) uses `breed.description`, so
+        // the guide prefers the admin SEO field, then the editorial copy, to read differently.
+        description: firstMetaDescription(
+            [breed.seo?.description, BREED_CONTENT[slug]?.whyFitDiffers, breed.description],
+            `Products and buying guides selected for ${breed.name}.`,
+        ),
         alternates: { canonical: `/dogs/${slug}` },
     };
 }

@@ -16,7 +16,8 @@ import {
     Instagram,
     Youtube,
     PawPrint,
-    HeartHandshake
+    HeartHandshake,
+    ArrowUpRight
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -51,6 +52,8 @@ interface BlogPost {
     date: string;
     readTime: string;
     tags: { name: string; slug: string }[];
+    breeds: { name: string; slug: string }[];
+    solutions: { name: string; slug: string }[];
 }
 
 interface BlogPostPageProps {
@@ -275,6 +278,34 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                 )}
                             </div>
                         </div>
+
+                        {(post.breeds.length > 0 || post.solutions.length > 0) && (
+                            <aside aria-label="Explore by breed and solution" className="mt-12 rounded-[3px] border border-zinc-200 bg-white p-6 shadow-sm">
+                                <h3 className="text-[18px] font-bold text-primary">Explore by breed and solution</h3>
+                                <ul className="mt-4 flex flex-wrap gap-2">
+                                    {post.breeds.map((breed) => (
+                                        <li key={`breed-${breed.slug}`}>
+                                            <Link
+                                                href={`/dogs/${breed.slug}`}
+                                                className="inline-flex items-center gap-1 rounded-[3px] border border-zinc-200 px-4 py-1.5 text-xs font-bold text-primary transition-colors hover:border-secondary hover:text-rust"
+                                            >
+                                                {breed.name} guide <ArrowUpRight size={12} />
+                                            </Link>
+                                        </li>
+                                    ))}
+                                    {post.solutions.map((solution) => (
+                                        <li key={`solution-${solution.slug}`}>
+                                            <Link
+                                                href={`/solutions/${solution.slug}`}
+                                                className="inline-flex items-center gap-1 rounded-[3px] border border-zinc-200 px-4 py-1.5 text-xs font-bold text-primary transition-colors hover:border-secondary hover:text-rust"
+                                            >
+                                                {solution.name} guide <ArrowUpRight size={12} />
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </aside>
+                        )}
 
                         {/* Comments Section */}
                         <div id="comments" className="mt-24 space-y-16">

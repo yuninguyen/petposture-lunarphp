@@ -44,14 +44,14 @@ test('route composition uses API summaries and exact fallback contracts', () => 
 
   const breedSource = readFileSync(new URL('./breeds/[slug]/page.tsx', import.meta.url), 'utf8');
   assert.match(breedSource, /name: breed\.name/);
-  assert.match(breedSource, /description: breed\.description \|\| `Breed-focused products selected for fit and everyday comfort for \$\{breed\.name\}\.`/);
+  assert.match(breedSource, /description: toMetaDescription\(breed\.description\) \?\? `Breed-focused products selected for fit and everyday comfort for \$\{breed\.name\}\.`/);
   assert.match(breedSource, /url: `\$\{SITE_URL\}\/shop\/breeds\/\$\{slug\}`/);
   const breedJsonLd = loadHelper('breeds/[slug]/page.tsx', 'buildBreedCollectionJsonLd')({ name: 'French Bulldog', description: 'Breed-focused products selected for fit and everyday comfort for French Bulldog.', url: 'https://petposture.test/shop/breeds/french-bulldog' });
   assert.equal(breedJsonLd.description, 'Breed-focused products selected for fit and everyday comfort for French Bulldog.');
 
   const solutionSource = readFileSync(new URL('./solutions/[slug]/page.tsx', import.meta.url), 'utf8');
   assert.match(solutionSource, /name: solution\.name/);
-  assert.match(solutionSource, /description: solution\.description \|\| `Practical, carefully selected products for \$\{solution\.name\.toLowerCase\(\)\}\.`/);
+  assert.match(solutionSource, /description: toMetaDescription\(solution\.description\) \?\? `Practical, carefully selected products for \$\{solution\.name\.toLowerCase\(\)\}\.`/);
   assert.match(solutionSource, /url: `\$\{SITE_URL\}\/shop\/solutions\/\$\{slug\}`/);
   const solutionJsonLd = loadHelper('solutions/[slug]/page.tsx', 'buildSolutionCollectionJsonLd')({ name: 'Mobility', description: 'Practical, carefully selected products for mobility.', url: 'https://petposture.test/shop/solutions/mobility' });
   assert.equal(solutionJsonLd.description, 'Practical, carefully selected products for mobility.');

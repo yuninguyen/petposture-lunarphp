@@ -29,6 +29,8 @@ type ApiPost = {
         slug?: string | null;
     } | null;
     tags?: { name: string; slug: string }[];
+    breeds?: { id: string; name: string; slug?: string | null }[];
+    solutions?: { id: string; name: string; slug?: string | null }[];
     seo?: {
         title?: string;
         keyphrase?: string;
@@ -56,7 +58,16 @@ type BlogPostViewModel = {
     date: string;
     readTime: string;
     tags: { name: string; slug: string }[];
+    breeds: { name: string; slug: string }[];
+    solutions: { name: string; slug: string }[];
 };
+
+// A breed or solution only becomes a link when the API gave us its slug.
+function withSlug(items: { name: string; slug?: string | null }[] | undefined) {
+    return (items ?? [])
+        .filter((item): item is { name: string; slug: string } => Boolean(item.slug))
+        .map((item) => ({ name: item.name, slug: item.slug }));
+}
 
 function toViewModel(post: ApiPost): BlogPostViewModel {
     const content = post.content || '';
@@ -80,6 +91,8 @@ function toViewModel(post: ApiPost): BlogPostViewModel {
                 : 'Recently published',
         readTime: post.read_time || '5 min read',
         tags: post.tags || [],
+        breeds: withSlug(post.breeds),
+        solutions: withSlug(post.solutions),
     };
 }
 
