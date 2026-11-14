@@ -120,6 +120,26 @@ describe('SystemUsersPage', () => {
     expect(screen.getByRole('heading', { name: 'New User' })).toBeInTheDocument();
   });
 
+  it('lets the person creating a user see the password they type, and hide it again', async () => {
+    renderWithClient(<SystemUsersPage />);
+
+    await screen.findByText('Super Admin');
+    fireEvent.click(screen.getByRole('button', { name: /New User/i }));
+
+    const dialog = screen.getByRole('dialog');
+    const password = dialog.querySelector<HTMLInputElement>('#user-password');
+    expect(password).not.toBeNull();
+    fireEvent.change(password!, { target: { value: 'a-long-test-password' } });
+    expect(password!.type).toBe('password');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(password!.type).toBe('text');
+    expect(password!.value).toBe('a-long-test-password');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+    expect(password!.type).toBe('password');
+  });
+
   it('shows error toast with CANNOT_MODIFY_SELF message when trying to delete own account', async () => {
     const error = new Error('You cannot disable or delete your own account.') as Error & {
       status?: number;

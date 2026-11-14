@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { humanizeRole } from '@/lib/humanizeRole';
 import {
   createSystemUser,
@@ -203,9 +204,8 @@ export function SystemUserModal({ open, user, onClose }: SystemUserModalProps) {
                   '*'
                 )}
               </label>
-              <Input
+              <PasswordInput
                 id="user-password"
-                type="password"
                 value={values.password || ''}
                 onChange={(e) =>
                   setValues({ ...values, password: e.target.value })
