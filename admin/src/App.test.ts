@@ -17,6 +17,8 @@ vi.mock('./features/dashboard/ConversionPage', () => ({ ConversionPage: () => cr
 vi.mock('./features/finance/GoalsPage', () => ({ GoalsPage: () => createElement('div', null, 'Goals route') }));
 vi.mock('./features/payment-methods/PaymentMethodsPage', () => ({ PaymentMethodsPage: () => createElement('div', null, 'Payment methods route') }));
 vi.mock('./features/profile/ProfilePage', () => ({ ProfilePage: () => createElement('div', null, 'Profile route') }));
+vi.mock('./features/posts/PostsListPage', () => ({ PostsListPage: () => createElement('div', null, 'Posts route') }));
+vi.mock('./features/posts/PostFormPage', () => ({ PostFormPage: () => createElement('div', null, 'Post form route') }));
 vi.mock('./features/system-users/SystemUsersPage', () => ({ SystemUsersPage: () => createElement('div', null, 'System users route') }));
 vi.mock('./features/system-media/MediaLibraryPage', () => ({ MediaLibraryPage: () => createElement('div', null, 'Media library route') }));
 vi.mock('./features/system-roles/RolesPage', () => ({ RolesPage: () => createElement('div', null, 'Roles route') }));
@@ -435,4 +437,42 @@ describe('admin home route resolution', () => {
     act(() => root.unmount());
     host.remove();
   });
+});
+
+describe('Content Writer admin role handling', () => {
+  it('lands on Posts, because that is the main thing the role can open', () => {
+    expect(getAdminHomeRoute(['Content Writer'], abilitiesFor(['Content Writer']))).toBe('/posts');
+    expect(getAdminHomeRoute(['admin'], abilitiesFor(['admin']))).toBe('/dashboard');
+  });
+
+  it.each([
+    ['/posts', 'Posts route'],
+    ['/posts/new', 'Post form route'],
+    ['/posts/12', 'Post form route'],
+  ])('opens %s instead of the "use the Filament admin panel" hand-off message', async (path, expectedRoute) => {
+    const { host, root } = renderRoutes(['Content Writer'], path);
+    await act(async () => await Promise.resolve());
+
+    expect(host.textContent).toContain(expectedRoute);
+    expect(host.textContent).not.toContain('Use the Filament admin panel');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it.each(['/orders', '/customers', '/products', '/dashboard/sales', '/system/users', '/system/settings'])(
+    'sends a Content Writer away from %s to Posts',
+    async (path) => {
+      const { host, root } = renderRoutes(['Content Writer'], path);
+      await act(async () => await Promise.resolve());
+
+      for (const forbidden of ['Orders route', 'Customers route', 'Products route', 'Sales dashboard route', 'System users route', 'System settings route']) {
+        expect(host.textContent).not.toContain(forbidden);
+      }
+      expect(host.querySelector('[data-testid="route-path"]')).toHaveTextContent('/posts');
+
+      act(() => root.unmount());
+      host.remove();
+    },
+  );
 });

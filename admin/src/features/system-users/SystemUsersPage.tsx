@@ -26,6 +26,7 @@ const ROLE_BADGE_STYLES: Record<string, string> = {
   'Product Manager': 'bg-emerald-50 text-emerald-700 border-emerald-200',
   'Order Manager': 'bg-amber-50 text-amber-700 border-amber-200',
   Support: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'Content Writer': 'bg-rose-50 text-rose-700 border-rose-200',
 };
 
 export function SystemUsersPage() {

@@ -224,8 +224,11 @@ export const ADMIN_HOME_CANDIDATES: HomeRouteCandidate[] = [
     canAccess: (roles, abilities) => !isCoreAdminRole(roles) && can(abilities, 'view_any_order'),
   },
   {
+    // Last, so every role that has a more specific home (core admins: dashboard; Product
+    // Manager: products; Order Manager and Support: orders) keeps it. A Content Writer
+    // has none of those, so Posts is where they land.
     path: '/posts',
-    canAccess: (roles, abilities) => isCoreAdminRole(roles) && can(abilities, 'view_any_post'),
+    canAccess: (_roles, abilities) => can(abilities, 'view_any_post'),
   },
 ];
 
@@ -260,7 +263,7 @@ export function AppRoutes({ userRoles, userAbilities = [] }: { userRoles: string
     || can(userAbilities, 'view_general_settings');
   const home = getAdminHomeRoute(userRoles, userAbilities);
 
-  if (!isCoreAdmin && !canManageProducts && !canManageSales && location.pathname !== '/system/settings') {
+  if (!isCoreAdmin && !canManageProducts && !canManageSales && !canViewContent && location.pathname !== '/system/settings') {
     return <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">Use the Filament admin panel for order and support workflows.</div>;
   }
 

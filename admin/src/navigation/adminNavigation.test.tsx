@@ -142,6 +142,15 @@ describe('admin navigation semantic authorization', () => {
     ]);
   });
 
+  it('shows a Content Writer only the content group, with posts, tags and categories but not comments, pages or SEO', () => {
+    const groups = getVisibleNavigation(abilitiesFor(['Content Writer']));
+    expect(groups.map((g) => g.key)).toEqual(['content']);
+
+    const paths = groups[0].items.map((i) => i.path);
+    expect(paths).toEqual(expect.arrayContaining(['/posts', '/tags', '/blog-categories']));
+    for (const hidden of ['/comments', '/pages', '/seo-social']) expect(paths).not.toContain(hidden);
+  });
+
   it('returns empty array for unknown or unauthorized roles', () => {
     expect(getVisibleNavigation(abilitiesFor(['guest']))).toEqual([]);
     expect(getVisibleNavigation(abilitiesFor([]))).toEqual([]);

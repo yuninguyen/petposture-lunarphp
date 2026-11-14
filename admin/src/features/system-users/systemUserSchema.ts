@@ -8,6 +8,7 @@ export const SYSTEM_USER_ROLES = [
   'Product Manager',
   'Order Manager',
   'Support',
+  'Content Writer',
 ] as const;
 
 export type SystemUserRole = (typeof SYSTEM_USER_ROLES)[number];

@@ -58,6 +58,27 @@ const CORE = [
   ...SYSTEM,
 ];
 
+// Mirrors AdminAbilityRegistry::CONTENT_WRITER in the backend: drafts posts, no publishing.
+const CONTENT_WRITER = [
+  'view_any_post',
+  'view_post',
+  'create_post',
+  'update_post',
+  'view_any_blog_tag',
+  'view_blog_tag',
+  'create_blog_tag',
+  'view_any_blog_category',
+  'view_blog_category',
+  'view_any_media',
+  'view_media',
+  'create_media',
+  'view_any_breed',
+  'view_breed',
+  'view_any_solution',
+  'view_solution',
+  'view_affiliate_network_selector',
+];
+
 export const ROLE_ABILITIES: Record<string, string[]> = {
   super_admin: CORE,
   admin: CORE,
@@ -65,6 +86,7 @@ export const ROLE_ABILITIES: Record<string, string[]> = {
   'Product Manager': [...CATALOGUE, ...REVIEWS],
   'Order Manager': [...DASHBOARD, ...ORDERS_WITH_REFUND, ...RETURN_REQUESTS],
   Support: [...DASHBOARD, ...ORDERS_NO_REFUND, ...RETURN_REQUESTS, ...REVIEWS],
+  'Content Writer': CONTENT_WRITER,
   customer: [],
 };
 

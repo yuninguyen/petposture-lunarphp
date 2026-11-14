@@ -706,6 +706,32 @@ committed to Git) and are mounted into the containers via `env_file:` in
 
 ---
 
+## Admin roles & permissions
+
+- **`super_admin`, `admin` and `staff` are the same in practice.** They hold the same 521 permissions
+  and `Gate::before` (`AppServiceProvider`) plus `EnforceAdminApiPermission` let anyone with one of
+  those roles through every check by role name. Trimming a core role's permissions in the database
+  therefore does nothing; to limit someone, give them a role that is **not** one of the three. The only
+  difference is that the last active `super_admin` cannot be deactivated or demoted.
+- **Business roles are enforced by permission** (Spatie, `Gate::authorize`), and the admin app gets its
+  abilities from `GET /admin/session`, which reads them from the database. Roles: Product Manager,
+  Order Manager, Support, **Content Writer**.
+- **Content Writer** drafts posts for an admin to review and publish: it can view, create and edit
+  **draft** posts, preview them, use tags (create), categories (view), media (upload) and the breed/solution/
+  affiliate pickers. It cannot publish, delete, edit or unpublish a post that is already live
+  (`PostController::update` requires `publish_post` for those), use AI SEO generation (paid), see
+  orders, customers, settings, users or roles. The permission list is `AdminAbilityRegistry::CONTENT_WRITER`.
+- **Adding a role** touches four places: the role name in `User::ADMIN_PANEL_ROLES` and the `role:` list
+  of the `/admin` route group in `routes/api.php`; its permissions in `AdminAbilityRegistry` /
+  `AdminPermissionMatrix::permissionsForRole()`; a migration that creates it (see
+  `2026_11_15_000001_create_content_writer_role.php`; the entrypoint runs migrations but **swallows
+  failures**, so check the role exists after a deploy); and the admin app (`lib/auth.ts`,
+  `systemUserSchema.ts`, the home-route and "Filament hand-off" checks in `App.tsx`).
+- New system users default to the `staff` role in the admin form (`SystemUserModal`), i.e. full access:
+  pick the role deliberately.
+
+---
+
 ## Local Setup
 
 ### Backend

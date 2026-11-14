@@ -1,6 +1,6 @@
 import { fetchJson } from './api';
 
-const ADMIN_ROLES = ['super_admin', 'admin', 'staff', 'Product Manager', 'Order Manager', 'Support'];
+const ADMIN_ROLES = ['super_admin', 'admin', 'staff', 'Product Manager', 'Order Manager', 'Support', 'Content Writer'];
 
 export interface AdminUser {
   id: string;
