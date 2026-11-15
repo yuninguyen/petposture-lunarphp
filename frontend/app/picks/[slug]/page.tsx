@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import { PickDetails } from '@/components/product/PickDetails';
 import { getApiBaseUrl } from '@/lib/api';
 import { firstMetaDescription } from '@/lib/meta-description';
+import { buildPickBreadcrumbJsonLd, buildPickJsonLd, serializeJsonLd } from '@/lib/pick-json-ld';
 import { buildPreviewQuery } from '@/lib/preview-query';
 import { SITE_URL } from '@/lib/site';
 import type { Product, ProductPick } from '@/types/shop';
@@ -104,7 +105,7 @@ export async function generateMetadata({ params, searchParams }: { params: Param
 export default async function Page({ params, searchParams }: { params: Params; searchParams: SearchParams }) {
     // Reading headers makes this route render per request. Its CSP carries a per-request nonce,
     // so a statically prerendered body (which cannot carry that nonce) would have its scripts blocked.
-    await headers();
+    const nonce = (await headers()).get('x-nonce') ?? undefined;
 
     const { slug } = await params;
     const previewQuery = buildPreviewQuery(await searchParams);
@@ -121,6 +122,8 @@ export default async function Page({ params, searchParams }: { params: Params; s
 
     return (
         <main className="min-h-screen bg-white font-hanken">
+            <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildPickJsonLd(SITE_URL, product)) }} />
+            <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildPickBreadcrumbJsonLd(SITE_URL, product)) }} />
             <Header />
             <PickDetails product={product} related={related} />
             <Footer />

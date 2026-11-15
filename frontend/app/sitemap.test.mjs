@@ -38,6 +38,38 @@ test('sitemap lists the breed and solution guides as well as the shop pages', as
     assert.ok(!urls.has('https://petposture.test/track-order'));
 });
 
+test('sitemap lists each Pick at /picks/<slug>, with no stock check and no ordinary product', async () => {
+    const sitemap = loadSitemap(async (url) => {
+        const parsed = new URL(url);
+        if (!parsed.pathname.endsWith('/products')) {
+            return { ok: true, async json() { return { data: [], meta: { last_page: 1 } }; } };
+        }
+        return {
+            ok: true,
+            async json() {
+                return {
+                    data: [
+                        { slug: 'necoichi-bowl', categorySlug: 'bowls', updated_at: '2026-11-15T10:00:00Z', stockStatus: 'out_of_stock', available: false, pick: { goUrl: 'https://api.test/go/pick/necoichi-bowl' } },
+                        { slug: 'ordinary-product', categorySlug: 'bowls', pick: null },
+                        { slug: 'no-pick-key', categorySlug: 'bowls' },
+                        { categorySlug: 'bowls', pick: { goUrl: 'https://api.test/go/pick/x' } },
+                    ],
+                    meta: { last_page: 1 },
+                };
+            },
+        };
+    });
+
+    const entries = await sitemap();
+    const pickEntries = entries.filter((entry) => entry.url.includes('/picks/'));
+
+    // Array.from: the sitemap runs in a vm context, whose arrays are not the same realm as the test's.
+    assert.deepEqual(Array.from(pickEntries, (entry) => entry.url), ['https://petposture.test/picks/necoichi-bowl']);
+    assert.equal(pickEntries[0].lastModified.toISOString(), new Date('2026-11-15T10:00:00Z').toISOString());
+    assert.ok(!entries.some((entry) => entry.url.endsWith('/picks/ordinary-product')));
+    assert.ok(!entries.some((entry) => entry.url.endsWith('/picks/no-pick-key')));
+});
+
 test('sitemap follows every page of posts instead of stopping at the first', async () => {
     const requests = [];
     const posts = Array.from({ length: 25 }, (_, index) => ({ slug: `guide-${index + 1}` }));

@@ -8,7 +8,7 @@ import { SITE_URL } from '@/lib/site';
 // INTERNAL_API_URL is available.
 export const dynamic = 'force-dynamic';
 
-type ApiProduct = { slug?: string; categorySlug?: string; updated_at?: string };
+type ApiProduct = { slug?: string; categorySlug?: string; updated_at?: string; pick?: unknown };
 type ApiPost = { slug?: string; updated_at?: string };
 
 function validLastModified(value?: string): Date | undefined {
@@ -99,6 +99,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             priority: 0.8,
         }));
 
+    // A Pick has its own page at /picks/<slug>. Stock is not looked at: PetPosture holds no stock for it.
+    const pickPages: MetadataRoute.Sitemap = products
+        .filter((p): p is ApiProduct & { slug: string } => Boolean(p.slug && p.pick))
+        .map((p) => ({
+            url: `${SITE_URL}/picks/${p.slug}`,
+            lastModified: validLastModified(p.updated_at),
+            changeFrequency: 'weekly',
+            priority: 0.8,
+        }));
+
     const postPages: MetadataRoute.Sitemap = posts
         .filter((p): p is Required<ApiPost> => Boolean(p.slug))
         .map((p) => ({
@@ -108,5 +118,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             priority: 0.6,
         }));
 
-    return [...staticPages, ...productPages, ...postPages];
+    return [...staticPages, ...productPages, ...pickPages, ...postPages];
 }
