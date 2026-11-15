@@ -14,7 +14,6 @@ const shopBySolution = [
   "Mobility",
   "Walking",
 ];
-const shopByBreed = ["Flat-Faced Breeds", "Long-Backed Breeds"];
 const customerService = [
   "Contact Us",
   "Shipping Policy",
@@ -66,8 +65,6 @@ const getShopHref = (item: string) => {
     case "Comfort": return "/solutions/comfort";
     case "Mobility": return "/solutions/mobility";
     case "Walking": return "/solutions/walking";
-    case "Flat-Faced Breeds": return "/shop/breeds/flat-faced";
-    case "Long-Backed Breeds": return "/shop/breeds/long-backed";
     default: return "#";
   }
 };
@@ -207,16 +204,16 @@ export default function Footer() {
               }
             />
 
-            {/* Shop section: solution + breed sub-groups, accordion on mobile */}
+            {/* SHOP-HIDDEN: this was the "Shop" section with a "By Body Type" group linking into /shop/breeds/*.
+                Only the solution guides remain. Revert the Step 1 commit to restore the shop links. */}
             <FooterSection
-              title="Shop"
+              title="Solutions"
               id="shop"
               isOpen={openSection === "shop"}
               onToggle={toggleSection}
               isCustomContent={
                 <div className="pb-4 lg:pb-0 space-y-6">
                   <ShopLinkGroup heading="By Solution" items={shopBySolution} />
-                  <ShopLinkGroup heading="By Body Type" items={shopByBreed} />
                 </div>
               }
             />

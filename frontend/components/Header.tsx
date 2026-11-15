@@ -165,11 +165,7 @@ router.push(`/shop?q=${encodeURIComponent(term)}`);
                 Home
               </Link>
             </li>
-            <li className="h-full">
-              <Link href="/shop" className={navLinkClass("/shop")}>
-                Shop
-              </Link>
-            </li>
+            {/* SHOP-HIDDEN: the "Shop" nav link is removed while the shop is hidden. Revert the Step 1 commit to restore. */}
             <li className="h-full">
               <Link href="/our-mission" className={navLinkClass("/our-mission")}>
                 Our Mission
@@ -286,7 +282,6 @@ router.push(`/shop?q=${encodeURIComponent(term)}`);
                 <nav className="space-y-1">
                   {[
                     { label: "Home", href: "/" },
-                    { label: "Shop", href: "/shop" },
                     { label: "Our Mission", href: "/our-mission" },
                     { label: "Blog", href: "/blog" },
                     { label: "Contact", href: "/contact" },

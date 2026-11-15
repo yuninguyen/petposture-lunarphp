@@ -226,10 +226,10 @@ export default function OurMissionPage() {
                         </p>
 
                         <Link
-                            href="/shop"
+                            href="/solutions"
                             className="inline-block px-10 py-3 border-2 border-secondary text-secondary font-bold uppercase tracking-[0.08em] text-[15px] hover:text-ink transition-all duration-500 rounded relative group overflow-hidden"
                         >
-                            <span className="relative z-10">Shop Our Solutions</span>
+                            <span className="relative z-10">Explore Our Solutions</span>
                             <div className="absolute inset-0 bg-secondary translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
                         </Link>
                     </motion.div>

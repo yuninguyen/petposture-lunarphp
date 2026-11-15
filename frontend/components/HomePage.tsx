@@ -534,11 +534,6 @@ function BestSellers({ initialProducts }: { initialProducts?: Product[] | null }
             </div>
           ))}
         </div>
-        <div style={{ textAlign: 'center', marginTop: 48 }}>
-          <Btn variant="outline" href="/shop" style={{ padding: '14px 36px', fontSize: 12 }}>
-            View All Products
-          </Btn>
-        </div>
       </div>
     </section>
   );
@@ -682,7 +677,7 @@ function BreedBanners() {
           {breeds.map((breed, idx) => (
             <Link
               key={breed.slug}
-              href={`/shop/breeds/${breed.slug}`}
+              href="/dogs"
               className="flex flex-col items-stretch sm:flex-row"
               style={{
                 borderRadius: 8, overflow: 'hidden',

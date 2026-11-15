@@ -393,16 +393,7 @@ export default async function Page({ params }: { params: Promise<Params> }) {
                             </ul>
                         </section>
 
-                        {/* Commerce CTA */}
-                        <section className="rounded-[20px] border border-[#eadfd3] bg-white p-6 text-center">
-                            <p className="mb-4 text-sm text-[#62666a]">Ready to shop?</p>
-                            <Link
-                                href={`/shop/solutions/${slug}`}
-                                className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-xs font-bold uppercase tracking-[0.08em] text-white transition-colors hover:bg-rust"
-                            >
-                                Shop {solution.name} Products <ArrowUpRight size={14} />
-                            </Link>
-                        </section>
+                        {/* SHOP-HIDDEN: a "Ready to shop?" CTA to /shop/solutions/<slug> sat here. Revert the Step 1 commit to restore. */}
                     </aside>
                 </div>
             </div>

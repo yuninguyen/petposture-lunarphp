@@ -104,11 +104,6 @@ const ALL_SOLUTIONS = [
     { name: 'Walking', slug: 'walking' },
 ];
 
-const BODY_TYPE_LABEL: Record<string, string> = {
-    'flat-faced': 'Flat-Faced Dogs',
-    'long-backed': 'Long-Backed & Low-Bodied Dogs',
-};
-
 async function getBreed(slug: string): Promise<BreedDetail | null> {
     try {
         const response = await fetch(`${API_BASE_URL}/api/breeds/${slug}`, {
@@ -152,8 +147,6 @@ export default async function Page({ params }: { params: Promise<Params> }) {
     }
 
     const content = BREED_CONTENT[slug];
-    const bodyTypeSlug = breed.body_type === 'flat-faced' ? 'flat-faced' : breed.body_type === 'long-backed' ? 'long-backed' : null;
-    const bodyTypeLabel = bodyTypeSlug ? BODY_TYPE_LABEL[bodyTypeSlug] : null;
 
     return (
         <main className="min-h-screen bg-[#f7f3ee] font-hanken">
@@ -177,8 +170,8 @@ export default async function Page({ params }: { params: Promise<Params> }) {
             </section>
 
             <div className="mx-auto max-w-[1280px] px-4 py-10 md:px-8">
-                <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
-                    <div className="lg:col-span-2 space-y-10">
+                <div className="grid grid-cols-1 gap-10">
+                    <div className="space-y-10">
 
                         {/* Why Product Fit Can Differ */}
                         {content && (
@@ -288,32 +281,8 @@ export default async function Page({ params }: { params: Promise<Params> }) {
                         )}
                     </div>
 
-                    <aside className="space-y-8">
-                        {/* Explore by Body Type */}
-                        {bodyTypeSlug && bodyTypeLabel && (
-                            <section>
-                                <h2 className="mb-4 text-[19px] font-bold text-[#2d3a43]">Explore by Body Type</h2>
-                                <Link
-                                    href={`/shop/breeds/${bodyTypeSlug}`}
-                                    className="flex items-center justify-between rounded-[14px] border border-[#eadfd3] bg-white px-4 py-3 text-sm font-semibold text-[#2d3a43] transition hover:border-rust hover:text-rust"
-                                >
-                                    {bodyTypeLabel}
-                                    <ArrowUpRight size={14} />
-                                </Link>
-                            </section>
-                        )}
-
-                        {/* Commerce CTA */}
-                        <section className="rounded-[20px] border border-[#eadfd3] bg-white p-6 text-center">
-                            <p className="mb-4 text-sm text-[#62666a]">Ready to shop?</p>
-                            <Link
-                                href={`/shop/breeds/${slug}`}
-                                className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-xs font-bold uppercase tracking-[0.08em] text-white transition-colors hover:bg-rust"
-                            >
-                                Shop {breed.name} Products <ArrowUpRight size={14} />
-                            </Link>
-                        </section>
-                    </aside>
+                    {/* SHOP-HIDDEN: the sidebar held an "Explore by Body Type" link to /shop/breeds/<body-type> and a
+                        "Ready to shop?" CTA to /shop/breeds/<slug>. Revert the Step 1 commit to restore it. */}
                 </div>
             </div>
 

@@ -49,7 +49,7 @@ it("migrates hero and product conversion controls to the shared primitive", () =
 
   expect(heroSource).toMatch(/import\s+\{\s*ButtonLink\s*\}\s+from\s+["']@\/components\/ui\/Button["']/);
   expect(heroSource).toMatch(/href="\/dogs"[\s\S]*variant="primary"/);
-  expect(heroSource).toMatch(/href="\/shop\/solutions"[\s\S]*variant="secondary"/);
+  expect(heroSource).toMatch(/href="\/solutions"[\s\S]*variant="secondary"/);
 
   expect(detailsSource).toMatch(/<Button\s+type="button"\s+variant="primary"/);
   expect(detailsSource).toMatch(/aria-label="Decrease quantity"/);

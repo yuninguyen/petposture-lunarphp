@@ -9,6 +9,7 @@ import {
     PUBLIC_HTML_CACHE_CONTROL,
     classifyStorefrontRequest,
 } from './lib/storefront-request-policy';
+import { resolveShopRedirect } from './lib/shop-redirects';
 
 type NavigationUser = { roles?: string[] };
 
@@ -135,6 +136,16 @@ export async function proxy(request: NextRequest) {
     // is gone for good, so it drops out of Search Console sooner.
     if (GONE_PATHS.has(pathname)) {
         return secure(new NextResponse('Gone', { status: 410 }));
+    }
+
+    // SHOP-HIDDEN: the shop is hidden. This runs after the 410 check so a retired URL that
+    // must stay "gone" is never turned into a redirect.
+    const shopRedirect = resolveShopRedirect(pathname);
+    if (shopRedirect) {
+        const target = request.nextUrl.clone();
+        target.pathname = shopRedirect;
+        target.search = '';
+        return secure(NextResponse.redirect(target, 302));
     }
 
     // /account's own client-side AuthContext check already gates this route

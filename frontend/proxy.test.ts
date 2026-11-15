@@ -309,9 +309,53 @@ describe('proxy storefront policy', () => {
     expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
   });
 
-  it('does not touch a live solution page', async () => {
-    const response = await proxy(new NextRequest('https://petposture.com/shop/solutions/feeding'));
+  it.each([
+    ['/shop/breeds/corgi', '/dogs/corgi'],
+    ['/shop/breeds/dachshund', '/dogs/dachshund'],
+    ['/shop/breeds/english-bulldog', '/dogs/english-bulldog'],
+    ['/shop/breeds/french-bulldog', '/dogs/french-bulldog'],
+    ['/shop/breeds/pug', '/dogs/pug'],
+    ['/shop/breeds/flat-faced', '/'],
+    ['/shop/breeds/long-backed', '/'],
+    ['/shop/breeds', '/'],
+    ['/shop/solutions/comfort', '/solutions/comfort'],
+    ['/shop/solutions/feeding', '/solutions/feeding'],
+    ['/shop/solutions/mobility', '/solutions/mobility'],
+    ['/shop/solutions/walking', '/solutions/walking'],
+    ['/shop/solutions', '/'],
+    ['/shop', '/'],
+    ['/shop/harness', '/'],
+    ['/shop/harness/puppia-soft-dog-harness', '/'],
+    ['/shop/breeds/not-a-real-breed', '/'],
+    ['/cart', '/'],
+    ['/checkout', '/'],
+    ['/product/123', '/'],
+  ])('redirects the retired shop URL %s to %s with a temporary 302', async (from, to) => {
+    const response = await proxy(new NextRequest(`https://petposture.com${from}`));
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe(`https://petposture.com${to}`);
+  });
+
+  it('drops the search query when redirecting /shop?q=... so the old product search does not leak into the target', async () => {
+    const response = await proxy(new NextRequest('https://petposture.com/shop?q=harness'));
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('https://petposture.com/');
+  });
+
+  it('keeps the CSP and cache headers on a shop redirect', async () => {
+    const response = await proxy(new NextRequest('https://petposture.com/shop'));
+
+    expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
+    expect(response.headers.get('content-security-policy')).toBeTruthy();
+  });
+
+  it('does not redirect pages outside the shop', async () => {
+    for (const path of ['/dogs/pug', '/solutions/feeding', '/shopping-guide', '/checkout/success', '/blog']) {
+      const response = await proxy(new NextRequest(`https://petposture.com${path}`));
+
+      expect(response.status, path).toBe(200);
+    }
   });
 });

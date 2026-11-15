@@ -59,7 +59,7 @@ export default function Hero({ heroImage }: { heroImage?: string | null }) {
                   Find Your Breed
                 </ButtonLink>
                 <ButtonLink
-                  href="/shop/solutions"
+                  href="/solutions"
                   variant="secondary"
                   className="w-full shadow-none hover:bg-zinc-200 sm:w-auto"
                   style={{

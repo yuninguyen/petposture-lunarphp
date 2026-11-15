@@ -288,6 +288,28 @@ domains were healthy).
 
 ---
 
+## Shop hidden (SHOP-HIDDEN)
+
+The storefront shop is hidden because there is no LLC, EIN or payment processor yet, so
+checkout cannot take money. `frontend/proxy.ts` answers a temporary **302** (not 301, so it can be
+undone) for retired shop URLs via `frontend/lib/shop-redirects.ts`:
+
+- `/shop/breeds/<corgi|dachshund|english-bulldog|french-bulldog|pug>` → `/dogs/<slug>`
+- `/shop/solutions/<comfort|feeding|mobility|walking>` → `/solutions/<slug>`
+- `/shop`, any other `/shop/*`, `/cart`, `/checkout`, `/product/*` → `/`
+- `/shop/solutions/eating-digestion` stays **410** (checked first, see `GONE_PATHS`).
+  `/checkout/success` is not redirected.
+
+Links into the shop were removed from the Header ("Shop" menu), Footer, Hero, Our Mission, the home
+page breed banners and the "Ready to shop?" blocks on `/dogs/[slug]` and `/solutions/[slug]`. Each
+removal carries a `SHOP-HIDDEN` comment.
+
+**To reopen the shop:** revert the "hide the shop" commit (`git revert <sha>`), then re-add the shop
+URLs to `app/sitemap.ts` if they were removed in the later Picks work. Reopen only once a payment
+processor is live. `grep -r SHOP-HIDDEN frontend` lists everything touched.
+
+---
+
 ## Email deliverability & branding (DNS)
 
 **Migrated off Hostinger mail entirely (2026-08-23) — Hostinger mail hosting has been
