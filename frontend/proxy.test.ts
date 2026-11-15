@@ -48,6 +48,15 @@ describe('proxy storefront policy', () => {
     expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
   });
 
+  it('keeps a Pick page uncached and nonce-protected, because it renders on every request', async () => {
+    const response = await proxy(new NextRequest('https://petposture.com/picks/necoichi-bowl'));
+    const policy = response.headers.get('content-security-policy');
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe(PRIVATE_HTML_CACHE_CONTROL);
+    expect(policy).toContain('nonce-');
+  });
+
   it('uses the request Host header when Next URL retains the local browser origin', async () => {
     const response = await proxy(new NextRequest('http://127.0.0.1:3101/', {
       headers: { host: 'petposture.com:3101' },
