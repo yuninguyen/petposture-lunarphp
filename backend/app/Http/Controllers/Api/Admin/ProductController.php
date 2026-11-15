@@ -12,6 +12,7 @@ use App\Models\ProductRedirect;
 use App\Models\SeoMetadata;
 use App\Services\Admin\ProductAttributeService;
 use App\Services\ProductRouteService;
+use App\Support\RetailerUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -240,11 +241,17 @@ class ProductController extends Controller
     {
         $product->loadMissing(['defaultUrl', 'collections.defaultUrl']);
         $slug = $routes->slug($product);
+        // Signed on the path, not the host: the storefront renders on the server and calls this API at
+        // an internal address, which would make a host-bound signature look invalid.
         $signedUrl = URL::temporarySignedRoute('products.show', now()->addDay(), [
             'slug' => $slug,
-        ]);
+        ], absolute: false);
+        // A Pick lives at /picks/{slug}; its shop address is hidden and would redirect the preview away.
+        $path = RetailerUrl::web($product->translateAttribute('external_url')) !== null
+            ? "/picks/{$slug}"
+            : $routes->path($product);
         $url = rtrim((string) config('app.frontend_url'), '/')
-            .$routes->path($product)
+            .$path
             .'?'.parse_url($signedUrl, PHP_URL_QUERY);
 
         return response()->json(['url' => $url]);

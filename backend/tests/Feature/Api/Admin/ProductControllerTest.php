@@ -576,6 +576,62 @@ class ProductControllerTest extends TestCase
         $this->getJson($expiredUrl)->assertNotFound();
     }
 
+    private function draftPick(string $slug = 'draft-pick'): Product
+    {
+        $product = $this->product('Draft pick', 'draft', null, ['external_url' => new Text('https://www.chewy.com/p/1')]);
+        $this->variant($product, 'PICK-'.$slug, 1000, 0);
+        $product->urls()->delete();
+        $product->urls()->create(['language_id' => Language::getDefault()->id, 'slug' => $slug, 'default' => true]);
+
+        return $product;
+    }
+
+    public function test_the_preview_of_a_draft_pick_opens_its_picks_page_not_the_hidden_shop(): void
+    {
+        $this->actingAsAdmin();
+        config()->set('app.frontend_url', 'https://storefront.example.test');
+        $product = $this->draftPick();
+
+        $url = $this->getJson("/api/admin/products/{$product->id}/preview-url")->assertOk()->json('url');
+        $parts = parse_url($url);
+        parse_str($parts['query'] ?? '', $query);
+
+        $this->assertSame('storefront.example.test', $parts['host'] ?? null);
+        $this->assertSame('/picks/draft-pick', $parts['path'] ?? null);
+        $this->assertNotEmpty($query['signature'] ?? null);
+        $this->assertGreaterThan(now()->addHours(23)->timestamp, (int) ($query['expires'] ?? 0));
+    }
+
+    public function test_a_draft_pick_preview_link_works_when_the_api_is_reached_under_an_internal_host(): void
+    {
+        // The storefront renders on the server and calls the API over an internal address
+        // (http://127.0.0.1:8001), not the public https host the link was signed under.
+        $this->actingAsAdmin();
+        $product = $this->draftPick();
+
+        $url = $this->getJson("/api/admin/products/{$product->id}/preview-url")->assertOk()->json('url');
+        parse_str(parse_url($url, PHP_URL_QUERY) ?? '', $query);
+
+        $this->getJson('http://127.0.0.1:8001/api/products/draft-pick?'.http_build_query($query))
+            ->assertOk()
+            ->assertJsonPath('data.slug', 'draft-pick')
+            ->assertJsonStructure(['data' => ['pick' => ['goUrl']]]);
+    }
+
+    public function test_a_tampered_draft_pick_preview_link_is_rejected_under_an_internal_host(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->draftPick();
+
+        $url = $this->getJson("/api/admin/products/{$product->id}/preview-url")->assertOk()->json('url');
+        parse_str(parse_url($url, PHP_URL_QUERY) ?? '', $query);
+        $signature = (string) $query['signature'];
+        $query['signature'] = ($signature[0] === '0' ? '1' : '0').substr($signature, 1);
+
+        $this->getJson('http://127.0.0.1:8001/api/products/draft-pick?'.http_build_query($query))->assertNotFound();
+        $this->getJson('http://127.0.0.1:8001/api/products/draft-pick')->assertNotFound();
+    }
+
     public function test_product_associations_are_written_and_removed_synchronously_for_all_supported_types(): void
     {
         $this->actingAsAdmin();

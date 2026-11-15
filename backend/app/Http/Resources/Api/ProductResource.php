@@ -6,6 +6,7 @@ use App\Models\AffiliateNetwork;
 use App\Services\InventoryService;
 use App\Services\ProductRouteService;
 use App\Services\ProductSyncService;
+use App\Support\RetailerUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Str;
@@ -202,9 +203,7 @@ class ProductResource extends JsonResource
     /** The retailer link typed in the admin, or null when it is missing or not a plain web link. */
     private function pickUrl(): ?string
     {
-        $url = trim((string) $this->translateAttribute('external_url'));
-
-        return filter_var($url, FILTER_VALIDATE_URL) && preg_match('#^https?://#i', $url) ? $url : null;
+        return RetailerUrl::web($this->translateAttribute('external_url'));
     }
 
     /**

@@ -426,7 +426,9 @@ class ProductController extends Controller
 
     private function hasValidPreviewToken(Request $request, string $slug): bool
     {
-        return $request->hasValidSignature();
+        // Links are signed on the path so they survive the storefront's internal API host; one signed
+        // for the full URL (an older link) is still accepted.
+        return $request->hasValidRelativeSignature() || $request->hasValidSignature();
     }
 
     private function resolveCurrentPublishedProduct(string $slug): ?Product

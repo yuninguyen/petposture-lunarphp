@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AffiliateClick;
 use App\Models\AffiliateNetwork;
 use App\Models\Post;
+use App\Support\RetailerUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Lunar\Models\Product;
@@ -41,8 +42,8 @@ class AffiliateClickController extends Controller
         abort_unless($product, 404);
 
         // The URL is typed in the admin, so only follow plain web links.
-        $url = trim((string) $product->translateAttribute('external_url'));
-        abort_unless(filter_var($url, FILTER_VALIDATE_URL) && preg_match('#^https?://#i', $url), 404);
+        $url = RetailerUrl::web($product->translateAttribute('external_url'));
+        abort_unless($url !== null, 404);
 
         $networkSlug = trim((string) $product->translateAttribute('affiliate_network_slug'));
         $network = $networkSlug === '' ? null : AffiliateNetwork::where('slug', $networkSlug)->first();
