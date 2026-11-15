@@ -304,9 +304,21 @@ Links into the shop were removed from the Header ("Shop" menu), Footer, Hero, Ou
 page breed banners and the "Ready to shop?" blocks on `/dogs/[slug]` and `/solutions/[slug]`. Each
 removal carries a `SHOP-HIDDEN` comment.
 
-**To reopen the shop:** revert the "hide the shop" commit (`git revert <sha>`), then re-add the shop
-URLs to `app/sitemap.ts` if they were removed in the later Picks work. Reopen only once a payment
-processor is live. `grep -r SHOP-HIDDEN frontend` lists everything touched.
+A second commit, "hide the shop chrome", removed the parts of the site header and footer that
+presented PetPosture as a store: the **"Free Shipping on all US orders over $50" bar**, both
+**product search boxes** (desktop and mobile, they searched `/shop?q=`), the footer's **Shipping
+Policy / Return & Refund Policy / Request a Return** links and the **payment card icons**
+(`PaymentIcons.tsx` is kept but no longer used). The `/shipping-policy`, `/return-refund-policy`
+and `/returns` pages still exist, just unlinked. "Track Your Order" and the cart/wishlist icons were
+left in place.
+
+**To reopen the shop:** revert the "hide the shop" commit **and** the "hide the shop chrome" commit
+(`git log --grep "hide the shop"`, then `git revert <sha>` for each), then re-add the shop URLs to
+`app/sitemap.ts` if they were removed in the later Picks work. Reopen only once a payment processor
+is live. `grep -r SHOP-HIDDEN frontend` lists everything touched.
+
+The Picks work (the `/picks/[slug]` pages, the homepage Picks block, the Pick-aware admin preview)
+is **not** part of those commits and is not undone by reverting them.
 
 ---
 

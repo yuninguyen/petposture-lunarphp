@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, User, ShoppingBag, Menu, Phone, Mail, Clock, Truck, X, Facebook, Instagram, Twitter, Youtube, ChevronRight, LogOut, Search, ArrowRight } from "lucide-react";
+import { Heart, User, ShoppingBag, Menu, Phone, Mail, Clock, X, Facebook, Instagram, Twitter, Youtube, ChevronRight, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -14,17 +14,9 @@ import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
 
 export default function Header() {
 const [mobileOpen, setMobileOpen] = useState(false);
-const [searchTerm, setSearchTerm] = useState("");
-const router = useRouter();
 const pathname = usePathname();
-const isBlogRoute = pathname?.startsWith("/blog") ?? false;
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const term = searchTerm.trim();
-    if (!term) return;
-router.push(`/shop?q=${encodeURIComponent(term)}`);
-};
+// SHOP-HIDDEN: the product search state and its /shop?q= submit handler were removed with the search
+// boxes. Revert the "hide the shop chrome" commit to restore them.
   const { items, setCartOpen } = useCart();
   const { items: wishlistItems } = useWishlist();
   const { user, logout } = useAuth();
@@ -55,13 +47,8 @@ router.push(`/shop?q=${encodeURIComponent(term)}`);
 
   return (
     <header className="w-full relative z-50 flex flex-col font-sans">
-      {/* Announcement Top Bar - Professional Refinement */}
-      <div className="bg-primary text-white py-1.5 px-4 text-center text-xs md:text-sm font-medium tracking-[0.03em] md:tracking-[0.1em] uppercase w-full">
-        <div className="flex items-center justify-center gap-1.5 md:gap-2 opacity-90">
-          <Truck size={13} className="text-secondary flex-shrink-0" />
-          <span className="whitespace-nowrap">Free Shipping on all US orders over $50</span>
-        </div>
-      </div>
+      {/* SHOP-HIDDEN: the "Free Shipping on all US orders over $50" announcement bar was here. PetPosture
+          does not sell while the shop is hidden. Revert the "hide the shop chrome" commit to restore it. */}
 
       {/* Top Bar - White */}
       <div className="bg-white h-[70px] md:h-[80px] border-b border-zinc-100 relative z-30">
@@ -89,26 +76,9 @@ router.push(`/shop?q=${encodeURIComponent(term)}`);
             />
           </Link>
 
-          {/* Center: Search (Desktop) */}
-          <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-[500px]">
-            <div className="group flex h-[44px] w-full items-center rounded-xl border border-zinc-200 bg-white transition-colors focus-within:border-secondary focus-within:shadow-focus">
-              <Search size={15} strokeWidth={1.6} className="ml-3.5 flex-shrink-0 text-zinc-400 transition-colors group-focus-within:text-secondary" />
-              <input
-                type="text"
-                placeholder="Search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-full flex-1 border-none bg-transparent px-3 text-[14px] text-primary outline-none focus:ring-0"
-              />
-              <button
-                type="submit"
-                aria-label="Search"
-                className={`mr-1.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-ink transition-all duration-200 hover:bg-secondary-dark ${searchTerm ? "scale-100 opacity-100" : "scale-75 opacity-0 group-focus-within:scale-100 group-focus-within:opacity-100"}`}
-              >
-                <ArrowRight size={15} />
-              </button>
-            </div>
-          </form>
+          {/* SHOP-HIDDEN: the desktop product search box (it searched /shop?q=) was here, between the logo
+              and the icons. Revert the "hide the shop chrome" commit to restore it. */}
+          <div className="hidden flex-1 md:block" aria-hidden="true" />
 
           {/* Right: Icons */}
           <div className="flex items-center gap-4 md:gap-6 text-primary flex-shrink-0">
@@ -209,30 +179,8 @@ router.push(`/shop?q=${encodeURIComponent(term)}`);
         </div>
       </nav>
 
-      {/* Product search stays visible on mobile outside the blog reading flow. */}
-      {!isBlogRoute && (
-        <div className="md:hidden border-b border-zinc-100 bg-white">
-          <form onSubmit={handleSearchSubmit} className="px-4 py-3">
-            <div className="group flex h-[44px] w-full items-center rounded-xl border border-zinc-200 bg-zinc-50 transition-colors focus-within:border-secondary focus-within:bg-white focus-within:shadow-focus">
-              <Search size={15} strokeWidth={1.6} className="ml-3.5 flex-shrink-0 text-zinc-400 transition-colors group-focus-within:text-secondary" />
-              <input
-                type="text"
-                placeholder="Search products, breeds and guides"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-full flex-1 border-none bg-transparent px-3 text-sm outline-none"
-              />
-              <button
-                type="submit"
-                aria-label="Search"
-                className={`mr-1.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-secondary text-ink transition-all duration-200 hover:bg-secondary-dark ${searchTerm ? "scale-100 opacity-100" : "scale-75 opacity-0 group-focus-within:scale-100 group-focus-within:opacity-100"}`}
-              >
-                <ArrowRight size={15} />
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      {/* SHOP-HIDDEN: the mobile product search box (it searched /shop?q=) was here, shown outside the
+          blog routes. Revert the "hide the shop chrome" commit to restore it. */}
 
       {/* Mobile Drawer Overlay - Professional Redesign */}
       <AnimatePresence>

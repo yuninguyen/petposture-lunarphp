@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Facebook, Instagram, Twitter, Youtube, Mail, Plus, Minus } from "lucide-react";
-import PaymentIcons from "./PaymentIcons";
 import Newsletter from "./Newsletter";
 import { useSettings } from "@/context/SettingsContext";
 import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
@@ -14,13 +13,12 @@ const shopBySolution = [
   "Mobility",
   "Walking",
 ];
+// SHOP-HIDDEN: "Shipping Policy", "Return & Refund Policy" and "Request a Return" were listed here. PetPosture
+// does not ship or take returns while the shop is hidden. Revert the "hide the shop chrome" commit to restore them.
 const customerService = [
   "Contact Us",
-  "Shipping Policy",
-  "Return & Refund Policy",
   "FAQs",
   "Track Your Order",
-  "Request a Return",
 ];
 const legalLinks = [
   "Privacy Policy",
@@ -123,11 +121,8 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent, wr
                 <Link
                   href={
                     item === "Contact Us" ? "/contact" :
-                      item === "Shipping Policy" ? "/shipping-policy" :
-                        item === "Return & Refund Policy" ? "/return-refund-policy" :
-                          item === "FAQs" ? "/faqs" :
-                            item === "Track Your Order" ? "/track-order" :
-                              item === "Request a Return" ? "/returns" : "#"
+                      item === "FAQs" ? "/faqs" :
+                        item === "Track Your Order" ? "/track-order" : "#"
                   }
                   className="text-[16px] text-white/80 hover:text-secondary transition-colors flex items-center gap-2 group"
                 >
@@ -283,10 +278,9 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Payment Icons & Back to Top */}
+            {/* SHOP-HIDDEN: the payment card icons (Visa, Mastercard, PayPal…) sat before the back-to-top button.
+                Revert the "hide the shop chrome" commit to restore them. */}
             <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-10 w-full lg:w-auto">
-              <PaymentIcons />
-
               <button
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 className="w-11 h-11 bg-white/5 border border-white/10 flex items-center justify-center rounded-lg transition-all group shadow-xl"
