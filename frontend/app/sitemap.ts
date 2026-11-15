@@ -8,7 +8,7 @@ import { SITE_URL } from '@/lib/site';
 // INTERNAL_API_URL is available.
 export const dynamic = 'force-dynamic';
 
-type ApiProduct = { slug?: string; categorySlug?: string; updated_at?: string; pick?: unknown };
+type ApiProduct = { slug?: string; updated_at?: string; pick?: unknown };
 type ApiPost = { slug?: string; updated_at?: string };
 
 function validLastModified(value?: string): Date | undefined {
@@ -49,7 +49,11 @@ const fetchPosts = () => fetchAllPages<ApiPost>('/api/posts');
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const staticPages: MetadataRoute.Sitemap = [
         { url: `${SITE_URL}/`, changeFrequency: 'daily', priority: 1 },
-        { url: `${SITE_URL}/shop`, changeFrequency: 'daily', priority: 0.9 },
+        // SHOP-HIDDEN: fifteen shop URLs were listed here and below: /shop (daily, 0.9), /shop/breeds,
+        // /shop/breeds/{flat-faced,long-backed,english-bulldog,corgi,dachshund,french-bulldog,pug},
+        // /shop/solutions and /shop/solutions/{comfort,feeding,mobility,walking}, plus one /shop/<category>/<product>
+        // entry per product. They all redirect while the shop is hidden. Revert the "hide the shop" commits to
+        // list them again.
         { url: `${SITE_URL}/our-mission`, changeFrequency: 'monthly', priority: 0.6 },
         { url: `${SITE_URL}/blog`, changeFrequency: 'daily', priority: 0.7 },
         { url: `${SITE_URL}/dogs`, changeFrequency: 'weekly', priority: 0.8 },
@@ -63,19 +67,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${SITE_URL}/solutions/comfort`, changeFrequency: 'weekly', priority: 0.7 },
         { url: `${SITE_URL}/solutions/mobility`, changeFrequency: 'weekly', priority: 0.7 },
         { url: `${SITE_URL}/solutions/walking`, changeFrequency: 'weekly', priority: 0.7 },
-        { url: `${SITE_URL}/shop/breeds`, changeFrequency: 'weekly', priority: 0.7 },
-        { url: `${SITE_URL}/shop/breeds/flat-faced`, changeFrequency: 'weekly', priority: 0.7 },
-        { url: `${SITE_URL}/shop/breeds/long-backed`, changeFrequency: 'weekly', priority: 0.7 },
-        { url: `${SITE_URL}/shop/breeds/english-bulldog`, changeFrequency: 'weekly', priority: 0.7 },
-        { url: `${SITE_URL}/shop/breeds/corgi`, changeFrequency: 'weekly', priority: 0.7 },
-        { url: `${SITE_URL}/shop/breeds/dachshund`, changeFrequency: 'weekly', priority: 0.8 },
-        { url: `${SITE_URL}/shop/breeds/french-bulldog`, changeFrequency: 'weekly', priority: 0.8 },
-        { url: `${SITE_URL}/shop/breeds/pug`, changeFrequency: 'weekly', priority: 0.8 },
-        { url: `${SITE_URL}/shop/solutions`, changeFrequency: 'weekly', priority: 0.7 },
-        { url: `${SITE_URL}/shop/solutions/comfort`, changeFrequency: 'weekly', priority: 0.7 },
-        { url: `${SITE_URL}/shop/solutions/feeding`, changeFrequency: 'weekly', priority: 0.7 },
-        { url: `${SITE_URL}/shop/solutions/mobility`, changeFrequency: 'weekly', priority: 0.7 },
-        { url: `${SITE_URL}/shop/solutions/walking`, changeFrequency: 'weekly', priority: 0.7 },
         { url: `${SITE_URL}/contact`, changeFrequency: 'monthly', priority: 0.5 },
         { url: `${SITE_URL}/faqs`, changeFrequency: 'monthly', priority: 0.5 },
         { url: `${SITE_URL}/returns`, changeFrequency: 'monthly', priority: 0.3 },
@@ -90,14 +81,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const [products, posts] = await Promise.all([fetchProducts(), fetchPosts()]);
 
-    const productPages: MetadataRoute.Sitemap = products
-        .filter((p): p is Required<ApiProduct> => Boolean(p.slug && p.categorySlug))
-        .map((p) => ({
-            url: `${SITE_URL}/shop/${p.categorySlug}/${p.slug}`,
-            lastModified: validLastModified(p.updated_at),
-            changeFrequency: 'weekly',
-            priority: 0.8,
-        }));
+    // SHOP-HIDDEN: a /shop/<categorySlug>/<slug> entry per product (weekly, 0.8, with the product's updated_at)
+    // was built here. Revert the "hide the shop" commits to restore it.
 
     // A Pick has its own page at /picks/<slug>. Stock is not looked at: PetPosture holds no stock for it.
     const pickPages: MetadataRoute.Sitemap = products
@@ -118,5 +103,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             priority: 0.6,
         }));
 
-    return [...staticPages, ...productPages, ...pickPages, ...postPages];
+    return [...staticPages, ...pickPages, ...postPages];
 }

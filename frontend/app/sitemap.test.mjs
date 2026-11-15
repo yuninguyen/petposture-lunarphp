@@ -24,18 +24,21 @@ function loadSitemap(fetchImpl) {
     return context.sitemap;
 }
 
-test('sitemap lists the breed and solution guides as well as the shop pages', async () => {
+// SHOP-HIDDEN: this test also required fifteen /shop URLs (/shop, /shop/breeds/*, /shop/solutions/*). The shop
+// is hidden and those URLs redirect, so none may be listed. Reverting the "hide the shop" commits restores them.
+test('sitemap lists the breed and solution guides and no hidden shop page', async () => {
     const sitemap = loadSitemap(async () => ({ ok: true, async json() { return { data: [], meta: { last_page: 1 } }; } }));
     const urls = new Set((await sitemap()).map((entry) => entry.url));
 
     for (const path of [
+        '/', '/blog', '/faqs',
         '/dogs', '/dogs/dachshund', '/dogs/french-bulldog', '/dogs/pug', '/dogs/corgi', '/dogs/english-bulldog',
         '/solutions', '/solutions/feeding', '/solutions/comfort', '/solutions/mobility', '/solutions/walking',
-        '/shop/breeds', '/shop/breeds/corgi', '/shop/solutions', '/shop/solutions/feeding',
     ]) {
         assert.ok(urls.has(`https://petposture.test${path}`), `sitemap should contain ${path}`);
     }
     assert.ok(!urls.has('https://petposture.test/track-order'));
+    assert.deepEqual(Array.from(urls).filter((url) => /\/shop(\/|$)/.test(url)), []);
 });
 
 test('sitemap lists each Pick at /picks/<slug>, with no stock check and no ordinary product', async () => {
@@ -116,6 +119,7 @@ test('sitemap paginates products and carries valid updated timestamps', async ()
     const products = Array.from({ length: 201 }, (_, index) => ({
         slug: `product-${index + 1}`,
         categorySlug: 'feeding',
+        pick: { goUrl: `https://api.test/go/pick/product-${index + 1}` },
         updated_at: `2026-08-${String((index % 9) + 1).padStart(2, '0')}T12:00:00Z`,
     }));
     const posts = [
@@ -147,8 +151,10 @@ test('sitemap paginates products and carries valid updated timestamps', async ()
     });
 
     const entries = await sitemap();
-    const productEntries = entries.filter((entry) => entry.url.includes('/shop/feeding/product-'));
+    // SHOP-HIDDEN: these were /shop/feeding/product-N entries; the Pick pages are what the sitemap lists now.
+    const productEntries = entries.filter((entry) => entry.url.includes('/picks/product-'));
     const postEntries = entries.filter((entry) => entry.url.includes('/blog/guide-'));
+    assert.equal(entries.filter((entry) => /\/shop(\/|$)/.test(entry.url)).length, 0);
     assert.equal(productEntries.length, 201);
     assert.ok(productEntries.every((entry) => entry.lastModified instanceof Date));
     assert.equal(productEntries[0].lastModified.toISOString(), new Date(products[0].updated_at).toISOString());

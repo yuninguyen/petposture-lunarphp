@@ -56,8 +56,10 @@ test('Product canonical, OG, JSON-LD, and sitemap URLs stay identical', async ()
         if (parsed.pathname.endsWith('/products')) return { data: [product], meta: { last_page: 1 } };
         return { data: [] };
     }}));
+    // SHOP-HIDDEN: the shop product URL used to be in the sitemap; it now redirects, so it must not be listed.
+    // Reverting the "hide the shop" commits makes this expect the entry again.
     const entry = (await sitemap()).find((item) => item.url === expectedAbsolute);
-    assert.ok(entry, 'sitemap should contain the product URL');
+    assert.equal(entry, undefined, 'sitemap must not list a hidden shop product URL');
 });
 
 test('Blog canonical, OG, and sitemap URLs stay identical without optional SEO fields', async () => {
