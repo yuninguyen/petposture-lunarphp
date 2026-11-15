@@ -2,12 +2,13 @@ import type { BlogCategory, BlogPost } from '../components/BlogPage';
 import type { Product } from '../types/shop';
 import { getApiBaseUrl } from './api';
 import { formatDate } from './date';
+import { PICKS_PATH, pickProducts } from './pick';
 import { stripHtml } from './text';
 
 // Kept in step with the hero image fetch on the homepage and with the
 // Cloudflare s-maxage on `/`, so a content change shows up within minutes.
 const REVALIDATE_SECONDS = 300;
-const BEST_SELLER_COUNT = 4;
+const PICK_COUNT = 4;
 const INSIGHT_COUNT = 3;
 // BlogPage cuts its own excerpt from `content` (160 chars), so the server only
 // has to hand over a little more than that instead of the whole article.
@@ -60,9 +61,9 @@ async function fetchRows<T>(path: string): Promise<T[] | null> {
     }
 }
 
-export async function fetchBestSellers(): Promise<Product[] | null> {
-    const rows = await fetchRows<Product>('/api/products?category=best-sellers');
-    return rows ? rows.slice(0, BEST_SELLER_COUNT) : null;
+export async function fetchPicks(): Promise<Product[] | null> {
+    const rows = await fetchRows<Product>(PICKS_PATH);
+    return rows ? pickProducts(rows).slice(0, PICK_COUNT) : null;
 }
 
 export async function fetchInsightPosts(): Promise<InsightPost[] | null> {

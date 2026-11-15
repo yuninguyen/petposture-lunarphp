@@ -5,9 +5,10 @@ import { notFound } from 'next/navigation';
 import { ArrowUpRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { ProductCard } from '@/components/shop/ProductCard';
+import { PickCard } from '@/components/product/PickCard';
 import { API_BASE_URL } from '@/lib/api';
 import { firstMetaDescription } from '@/lib/meta-description';
+import { pickProducts } from '@/lib/pick';
 import { Product } from '@/types/shop';
 
 type Params = { slug: string };
@@ -269,12 +270,12 @@ export default async function Page({ params }: { params: Promise<Params> }) {
                         )}
 
                         {/* PetPosture Picks — only when products are actually mapped */}
-                        {breed.products.length > 0 && (
+                        {pickProducts(breed.products).length > 0 && (
                             <section>
                                 <h2 className="mb-4 text-[19px] font-bold text-[#2d3a43]">PetPosture Picks</h2>
                                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                                    {breed.products.map((product) => (
-                                        <ProductCard key={product.id} product={product} />
+                                    {pickProducts(breed.products).map((product) => (
+                                        <PickCard key={product.id} product={product} />
                                     ))}
                                 </div>
                             </section>

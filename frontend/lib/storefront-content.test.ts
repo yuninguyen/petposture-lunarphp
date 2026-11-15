@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  fetchBestSellers,
   fetchBlogIndex,
   fetchInsightPosts,
+  fetchPicks,
   toInsightPost,
 } from './storefront-content';
 
@@ -24,19 +24,43 @@ afterEach(() => {
 });
 
 describe('storefront content fetchers', () => {
-  it('keeps only four best sellers and asks Next to revalidate them', async () => {
+  it('keeps only four Picks and asks Next to revalidate them', async () => {
     vi.stubEnv('INTERNAL_API_URL', 'http://127.0.0.1:8001');
     const fetchMock = stubFetch({
-      '/api/products?category=best-sellers': { body: { data: [1, 2, 3, 4, 5, 6].map((id) => ({ id })) } },
+      '/api/products?per_page=100': { body: { data: [1, 2, 3, 4, 5, 6].map((id) => ({ id, pick: { goUrl: `/go/${id}` } })) } },
     });
 
-    const products = await fetchBestSellers();
+    const products = await fetchPicks();
 
     expect(products).toHaveLength(4);
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:8001/api/products?category=best-sellers',
+      'http://127.0.0.1:8001/api/products?per_page=100',
       { next: { revalidate: 300 } },
     );
+  });
+
+  it('leaves out products that are not Picks, and a Pick with no stock is still a Pick', async () => {
+    stubFetch({
+      '/api/products?per_page=100': {
+        body: {
+          data: [
+            { id: 1, name: 'Ordinary product', pick: null },
+            { id: 2, name: 'No pick key at all' },
+            { id: 3, name: 'Pick with stock 0', available: false, stockStatus: 'out_of_stock', pick: { goUrl: '/go/3' } },
+          ],
+        },
+      },
+    });
+
+    const products = await fetchPicks();
+
+    expect(products?.map((product) => product.id)).toEqual([3]);
+  });
+
+  it('returns an empty list, not null, when no product is a Pick yet', async () => {
+    stubFetch({ '/api/products?per_page=100': { body: { data: [{ id: 1, pick: null }] } } });
+
+    expect(await fetchPicks()).toEqual([]);
   });
 
   it('returns null when the API answers with an error status', async () => {
@@ -46,9 +70,9 @@ describe('storefront content fetchers', () => {
   });
 
   it('returns null when the request throws', async () => {
-    stubFetch({ '/api/products?category=best-sellers': new Error('boom') });
+    stubFetch({ '/api/products?per_page=100': new Error('boom') });
 
-    expect(await fetchBestSellers()).toBeNull();
+    expect(await fetchPicks()).toBeNull();
   });
 
   it('returns null when the payload has no data array', async () => {

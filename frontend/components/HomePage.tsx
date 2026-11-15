@@ -7,7 +7,8 @@ import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import dynamic from 'next/dynamic';
 const Footer = dynamic(() => import('@/components/Footer'));
-import { ProductCard } from '@/components/shop/ProductCard';
+import { PickCard } from '@/components/product/PickCard';
+import { PICKS_PATH, pickProducts } from '@/lib/pick';
 import type { Product } from '@/types/shop';
 import { API_BASE_URL as apiBaseUrl } from '@/lib/api';
 import { toInsightPost, type InsightPost } from '@/lib/storefront-content';
@@ -450,9 +451,9 @@ function WhyChoose() {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   OUR BEST SELLERS
+   PETPOSTURE PICKS
  ───────────────────────────────────────────────────────────────── */
-export function BestSellers({ initialProducts }: { initialProducts?: Product[] | null }) {
+export function PicksBlock({ initialProducts }: { initialProducts?: Product[] | null }) {
   const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
 
   useEffect(() => {
@@ -462,10 +463,10 @@ export function BestSellers({ initialProducts }: { initialProducts?: Product[] |
     // back to the browser. If that fails too, the block simply stays hidden.
     const fetchProducts = async () => {
       try {
-        const response = await fetch(`${apiBaseUrl}/api/products?category=best-sellers`);
+        const response = await fetch(`${apiBaseUrl}${PICKS_PATH}`);
         if (!response.ok) return;
         const data = await response.json();
-        setProducts(data.data.slice(0, 4)); // Only show first 4
+        setProducts(pickProducts(data.data).slice(0, 4)); // Only show first 4
       } catch {
         // Keep the block hidden rather than show a raw error to visitors.
       }
@@ -483,14 +484,14 @@ export function BestSellers({ initialProducts }: { initialProducts?: Product[] |
         <SectionTitle sub="A curated selection chosen around the dogs and everyday needs we focus on.">
           PetPosture Picks
         </SectionTitle>
-        <p className="mb-3 text-center text-[11px] font-semibold text-zinc-500 sm:hidden">Swipe to see more products</p>
+        <p className="mb-3 text-center text-[11px] font-semibold text-zinc-500 sm:hidden">Swipe to see more picks</p>
         <div
           className="flex flex-row overflow-x-auto snap-x snap-mandatory scroll-px-4 scrollbar-hide gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 md:gap-8"
           style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
         >
           {products.map((p) => (
             <div key={p.variantId} className="w-[78%] shrink-0 snap-start sm:w-auto">
-              <ProductCard product={p} presentation="homepage" sizes="(max-width: 640px) 72vw, (max-width: 1024px) 50vw, 25vw" />
+              <PickCard product={p} sizes="(max-width: 640px) 72vw, (max-width: 1024px) 50vw, 25vw" />
             </div>
           ))}
         </div>
@@ -887,7 +888,7 @@ export default function HomePage({ heroImage, initialProducts, initialPosts }: {
         <SocialProofStrip />
         <ShopCategories />
         <WhyChoose />
-        <BestSellers initialProducts={initialProducts} />
+        <PicksBlock initialProducts={initialProducts} />
         <MealtimeDiff />
         <BreedBanners />
         <Insights initialPosts={initialPosts} />

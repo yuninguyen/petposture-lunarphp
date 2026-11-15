@@ -1,4 +1,20 @@
-import type { ProductPick } from '@/types/shop';
+import type { Product, ProductPick } from '@/types/shop';
+
+export type PickProduct = Product & { pick: ProductPick };
+
+/**
+ * Where the Picks come from: the newest products, of which the Picks are kept. 100 is the API's
+ * page limit, plenty while the catalogue is small; a backend filter would be needed beyond that.
+ */
+export const PICKS_PATH = '/api/products?per_page=100';
+
+/**
+ * The products that are Picks. Stock is deliberately not looked at: PetPosture does not hold
+ * stock for a Pick, so a variant with stock 0 is still a Pick.
+ */
+export function pickProducts(products: Product[]): PickProduct[] {
+    return products.filter((product): product is PickProduct => Boolean(product.pick));
+}
 
 /** "french-bulldog" -> "French Bulldog" */
 export function humanizeSlug(slug: string): string {
