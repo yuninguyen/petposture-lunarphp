@@ -321,8 +321,9 @@ in the layout, nothing opens it).
 
 A "hide the shop - newsletter" commit removed the **"10% off your first PetPosture order" offer** from the
 newsletter banner (the description, the "Join & Get 10% Off" button and the confirmation text). The
-newsletter confirmation **email** (`resources/views/mail/newsletter-confirmation.blade.php`) still mentions a
-first-order 10% offer and "Exclusive discounts and promotions"; it is a backend template and was left alone.
+newsletter confirmation **email** (`resources/views/mail/newsletter-confirmation.blade.php`) was changed the
+same way (no 10% offer, no "Exclusive discounts and promotions", no "New product launches"), and its test
+(`NewsletterDoubleOptInTest`) asserts that. Both are part of the same revert.
 
 A last "hide the shop - sitemap" commit took the **fifteen `/shop*` URLs and the per-product `/shop/<category>/<slug>`
 entries out of `sitemap.xml`** (the sitemap now lists the guides, the blog and `/picks/<slug>`), and cleaned

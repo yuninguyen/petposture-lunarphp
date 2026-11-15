@@ -44,7 +44,11 @@ class NewsletterDoubleOptInTest extends TestCase
         Mail::assertSent(NewsletterConfirmation::class, 1);
         $mailable = Mail::sent(NewsletterConfirmation::class)->first();
         $this->assertStringContainsString('Confirm Subscription', $mailable->render());
-        $this->assertStringContainsString('available only after confirmation', $mailable->render());
+        $this->assertStringContainsString('starts only after confirmation', $mailable->render());
+        // The shop is hidden, so the email must not promise an offer or a discount.
+        $this->assertStringNotContainsString('10%', $mailable->render());
+        $this->assertStringNotContainsStringIgnoringCase('discount', $mailable->render());
+        $this->assertStringNotContainsStringIgnoringCase('product launches', $mailable->render());
         $subscriber->refresh();
         $this->assertSame(NewsletterSubscriber::MAIL_SENT, $subscriber->mail_status);
         $this->assertSame(1, $subscriber->mail_attempts);

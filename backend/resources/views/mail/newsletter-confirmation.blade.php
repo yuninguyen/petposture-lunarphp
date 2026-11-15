@@ -46,7 +46,7 @@
 <tr>
 <td align="center" class="mail-px" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:12px 40px 0 40px;">
 <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; margin:0; font-size:15px; line-height:1.7; color:#666666; text-align:center;">
-We received a signup request for <strong style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; color:#3e4c57;">{{ $email }}</strong>. Confirm below to complete your subscription. Your first-order 10% offer is available only after confirmation.
+We received a signup request for <strong style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; color:#3e4c57;">{{ $email }}</strong>. Confirm below to complete your subscription. Your subscription starts only after confirmation.
 </p>
 </td>
 </tr>
@@ -56,12 +56,12 @@ We received a signup request for <strong style="font-family:-apple-system,BlinkM
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; background-color:#fcfbf8; border:1px solid #eee3d7; border-radius:14px;">
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:28px 24px 18px 24px; font-size:14px; line-height:16px; color:#3e4c57;">
-<span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:inline-block; width:16px; height:16px; border-radius:50%; background-color:#df8448; color:#ffffff; font-size:10px; font-weight:700; text-align:center; line-height:16px; vertical-align:middle;">&#10003;</span>&nbsp;&nbsp;<span style="vertical-align:middle;">New product launches</span>
+<span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:inline-block; width:16px; height:16px; border-radius:50%; background-color:#df8448; color:#ffffff; font-size:10px; font-weight:700; text-align:center; line-height:16px; vertical-align:middle;">&#10003;</span>&nbsp;&nbsp;<span style="vertical-align:middle;">New PetPosture Picks</span>
 </td>
 </tr>
 <tr>
 <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; padding:0 24px 18px 24px; font-size:14px; line-height:16px; color:#3e4c57;">
-<span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:inline-block; width:16px; height:16px; border-radius:50%; background-color:#df8448; color:#ffffff; font-size:10px; font-weight:700; text-align:center; line-height:16px; vertical-align:middle;">&#10003;</span>&nbsp;&nbsp;<span style="vertical-align:middle;">Exclusive discounts and promotions</span>
+<span style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; display:inline-block; width:16px; height:16px; border-radius:50%; background-color:#df8448; color:#ffffff; font-size:10px; font-weight:700; text-align:center; line-height:16px; vertical-align:middle;">&#10003;</span>&nbsp;&nbsp;<span style="vertical-align:middle;">Breed-focused guides for your dog&#039;s body type</span>
 </td>
 </tr>
 <tr>
