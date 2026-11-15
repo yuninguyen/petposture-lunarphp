@@ -326,17 +326,15 @@ entries out of `sitemap.xml`** (the sitemap now lists the guides, the blog and `
 
 **To reopen the shop (everything comes back exactly as it was):**
 
-1. Revert every "hide the shop" commit, newest first, in one go:
-
-   ```bash
-   git revert --no-commit $(git log --grep "hide the shop" --format=%h)
-   git commit -m "feat(shop): reopen the shop"
-   ```
-
-   Every commit that hides something sellable has "hide the shop" in its message (the redirects, the
-   chrome, the chrome (2), and later the sitemap one), so the `--grep` finds all of them. Check the list
-   with `git log --grep "hide the shop" --oneline` first.
-2. Check nothing was missed: `grep -r SHOP-HIDDEN frontend` must now print nothing.
+1. From a clean checkout of `main`, run **`bash scripts/reopen-shop.sh`**. It reverts every commit whose
+   message says "hide the shop", newest first, and squashes the reverts into one commit. Every commit
+   that hides something sellable has that phrase in its message (the redirects, the chrome (1) to (3),
+   the sitemap and llms.txt), so `git log --grep "hide the shop" --oneline` lists exactly what will be
+   reverted. The script resolves by itself the one conflict a plain `git revert` cannot: the one-line
+   `test` script in `frontend/package.json`, which both these commits and the Picks work edited. It
+   keeps the current line and drops the test files the reverts deleted. Any other conflict stops it.
+   (A bare `git revert --no-commit $(git log --grep ...)` does NOT work: it stops on that conflict.)
+2. Check nothing was missed: the script says so, and `grep -r SHOP-HIDDEN frontend` must print nothing.
 3. Deploy, then purge the Cloudflare cache (`app(CloudflareCacheService::class)->purgeAll()` in tinker).
 4. The shop's **data** is not code: publish the products you want back in the admin (Puppia was set to
    draft), and only reopen once a payment processor is live.
