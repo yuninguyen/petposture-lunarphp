@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api;
 
+use App\Models\AffiliateNetwork;
 use App\Services\InventoryService;
 use App\Services\ProductRouteService;
 use App\Services\ProductSyncService;
@@ -80,6 +81,9 @@ class ProductResource extends JsonResource
 
             // Technical specs — e.g. [{"label":"Material","value":"..."}]
             'specs' => $this->resolveSpecs(),
+
+            // Affiliate "Pick" details; null for an ordinary product
+            'pick' => $this->resolvePick($productSlug),
 
             // Options — e.g. [{"name":"Size","values":["S","M","L"]}]
             'options' => $this->resolveOptions(),
@@ -190,6 +194,67 @@ class ProductResource extends JsonResource
 
         return collect(explode(',', $raw))
             ->map(fn ($tag) => Str::slug(trim($tag)))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /** The retailer link typed in the admin, or null when it is missing or not a plain web link. */
+    private function pickUrl(): ?string
+    {
+        $url = trim((string) $this->translateAttribute('external_url'));
+
+        return filter_var($url, FILTER_VALIDATE_URL) && preg_match('#^https?://#i', $url) ? $url : null;
+    }
+
+    /**
+     * A Pick sends readers to a retailer instead of selling. The retailer URL is not returned:
+     * the button goes through `goUrl` so every click is counted. The reference price is the
+     * retailer's, so it is only returned together with a valid checked date.
+     */
+    private function resolvePick(string $slug): ?array
+    {
+        if ($this->pickUrl() === null) {
+            return null;
+        }
+
+        $retailer = trim((string) $this->translateAttribute('affiliate_network_slug'));
+        $checkedDate = $this->resolveCheckedDate();
+        $price = $checkedDate === null ? null : $this->resolveReferencePrice();
+
+        return [
+            'retailer' => $retailer !== '' ? $retailer : null,
+            'retailerName' => $retailer !== '' ? AffiliateNetwork::where('slug', $retailer)->value('name') : null,
+            'goUrl' => url("/go/pick/{$slug}"),
+            'referencePrice' => $price,
+            'priceCheckedDate' => $price === null ? null : $checkedDate,
+            'bestForBreeds' => $this->resolveTagList('best_for_breeds'),
+            'pros' => $this->resolveLines('pros'),
+            'cons' => $this->resolveLines('cons'),
+        ];
+    }
+
+    private function resolveCheckedDate(): ?string
+    {
+        $raw = trim((string) $this->translateAttribute('price_checked_date'));
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $raw);
+
+        // A rolled-over date such as 2026-13-45 formats differently, so it is rejected here.
+        return $date && $date->format('Y-m-d') === $raw ? $raw : null;
+    }
+
+    private function resolveReferencePrice(): ?float
+    {
+        $raw = str_replace(['$', ','], '', trim((string) $this->translateAttribute('reference_price')));
+
+        return is_numeric($raw) && (float) $raw >= 0 ? round((float) $raw, 2) : null;
+    }
+
+    /** One entry per non-empty line of a text attribute. */
+    private function resolveLines(string $attributeHandle): array
+    {
+        return collect(preg_split('/\R/', (string) $this->translateAttribute($attributeHandle)))
+            ->map(fn ($line) => trim((string) $line))
             ->filter()
             ->values()
             ->all();
@@ -341,7 +406,10 @@ class ProductResource extends JsonResource
             $ld['sku'] = $sku;
         }
 
-        if ($priceValue !== null) {
+        // A Pick is not sold here: no offer, and the rating is the retailer's, not ours.
+        $isPick = $this->pickUrl() !== null;
+
+        if (! $isPick && $priceValue !== null) {
             $ld['offers'] = [
                 '@type' => 'Offer',
                 'price' => $priceValue,
@@ -353,7 +421,7 @@ class ProductResource extends JsonResource
 
         $rating = round((float) ($this->approved_reviews_avg_rating ?? 0), 2);
         $reviewCount = (int) ($this->approved_reviews_count ?? 0);
-        if ($rating > 0 && $reviewCount > 0) {
+        if (! $isPick && $rating > 0 && $reviewCount > 0) {
             $ld['aggregateRating'] = [
                 '@type' => 'AggregateRating',
                 'ratingValue' => $rating,

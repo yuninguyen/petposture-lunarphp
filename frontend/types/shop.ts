@@ -68,6 +68,22 @@ export interface ProductVariant {
     options: ProductVariantOption[];
 }
 
+/**
+ * Details of a "PetPosture Pick": an affiliate product page that sends readers to a retailer.
+ * `goUrl` counts the click, then redirects; the retailer URL itself is never returned.
+ * The reference price is the retailer's price and only comes with its checked date (YYYY-MM-DD).
+ */
+export interface ProductPick {
+    retailer: string | null;
+    retailerName: string | null;
+    goUrl: string;
+    referencePrice: number | null;
+    priceCheckedDate: string | null;
+    bestForBreeds: string[];
+    pros: string[];
+    cons: string[];
+}
+
 export interface Product {
     id: number;
     productId: number;
@@ -94,6 +110,8 @@ export interface Product {
     description?: string;
     brand?: string;
     specs?: ProductSpec[];
+    /** Present only for an affiliate Pick; null or absent for an ordinary product. */
+    pick?: ProductPick | null;
     options?: ProductOption[];
     variants?: ProductVariant[];
     seoMeta?: ProductSeoMeta | null;
