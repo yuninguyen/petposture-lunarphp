@@ -47,7 +47,10 @@ export default function Newsletter() {
               Better recommendations for your dog.
             </h2>
             <p className="max-w-[380px] text-sm leading-relaxed text-[#1a2128b8]">
-              Get breed-focused guides, product updates and 10% off your first PetPosture order.
+              {/* SHOP-HIDDEN: this line, the button label and the confirmation text used to offer a discount on a
+                  first order, which PetPosture cannot take while the shop is hidden. Revert the "hide the shop"
+                  commits to restore the original wording. */}
+              Get breed-focused guides and product updates for your dog&apos;s body type.
             </p>
           </div>
         </div>
@@ -80,7 +83,7 @@ export default function Newsletter() {
                   disabled={isSubmitting}
                   className="whitespace-nowrap rounded-[3px] bg-secondary px-6 py-3 text-[13px] font-bold uppercase tracking-[0.1em] text-ink transition-colors hover:bg-secondary-dark disabled:opacity-60 sm:py-0"
                 >
-                  {isSubmitting ? "Subscribing…" : "Join & Get 10% Off"}
+                  {isSubmitting ? "Subscribing…" : "Join"}
                 </button>
               </form>
               {error && (
@@ -95,7 +98,7 @@ export default function Newsletter() {
           ) : (
             <div className="rounded-[4px] border border-[#38c68b40] bg-white px-6 py-[18px]">
               <p className="mb-1 text-[15px] font-bold text-primary">Confirm your email to join.</p>
-              <p className="text-[13px] text-primary/60">Your 10% first-order offer becomes available after confirmation.</p>
+              <p className="text-[13px] text-primary/60">Your subscription starts after you confirm.</p>
             </div>
           )}
         </div>
