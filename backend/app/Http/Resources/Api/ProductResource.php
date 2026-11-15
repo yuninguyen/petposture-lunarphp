@@ -225,7 +225,9 @@ class ProductResource extends JsonResource
         return [
             'retailer' => $retailer !== '' ? $retailer : null,
             'retailerName' => $retailer !== '' ? AffiliateNetwork::where('slug', $retailer)->value('name') : null,
-            'goUrl' => url("/go/pick/{$slug}"),
+            // Built from APP_URL, not the request host: the storefront renders on the server and
+            // calls this API at an internal address that a visitor's browser cannot open.
+            'goUrl' => rtrim((string) config('app.url'), '/')."/go/pick/{$slug}",
             'referencePrice' => $price,
             'priceCheckedDate' => $price === null ? null : $checkedDate,
             'bestForBreeds' => $this->resolveTagList('best_for_breeds'),
