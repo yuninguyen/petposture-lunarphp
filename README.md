@@ -321,8 +321,8 @@ in the layout, nothing opens it).
 
 A last "hide the shop - sitemap" commit took the **fifteen `/shop*` URLs and the per-product `/shop/<category>/<slug>`
 entries out of `sitemap.xml`** (the sitemap now lists the guides, the blog and `/picks/<slug>`), and cleaned
-`llms.txt` (no "e-commerce store" wording, no `/shop` link). The `/shipping-policy`, `/return-refund-policy` and
-`/returns` pages are still listed in the sitemap: they are legal pages that still exist.
+`llms.txt` (no "e-commerce store" wording, no `/shop` link). The same commit family also took `/shipping-policy`,
+`/return-refund-policy` and `/returns` out of the sitemap; those pages still exist, unlinked and not advertised.
 
 **To reopen the shop (everything comes back exactly as it was):**
 

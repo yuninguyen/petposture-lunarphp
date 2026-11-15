@@ -69,14 +69,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${SITE_URL}/solutions/walking`, changeFrequency: 'weekly', priority: 0.7 },
         { url: `${SITE_URL}/contact`, changeFrequency: 'monthly', priority: 0.5 },
         { url: `${SITE_URL}/faqs`, changeFrequency: 'monthly', priority: 0.5 },
-        { url: `${SITE_URL}/returns`, changeFrequency: 'monthly', priority: 0.3 },
+        // SHOP-HIDDEN: three policy pages were listed too: /returns (monthly, 0.3), /return-refund-policy and
+        // /shipping-policy (yearly, 0.2). PetPosture ships nothing and takes no returns while the shop is hidden.
+        // Revert the "hide the shop" commits to list them again.
         { url: `${SITE_URL}/privacy-policy`, changeFrequency: 'yearly', priority: 0.2 },
         { url: `${SITE_URL}/terms-and-conditions`, changeFrequency: 'yearly', priority: 0.2 },
         { url: `${SITE_URL}/cookie-policy`, changeFrequency: 'yearly', priority: 0.2 },
         { url: `${SITE_URL}/acceptable-use-policy`, changeFrequency: 'yearly', priority: 0.2 },
         { url: `${SITE_URL}/affiliate-disclosure`, changeFrequency: 'yearly', priority: 0.2 },
-        { url: `${SITE_URL}/return-refund-policy`, changeFrequency: 'yearly', priority: 0.2 },
-        { url: `${SITE_URL}/shipping-policy`, changeFrequency: 'yearly', priority: 0.2 },
     ];
 
     const [products, posts] = await Promise.all([fetchProducts(), fetchPosts()]);

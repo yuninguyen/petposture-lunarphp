@@ -39,6 +39,15 @@ test('sitemap lists the breed and solution guides and no hidden shop page', asyn
     }
     assert.ok(!urls.has('https://petposture.test/track-order'));
     assert.deepEqual(Array.from(urls).filter((url) => /\/shop(\/|$)/.test(url)), []);
+
+    // SHOP-HIDDEN: the shipping and returns policy pages are unlinked and PetPosture ships nothing, so they
+    // are not advertised to search engines either. Reverting the "hide the shop" commits lists them again.
+    for (const path of ['/shipping-policy', '/return-refund-policy', '/returns']) {
+        assert.ok(!urls.has(`https://petposture.test${path}`), `sitemap must not list ${path}`);
+    }
+    for (const path of ['/privacy-policy', '/terms-and-conditions', '/cookie-policy', '/acceptable-use-policy', '/affiliate-disclosure']) {
+        assert.ok(urls.has(`https://petposture.test${path}`), `sitemap should still list ${path}`);
+    }
 });
 
 test('sitemap lists each Pick at /picks/<slug>, with no stock check and no ordinary product', async () => {
