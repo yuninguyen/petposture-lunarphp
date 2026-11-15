@@ -1527,7 +1527,7 @@ parameters:
 		-
 			message: '#^Call to an undefined method App\\Http\\Resources\\Api\\ProductResource\:\:translateAttribute\(\)\.$#'
 			identifier: method.notFound
-			count: 16
+			count: 17
 			path: app/Http/Resources/Api/ProductResource.php
 
 		-

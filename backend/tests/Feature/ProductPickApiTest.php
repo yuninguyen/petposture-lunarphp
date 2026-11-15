@@ -98,6 +98,42 @@ class ProductPickApiTest extends TestCase
         $this->assertSame('https://api.petposture.com/go/pick/necoichi-bowl', $item['pick']['goUrl']);
     }
 
+    public function test_the_story_fields_are_exposed_and_parsed(): void
+    {
+        $this->pick([
+            'our_take' => "  Based on the seller's description and customer reviews.\n",
+            'best_for_note' => "Pug & flat-faced breeds\n\nSmall, split meals\n",
+            'problem' => 'A flat bowl makes a flat-faced dog bend its neck.',
+            'approach' => 'A tilted, raised shape brings the food closer.',
+            'quick_specs' => "Material: Porcelain\nTilt: 15°\nSize: 6 in: wide\nno colon here\n: no label\nNo value:\n",
+        ]);
+
+        $pick = $this->listed()['pick'];
+
+        $this->assertSame("Based on the seller's description and customer reviews.", $pick['ourTake']);
+        $this->assertSame(['Pug & flat-faced breeds', 'Small, split meals'], $pick['bestForNotes']);
+        $this->assertSame('A flat bowl makes a flat-faced dog bend its neck.', $pick['problem']);
+        $this->assertSame('A tilted, raised shape brings the food closer.', $pick['approach']);
+        $this->assertSame([
+            ['label' => 'Material', 'value' => 'Porcelain'],
+            ['label' => 'Tilt', 'value' => '15°'],
+            ['label' => 'Size', 'value' => '6 in: wide'],
+        ], $pick['quickSpecs']);
+    }
+
+    public function test_empty_story_fields_are_null_or_empty_so_the_page_can_hide_them(): void
+    {
+        $this->pick();
+
+        $pick = $this->listed()['pick'];
+
+        $this->assertNull($pick['ourTake']);
+        $this->assertSame([], $pick['bestForNotes']);
+        $this->assertNull($pick['problem']);
+        $this->assertNull($pick['approach']);
+        $this->assertSame([], $pick['quickSpecs']);
+    }
+
     public function test_the_retailer_url_itself_is_never_exposed_so_clicks_cannot_skip_tracking(): void
     {
         $this->pick();

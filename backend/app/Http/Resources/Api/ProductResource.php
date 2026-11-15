@@ -230,9 +230,41 @@ class ProductResource extends JsonResource
             'referencePrice' => $price,
             'priceCheckedDate' => $price === null ? null : $checkedDate,
             'bestForBreeds' => $this->resolveTagList('best_for_breeds'),
+            'bestForNotes' => $this->resolveLines('best_for_note'),
+            'ourTake' => $this->resolveText('our_take'),
+            'problem' => $this->resolveText('problem'),
+            'approach' => $this->resolveText('approach'),
+            'quickSpecs' => $this->resolveLabelledLines('quick_specs'),
             'pros' => $this->resolveLines('pros'),
             'cons' => $this->resolveLines('cons'),
         ];
+    }
+
+    /** A trimmed text attribute, or null when it is empty so the page can leave the block out. */
+    private function resolveText(string $attributeHandle): ?string
+    {
+        $text = trim((string) $this->translateAttribute($attributeHandle));
+
+        return $text === '' ? null : $text;
+    }
+
+    /**
+     * "label: value" lines as [{label, value}]. A line with no colon, no label or no value is dropped;
+     * only the first colon splits, so a value such as "6 in: wide" keeps its own.
+     */
+    private function resolveLabelledLines(string $attributeHandle): array
+    {
+        return collect($this->resolveLines($attributeHandle))
+            ->map(function (string $line): ?array {
+                [$label, $value] = array_pad(explode(':', $line, 2), 2, '');
+
+                return trim($label) !== '' && trim($value) !== ''
+                    ? ['label' => trim($label), 'value' => trim($value)]
+                    : null;
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     private function resolveCheckedDate(): ?string
