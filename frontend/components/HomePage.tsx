@@ -452,70 +452,30 @@ function WhyChoose() {
 /* ─────────────────────────────────────────────────────────────────
    OUR BEST SELLERS
  ───────────────────────────────────────────────────────────────── */
-function BestSellers({ initialProducts }: { initialProducts?: Product[] | null }) {
+export function BestSellers({ initialProducts }: { initialProducts?: Product[] | null }) {
   const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
-  const [loading, setLoading] = useState(!initialProducts);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialProducts) return;
 
+    // The server fetch can fail (e.g. Cloudflare blocks the VPS during `next build`), so fall
+    // back to the browser. If that fails too, the block simply stays hidden.
     const fetchProducts = async () => {
       try {
         const response = await fetch(`${apiBaseUrl}/api/products?category=best-sellers`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch products: ${response.status}`);
-        }
+        if (!response.ok) return;
         const data = await response.json();
         setProducts(data.data.slice(0, 4)); // Only show first 4
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Failed to load products.');
-      } finally {
-        setLoading(false);
+      } catch {
+        // Keep the block hidden rather than show a raw error to visitors.
       }
     };
     fetchProducts();
   }, [initialProducts]);
 
-  if (loading) {
-    return (
-      <section className="px-4 py-8 sm:px-6 sm:py-10" style={{ background: C.white }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <SectionTitle sub="Loading our most-loved products...">
-            PetPosture Picks
-          </SectionTitle>
-          <p style={{ color: C.grayText }}>Loading products...</p>
-        </div>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section className="px-4 py-8 sm:px-6 sm:py-10" style={{ background: C.white }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <SectionTitle sub="Failed to load products.">
-            PetPosture Picks
-          </SectionTitle>
-          <p style={{ color: C.primary, fontWeight: 600 }}>Error: {error}</p>
-          <p style={{ color: C.grayText }}>Please check the API connection or try again later.</p>
-        </div>
-      </section>
-    );
-  }
-
-  if (products.length === 0) {
-    return (
-      <section className="px-4 py-8 sm:px-6 sm:py-10" style={{ background: C.white }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <SectionTitle sub="No products available at the moment.">
-            PetPosture Picks
-          </SectionTitle>
-          <p style={{ color: C.grayText }}>Please check back soon!</p>
-        </div>
-      </section>
-    );
-  }
+  // No Picks to show (none yet, still loading, or the request failed): render nothing at all,
+  // not an empty box, a placeholder or an error message.
+  if (products.length === 0) return null;
 
   return (
     <section className="px-4 py-8 sm:px-6 sm:py-10" style={{ background: C.white }}>
