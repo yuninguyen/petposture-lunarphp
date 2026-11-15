@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProductPick } from '../types/shop';
-import { formatPickDate, humanizeSlug, pickCtaLabel, pickPriceParts } from './pick';
+import { filterPicksByBreed, formatPickDate, humanizeSlug, pickBreeds, pickCtaLabel, pickPriceParts, type PickProduct } from './pick';
 
 const pick = (overrides: Partial<ProductPick> = {}): ProductPick => ({
     retailer: 'chewy',
@@ -71,6 +71,33 @@ describe('pickPriceParts', () => {
 
     it('does not name a store it does not know', () => {
         expect(pickPriceParts(pick({ retailer: null, retailerName: null }))?.label).toBe('Retailer price');
+    });
+});
+
+describe('the Picks list helpers', () => {
+    const withBreeds = (slug: string, breeds: string[]) => ({ slug, pick: pick({ bestForBreeds: breeds }) }) as unknown as PickProduct;
+    const picks = [
+        withBreeds('bowl', ['pug', 'french-bulldog']),
+        withBreeds('harness', ['pug']),
+        withBreeds('ramp', []),
+    ];
+
+    it('lists each breed once, sorted, across all the Picks', () => {
+        expect(pickBreeds(picks)).toEqual(['french-bulldog', 'pug']);
+        expect(pickBreeds([])).toEqual([]);
+    });
+
+    it('keeps every Pick when no breed is asked for', () => {
+        expect(filterPicksByBreed(picks, null).map((p) => p.slug)).toEqual(['bowl', 'harness', 'ramp']);
+    });
+
+    it('keeps only the Picks that are best for the breed', () => {
+        expect(filterPicksByBreed(picks, 'pug').map((p) => p.slug)).toEqual(['bowl', 'harness']);
+        expect(filterPicksByBreed(picks, 'french-bulldog').map((p) => p.slug)).toEqual(['bowl']);
+    });
+
+    it('answers an unknown breed with no Picks rather than all of them', () => {
+        expect(filterPicksByBreed(picks, 'not-a-breed')).toEqual([]);
     });
 });
 

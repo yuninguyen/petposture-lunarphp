@@ -57,6 +57,16 @@ describe('proxy storefront policy', () => {
     expect(policy).toContain('nonce-');
   });
 
+  it('keeps the Picks list, with or without a breed filter, uncached and nonce-protected', async () => {
+    for (const path of ['/picks', '/picks?breed=pug']) {
+      const response = await proxy(new NextRequest(`https://petposture.com${path}`));
+
+      expect(response.status, path).toBe(200);
+      expect(response.headers.get('cache-control'), path).toBe(PRIVATE_HTML_CACHE_CONTROL);
+      expect(response.headers.get('content-security-policy'), path).toContain('nonce-');
+    }
+  });
+
   it('uses the request Host header when Next URL retains the local browser origin', async () => {
     const response = await proxy(new NextRequest('http://127.0.0.1:3101/', {
       headers: { host: 'petposture.com:3101' },

@@ -50,6 +50,13 @@ test('sitemap lists the breed and solution guides and no hidden shop page', asyn
     }
 });
 
+test('sitemap lists the Picks list page', async () => {
+    const sitemap = loadSitemap(async () => ({ ok: true, async json() { return { data: [], meta: { last_page: 1 } }; } }));
+    const urls = new Set((await sitemap()).map((entry) => entry.url));
+
+    assert.ok(urls.has('https://petposture.test/picks'));
+});
+
 test('sitemap lists each Pick at /picks/<slug>, with no stock check and no ordinary product', async () => {
     const sitemap = loadSitemap(async (url) => {
         const parsed = new URL(url);

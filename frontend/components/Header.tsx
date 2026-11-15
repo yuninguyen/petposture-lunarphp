@@ -123,6 +123,11 @@ const pathname = usePathname();
               </Link>
             </li>
             <li className="h-full">
+              <Link href="/picks" className={navLinkClass("/picks")}>
+                Picks
+              </Link>
+            </li>
+            <li className="h-full">
               <Link href="/blog" className={navLinkClass("/blog")}>
                 Blog
               </Link>
@@ -212,6 +217,8 @@ const pathname = usePathname();
                   {[
                     { label: "Home", href: "/" },
                     { label: "Our Mission", href: "/our-mission" },
+                    { label: "Picks", href: "/picks" },
+                    { label: "Picks", href: "/picks" },
                     { label: "Blog", href: "/blog" },
                     { label: "Contact", href: "/contact" },
                   ].map((item) => (

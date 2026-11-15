@@ -2,6 +2,16 @@ import type { Product, ProductPick } from '@/types/shop';
 
 export type PickProduct = Product & { pick: ProductPick };
 
+/** Every breed some Pick is best for, once each and sorted, for the filter chips of the Picks list. */
+export function pickBreeds(picks: PickProduct[]): string[] {
+    return [...new Set(picks.flatMap((product) => product.pick.bestForBreeds))].sort();
+}
+
+/** The Picks that are best for a breed; no breed means all of them, an unknown breed means none. */
+export function filterPicksByBreed(picks: PickProduct[], breed: string | null): PickProduct[] {
+    return breed ? picks.filter((product) => product.pick.bestForBreeds.includes(breed)) : picks;
+}
+
 /**
  * Where the Picks come from: the newest products, of which the Picks are kept. 100 is the API's
  * page limit, plenty while the catalogue is small; a backend filter would be needed beyond that.

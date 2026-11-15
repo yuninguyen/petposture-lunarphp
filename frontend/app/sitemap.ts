@@ -55,6 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         // entry per product. They all redirect while the shop is hidden. Revert the "hide the shop" commits to
         // list them again.
         { url: `${SITE_URL}/our-mission`, changeFrequency: 'monthly', priority: 0.6 },
+        { url: `${SITE_URL}/picks`, changeFrequency: 'weekly', priority: 0.8 },
         { url: `${SITE_URL}/blog`, changeFrequency: 'daily', priority: 0.7 },
         { url: `${SITE_URL}/dogs`, changeFrequency: 'weekly', priority: 0.8 },
         { url: `${SITE_URL}/dogs/dachshund`, changeFrequency: 'weekly', priority: 0.8 },
