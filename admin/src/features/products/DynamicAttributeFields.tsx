@@ -5,8 +5,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { ProductDescriptionEditor } from './ProductDescriptionEditor';
 import type { AttributeDefinition } from './api';
 
-// Pick fields where each line is one item (a pro or a con), so a single-line input would lose the line breaks.
-const MULTILINE_HANDLES = new Set(['pros', 'cons']);
+// Pick fields that are sentences or hold one entry per line (a pro, a con, a spec), so a single-line input would
+// lose the line breaks.
+const MULTILINE_HANDLES = new Set(['pros', 'cons', 'our_take', 'best_for_note', 'problem', 'approach', 'quick_specs']);
 
 export function DynamicAttributeFields({ definitions, register, control, errors = {}, prefix = 'attributes', disabled = false, afterHandle = {} }: { definitions: AttributeDefinition[]; register: UseFormRegister<any>; control: Control<any>; errors?: FieldErrors; prefix?: string; disabled?: boolean; afterHandle?: Record<string, ReactNode> }) {
   return <div className="space-y-5">{definitions.map((definition) => {

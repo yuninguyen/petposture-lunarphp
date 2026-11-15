@@ -40,6 +40,27 @@ describe('DynamicAttributeFields', () => {
     expect(controlFor('Cons')!.value).toBe('Holds about one cup');
   });
 
+  it('renders the editorial Pick fields as text areas too, since they are sentences or one entry per line', () => {
+    const handles: Array<[string, string]> = [
+      ['our_take', 'Our take'],
+      ['best_for_note', 'Best for (notes)'],
+      ['problem', 'The problem'],
+      ['approach', 'The PetPosture approach'],
+      ['quick_specs', 'Quick specs'],
+    ];
+    render(
+      <Harness
+        definitions={handles.map(([handle, label]) => definition(handle, label))}
+        defaults={Object.fromEntries(handles.map(([handle]) => [handle, 'line one\nline two']))}
+      />,
+    );
+
+    for (const [, label] of handles) {
+      expect(controlFor(label), label).toBeInstanceOf(HTMLTextAreaElement);
+      expect(controlFor(label)!.value).toBe('line one\nline two');
+    }
+  });
+
   it('keeps the other text fields as single-line inputs', () => {
     render(
       <Harness
