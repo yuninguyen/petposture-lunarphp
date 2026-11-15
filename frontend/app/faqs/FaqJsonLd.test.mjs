@@ -21,6 +21,14 @@ test('shared FAQ data keeps the three product questions and answers', () => {
     assert.doesNotMatch(componentSource, /const FAQ_ITEMS\s*=/);
 });
 
+// SHOP-HIDDEN: the page description used to promise answers about shipping and returns.
+test('FAQ page metadata does not promise shipping or returns answers', () => {
+    const description = pageSource.match(/description:\s*"([^"]*)"/)?.[1] ?? '';
+
+    assert.ok(description.length > 0);
+    assert.doesNotMatch(description, /shipping|return/i);
+});
+
 test('FAQ JSON-LD helper creates one accepted answer per shared FAQ item', () => {
     const transformed = dataSource
         .replace(/export const /g, 'const ')

@@ -5,7 +5,9 @@ import { headers } from "next/headers";
 
 export const metadata = {
     title: "Frequently Asked Questions",
-    description: "Find answers to common questions about PetPosture products, shipping, and returns.",
+    // SHOP-HIDDEN: this read "...about PetPosture products, shipping, and returns." Revert the "hide the shop
+    // chrome" commits to restore it.
+    description: "Find answers to common questions about PetPosture products.",
     alternates: { canonical: '/faqs' },
 };
 
