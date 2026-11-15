@@ -61,6 +61,18 @@ const mockReportsResponse: AffiliateReportsResponse = {
       clicks: 210,
     },
   ],
+  by_product: [
+    {
+      product_id: 201,
+      product_name: 'Necoichi Raised Cat Food Bowl',
+      clicks: 77,
+    },
+    {
+      product_id: 202,
+      product_name: 'Slo Bowl Slow Feeder',
+      clicks: 41,
+    },
+  ],
 };
 
 function renderPage() {
@@ -104,6 +116,29 @@ describe('AffiliateReportsPage', () => {
     expect(screen.getByText('Best Harness for Golden Retrievers')).toBeInTheDocument();
     expect(screen.getByText('340')).toBeInTheDocument();
     expect(screen.getByText('Chewy Affiliate')).toBeInTheDocument();
+  });
+
+  it('lists the most clicked Picks in their own table', async () => {
+    vi.mocked(fetchJson).mockResolvedValueOnce(mockReportsResponse);
+
+    renderPage();
+
+    expect(await screen.findByText('Top Clicked Picks')).toBeInTheDocument();
+    expect(screen.getByText('Necoichi Raised Cat Food Bowl')).toBeInTheDocument();
+    expect(screen.getByText('77')).toBeInTheDocument();
+    expect(screen.getByText('Slo Bowl Slow Feeder')).toBeInTheDocument();
+    expect(screen.getByText('41')).toBeInTheDocument();
+  });
+
+  it('shows an empty state for Picks when none was clicked, and tolerates an API without by_product', async () => {
+    const { by_product: _omitted, ...withoutPicks } = mockReportsResponse;
+    vi.mocked(fetchJson).mockResolvedValueOnce(withoutPicks as AffiliateReportsResponse);
+
+    renderPage();
+
+    expect(await screen.findByText('Top Clicked Picks')).toBeInTheDocument();
+    expect(screen.getByText('No clicks recorded for any Pick in this period.')).toBeInTheDocument();
+    expect(screen.getByText('Best Harness for Golden Retrievers')).toBeInTheDocument();
   });
 
   it('handles date range filter switching', async () => {

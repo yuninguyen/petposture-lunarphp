@@ -11,7 +11,12 @@ import {
   Layers,
   FileText,
 } from 'lucide-react';
-import { fetchAffiliateReports, type NetworkReportItem, type PostReportItem } from './api';
+import {
+  fetchAffiliateReports,
+  type NetworkReportItem,
+  type PostReportItem,
+  type ProductReportItem,
+} from './api';
 
 type RangeOption = '7' | '30' | '90' | 'all' | 'custom';
 
@@ -39,6 +44,7 @@ export function AffiliateReportsPage() {
   const overview = data?.overview;
   const byNetwork = data?.by_network ?? [];
   const byPost = data?.by_post ?? [];
+  const byProduct = data?.by_product ?? [];
 
   const rangeOptions: { value: RangeOption; label: string }[] = [
     { value: '7', label: t('affiliate_reports.range_7', 'Last 7 days') },
@@ -359,6 +365,49 @@ export function AffiliateReportsPage() {
                           </td>
                           <td className="px-4 py-3 text-right font-bold text-slate-900">
                             {post.clicks.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+
+            {/* Table 3: Top Clicked Picks */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:col-span-2">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
+                <Trophy className="w-4 h-4 text-slate-500" />
+                <h3 className="text-sm font-semibold text-slate-800">
+                  {t('affiliate_reports.picks_table_title', 'Top Clicked Picks')}
+                </h3>
+              </div>
+
+              <div className="overflow-x-auto flex-1">
+                {byProduct.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-slate-400">
+                    {t('affiliate_reports.no_pick_data', 'No clicks recorded for any Pick in this period.')}
+                  </div>
+                ) : (
+                  <table className="w-full text-left text-xs text-slate-700">
+                    <thead className="bg-slate-50/60 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                      <tr>
+                        <th scope="col" className="px-4 py-3">
+                          {t('affiliate_reports.column_pick', 'Pick')}
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-right">
+                          {t('affiliate_reports.column_tracked_clicks', 'Tracked Clicks')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {byProduct.map((pick: ProductReportItem) => (
+                        <tr key={pick.product_id} className="hover:bg-slate-50/60">
+                          <td className="px-4 py-3 font-medium text-slate-900 truncate max-w-xs">
+                            {pick.product_name}
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-slate-900">
+                            {pick.clicks.toLocaleString()}
                           </td>
                         </tr>
                       ))}

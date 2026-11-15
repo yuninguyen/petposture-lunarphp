@@ -30,6 +30,13 @@ export interface PostReportItem {
   clicks: number;
 }
 
+/** Clicks on a Pick (an affiliate product page), as opposed to a link inside a blog post. */
+export interface ProductReportItem {
+  product_id: number;
+  product_name: string;
+  clicks: number;
+}
+
 export interface AffiliateReportsResponse {
   range: string;
   date_from?: string | null;
@@ -37,6 +44,8 @@ export interface AffiliateReportsResponse {
   overview: ReportOverview;
   by_network: NetworkReportItem[];
   by_post: PostReportItem[];
+  /** Absent on an API that predates Pick tracking, so the page treats it as empty. */
+  by_product?: ProductReportItem[];
 }
 
 export interface FetchAffiliateReportsParams {

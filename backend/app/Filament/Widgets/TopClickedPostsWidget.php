@@ -32,6 +32,7 @@ class TopClickedPostsWidget extends TableWidget
             ->query(
                 AffiliateClick::query()
                     ->selectRaw('max(id) as id, post_id, count(*) as total')
+                    ->whereNotNull('post_id')
                     ->where('created_at', '>=', Carbon::now()->subDays(30))
                     ->groupBy('post_id')
                     ->with('post')

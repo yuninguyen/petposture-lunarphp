@@ -96,8 +96,10 @@ class AffiliateReportController extends Controller
             });
 
         // 3. Top Clicked Posts in range
+        // Clicks from a Pick have no post; they are listed under by_product instead.
         $byPost = AffiliateClick::query()
             ->selectRaw('max(id) as id, post_id, count(*) as total')
+            ->whereNotNull('post_id')
             ->when($startDate, fn ($q) => $q->where('created_at', '>=', $startDate))
             ->when($endDate, fn ($q) => $q->where('created_at', '<=', $endDate))
             ->groupBy('post_id')
@@ -108,6 +110,22 @@ class AffiliateReportController extends Controller
             ->map(fn ($item) => [
                 'post_id' => $item->post_id,
                 'post_title' => $item->post?->title ?? '(deleted post)',
+                'clicks' => (int) $item->total,
+            ]);
+
+        // 4. Top Clicked Picks in range (the name is stored on the click, so it survives a rename)
+        $byProduct = AffiliateClick::query()
+            ->selectRaw('product_id, max(product_name) as product_name, count(*) as total')
+            ->whereNotNull('product_id')
+            ->when($startDate, fn ($q) => $q->where('created_at', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->where('created_at', '<=', $endDate))
+            ->groupBy('product_id')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get()
+            ->map(fn ($item) => [
+                'product_id' => (int) $item->product_id,
+                'product_name' => $item->product_name ?: '(unnamed pick)',
                 'clicks' => (int) $item->total,
             ]);
 
@@ -129,6 +147,7 @@ class AffiliateReportController extends Controller
             ],
             'by_network' => $byNetwork,
             'by_post' => $byPost,
+            'by_product' => $byProduct,
         ]);
     }
 }
