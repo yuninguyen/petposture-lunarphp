@@ -11,6 +11,11 @@ const pick: ProductPick = {
     referencePrice: 25.99,
     priceCheckedDate: '2026-11-15',
     bestForBreeds: ['french-bulldog'],
+    bestForNotes: [],
+    ourTake: null,
+    problem: null,
+    approach: null,
+    quickSpecs: [],
     pros: [],
     cons: [],
 };
@@ -70,14 +75,16 @@ describe('buildPickJsonLd', () => {
 });
 
 describe('buildPickBreadcrumbJsonLd', () => {
-    it('goes Home then the Pick, without a shop step', () => {
+    it('goes Home, then the Picks list, then the Pick, without a shop step', () => {
         const ld = buildPickBreadcrumbJsonLd(SITE, product());
 
         expect(ld['@type']).toBe('BreadcrumbList');
         expect(ld.itemListElement).toEqual([
             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://petposture.com/' },
-            { '@type': 'ListItem', position: 2, name: 'Necoichi Tilted Elevated Bowl', item: 'https://petposture.com/picks/necoichi-bowl' },
+            { '@type': 'ListItem', position: 2, name: 'Picks', item: 'https://petposture.com/picks' },
+            { '@type': 'ListItem', position: 3, name: 'Necoichi Tilted Elevated Bowl', item: 'https://petposture.com/picks/necoichi-bowl' },
         ]);
+        expect(JSON.stringify(ld)).not.toContain('/shop');
     });
 });
 

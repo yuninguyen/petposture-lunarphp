@@ -53,10 +53,14 @@ export function formatPickDate(isoDate: string): string {
  * The price is the retailer's, never PetPosture's, so it only appears with the date it was
  * checked. Without both, there is no price line at all.
  */
-export function pickPriceLine(pick: ProductPick): string | null {
+export function pickPriceParts(pick: ProductPick): { label: string; amount: string; note: string } | null {
     if (pick.referencePrice === null || pick.priceCheckedDate === null) return null;
 
     const name = retailerName(pick);
 
-    return `${name ? `Price on ${name}` : 'Retailer price'}: $${pick.referencePrice.toFixed(2)} (checked ${formatPickDate(pick.priceCheckedDate)}) — check current price`;
+    return {
+        label: name ? `Price at ${name}` : 'Retailer price',
+        amount: `$${pick.referencePrice.toFixed(2)}`,
+        note: `Checked ${formatPickDate(pick.priceCheckedDate)} — check current price`,
+    };
 }

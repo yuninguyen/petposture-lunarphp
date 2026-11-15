@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProductPick } from '../types/shop';
-import { formatPickDate, humanizeSlug, pickCtaLabel, pickPriceLine } from './pick';
+import { formatPickDate, humanizeSlug, pickCtaLabel, pickPriceParts } from './pick';
 
 const pick = (overrides: Partial<ProductPick> = {}): ProductPick => ({
     retailer: 'chewy',
@@ -9,6 +9,11 @@ const pick = (overrides: Partial<ProductPick> = {}): ProductPick => ({
     referencePrice: 49.96,
     priceCheckedDate: '2026-11-14',
     bestForBreeds: [],
+    bestForNotes: [],
+    ourTake: null,
+    problem: null,
+    approach: null,
+    quickSpecs: [],
     pros: [],
     cons: [],
     ...overrides,
@@ -43,27 +48,29 @@ describe('formatPickDate', () => {
     });
 });
 
-describe('pickPriceLine', () => {
-    it('labels the price as the retailer reference price with its checked date', () => {
-        expect(pickPriceLine(pick())).toBe('Price on Chewy: $49.96 (checked 14 Nov 2026) — check current price');
+describe('pickPriceParts', () => {
+    it('labels the price as the retailer price and always carries the date it was checked', () => {
+        expect(pickPriceParts(pick())).toEqual({
+            label: 'Price at Chewy',
+            amount: '$49.96',
+            note: 'Checked 14 Nov 2026 — check current price',
+        });
     });
 
     it('shows no price without a checked date', () => {
-        expect(pickPriceLine(pick({ priceCheckedDate: null }))).toBeNull();
+        expect(pickPriceParts(pick({ priceCheckedDate: null }))).toBeNull();
     });
 
     it('shows no price without a reference price', () => {
-        expect(pickPriceLine(pick({ referencePrice: null }))).toBeNull();
+        expect(pickPriceParts(pick({ referencePrice: null }))).toBeNull();
     });
 
     it('keeps two decimals', () => {
-        expect(pickPriceLine(pick({ referencePrice: 50 }))).toContain('$50.00');
+        expect(pickPriceParts(pick({ referencePrice: 50 }))?.amount).toBe('$50.00');
     });
 
     it('does not name a store it does not know', () => {
-        expect(pickPriceLine(pick({ retailer: null, retailerName: null }))).toBe(
-            'Retailer price: $49.96 (checked 14 Nov 2026) — check current price',
-        );
+        expect(pickPriceParts(pick({ retailer: null, retailerName: null }))?.label).toBe('Retailer price');
     });
 });
 

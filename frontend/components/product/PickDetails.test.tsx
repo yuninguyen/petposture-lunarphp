@@ -6,6 +6,7 @@ import type { Product, ProductPick } from '../../types/shop';
 import { PickDetails } from './PickDetails';
 
 const GO_URL = 'https://api.petposture.com/go/pick/necoichi-bowl';
+const OUR_TAKE = "Based on the seller's description and customer reviews — we haven't tested this ourselves.";
 
 const pickData = (overrides: Partial<ProductPick> = {}): ProductPick => ({
     retailer: 'chewy',
@@ -14,6 +15,11 @@ const pickData = (overrides: Partial<ProductPick> = {}): ProductPick => ({
     referencePrice: 49.96,
     priceCheckedDate: '2026-11-14',
     bestForBreeds: ['french-bulldog', 'pug'],
+    bestForNotes: ['Small, split meals'],
+    ourTake: OUR_TAKE,
+    problem: 'A flat bowl makes a flat-faced dog bend its neck.',
+    approach: 'A tilted, raised shape brings the food closer.',
+    quickSpecs: [{ label: 'Material', value: 'Porcelain' }, { label: 'Tilt', value: '15°' }],
     pros: ['Raised design', 'Easy to clean'],
     cons: ['Holds about one cup'],
     ...overrides,
@@ -32,6 +38,7 @@ const product = (pick: ProductPick = pickData(), overrides: Partial<Product> = {
     rating: 4.6,
     reviews: 128,
     image: '/storage/bowl.png',
+    images: [{ id: 1, src: '/storage/bowl.png', alt: 'Bowl from above' }],
     brand: 'Necoichi',
     description: '<p>A raised, tilted bowl.</p>',
     specs: [{ label: 'Material', value: 'Ceramic' }],
@@ -83,10 +90,23 @@ describe('PickDetails', () => {
         expect(html).toContain('>Check Price on Amazon<');
     });
 
-    it('shows the price only as the retailer reference price with its checked date', () => {
+    it('puts the buy box right after the title, before "Our take" and the photo, so the button is on the first screen of a phone', () => {
+        const html = render();
+        const title = html.indexOf('<h1');
+        const button = html.indexOf('>Buy on Chewy<');
+
+        expect(title).toBeGreaterThan(-1);
+        expect(button).toBeGreaterThan(title);
+        expect(button).toBeLessThan(html.indexOf('Our take'));
+        expect(button).toBeLessThan(html.indexOf('<img'));
+    });
+
+    it('shows the price as the retailer price with the date it was checked, never the site price', () => {
         const html = render();
 
-        expect(html).toContain('Price on Chewy: $49.96 (checked 14 Nov 2026) — check current price');
+        expect(html).toContain('Price at Chewy');
+        expect(html).toContain('$49.96');
+        expect(html).toContain('Checked 14 Nov 2026 — check current price');
         expect(html).not.toContain('22.71');
     });
 
@@ -96,9 +116,10 @@ describe('PickDetails', () => {
         expect(html).not.toContain('$');
         expect(html).not.toContain('49.96');
         expect(html).not.toContain('22.71');
+        expect(html).not.toContain('Checked');
     });
 
-    it('puts the affiliate disclosure right after the button', () => {
+    it('puts the live affiliate disclosure right after the button', () => {
         const html = render();
         const disclosure = 'PetPosture may earn a commission if you buy through this link, at no extra cost to you.';
         const button = html.indexOf('>Buy on Chewy<');
@@ -106,6 +127,11 @@ describe('PickDetails', () => {
         expect(html).toContain(disclosure);
         expect(html.indexOf(disclosure) - button).toBeGreaterThan(0);
         expect(html.indexOf(disclosure) - button).toBeLessThan(400);
+    });
+
+    it('names the date in the eyebrow when there is one, and only "PetPosture Pick" when there is not', () => {
+        expect(render()).toContain('PetPosture Pick · Checked 14 Nov 2026');
+        expect(render(product(pickData({ priceCheckedDate: null, referencePrice: null })))).toContain('PetPosture Pick');
     });
 
     it('does not present the site rating or review count as a retailer rating', () => {
@@ -117,41 +143,89 @@ describe('PickDetails', () => {
         expect(html).not.toContain('AggregateRating');
     });
 
-    it('lists the pros and the honest cons', () => {
+    it('never says the products were researched or tested by PetPosture', () => {
+        const withoutTake = render(product(pickData({ ourTake: null }))).toLowerCase();
+
+        expect(withoutTake).not.toContain('researched');
+        expect(withoutTake).not.toContain('tested');
+        expect(withoutTake).not.toContain('we checked');
+    });
+
+    it('shows "Our take" exactly as entered, and leaves the block out when it is empty', () => {
+        expect(render()).toContain('Our take');
+        expect(render()).toContain(OUR_TAKE.replace(/'/g, '&#x27;'));
+        expect(render(product(pickData({ ourTake: null })))).not.toContain('Our take');
+    });
+
+    it('lists the quick specs, lets them win over the same label from the product specs, and hides the card when there are none', () => {
         const html = render();
 
-        expect(html).toContain('Raised design');
-        expect(html).toContain('Easy to clean');
-        expect(html).toContain('Holds about one cup');
+        expect(html).toContain('Quick specs');
+        expect(html).toContain('Porcelain');
+        expect(html).toContain('15°');
+        expect(html).not.toContain('Ceramic');
+        expect(render(product(pickData({ quickSpecs: [] }), { specs: [] }))).not.toContain('Quick specs');
     });
 
-    it('omits the cons block when there are none instead of showing an empty heading', () => {
-        const html = render(product(pickData({ cons: [] })));
+    it('keeps product specs entered the old way when no quick spec uses their label', () => {
+        const html = render(product(pickData({ quickSpecs: [] })));
 
-        expect(html.toLowerCase()).not.toContain('cons');
+        expect(html).toContain('Quick specs');
+        expect(html).toContain('Ceramic');
     });
 
-    it('links each best-for breed to its guide', () => {
+    it('links each best-for breed to its guide and lists the free-text notes beside them', () => {
         const html = render();
 
         expect(html).toContain('href="/dogs/french-bulldog"');
         expect(html).toContain('French Bulldog');
         expect(html).toContain('href="/dogs/pug"');
+        expect(html).toContain('Small, split meals');
     });
 
-    it('shows the specs and the description that were entered in the admin, and nothing more', () => {
+    it('shows the problem and the approach as two cards, each only when entered', () => {
+        const both = render();
+        expect(both).toContain('The practical difference');
+        expect(both).toContain('The Problem');
+        expect(both).toContain('A flat bowl makes a flat-faced dog bend its neck.');
+        expect(both).toContain('The PetPosture Approach');
+
+        const onlyProblem = render(product(pickData({ approach: null })));
+        expect(onlyProblem).toContain('The Problem');
+        expect(onlyProblem).not.toContain('The PetPosture Approach');
+
+        expect(render(product(pickData({ problem: null, approach: null })))).not.toContain('The practical difference');
+    });
+
+    it('lists the pros under "What we like" and the cons under "What to know first"', () => {
         const html = render();
 
-        expect(html).toContain('Material');
-        expect(html).toContain('Ceramic');
-        expect(html).toContain('A raised, tilted bowl.');
+        expect(html).toContain('Honest Pros &amp; Cons');
+        expect(html).toContain('What we like');
+        expect(html).toContain('Raised design');
+        expect(html).toContain('Easy to clean');
+        expect(html).toContain('What to know first');
+        expect(html).toContain('Holds about one cup');
     });
 
-    it('links related Picks to their own pages, not to the shop', () => {
-        const html = render(product(), [related('slo-bowl', 'Slo Bowl'), related('puppia-vest', 'Puppia Vest')]);
+    it('leaves out the cons card when there are no cons, and the whole section when there is nothing to list', () => {
+        const noCons = render(product(pickData({ cons: [] })));
+        expect(noCons).toContain('What we like');
+        expect(noCons).not.toContain('What to know first');
 
-        expect(html).toContain('href="/picks/slo-bowl"');
-        expect(html).toContain('href="/picks/puppia-vest"');
+        expect(render(product(pickData({ pros: [], cons: [] })))).not.toContain('Honest Pros');
+    });
+
+    it('shows the description entered in the admin', () => {
+        expect(render()).toContain('A raised, tilted bowl.');
+    });
+
+    it('has a breadcrumb Home > Picks > the Pick, with Picks linking to the list', () => {
+        const html = render();
+
+        expect(html).toContain('aria-label="Breadcrumb"');
+        expect(html).toContain('href="/picks"');
+        expect(html).not.toMatch(/Feeding/);
     });
 
     it('renders no image, not a broken one, when the Pick has no photo yet', () => {
@@ -163,7 +237,24 @@ describe('PickDetails', () => {
         expect(html).toContain('>Buy on Chewy<');
     });
 
-    it('has no related section when there are no other Picks', () => {
-        expect(render().toLowerCase()).not.toContain('more picks');
+    it('links related Picks to their own pages, not to the shop', () => {
+        const html = render(product(), [related('slo-bowl', 'Slo Bowl'), related('puppia-vest', 'Puppia Vest')]);
+
+        expect(html).toContain('More PetPosture Picks');
+        expect(html).toContain('href="/picks/slo-bowl"');
+        expect(html).toContain('href="/picks/puppia-vest"');
+    });
+
+    it('offers all the Picks for the first breed, on the Picks list filtered by that breed', () => {
+        const html = render();
+
+        expect(html).toContain('All French Bulldog Picks');
+        expect(html).toContain('href="/picks?breed=french-bulldog"');
+    });
+
+    it('has no "more picks" section when there are no other Picks and no breed to filter by', () => {
+        const html = render(product(pickData({ bestForBreeds: [] }))).toLowerCase();
+
+        expect(html).not.toContain('more petposture picks');
     });
 });

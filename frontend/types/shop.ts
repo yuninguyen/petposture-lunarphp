@@ -80,6 +80,13 @@ export interface ProductPick {
     referencePrice: number | null;
     priceCheckedDate: string | null;
     bestForBreeds: string[];
+    /** Free-text "best for" notes ("Small, split meals"), shown next to the breed links. */
+    bestForNotes: string[];
+    /** Editorial copy. Each is null or empty when not entered, and the page then leaves the block out. */
+    ourTake: string | null;
+    problem: string | null;
+    approach: string | null;
+    quickSpecs: { label: string; value: string }[];
     pros: string[];
     cons: string[];
 }

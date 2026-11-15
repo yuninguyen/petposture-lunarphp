@@ -15,6 +15,11 @@ const pick: ProductPick = {
     referencePrice: 25.99,
     priceCheckedDate: '2026-11-15',
     bestForBreeds: ['french-bulldog'],
+    bestForNotes: [],
+    ourTake: null,
+    problem: null,
+    approach: null,
+    quickSpecs: [],
     pros: [],
     cons: [],
 };

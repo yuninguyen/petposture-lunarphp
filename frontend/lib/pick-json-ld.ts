@@ -29,7 +29,8 @@ export function buildPickBreadcrumbJsonLd(siteUrl: string, product: Pick<PickPro
         '@type': 'BreadcrumbList',
         itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
-            { '@type': 'ListItem', position: 2, name: product.name, item: `${siteUrl}/picks/${product.slug}` },
+            { '@type': 'ListItem', position: 2, name: 'Picks', item: `${siteUrl}/picks` },
+            { '@type': 'ListItem', position: 3, name: product.name, item: `${siteUrl}/picks/${product.slug}` },
         ],
     };
 }
