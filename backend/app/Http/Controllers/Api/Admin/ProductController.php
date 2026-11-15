@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Http\Controllers\Api\ProductController as PublicProductController;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreProductRequest;
 use App\Http\Requests\Admin\UpdateProductRequest;
@@ -14,6 +15,7 @@ use App\Services\ProductRouteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
@@ -355,6 +357,8 @@ class ProductController extends Controller
         ]);
 
         Product::query()->whereIn('id', $validated['ids'])->delete();
+        // A bulk query fires no model events, so the observer cannot clear this.
+        Cache::forget(PublicProductController::INDEX_CACHE_KEY);
 
         return response()->noContent();
     }
@@ -370,6 +374,8 @@ class ProductController extends Controller
         $updated = Product::query()->whereIn('id', $validated['ids'])->update([
             'status' => $validated['status'],
         ]);
+        // A bulk query fires no model events, so the observer cannot clear this.
+        Cache::forget(PublicProductController::INDEX_CACHE_KEY);
 
         return response()->json(['updated' => $updated]);
     }

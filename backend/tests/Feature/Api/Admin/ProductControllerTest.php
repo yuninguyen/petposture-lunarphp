@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\ProductRouteService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -1082,6 +1083,63 @@ class ProductControllerTest extends TestCase
 
         $this->assertSoftDeleted('lunar_products', ['id' => $product->id]);
         $this->getJson("/api/admin/products/{$product->id}")->assertNotFound();
+    }
+
+    public function test_saving_a_product_clears_the_cached_public_product_listing(): void
+    {
+        $product = $this->product('Cached listing', 'published');
+        Cache::put('products:index:p1', 'stale');
+
+        $product->update(['status' => 'draft']);
+
+        $this->assertFalse(Cache::has('products:index:p1'));
+    }
+
+    public function test_deleting_a_product_clears_the_cached_public_product_listing(): void
+    {
+        $product = $this->product('Cached listing', 'published');
+        Cache::put('products:index:p1', 'stale');
+
+        $product->delete();
+
+        $this->assertFalse(Cache::has('products:index:p1'));
+    }
+
+    public function test_bulk_status_change_clears_the_cached_public_product_listing(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->product('Cached listing', 'published');
+        Cache::put('products:index:p1', 'stale');
+
+        $this->postJson('/api/admin/products/bulk-status', [
+            'ids' => [$product->id],
+            'status' => 'draft',
+        ])->assertOk();
+
+        $this->assertFalse(Cache::has('products:index:p1'));
+    }
+
+    public function test_bulk_delete_clears_the_cached_public_product_listing(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->product('Cached listing', 'published');
+        Cache::put('products:index:p1', 'stale');
+
+        $this->postJson('/api/admin/products/bulk-delete', ['ids' => [$product->id]])->assertNoContent();
+
+        $this->assertFalse(Cache::has('products:index:p1'));
+    }
+
+    public function test_a_product_moved_to_draft_disappears_from_the_public_product_listing(): void
+    {
+        $product = $this->product('Soon a draft', 'published');
+        $this->variant($product, 'SOON-DRAFT-001', 1000);
+
+        $this->assertContains($product->id, collect($this->getJson('/api/products')->assertOk()->json('data'))->pluck('id')->all());
+
+        $product->update(['status' => 'draft']);
+
+        $this->assertNotContains($product->id, collect($this->getJson('/api/products')->assertOk()->json('data'))->pluck('id')->all());
     }
 
     private function actingAsAdmin(): User

@@ -29,6 +29,9 @@ class ProductController extends Controller
 {
     use HttpResponses;
 
+    /** Cached unfiltered first page of the public listing; cleared whenever a product changes. */
+    public const INDEX_CACHE_KEY = 'products:index:p1';
+
     public function index(Request $request)
     {
         $query = $this->productQuery()
@@ -155,8 +158,7 @@ class ProductController extends Controller
             return ProductResource::collection($query->paginate($perPage));
         }
 
-        $cacheKey = 'products:index:p1';
-        $products = Cache::remember($cacheKey, now()->addHour(), fn () => $query->paginate($perPage));
+        $products = Cache::remember(self::INDEX_CACHE_KEY, now()->addHour(), fn () => $query->paginate($perPage));
 
         return ProductResource::collection($products);
     }
