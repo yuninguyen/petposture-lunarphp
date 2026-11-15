@@ -9,11 +9,13 @@ const dataSource = readFileSync(dataPath, 'utf8');
 const componentSource = readFileSync(new URL('../../components/FaqsPage.tsx', import.meta.url), 'utf8');
 const pageSource = readFileSync(new URL('./page.tsx', import.meta.url), 'utf8');
 
-test('shared FAQ data preserves the nine current questions and answers', () => {
+// SHOP-HIDDEN: there were nine questions; the three shipping and the three orders-and-returns ones are
+// removed while the shop is hidden. Reverting the "hide the shop chrome" commits makes this nine again.
+test('shared FAQ data keeps the three product questions and answers', () => {
     assert.ok(dataSource.includes('export const CATEGORIES'));
     assert.ok(dataSource.includes('export const FAQ_ITEMS'));
-    assert.equal((dataSource.match(/question:/g) || []).length, 9);
-    assert.equal((dataSource.match(/answer:/g) || []).length, 9);
+    assert.equal((dataSource.match(/question:/g) || []).length, 3);
+    assert.equal((dataSource.match(/answer:/g) || []).length, 3);
     assert.match(componentSource, /import \{ CATEGORIES, FAQ_ITEMS \} from ['"]@\/lib\/faq-data['"]/);
     assert.doesNotMatch(componentSource, /const CATEGORIES\s*=/);
     assert.doesNotMatch(componentSource, /const FAQ_ITEMS\s*=/);

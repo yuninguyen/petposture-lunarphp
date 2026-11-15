@@ -312,13 +312,33 @@ Policy / Return & Refund Policy / Request a Return** links and the **payment car
 and `/returns` pages still exist, just unlinked. "Track Your Order" and the cart/wishlist icons were
 left in place.
 
-**To reopen the shop:** revert the "hide the shop" commit **and** the "hide the shop chrome" commit
-(`git log --grep "hide the shop"`, then `git revert <sha>` for each), then re-add the shop URLs to
-`app/sitemap.ts` if they were removed in the later Picks work. Reopen only once a payment processor
-is live. `grep -r SHOP-HIDDEN frontend` lists everything touched.
+A further "hide the shop chrome (2)" commit removed, from the homepage and the site header/footer, the
+**"30-Day Returns" and "Free Shipping $50+" trust claims** (the strip now has two), the whole **FAQ
+"Shipping Information" and "Orders & Returns" categories** (nine questions become three, and the
+`FaqJsonLd.test.mjs` count with them), the FAQ page's "…shipping, and return policies" intro, the footer's
+**"Track Your Order"** link, and the header's **wishlist and cart icons** (`CartDrawer` is still mounted
+in the layout, nothing opens it).
 
-The Picks work (the `/picks/[slug]` pages, the homepage Picks block, the Pick-aware admin preview)
-is **not** part of those commits and is not undone by reverting them.
+**To reopen the shop (everything comes back exactly as it was):**
+
+1. Revert every "hide the shop" commit, newest first, in one go:
+
+   ```bash
+   git revert --no-commit $(git log --grep "hide the shop" --format=%h)
+   git commit -m "feat(shop): reopen the shop"
+   ```
+
+   Every commit that hides something sellable has "hide the shop" in its message (the redirects, the
+   chrome, the chrome (2), and later the sitemap one), so the `--grep` finds all of them. Check the list
+   with `git log --grep "hide the shop" --oneline` first.
+2. Check nothing was missed: `grep -r SHOP-HIDDEN frontend` must now print nothing.
+3. Deploy, then purge the Cloudflare cache (`app(CloudflareCacheService::class)->purgeAll()` in tinker).
+4. The shop's **data** is not code: publish the products you want back in the admin (Puppia was set to
+   draft), and only reopen once a payment processor is live.
+
+The Picks work (the `/picks/[slug]` pages, the homepage Picks block, the Pick-aware admin preview, click
+tracking, reports) is **not** part of those commits and is not undone by reverting them. Reverting does
+not delete any data (clicks, attributes, products).
 
 ---
 

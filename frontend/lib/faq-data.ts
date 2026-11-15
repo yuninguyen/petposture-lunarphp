@@ -1,7 +1,10 @@
+// SHOP-HIDDEN: this file also held the "Shipping Information" category ("How long will my order take to
+// arrive?", "How much does shipping cost?", "Do you ship internationally?") and the "Orders & Returns"
+// category ("How do I start a return? (30-Day Returns)", "My item arrived damaged. What do I do?",
+// "Can I change or cancel my order?"). PetPosture ships nothing and takes no orders while the shop is
+// hidden. Revert the "hide the shop chrome" commits to restore them word for word.
 export const CATEGORIES = [
     { id: "products", title: "Product & Sizing" },
-    { id: "shipping", title: "Shipping Information" },
-    { id: "orders", title: "Orders & Returns" },
 ];
 
 export const FAQ_ITEMS = [
@@ -19,35 +22,5 @@ export const FAQ_ITEMS = [
         category: "products",
         question: "Are the bowls dishwasher safe?",
         answer: "Yes! All of our ceramic and stainless steel bowl inserts are 100% dishwasher safe (top rack recommended). For stands made of bamboo or elevated wood, we recommend wiping them down with a damp cloth to preserve the finish."
-    },
-    {
-        category: "shipping",
-        question: "How long will my order take to arrive?",
-        answer: "We typically process orders within 1-3 business days. Shipping within the contiguous United States generally takes 3-8 business days. Once shipped, you'll receive a tracking number via email."
-    },
-    {
-        category: "shipping",
-        question: "How much does shipping cost?",
-        answer: "We offer flat-rate shipping of $5.99 for all orders within the contiguous US. Plus, we provide FREE standard shipping on all orders over $49.99!"
-    },
-    {
-        category: "shipping",
-        question: "Do you ship internationally?",
-        answer: "Currently, PetPosture only ships to addresses within the contiguous 48 United States. We are actively working on expanding our shipping services to Alaska, Hawaii, and international destinations in the near future."
-    },
-    {
-        category: "orders",
-        question: "How do I start a return? (30-Day Returns)",
-        answer: "You can return eligible items within 30 days of delivery. Items must be new, unused, and free of pet hair, in original packaging, and a 25% restocking fee applies. To start, email support@petposture.com with your order number. Our team will provide you with a Return Merchandise Authorization (RMA) and instructions."
-    },
-    {
-        category: "orders",
-        question: "My item arrived damaged. What do I do?",
-        answer: "If your item arrives with any defects or shipping damage, please let us know within 7 days of delivery. Send photos to support@petposture.com and we will ship out a replacement immediately at no extra cost to you."
-    },
-    {
-        category: "orders",
-        question: "Can I change or cancel my order?",
-        answer: "As long as your order hasn't been processed by our warehouse, we can make changes or cancellations. Please reach out to our support team as soon as possible via email or phone."
     }
 ];

@@ -15,10 +15,11 @@ const shopBySolution = [
 ];
 // SHOP-HIDDEN: "Shipping Policy", "Return & Refund Policy" and "Request a Return" were listed here. PetPosture
 // does not ship or take returns while the shop is hidden. Revert the "hide the shop chrome" commit to restore them.
+// SHOP-HIDDEN: "Track Your Order" (/track-order) was also listed here. Revert the "hide the shop chrome"
+// commits to restore it.
 const customerService = [
   "Contact Us",
   "FAQs",
-  "Track Your Order",
 ];
 const legalLinks = [
   "Privacy Policy",
@@ -121,8 +122,7 @@ function FooterSection({ title, items, id, isOpen, onToggle, isCustomContent, wr
                 <Link
                   href={
                     item === "Contact Us" ? "/contact" :
-                      item === "FAQs" ? "/faqs" :
-                        item === "Track Your Order" ? "/track-order" : "#"
+                      item === "FAQs" ? "/faqs" : "#"
                   }
                   className="text-[16px] text-white/80 hover:text-secondary transition-colors flex items-center gap-2 group"
                 >

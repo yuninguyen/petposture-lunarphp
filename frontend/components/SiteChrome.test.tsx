@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import Footer from './Footer';
 import Header from './Header';
+import { SocialProofStrip } from './HomePage';
 
 vi.mock('@/context/CartContext', () => ({ useCart: () => ({ items: [], setCartOpen: vi.fn() }) }));
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: null, logout: vi.fn() }) }));
@@ -32,10 +33,34 @@ describe('site header', () => {
         expect(html).not.toMatch(/href="\/shop/);
     });
 
-    it('keeps the rest of the navigation', () => {
+    it('has no cart or wishlist icon', () => {
+        expect(html).not.toContain('aria-label="Shopping cart"');
+        expect(html).not.toContain('aria-label="Wishlist"');
+        expect(html).not.toContain('href="/wishlist"');
+    });
+
+    it('keeps the rest of the navigation and the account icon', () => {
         expect(html).toContain('Our Mission');
         expect(html).toContain('Blog');
         expect(html).toContain('Contact');
+        expect(html).toContain('href="/sign-in"');
+    });
+});
+
+describe('homepage trust strip', () => {
+    const html = renderToStaticMarkup(<SocialProofStrip />);
+
+    it('no longer promises returns or free shipping', () => {
+        const lower = html.toLowerCase();
+
+        expect(lower).not.toContain('returns');
+        expect(lower).not.toContain('shipping');
+        expect(lower).not.toContain('delivery');
+    });
+
+    it('keeps the two claims that are about the guides', () => {
+        expect(html).toContain('Breed-Focused');
+        expect(html).toContain('Curated Selection');
     });
 });
 
@@ -57,6 +82,11 @@ describe('site footer', () => {
         for (const brand of ['Visa', 'Mastercard', 'American Express', 'Discover', 'PayPal', 'Apple Pay', 'Google Pay']) {
             expect(html, brand).not.toContain(`title="${brand}"`);
         }
+    });
+
+    it('has no order tracking link', () => {
+        expect(html.toLowerCase()).not.toContain('track your order');
+        expect(html).not.toContain('href="/track-order"');
     });
 
     it('keeps the contact, FAQ and legal links', () => {

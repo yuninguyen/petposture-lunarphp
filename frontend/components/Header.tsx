@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, User, ShoppingBag, Menu, Phone, Mail, Clock, X, Facebook, Instagram, Twitter, Youtube, ChevronRight, LogOut } from "lucide-react";
+import { User, Menu, Phone, Mail, Clock, X, Facebook, Instagram, Twitter, Youtube, ChevronRight, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import { useWishlist } from "@/context/WishlistContext";
 import { useSettings } from "@/context/SettingsContext";
 import { TikTokIcon, PinterestIcon } from "@/lib/socialIcons";
 
@@ -17,8 +15,7 @@ const [mobileOpen, setMobileOpen] = useState(false);
 const pathname = usePathname();
 // SHOP-HIDDEN: the product search state and its /shop?q= submit handler were removed with the search
 // boxes. Revert the "hide the shop chrome" commit to restore them.
-  const { items, setCartOpen } = useCart();
-  const { items: wishlistItems } = useWishlist();
+  // SHOP-HIDDEN: useCart() (items, setCartOpen) and useWishlist() fed the removed cart and wishlist icons.
   const { user, logout } = useAuth();
   const { shop_name, shop_logo, contact, social } = useSettings();
   const logoSrc = shop_logo || "/assets/logo/Logo-PetPosture-1-e1761840892773.webp";
@@ -82,14 +79,8 @@ const pathname = usePathname();
 
           {/* Right: Icons */}
           <div className="flex items-center gap-4 md:gap-6 text-primary flex-shrink-0">
-            <Link href="/wishlist" className="relative hover:text-rust transition-colors hidden md:block" aria-label="Wishlist">
-              <Heart size={22} strokeWidth={2} />
-              {wishlistItems.length > 0 && (
-                <span className="absolute -top-1 -right-1.5 bg-secondary text-ink text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
-                  {wishlistItems.length}
-                </span>
-              )}
-            </Link>
+            {/* SHOP-HIDDEN: the wishlist heart icon (link to /wishlist, with its item count) was here. Revert the
+                "hide the shop chrome" commits to restore it. */}
             {user ? (
               <div className="hidden md:flex items-center gap-3">
                 <Link href="/account" className="text-sm font-bold text-rust hidden lg:block hover:underline">
@@ -107,18 +98,8 @@ const pathname = usePathname();
                 <User size={22} strokeWidth={2} aria-hidden="true" />
               </Link>
             )}
-            <button
-              onClick={() => setCartOpen(true)}
-              className="relative group flex h-10 w-10 items-center justify-center hover:text-rust transition-colors outline-none md:h-auto md:w-auto md:p-1"
-              aria-label="Shopping cart"
-            >
-              <ShoppingBag size={22} strokeWidth={2} />
-              {items.length > 0 && (
-                <span className="absolute -top-1 -right-1.5 bg-secondary text-ink text-xs font-black rounded-full w-4 h-4 flex items-center justify-center shadow-sm">
-                  {items.reduce((total, item) => total + item.quantity, 0)}
-                </span>
-              )}
-            </button>
+            {/* SHOP-HIDDEN: the shopping-cart button (opens the cart drawer, with its item count) was here. Revert
+                the "hide the shop chrome" commits to restore it. */}
           </div>
 
         </div>

@@ -59,8 +59,10 @@ export default function FaqsPage() {
                         <h1 className="text-[32px] md:text-[42px] font-bold uppercase tracking-[0.1em] text-primary mb-6">
                             Frequently Asked Questions
                         </h1>
+                        {/* SHOP-HIDDEN: this read "...about our products, shipping, and return policies." Revert the
+                            "hide the shop chrome" commits to restore it. */}
                         <p className="text-[#666666] text-[16px] max-w-2xl mx-auto leading-relaxed">
-                            Find answers to common questions about our products, shipping, and return policies.
+                            Find answers to common questions about our products.
                         </p>
                         <div className="w-12 h-1 bg-secondary mx-auto rounded-full mt-8"></div>
                     </motion.div>

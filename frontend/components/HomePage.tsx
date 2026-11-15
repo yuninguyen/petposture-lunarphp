@@ -116,7 +116,7 @@ function SectionTitle({
 /* ─────────────────────────────────────────────────────────────────
    SOCIAL PROOF STRIP  (below Hero)
  ───────────────────────────────────────────────────────────────── */
-function SocialProofStrip() {
+export function SocialProofStrip() {
   const stats = [
     {
       value: 'Breed-Focused',
@@ -130,23 +130,15 @@ function SocialProofStrip() {
       accent: '#f5a623',
       img: '/assets/icons/Trust-Curated-Selection.webp',
     },
-    {
-      value: '30-Day Returns',
-      label: 'Return unused items within 30 days of delivery. See our policy.',
-      accent: '#38c68b',
-      img: '/assets/icons/Trust-30-Day-Guarantee.webp',
-    },
-    {
-      value: 'Free Shipping $50+',
-      label: 'Free standard shipping on orders over $50 in the US.',
-      accent: C.secondary,
-      img: '/assets/icons/Trust-Free-Shipping.webp',
-    },
+    // SHOP-HIDDEN: two more claims sat here, "30-Day Returns" (accent #38c68b, Trust-30-Day-Guarantee.webp)
+    // and "Free Shipping $50+" (accent C.secondary, Trust-Free-Shipping.webp). PetPosture does not sell or
+    // ship while the shop is hidden. Revert the "hide the shop chrome" commits to restore them and the
+    // 4-column grid below.
   ];
 
   return (
     <div className="px-4 py-6 sm:px-6 sm:py-8" style={{ background: C.white, borderBottom: `1px solid ${C.border}` }}>
-      <div className="max-w-[1200px] mx-auto grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-x-6 sm:gap-y-8 lg:grid-cols-4">
+      <div className="max-w-[1200px] mx-auto grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-x-6 sm:gap-y-8 lg:grid-cols-2">
         {stats.map((s, i) => (
           <div
             key={i}
