@@ -21,4 +21,6 @@ Route::get('/newsletter/unsubscribe/{subscriber}/{token}', [NewsletterController
     ->middleware('signed')
     ->name('newsletter.unsubscribe');
 
+// Must stay above /go/{post}/{item}, which would otherwise take "pick" as a post.
+Route::get('/go/pick/{slug}', [AffiliateClickController::class, 'redirectPick'])->name('affiliate.go.pick');
 Route::get('/go/{post}/{item}', [AffiliateClickController::class, 'redirect'])->name('affiliate.go');
