@@ -50,6 +50,26 @@ describe('PicksIndex header', () => {
 
         expect(html).toContain('aria-label="Breadcrumb"');
         expect(html).toContain('href="/"');
+        expect(html).toMatch(/Home<\/a><\/li><li aria-hidden="true">›<\/li><li[^>]*aria-current="page"[^>]*>Picks<\/li>/);
+    });
+
+    // In the design the breadcrumb is a full-width grey bar right under the menu, not a line inside the page column,
+    // and the current page is bold.
+    it('puts the breadcrumb in a full-width grey bar above the header, with the current page in bold', () => {
+        const html = render();
+        const nav = html.match(/<nav aria-label="Breadcrumb"[^>]*>/)?.[0] ?? '';
+
+        expect(html.startsWith('<nav aria-label="Breadcrumb"')).toBe(true);
+        expect(nav).toContain('bg-[#f4f5f6]');
+        expect(nav).toContain('border-b');
+        expect(html).toMatch(/aria-current="page"[^>]*class="[^"]*font-bold[^"]*"|class="[^"]*font-bold[^"]*"[^>]*aria-current="page"/);
+        expect(html.indexOf('<nav aria-label="Breadcrumb"')).toBeLessThan(html.indexOf('<h1'));
+    });
+
+    it('keeps the Home link grey, so only the current page stands out in the breadcrumb', () => {
+        const home = render().match(/<a [^>]*href="\/"[^>]*>Home<\/a>/)?.[0] ?? '';
+
+        expect(home).toContain('text-[#6b7680]');
     });
 
     it('says how many Picks there are and when the latest price was checked, from the data', () => {

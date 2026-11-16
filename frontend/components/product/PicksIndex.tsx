@@ -40,17 +40,17 @@ export function PicksIndex({ allPicks, breed, now }: { allPicks: PickProduct[]; 
 
     return (
         <>
-            <div className="mx-auto max-w-[1180px] px-4 py-8 md:py-10">
-                <nav aria-label="Breadcrumb" className="mb-6 text-[13px] text-[#56616a]">
-                    <ol className="flex flex-wrap items-center gap-2">
-                        <li>
-                            <Link href="/" className="hover:underline">Home</Link>
-                        </li>
-                        <li aria-hidden="true">›</li>
-                        <li aria-current="page" className="font-semibold text-[#2d3a43]">Picks</li>
-                    </ol>
-                </nav>
+            <nav aria-label="Breadcrumb" className="border-b border-[#e2e5e8] bg-[#f4f5f6]">
+                <ol className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-2 px-4 py-[11px] text-[13px] text-[#6b7680]">
+                    <li>
+                        <Link href="/" className="text-[#6b7680] hover:underline">Home</Link>
+                    </li>
+                    <li aria-hidden="true">›</li>
+                    <li aria-current="page" className="font-bold text-[#3e4c57]">Picks</li>
+                </ol>
+            </nav>
 
+            <div className="mx-auto max-w-[1180px] px-4 pb-8 pt-[38px] md:pb-10">
                 <header className="text-center">
                     <span className="inline-block rounded-[3px] bg-[#fdf2ea] px-[11px] py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#8f4a1f]">
                         PetPosture Picks
