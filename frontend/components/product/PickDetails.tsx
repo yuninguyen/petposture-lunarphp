@@ -93,9 +93,12 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                             href={pick.goUrl}
                             target="_blank"
                             rel="sponsored nofollow noopener"
-                            className={buttonClasses({ variant: 'primary', size: 'lg', className: 'w-full gap-2 shadow-xl shadow-orange-500/20' })}
+                            className={buttonClasses({ variant: 'primary', size: 'lg', className: 'w-full gap-[9px] shadow-xl shadow-orange-500/20' })}
                         >
-                            {pickCtaLabel(pick)}<span aria-hidden="true">→</span>
+                            {pickCtaLabel(pick)}
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
+                                <path d="M7 17L17 7M9 7h8v8" />
+                            </svg>
                         </a>
                         <p className="mt-3 text-xs leading-5 text-zinc-500">{PICK_DISCLOSURE}</p>
                         <p className="mt-2 text-xs leading-5 text-zinc-500">No made-up star ratings: just pros and cons.</p>

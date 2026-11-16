@@ -75,7 +75,7 @@ describe('PickDetails', () => {
 
     it('has exactly one primary button, opening the tracked link in a new tab with the affiliate rel', () => {
         const html = render();
-        const anchors = html.match(/<a [^>]*rel="sponsored nofollow noopener"[^>]*>(?:[^<]|<span[^>]*>[^<]*<\/span>)*<\/a>/g) ?? [];
+        const anchors = html.match(/<a [^>]*rel="sponsored nofollow noopener"[^>]*>[\s\S]*?<\/a>/g) ?? [];
 
         expect(anchors).toHaveLength(1);
         expect(anchors[0]).toContain(`href="${GO_URL}"`);
@@ -84,11 +84,13 @@ describe('PickDetails', () => {
         expect(html).not.toContain('noreferrer');
     });
 
-    it('shows an arrow to the right of the button text, hidden from screen readers', () => {
+    // The Muse mock ends the button with the diagonal "opens elsewhere" arrow (up and to the right), not a plain →.
+    it('ends the button with the diagonal up-right arrow of the design, hidden from screen readers', () => {
         const html = render();
-        const anchor = html.match(/<a [^>]*rel="sponsored nofollow noopener"[^>]*>(?:[^<]|<span[^>]*>[^<]*<\/span>)*<\/a>/)?.[0] ?? '';
+        const anchor = html.match(/<a [^>]*rel="sponsored nofollow noopener"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? '';
 
-        expect(anchor).toMatch(/>Buy on Chewy<span aria-hidden="true"[^>]*>→<\/span><\/a>$/);
+        expect(anchor).toMatch(/>Buy on Chewy<svg [^>]*aria-hidden="true"[^>]*><path d="M7 17L17 7M9 7h8v8"><\/path><\/svg><\/a>$/);
+        expect(anchor).not.toContain('→');
     });
 
     it('names Amazon on the button when the retailer is Amazon', () => {
