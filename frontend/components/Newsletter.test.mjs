@@ -19,4 +19,5 @@ test('the newsletter banner does not offer money off an order', () => {
     assert.doesNotMatch(source, /off your first/i);
     assert.doesNotMatch(source, /first-order/i);
     assert.doesNotMatch(source, /Join & Get/);
+    assert.doesNotMatch(source, /Exclusive offers/i);
 });

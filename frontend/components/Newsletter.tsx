@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MailOpen, Lock, Ban, Tag } from "lucide-react";
+import { MailOpen, Lock, Ban } from "lucide-react";
 import { fetchApi } from "@/lib/fetchApi";
 
 export default function Newsletter() {
@@ -92,7 +92,8 @@ export default function Newsletter() {
               <div className="mt-3 flex flex-row flex-wrap items-center justify-center gap-x-5 gap-y-2 text-center text-xs text-[#1a2128b8] sm:justify-start sm:text-left">
                 <span className="flex items-center gap-1.5"><Lock size={13} /> No spam ever</span>
                 <span className="flex items-center gap-1.5"><Ban size={13} /> Unsubscribe anytime</span>
-                <span className="flex items-center gap-1.5"><Tag size={13} /> Exclusive offers</span>
+                {/* SHOP-HIDDEN: a third label with a Tag icon used to promise offers. There is nothing to
+                    offer while the shop is hidden. Revert the "hide the shop" commits to restore it. */}
               </div>
             </>
           ) : (
