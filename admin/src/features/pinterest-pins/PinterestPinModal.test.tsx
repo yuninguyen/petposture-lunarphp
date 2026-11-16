@@ -62,6 +62,7 @@ const connection = (overrides = {}) => ({
   username: null,
   last_error: null,
   refresh_expires_at: null,
+  credentials: { app_id: '1640223', redirect_uri: 'https://admin.petposture.com/cb', sandbox: true, has_secret: true },
   settings: { auto_publish: false, max_per_day: 3, min_gap_minutes: 180, window_start: '08:00', window_end: '21:00', timezone: 'America/New_York' },
   recent_errors: [],
   ...overrides,

@@ -772,7 +772,10 @@ committed to Git) and are mounted into the containers via `env_file:` in
 Admin **Pinterest Pins** (`/pinterest-pins`) holds the pins prepared per blog post. Without any setup it works
 by hand: download the image, copy the text, post on Pinterest, mark the pin posted.
 
-Automatic posting needs a Pinterest app (developers.pinterest.com) and these in `backend/.env`:
+Automatic posting needs a Pinterest app (developers.pinterest.com). Its details are entered in the admin
+(Pinterest Pins → *Pinterest app details*: App ID, App secret, redirect address, sandbox switch). They are stored
+as `settings` rows `pinterest.*`; the secret is **encrypted, write-only** (never returned by the API) and a blank
+secret keeps the saved one. What is saved there wins; anything left blank falls back to `backend/.env`:
 
 ```
 PINTEREST_APP_ID=...

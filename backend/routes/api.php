@@ -204,6 +204,7 @@ Route::prefix('/admin')
         Route::delete('/pinterest/connection', [PinterestConnectionController::class, 'disconnect']);
         Route::get('/pinterest/boards', [PinterestConnectionController::class, 'boards']);
         Route::put('/pinterest/settings', [PinterestConnectionController::class, 'updateSettings']);
+        Route::put('/pinterest/credentials', [PinterestConnectionController::class, 'updateCredentials']);
 
         // Pinterest pins are prepared here and posted by hand or by the posting job. Admin only: there is no public route for them.
         Route::get('/pinterest-pins/options', [PinterestPinController::class, 'options']);

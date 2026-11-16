@@ -87,9 +87,27 @@ export interface PinterestLogEntry {
   created_at: string | null;
 }
 
+/** The Pinterest app's details. The secret is write-only: only whether one is set comes back. */
+export interface PinterestCredentials {
+  app_id: string | null;
+  redirect_uri: string | null;
+  sandbox: boolean;
+  has_secret: boolean;
+}
+
+// A type alias, not an interface: fetchJson takes a plain record as the body, which an interface is not assignable to.
+export type PinterestCredentialsInput = {
+  app_id: string;
+  /** Left blank to keep the saved secret. */
+  app_secret: string;
+  redirect_uri: string;
+  sandbox: boolean;
+};
+
 export interface PinterestConnection {
-  /** False until the app id, secret and redirect address are set on the server. */
+  /** False until the app id, secret and redirect address are saved (in the admin or in the server's .env). */
   configured: boolean;
+  credentials: PinterestCredentials;
   connected: boolean;
   /** 'disconnected' means it was connected and the login was lost. */
   status: 'connected' | 'disconnected' | 'not_connected';
@@ -161,6 +179,10 @@ export async function disconnectPinterest(): Promise<void> {
 
 export async function fetchPinterestBoards(): Promise<PinterestBoard[]> {
   return (await fetchJson<{ data: PinterestBoard[] }>('/admin/pinterest/boards')).data;
+}
+
+export async function updatePinterestCredentials(values: PinterestCredentialsInput): Promise<PinterestCredentials> {
+  return (await fetchJson<{ data: PinterestCredentials }>('/admin/pinterest/credentials', { method: 'PUT', body: values })).data;
 }
 
 export async function updatePinterestSettings(settings: Partial<PinterestPublishSettings>): Promise<PinterestPublishSettings> {

@@ -25,19 +25,19 @@ class PinterestClient
     /** Refresh the access token when it has less than this left, so a call never starts with a dying token. */
     private const REFRESH_MARGIN_SECONDS = 120;
 
+    public function __construct(private readonly PinterestCredentials $credentials) {}
+
     public function isConfigured(): bool
     {
-        return filled(config('services.pinterest.app_id'))
-            && filled(config('services.pinterest.app_secret'))
-            && filled(config('services.pinterest.redirect_uri'));
+        return $this->credentials->isComplete();
     }
 
     /** The Pinterest page where the owner is asked to let this app post pins. */
     public function authorizationUrl(string $state): string
     {
         return config('services.pinterest.oauth_url').'?'.http_build_query([
-            'client_id' => config('services.pinterest.app_id'),
-            'redirect_uri' => config('services.pinterest.redirect_uri'),
+            'client_id' => $this->credentials->appId(),
+            'redirect_uri' => $this->credentials->redirectUri(),
             'response_type' => 'code',
             'scope' => implode(',', config('services.pinterest.scopes')),
             'state' => $state,
@@ -50,7 +50,7 @@ class PinterestClient
         $tokens = $this->requestToken([
             'grant_type' => 'authorization_code',
             'code' => $code,
-            'redirect_uri' => config('services.pinterest.redirect_uri'),
+            'redirect_uri' => $this->credentials->redirectUri(),
         ], 'connect');
 
         $connection = new PinterestConnection;
@@ -236,7 +236,7 @@ class PinterestClient
 
         try {
             $response = $this->http()
-                ->withBasicAuth((string) config('services.pinterest.app_id'), (string) config('services.pinterest.app_secret'))
+                ->withBasicAuth((string) $this->credentials->appId(), (string) $this->credentials->appSecret())
                 ->asForm()
                 ->post('/oauth/token', $form);
         } catch (ConnectionException $e) {
@@ -283,7 +283,7 @@ class PinterestClient
 
     private function http(): PendingRequest
     {
-        return Http::baseUrl(config('services.pinterest.api_base'))
+        return Http::baseUrl($this->credentials->apiBase())
             ->timeout(self::TIMEOUT_SECONDS)
             ->acceptJson();
     }

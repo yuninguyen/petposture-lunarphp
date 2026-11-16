@@ -1833,7 +1833,7 @@
   "pinterest_pins.validation.date_invalid": "Hãy nhập ngày theo dạng YYYY-MM-DD.",
   "pinterest_connect.title": "Kết nối Pinterest",
   "pinterest_connect.load_error": "Không tải được kết nối Pinterest.",
-  "pinterest_connect.not_configured": "Máy chủ chưa được cài đặt cho Pinterest (thiếu app id, secret và địa chỉ chuyển hướng).",
+  "pinterest_connect.not_configured": "Chưa cài đặt Pinterest. Hãy nhập thông tin ứng dụng bên dưới.",
   "pinterest_connect.not_connected": "Chưa kết nối. Hãy kết nối tài khoản Pinterest Business để đăng pin tự động.",
   "pinterest_connect.connected_as": "Đã kết nối với @{{username}}",
   "pinterest_connect.login_valid_until": "Đăng nhập có hiệu lực đến {{date}}",
@@ -1869,5 +1869,18 @@
   "pinterest_pins.action_retry": "Thử lại",
   "pinterest_pins.retried": "Pin đã sẵn sàng để đăng lại.",
   "pinterest_pins.field_board_choose": "Chọn board",
-  "pinterest_pins.field_board_hint_connected": "Các board của tài khoản Pinterest đã kết nối. Pin cần có board để được đăng tự động."
+  "pinterest_pins.field_board_hint_connected": "Các board của tài khoản Pinterest đã kết nối. Pin cần có board để được đăng tự động.",
+  "pinterest_connect.credentials_title": "Thông tin ứng dụng Pinterest",
+  "pinterest_connect.app_id": "App ID",
+  "pinterest_connect.app_secret": "App secret",
+  "pinterest_connect.app_secret_set": "Đã lưu một secret",
+  "pinterest_connect.app_secret_hint": "Lấy từ ứng dụng của bạn trên developers.pinterest.com. Được lưu mã hoá và không bao giờ hiển thị lại.",
+  "pinterest_connect.app_secret_keep_hint": "Để trống để giữ secret đã lưu, hoặc nhập secret mới để thay.",
+  "pinterest_connect.redirect_uri": "Địa chỉ chuyển hướng",
+  "pinterest_connect.redirect_uri_hint": "Hãy thêm đúng địa chỉ này vào ứng dụng trên developers.pinterest.com, nếu không Pinterest sẽ từ chối kết nối.",
+  "pinterest_connect.sandbox": "Chế độ sandbox",
+  "pinterest_connect.sandbox_hint": "Bật khi ứng dụng mới có quyền Trial. Pin trong sandbox không công khai. Tắt khi Pinterest cấp quyền Standard.",
+  "pinterest_connect.credentials_connected_note": "Đang kết nối Pinterest. Sau khi đổi app id hoặc secret, hãy ngắt kết nối rồi kết nối lại.",
+  "pinterest_connect.save_credentials": "Lưu thông tin ứng dụng",
+  "pinterest_connect.credentials_saved": "Đã lưu thông tin ứng dụng."
 }

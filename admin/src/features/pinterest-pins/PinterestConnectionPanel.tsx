@@ -5,16 +5,121 @@ import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+  PinterestCredentials,
+  PinterestCredentialsInput,
   PinterestPublishSettings,
   disconnectPinterest,
   fetchPinterestConnection,
   pinterestConnectionKey,
   startPinterestConnect,
+  updatePinterestCredentials,
   updatePinterestSettings,
 } from './api';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+/** The address Pinterest sends the owner back to: this admin's own callback page. */
+function defaultRedirectUri(): string {
+  return `${window.location.origin}/system/integrations/pinterest/callback`;
+}
+
+/**
+ * The Pinterest app's details, kept on the server. The secret can be replaced but never shown: the field stays empty
+ * and a blank one keeps the saved secret.
+ */
+function CredentialsForm({ credentials, connected, startOpen }: { credentials: PinterestCredentials; connected: boolean; startOpen: boolean }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [values, setValues] = useState<PinterestCredentialsInput>({
+    app_id: credentials.app_id ?? '',
+    app_secret: '',
+    redirect_uri: credentials.redirect_uri ?? defaultRedirectUri(),
+    sandbox: credentials.sandbox,
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof PinterestCredentialsInput, string>>>({});
+
+  const saveMutation = useMutation({
+    mutationFn: () => updatePinterestCredentials(values),
+    onSuccess: () => {
+      setErrors({});
+      setValues((current) => ({ ...current, app_secret: '' }));
+      queryClient.invalidateQueries({ queryKey: pinterestConnectionKey });
+      toast.success(t('pinterest_connect.credentials_saved'));
+    },
+    onError: (error: Error & { status?: number; data?: { errors?: Record<string, string[]> } }) => {
+      if (error.status === 422 && error.data?.errors) {
+        const next: Partial<Record<keyof PinterestCredentialsInput, string>> = {};
+        for (const [field, messages] of Object.entries(error.data.errors)) {
+          if (messages[0]) next[field as keyof PinterestCredentialsInput] = messages[0];
+        }
+        setErrors(next);
+        return;
+      }
+      toast.error(error.message || t('common.error_occurred'));
+    },
+  });
+
+  return (
+    <details className="mt-4 border-t border-slate-100 pt-3" open={startOpen}>
+      <summary className="cursor-pointer text-sm font-medium text-slate-700">{t('pinterest_connect.credentials_title')}</summary>
+      <form
+        className="mt-3 space-y-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          saveMutation.mutate();
+        }}
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="pin-app-id" className="mb-1 block text-xs font-medium text-slate-500">{t('pinterest_connect.app_id')}</label>
+            <Input id="pin-app-id" inputMode="numeric" autoComplete="off" value={values.app_id} onChange={(event) => setValues({ ...values, app_id: event.target.value })} />
+            {errors.app_id && <p className="mt-1 text-xs text-red-600">{errors.app_id}</p>}
+          </div>
+          <div>
+            <label htmlFor="pin-app-secret" className="mb-1 block text-xs font-medium text-slate-500">{t('pinterest_connect.app_secret')}</label>
+            <Input
+              id="pin-app-secret"
+              type="password"
+              autoComplete="new-password"
+              placeholder={credentials.has_secret ? t('pinterest_connect.app_secret_set') : ''}
+              value={values.app_secret}
+              onChange={(event) => setValues({ ...values, app_secret: event.target.value })}
+            />
+            {errors.app_secret ? (
+              <p className="mt-1 text-xs text-red-600">{errors.app_secret}</p>
+            ) : (
+              <p className="mt-1 text-xs text-slate-500">{t(credentials.has_secret ? 'pinterest_connect.app_secret_keep_hint' : 'pinterest_connect.app_secret_hint')}</p>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="pin-redirect-uri" className="mb-1 block text-xs font-medium text-slate-500">{t('pinterest_connect.redirect_uri')}</label>
+          <Input id="pin-redirect-uri" inputMode="url" value={values.redirect_uri} onChange={(event) => setValues({ ...values, redirect_uri: event.target.value })} />
+          {errors.redirect_uri ? <p className="mt-1 text-xs text-red-600">{errors.redirect_uri}</p> : <p className="mt-1 text-xs text-slate-500">{t('pinterest_connect.redirect_uri_hint')}</p>}
+        </div>
+
+        <label className="flex items-start gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-slate-300"
+            checked={values.sandbox}
+            onChange={(event) => setValues({ ...values, sandbox: event.target.checked })}
+          />
+          <span>
+            {t('pinterest_connect.sandbox')}
+            <span className="block text-xs text-slate-500">{t('pinterest_connect.sandbox_hint')}</span>
+          </span>
+        </label>
+
+        {connected && <p className="text-xs text-amber-700">{t('pinterest_connect.credentials_connected_note')}</p>}
+
+        <Button type="submit" variant="primary" disabled={saveMutation.isPending}>{t('pinterest_connect.save_credentials')}</Button>
+      </form>
+    </details>
+  );
 }
 
 /** Who Pinterest is connected as, the connect/disconnect buttons, and the switches for automatic posting. */
@@ -167,6 +272,13 @@ export function PinterestConnectionPanel() {
             </div>
           </form>
         )}
+
+        <CredentialsForm
+          key={`${connection.credentials.app_id}-${connection.credentials.sandbox}-${connection.credentials.has_secret}`}
+          credentials={connection.credentials}
+          connected={connection.connected}
+          startOpen={!connection.configured}
+        />
 
         {connection.recent_errors.length > 0 && (
           <details className="mt-4 border-t border-slate-100 pt-3">

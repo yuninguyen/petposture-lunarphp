@@ -76,6 +76,7 @@ const notConnected = {
   username: null,
   last_error: null,
   refresh_expires_at: null,
+  credentials: { app_id: '1640223', redirect_uri: 'https://admin.petposture.com/system/integrations/pinterest/callback', sandbox: true, has_secret: true },
   settings: { auto_publish: false, max_per_day: 3, min_gap_minutes: 180, window_start: '08:00', window_end: '21:00', timezone: 'America/New_York' },
   recent_errors: [],
 };
@@ -438,12 +439,53 @@ describe('PinterestPinsPage automatic posting', () => {
     );
   });
 
-  it('without credentials on the server it explains and offers no connect button', async () => {
-    withPins([readyPin], { ...notConnected, configured: false });
+  it('without app details it explains, offers no connect button and opens the form', async () => {
+    withPins([readyPin], { ...notConnected, configured: false, credentials: { app_id: null, redirect_uri: null, sandbox: false, has_secret: false } });
     renderPage();
 
-    expect(await screen.findByText(/Pinterest is not set up on the server yet/)).toBeTruthy();
+    expect(await screen.findByText('Pinterest is not set up yet. Enter the app details below.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Connect Pinterest' })).toBeNull();
+    expect(screen.getByText('Pinterest app details').closest('details')?.hasAttribute('open')).toBe(true);
+    expect((screen.getByLabelText('Redirect address') as HTMLInputElement).value).toBe(`${window.location.origin}/system/integrations/pinterest/callback`);
+  });
+
+  it('saves the app details with the id and sandbox, and never shows the saved secret', async () => {
+    withPins([readyPin], { ...notConnected, credentials: { app_id: '1640181', redirect_uri: 'https://admin.petposture.com/cb', sandbox: false, has_secret: true } });
+    renderPage();
+
+    const secret = (await screen.findByLabelText('App secret')) as HTMLInputElement;
+    expect(secret.value).toBe('');
+    expect(secret.placeholder).toBe('A secret is saved');
+    expect(secret.type).toBe('password');
+
+    fireEvent.change(screen.getByLabelText('App ID'), { target: { value: '1640223' } });
+    fireEvent.click(screen.getByLabelText(/Sandbox mode/));
+    fireEvent.click(screen.getByRole('button', { name: 'Save app details' }));
+
+    await waitFor(() =>
+      expect(mockedFetch).toHaveBeenCalledWith('/admin/pinterest/credentials', {
+        method: 'PUT',
+        body: { app_id: '1640223', app_secret: '', redirect_uri: 'https://admin.petposture.com/cb', sandbox: true },
+      }),
+    );
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('App details saved.'));
+  });
+
+  it('shows what the server refused next to the field', async () => {
+    mockedFetch.mockImplementation(async (url: string, init?: FetchApiOptions) => {
+      if (url === '/admin/pinterest-pins/options') return { data: options };
+      if (url === '/admin/pinterest/connection') return { data: { ...notConnected, credentials: { app_id: null, redirect_uri: null, sandbox: false, has_secret: false } } };
+      if (url === '/admin/pinterest/credentials' && init?.method === 'PUT') {
+        throw Object.assign(new Error('The given data was invalid.'), { status: 422, data: { errors: { app_secret: ['Enter the app secret from developers.pinterest.com.'] } } });
+      }
+      return { data: [readyPin], meta: meta({ total: 1 }) };
+    });
+    renderPage();
+
+    fireEvent.change(await screen.findByLabelText('App ID'), { target: { value: '1640223' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save app details' }));
+
+    expect(await screen.findByText('Enter the app secret from developers.pinterest.com.')).toBeTruthy();
   });
 
   it('shows a small message, not an error page, when the server refuses to start the connection', async () => {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PinterestConnection;
 use App\Models\PinterestPublishLog;
 use App\Services\Pinterest\PinterestClient;
+use App\Services\Pinterest\PinterestCredentials;
 use App\Services\Pinterest\PinterestException;
 use App\Services\Pinterest\PinterestPublishSettings;
 use Illuminate\Http\JsonResponse;
@@ -27,6 +28,7 @@ class PinterestConnectionController extends Controller
     public function __construct(
         private readonly PinterestClient $client,
         private readonly PinterestPublishSettings $settings,
+        private readonly PinterestCredentials $credentials,
     ) {}
 
     /** Whether the account is connected, who it is, and the posting switches. Never returns a token. */
@@ -42,6 +44,13 @@ class PinterestConnectionController extends Controller
             'last_error' => $connection?->last_error,
             'refresh_expires_at' => $connection?->refresh_expires_at?->toISOString(),
             'settings' => $this->settings->all(),
+            // The app's details for the form. The secret is never sent back, only whether one is set.
+            'credentials' => [
+                'app_id' => $this->credentials->appId(),
+                'redirect_uri' => $this->credentials->redirectUri(),
+                'sandbox' => $this->credentials->sandbox(),
+                'has_secret' => $this->credentials->hasSecret(),
+            ],
             'recent_errors' => PinterestPublishLog::query()
                 ->whereNotNull('error_code')
                 ->orWhere('http_status', '>=', 400)
@@ -127,6 +136,39 @@ class PinterestConnectionController extends Controller
         ]);
 
         return response()->json(['data' => $this->settings->update($data)]);
+    }
+
+    /**
+     * Saves the Pinterest app's details. The secret is optional: left blank, the saved one stays. It is stored
+     * encrypted and never returned.
+     */
+    public function updateCredentials(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'app_id' => ['required', 'string', 'regex:/^\d{4,32}$/'],
+            'app_secret' => ['nullable', 'string', 'min:8', 'max:255'],
+            'redirect_uri' => ['required', 'url', 'max:2048'],
+            'sandbox' => ['required', 'boolean'],
+        ], [
+            'app_id.regex' => 'The app id is the number shown on the app in developers.pinterest.com.',
+        ]);
+
+        // A first save has nothing to fall back on, so the secret is required then.
+        if (blank($data['app_secret'] ?? null) && ! $this->credentials->hasSecret()) {
+            return response()->json([
+                'message' => 'The app secret is required.',
+                'errors' => ['app_secret' => ['Enter the app secret from developers.pinterest.com.']],
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $this->credentials->update($data);
+
+        return response()->json(['data' => [
+            'app_id' => $this->credentials->appId(),
+            'redirect_uri' => $this->credentials->redirectUri(),
+            'sandbox' => $this->credentials->sandbox(),
+            'has_secret' => $this->credentials->hasSecret(),
+        ]]);
     }
 
     /** Tied to the signed-in user so one admin's attempt cannot be completed by another session. */
