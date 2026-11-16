@@ -26,6 +26,57 @@ export function pickProducts(products: Product[]): PickProduct[] {
     return products.filter((product): product is PickProduct => Boolean(product.pick));
 }
 
+/** A price on a list card is hidden once its check date is older than this; the Pick page keeps showing it with its date. */
+export const PICK_PRICE_MAX_AGE_DAYS = 30;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export function isPickPriceFresh(pick: ProductPick, now: Date): boolean {
+    if (!pick.priceCheckedDate) return false;
+
+    const checked = new Date(`${pick.priceCheckedDate}T00:00:00Z`).getTime();
+    if (Number.isNaN(checked)) return false;
+
+    const ageDays = Math.floor((now.getTime() - checked) / DAY_MS);
+
+    return ageDays >= 0 && ageDays <= PICK_PRICE_MAX_AGE_DAYS;
+}
+
+/** The price line of a list card: the Pick page's price parts, but only while the check is recent enough. */
+export function pickCardPrice(pick: ProductPick, now: Date): ReturnType<typeof pickPriceParts> {
+    return isPickPriceFresh(pick, now) ? pickPriceParts(pick) : null;
+}
+
+/**
+ * The short take for a list card. Every take opens with "we haven't tested this ourselves", which the list header
+ * already says once for all Picks, so that sentence is dropped and the rest is cut at a word boundary.
+ */
+export function pickTakeSummary(ourTake: string | null | undefined, maxLength = 150): string | null {
+    if (!ourTake) return null;
+
+    const kept = ourTake
+        .split(/(?<=[.!?])\s+/)
+        .filter((sentence) => !/haven['’]t tested/i.test(sentence))
+        .join(' ')
+        .trim();
+
+    if (!kept) return null;
+    if (kept.length <= maxLength) return kept;
+
+    return `${kept.slice(0, maxLength).replace(/\s+\S*$/, '')}…`;
+}
+
+/** What the list header may claim, worked out from the Picks themselves rather than typed in. */
+export function pickListStats(picks: PickProduct[]): { count: number; latestChecked: string | null; everyPickHasCons: boolean } {
+    const dates = picks.map((product) => product.pick.priceCheckedDate).filter((date): date is string => Boolean(date));
+
+    return {
+        count: picks.length,
+        latestChecked: dates.length ? dates.reduce((latest, date) => (date > latest ? date : latest)) : null,
+        everyPickHasCons: picks.length > 0 && picks.every((product) => product.pick.cons.length > 0),
+    };
+}
+
 export const RELATED_PICK_COUNT = 3;
 
 /**
@@ -56,6 +107,8 @@ export function humanizeSlug(slug: string): string {
 function retailerName(pick: ProductPick): string | null {
     return pick.retailerName ?? (pick.retailer ? humanizeSlug(pick.retailer) : null);
 }
+
+export { retailerName as pickRetailerName };
 
 /** The button text must name the store the button actually opens. */
 export function pickCtaLabel(pick: ProductPick): string {

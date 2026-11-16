@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import type { ProductPick } from '../types/shop';
-import { filterPicksByBreed, formatPickDate, humanizeSlug, pickBreeds, pickCtaLabel, pickPriceParts, relatedPicks, type PickProduct } from './pick';
+import {
+    filterPicksByBreed,
+    formatPickDate,
+    humanizeSlug,
+    isPickPriceFresh,
+    pickBreeds,
+    pickCardPrice,
+    pickCtaLabel,
+    pickListStats,
+    pickPriceParts,
+    pickTakeSummary,
+    relatedPicks,
+    type PickProduct,
+} from './pick';
 
 const pick = (overrides: Partial<ProductPick> = {}): ProductPick => ({
     retailer: 'chewy',
@@ -98,6 +111,85 @@ describe('the Picks list helpers', () => {
 
     it('answers an unknown breed with no Picks rather than all of them', () => {
         expect(filterPicksByBreed(picks, 'not-a-breed')).toEqual([]);
+    });
+});
+
+describe('a price on a list card goes away once its check date is more than 30 days old', () => {
+    const now = new Date('2026-12-14T12:00:00Z');
+
+    it('keeps the price for a check up to 30 days ago', () => {
+        expect(isPickPriceFresh(pick({ priceCheckedDate: '2026-11-15' }), now)).toBe(true);
+        expect(isPickPriceFresh(pick({ priceCheckedDate: '2026-11-14' }), now)).toBe(true);
+    });
+
+    it('drops it from the 31st day', () => {
+        expect(isPickPriceFresh(pick({ priceCheckedDate: '2026-11-13' }), now)).toBe(false);
+        expect(isPickPriceFresh(pick({ priceCheckedDate: '2025-01-01' }), now)).toBe(false);
+    });
+
+    it('does not trust a date in the future or a missing one', () => {
+        expect(isPickPriceFresh(pick({ priceCheckedDate: '2027-01-01' }), now)).toBe(false);
+        expect(isPickPriceFresh(pick({ priceCheckedDate: null }), now)).toBe(false);
+    });
+
+    it('gives the same price parts as the Pick page while fresh, and nothing once stale', () => {
+        expect(pickCardPrice(pick({ priceCheckedDate: '2026-11-15' }), now)).toEqual(pickPriceParts(pick({ priceCheckedDate: '2026-11-15' })));
+        expect(pickCardPrice(pick({ priceCheckedDate: '2026-11-01' }), now)).toBeNull();
+    });
+
+    it('still has no price without a reference price, however fresh the date', () => {
+        expect(pickCardPrice(pick({ referencePrice: null, priceCheckedDate: '2026-12-01' }), now)).toBeNull();
+    });
+});
+
+describe('pickTakeSummary', () => {
+    it('drops the "we have not tested this" sentence, which the page header already says, and keeps the take', () => {
+        const text = "Based on the seller's description and customer reviews — we haven't tested this ourselves. A simple front-clip harness that gently steers a dog.";
+
+        expect(pickTakeSummary(text)).toBe('A simple front-clip harness that gently steers a dog.');
+    });
+
+    it('recognises the same sentence typed with a curly apostrophe', () => {
+        const text = 'Based on the seller’s description and customer reviews — we haven’t tested this ourselves. A snuffle mat.';
+
+        expect(pickTakeSummary(text)).toBe('A snuffle mat.');
+    });
+
+    it('keeps several sentences when they fit', () => {
+        expect(pickTakeSummary('One. Two.')).toBe('One. Two.');
+    });
+
+    it('is null when nothing is left or nothing was written', () => {
+        expect(pickTakeSummary("Based on the seller's description — we haven't tested this ourselves.")).toBeNull();
+        expect(pickTakeSummary('')).toBeNull();
+        expect(pickTakeSummary(null)).toBeNull();
+    });
+
+    it('cuts a long take at a word boundary with an ellipsis', () => {
+        const long = 'Word '.repeat(60).trim();
+        const summary = pickTakeSummary(long, 50) as string;
+
+        expect(summary.length).toBeLessThanOrEqual(51);
+        expect(summary.endsWith('…')).toBe(true);
+        expect(summary).not.toMatch(/Wor…$/);
+    });
+});
+
+describe('pickListStats', () => {
+    const withData = (checked: string | null, cons: string[]) => ({ pick: pick({ priceCheckedDate: checked, cons }) }) as unknown as PickProduct;
+
+    it('counts the Picks and finds the latest check date', () => {
+        const stats = pickListStats([withData('2026-11-10', ['x']), withData('2026-11-15', ['x']), withData(null, ['x'])]);
+
+        expect(stats).toEqual({ count: 3, latestChecked: '2026-11-15', everyPickHasCons: true });
+    });
+
+    it('says the downsides claim is not true for every Pick when one has none', () => {
+        expect(pickListStats([withData('2026-11-10', ['x']), withData('2026-11-10', [])]).everyPickHasCons).toBe(false);
+    });
+
+    it('has no date and no downsides claim for an empty list', () => {
+        expect(pickListStats([])).toEqual({ count: 0, latestChecked: null, everyPickHasCons: false });
     });
 });
 

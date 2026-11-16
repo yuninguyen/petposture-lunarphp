@@ -4,7 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { PicksIndex } from '@/components/product/PicksIndex';
 import { getApiBaseUrl } from '@/lib/api';
-import { PICKS_PATH, filterPicksByBreed, pickBreeds, pickProducts } from '@/lib/pick';
+import { PICKS_PATH, pickProducts } from '@/lib/pick';
 import type { Product } from '@/types/shop';
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -42,7 +42,7 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
     return (
         <main className="min-h-screen bg-white font-hanken">
             <Header />
-            <PicksIndex picks={filterPicksByBreed(all, breed)} breeds={pickBreeds(all)} breed={breed} />
+            <PicksIndex allPicks={all} breed={breed} now={new Date()} />
             <Footer />
         </main>
     );
