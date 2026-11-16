@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProductPick } from '../types/shop';
-import { filterPicksByBreed, formatPickDate, humanizeSlug, pickBreeds, pickCtaLabel, pickPriceParts, type PickProduct } from './pick';
+import { filterPicksByBreed, formatPickDate, humanizeSlug, pickBreeds, pickCtaLabel, pickPriceParts, relatedPicks, type PickProduct } from './pick';
 
 const pick = (overrides: Partial<ProductPick> = {}): ProductPick => ({
     retailer: 'chewy',
@@ -98,6 +98,44 @@ describe('the Picks list helpers', () => {
 
     it('answers an unknown breed with no Picks rather than all of them', () => {
         expect(filterPicksByBreed(picks, 'not-a-breed')).toEqual([]);
+    });
+});
+
+describe('relatedPicks', () => {
+    // The API sends "id" and no "productId" (the Product type still declares one), so fixtures carry only "id".
+    const apiPick = (id: number, breeds: string[] = []) => ({ id, slug: `pick-${id}`, pick: pick({ bestForBreeds: breeds }) }) as unknown as PickProduct;
+    const ordinary = { id: 99, slug: 'not-a-pick', pick: null } as unknown as PickProduct;
+
+    it('lists other Picks even though the API sends no productId (the section used to come out empty)', () => {
+        const related = relatedPicks([apiPick(1), apiPick(2), apiPick(3)], 1);
+
+        expect(related.map((p) => p.slug)).toEqual(['pick-2', 'pick-3']);
+    });
+
+    it('leaves out the Pick being viewed and anything that is not a Pick', () => {
+        const related = relatedPicks([apiPick(1), ordinary, apiPick(2)], 2);
+
+        expect(related.map((p) => p.slug)).toEqual(['pick-1']);
+    });
+
+    it('shows at most three', () => {
+        const related = relatedPicks([apiPick(1), apiPick(2), apiPick(3), apiPick(4), apiPick(5)], 1);
+
+        expect(related).toHaveLength(3);
+    });
+
+    it('puts Picks for the same breed first', () => {
+        const related = relatedPicks(
+            [apiPick(1, ['pug']), apiPick(2, ['corgi']), apiPick(3, ['pug']), apiPick(4, ['corgi']), apiPick(5, ['pug'])],
+            1,
+            ['pug'],
+        );
+
+        expect(related.map((p) => p.slug)).toEqual(['pick-3', 'pick-5', 'pick-2']);
+    });
+
+    it('returns nothing when the viewed Pick is the only one', () => {
+        expect(relatedPicks([apiPick(1)], 1)).toEqual([]);
     });
 });
 

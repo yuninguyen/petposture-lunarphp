@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import { PickDetails } from '@/components/product/PickDetails';
 import { getApiBaseUrl } from '@/lib/api';
 import { firstMetaDescription } from '@/lib/meta-description';
+import { PICKS_PATH, relatedPicks } from '@/lib/pick';
 import { buildPickBreadcrumbJsonLd, buildPickJsonLd, serializeJsonLd } from '@/lib/pick-json-ld';
 import { buildPreviewQuery } from '@/lib/preview-query';
 import { SITE_URL } from '@/lib/site';
@@ -14,8 +15,6 @@ import type { Product, ProductPick } from '@/types/shop';
 type Params = Promise<{ slug: string }>;
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 type PickProduct = Product & { pick: ProductPick };
-
-const RELATED_PICK_COUNT = 3;
 
 type Lookup = { product: PickProduct | null; redirectSlug: string | null };
 
@@ -44,17 +43,15 @@ async function fetchPick(slug: string, previewQuery?: string): Promise<Lookup> {
 }
 
 // Stock is not looked at: a Pick has no PetPosture stock, so a variant with stock 0 is still a Pick.
-async function fetchRelatedPicks(currentProductId: number): Promise<Product[]> {
+async function fetchRelatedPicks(current: PickProduct): Promise<Product[]> {
     try {
-        const response = await fetch(`${getApiBaseUrl()}/api/products?per_page=100`, { next: { revalidate: 60 } });
+        const response = await fetch(`${getApiBaseUrl()}${PICKS_PATH}`, { next: { revalidate: 60 } });
         if (!response.ok) return [];
 
         const payload = await response.json();
         const products: Product[] = Array.isArray(payload?.data) ? payload.data : [];
 
-        return products
-            .filter((candidate) => candidate.pick && candidate.productId !== currentProductId)
-            .slice(0, RELATED_PICK_COUNT);
+        return relatedPicks(products, current.id, current.pick.bestForBreeds);
     } catch (error) {
         console.error('Failed to fetch related picks:', error);
         return [];
@@ -118,7 +115,7 @@ export default async function Page({ params, searchParams }: { params: Params; s
     const product = lookup.product;
     if (!product) notFound();
 
-    const related = await fetchRelatedPicks(product.productId);
+    const related = await fetchRelatedPicks(product);
 
     return (
         <main className="min-h-screen bg-white font-hanken">

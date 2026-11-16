@@ -256,6 +256,16 @@ describe('PickDetails', () => {
         expect(html).toContain('>Buy on Chewy<');
     });
 
+    it('shows every related Pick as a card with its photo and name, not only the "All … Picks" link', () => {
+        const html = render(product(), [related('slo-bowl', 'Slo Bowl'), related('puppia-vest', 'Puppia Vest'), related('ramp', 'Dog Ramp')]);
+
+        for (const name of ['Slo Bowl', 'Puppia Vest', 'Dog Ramp']) {
+            expect(html, name).toContain(`alt="${name}"`);
+            expect(html, name).toContain(`>${name}<`);
+        }
+        expect(html.match(/View pick/g)).toHaveLength(3);
+    });
+
     it('links related Picks to their own pages, not to the shop', () => {
         const html = render(product(), [related('slo-bowl', 'Slo Bowl'), related('puppia-vest', 'Puppia Vest')]);
 

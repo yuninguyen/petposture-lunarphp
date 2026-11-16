@@ -26,6 +26,24 @@ export function pickProducts(products: Product[]): PickProduct[] {
     return products.filter((product): product is PickProduct => Boolean(product.pick));
 }
 
+export const RELATED_PICK_COUNT = 3;
+
+/**
+ * The Picks to suggest under a Pick: the others, the ones for a shared breed first. They are matched on "id":
+ * the API sends no "productId" (the Product type still declares one), and comparing on it left this list empty.
+ */
+export function relatedPicks(
+    products: Product[],
+    currentId: number,
+    breeds: string[] = [],
+    count: number = RELATED_PICK_COUNT,
+): PickProduct[] {
+    const others = pickProducts(products).filter((candidate) => candidate.id !== currentId);
+    const sharesBreed = (candidate: PickProduct) => candidate.pick.bestForBreeds.some((breed) => breeds.includes(breed));
+
+    return [...others.filter(sharesBreed), ...others.filter((candidate) => !sharesBreed(candidate))].slice(0, count);
+}
+
 /** "french-bulldog" -> "French Bulldog" */
 export function humanizeSlug(slug: string): string {
     return slug
