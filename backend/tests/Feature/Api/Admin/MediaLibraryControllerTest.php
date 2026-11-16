@@ -5,6 +5,7 @@ namespace Tests\Feature\Api\Admin;
 use App\Enums\ErrorCode;
 use App\Models\Breed;
 use App\Models\CuratorMedia;
+use App\Models\PinterestPin;
 use App\Models\Post;
 use App\Models\SiteMedia;
 use App\Models\Solution;
@@ -228,6 +229,34 @@ class MediaLibraryControllerTest extends TestCase
         // Verify curator_media row and file still exist
         $this->assertDatabaseHas('curator_media', ['id' => $curator->id]);
         Storage::disk('public')->assertExists('media/breed.jpg');
+    }
+
+    public function test_destroy_curator_media_fails_with_409_when_it_is_the_image_of_a_pinterest_pin(): void
+    {
+        Sanctum::actingAs($this->admin);
+
+        Storage::disk('public')->put('media/pin-image.png', 'pin-image-bytes');
+        $curator = $this->createCuratorMedia([
+            'disk' => 'public',
+            'path' => 'media/pin-image.png',
+        ]);
+
+        $pin = PinterestPin::query()->create([
+            'image' => 'media/pin-image.png',
+            'title' => 'Does your Frenchie eat too fast?',
+            'description' => 'A tilted bowl can help a flat-faced dog.',
+            'destination_url' => 'https://petposture.com/blog/tilted-bowl-vs-slow-feeder',
+        ]);
+
+        $this->deleteJson("/api/admin/system/media/curator/{$curator->id}")
+            ->assertStatus(409)
+            ->assertJsonPath('code', ErrorCode::MEDIA_IN_USE->value)
+            ->assertJsonPath('details.usages.0.type', 'Pinterest pin')
+            ->assertJsonPath('details.usages.0.id', $pin->id)
+            ->assertJsonPath('details.usages.0.label', 'Does your Frenchie eat too fast?');
+
+        $this->assertDatabaseHas('curator_media', ['id' => $curator->id]);
+        Storage::disk('public')->assertExists('media/pin-image.png');
     }
 
     public function test_destroy_curator_media_fails_with_409_when_used_by_solution_or_post(): void

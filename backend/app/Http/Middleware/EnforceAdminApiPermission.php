@@ -168,8 +168,34 @@ class EnforceAdminApiPermission
         if ($this->isDiscountPath($relativePath)) {
             return $this->discountAbilityFor($request, $relativePath);
         }
+        if ($this->isPinterestPinPath($relativePath)) {
+            return $this->pinterestPinAbilityFor($request, $relativePath);
+        }
 
         return null;
+    }
+
+    private function isPinterestPinPath(string $path): bool
+    {
+        return $path === 'pinterest-pins' || str_starts_with($path, 'pinterest-pins/');
+    }
+
+    private function pinterestPinAbilityFor(Request $request, string $path): ?string
+    {
+        if ($request->isMethod('get')) {
+            // The list and the form's options are the whole list; one pin and its image download are one pin.
+            return in_array($path, ['pinterest-pins', 'pinterest-pins/options'], true) ? 'view_any_pinterest_pin' : 'view_pinterest_pin';
+        }
+
+        if ($request->isMethod('post')) {
+            return $path === 'pinterest-pins' ? 'create_pinterest_pin' : null;
+        }
+
+        if ($request->isMethod('put') || $request->isMethod('patch')) {
+            return 'update_pinterest_pin';
+        }
+
+        return $request->isMethod('delete') ? 'delete_pinterest_pin' : null;
     }
 
     private function isCustomerPath(string $path): bool

@@ -138,6 +138,15 @@ class MediaLibraryController extends Controller
                 }
             }
 
+            // Reference Path 1b: a Pinterest pin keeps the media path, not the id, so match on the path
+            foreach (DB::table('pinterest_pins')->where('image', $curatorMedia->path)->select('id', 'title')->get() as $pin) {
+                $usages[] = [
+                    'type' => 'Pinterest pin',
+                    'id' => $pin->id,
+                    'label' => $pin->title ?? "#{$pin->id}",
+                ];
+            }
+
             // Reference Path 2: Check indirect references from Spatie Media (via custom_properties.curator_media_id)
             // Filtered in-memory as established in ProductController:372 and BackfillCuratorMediaFolders:36-47
             $spatieUsages = Media::query()

@@ -314,6 +314,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       || can(abilities, 'view_any_blog_tag')
       || can(abilities, 'view_seo_social')
       || can(abilities, 'view_any_page')
+      || can(abilities, 'view_any_pinterest_pin')
     ),
     items: [
       {
@@ -339,6 +340,18 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
           </svg>
         ),
         canAccess: (abilities) => can(abilities, 'view_any_post'),
+      },
+      {
+        key: 'pinterest-pins',
+        labelKey: 'nav.pinterest_pins',
+        fallbackLabel: 'Pinterest Pins',
+        path: '/pinterest-pins',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+          </svg>
+        ),
+        canAccess: (abilities) => can(abilities, 'view_any_pinterest_pin'),
       },
       {
         key: 'comments',

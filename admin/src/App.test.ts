@@ -26,6 +26,7 @@ vi.mock('./features/system-activity-logs/ActivityLogsPage', () => ({ ActivityLog
 vi.mock('./features/settings/SettingsPage', () => ({ SettingsPage: () => createElement('div', null, 'System settings route') }));
 vi.mock('./features/affiliate-reports/AffiliateReportsPage', () => ({ AffiliateReportsPage: () => createElement('div', null, 'Affiliate reports route') }));
 vi.mock('./features/affiliate-networks/AffiliateNetworksPage', () => ({ AffiliateNetworksPage: () => createElement('div', null, 'Affiliate networks route') }));
+vi.mock('./features/pinterest-pins/PinterestPinsPage', () => ({ PinterestPinsPage: () => createElement('div', null, 'Pinterest pins route') }));
 
 import { AppRoutes, canDeleteReviews, canManageCommerce, canManageCustomers, canManageDiscounts, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute, ADMIN_HOME_CANDIDATES, HomeRouteCandidate } from './App';
 import { canAccessFinance } from './navigation/adminNavigation';
@@ -434,6 +435,28 @@ describe('admin home route resolution', () => {
     await act(async () => await Promise.resolve());
     expect(host.querySelector('[data-testid="route-path"]')).toHaveTextContent(expectedPath);
     expect(host.textContent).not.toContain('System settings route');
+    act(() => root.unmount());
+    host.remove();
+  });
+});
+
+describe('Pinterest Pins route', () => {
+  it.each(['super_admin', 'admin', 'staff'])('opens /pinterest-pins for %s', async (role) => {
+    const { host, root } = renderRoutes([role], '/pinterest-pins');
+    await act(async () => await Promise.resolve());
+
+    expect(host.textContent).toContain('Pinterest pins route');
+
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it.each(['Content Writer', 'Product Manager', 'Order Manager', 'Support'])('does not open /pinterest-pins for %s', async (role) => {
+    const { host, root } = renderRoutes([role], '/pinterest-pins');
+    await act(async () => await Promise.resolve());
+
+    expect(host.textContent).not.toContain('Pinterest pins route');
+
     act(() => root.unmount());
     host.remove();
   });

@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\Admin\MediaLibraryController;
 use App\Http\Controllers\Api\Admin\NotificationController;
 use App\Http\Controllers\Api\Admin\PageController;
 use App\Http\Controllers\Api\Admin\PaymentMethodController;
+use App\Http\Controllers\Api\Admin\PinterestPinController;
 use App\Http\Controllers\Api\Admin\ProductAssociationController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\ProductOptionController;
@@ -194,6 +195,15 @@ Route::prefix('/admin')
         Route::get('/brands/{brand}', [AdminBrandController::class, 'show']);
         Route::put('/brands/{brand}', [AdminBrandController::class, 'update']);
         Route::delete('/brands/{brand}', [AdminBrandController::class, 'destroy']);
+
+        // Pinterest pins are prepared here and posted by hand. Admin only: there is no public route for them.
+        Route::get('/pinterest-pins/options', [PinterestPinController::class, 'options']);
+        Route::get('/pinterest-pins', [PinterestPinController::class, 'index']);
+        Route::post('/pinterest-pins', [PinterestPinController::class, 'store']);
+        Route::get('/pinterest-pins/{pinterestPin}', [PinterestPinController::class, 'show'])->whereNumber('pinterestPin');
+        Route::get('/pinterest-pins/{pinterestPin}/download', [PinterestPinController::class, 'download'])->whereNumber('pinterestPin');
+        Route::put('/pinterest-pins/{pinterestPin}', [PinterestPinController::class, 'update'])->whereNumber('pinterestPin');
+        Route::delete('/pinterest-pins/{pinterestPin}', [PinterestPinController::class, 'destroy'])->whereNumber('pinterestPin');
 
         Route::get('/collection-groups', [CollectionGroupController::class, 'index']);
         Route::post('/collection-groups', [CollectionGroupController::class, 'store']);

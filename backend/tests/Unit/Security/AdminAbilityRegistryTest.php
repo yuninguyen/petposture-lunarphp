@@ -16,13 +16,13 @@ use PHPUnit\Framework\TestCase;
  */
 class AdminAbilityRegistryTest extends TestCase
 {
-    public function test_it_registers_all_40_domains_with_complete_metadata(): void
+    public function test_it_registers_all_41_domains_with_complete_metadata(): void
     {
         $domains = AdminAbilityRegistry::domains();
 
-        $this->assertCount(40, $domains, 'Must register exactly 40 admin domains.');
+        $this->assertCount(41, $domains, 'Must register exactly 41 admin domains.');
 
-        for ($i = 1; $i <= 40; $i++) {
+        for ($i = 1; $i <= 41; $i++) {
             $this->assertArrayHasKey($i, $domains, "Domain #{$i} must be present in registry.");
             $entry = $domains[$i];
 
@@ -41,6 +41,32 @@ class AdminAbilityRegistryTest extends TestCase
             foreach ($entry['allowed_roles'] as $role) {
                 $this->assertIsString($role);
                 $this->assertNotEmpty(trim($role));
+            }
+        }
+    }
+
+    public function test_pinterest_pins_is_a_core_admin_only_domain(): void
+    {
+        $domain = AdminAbilityRegistry::domain('pinterest-pins');
+
+        $this->assertNotNull($domain);
+        $this->assertSame(41, $domain['id']);
+        $this->assertSame('fast-path-only', $domain['access_type']);
+        $this->assertSame(['super_admin', 'admin', 'staff'], $domain['allowed_roles']);
+        $this->assertSame([
+            'view_any_pinterest_pin',
+            'view_pinterest_pin',
+            'create_pinterest_pin',
+            'update_pinterest_pin',
+            'delete_pinterest_pin',
+        ], $domain['abilities']);
+
+        foreach (['super_admin', 'admin', 'staff'] as $role) {
+            $this->assertTrue(AdminAbilityRegistry::roleHasAbility($role, 'view_any_pinterest_pin'), $role);
+        }
+        foreach (['Product Manager', 'Order Manager', 'Support', 'Content Writer'] as $role) {
+            foreach (AdminAbilityRegistry::PINTEREST_PINS as $ability) {
+                $this->assertFalse(AdminAbilityRegistry::roleHasAbility($role, $ability), "{$role} must not have {$ability}.");
             }
         }
     }

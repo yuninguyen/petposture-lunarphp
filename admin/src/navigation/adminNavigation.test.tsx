@@ -78,6 +78,7 @@ describe('admin navigation semantic authorization', () => {
     expect(contentItems).toEqual([
       '/blog-categories',
       '/posts',
+      '/pinterest-pins',
       '/comments',
       '/tags',
       '/seo-social',
@@ -149,6 +150,21 @@ describe('admin navigation semantic authorization', () => {
     const paths = groups[0].items.map((i) => i.path);
     expect(paths).toEqual(expect.arrayContaining(['/posts', '/tags', '/blog-categories']));
     for (const hidden of ['/comments', '/pages', '/seo-social']) expect(paths).not.toContain(hidden);
+  });
+
+  it('shows Pinterest Pins to the core admin roles only', () => {
+    const pathsFor = (role: string) => getVisibleNavigation(abilitiesFor([role])).flatMap((group) => group.items.map((item) => item.path));
+
+    for (const role of ['super_admin', 'admin', 'staff']) expect(pathsFor(role)).toContain('/pinterest-pins');
+    for (const role of ['Content Writer', 'Product Manager', 'Order Manager', 'Support']) expect(pathsFor(role)).not.toContain('/pinterest-pins');
+  });
+
+  it('labels Pinterest Pins in English and Vietnamese', () => {
+    const item = ADMIN_NAV_GROUPS.flatMap((group) => group.items).find((candidate) => candidate.path === '/pinterest-pins');
+
+    expect(item?.labelKey).toBe('nav.pinterest_pins');
+    expect((en as Record<string, string>)['nav.pinterest_pins']).toBe('Pinterest Pins');
+    expect((vi as Record<string, string>)['nav.pinterest_pins']).toBe('Pinterest Pins');
   });
 
   it('returns empty array for unknown or unauthorized roles', () => {

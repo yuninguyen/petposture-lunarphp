@@ -55,6 +55,7 @@ const ActivityLogsPage = lazy(() => import('@/features/system-activity-logs/Acti
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const AffiliateReportsPage = lazy(() => import('@/features/affiliate-reports/AffiliateReportsPage').then(m => ({ default: m.AffiliateReportsPage })));
 const AffiliateNetworksPage = lazy(() => import('@/features/affiliate-networks/AffiliateNetworksPage').then(m => ({ default: m.AffiliateNetworksPage })));
+const PinterestPinsPage = lazy(() => import('@/features/pinterest-pins/PinterestPinsPage').then(m => ({ default: m.PinterestPinsPage })));
 
 function PageLoader() {
   return (
@@ -256,6 +257,7 @@ export function AppRoutes({ userRoles, userAbilities = [] }: { userRoles: string
     || can(userAbilities, 'view_seo_social')
     || can(userAbilities, 'view_any_page');
   const canViewAffiliate = can(userAbilities, 'view_any_affiliate_report') || can(userAbilities, 'view_any_affiliate_network');
+  const canViewPinterestPins = can(userAbilities, 'view_any_pinterest_pin');
   const canViewSystem = can(userAbilities, 'view_any_system_user')
     || can(userAbilities, 'view_any_role')
     || can(userAbilities, 'view_any_system_media')
@@ -299,6 +301,7 @@ export function AppRoutes({ userRoles, userAbilities = [] }: { userRoles: string
         <Route path="/system/activity-logs" element={<ActivityLogsPage />} />
         <Route path="/system/settings" element={<SettingsPage />} />
       </>}
+      {canViewPinterestPins && <Route path="/pinterest-pins" element={<PinterestPinsPage />} />}
       {canViewAffiliate && <>
         <Route path="/affiliate/reports" element={<AffiliateReportsPage />} />
         <Route path="/affiliate/networks" element={<AffiliateNetworksPage />} />

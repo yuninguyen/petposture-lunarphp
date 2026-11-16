@@ -7,7 +7,7 @@ namespace App\Security;
 use App\Models\User;
 
 /**
- * Authoritative registry of all abilities across the 40 admin domains.
+ * Authoritative registry of all abilities across the 41 admin domains.
  *
  * Phase 6a: Pure data preparation. Not wired to routes, middleware,
  * or policies yet. Preserves effective access of all roles 100%.
@@ -388,12 +388,21 @@ final class AdminAbilityRegistry
         'delete_any_discount',
     ];
 
+    // 41. Pinterest Pins (core admin roles only: pins are prepared here and posted by hand)
+    public const PINTEREST_PINS = [
+        'view_any_pinterest_pin',
+        'view_pinterest_pin',
+        'create_pinterest_pin',
+        'update_pinterest_pin',
+        'delete_pinterest_pin',
+    ];
+
     // =========================================================================
-    // Domain Catalog (1 - 40 Ground Truth)
+    // Domain Catalog (1 - 41 Ground Truth)
     // =========================================================================
 
     /**
-     * Complete inventory of all 40 admin domains with route prefixes,
+     * Complete inventory of all 41 admin domains with route prefixes,
      * abilities, and current effective role access.
      *
      * @return array<int, array{
@@ -728,6 +737,14 @@ final class AdminAbilityRegistry
                 'abilities' => self::DISCOUNTS,
                 'allowed_roles' => ['super_admin', 'admin', 'staff'],
             ],
+            41 => [
+                'id' => 41,
+                'key' => 'pinterest-pins',
+                'route_prefix' => 'pinterest-pins',
+                'access_type' => 'fast-path-only',
+                'abilities' => self::PINTEREST_PINS,
+                'allowed_roles' => ['super_admin', 'admin', 'staff'],
+            ],
         ];
     }
 
@@ -774,7 +791,7 @@ final class AdminAbilityRegistry
     }
 
     /**
-     * Return all registered abilities across all 40 domains, sorted and deduplicated.
+     * Return all registered abilities across all 41 domains, sorted and deduplicated.
      *
      * @return list<string>
      */
@@ -798,7 +815,7 @@ final class AdminAbilityRegistry
      *
      * Guarantees 100% parity with the pre-Phase-6a permission matrix and
      * middleware/route access model:
-     * - super_admin, admin, staff: ALL abilities across all 40 domains.
+     * - super_admin, admin, staff: ALL abilities across all 41 domains.
      * - Product Manager: Catalogue domains (12-19), Reviews (view/create/update, NO delete), Profile (4), Notifications (9).
      * - Order Manager: Dashboard (1-2), Orders (26, including refund), Return Requests (27), Profile (4), Notifications (9).
      * - Support: Dashboard (1-2), Orders (26, NO refund, NO delete), Return Requests (27), Reviews (view/create/update, NO delete), Profile (4), Notifications (9).

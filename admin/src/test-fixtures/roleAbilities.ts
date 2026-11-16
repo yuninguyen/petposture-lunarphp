@@ -35,6 +35,8 @@ const CONTENT = [
   'view_any_page',
 ];
 const AFFILIATE = ['view_any_affiliate_report', 'view_any_affiliate_network'];
+// Core admin roles only: pins are prepared in the admin and posted by hand.
+const PINTEREST = ['view_any_pinterest_pin'];
 const SYSTEM = [
   'view_any_system_user',
   'view_any_role',
@@ -54,6 +56,7 @@ const CORE = [
   ...DISCOUNTS,
   ...FINANCE,
   ...CONTENT,
+  ...PINTEREST,
   ...AFFILIATE,
   ...SYSTEM,
 ];
