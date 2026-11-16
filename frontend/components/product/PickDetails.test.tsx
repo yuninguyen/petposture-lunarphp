@@ -247,6 +247,39 @@ describe('PickDetails', () => {
         expect(html).not.toMatch(/Feeding/);
     });
 
+    // As in the design: a full-width grey bar right under the menu. Home is grey, Picks (the list) is bold and links
+    // to it, and the Pick being viewed ends the trail as plain text.
+    it('puts the breadcrumb in a full-width grey bar, Picks in bold and the Pick as plain text', () => {
+        const p = product();
+        const html = render(p);
+        const nav = html.match(/<nav aria-label="Breadcrumb"[^>]*>/)?.[0] ?? '';
+        const home = html.match(/<a [^>]*href="\/"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? '';
+        const picks = html.match(/<a [^>]*href="\/picks"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? '';
+
+        expect(nav).toContain('bg-[#f4f5f6]');
+        expect(nav).toContain('border-b');
+        expect(html.indexOf('<nav aria-label="Breadcrumb"')).toBeLessThan(html.indexOf('<h1'));
+        expect(home).toContain('text-[#6b7680]');
+        expect(home).toContain('>Home<');
+        expect(picks).toContain('font-bold');
+        expect(picks).toContain('>Picks<');
+        expect(html).toMatch(new RegExp(`aria-current="page"[^>]*>${p.name}</`));
+        expect(html).not.toMatch(/aria-current="page"[^>]*font-bold/);
+    });
+
+    it('leaves room between the breadcrumb bar and the content under it', () => {
+        const section = render().match(/<\/nav><section[^>]*>/)?.[0] ?? '';
+
+        expect(section).toMatch(/class="[^"]*\bpt-6\b/);
+    });
+
+    it('separates the breadcrumb steps with › text, not icons', () => {
+        const nav = render().match(/<nav aria-label="Breadcrumb"[\s\S]*?<\/nav>/)?.[0] ?? '';
+
+        expect(nav.match(/›/g)).toHaveLength(2);
+        expect(nav).not.toContain('<svg');
+    });
+
     it('renders no image, not a broken one, when the Pick has no photo yet', () => {
         const withoutPhoto = product(pickData(), { image: null, images: [] } as unknown as Partial<Product>);
         const html = render(withoutPhoto);

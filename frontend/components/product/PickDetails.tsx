@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { ChevronRight, Home } from 'lucide-react';
 import type { Product, ProductPick } from '@/types/shop';
 import { buttonClasses } from '@/components/ui/Button';
 import { formatPickDate, humanizeSlug, pickCtaLabel, pickPriceParts } from '@/lib/pick';
@@ -58,18 +57,21 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
 
     return (
         <div className="bg-white">
-            <nav aria-label="Breadcrumb" className="mx-auto flex max-w-[1200px] items-center gap-2 px-4 py-5 text-sm font-bold tracking-wide text-zinc-400 md:px-8">
-                <Link href="/" className="flex shrink-0 items-center gap-1 transition-colors hover:text-rust">
-                    <Home size={12} />
-                    <span>Home</span>
-                </Link>
-                <ChevronRight size={13} className="shrink-0 text-zinc-300" />
-                <Link href="/picks" className="shrink-0 transition-colors hover:text-rust">Picks</Link>
-                <ChevronRight size={13} className="shrink-0 text-zinc-300" />
-                <span className="min-w-0 truncate text-primary">{product.name}</span>
+            <nav aria-label="Breadcrumb" className="border-b border-[#e2e5e8] bg-[#f4f5f6]">
+                <ol className="mx-auto flex max-w-[1200px] items-center gap-2 px-4 py-[11px] text-[13px] text-[#6b7680] md:px-8">
+                    <li className="shrink-0">
+                        <Link href="/" className="text-[#6b7680] hover:underline">Home</Link>
+                    </li>
+                    <li aria-hidden="true" className="shrink-0">›</li>
+                    <li className="shrink-0">
+                        <Link href="/picks" className="font-bold text-[#3e4c57] hover:underline">Picks</Link>
+                    </li>
+                    <li aria-hidden="true" className="shrink-0">›</li>
+                    <li aria-current="page" className="min-w-0 truncate">{product.name}</li>
+                </ol>
             </nav>
 
-            <section className="px-4 pb-12 md:px-8">
+            <section className="px-4 pb-12 pt-6 md:px-8">
                 <div className={`mx-auto grid grid-cols-1 items-start gap-x-12 gap-y-6 ${hasPhoto ? 'max-w-[1200px] lg:grid-cols-2' : 'max-w-[720px]'}`}>
                     <header className={rightColumn}>
                         <p className="mb-3 inline-block rounded-[3px] bg-secondary-light px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-rust">{eyebrow}</p>
