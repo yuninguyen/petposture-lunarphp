@@ -75,13 +75,20 @@ describe('PickDetails', () => {
 
     it('has exactly one primary button, opening the tracked link in a new tab with the affiliate rel', () => {
         const html = render();
-        const anchors = html.match(/<a [^>]*rel="sponsored nofollow noopener"[^>]*>[^<]*<\/a>/g) ?? [];
+        const anchors = html.match(/<a [^>]*rel="sponsored nofollow noopener"[^>]*>(?:[^<]|<span[^>]*>[^<]*<\/span>)*<\/a>/g) ?? [];
 
         expect(anchors).toHaveLength(1);
         expect(anchors[0]).toContain(`href="${GO_URL}"`);
         expect(anchors[0]).toContain('target="_blank"');
         expect(anchors[0]).toContain('>Buy on Chewy<');
         expect(html).not.toContain('noreferrer');
+    });
+
+    it('shows an arrow to the right of the button text, hidden from screen readers', () => {
+        const html = render();
+        const anchor = html.match(/<a [^>]*rel="sponsored nofollow noopener"[^>]*>(?:[^<]|<span[^>]*>[^<]*<\/span>)*<\/a>/)?.[0] ?? '';
+
+        expect(anchor).toMatch(/>Buy on Chewy<span aria-hidden="true"[^>]*>→<\/span><\/a>$/);
     });
 
     it('names Amazon on the button when the retailer is Amazon', () => {

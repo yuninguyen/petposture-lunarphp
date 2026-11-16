@@ -93,9 +93,9 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                             href={pick.goUrl}
                             target="_blank"
                             rel="sponsored nofollow noopener"
-                            className={buttonClasses({ variant: 'primary', size: 'lg', className: 'w-full shadow-xl shadow-orange-500/20' })}
+                            className={buttonClasses({ variant: 'primary', size: 'lg', className: 'w-full gap-2 shadow-xl shadow-orange-500/20' })}
                         >
-                            {pickCtaLabel(pick)}
+                            {pickCtaLabel(pick)}<span aria-hidden="true">→</span>
                         </a>
                         <p className="mt-3 text-xs leading-5 text-zinc-500">{PICK_DISCLOSURE}</p>
                         <p className="mt-2 text-xs leading-5 text-zinc-500">No made-up star ratings: just pros and cons.</p>
