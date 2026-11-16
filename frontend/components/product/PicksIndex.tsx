@@ -1,12 +1,28 @@
 import Link from 'next/link';
 import { Check, Search, Star } from 'lucide-react';
-import { filterPicksByBreed, formatPickDate, humanizeSlug, pickBreeds, pickListStats, type PickProduct } from '@/lib/pick';
+import {
+    filterPicksByBreed,
+    filterPicksBySolution,
+    formatPickDate,
+    humanizeSlug,
+    pickBreeds,
+    pickListStats,
+    pickSolutions,
+    picksHref,
+    type PickProduct,
+} from '@/lib/pick';
 import { PickListCard } from './PickListCard';
 
-const chipClass = (active: boolean) =>
+// A breed chip turns slate when chosen, a need chip turns orange, as in the design.
+const chipClass = (active: boolean, activeClass = 'border-[#3e4c57] bg-[#3e4c57] text-white') =>
     `inline-flex min-h-[40px] shrink-0 items-center rounded-full border-[1.5px] px-4 py-2 text-[13.5px] font-semibold transition-colors ${
-        active ? 'border-[#3e4c57] bg-[#3e4c57] text-white' : 'border-[#e2e5e8] bg-white text-[#3e4c57] hover:border-[#df8448]'
+        active ? activeClass : 'border-[#e2e5e8] bg-white text-[#3e4c57] hover:border-[#df8448]'
     }`;
+
+const NEED_ACTIVE = 'border-[#df8448] bg-[#df8448] text-[#1a2128]';
+
+const rowLabelClass = 'w-[54px] shrink-0 text-[11.5px] font-bold uppercase tracking-[0.12em] text-[#6b7680]';
+const rowChipsClass = 'flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0';
 
 const statClass =
     'inline-flex items-center gap-2 rounded-full border border-[#f3ddc9] bg-[#fdf7f0] px-[15px] py-2 text-[13px] font-semibold text-[#2c3840]';
@@ -32,11 +48,23 @@ const HOW_WE_CHOOSE = [
 // The list of PetPosture Picks, optionally narrowed to one breed. It is handed every Pick and works out the rest:
 // the breed chips, the count, and what the header may claim. There is no cart, stock or sale here; the retailer
 // price on a card is dated and goes away once that date is more than 30 days old.
-export function PicksIndex({ allPicks, breed, now }: { allPicks: PickProduct[]; breed: string | null; now: Date }) {
+export function PicksIndex({
+    allPicks,
+    breed,
+    solution,
+    now,
+}: {
+    allPicks: PickProduct[];
+    breed: string | null;
+    solution: string | null;
+    now: Date;
+}) {
     const breeds = pickBreeds(allPicks);
-    const picks = filterPicksByBreed(allPicks, breed);
+    const solutions = pickSolutions(allPicks);
+    const picks = filterPicksBySolution(filterPicksByBreed(allPicks, breed), solution);
     const stats = pickListStats(allPicks);
     const breedName = breed ? humanizeSlug(breed) : null;
+    const solutionName = solution ? humanizeSlug(solution) : null;
 
     return (
         <>
@@ -84,25 +112,45 @@ export function PicksIndex({ allPicks, breed, now }: { allPicks: PickProduct[]; 
                     )}
                 </header>
 
-                {allPicks.length > 0 && breeds.length > 0 && (
-                    <section aria-label="Filter picks" className="mt-8 border-y border-[#e2e5e8] py-3.5">
-                        <div className="flex items-center gap-3">
-                            <span className="w-[54px] shrink-0 text-[11.5px] font-bold uppercase tracking-[0.12em] text-[#6b7680]">Breed</span>
-                            <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
-                                <Link href="/picks" className={chipClass(!breed)} {...(!breed ? { 'aria-current': 'true' } : {})}>All breeds</Link>
-                                {breeds.map((slug) => (
-                                    <Link
-                                        key={slug}
-                                        href={`/picks?breed=${encodeURIComponent(slug)}`}
-                                        className={chipClass(slug === breed)}
-                                        {...(slug === breed ? { 'aria-current': 'true' } : {})}
-                                    >
-                                        {humanizeSlug(slug)}
-                                    </Link>
-                                ))}
+                {allPicks.length > 0 && (breeds.length > 0 || solutions.length > 0) && (
+                    <section aria-label="Filter picks" className="mt-8 grid gap-2.5 border-y border-[#e2e5e8] py-3.5">
+                        {breeds.length > 0 && (
+                            <div className="flex items-center gap-3">
+                                <span className={rowLabelClass}>Breed</span>
+                                <div className={rowChipsClass}>
+                                    <Link href={picksHref({ breed: null, solution })} className={chipClass(!breed)} {...(!breed ? { 'aria-current': 'true' } : {})}>All breeds</Link>
+                                    {breeds.map((slug) => (
+                                        <Link
+                                            key={slug}
+                                            href={picksHref({ breed: slug, solution })}
+                                            className={chipClass(slug === breed)}
+                                            {...(slug === breed ? { 'aria-current': 'true' } : {})}
+                                        >
+                                            {humanizeSlug(slug)}
+                                        </Link>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                        <p role="status" className="mt-2.5 text-[13.5px] text-[#6b7680]">
+                        )}
+                        {solutions.length > 0 && (
+                            <div className="flex items-center gap-3">
+                                <span className={rowLabelClass}>Need</span>
+                                <div className={rowChipsClass}>
+                                    <Link href={picksHref({ breed, solution: null })} className={chipClass(!solution, NEED_ACTIVE)} {...(!solution ? { 'aria-current': 'true' } : {})}>All needs</Link>
+                                    {solutions.map((slug) => (
+                                        <Link
+                                            key={slug}
+                                            href={picksHref({ breed, solution: slug })}
+                                            className={chipClass(slug === solution, NEED_ACTIVE)}
+                                            {...(slug === solution ? { 'aria-current': 'true' } : {})}
+                                        >
+                                            {humanizeSlug(slug)}
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <p role="status" className="text-[13.5px] text-[#6b7680]">
                             Showing <b className="font-semibold text-[#2c3840]">{`${picks.length} of ${allPicks.length}`}</b> picks
                         </p>
                     </section>
@@ -114,9 +162,14 @@ export function PicksIndex({ allPicks, breed, now }: { allPicks: PickProduct[]; 
                             <PickListCard key={product.slug} product={product} allBreedsCount={breeds.length} now={now} />
                         ))}
                     </div>
-                ) : breedName ? (
+                ) : breedName && solutionName ? (
                     <p className="mt-6 rounded-2xl border-[1.5px] border-dashed border-[#e2e5e8] px-5 py-10 text-center text-[15px] text-[#4b5563]">
-                        No Picks for {breedName} yet. <Link href="/picks" className="font-semibold underline">See all Picks</Link>
+                        No Picks match that combination yet. We only list Picks we have actually looked at for that breed and need.{' '}
+                        <Link href="/picks" className="font-semibold underline">Clear filters</Link>
+                    </p>
+                ) : breedName || solutionName ? (
+                    <p className="mt-6 rounded-2xl border-[1.5px] border-dashed border-[#e2e5e8] px-5 py-10 text-center text-[15px] text-[#4b5563]">
+                        No Picks for {breedName ?? solutionName} yet. <Link href="/picks" className="font-semibold underline">See all Picks</Link>
                     </p>
                 ) : (
                     <p className="mt-6 text-[15px] text-[#56616a]">

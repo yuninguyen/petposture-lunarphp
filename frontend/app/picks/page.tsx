@@ -34,15 +34,16 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
     // Reading headers makes this route render per request, so the nonce CSP matches the body.
     await headers();
 
-    const { breed: rawBreed } = await searchParams;
+    const { breed: rawBreed, solution: rawSolution } = await searchParams;
     const breed = typeof rawBreed === 'string' && rawBreed ? rawBreed : null;
+    const solution = typeof rawSolution === 'string' && rawSolution ? rawSolution : null;
 
     const all = await fetchPicks();
 
     return (
         <main className="min-h-screen bg-white font-hanken">
             <Header />
-            <PicksIndex allPicks={all} breed={breed} now={new Date()} />
+            <PicksIndex allPicks={all} breed={breed} solution={solution} now={new Date()} />
             <Footer />
         </main>
     );

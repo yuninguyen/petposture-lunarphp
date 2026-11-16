@@ -7,6 +7,37 @@ export function pickBreeds(picks: PickProduct[]): string[] {
     return [...new Set(picks.flatMap((product) => product.pick.bestForBreeds))].sort();
 }
 
+// The solutions of the site come first, in the order of its menu; any other tag follows alphabetically.
+const SOLUTION_ORDER = ['feeding', 'comfort', 'mobility', 'walking'];
+
+/** Every solution some Pick is tagged with, once each: the options of the need filter. Empty until Picks are tagged. */
+export function pickSolutions(picks: PickProduct[]): string[] {
+    const rank = (slug: string) => {
+        const index = SOLUTION_ORDER.indexOf(slug);
+
+        return index === -1 ? SOLUTION_ORDER.length : index;
+    };
+
+    return [...new Set(picks.flatMap((product) => product.solutionTags ?? []))].sort(
+        (a, b) => rank(a) - rank(b) || a.localeCompare(b),
+    );
+}
+
+/** The Picks tagged with a solution; no solution means all of them, an unknown one means none. */
+export function filterPicksBySolution(picks: PickProduct[], solution: string | null): PickProduct[] {
+    return solution ? picks.filter((product) => (product.solutionTags ?? []).includes(solution)) : picks;
+}
+
+/** The list URL for a combination of filters, so a chip in one row keeps what was chosen in the other. */
+export function picksHref({ breed, solution }: { breed: string | null; solution: string | null }): string {
+    const params = new URLSearchParams();
+    if (breed) params.set('breed', breed);
+    if (solution) params.set('solution', solution);
+    const query = params.toString();
+
+    return query ? `/picks?${query}` : '/picks';
+}
+
 /** The Picks that are best for a breed; no breed means all of them, an unknown breed means none. */
 export function filterPicksByBreed(picks: PickProduct[], breed: string | null): PickProduct[] {
     return breed ? picks.filter((product) => product.pick.bestForBreeds.includes(breed)) : picks;

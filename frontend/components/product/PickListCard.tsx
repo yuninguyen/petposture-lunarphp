@@ -13,6 +13,8 @@ export function PickListCard({ product, allBreedsCount, now }: { product: PickPr
     const retailer = pickRetailerName(pick);
     const suitsEveryBreed = pick.bestForBreeds.length > 2 && pick.bestForBreeds.length === allBreedsCount;
     const breedChips = suitsEveryBreed ? [`All ${allBreedsCount} breeds`] : pick.bestForBreeds.map(humanizeSlug);
+    // The first solution tag labels the card; a Pick that is not tagged has no label.
+    const solution = product.solutionTags?.[0] ? humanizeSlug(product.solutionTags[0]) : null;
 
     return (
         <article className="group flex flex-col overflow-hidden rounded-2xl border border-[#e2e5e8] bg-white shadow-[0_3px_14px_rgba(44,56,64,0.05)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(44,56,64,0.1)]">
@@ -26,6 +28,11 @@ export function PickListCard({ product, allBreedsCount, now }: { product: PickPr
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                             className="object-contain p-3 mix-blend-multiply"
                         />
+                        {solution && (
+                            <span className="absolute left-3 top-3 rounded-full bg-white px-[11px] py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[#8f4a1f] shadow-[0_3px_10px_rgba(44,56,64,0.14)]">
+                                {solution}
+                            </span>
+                        )}
                     </div>
                 )}
 

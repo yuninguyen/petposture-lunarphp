@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProductPick } from '../types/shop';
 import {
     filterPicksByBreed,
+    filterPicksBySolution,
     formatPickDate,
     humanizeSlug,
     isPickPriceFresh,
@@ -10,7 +11,9 @@ import {
     pickCtaLabel,
     pickListStats,
     pickPriceParts,
+    pickSolutions,
     pickTakeSummary,
+    picksHref,
     relatedPicks,
     type PickProduct,
 } from './pick';
@@ -111,6 +114,47 @@ describe('the Picks list helpers', () => {
 
     it('answers an unknown breed with no Picks rather than all of them', () => {
         expect(filterPicksByBreed(picks, 'not-a-breed')).toEqual([]);
+    });
+});
+
+describe('the solution (need) filter helpers', () => {
+    const tagged = (slug: string, tags?: string[]) => ({ slug, solutionTags: tags, pick: pick() }) as unknown as PickProduct;
+    const picks = [tagged('harness', ['walking']), tagged('bowl', ['feeding']), tagged('mat', ['comfort', 'feeding']), tagged('untagged', []), tagged('missing')];
+
+    it('lists the solutions in use once each, in the order of the site, with others after, alphabetically', () => {
+        const mixed = [tagged('a', ['walking', 'zeta']), tagged('b', ['feeding', 'alpha']), tagged('c', ['comfort'])];
+
+        expect(pickSolutions(mixed)).toEqual(['feeding', 'comfort', 'walking', 'alpha', 'zeta']);
+    });
+
+    it('has no solutions when no Pick carries a tag', () => {
+        expect(pickSolutions([tagged('x', []), tagged('y')])).toEqual([]);
+        expect(pickSolutions([])).toEqual([]);
+    });
+
+    it('keeps every Pick when no solution is asked for', () => {
+        expect(filterPicksBySolution(picks, null).map((p) => p.slug)).toEqual(['harness', 'bowl', 'mat', 'untagged', 'missing']);
+    });
+
+    it('keeps only the Picks tagged with the solution, whatever else they are tagged with', () => {
+        expect(filterPicksBySolution(picks, 'feeding').map((p) => p.slug)).toEqual(['bowl', 'mat']);
+        expect(filterPicksBySolution(picks, 'walking').map((p) => p.slug)).toEqual(['harness']);
+    });
+
+    it('answers an unknown solution with no Picks rather than all of them', () => {
+        expect(filterPicksBySolution(picks, 'not-a-solution')).toEqual([]);
+    });
+});
+
+describe('picksHref', () => {
+    it('links to the whole list when nothing is chosen', () => {
+        expect(picksHref({ breed: null, solution: null })).toBe('/picks');
+    });
+
+    it('carries one filter or both, so choosing a chip in one row keeps the other row', () => {
+        expect(picksHref({ breed: 'pug', solution: null })).toBe('/picks?breed=pug');
+        expect(picksHref({ breed: null, solution: 'walking' })).toBe('/picks?solution=walking');
+        expect(picksHref({ breed: 'french-bulldog', solution: 'feeding' })).toBe('/picks?breed=french-bulldog&solution=feeding');
     });
 });
 

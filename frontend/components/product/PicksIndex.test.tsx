@@ -15,9 +15,15 @@ const pick: ProductPick = {
     quickSpecs: [], pros: [], cons: ['Porcelain can break'],
 };
 
-const pickProduct = (slug: string, name: string, breeds: string[], overrides: Partial<ProductPick> = {}) => ({
+const pickProduct = (
+    slug: string,
+    name: string,
+    breeds: string[],
+    overrides: Partial<ProductPick> = {},
+    solutionTags: string[] = [],
+) => ({
     id: 1, productId: 1, variantId: 1, slug, name, category: 'Bowls', categorySlug: 'bowls', price: 22.71, rating: 0, reviews: 0,
-    image: '/storage/x.png', brand: 'Necoichi', available: false, stockStatus: 'out_of_stock',
+    image: '/storage/x.png', brand: 'Necoichi', available: false, stockStatus: 'out_of_stock', solutionTags,
     pick: {
         ...pick,
         bestForBreeds: breeds,
@@ -33,7 +39,7 @@ const harness = pickProduct('puppia-vest', 'Puppia Vest', ['pug']);
 // renderToStaticMarkup writes an apostrophe as &#x27;, which would make every sentence below unreadable.
 const render = (props: Partial<React.ComponentProps<typeof PicksIndex>> = {}) =>
     renderToStaticMarkup(
-        <PicksIndex allPicks={[bowl, harness]} breed={null} now={NOW} {...props} />,
+        <PicksIndex allPicks={[bowl, harness]} breed={null} solution={null} now={NOW} {...props} />,
     ).replace(/&#x27;/g, "'");
 
 describe('PicksIndex header', () => {
@@ -193,7 +199,7 @@ describe('PicksIndex filter', () => {
         expect(html).toContain('French Bulldog');
     });
 
-    it('has no Need filter yet', () => {
+    it('has no Need row while no Pick carries a solution tag, instead of a row with nothing to choose', () => {
         const html = render();
 
         expect(html).not.toContain('>Need<');
@@ -220,6 +226,77 @@ describe('PicksIndex filter', () => {
 
         expect(html).toContain('overflow-x-auto');
         expect(html).toContain('min-h-[40px]');
+    });
+});
+
+describe('PicksIndex solution (need) filter', () => {
+    const walker = pickProduct('walk-harness', 'Walk Harness', ['pug'], {}, ['walking']);
+    const feeder = pickProduct('slo-bowl', 'Slo Bowl', ['pug', 'french-bulldog'], {}, ['feeding']);
+    const tagged = [walker, feeder];
+
+    it('shows a Need row under the Breed row, with an "All needs" chip and one chip per solution, as links', () => {
+        const html = render({ allPicks: tagged });
+
+        expect(html).toContain('>Need<');
+        expect(html).toContain('>All needs<');
+        expect(html).toContain('href="/picks?solution=feeding"');
+        expect(html).toContain('href="/picks?solution=walking"');
+        expect(html.indexOf('>Breed<')).toBeLessThan(html.indexOf('>Need<'));
+    });
+
+    it('marks "All needs" when no solution is chosen, and the chosen solution otherwise', () => {
+        expect(render({ allPicks: tagged })).toMatch(/aria-current="true"[^>]*>All needs</);
+        expect(render({ allPicks: tagged, solution: 'walking' })).toMatch(/aria-current="true"[^>]*>Walking</);
+    });
+
+    it('keeps one row when a chip of the other row is chosen', () => {
+        const html = render({ allPicks: tagged, breed: 'pug', solution: 'walking' });
+
+        expect(html).toContain('href="/picks?breed=french-bulldog&amp;solution=walking"');
+        expect(html).toContain('href="/picks?breed=pug&amp;solution=feeding"');
+        expect(html).toContain('href="/picks?breed=pug"');
+        expect(html).toContain('href="/picks?solution=walking"');
+    });
+
+    it('lists only the Picks of the chosen solution and counts them against all', () => {
+        const html = render({ allPicks: tagged, solution: 'feeding' });
+
+        expect(html).toContain('href="/picks/slo-bowl"');
+        expect(html).not.toContain('href="/picks/walk-harness"');
+        expect(html).toMatch(/Showing <b[^>]*>1 of 2<\/b> picks/);
+    });
+
+    it('combines with the breed: a Pick must match both', () => {
+        const html = render({ allPicks: tagged, breed: 'french-bulldog', solution: 'feeding' });
+
+        expect(html).toContain('href="/picks/slo-bowl"');
+        expect(html).toMatch(/Showing <b[^>]*>1 of 2<\/b> picks/);
+        expect(render({ allPicks: tagged, breed: 'french-bulldog', solution: 'walking' })).toMatch(/Showing <b[^>]*>0 of 2<\/b> picks/);
+    });
+
+    it('labels a card with its solution, in the corner of the photo', () => {
+        const html = render({ allPicks: [walker] });
+
+        expect(html).toMatch(/<span[^>]*text-\[#8f4a1f\][^>]*>Walking<\/span>/);
+    });
+
+    it('has no solution label on a card whose Pick is not tagged', () => {
+        const html = render({ allPicks: [bowl] });
+
+        expect(html).not.toMatch(/<span[^>]*uppercase[^>]*shadow[^>]*>[A-Za-z]+<\/span>/);
+    });
+
+    it('says plainly when no Pick matches the breed and solution together, and offers to clear them', () => {
+        const html = render({ allPicks: tagged, breed: 'french-bulldog', solution: 'walking' });
+
+        expect(html).toContain('No Picks match that combination yet.');
+        expect(html).toContain('Clear filters');
+    });
+
+    it('says so when a solution has no Pick yet', () => {
+        const html = render({ allPicks: tagged, solution: 'mobility' });
+
+        expect(html).toContain('No Picks for Mobility yet.');
     });
 });
 

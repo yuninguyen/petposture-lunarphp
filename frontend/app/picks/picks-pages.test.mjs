@@ -17,6 +17,11 @@ test('the Picks list and a Pick page are rendered per request so their CSP nonce
     assert.match(list, /await headers\(\)/);
 });
 
-test('the Picks list has its own canonical URL, whatever the breed filter', () => {
+test('the Picks list reads both filters from the URL and hands them to the list', () => {
+    assert.match(list, /breed: rawBreed, solution: rawSolution/);
+    assert.match(list, /<PicksIndex allPicks=\{all\} breed=\{breed\} solution=\{solution\}/);
+});
+
+test('the Picks list has its own canonical URL, whatever the filters', () => {
     assert.match(list, /canonical: '\/picks'/);
 });
