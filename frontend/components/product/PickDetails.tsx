@@ -233,7 +233,8 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                                     <PickCard product={item} />
                                 </li>
                             ))}
-                            {firstBreed && (
+                            {/* Only the fallback of the section: next to related cards it would sit alone on a second row. */}
+                            {related.length === 0 && firstBreed && (
                                 <li>
                                     <Link
                                         href={`/picks?breed=${firstBreed}`}
@@ -248,6 +249,17 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                                 </li>
                             )}
                         </ul>
+                        {related.length > 0 && (
+                            <p className="mt-8 text-center">
+                                <Link
+                                    href={firstBreed ? `/picks?breed=${firstBreed}` : '/picks'}
+                                    className="inline-flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-[0.08em] text-rust hover:underline"
+                                >
+                                    {`See all ${firstBreed ? `${humanizeSlug(firstBreed)} ` : ''}Picks`}{' '}
+                                    <span aria-hidden="true">→</span>
+                                </Link>
+                            </p>
+                        )}
                     </div>
                 </section>
             )}

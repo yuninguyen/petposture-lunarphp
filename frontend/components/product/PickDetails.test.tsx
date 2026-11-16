@@ -307,11 +307,42 @@ describe('PickDetails', () => {
         expect(html).toContain('href="/picks/puppia-vest"');
     });
 
-    it('offers all the Picks for the first breed, on the Picks list filtered by that breed', () => {
+    // With no related Pick the text card is the fallback of the section: the only thing in its grid.
+    it('offers all the Picks for the first breed as a fallback card when there is no related Pick', () => {
         const html = render();
 
         expect(html).toContain('All French Bulldog Picks');
         expect(html).toContain('href="/picks?breed=french-bulldog"');
+        expect(html).toContain('Explore all');
+        expect(html).not.toContain('See all');
+    });
+
+    // With related Picks the text card would sit alone on a second row of the grid, so it leaves the grid and
+    // becomes a centred link under it.
+    it('keeps the "All … Picks" card out of the grid once there are related Picks', () => {
+        const html = render(product(), [related('slo-bowl', 'Slo Bowl'), related('puppia-vest', 'Puppia Vest'), related('ramp', 'Dog Ramp')]);
+        const grid = html.match(/<ul class="grid[\s\S]*?<\/ul>/)?.[0] ?? '';
+
+        expect(grid.match(/<li>/g)).toHaveLength(3);
+        expect(grid).not.toContain('All French Bulldog Picks');
+        expect(grid).not.toContain('Explore all');
+        expect(html).not.toContain('Explore all');
+        expect(html).not.toContain('All French Bulldog Picks');
+    });
+
+    it('adds a centred "See all … Picks →" link under the grid, to the list filtered by the first breed', () => {
+        const html = render(product(), [related('slo-bowl', 'Slo Bowl'), related('puppia-vest', 'Puppia Vest'), related('ramp', 'Dog Ramp')]);
+
+        expect(html).toMatch(
+            /<\/ul><p[^>]*text-center[^>]*><a [^>]*href="\/picks\?breed=french-bulldog"[^>]*>See all French Bulldog Picks\s*<span aria-hidden="true">→<\/span><\/a><\/p>/,
+        );
+    });
+
+    it('links to the whole list when the Pick has related Picks but no breed to filter by', () => {
+        const html = render(product(pickData({ bestForBreeds: [] })), [related('slo-bowl', 'Slo Bowl')]);
+
+        expect(html).toMatch(/<\/ul><p[^>]*text-center[^>]*><a [^>]*href="\/picks"[^>]*>See all Picks\s*<span aria-hidden="true">→<\/span>/);
+        expect(html).not.toContain('All French Bulldog Picks');
     });
 
     it('has no "more picks" section when there are no other Picks and no breed to filter by', () => {
