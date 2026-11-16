@@ -93,11 +93,10 @@ const pathname = usePathname();
                   <LogOut size={22} strokeWidth={2} aria-hidden="true" />
                 </button>
               </div>
-            ) : (
-              <Link href="/sign-in" className="hidden md:block hover:text-rust transition-colors" title="Login / Register" aria-label="Login or register">
-                <User size={22} strokeWidth={2} aria-hidden="true" />
-              </Link>
-            )}
+            ) : null}
+            {/* SHOP-HIDDEN: for a visitor, the user icon linking to /sign-in was here (the /sign-in page itself is
+                untouched). Someone already signed in keeps the account and log-out controls. Revert the "hide the
+                shop" commits to restore it. */}
             {/* SHOP-HIDDEN: the shopping-cart button (opens the cart drawer, with its item count) was here. Revert
                 the "hide the shop chrome" commits to restore it. */}
           </div>
@@ -237,19 +236,21 @@ const pathname = usePathname();
                   ))}
                 </nav>
 
-                <div className="mt-8 border-t border-zinc-100 pt-6">
-                  <Link
-                    href={user ? "/account" : "/sign-in"}
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center justify-between rounded-xl bg-zinc-50 px-4 py-4 text-primary transition-colors hover:bg-zinc-100"
-                  >
-                    <span className="flex items-center gap-3 text-[14px] font-bold uppercase tracking-widest">
-                      <User size={18} aria-hidden="true" />
-                      {user ? "My Account" : "Login / Register"}
-                    </span>
-                    <ChevronRight size={18} aria-hidden="true" />
-                  </Link>
-                  {user && (
+                {/* SHOP-HIDDEN: for a visitor this block was a "Login / Register" row linking to /sign-in. A signed-in
+                    user still gets "My Account" and "Log Out". Revert the "hide the shop" commits to restore it. */}
+                {user && (
+                  <div className="mt-8 border-t border-zinc-100 pt-6">
+                    <Link
+                      href="/account"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center justify-between rounded-xl bg-zinc-50 px-4 py-4 text-primary transition-colors hover:bg-zinc-100"
+                    >
+                      <span className="flex items-center gap-3 text-[14px] font-bold uppercase tracking-widest">
+                        <User size={18} aria-hidden="true" />
+                        My Account
+                      </span>
+                      <ChevronRight size={18} aria-hidden="true" />
+                    </Link>
                     <button
                       onClick={() => {
                         logout();
@@ -260,8 +261,8 @@ const pathname = usePathname();
                       <LogOut size={18} aria-hidden="true" />
                       Log Out
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Secondary Info */}
                 <div className="mt-10 pt-8 border-t border-zinc-100 space-y-6">

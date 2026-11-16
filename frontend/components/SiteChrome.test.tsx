@@ -43,7 +43,13 @@ describe('site header', () => {
         expect(html).toContain('Our Mission');
         expect(html).toContain('Blog');
         expect(html).toContain('Contact');
-        expect(html).toContain('href="/sign-in"');
+    });
+
+    it('has no sign-in or register link for a visitor, in the bar or the mobile menu', () => {
+        expect(html).not.toContain('href="/sign-in"');
+        expect(html).not.toContain('href="/sign-up"');
+        expect(html).not.toMatch(/Login \/ Register/i);
+        expect(html).not.toContain('aria-label="Login or register"');
     });
 });
 
