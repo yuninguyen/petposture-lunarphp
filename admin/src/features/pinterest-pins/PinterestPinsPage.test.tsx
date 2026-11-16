@@ -438,6 +438,31 @@ describe('PinterestPinsPage automatic posting', () => {
     );
   });
 
+  it('without credentials on the server it explains and offers no connect button', async () => {
+    withPins([readyPin], { ...notConnected, configured: false });
+    renderPage();
+
+    expect(await screen.findByText(/Pinterest is not set up on the server yet/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Connect Pinterest' })).toBeNull();
+  });
+
+  it('shows a small message, not an error page, when the server refuses to start the connection', async () => {
+    mockedFetch.mockImplementation(async (url: string, init?: FetchApiOptions) => {
+      if (url === '/admin/pinterest-pins/options') return { data: options };
+      if (url === '/admin/pinterest/connection') return { data: notConnected };
+      if (url === '/admin/pinterest/connect' && init?.method === 'POST') {
+        throw Object.assign(new Error('Pinterest is not set up on the server (app id, secret and redirect address).'), { status: 422 });
+      }
+      return { data: [readyPin], meta: meta({ total: 1 }) };
+    });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Connect Pinterest' }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Pinterest is not set up on the server (app id, secret and redirect address).'));
+    expect(screen.getByRole('button', { name: 'Connect Pinterest' })).toBeTruthy();
+  });
+
   it('asks before disconnecting', async () => {
     withPins([readyPin], { ...notConnected, connected: true, status: 'connected', username: 'petposture' });
     renderPage();
