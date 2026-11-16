@@ -84,6 +84,16 @@ describe('PickDetails', () => {
         expect(html).not.toContain('noreferrer');
     });
 
+    // The Muse mock's button is 52px high with 14px text; the 56px "lg" size read as too tall next to it.
+    it('makes the button 52px high with 14px text like the design, not the taller lg size', () => {
+        const html = render();
+        const anchor = html.match(/<a [^>]*rel="sponsored nofollow noopener"[^>]*>/)?.[0] ?? '';
+
+        expect(anchor).toContain('min-h-[52px]');
+        expect(anchor).toContain('text-sm');
+        expect(anchor).not.toContain('h-14');
+    });
+
     // The Muse mock ends the button with the diagonal "opens elsewhere" arrow (up and to the right), not a plain →.
     it('ends the button with the diagonal up-right arrow of the design, hidden from screen readers', () => {
         const html = render();

@@ -93,7 +93,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                             href={pick.goUrl}
                             target="_blank"
                             rel="sponsored nofollow noopener"
-                            className={buttonClasses({ variant: 'primary', size: 'lg', className: 'w-full gap-[9px] shadow-xl shadow-orange-500/20' })}
+                            className={buttonClasses({ variant: 'primary', size: 'md', className: 'min-h-[52px] w-full gap-[9px] shadow-xl shadow-orange-500/20' })}
                         >
                             {pickCtaLabel(pick)}
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
