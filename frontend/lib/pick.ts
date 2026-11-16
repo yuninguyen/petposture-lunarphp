@@ -10,7 +10,7 @@ export function pickBreeds(picks: PickProduct[]): string[] {
 // The solutions of the site come first, in the order of its menu; any other tag follows alphabetically.
 const SOLUTION_ORDER = ['feeding', 'comfort', 'mobility', 'walking'];
 
-/** Every solution some Pick is tagged with, once each: the options of the need filter. Empty until Picks are tagged. */
+/** Every solution some Pick is tagged with, once each: the options of the solution filter. Empty until Picks are tagged. */
 export function pickSolutions(picks: PickProduct[]): string[] {
     const rank = (slug: string) => {
         const index = SOLUTION_ORDER.indexOf(slug);

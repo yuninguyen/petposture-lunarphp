@@ -117,7 +117,7 @@ describe('the Picks list helpers', () => {
     });
 });
 
-describe('the solution (need) filter helpers', () => {
+describe('the solution filter helpers', () => {
     const tagged = (slug: string, tags?: string[]) => ({ slug, solutionTags: tags, pick: pick() }) as unknown as PickProduct;
     const picks = [tagged('harness', ['walking']), tagged('bowl', ['feeding']), tagged('mat', ['comfort', 'feeding']), tagged('untagged', []), tagged('missing')];
 

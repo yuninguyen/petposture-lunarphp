@@ -13,7 +13,7 @@ import {
 } from '@/lib/pick';
 import { PickListCard } from './PickListCard';
 
-// A breed chip turns slate when chosen, a need chip turns orange, as in the design.
+// A breed chip turns slate when chosen, a solution chip turns orange, as in the design.
 const chipClass = (active: boolean, activeClass = 'border-[#3e4c57] bg-[#3e4c57] text-white') =>
     `inline-flex min-h-[40px] shrink-0 items-center rounded-full border-[1.5px] px-4 py-2 text-[13.5px] font-semibold transition-colors ${
         active ? activeClass : 'border-[#e2e5e8] bg-white text-[#3e4c57] hover:border-[#df8448]'
@@ -134,9 +134,9 @@ export function PicksIndex({
                         )}
                         {solutions.length > 0 && (
                             <div className="flex items-center gap-3">
-                                <span className={rowLabelClass}>Need</span>
+                                <span className={rowLabelClass}>Solution</span>
                                 <div className={rowChipsClass}>
-                                    <Link href={picksHref({ breed, solution: null })} className={chipClass(!solution, NEED_ACTIVE)} {...(!solution ? { 'aria-current': 'true' } : {})}>All needs</Link>
+                                    <Link href={picksHref({ breed, solution: null })} className={chipClass(!solution, NEED_ACTIVE)} {...(!solution ? { 'aria-current': 'true' } : {})}>All solutions</Link>
                                     {solutions.map((slug) => (
                                         <Link
                                             key={slug}
@@ -164,7 +164,7 @@ export function PicksIndex({
                     </div>
                 ) : breedName && solutionName ? (
                     <p className="mt-6 rounded-2xl border-[1.5px] border-dashed border-[#e2e5e8] px-5 py-10 text-center text-[15px] text-[#4b5563]">
-                        No Picks match that combination yet. We only list Picks we have actually looked at for that breed and need.{' '}
+                        No Picks match that combination yet. We only list Picks we have actually looked at for that breed and solution.{' '}
                         <Link href="/picks" className="font-semibold underline">Clear filters</Link>
                     </p>
                 ) : breedName || solutionName ? (

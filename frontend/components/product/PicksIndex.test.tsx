@@ -199,11 +199,11 @@ describe('PicksIndex filter', () => {
         expect(html).toContain('French Bulldog');
     });
 
-    it('has no Need row while no Pick carries a solution tag, instead of a row with nothing to choose', () => {
+    it('has no Solution row while no Pick carries a solution tag, instead of a row with nothing to choose', () => {
         const html = render();
 
-        expect(html).not.toContain('>Need<');
-        expect(html).not.toContain('All needs');
+        expect(html).not.toContain('>Solution<');
+        expect(html).not.toContain('All solutions');
     });
 
     it('marks the chip of the breed being shown', () => {
@@ -229,23 +229,23 @@ describe('PicksIndex filter', () => {
     });
 });
 
-describe('PicksIndex solution (need) filter', () => {
+describe('PicksIndex solution filter', () => {
     const walker = pickProduct('walk-harness', 'Walk Harness', ['pug'], {}, ['walking']);
     const feeder = pickProduct('slo-bowl', 'Slo Bowl', ['pug', 'french-bulldog'], {}, ['feeding']);
     const tagged = [walker, feeder];
 
-    it('shows a Need row under the Breed row, with an "All needs" chip and one chip per solution, as links', () => {
+    it('shows a Solution row under the Breed row, with an "All solutions" chip and one chip per solution, as links', () => {
         const html = render({ allPicks: tagged });
 
-        expect(html).toContain('>Need<');
-        expect(html).toContain('>All needs<');
+        expect(html).toContain('>Solution<');
+        expect(html).toContain('>All solutions<');
         expect(html).toContain('href="/picks?solution=feeding"');
         expect(html).toContain('href="/picks?solution=walking"');
-        expect(html.indexOf('>Breed<')).toBeLessThan(html.indexOf('>Need<'));
+        expect(html.indexOf('>Breed<')).toBeLessThan(html.indexOf('>Solution<'));
     });
 
-    it('marks "All needs" when no solution is chosen, and the chosen solution otherwise', () => {
-        expect(render({ allPicks: tagged })).toMatch(/aria-current="true"[^>]*>All needs</);
+    it('marks "All solutions" when no solution is chosen, and the chosen solution otherwise', () => {
+        expect(render({ allPicks: tagged })).toMatch(/aria-current="true"[^>]*>All solutions</);
         expect(render({ allPicks: tagged, solution: 'walking' })).toMatch(/aria-current="true"[^>]*>Walking</);
     });
 
