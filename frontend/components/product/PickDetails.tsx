@@ -85,7 +85,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                         {price && (
                             <div className="mb-4">
                                 <p className="text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">{price.label}</p>
-                                <p className="text-[32px] font-bold leading-tight text-primary">{price.amount}</p>
+                                <p className="py-[10px] text-[32px] font-bold leading-tight text-primary">{price.amount}</p>
                                 <p className="text-xs text-zinc-500">{price.note}</p>
                             </div>
                         )}
