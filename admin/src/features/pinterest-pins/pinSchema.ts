@@ -3,7 +3,11 @@ import { z } from 'zod';
 export const PIN_TITLE_MAX = 100;
 export const PIN_DESCRIPTION_MAX = 500;
 
+/** What a person can set on a pin. */
 export type PinStatus = 'ready' | 'posted';
+
+/** Every state a pin can be in. The last three are set by the posting job, never chosen in the form. */
+export type PinDisplayStatus = PinStatus | 'publishing' | 'failed' | 'needs_review';
 
 export interface PinFormValues {
   /** Id of the media library entry chosen as the pin image; empty until one is chosen. */
@@ -14,6 +18,8 @@ export interface PinFormValues {
   description: string;
   destinationUrl: string;
   board: string;
+  /** Id of the board on the connected Pinterest account; empty when the board is only typed text. */
+  boardId: string;
   status: PinStatus;
   /** YYYY-MM-DD, or empty. */
   scheduledDate: string;
@@ -52,21 +58,34 @@ export const pinFormSchema = z.object({
     .min(1, 'pinterest_pins.validation.url_required')
     .refine(isWebUrl, 'pinterest_pins.validation.url_invalid'),
   board: z.string(),
+  boardId: z.string(),
   status: z.enum(['ready', 'posted']),
   scheduledDate: z.string().refine((value) => value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value), 'pinterest_pins.validation.date_invalid'),
 });
 
-export function buildPinPayload(values: PinFormValues) {
-  return {
+/**
+ * `omitStatus` leaves the status out of the payload, so saving edits to a pin the posting job is holding (failed,
+ * or waiting for a person to check it) does not quietly put it back to ready.
+ */
+export function buildPinPayload(values: PinFormValues, omitStatus = false) {
+  const payload = {
     media_id: Number(values.mediaId),
     post_id: values.postId ? Number(values.postId) : null,
     title: values.title.trim(),
     description: values.description.trim(),
     destination_url: values.destinationUrl.trim(),
     board: values.board.trim() || null,
+    pinterest_board_id: values.boardId || null,
     status: values.status,
     scheduled_date: values.scheduledDate || null,
   };
+
+  if (omitStatus) {
+    const { status: _status, ...withoutStatus } = payload;
+    return withoutStatus;
+  }
+
+  return payload;
 }
 
 /**

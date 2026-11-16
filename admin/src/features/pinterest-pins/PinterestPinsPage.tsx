@@ -7,9 +7,18 @@ import { Button } from '@/components/ui/button';
 import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
 import { PlusIcon } from '@/components/ui/icons';
 import { PinFilters, PinterestPin, deletePin, fetchPinOptions, fetchPins, pinterestPinOptionsKey, pinterestPinsKey } from './api';
+import { PinterestConnectionPanel } from './PinterestConnectionPanel';
 import { PinterestPinModal } from './PinterestPinModal';
 import { PinterestPinRowActions } from './PinterestPinRowActions';
-import type { PinStatus } from './pinSchema';
+import type { PinDisplayStatus } from './pinSchema';
+
+const STATUS_BADGE: Record<PinDisplayStatus, 'blue' | 'emerald' | 'amber' | 'red'> = {
+  ready: 'blue',
+  posted: 'emerald',
+  publishing: 'amber',
+  failed: 'red',
+  needs_review: 'amber',
+};
 
 const selectClass =
   'appearance-none h-[38px] w-full rounded-lg border border-slate-200 bg-white px-3 pr-8 text-sm text-slate-700 shadow-sm outline-none transition-colors hover:bg-slate-50 focus:border-primary focus:ring-2 focus:ring-primary/20';
@@ -65,6 +74,8 @@ export function PinterestPinsPage() {
         </Button>
       </div>
 
+      <PinterestConnectionPanel />
+
       <div className="flex flex-wrap items-end gap-4 rounded-t-xl border border-b-0 border-slate-200 bg-white p-4">
         <div className="w-full sm:w-48">
           <label htmlFor="pin-filter-status" className="mb-1 block text-xs font-medium text-slate-500">{t('pinterest_pins.col_status')}</label>
@@ -72,11 +83,13 @@ export function PinterestPinsPage() {
             id="pin-filter-status"
             className={selectClass}
             value={filters.status}
-            onChange={(event) => changeFilter({ status: event.target.value as '' | PinStatus })}
+            onChange={(event) => changeFilter({ status: event.target.value as '' | PinDisplayStatus })}
           >
             <option value="">{t('pinterest_pins.filter_status_all')}</option>
             <option value="ready">{t('pinterest_pins.status_ready')}</option>
             <option value="posted">{t('pinterest_pins.status_posted')}</option>
+            <option value="failed">{t('pinterest_pins.status_failed')}</option>
+            <option value="needs_review">{t('pinterest_pins.status_needs_review')}</option>
           </select>
         </div>
         <div className="w-full sm:w-72">
@@ -133,12 +146,15 @@ export function PinterestPinsPage() {
                   <td className="max-w-[14rem] px-4 py-3 text-slate-600">{pin.post ? pin.post.title : t('pinterest_pins.no_post')}</td>
                   <td className="px-4 py-3 text-slate-600">{pin.board ?? '—'}</td>
                   <td className="px-4 py-3">
-                    <Badge color={pin.status === 'posted' ? 'emerald' : 'blue'}>
-                      {t(pin.status === 'posted' ? 'pinterest_pins.status_posted' : 'pinterest_pins.status_ready')}
-                    </Badge>
+                    <Badge color={STATUS_BADGE[pin.status] ?? 'slate'}>{t(`pinterest_pins.status_${pin.status}`)}</Badge>
                     {pin.posted_at && (
-                      <p className="mt-1 text-xs text-slate-500">{t('pinterest_pins.posted_on', { date: formatPostedAt(pin.posted_at) })}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {t('pinterest_pins.posted_on', { date: formatPostedAt(pin.posted_at) })}
+                        {pin.posted_via === 'api' && ` · ${t('pinterest_pins.posted_by_api')}`}
+                      </p>
                     )}
+                    {pin.status === 'needs_review' && <p className="mt-1 max-w-[14rem] text-xs text-amber-700">{t('pinterest_pins.needs_review_hint')}</p>}
+                    {pin.last_error && pin.status !== 'posted' && <p className="mt-1 max-w-[14rem] text-xs text-red-600">{pin.last_error}</p>}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{pin.scheduled_date ?? '—'}</td>
                   <td className="px-4 py-3">

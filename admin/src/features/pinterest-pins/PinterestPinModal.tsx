@@ -7,7 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageIcon } from '@/components/ui/icons';
 import { MediaLibraryModal } from '@/components/ui/media-library-modal';
-import { PinterestPin, createPin, fetchPinOptions, pinterestPinOptionsKey, pinterestPinsKey, updatePin } from './api';
+import {
+  PinterestPin,
+  createPin,
+  fetchPinOptions,
+  fetchPinterestBoards,
+  fetchPinterestConnection,
+  pinterestBoardsKey,
+  pinterestConnectionKey,
+  pinterestPinOptionsKey,
+  pinterestPinsKey,
+  updatePin,
+} from './api';
 import {
   PIN_DESCRIPTION_MAX,
   PIN_TITLE_MAX,
@@ -36,6 +47,7 @@ const emptyValues: PinFormValues = {
   description: '',
   destinationUrl: '',
   board: '',
+  boardId: '',
   status: 'ready',
   scheduledDate: '',
 };
@@ -49,6 +61,7 @@ const SERVER_FIELD: Record<string, keyof PinFormValues> = {
   title: 'title',
   description: 'description',
   board: 'board',
+  pinterest_board_id: 'boardId',
   status: 'status',
 };
 
@@ -62,9 +75,16 @@ function valuesFor(pin: PinterestPin | null): PinFormValues {
     description: pin.description,
     destinationUrl: pin.destination_url,
     board: pin.board ?? '',
-    status: pin.status,
+    boardId: pin.pinterest_board_id ?? '',
+    // The form only offers ready and posted; a pin the posting job is holding shows as ready.
+    status: pin.status === 'posted' ? 'posted' : 'ready',
     scheduledDate: pin.scheduled_date ?? '',
   };
+}
+
+/** True when the posting job holds the pin, so saving its content must not change its status. */
+function heldByJob(pin: PinterestPin | null): boolean {
+  return pin !== null && pin.status !== 'ready' && pin.status !== 'posted';
 }
 
 function Field({ id, label, error, children, hint }: { id: string; label: string; error?: string; children: ReactNode; hint?: string }) {
@@ -105,6 +125,13 @@ export function PinterestPinModal({ open, pin, onClose }: PinterestPinModalProps
   const posts = optionsQuery.data?.posts ?? [];
   const boards = optionsQuery.data?.boards ?? [];
 
+  // Once Pinterest is connected the board is chosen from the account's own boards, so it can be posted automatically.
+  const connectionQuery = useQuery({ queryKey: pinterestConnectionKey, queryFn: fetchPinterestConnection, enabled: open });
+  const connected = connectionQuery.data?.connected === true;
+  const pinterestBoardsQuery = useQuery({ queryKey: pinterestBoardsKey, queryFn: fetchPinterestBoards, enabled: open && connected });
+  const pinterestBoards = pinterestBoardsQuery.data ?? [];
+  const useBoardList = connected && pinterestBoardsQuery.isSuccess;
+
   useEffect(() => {
     if (!open) return;
     setValues(valuesFor(pin));
@@ -116,7 +143,12 @@ export function PinterestPinModal({ open, pin, onClose }: PinterestPinModalProps
   }, [open, pin]);
 
   const saveMutation = useMutation({
-    mutationFn: (formValues: PinFormValues) => (pin ? updatePin(pin.id, buildPinPayload(formValues)) : createPin(buildPinPayload(formValues))),
+    mutationFn: (formValues: PinFormValues) => {
+      // Editing a pin the job holds keeps its status unless the person picked "posted".
+      const omitStatus = heldByJob(pin) && formValues.status === 'ready';
+
+      return pin ? updatePin(pin.id, buildPinPayload(formValues, omitStatus)) : createPin(buildPinPayload(formValues));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: pinterestPinsKey });
       toast.success(t(isEditing ? 'pinterest_pins.update_success' : 'pinterest_pins.create_success'));
@@ -261,20 +293,43 @@ export function PinterestPinModal({ open, pin, onClose }: PinterestPinModalProps
               <Input id="pin-url" inputMode="url" value={values.destinationUrl} onChange={(event) => setField('destinationUrl', event.target.value)} />
             </Field>
 
-            <Field id="pin-board" label={t('pinterest_pins.field_board')} error={errors.board}>
-              <Input
-                id="pin-board"
-                list="pin-board-suggestions"
-                placeholder={t('pinterest_pins.field_board_placeholder')}
-                value={values.board}
-                onChange={(event) => setField('board', event.target.value)}
-              />
-              <datalist id="pin-board-suggestions">
-                {boards.map((board) => (
-                  <option key={board} value={board} />
-                ))}
-              </datalist>
-            </Field>
+            {useBoardList ? (
+              <Field id="pin-board" label={t('pinterest_pins.field_board')} error={errors.boardId ?? errors.board} hint={t('pinterest_pins.field_board_hint_connected')}>
+                <select
+                  id="pin-board"
+                  className={selectClass}
+                  value={values.boardId}
+                  onChange={(event) => {
+                    const chosen = pinterestBoards.find((board) => board.id === event.target.value);
+                    setValues((current) => ({ ...current, boardId: chosen?.id ?? '', board: chosen?.name ?? '' }));
+                    setErrors((current) => ({ ...current, board: undefined, boardId: undefined }));
+                  }}
+                >
+                  <option value="">{t('pinterest_pins.field_board_choose')}</option>
+                  {values.boardId !== '' && !pinterestBoards.some((board) => board.id === values.boardId) && (
+                    <option value={values.boardId}>{values.board || values.boardId}</option>
+                  )}
+                  {pinterestBoards.map((board) => (
+                    <option key={board.id} value={board.id}>{board.name}</option>
+                  ))}
+                </select>
+              </Field>
+            ) : (
+              <Field id="pin-board" label={t('pinterest_pins.field_board')} error={errors.board}>
+                <Input
+                  id="pin-board"
+                  list="pin-board-suggestions"
+                  placeholder={t('pinterest_pins.field_board_placeholder')}
+                  value={values.board}
+                  onChange={(event) => setField('board', event.target.value)}
+                />
+                <datalist id="pin-board-suggestions">
+                  {boards.map((board) => (
+                    <option key={board} value={board} />
+                  ))}
+                </datalist>
+              </Field>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="pin-scheduled" label={t('pinterest_pins.field_scheduled')} error={errors.scheduledDate}>

@@ -43,12 +43,34 @@ const existing: PinterestPin = {
   description: 'A tilted bowl can help.',
   destination_url: 'https://petposture.com/blog/tilted-bowl-vs-slow-feeder',
   board: 'French Bulldog Tips',
+  pinterest_board_id: null,
   status: 'ready',
   scheduled_date: '2026-11-25',
   posted_at: null,
+  posted_via: null,
+  pinterest_pin_id: null,
+  publish_attempts: 0,
+  last_error: null,
   created_at: null,
   updated_at: null,
 };
+
+const connection = (overrides = {}) => ({
+  configured: true,
+  connected: false,
+  status: 'not_connected',
+  username: null,
+  last_error: null,
+  refresh_expires_at: null,
+  settings: { auto_publish: false, max_per_day: 3, min_gap_minutes: 180, window_start: '08:00', window_end: '21:00', timezone: 'America/New_York' },
+  recent_errors: [],
+  ...overrides,
+});
+
+const pinterestBoards = [
+  { id: '111', name: 'Feeding' },
+  { id: '222', name: 'French Bulldog Tips' },
+];
 
 const mockedFetch = vi.mocked(fetchJson);
 
@@ -77,6 +99,7 @@ beforeEach(() => {
   vi.mocked(toast.success).mockReset();
   mockedFetch.mockImplementation(async (url: string, init?: FetchApiOptions) => {
     if (url === '/admin/pinterest-pins/options') return { data: options };
+    if (url === '/admin/pinterest/connection') return { data: connection() };
     if (init?.method === 'POST') return { data: { ...existing, id: 8 } };
     if (init?.method === 'PUT') return { data: existing };
     return null;
@@ -254,6 +277,7 @@ describe('PinterestPinModal saving', () => {
         description: 'A tilted bowl can help.',
         destination_url: 'https://petposture.com/blog/tilted-bowl-vs-slow-feeder',
         board: 'French Bulldog Tips',
+        pinterest_board_id: null,
         status: 'ready',
         scheduled_date: '2026-11-25',
       },
@@ -313,5 +337,66 @@ describe('PinterestPinModal editing', () => {
       expect.objectContaining({ method: 'PUT', body: expect.objectContaining({ title: 'New title', media_id: 12 }) }),
     );
     expect(toast.success).toHaveBeenCalledWith('Pin updated');
+  });
+});
+
+describe('PinterestPinModal with Pinterest connected', () => {
+  function connectedMock() {
+    mockedFetch.mockImplementation(async (url: string, init?: FetchApiOptions) => {
+      if (url === '/admin/pinterest-pins/options') return { data: options };
+      if (url === '/admin/pinterest/connection') return { data: connection({ connected: true, status: 'connected', username: 'petposture' }) };
+      if (url === '/admin/pinterest/boards') return { data: pinterestBoards };
+      if (init?.method === 'POST') return { data: { ...existing, id: 8 } };
+      if (init?.method === 'PUT') return { data: existing };
+      return null;
+    });
+  }
+
+  it('offers the boards of the connected account instead of free text', async () => {
+    connectedMock();
+    renderModal();
+
+    expect(await screen.findByRole('option', { name: 'Feeding' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'French Bulldog Tips' })).toBeTruthy();
+    expect((screen.getByLabelText('Board') as HTMLElement).tagName).toBe('SELECT');
+  });
+
+  it('sends the chosen board id along with its name', async () => {
+    connectedMock();
+    const { onClose } = renderModal();
+    await screen.findByRole('option', { name: 'Feeding' });
+    await pickImage();
+    fireEvent.change(field('Title'), { target: { value: 'A title' } });
+    fireEvent.change(field('Description'), { target: { value: 'A description' } });
+    fireEvent.change(field('Destination link'), { target: { value: 'https://petposture.com/blog/x' } });
+    fireEvent.change(field('Board'), { target: { value: '222' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save pin' }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(mockedFetch).toHaveBeenCalledWith(
+      '/admin/pinterest-pins',
+      expect.objectContaining({ method: 'POST', body: expect.objectContaining({ board: 'French Bulldog Tips', pinterest_board_id: '222' }) }),
+    );
+  });
+
+  it('keeps the typed board field when Pinterest is not connected', async () => {
+    renderModal();
+    await screen.findByRole('dialog');
+
+    expect((screen.getByLabelText('Board') as HTMLElement).tagName).toBe('INPUT');
+  });
+
+  it('does not change the status of a pin that needs checking when only its text is edited', async () => {
+    connectedMock();
+    const { onClose } = renderModal({ pin: { ...existing, status: 'needs_review', last_error: 'unsure' } });
+    await screen.findByText('Edit pin');
+
+    fireEvent.change(field('Title'), { target: { value: 'New title' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save pin' }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    const call = mockedFetch.mock.calls.find(([url, init]) => url === '/admin/pinterest-pins/7' && (init as FetchApiOptions)?.method === 'PUT');
+    expect((call?.[1] as { body: Record<string, unknown> }).body).not.toHaveProperty('status');
   });
 });

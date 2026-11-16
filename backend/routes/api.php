@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\Admin\MediaLibraryController;
 use App\Http\Controllers\Api\Admin\NotificationController;
 use App\Http\Controllers\Api\Admin\PageController;
 use App\Http\Controllers\Api\Admin\PaymentMethodController;
+use App\Http\Controllers\Api\Admin\PinterestConnectionController;
 use App\Http\Controllers\Api\Admin\PinterestPinController;
 use App\Http\Controllers\Api\Admin\ProductAssociationController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
@@ -196,7 +197,15 @@ Route::prefix('/admin')
         Route::put('/brands/{brand}', [AdminBrandController::class, 'update']);
         Route::delete('/brands/{brand}', [AdminBrandController::class, 'destroy']);
 
-        // Pinterest pins are prepared here and posted by hand. Admin only: there is no public route for them.
+        // The Pinterest connection: who is connected, the boards to choose from, and the automatic-posting switches.
+        Route::get('/pinterest/connection', [PinterestConnectionController::class, 'show']);
+        Route::post('/pinterest/connect', [PinterestConnectionController::class, 'authorizeUrl']);
+        Route::post('/pinterest/callback', [PinterestConnectionController::class, 'callback']);
+        Route::delete('/pinterest/connection', [PinterestConnectionController::class, 'disconnect']);
+        Route::get('/pinterest/boards', [PinterestConnectionController::class, 'boards']);
+        Route::put('/pinterest/settings', [PinterestConnectionController::class, 'updateSettings']);
+
+        // Pinterest pins are prepared here and posted by hand or by the posting job. Admin only: there is no public route for them.
         Route::get('/pinterest-pins/options', [PinterestPinController::class, 'options']);
         Route::get('/pinterest-pins', [PinterestPinController::class, 'index']);
         Route::post('/pinterest-pins', [PinterestPinController::class, 'store']);

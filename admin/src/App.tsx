@@ -56,6 +56,7 @@ const SettingsPage = lazy(() => import('@/features/settings/SettingsPage').then(
 const AffiliateReportsPage = lazy(() => import('@/features/affiliate-reports/AffiliateReportsPage').then(m => ({ default: m.AffiliateReportsPage })));
 const AffiliateNetworksPage = lazy(() => import('@/features/affiliate-networks/AffiliateNetworksPage').then(m => ({ default: m.AffiliateNetworksPage })));
 const PinterestPinsPage = lazy(() => import('@/features/pinterest-pins/PinterestPinsPage').then(m => ({ default: m.PinterestPinsPage })));
+const PinterestCallbackPage = lazy(() => import('@/features/pinterest-pins/PinterestCallbackPage').then(m => ({ default: m.PinterestCallbackPage })));
 
 function PageLoader() {
   return (
@@ -302,6 +303,8 @@ export function AppRoutes({ userRoles, userAbilities = [] }: { userRoles: string
         <Route path="/system/settings" element={<SettingsPage />} />
       </>}
       {canViewPinterestPins && <Route path="/pinterest-pins" element={<PinterestPinsPage />} />}
+      {/* Where Pinterest sends the owner back to after allowing the connection (the redirect address of the app). */}
+      {canViewPinterestPins && <Route path="/system/integrations/pinterest/callback" element={<PinterestCallbackPage />} />}
       {canViewAffiliate && <>
         <Route path="/affiliate/reports" element={<AffiliateReportsPage />} />
         <Route path="/affiliate/networks" element={<AffiliateNetworksPage />} />

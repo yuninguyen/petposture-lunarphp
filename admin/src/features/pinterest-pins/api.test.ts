@@ -9,14 +9,21 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import {
+  completePinterestCallback,
   createPin,
   deletePin,
+  disconnectPinterest,
   downloadPinImage,
   fetchPinOptions,
+  fetchPinterestBoards,
+  fetchPinterestConnection,
   fetchPins,
   markPinPosted,
   pinFilename,
+  retryPin,
+  startPinterestConnect,
   updatePin,
+  updatePinterestSettings,
   type PinterestPin,
 } from './api';
 
@@ -70,6 +77,7 @@ describe('pin writes', () => {
     description: 'D',
     destination_url: 'https://petposture.com/blog/x',
     board: null,
+    pinterest_board_id: null,
     status: 'ready' as const,
     scheduled_date: null,
   };
@@ -104,6 +112,52 @@ describe('pin writes', () => {
 
     expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest-pins/7', { method: 'PUT', body: { status: 'posted' } });
     expect(result.status).toBe('posted');
+  });
+
+  it('retries a pin by sending only the status ready', async () => {
+    fetchJson.mockResolvedValue({ data: { ...pin, status: 'ready' } });
+
+    await retryPin(7);
+
+    expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest-pins/7', { method: 'PUT', body: { status: 'ready' } });
+  });
+});
+
+describe('Pinterest connection requests', () => {
+  it('reads the connection, unwrapped', async () => {
+    const connection = { configured: true, connected: true, status: 'connected', username: 'petposture' };
+    fetchJson.mockResolvedValue({ data: connection });
+
+    await expect(fetchPinterestConnection()).resolves.toEqual(connection);
+    expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest/connection');
+  });
+
+  it('asks the server for the Pinterest page to visit and returns its address', async () => {
+    fetchJson.mockResolvedValue({ data: { url: 'https://www.pinterest.com/oauth/?state=abc' } });
+
+    await expect(startPinterestConnect()).resolves.toBe('https://www.pinterest.com/oauth/?state=abc');
+    expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest/connect', { method: 'POST' });
+  });
+
+  it('hands the code and the state back to the server', async () => {
+    fetchJson.mockResolvedValue({ data: { username: 'petposture' } });
+
+    await expect(completePinterestCallback('the-code', 'the-state')).resolves.toEqual({ username: 'petposture' });
+    expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest/callback', { method: 'POST', body: { code: 'the-code', state: 'the-state' } });
+  });
+
+  it('disconnects, lists boards and saves the posting switches', async () => {
+    fetchJson.mockResolvedValue(null);
+    await disconnectPinterest();
+    expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest/connection', { method: 'DELETE' });
+
+    fetchJson.mockResolvedValue({ data: [{ id: '1', name: 'Feeding' }] });
+    await expect(fetchPinterestBoards()).resolves.toEqual([{ id: '1', name: 'Feeding' }]);
+    expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest/boards');
+
+    fetchJson.mockResolvedValue({ data: { auto_publish: true } });
+    await updatePinterestSettings({ auto_publish: true });
+    expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest/settings', { method: 'PUT', body: { auto_publish: true } });
   });
 });
 

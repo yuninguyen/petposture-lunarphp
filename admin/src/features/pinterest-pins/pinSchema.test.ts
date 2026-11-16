@@ -16,6 +16,7 @@ const valid: PinFormValues = {
   description: 'A tilted bowl can help a flat-faced dog eat without bending its neck.',
   destinationUrl: 'https://petposture.com/blog/tilted-bowl-vs-slow-feeder',
   board: 'French Bulldog Tips',
+  boardId: '',
   status: 'ready',
   scheduledDate: '2026-11-25',
 };
@@ -87,9 +88,19 @@ describe('pin payload', () => {
       description: valid.description,
       destination_url: valid.destinationUrl,
       board: 'Dog Feeding',
+      pinterest_board_id: null,
       status: 'ready',
       scheduled_date: '2026-11-25',
     });
+  });
+
+  it('sends the id of the board chosen from Pinterest', () => {
+    expect(buildPinPayload({ ...valid, boardId: '549755885175' })).toMatchObject({ pinterest_board_id: '549755885175' });
+  });
+
+  it('leaves the status out when asked, so editing a held pin does not change it', () => {
+    expect(buildPinPayload(valid, true)).not.toHaveProperty('status');
+    expect(buildPinPayload(valid)).toHaveProperty('status', 'ready');
   });
 
   it('sends null for a pin without a post, board or schedule', () => {

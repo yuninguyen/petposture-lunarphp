@@ -40,6 +40,8 @@ class PinterestPinRequest extends FormRequest
                 ? ['required_without:post_id', 'nullable', 'url', 'max:2048']
                 : ['sometimes', 'nullable', 'url', 'max:2048'],
             'board' => ['nullable', 'string', 'max:255'],
+            // Chosen from the connected Pinterest account's boards; needed for the pin to be posted automatically.
+            'pinterest_board_id' => ['nullable', 'string', 'max:64'],
             'status' => ['sometimes', Rule::in(PinterestPin::STATUSES)],
             'scheduled_date' => ['nullable', 'date_format:Y-m-d'],
         ];

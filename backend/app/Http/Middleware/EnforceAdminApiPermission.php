@@ -171,6 +171,10 @@ class EnforceAdminApiPermission
         if ($this->isPinterestPinPath($relativePath)) {
             return $this->pinterestPinAbilityFor($request, $relativePath);
         }
+        if ($relativePath === 'pinterest' || str_starts_with($relativePath, 'pinterest/')) {
+            // The connection, its boards and the posting switches follow the pin abilities (core roles only).
+            return $request->isMethod('get') ? 'view_any_pinterest_pin' : 'update_pinterest_pin';
+        }
 
         return null;
     }

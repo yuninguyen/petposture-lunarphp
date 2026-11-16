@@ -19,14 +19,15 @@ use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Pinterest pins prepared in the admin and posted by hand. Nothing here talks to Pinterest.
+ * Pinterest pins prepared in the admin, posted by hand or by the posting job. Nothing here talks to Pinterest:
+ * the job (PinterestPublisher) does, and a person can still mark a pin posted.
  */
 class PinterestPinController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
         $validated = $request->validate([
-            'status' => ['nullable', Rule::in(PinterestPin::STATUSES)],
+            'status' => ['nullable', Rule::in(PinterestPin::ALL_STATUSES)],
             'post_id' => ['nullable', 'integer'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
@@ -80,6 +81,7 @@ class PinterestPinController extends Controller
             'title' => $data['title'],
             'description' => $data['description'],
             'board' => $data['board'] ?? null,
+            'pinterest_board_id' => $data['pinterest_board_id'] ?? null,
             'scheduled_date' => $data['scheduled_date'] ?? null,
         ]);
         $pin->image = CuratorMedia::query()->findOrFail($data['media_id'])->path;
@@ -100,7 +102,7 @@ class PinterestPinController extends Controller
     {
         $data = $request->validated();
 
-        $pinterestPin->fill(array_intersect_key($data, array_flip(['post_id', 'title', 'description', 'board', 'scheduled_date'])));
+        $pinterestPin->fill(array_intersect_key($data, array_flip(['post_id', 'title', 'description', 'board', 'pinterest_board_id', 'scheduled_date'])));
 
         if (array_key_exists('media_id', $data)) {
             $pinterestPin->image = CuratorMedia::query()->findOrFail($data['media_id'])->path;

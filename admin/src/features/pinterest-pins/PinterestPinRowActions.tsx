@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { CopyIcon, PencilIcon, TrashIcon } from '@/components/ui/icons';
-import { PinterestPin, downloadPinImage, markPinPosted, pinterestPinsKey } from './api';
+import { PinterestPin, downloadPinImage, markPinPosted, pinterestPinsKey, retryPin } from './api';
 import { copyToClipboard } from './clipboard';
 
 const buttonClass =
@@ -40,6 +40,14 @@ function CheckCircleIcon({ className }: { className?: string }) {
   );
 }
 
+function RetryIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h5M20 20v-5h-5M5.6 15A8 8 0 0018 17.5M18.4 9A8 8 0 006 6.5" />
+    </svg>
+  );
+}
+
 /** What Yuni does with a pin: take the image, copy the text, post it by hand, then mark it posted. */
 export function PinterestPinRowActions({ pin, onEdit, onDelete }: { pin: PinterestPin; onEdit: (pin: PinterestPin) => void; onDelete: (pin: PinterestPin) => void }) {
   const { t } = useTranslation();
@@ -51,6 +59,15 @@ export function PinterestPinRowActions({ pin, onEdit, onDelete }: { pin: Pintere
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: pinterestPinsKey });
       toast.success(t('pinterest_pins.marked_posted'));
+    },
+    onError: (error: Error) => toast.error(error.message || t('common.error_occurred')),
+  });
+
+  const retryMutation = useMutation({
+    mutationFn: () => retryPin(pin.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: pinterestPinsKey });
+      toast.success(t('pinterest_pins.retried'));
     },
     onError: (error: Error) => toast.error(error.message || t('common.error_occurred')),
   });
@@ -85,7 +102,12 @@ export function PinterestPinRowActions({ pin, onEdit, onDelete }: { pin: Pintere
       <ActionButton label={t('pinterest_pins.action_copy_description')} onClick={() => copy(pin.description, 'pinterest_pins.copied_description')}>
         <CopyIcon className="h-4 w-4 opacity-60" />
       </ActionButton>
-      {pin.status !== 'posted' && (
+      {(pin.status === 'failed' || pin.status === 'needs_review') && (
+        <ActionButton label={t('pinterest_pins.action_retry')} onClick={() => retryMutation.mutate()} disabled={retryMutation.isPending}>
+          <RetryIcon className="h-4 w-4" />
+        </ActionButton>
+      )}
+      {pin.status !== 'posted' && pin.status !== 'publishing' && (
         <ActionButton label={t('pinterest_pins.action_mark_posted')} onClick={() => postedMutation.mutate()} disabled={postedMutation.isPending}>
           <CheckCircleIcon className="h-4 w-4" />
         </ActionButton>

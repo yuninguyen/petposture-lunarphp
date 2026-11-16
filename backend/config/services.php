@@ -72,6 +72,18 @@ return [
         'webhook_secret' => env('PAYONEER_WEBHOOK_SECRET'),
     ],
 
+    // Posting pins to the owner's own Pinterest business account (API v5). App id/secret come from the app on
+    // developers.pinterest.com; the secret belongs in .env only. Use PINTEREST_API_BASE=https://api-sandbox.pinterest.com/v5
+    // while the app only has Trial access.
+    'pinterest' => [
+        'app_id' => env('PINTEREST_APP_ID'),
+        'app_secret' => env('PINTEREST_APP_SECRET'),
+        'redirect_uri' => env('PINTEREST_REDIRECT_URI'),
+        'api_base' => rtrim((string) env('PINTEREST_API_BASE', 'https://api.pinterest.com/v5'), '/'),
+        'oauth_url' => env('PINTEREST_OAUTH_URL', 'https://www.pinterest.com/oauth/'),
+        'scopes' => ['boards:read', 'pins:read', 'pins:write', 'user_accounts:read'],
+    ],
+
     'pingpong' => [
         'mode' => env('PINGPONG_MODE', 'sandbox'),
         'app_id' => env('PINGPONG_APP_ID'),

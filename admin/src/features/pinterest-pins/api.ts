@@ -1,5 +1,5 @@
 import { fetchApi, fetchJson } from '@/lib/api';
-import type { PinStatus } from './pinSchema';
+import type { PinDisplayStatus, PinStatus } from './pinSchema';
 
 export interface PinterestPin {
   id: number;
@@ -15,9 +15,17 @@ export interface PinterestPin {
   description: string;
   destination_url: string;
   board: string | null;
-  status: PinStatus;
+  /** Id of the board on the connected Pinterest account, when one was chosen from the list. */
+  pinterest_board_id: string | null;
+  status: PinDisplayStatus;
   scheduled_date: string | null;
   posted_at: string | null;
+  /** 'api' when the posting job posted it, 'manual' when a person did; null until posted. */
+  posted_via: 'api' | 'manual' | null;
+  pinterest_pin_id: string | null;
+  publish_attempts: number;
+  /** Why the last automatic attempt did not post the pin. */
+  last_error: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -35,7 +43,7 @@ export interface PinterestPinsResponse {
 }
 
 export interface PinFilters {
-  status: '' | PinStatus;
+  status: '' | PinDisplayStatus;
   postId: '' | number;
   page: number;
 }
@@ -53,9 +61,52 @@ export type PinPayload = {
   description: string;
   destination_url: string;
   board: string | null;
-  status: PinStatus;
+  pinterest_board_id: string | null;
+  /** Left out when the pin is being held by the posting job and only its content is edited. */
+  status?: PinStatus;
   scheduled_date: string | null;
 };
+
+export interface PinterestPublishSettings {
+  auto_publish: boolean;
+  max_per_day: number;
+  min_gap_minutes: number;
+  window_start: string;
+  window_end: string;
+  timezone: string;
+}
+
+export interface PinterestLogEntry {
+  id: number;
+  pinterest_pin_id: number | null;
+  action: string;
+  endpoint: string;
+  http_status: number | null;
+  error_code: string | null;
+  message: string | null;
+  created_at: string | null;
+}
+
+export interface PinterestConnection {
+  /** False until the app id, secret and redirect address are set on the server. */
+  configured: boolean;
+  connected: boolean;
+  /** 'disconnected' means it was connected and the login was lost. */
+  status: 'connected' | 'disconnected' | 'not_connected';
+  username: string | null;
+  last_error: string | null;
+  refresh_expires_at: string | null;
+  settings: PinterestPublishSettings;
+  recent_errors: PinterestLogEntry[];
+}
+
+export interface PinterestBoard {
+  id: string;
+  name: string;
+}
+
+export const pinterestConnectionKey = ['pinterest-connection'] as const;
+export const pinterestBoardsKey = ['pinterest-connection', 'boards'] as const;
 
 export const pinterestPinsKey = ['pinterest-pins'] as const;
 export const pinterestPinOptionsKey = ['pinterest-pins', 'options'] as const;
@@ -83,6 +134,37 @@ export async function updatePin(id: number, payload: Partial<PinPayload>): Promi
 
 export async function deletePin(id: number): Promise<void> {
   await fetchJson(`/admin/pinterest-pins/${id}`, { method: 'DELETE' });
+}
+
+/** Puts a pin back to ready so the posting job tries it again (after a failure, or once a person checked it). */
+export async function retryPin(id: number): Promise<PinterestPin> {
+  return updatePin(id, { status: 'ready' });
+}
+
+export async function fetchPinterestConnection(): Promise<PinterestConnection> {
+  return (await fetchJson<{ data: PinterestConnection }>('/admin/pinterest/connection')).data;
+}
+
+/** The Pinterest page the owner must visit to allow the connection. */
+export async function startPinterestConnect(): Promise<string> {
+  return (await fetchJson<{ data: { url: string } }>('/admin/pinterest/connect', { method: 'POST' })).data.url;
+}
+
+/** Hands the code Pinterest sent back to the server, which finishes the connection. */
+export async function completePinterestCallback(code: string, state: string): Promise<{ username: string | null }> {
+  return (await fetchJson<{ data: { username: string | null } }>('/admin/pinterest/callback', { method: 'POST', body: { code, state } })).data;
+}
+
+export async function disconnectPinterest(): Promise<void> {
+  await fetchJson('/admin/pinterest/connection', { method: 'DELETE' });
+}
+
+export async function fetchPinterestBoards(): Promise<PinterestBoard[]> {
+  return (await fetchJson<{ data: PinterestBoard[] }>('/admin/pinterest/boards')).data;
+}
+
+export async function updatePinterestSettings(settings: Partial<PinterestPublishSettings>): Promise<PinterestPublishSettings> {
+  return (await fetchJson<{ data: PinterestPublishSettings }>('/admin/pinterest/settings', { method: 'PUT', body: settings })).data;
 }
 
 /** Sends only the status: the server stamps `posted_at` with the time of this call and changes nothing else. */

@@ -27,6 +27,7 @@ vi.mock('./features/settings/SettingsPage', () => ({ SettingsPage: () => createE
 vi.mock('./features/affiliate-reports/AffiliateReportsPage', () => ({ AffiliateReportsPage: () => createElement('div', null, 'Affiliate reports route') }));
 vi.mock('./features/affiliate-networks/AffiliateNetworksPage', () => ({ AffiliateNetworksPage: () => createElement('div', null, 'Affiliate networks route') }));
 vi.mock('./features/pinterest-pins/PinterestPinsPage', () => ({ PinterestPinsPage: () => createElement('div', null, 'Pinterest pins route') }));
+vi.mock('./features/pinterest-pins/PinterestCallbackPage', () => ({ PinterestCallbackPage: () => createElement('div', null, 'Pinterest callback route') }));
 
 import { AppRoutes, canDeleteReviews, canManageCommerce, canManageCustomers, canManageDiscounts, canManageReviews, canManageShipping, canRefundOrders, getAdminHomeRoute, ADMIN_HOME_CANDIDATES, HomeRouteCandidate } from './App';
 import { canAccessFinance } from './navigation/adminNavigation';
@@ -449,6 +450,20 @@ describe('Pinterest Pins route', () => {
 
     act(() => root.unmount());
     host.remove();
+  });
+
+  it('opens the address Pinterest sends the owner back to, for an admin only', async () => {
+    const allowed = renderRoutes(['admin'], '/system/integrations/pinterest/callback?code=c&state=s');
+    await act(async () => await Promise.resolve());
+    expect(allowed.host.textContent).toContain('Pinterest callback route');
+    act(() => allowed.root.unmount());
+    allowed.host.remove();
+
+    const blocked = renderRoutes(['Content Writer'], '/system/integrations/pinterest/callback?code=c&state=s');
+    await act(async () => await Promise.resolve());
+    expect(blocked.host.textContent).not.toContain('Pinterest callback route');
+    act(() => blocked.root.unmount());
+    blocked.host.remove();
   });
 
   it.each(['Content Writer', 'Product Manager', 'Order Manager', 'Support'])('does not open /pinterest-pins for %s', async (role) => {

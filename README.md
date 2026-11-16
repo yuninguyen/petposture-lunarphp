@@ -767,6 +767,37 @@ Build/recreate only `backend` or only `frontend` if the change is isolated to on
 committed to Git) and are mounted into the containers via `env_file:` in
 `docker-compose.prod.yml`.
 
+### Pinterest pins: posting by hand or by the Pinterest API v5
+
+Admin **Pinterest Pins** (`/pinterest-pins`) holds the pins prepared per blog post. Without any setup it works
+by hand: download the image, copy the text, post on Pinterest, mark the pin posted.
+
+Automatic posting needs a Pinterest app (developers.pinterest.com) and these in `backend/.env`:
+
+```
+PINTEREST_APP_ID=...
+PINTEREST_APP_SECRET=...        # secret: .env only, never in chat or Git
+PINTEREST_REDIRECT_URI=https://admin.petposture.com/system/integrations/pinterest/callback
+# While the app only has Trial access, use the sandbox API (pins are not public there):
+# PINTEREST_API_BASE=https://api-sandbox.pinterest.com/v5
+```
+
+The same redirect address (and `http://localhost:5173/...` for local) must be listed in the app on Pinterest.
+Then **Connect Pinterest** on the Pinterest Pins page runs the OAuth flow; scopes asked: `boards:read`,
+`pins:read`, `pins:write`, `user_accounts:read`. Tokens are stored encrypted (`pinterest_connections`).
+
+- **Scheduler** (driven by the container's `schedule:work` process, see above): `pinterest:publish-next` every 15 minutes
+  (at most **one** pin per run) and `pinterest:refresh-token` daily. Automatic posting is **off** until it is switched
+  on in the Pinterest panel; limits (pins/day, minutes between pins, time window, time zone) are stored as `settings`
+  rows `pinterest.*`.
+- A pin is posted only if it is `ready`, has a scheduled date that has come, has a board chosen from Pinterest
+  (`pinterest_board_id`) and its link points to this site. A pin marked posted by hand is never posted again.
+- If Pinterest does not confirm a create (timeout, 5xx) the pin goes to `needs_review` and is **not** retried; check
+  Pinterest, then mark it posted or retry. Other refusals retry up to 3 times, then `failed`.
+- A lost login (refresh refused) pauses posting, shows a red banner in the panel and sends an admin notification.
+- Every call is logged in `pinterest_publish_logs` (endpoint, status, Pinterest's error; never a token).
+- Access follows the `*_pinterest_pin` abilities (core roles only); the connection endpoints are `/api/admin/pinterest/*`.
+
 ---
 
 ## Admin roles & permissions

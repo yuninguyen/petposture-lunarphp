@@ -34,9 +34,14 @@ const readyPin: PinterestPin = {
   description: 'A tilted bowl can help a flat-faced dog eat.',
   destination_url: 'https://petposture.com/blog/tilted-bowl-vs-slow-feeder',
   board: 'French Bulldog Tips',
+  pinterest_board_id: null,
   status: 'ready',
   scheduled_date: '2026-11-25',
   posted_at: null,
+  posted_via: null,
+  pinterest_pin_id: null,
+  publish_attempts: 0,
+  last_error: null,
   created_at: '2026-11-17T08:00:00.000000Z',
   updated_at: '2026-11-17T08:00:00.000000Z',
 };
@@ -64,6 +69,17 @@ const options = {
 
 const meta = (overrides = {}) => ({ current_page: 1, last_page: 1, per_page: 20, total: 2, ...overrides });
 
+const notConnected = {
+  configured: true,
+  connected: false,
+  status: 'not_connected',
+  username: null,
+  last_error: null,
+  refresh_expires_at: null,
+  settings: { auto_publish: false, max_per_day: 3, min_gap_minutes: 180, window_start: '08:00', window_end: '21:00', timezone: 'America/New_York' },
+  recent_errors: [],
+};
+
 const mockedFetch = vi.mocked(fetchJson);
 const mockedFetchApi = vi.mocked(fetchApi);
 const mockedCopy = vi.mocked(copyToClipboard);
@@ -90,6 +106,7 @@ beforeEach(() => {
   mockedCopy.mockResolvedValue(true);
   mockedFetch.mockImplementation(async (url: string, init?: FetchApiOptions) => {
     if (url === '/admin/pinterest-pins/options') return { data: options };
+    if (url === '/admin/pinterest/connection') return { data: notConnected };
     if (url.startsWith('/admin/pinterest-pins?')) return { data: [readyPin, postedPin], meta: meta() };
     if (init?.method === 'PUT') return { data: { ...readyPin, status: 'posted', posted_at: '2026-11-22T10:00:00.000000Z' } };
     return null;
@@ -123,7 +140,10 @@ describe('PinterestPinsPage list', () => {
   });
 
   it('shows the empty state when there is no pin', async () => {
-    mockedFetch.mockImplementation(async (url: string) => (url === '/admin/pinterest-pins/options' ? { data: options } : { data: [], meta: meta({ total: 0 }) }));
+    mockedFetch.mockImplementation(async (url: string) => {
+      if (url === '/admin/pinterest/connection') return { data: notConnected };
+      return url === '/admin/pinterest-pins/options' ? { data: options } : { data: [], meta: meta({ total: 0 }) };
+    });
     renderPage();
 
     expect(await screen.findByText('No pins yet')).toBeTruthy();
@@ -132,6 +152,7 @@ describe('PinterestPinsPage list', () => {
   it('says so when the filters match nothing', async () => {
     mockedFetch.mockImplementation(async (url: string) => {
       if (url === '/admin/pinterest-pins/options') return { data: options };
+      if (url === '/admin/pinterest/connection') return { data: notConnected };
       if (url.includes('status=posted')) return { data: [], meta: meta({ total: 0 }) };
       return { data: [readyPin], meta: meta({ total: 1 }) };
     });
@@ -174,6 +195,7 @@ describe('PinterestPinsPage filters and paging', () => {
   it('goes back to the first page when a filter changes', async () => {
     mockedFetch.mockImplementation(async (url: string) => {
       if (url === '/admin/pinterest-pins/options') return { data: options };
+      if (url === '/admin/pinterest/connection') return { data: notConnected };
       return { data: [readyPin], meta: meta({ current_page: url.includes('page=2') ? 2 : 1, last_page: 2, total: 21 }) };
     });
     renderPage();
@@ -189,6 +211,7 @@ describe('PinterestPinsPage filters and paging', () => {
   it('pages through the pins', async () => {
     mockedFetch.mockImplementation(async (url: string) => {
       if (url === '/admin/pinterest-pins/options') return { data: options };
+      if (url === '/admin/pinterest/connection') return { data: notConnected };
       return { data: [readyPin], meta: meta({ current_page: url.includes('page=2') ? 2 : 1, last_page: 2, total: 21 }) };
     });
     renderPage();
@@ -311,5 +334,119 @@ describe('PinterestPinsPage create, edit and delete', () => {
 
     await waitFor(() => expect(mockedFetch).toHaveBeenCalledWith('/admin/pinterest-pins/7', { method: 'DELETE' }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Pin deleted'));
+  });
+});
+
+describe('PinterestPinsPage automatic posting', () => {
+  const failedPin: PinterestPin = { ...readyPin, id: 9, title: 'A pin that failed', status: 'failed', last_error: 'Invalid board', publish_attempts: 3 };
+  const reviewPin: PinterestPin = { ...readyPin, id: 10, title: 'A pin to check', status: 'needs_review', last_error: 'Pinterest did not confirm.' };
+  const apiPin: PinterestPin = { ...postedPin, id: 11, title: 'Posted by the job', posted_via: 'api' };
+
+  function withPins(pins: PinterestPin[], connection: object = notConnected) {
+    mockedFetch.mockImplementation(async (url: string, init?: FetchApiOptions) => {
+      if (url === '/admin/pinterest-pins/options') return { data: options };
+      if (url === '/admin/pinterest/connection') return { data: connection };
+      if (url.startsWith('/admin/pinterest-pins?')) return { data: pins, meta: meta({ total: pins.length }) };
+      if (init?.method === 'PUT') return { data: { ...readyPin, status: 'ready' } };
+      return null;
+    });
+  }
+
+  it('shows why a pin failed and that one needs checking, and where a posted pin came from', async () => {
+    withPins([failedPin, reviewPin, apiPin]);
+    renderPage();
+
+    const failed = await rowOf('A pin that failed');
+    expect(within(failed).getByText('Failed')).toBeTruthy();
+    expect(within(failed).getByText('Invalid board')).toBeTruthy();
+
+    const review = await rowOf('A pin to check');
+    expect(within(review).getByText('Check on Pinterest')).toBeTruthy();
+    expect(within(review).getByText(/Pinterest did not confirm\. Check if it was posted/)).toBeTruthy();
+
+    const posted = await rowOf('Posted by the job');
+    expect(within(posted).getByText(/by the API/)).toBeTruthy();
+  });
+
+  it('retries a failed pin by putting it back to ready', async () => {
+    withPins([failedPin]);
+    renderPage();
+
+    fireEvent.click(within(await rowOf('A pin that failed')).getByRole('button', { name: 'Retry' }));
+
+    await waitFor(() => expect(mockedFetch).toHaveBeenCalledWith('/admin/pinterest-pins/9', { method: 'PUT', body: { status: 'ready' } }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('The pin is ready to be posted again.'));
+  });
+
+  it('offers retry only for a pin that failed or needs checking', async () => {
+    withPins([readyPin, postedPin]);
+    renderPage();
+
+    await screen.findByText('Does your Frenchie eat too fast?');
+
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('can filter by the failed and needs-checking states', async () => {
+    renderPage();
+    await screen.findByText('Does your Frenchie eat too fast?');
+
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'needs_review' } });
+
+    await waitFor(() => expect(listCalls().some((url) => url.includes('status=needs_review'))).toBe(true));
+  });
+
+  it('says when Pinterest is not connected and offers to connect', async () => {
+    renderPage();
+
+    expect(await screen.findByText(/Connect your Pinterest business account/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Connect Pinterest' })).toBeTruthy();
+  });
+
+  it('warns loudly when the connection was lost', async () => {
+    withPins([readyPin], { ...notConnected, status: 'disconnected', last_error: 'Refresh token revoked' });
+    renderPage();
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText(/automatic posting is paused/)).toBeTruthy();
+    expect(screen.getByText('Refresh token revoked')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Reconnect' })).toBeTruthy();
+  });
+
+  it('shows who is connected and the posting switches', async () => {
+    withPins([readyPin], { ...notConnected, connected: true, status: 'connected', username: 'petposture' });
+    renderPage();
+
+    expect(await screen.findByText('Connected as @petposture')).toBeTruthy();
+    expect((screen.getByLabelText(/Post due pins automatically/) as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByLabelText('Pins per day') as HTMLInputElement).value).toBe('3');
+  });
+
+  it('saves the posting switches', async () => {
+    withPins([readyPin], { ...notConnected, connected: true, status: 'connected', username: 'petposture' });
+    renderPage();
+
+    fireEvent.click(await screen.findByLabelText(/Post due pins automatically/));
+    fireEvent.change(screen.getByLabelText('Pins per day'), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save settings' }));
+
+    await waitFor(() =>
+      expect(mockedFetch).toHaveBeenCalledWith('/admin/pinterest/settings', {
+        method: 'PUT',
+        body: expect.objectContaining({ auto_publish: true, max_per_day: 2 }),
+      }),
+    );
+  });
+
+  it('asks before disconnecting', async () => {
+    withPins([readyPin], { ...notConnected, connected: true, status: 'connected', username: 'petposture' });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Disconnect' }));
+    expect(mockedFetch).not.toHaveBeenCalledWith('/admin/pinterest/connection', { method: 'DELETE' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, disconnect' }));
+
+    await waitFor(() => expect(mockedFetch).toHaveBeenCalledWith('/admin/pinterest/connection', { method: 'DELETE' }));
   });
 });
