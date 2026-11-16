@@ -73,6 +73,10 @@ export async function generateMetadata(): Promise<Metadata> {
       description: metaDescription,
       images: [socialPreview.url],
     },
+    other: {
+      // Pinterest domain claim; needed before the Pinterest API app can be approved.
+      'p:domain_verify': 'd953ca1d230e7a63b51d67fbed96af7b',
+    },
     icons: {
       icon: [{ url: '/favicon.png', sizes: '96x96', type: 'image/png' }],
       shortcut: [{ url: '/favicon.png', sizes: '96x96', type: 'image/png' }],
