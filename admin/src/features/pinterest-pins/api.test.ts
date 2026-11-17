@@ -232,11 +232,31 @@ describe('pin image download', () => {
     expect(created?.download).toBe('does-your-frenchie-eat-too-fast.png');
   });
 
+  it('names a WebP image as a jpg when the server hands over a JPEG and the browser hides the file name', async () => {
+    fetchApi.mockResolvedValue(new Response(new Blob(['jpeg']), { status: 200, headers: { 'Content-Type': 'image/jpeg' } }));
+
+    await downloadPinImage({ ...pin, image: 'media/abc.webp' });
+
+    expect(created?.download).toBe('does-your-frenchie-eat-too-fast.jpg');
+  });
+
   it('says why when the file cannot be downloaded', async () => {
     fetchApi.mockResolvedValue(new Response(JSON.stringify({ message: 'The image file of this pin is missing.' }), { status: 404 }));
 
     await expect(downloadPinImage(pin)).rejects.toThrow('The image file of this pin is missing.');
     expect(click).not.toHaveBeenCalled();
+  });
+});
+
+describe('pinFilename with the type of the file received', () => {
+  it('names a converted image by what it is now, not by the stored WebP', () => {
+    expect(pinFilename({ title: 'Does your Frenchie eat too fast?', image: 'media/abc.webp' }, 'image/jpeg')).toBe('does-your-frenchie-eat-too-fast.jpg');
+    expect(pinFilename({ title: 'A pin', image: 'media/abc.webp' }, 'image/png')).toBe('a-pin.png');
+  });
+
+  it('keeps the stored extension when the type is unknown or empty', () => {
+    expect(pinFilename({ title: 'A pin', image: 'media/abc.png' }, 'application/octet-stream')).toBe('a-pin.png');
+    expect(pinFilename({ title: 'A pin', image: 'media/abc.png' }, '')).toBe('a-pin.png');
   });
 });
 

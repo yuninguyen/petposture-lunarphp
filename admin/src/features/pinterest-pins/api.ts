@@ -220,15 +220,21 @@ export async function markPinPosted(id: number): Promise<PinterestPin> {
   return updatePin(id, { status: 'posted' });
 }
 
-/** A file name from the pin title, with the extension of its image: "does-your-frenchie-eat-too-fast.png". */
-export function pinFilename(pin: Pick<PinterestPin, 'title' | 'image'>): string {
+const MIME_EXTENSION: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
+/**
+ * A file name from the pin title, with the extension of its image: "does-your-frenchie-eat-too-fast.png". `mime` is the
+ * type of the file actually received and wins over the stored image's extension: the server hands over a JPG for a
+ * WebP image (Pinterest takes JPG and PNG only), so the name must say jpg too.
+ */
+export function pinFilename(pin: Pick<PinterestPin, 'title' | 'image'>, mime?: string): string {
   const slug = pin.title
     .toLowerCase()
     .normalize('NFKD')
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  const extension = /\.([a-z0-9]+)$/i.exec(pin.image)?.[1]?.toLowerCase();
+  const extension = (mime ? MIME_EXTENSION[mime.toLowerCase()] : undefined) ?? /\.([a-z0-9]+)$/i.exec(pin.image)?.[1]?.toLowerCase();
 
   return `${slug || 'pinterest-pin'}${extension ? `.${extension}` : ''}`;
 }
@@ -245,12 +251,15 @@ export async function downloadPinImage(pin: Pick<PinterestPin, 'id' | 'title' | 
     throw new Error(body?.message ?? 'The image could not be downloaded.');
   }
 
+  // The admin runs on another address than the API, so the browser hides Content-Disposition from it; the file's own
+  // type is always readable, and that is what the extension follows.
   const serverName = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(response.headers.get('Content-Disposition') ?? '')?.[1];
-  const url = URL.createObjectURL(await response.blob());
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
 
   link.href = url;
-  link.download = serverName ? decodeURIComponent(serverName) : pinFilename(pin);
+  link.download = serverName ? decodeURIComponent(serverName) : pinFilename(pin, blob.type || response.headers.get('Content-Type') || undefined);
   document.body.appendChild(link);
   link.click();
   link.remove();
