@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\Admin\PinterestConnectionController;
 use App\Http\Controllers\Api\Admin\PinterestPinController;
 use App\Http\Controllers\Api\Admin\ProductAssociationController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Api\Admin\ProductImportController as AdminProductImportController;
 use App\Http\Controllers\Api\Admin\ProductOptionController;
 use App\Http\Controllers\Api\Admin\ProductTypeController;
 use App\Http\Controllers\Api\Admin\ProductVariantController as AdminProductVariantController;
@@ -237,6 +238,8 @@ Route::prefix('/admin')
 
         Route::get('/products', [AdminProductController::class, 'index']);
         Route::post('/products', [AdminProductController::class, 'store']);
+        Route::post('/products/import/preview', [AdminProductImportController::class, 'preview'])->middleware('throttle:30,1');
+        Route::post('/products/import', [AdminProductImportController::class, 'store'])->middleware('throttle:10,1');
         Route::post('/products/bulk-delete', [AdminProductController::class, 'bulkDestroy']);
         Route::post('/products/bulk-status', [AdminProductController::class, 'bulkStatus']);
         Route::get('/products/{product}', [AdminProductController::class, 'show']);
