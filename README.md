@@ -799,6 +799,10 @@ Then **Connect Pinterest** on the Pinterest Pins page runs the OAuth flow; scope
   Pinterest, then mark it posted or retry. Other refusals retry up to 3 times, then `failed`.
 - A lost login (refresh refused) pauses posting, shows a red banner in the panel and sends an admin notification.
 - Every call is logged in `pinterest_publish_logs` (endpoint, status, Pinterest's error; never a token).
+- Deleting: *Delete on Pinterest* (only for pins the job posted, via `pinterest_pin_id`) removes the pin on Pinterest and
+  returns it here as a ready draft with no date and no Pinterest id, so it is not posted again until rescheduled.
+  Boards can be created and deleted from the panel (`boards:write`); deleting a board also deletes its pins on
+  Pinterest, and pins here lose only the board link. Deleting a pin in the admin never deletes it on Pinterest.
 - Access follows the `*_pinterest_pin` abilities (core roles only); the connection endpoints are `/api/admin/pinterest/*`.
 
 ---
