@@ -15,6 +15,7 @@ export default function robots(): MetadataRoute.Robots {
                 '/sign-up',
                 '/admin',
                 '/product/',
+                '/go/',
             ],
         },
         sitemap: `${SITE_URL}/sitemap.xml`,

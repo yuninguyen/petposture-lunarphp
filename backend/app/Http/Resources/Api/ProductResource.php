@@ -227,7 +227,8 @@ class ProductResource extends JsonResource
             'retailerName' => $retailer !== '' ? AffiliateNetwork::where('slug', $retailer)->value('name') : null,
             // Built from APP_URL, not the request host: the storefront renders on the server and
             // calls this API at an internal address that a visitor's browser cannot open.
-            'goUrl' => rtrim((string) config('app.url'), '/')."/go/pick/{$slug}",
+            // The public storefront host (petposture.com), which forwards /go/pick/* here; not the API host.
+            'goUrl' => rtrim((string) config('app.frontend_url'), '/')."/go/pick/{$slug}",
             'referencePrice' => $price,
             'priceCheckedDate' => $price === null ? null : $checkedDate,
             'bestForBreeds' => $this->resolveTagList('best_for_breeds'),

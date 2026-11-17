@@ -77,7 +77,7 @@ class ProductPickApiTest extends TestCase
 
         $this->assertSame('chewy', $pick['retailer']);
         $this->assertSame('Chewy', $pick['retailerName']);
-        $this->assertSame(rtrim((string) config('app.url'), '/').'/go/pick/necoichi-bowl', $pick['goUrl']);
+        $this->assertSame(rtrim((string) config('app.frontend_url'), '/').'/go/pick/necoichi-bowl', $pick['goUrl']);
         $this->assertSame(49.96, $pick['referencePrice']);
         $this->assertSame('2026-11-14', $pick['priceCheckedDate']);
         $this->assertSame(['french-bulldog', 'pug'], $pick['bestForBreeds']);
@@ -85,17 +85,17 @@ class ProductPickApiTest extends TestCase
         $this->assertSame(['Holds about one cup'], $pick['cons']);
     }
 
-    public function test_the_go_url_uses_the_public_app_url_even_when_the_storefront_calls_an_internal_host(): void
+    public function test_the_go_url_uses_the_storefront_host_even_when_the_storefront_calls_an_internal_host(): void
     {
         // The storefront renders on the server and calls the API at http://127.0.0.1:8001, but a
-        // visitor's browser has to be able to open the link, so it must not carry that host.
-        config(['app.url' => 'https://api.petposture.com']);
+        // visitor's browser has to be able to open the link, so it must not carry that host, nor the API host.
+        config(['app.url' => 'https://api.petposture.com', 'app.frontend_url' => 'https://petposture.com']);
         $this->pick();
 
         $item = collect($this->withServerVariables(['HTTP_HOST' => '127.0.0.1:8001'])
             ->getJson('/api/products?per_page=100')->assertOk()->json('data'))->firstWhere('slug', 'necoichi-bowl');
 
-        $this->assertSame('https://api.petposture.com/go/pick/necoichi-bowl', $item['pick']['goUrl']);
+        $this->assertSame('https://petposture.com/go/pick/necoichi-bowl', $item['pick']['goUrl']);
     }
 
     public function test_a_photo_alt_is_the_admin_alt_text_and_never_the_file_name(): void
