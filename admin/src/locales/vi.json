@@ -1896,5 +1896,11 @@
   "pinterest_connect.board_delete": "Xóa board \"{{name}}\"",
   "pinterest_connect.board_delete_confirm": "Xóa \"{{name}}\"? Mọi pin trong board này cũng bị xóa trên Pinterest. Không thể hoàn tác.",
   "pinterest_connect.board_delete_yes": "Có, xóa board",
-  "pinterest_connect.board_deleted": "Đã xóa board \"{{name}}\"."
+  "pinterest_connect.board_deleted": "Đã xóa board \"{{name}}\".",
+  "pinterest_pins.action_post_now": "Đăng ngay",
+  "pinterest_pins.post_now_title": "Đăng lên Pinterest ngay?",
+  "pinterest_pins.post_now_message": "Pin sẽ được đăng lên Pinterest ngay lập tức, bỏ qua ngày hẹn và giới hạn mỗi ngày. Khi ứng dụng mới có quyền Trial thì pin chỉ vào sandbox và không công khai.",
+  "pinterest_pins.post_now_confirm": "Đăng ngay",
+  "pinterest_pins.post_now_posting": "Đang đăng...",
+  "pinterest_pins.posted_now": "Đã đăng lên Pinterest."
 }

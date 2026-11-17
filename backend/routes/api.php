@@ -205,6 +205,7 @@ Route::prefix('/admin')
         Route::get('/pinterest/boards', [PinterestConnectionController::class, 'boards']);
         Route::post('/pinterest/boards', [PinterestConnectionController::class, 'createBoard']);
         Route::delete('/pinterest/boards/{boardId}', [PinterestConnectionController::class, 'deleteBoard'])->where('boardId', '[0-9]+');
+        Route::post('/pinterest/pins/{pinterestPin}/publish', [PinterestConnectionController::class, 'publishPin'])->whereNumber('pinterestPin');
         Route::delete('/pinterest/pins/{pinterestPin}', [PinterestConnectionController::class, 'deletePin'])->whereNumber('pinterestPin');
         Route::put('/pinterest/settings', [PinterestConnectionController::class, 'updateSettings']);
         Route::put('/pinterest/credentials', [PinterestConnectionController::class, 'updateCredentials']);

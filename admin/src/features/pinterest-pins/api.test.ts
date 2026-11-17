@@ -22,6 +22,7 @@ import {
   fetchPins,
   markPinPosted,
   pinFilename,
+  publishPinNow,
   retryPin,
   startPinterestConnect,
   updatePin,
@@ -122,6 +123,16 @@ describe('pin writes', () => {
     await retryPin(7);
 
     expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest-pins/7', { method: 'PUT', body: { status: 'ready' } });
+  });
+});
+
+describe('posting now', () => {
+  it('asks the server to post that pin straight away', async () => {
+    fetchJson.mockResolvedValue({ data: { id: 7, status: 'posted' } });
+
+    await publishPinNow(7);
+
+    expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest/pins/7/publish', { method: 'POST' });
   });
 });
 

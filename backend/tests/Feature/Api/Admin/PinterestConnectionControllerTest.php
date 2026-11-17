@@ -5,9 +5,11 @@ namespace Tests\Feature\Api\Admin;
 use App\Models\PinterestConnection;
 use App\Models\PinterestPin;
 use App\Models\User;
+use App\Services\Pinterest\PinterestPublishSettings;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -260,6 +262,134 @@ class PinterestConnectionControllerTest extends TestCase
         $this->assertNull($pin->posted_via);
         $this->assertNull($pin->scheduled_date, 'No date, so the job cannot post it again by itself.');
         $this->assertSame('222', $pin->pinterest_board_id);
+    }
+
+    private function readyPin(array $overrides = []): PinterestPin
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('media/pin.png', 'png-bytes');
+        config(['app.frontend_url' => 'https://petposture.com']);
+
+        return PinterestPin::query()->create(array_merge([
+            'image' => 'media/pin.png',
+            'title' => 'A pin',
+            'description' => 'About it.',
+            'destination_url' => 'https://petposture.com/blog/a-post',
+            'pinterest_board_id' => '222',
+            'scheduled_date' => null,
+        ], $overrides));
+    }
+
+    public function test_post_now_posts_the_pin_straight_away_without_a_date_or_the_automatic_switch(): void
+    {
+        $this->actingAsRole();
+        $this->connection();
+        $pin = $this->readyPin();
+        Http::fake(['api.pinterest.com/v5/pins' => Http::response(['id' => 'pin-777'], 201)]);
+
+        $this->postJson("/api/admin/pinterest/pins/{$pin->id}/publish")->assertOk()->assertJsonPath('data.status', 'posted');
+
+        $pin->refresh();
+        $this->assertSame('posted', $pin->status);
+        $this->assertSame('api', $pin->posted_via);
+        $this->assertSame('pin-777', $pin->pinterest_pin_id);
+    }
+
+    public function test_post_now_ignores_the_daily_limit_and_the_time_window(): void
+    {
+        $this->actingAsRole();
+        $this->connection();
+        app(PinterestPublishSettings::class)->update(['max_per_day' => 1, 'window_start' => '03:00', 'window_end' => '03:30']);
+        $first = $this->readyPin(['title' => 'First']);
+        $second = $this->readyPin(['title' => 'Second']);
+        Http::fake(['api.pinterest.com/v5/pins' => Http::response(['id' => 'pin-1'], 201)]);
+
+        $this->postJson("/api/admin/pinterest/pins/{$first->id}/publish")->assertOk();
+        $this->postJson("/api/admin/pinterest/pins/{$second->id}/publish")->assertOk();
+    }
+
+    public function test_post_now_needs_a_board_from_pinterest(): void
+    {
+        $this->actingAsRole();
+        $this->connection();
+        $pin = $this->readyPin(['pinterest_board_id' => null]);
+        Http::fake();
+
+        $this->postJson("/api/admin/pinterest/pins/{$pin->id}/publish")
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Choose a board from Pinterest for this pin first.');
+
+        Http::assertNothingSent();
+        $this->assertSame('ready', $pin->refresh()->status);
+    }
+
+    public function test_post_now_never_posts_a_pin_twice(): void
+    {
+        $this->actingAsRole();
+        $this->connection();
+        $pin = $this->postedPin();
+        Http::fake();
+
+        $this->postJson("/api/admin/pinterest/pins/{$pin->id}/publish")->assertUnprocessable();
+
+        Http::assertNothingSent();
+    }
+
+    public function test_post_now_says_so_when_pinterest_is_not_connected(): void
+    {
+        $this->actingAsRole();
+        $pin = $this->readyPin();
+        Http::fake();
+
+        $this->postJson("/api/admin/pinterest/pins/{$pin->id}/publish")
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Pinterest is not connected. Connect it first.');
+
+        Http::assertNothingSent();
+    }
+
+    public function test_post_now_reports_why_pinterest_would_not_post_it_and_keeps_the_pin(): void
+    {
+        $this->actingAsRole();
+        $this->connection();
+        $pin = $this->readyPin();
+        Http::fake(['api.pinterest.com/v5/pins' => Http::response(['code' => 400, 'message' => 'Invalid board'], 400)]);
+
+        $this->postJson("/api/admin/pinterest/pins/{$pin->id}/publish")
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Invalid board')
+            ->assertJsonPath('data.status', 'ready');
+
+        $this->assertSame('ready', $pin->refresh()->status);
+    }
+
+    public function test_post_now_never_posts_a_link_to_another_site(): void
+    {
+        $this->actingAsRole();
+        $this->connection();
+        $pin = $this->readyPin(['destination_url' => 'https://www.amazon.com/dp/B000?tag=x']);
+        Http::fake();
+
+        $this->postJson("/api/admin/pinterest/pins/{$pin->id}/publish")
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'The link must point to this site.');
+
+        Http::assertNothingSent();
+    }
+
+    public function test_only_the_core_admin_roles_can_post_now(): void
+    {
+        $this->connection();
+        $pin = $this->readyPin();
+        Http::fake();
+
+        foreach (self::BLOCKED_ROLES as $role) {
+            $this->actingAsRole($role);
+
+            $this->postJson("/api/admin/pinterest/pins/{$pin->id}/publish")->assertForbidden();
+        }
+
+        Http::assertNothingSent();
     }
 
     public function test_a_pin_posted_by_hand_cannot_be_deleted_on_pinterest_from_here(): void

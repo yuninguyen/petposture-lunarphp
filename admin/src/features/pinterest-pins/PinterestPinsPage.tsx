@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
 import { PlusIcon } from '@/components/ui/icons';
-import { PinFilters, PinterestPin, deletePin, deletePinOnPinterest, fetchPinOptions, fetchPins, pinterestPinOptionsKey, pinterestPinsKey } from './api';
+import { PinFilters, PinterestPin, deletePin, deletePinOnPinterest, fetchPinOptions, fetchPins, pinterestPinOptionsKey, pinterestPinsKey, publishPinNow } from './api';
+import { PostNowConfirmModal } from './PostNowConfirmModal';
 import { PinterestConnectionPanel } from './PinterestConnectionPanel';
 import { PinterestPinModal } from './PinterestPinModal';
 import { PinterestPinRowActions } from './PinterestPinRowActions';
@@ -34,6 +35,7 @@ export function PinterestPinsPage() {
   const [editing, setEditing] = useState<{ pin: PinterestPin | null } | null>(null);
   const [deleting, setDeleting] = useState<PinterestPin | null>(null);
   const [unpublishing, setUnpublishing] = useState<PinterestPin | null>(null);
+  const [postingNow, setPostingNow] = useState<PinterestPin | null>(null);
 
   const pinsQuery = useQuery({
     queryKey: [...pinterestPinsKey, 'list', filters],
@@ -50,6 +52,17 @@ export function PinterestPinsPage() {
       setDeleting(null);
     },
     onError: (error: Error) => toast.error(error.message || t('common.error_occurred')),
+  });
+
+  const postNowMutation = useMutation({
+    mutationFn: (pin: PinterestPin) => publishPinNow(pin.id),
+    onSuccess: () => toast.success(t('pinterest_pins.posted_now')),
+    onError: (error: Error) => toast.error(error.message || t('common.error_occurred')),
+    // Either way the pin may have changed (posted, to retry, failed, to check), so the list is reloaded.
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: pinterestPinsKey });
+      setPostingNow(null);
+    },
   });
 
   const unpublishMutation = useMutation({
@@ -172,7 +185,7 @@ export function PinterestPinsPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{pin.scheduled_date ?? '—'}</td>
                   <td className="px-4 py-3">
-                    <PinterestPinRowActions pin={pin} onEdit={(target) => setEditing({ pin: target })} onDelete={setDeleting} onUnpublish={setUnpublishing} />
+                    <PinterestPinRowActions pin={pin} onEdit={(target) => setEditing({ pin: target })} onDelete={setDeleting} onUnpublish={setUnpublishing} onPostNow={setPostingNow} />
                   </td>
                 </tr>
               ))}
@@ -194,6 +207,14 @@ export function PinterestPinsPage() {
       )}
 
       <PinterestPinModal open={editing !== null} pin={editing?.pin ?? null} onClose={() => setEditing(null)} />
+
+      <PostNowConfirmModal
+        open={postingNow !== null}
+        pinTitle={postingNow?.title ?? ''}
+        onClose={() => setPostingNow(null)}
+        onConfirm={() => postingNow && postNowMutation.mutate(postingNow)}
+        isLoading={postNowMutation.isPending}
+      />
 
       <DeleteConfirmModal
         open={unpublishing !== null}

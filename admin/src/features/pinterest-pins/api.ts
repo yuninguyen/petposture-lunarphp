@@ -194,6 +194,14 @@ export async function deletePinOnPinterest(id: number): Promise<void> {
   await fetchJson(`/admin/pinterest/pins/${id}`, { method: 'DELETE' });
 }
 
+/**
+ * Posts a ready pin to Pinterest straight away, ignoring its date and the daily limit. Rejects with the reason when
+ * Pinterest would not take it (the list then shows the pin's new state).
+ */
+export async function publishPinNow(id: number): Promise<void> {
+  await fetchJson(`/admin/pinterest/pins/${id}/publish`, { method: 'POST' });
+}
+
 /** Deletes a board on Pinterest, and every pin on it there. */
 export async function deletePinterestBoard(id: string): Promise<void> {
   await fetchJson(`/admin/pinterest/boards/${id}`, { method: 'DELETE' });

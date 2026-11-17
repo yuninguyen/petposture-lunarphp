@@ -9,6 +9,7 @@ use App\Models\PinterestPublishLog;
 use App\Services\Pinterest\PinterestClient;
 use App\Services\Pinterest\PinterestCredentials;
 use App\Services\Pinterest\PinterestException;
+use App\Services\Pinterest\PinterestPublisher;
 use App\Services\Pinterest\PinterestPublishSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,6 +31,7 @@ class PinterestConnectionController extends Controller
         private readonly PinterestClient $client,
         private readonly PinterestPublishSettings $settings,
         private readonly PinterestCredentials $credentials,
+        private readonly PinterestPublisher $publisher,
     ) {}
 
     /** Whether the account is connected, who it is, and the posting switches. Never returns a token. */
@@ -140,6 +142,36 @@ class PinterestConnectionController extends Controller
 
             return response()->json(['message' => $message], $e->isAuthFailure() ? Response::HTTP_FORBIDDEN : Response::HTTP_BAD_GATEWAY);
         }
+    }
+
+    /**
+     * "Post now": posts this pin to Pinterest straight away instead of waiting for the schedule. A pin that could not
+     * be posted answers 422 with the reason, and the list shows its new state (retry, failed or needs checking).
+     */
+    public function publishPin(PinterestPin $pinterestPin): JsonResponse
+    {
+        $result = $this->publisher->publishNow($pinterestPin);
+
+        $refusals = [
+            'not_connected' => 'Pinterest is not connected. Connect it first.',
+            'no_board' => 'Choose a board from Pinterest for this pin first.',
+            'not_ready' => 'This pin is not ready to be posted (it may already be posted or in progress).',
+        ];
+
+        if (isset($refusals[$result])) {
+            return response()->json(['message' => $refusals[$result]], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $pinterestPin->refresh();
+
+        if ($result !== 'posted') {
+            return response()->json([
+                'message' => $pinterestPin->last_error ?: 'Pinterest did not post the pin.',
+                'data' => ['id' => $pinterestPin->id, 'status' => $pinterestPin->status],
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        return response()->json(['data' => ['id' => $pinterestPin->id, 'status' => $pinterestPin->status]]);
     }
 
     /**

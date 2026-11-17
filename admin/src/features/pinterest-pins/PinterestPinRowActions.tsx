@@ -40,6 +40,14 @@ function CheckCircleIcon({ className }: { className?: string }) {
   );
 }
 
+function PostNowIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19V5m0 0l-5 5m5-5l5 5" />
+    </svg>
+  );
+}
+
 function UnpublishIcon({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -62,10 +70,13 @@ export function PinterestPinRowActions({
   onEdit,
   onDelete,
   onUnpublish,
+  onPostNow,
 }: {
   pin: PinterestPin;
   onEdit: (pin: PinterestPin) => void;
   onDelete: (pin: PinterestPin) => void;
+  /** Asks to post the pin to Pinterest right now; only offered for a ready pin that has a Pinterest board. */
+  onPostNow: (pin: PinterestPin) => void;
   /** Asks to take the pin off Pinterest; only offered for a pin the posting job posted. */
   onUnpublish: (pin: PinterestPin) => void;
 }) {
@@ -121,6 +132,11 @@ export function PinterestPinRowActions({
       <ActionButton label={t('pinterest_pins.action_copy_description')} onClick={() => copy(pin.description, 'pinterest_pins.copied_description')}>
         <CopyIcon className="h-4 w-4 opacity-60" />
       </ActionButton>
+      {pin.status === 'ready' && pin.pinterest_board_id && (
+        <ActionButton label={t('pinterest_pins.action_post_now')} onClick={() => onPostNow(pin)}>
+          <PostNowIcon className="h-4 w-4" />
+        </ActionButton>
+      )}
       {(pin.status === 'failed' || pin.status === 'needs_review') && (
         <ActionButton label={t('pinterest_pins.action_retry')} onClick={() => retryMutation.mutate()} disabled={retryMutation.isPending}>
           <RetryIcon className="h-4 w-4" />

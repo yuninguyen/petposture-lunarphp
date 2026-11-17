@@ -1896,5 +1896,11 @@
   "pinterest_connect.board_delete": "Delete the board \"{{name}}\"",
   "pinterest_connect.board_delete_confirm": "Delete \"{{name}}\"? Every pin on this board is deleted on Pinterest too. This cannot be undone.",
   "pinterest_connect.board_delete_yes": "Yes, delete the board",
-  "pinterest_connect.board_deleted": "Board \"{{name}}\" deleted."
+  "pinterest_connect.board_deleted": "Board \"{{name}}\" deleted.",
+  "pinterest_pins.action_post_now": "Post now",
+  "pinterest_pins.post_now_title": "Post to Pinterest now?",
+  "pinterest_pins.post_now_message": "This posts the pin to Pinterest straight away, ignoring its date and the daily limit. While the app only has Trial access it goes to the sandbox and is not public.",
+  "pinterest_pins.post_now_confirm": "Post now",
+  "pinterest_pins.post_now_posting": "Posting...",
+  "pinterest_pins.posted_now": "Posted to Pinterest."
 }

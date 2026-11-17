@@ -70,21 +70,49 @@ class PinterestPublisher
             return 'nothing_due';
         }
 
-        // Claim it in one statement so a hand click or a second run cannot take the same pin.
-        $claimed = PinterestPin::query()
-            ->whereKey($pin->id)
+        if ($this->claim($pin->id) === 0) {
+            return 'raced';
+        }
+
+        return $this->publish($pin->refresh());
+    }
+
+    /**
+     * Posts one chosen pin right now, for the "Post now" button. The owner asked for this pin, so the schedule, the
+     * daily limit, the gap and the time window do not apply. The safety checks do: Pinterest must be connected, the
+     * pin must still be ready and have a board, its link must point to this site, and a second click while the first
+     * is in flight finds the pin already taken.
+     */
+    public function publishNow(PinterestPin $pin): string
+    {
+        $connection = PinterestConnection::current();
+
+        if (! $connection || ! $connection->isUsable()) {
+            return 'not_connected';
+        }
+
+        if (blank($pin->pinterest_board_id)) {
+            return 'no_board';
+        }
+
+        if ($this->claim($pin->id) === 0) {
+            return 'not_ready';
+        }
+
+        return $this->publish($pin->refresh());
+    }
+
+    /** Takes the pin in one statement so a hand click or another run cannot take the same one. Returns rows taken. */
+    private function claim(int $pinId): int
+    {
+        return PinterestPin::query()
+            ->whereKey($pinId)
             ->where('status', PinterestPin::STATUS_READY)
             ->update([
                 'status' => PinterestPin::STATUS_PUBLISHING,
                 'publish_attempts' => DB::raw('publish_attempts + 1'),
                 'last_attempt_at' => now(),
             ]);
-
-        if ($claimed === 0) {
-            return 'raced';
-        }
-
-        return $this->publish($pin->refresh());
     }
 
     private function publish(PinterestPin $pin): string

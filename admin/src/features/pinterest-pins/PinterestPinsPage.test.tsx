@@ -577,6 +577,59 @@ describe('PinterestPinsPage automatic posting', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Board "TEST board" deleted.'));
   });
 
+  it('offers "Post now" only for a ready pin that has a Pinterest board', async () => {
+    const withBoard: PinterestPin = { ...readyPin, id: 20, title: 'Ready with a board', pinterest_board_id: '222' };
+    const withoutBoard: PinterestPin = { ...readyPin, id: 21, title: 'Ready without a board', pinterest_board_id: null };
+    const failed: PinterestPin = { ...readyPin, id: 22, title: 'Failed with a board', pinterest_board_id: '222', status: 'failed' };
+    withPins([withBoard, withoutBoard, failed, postedPin]);
+    renderPage();
+
+    expect(within(await rowOf('Ready with a board')).getByRole('button', { name: 'Post now' })).toBeTruthy();
+    expect(within(await rowOf('Ready without a board')).queryByRole('button', { name: 'Post now' })).toBeNull();
+    expect(within(await rowOf('Failed with a board')).queryByRole('button', { name: 'Post now' })).toBeNull();
+    expect(within(await rowOf('Raised bowls for flat faces')).queryByRole('button', { name: 'Post now' })).toBeNull();
+  });
+
+  it('asks before posting now, then posts that pin and says so', async () => {
+    const withBoard: PinterestPin = { ...readyPin, id: 20, title: 'Ready with a board', pinterest_board_id: '222' };
+    mockedFetch.mockImplementation(async (url: string, init?: FetchApiOptions) => {
+      if (url === '/admin/pinterest-pins/options') return { data: options };
+      if (url === '/admin/pinterest/connection') return { data: notConnected };
+      if (url === '/admin/pinterest/pins/20/publish' && init?.method === 'POST') return { data: { id: 20, status: 'posted' } };
+      return { data: [withBoard], meta: meta({ total: 1 }) };
+    });
+    renderPage();
+
+    fireEvent.click(within(await rowOf('Ready with a board')).getByRole('button', { name: 'Post now' }));
+    expect(await screen.findByText('Post to Pinterest now?')).toBeTruthy();
+    expect(mockedFetch).not.toHaveBeenCalledWith('/admin/pinterest/pins/20/publish', { method: 'POST' });
+
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Post now' }));
+
+    await waitFor(() => expect(mockedFetch).toHaveBeenCalledWith('/admin/pinterest/pins/20/publish', { method: 'POST' }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Posted to Pinterest.'));
+  });
+
+  it('shows why when Pinterest would not take the pin, and reloads the list', async () => {
+    const withBoard: PinterestPin = { ...readyPin, id: 20, title: 'Ready with a board', pinterest_board_id: '222' };
+    mockedFetch.mockImplementation(async (url: string, init?: FetchApiOptions) => {
+      if (url === '/admin/pinterest-pins/options') return { data: options };
+      if (url === '/admin/pinterest/connection') return { data: notConnected };
+      if (url === '/admin/pinterest/pins/20/publish' && init?.method === 'POST') {
+        throw Object.assign(new Error('Invalid board'), { status: 422 });
+      }
+      return { data: [withBoard], meta: meta({ total: 1 }) };
+    });
+    renderPage();
+
+    fireEvent.click(within(await rowOf('Ready with a board')).getByRole('button', { name: 'Post now' }));
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Post now' }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Invalid board'));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(listCalls().length).toBeGreaterThan(1);
+  });
+
   it('offers "Delete on Pinterest" only for a pin the posting job posted', async () => {
     const byApi: PinterestPin = { ...postedPin, id: 12, title: 'Posted by the job', posted_via: 'api', pinterest_pin_id: '999' };
     const byHand: PinterestPin = { ...postedPin, id: 13, title: 'Posted by hand', posted_via: 'manual' };
