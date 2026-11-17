@@ -70,5 +70,6 @@ describe('Contact page', () => {
 
         expect(html).toContain('For brands: dropship &amp; affiliate');
         expect(html).toContain('href="mailto:support@petposture.com"');
+        expect(html).toContain('src="/assets/contact/brands-french-bulldog.webp"');
     });
 });

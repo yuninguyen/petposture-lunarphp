@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle, Copy } from "lucide-react";
+import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from "lucide-react";
 import { fetchApi } from '@/lib/fetchApi';
 import { useSettings } from '@/context/SettingsContext';
 
@@ -70,7 +70,7 @@ export default function ContactPage() {
             await navigator.clipboard.writeText(subject);
             setCopied(subject);
         } catch {
-            // Clipboard blocked: the subject is also written in the paragraph above.
+            // Clipboard blocked: show the subject so it can be typed in by hand.
             setCopied('');
         }
     };
@@ -340,30 +340,41 @@ export default function ContactPage() {
 
             {/* For brands: suppliers and affiliate programmes write to support@ with one of two subjects. */}
             <section className="pb-20 px-4 md:px-8 bg-white" aria-labelledby="brands-title">
-                <div className="max-w-[1100px] mx-auto p-8 md:p-10 rounded-2xl border border-zinc-100 bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)]">
-                    <h3 id="brands-title" className="text-xl font-black uppercase tracking-[0.08em] text-primary mb-4">For brands: dropship &amp; affiliate</h3>
-                    <p className="text-[15px] text-zinc-500 leading-relaxed font-medium">
+                <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-[300px_1fr] rounded-2xl border border-zinc-100 bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] overflow-hidden">
+                    <div className="h-[220px] md:h-auto md:min-h-[260px]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src="/assets/contact/brands-french-bulldog.webp"
+                            alt="A French Bulldog, one of the five breeds PetPosture covers, tilting its head at the camera"
+                            width={720}
+                            height={900}
+                            loading="lazy"
+                            className="w-full h-full object-cover block"
+                        />
+                    </div>
+                    <div className="p-5 sm:p-8 md:px-8 md:py-8">
+                        <h3 id="brands-title" className="text-xl font-bold uppercase tracking-[0.05em] text-primary mb-3">For brands: dropship &amp; affiliate</h3>
+                        <p className="text-[15px] text-zinc-500 leading-relaxed font-medium">
                         If you make or supply pet products that fit the dogs we cover (Corgi, Dachshund, English Bulldog, French Bulldog, Pug), we&rsquo;d like to hear from you. Email{' '}
                         <a href="mailto:support@petposture.com" className="font-bold text-rust hover:underline break-all">support@petposture.com</a>{' '}
                         with the subject &ldquo;Supplier&rdquo; or &ldquo;Affiliate&rdquo; and tell us about your product, your wholesale terms, or your affiliate programme. We only feature products we&rsquo;ve researched ourselves, and we don&rsquo;t accept paid placement. Please note we&rsquo;re not yet set up to sell directly, so dropship partnerships will be considered once our shop setup is complete.
                     </p>
-                    <div className="mt-6 pt-6 border-t border-zinc-100">
-                        <p className="text-xs font-black uppercase tracking-[0.08em] text-rust mb-3">Quick send with a ready-made subject</p>
-                        <div className="flex flex-wrap gap-3">
+                        <div className="flex flex-wrap items-center gap-2.5 mt-[18px]">
+                            <span className="text-[0.9rem] text-zinc-500">Quick send with a ready-made subject:</span>
                             {BRAND_SUBJECTS.map((subject) => (
                                 <button
                                     key={subject}
                                     type="button"
                                     onClick={() => copySubject(subject)}
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zinc-200 text-sm font-bold text-primary hover:border-secondary hover:text-rust transition-colors"
+                                    className="inline-flex items-center min-h-10 px-4 py-2 rounded-md border border-secondary text-[0.88rem] font-semibold text-rust bg-transparent hover:bg-secondary/10 transition-colors"
                                 >
-                                    <Copy size={14} /> Copy &ldquo;{subject}&rdquo;
+                                    Copy &ldquo;{subject}&rdquo;
                                 </button>
                             ))}
+                            <span role="status" aria-live="polite" className="text-[0.9rem] text-[#2e6b34] min-h-[1.2em]">
+                                {copied === '' ? '' : copied.startsWith('!') ? <>Use this subject: &ldquo;{copied.slice(1)}&rdquo;</> : <>Copied &ldquo;{copied}&rdquo; &mdash; paste it into the Subject line of your email.</>}
+                            </span>
                         </div>
-                        <p role="status" aria-live="polite" className="mt-3 min-h-[1.25rem] text-sm font-medium text-zinc-500">
-                            {copied && <>Copied &ldquo;{copied}&rdquo; &mdash; paste it into the Subject line of your email.</>}
-                        </p>
                     </div>
                 </div>
             </section>
