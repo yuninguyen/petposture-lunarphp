@@ -125,7 +125,7 @@ export function useCreateProductAssociation() { const qc = useQueryClient(); ret
 export function useDeleteProductAssociation() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ productId, associationId }: { productId: number; associationId: number }) => deleteProductAssociation(productId, associationId), onSuccess: (_data, variables) => qc.invalidateQueries({ queryKey: ['products', variables.productId, 'associations'] }) }); }
 export function useBulkDeleteProducts() { const qc = useQueryClient(); return useMutation({ mutationFn: bulkDeleteProducts, onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }) }); }
 export function useBulkUpdateProductStatus() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ ids, status }: { ids: number[]; status: ProductStatus }) => bulkUpdateProductStatus(ids, status), onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }) }); }
-export interface ProductImportRow { row: number; name: string; variant: string; price: string; status: 'create' | 'skipped_duplicate' | 'error'; reasons: string[]; warnings: string[]; photos: { slot: number; source: 'library' | 'url'; label: string; alt: string }[] }
+export interface ProductImportRow { row: number; name: string; variant: string; price: string; brand: string; status: 'create' | 'skipped_duplicate' | 'error'; reasons: string[]; warnings: string[]; photos: { slot: number; source: 'library' | 'url'; label: string; alt: string }[] }
 export interface ProductImportPreview { summary: { create: number; skipped_duplicate: number; error: number }; rows: ProductImportRow[] }
 export interface ProductImportResult {
   created: { row: number; name: string; id: number; slug: string }[];

@@ -59,10 +59,11 @@ export function ProductImportModal({ open, onClose }: { open: boolean; onClose: 
       {preview && <div className="min-h-0 flex-1 overflow-auto">
         <p className="mb-3 text-sm font-medium text-slate-700">{t('products.import_summary_preview', { create: preview.summary.create, skipped: preview.summary.skipped_duplicate, errors: preview.summary.error })}</p>
         <table className="w-full text-left text-sm">
-          <thead className="sticky top-0 bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-3 py-2">{t('products.import_col_row')}</th><th className="px-3 py-2">{t('products.name')}</th><th className="px-3 py-2">{t('products.import_col_price')}</th><th className="px-3 py-2">{t('products.import_col_photos')}</th><th className="px-3 py-2">{t('products.import_col_result')}</th></tr></thead>
+          <thead className="sticky top-0 bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-3 py-2">{t('products.import_col_row')}</th><th className="px-3 py-2">{t('products.name')}</th><th className="px-3 py-2">{t('products.column_brand')}</th><th className="px-3 py-2">{t('products.import_col_price')}</th><th className="px-3 py-2">{t('products.import_col_photos')}</th><th className="px-3 py-2">{t('products.import_col_result')}</th></tr></thead>
           <tbody className="divide-y divide-slate-100">{preview.rows.map((row) => <tr key={row.row} className="align-top">
             <td className="px-3 py-2 text-slate-500">{row.row}</td>
             <td className="px-3 py-2 font-medium text-slate-900">{row.name || '—'}{row.variant && <span className="block text-xs font-normal text-slate-500">{row.variant}</span>}</td>
+            <td className="px-3 py-2">{row.brand || '—'}</td>
             <td className="px-3 py-2">{row.price}</td>
             <td className="px-3 py-2 text-xs text-slate-600">{row.photos.length === 0 ? '—' : row.photos.map((p) => <span key={p.slot} className="block">{p.slot}. {p.source === 'library' ? t('products.import_photo_library') : t('products.import_photo_url')}</span>)}</td>
             <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[row.status]}`}>{statusLabel(row.status)}</span>

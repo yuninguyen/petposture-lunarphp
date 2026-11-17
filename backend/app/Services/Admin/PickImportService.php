@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Models\AffiliateNetwork;
+use Lunar\Models\Brand;
 use App\Models\CuratorMedia;
 use App\Support\ImageOptimizer;
 use App\Support\RetailerUrl;
@@ -115,6 +116,7 @@ class PickImportService
         });
         $existingSkus = DB::table('lunar_product_variants')->pluck('sku')->map(fn ($sku) => Str::upper((string) $sku))->flip()->all();
 
+        $brands = Brand::query()->get(['id', 'name'])->mapWithKeys(fn (Brand $brand) => [Str::lower(trim($brand->name)) => $brand->id])->all();
         $networks = AffiliateNetwork::query()->pluck('slug')->all();
         $seenNames = [];
         $seenUrls = [];
@@ -122,7 +124,7 @@ class PickImportService
         $rows = collect();
 
         foreach ($table as $number => $cells) {
-            $row = ['row' => $number, 'name' => $cells['product name'] ?? '', 'variant' => $cells['variant'] ?? '', 'price' => $cells['price'] ?? '',
+            $row = ['row' => $number, 'name' => $cells['product name'] ?? '', 'variant' => $cells['variant'] ?? '', 'price' => $cells['price'] ?? '', 'brand' => trim($cells['brand'] ?? ''),
                 'status' => 'create', 'reasons' => [], 'warnings' => [], 'photos' => [], 'plan' => []];
             $errors = [];
             $duplicate = null;
@@ -160,6 +162,16 @@ class PickImportService
                 }
             } elseif ($networkSlug !== '' && ! in_array($networkSlug, $networks, true)) {
                 $errors[] = "Affiliate network \"{$networkSlug}\" does not exist.";
+            }
+
+            // A brand is matched to an existing one by name; a typo is flagged rather than creating a second brand.
+            $brandName = trim($cells['brand'] ?? '');
+            $brandId = null;
+            if ($brandName !== '') {
+                $brandId = $brands[Str::lower($brandName)] ?? null;
+                if ($brandId === null) {
+                    $errors[] = "Brand \"{$brandName}\" does not exist. Add it under Brands first, or fix the spelling.";
+                }
             }
 
             $status = Str::lower(trim($cells['status'] ?? ''));
@@ -212,7 +224,7 @@ class PickImportService
                 foreach (self::TEXT_COLUMNS as $handle => $label) {
                     $values[$handle] = trim((string) ($cells[Str::lower($label)] ?? ''));
                 }
-                $row['plan'] = ['name' => $name, 'variant' => $variant, 'sku' => $sku, 'slug' => $slug, 'price' => $price,
+                $row['plan'] = ['name' => $name, 'brand_id' => $brandId, 'variant' => $variant, 'sku' => $sku, 'slug' => $slug, 'price' => $price,
                     'status' => $status === '' ? 'published' : $status, 'values' => $values, 'photos' => $photos];
             }
 
@@ -431,6 +443,7 @@ class PickImportService
         $product = DB::transaction(function () use ($plan, $type, $nameAttribute, $currency, $taxClass, $values, $photos): Product {
             $product = Product::query()->create([
                 'status' => 'draft',
+                'brand_id' => $plan['brand_id'],
                 'product_type_id' => $type->id,
                 'attribute_data' => ['name' => $this->attributes->makeNameValue($nameAttribute->type, $plan['name'])],
             ]);

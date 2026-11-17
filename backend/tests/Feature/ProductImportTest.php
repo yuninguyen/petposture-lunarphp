@@ -145,6 +145,41 @@ class ProductImportTest extends TestCase
         $this->assertSame('Another Toy', $other->fresh()->translateAttribute('name'));
     }
 
+    private function brandFile(string $brand): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent('picks.csv', "Product name,Chewy URL,Price,Brand\nKONG Toy,https://www.chewy.com/kong/dp/1,7.46,{$brand}\n");
+    }
+
+    public function test_the_brand_column_sets_the_brand_of_the_pick_matching_by_name_without_case(): void
+    {
+        $brand = \Lunar\Models\Brand::query()->create(['name' => 'KONG']);
+
+        $this->postJson('/api/admin/products/import', ['file' => $this->brandFile(' kong ')])->assertCreated()->assertJsonCount(1, 'data.created');
+
+        $this->assertSame($brand->id, Product::query()->firstOrFail()->brand_id);
+    }
+
+    public function test_an_unknown_brand_flags_the_row_instead_of_creating_a_new_brand(): void
+    {
+        \Lunar\Models\Brand::query()->create(['name' => 'KONG']);
+
+        $this->postJson('/api/admin/products/import/preview', ['file' => $this->brandFile('Kongg')])
+            ->assertOk()
+            ->assertJsonPath('data.rows.0.status', 'error')
+            ->assertJsonPath('data.rows.0.brand', 'Kongg');
+        $this->postJson('/api/admin/products/import', ['file' => $this->brandFile('Kongg')])->assertCreated()->assertJsonCount(1, 'data.failed');
+
+        $this->assertSame(0, Product::query()->count());
+        $this->assertSame(1, \Lunar\Models\Brand::query()->count());
+    }
+
+    public function test_a_blank_brand_leaves_the_pick_without_one(): void
+    {
+        $this->postJson('/api/admin/products/import', ['file' => $this->brandFile('')])->assertCreated()->assertJsonCount(1, 'data.created');
+
+        $this->assertNull(Product::query()->firstOrFail()->brand_id);
+    }
+
     public function test_a_second_row_with_the_same_chewy_url_in_the_file_is_skipped(): void
     {
         $this->libraryPhoto();

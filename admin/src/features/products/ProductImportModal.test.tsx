@@ -15,7 +15,7 @@ vi.mock('./api', () => ({ previewProductImport: mocks.preview, importProducts: m
 
 import { ProductImportModal } from './ProductImportModal';
 
-const row = { row: 2, name: 'KONG Puppy Chew Dog Toy', variant: 'Pink, Small', price: '7.46', status: 'create', reasons: [], warnings: [], photos: [{ slot: 1, source: 'library', label: 'kong-puppy.jpg', alt: 'KONG' }] };
+const row = { row: 2, name: 'KONG Puppy Chew Dog Toy', variant: 'Pink, Small', price: '7.46', brand: 'KONG', status: 'create', reasons: [], warnings: [], photos: [{ slot: 1, source: 'library', label: 'kong-puppy.jpg', alt: 'KONG' }] };
 
 async function mount(open = true) {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -51,6 +51,8 @@ describe('ProductImportModal', () => {
     expect(mocks.preview).toHaveBeenCalledWith(file);
     expect(mocks.run).not.toHaveBeenCalled();
     expect(container.textContent).toContain('KONG Puppy Chew Dog Toy');
+    expect(container.textContent).toContain('products.column_brand');
+    expect(container.textContent).toContain('KONG');
     expect(container.textContent).toContain('products.import_status_create');
 
     mocks.run.mockResolvedValue({ created: [{ row: 2, name: 'KONG Puppy Chew Dog Toy', id: 9, slug: 'kong' }], skipped: [], failed: [], photo_warnings: [] });
