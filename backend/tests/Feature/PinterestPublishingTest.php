@@ -149,6 +149,32 @@ class PinterestPublishingTest extends TestCase
         $this->assertSame('boards:read,boards:write,pins:read,pins:write,user_accounts:read', $query['scope']);
     }
 
+    public function test_a_pin_and_a_board_can_be_deleted_and_one_already_gone_counts_as_deleted(): void
+    {
+        $this->connection();
+        Http::fake([
+            'api.pinterest.com/v5/pins/111' => Http::response(null, 204),
+            'api.pinterest.com/v5/boards/222' => Http::response(['code' => 40, 'message' => 'Board not found'], 404),
+        ]);
+
+        app(PinterestClient::class)->deletePin('111');
+        app(PinterestClient::class)->deleteBoard('222');
+
+        Http::assertSent(fn ($request) => $request->method() === 'DELETE' && str_ends_with($request->url(), '/pins/111'));
+        Http::assertSent(fn ($request) => $request->method() === 'DELETE' && str_ends_with($request->url(), '/boards/222'));
+        $this->assertSame(['delete_pin', 'delete_board'], PinterestPublishLog::query()->orderBy('id')->pluck('action')->all());
+    }
+
+    public function test_a_refusal_to_delete_is_reported(): void
+    {
+        $this->connection();
+        Http::fake(['api.pinterest.com/v5/pins/111' => Http::response(['code' => 29, 'message' => 'Not authorized'], 403)]);
+
+        $this->expectException(PinterestException::class);
+
+        app(PinterestClient::class)->deletePin('111');
+    }
+
     public function test_a_board_can_be_created_on_the_connected_account(): void
     {
         $this->connection();

@@ -134,6 +134,29 @@ class PinterestClient
         return ['id' => (string) $created['id'], 'name' => (string) ($created['name'] ?? $name)];
     }
 
+    /** Deletes a pin from the connected account on Pinterest. A pin that is already gone (404) counts as deleted. */
+    public function deletePin(string $pinterestPinId): void
+    {
+        $this->deleteRemote('/pins/'.$pinterestPinId, 'delete_pin');
+    }
+
+    /** Deletes a board and, on Pinterest's side, every pin on it. A board that is already gone (404) counts as deleted. */
+    public function deleteBoard(string $boardId): void
+    {
+        $this->deleteRemote('/boards/'.$boardId, 'delete_board');
+    }
+
+    private function deleteRemote(string $path, string $action): void
+    {
+        try {
+            $this->send($this->requireConnection(), 'delete', $path, null, $action);
+        } catch (PinterestException $e) {
+            if ($e->httpStatus !== 404) {
+                throw $e;
+            }
+        }
+    }
+
     /**
      * Creates the pin and returns Pinterest's id for it. The image goes as base64 so it does not have to be
      * reachable from the internet. A timeout or 5xx throws with outcomeUnknown set: the pin may exist.

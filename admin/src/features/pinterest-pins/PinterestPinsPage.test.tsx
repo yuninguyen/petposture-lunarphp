@@ -557,6 +557,57 @@ describe('PinterestPinsPage automatic posting', () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Pinterest did not allow creating boards. Disconnect and connect again to give that permission.'));
   });
 
+  it('lists the boards with a delete button that names the board and asks first', async () => {
+    mockedFetch.mockImplementation(async (url: string, init?: FetchApiOptions) => {
+      if (url === '/admin/pinterest-pins/options') return { data: options };
+      if (url === '/admin/pinterest/connection') return { data: { ...notConnected, connected: true, status: 'connected', username: 'petposture' } };
+      if (url === '/admin/pinterest/boards' && !init?.method) return { data: [{ id: '111', name: 'Feeding' }, { id: '222', name: 'TEST board' }] };
+      if (url === '/admin/pinterest/boards/222' && init?.method === 'DELETE') return null;
+      return { data: [readyPin], meta: meta({ total: 1 }) };
+    });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete the board "TEST board"' }));
+    expect(await screen.findByText(/Every pin on this board is deleted on Pinterest too/)).toBeTruthy();
+    expect(mockedFetch).not.toHaveBeenCalledWith('/admin/pinterest/boards/222', { method: 'DELETE' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, delete the board' }));
+
+    await waitFor(() => expect(mockedFetch).toHaveBeenCalledWith('/admin/pinterest/boards/222', { method: 'DELETE' }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Board "TEST board" deleted.'));
+  });
+
+  it('offers "Delete on Pinterest" only for a pin the posting job posted', async () => {
+    const byApi: PinterestPin = { ...postedPin, id: 12, title: 'Posted by the job', posted_via: 'api', pinterest_pin_id: '999' };
+    const byHand: PinterestPin = { ...postedPin, id: 13, title: 'Posted by hand', posted_via: 'manual' };
+    withPins([readyPin, byApi, byHand]);
+    renderPage();
+
+    expect(within(await rowOf('Posted by the job')).getByRole('button', { name: 'Delete on Pinterest' })).toBeTruthy();
+    expect(within(await rowOf('Posted by hand')).queryByRole('button', { name: 'Delete on Pinterest' })).toBeNull();
+    expect(within(await rowOf('Does your Frenchie eat too fast?')).queryByRole('button', { name: 'Delete on Pinterest' })).toBeNull();
+  });
+
+  it('asks before deleting a pin on Pinterest, then does it and says the pin is a draft again', async () => {
+    const byApi: PinterestPin = { ...postedPin, id: 12, title: 'Posted by the job', posted_via: 'api', pinterest_pin_id: '999' };
+    mockedFetch.mockImplementation(async (url: string, init?: FetchApiOptions) => {
+      if (url === '/admin/pinterest-pins/options') return { data: options };
+      if (url === '/admin/pinterest/connection') return { data: notConnected };
+      if (url === '/admin/pinterest/pins/12' && init?.method === 'DELETE') return { data: { id: 12, status: 'ready' } };
+      return { data: [byApi], meta: meta({ total: 1 }) };
+    });
+    renderPage();
+
+    fireEvent.click(within(await rowOf('Posted by the job')).getByRole('button', { name: 'Delete on Pinterest' }));
+    expect(await screen.findByText('Delete on Pinterest?')).toBeTruthy();
+    expect(mockedFetch).not.toHaveBeenCalledWith('/admin/pinterest/pins/12', { method: 'DELETE' });
+
+    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }));
+
+    await waitFor(() => expect(mockedFetch).toHaveBeenCalledWith('/admin/pinterest/pins/12', { method: 'DELETE' }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Deleted on Pinterest. The pin is a draft again.'));
+  });
+
   it('asks before disconnecting', async () => {
     withPins([readyPin], { ...notConnected, connected: true, status: 'connected', username: 'petposture' });
     renderPage();

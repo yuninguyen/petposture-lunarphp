@@ -1887,5 +1887,15 @@
   "pinterest_connect.board_hint": "Pin cần có board. Tài khoản mới hoặc sandbox chưa có board nào. Nếu báo lỗi thiếu quyền, hãy ngắt kết nối rồi kết nối lại.",
   "pinterest_connect.board_name": "Tên board",
   "pinterest_connect.board_create": "Tạo board",
-  "pinterest_connect.board_created": "Đã tạo board \"{{name}}\"."
+  "pinterest_connect.board_created": "Đã tạo board \"{{name}}\".",
+  "pinterest_pins.action_unpublish": "Xóa trên Pinterest",
+  "pinterest_pins.unpublish_title": "Xóa trên Pinterest?",
+  "pinterest_pins.unpublish_message": "Pin sẽ bị gỡ khỏi Pinterest. Pin vẫn còn ở đây dưới dạng bản nháp không có ngày hẹn, nên sẽ không được đăng lại cho đến khi bạn đặt lịch lại.",
+  "pinterest_pins.unpublished": "Đã xóa trên Pinterest. Pin đã quay về bản nháp.",
+  "pinterest_connect.boards_list_title": "Các board của bạn",
+  "pinterest_connect.board_delete_short": "Xóa",
+  "pinterest_connect.board_delete": "Xóa board \"{{name}}\"",
+  "pinterest_connect.board_delete_confirm": "Xóa \"{{name}}\"? Mọi pin trong board này cũng bị xóa trên Pinterest. Không thể hoàn tác.",
+  "pinterest_connect.board_delete_yes": "Có, xóa board",
+  "pinterest_connect.board_deleted": "Đã xóa board \"{{name}}\"."
 }

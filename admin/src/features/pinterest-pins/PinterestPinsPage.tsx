@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
 import { PlusIcon } from '@/components/ui/icons';
-import { PinFilters, PinterestPin, deletePin, fetchPinOptions, fetchPins, pinterestPinOptionsKey, pinterestPinsKey } from './api';
+import { PinFilters, PinterestPin, deletePin, deletePinOnPinterest, fetchPinOptions, fetchPins, pinterestPinOptionsKey, pinterestPinsKey } from './api';
 import { PinterestConnectionPanel } from './PinterestConnectionPanel';
 import { PinterestPinModal } from './PinterestPinModal';
 import { PinterestPinRowActions } from './PinterestPinRowActions';
@@ -33,6 +33,7 @@ export function PinterestPinsPage() {
   const [filters, setFilters] = useState<PinFilters>({ status: '', postId: '', page: 1 });
   const [editing, setEditing] = useState<{ pin: PinterestPin | null } | null>(null);
   const [deleting, setDeleting] = useState<PinterestPin | null>(null);
+  const [unpublishing, setUnpublishing] = useState<PinterestPin | null>(null);
 
   const pinsQuery = useQuery({
     queryKey: [...pinterestPinsKey, 'list', filters],
@@ -49,6 +50,19 @@ export function PinterestPinsPage() {
       setDeleting(null);
     },
     onError: (error: Error) => toast.error(error.message || t('common.error_occurred')),
+  });
+
+  const unpublishMutation = useMutation({
+    mutationFn: (pin: PinterestPin) => deletePinOnPinterest(pin.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: pinterestPinsKey });
+      toast.success(t('pinterest_pins.unpublished'));
+      setUnpublishing(null);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || t('common.error_occurred'));
+      setUnpublishing(null);
+    },
   });
 
   const pins = pinsQuery.data?.data ?? [];
@@ -158,7 +172,7 @@ export function PinterestPinsPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{pin.scheduled_date ?? '—'}</td>
                   <td className="px-4 py-3">
-                    <PinterestPinRowActions pin={pin} onEdit={(target) => setEditing({ pin: target })} onDelete={setDeleting} />
+                    <PinterestPinRowActions pin={pin} onEdit={(target) => setEditing({ pin: target })} onDelete={setDeleting} onUnpublish={setUnpublishing} />
                   </td>
                 </tr>
               ))}
@@ -180,6 +194,15 @@ export function PinterestPinsPage() {
       )}
 
       <PinterestPinModal open={editing !== null} pin={editing?.pin ?? null} onClose={() => setEditing(null)} />
+
+      <DeleteConfirmModal
+        open={unpublishing !== null}
+        onClose={() => setUnpublishing(null)}
+        onConfirm={() => unpublishing && unpublishMutation.mutate(unpublishing)}
+        title={t('pinterest_pins.unpublish_title')}
+        message={t('pinterest_pins.unpublish_message')}
+        isLoading={unpublishMutation.isPending}
+      />
 
       <DeleteConfirmModal
         open={deleting !== null}

@@ -10,7 +10,9 @@ import {
   PinterestCredentialsInput,
   PinterestPublishSettings,
   createPinterestBoard,
+  deletePinterestBoard,
   disconnectPinterest,
+  fetchPinterestBoards,
   fetchPinterestConnection,
   pinterestBoardsKey,
   pinterestConnectionKey,
@@ -65,6 +67,63 @@ function CreateBoardForm() {
         <Button type="submit" variant="secondary" disabled={createMutation.isPending || name.trim() === ''}>{t('pinterest_connect.board_create')}</Button>
       </div>
     </form>
+  );
+}
+
+/**
+ * The boards of the connected account, each with a delete button. Deleting a board also deletes every pin on it on
+ * Pinterest, so it asks first and names the board.
+ */
+function BoardList() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [confirming, setConfirming] = useState<string | null>(null);
+
+  const boardsQuery = useQuery({ queryKey: pinterestBoardsKey, queryFn: fetchPinterestBoards });
+  const boards = boardsQuery.data ?? [];
+
+  const deleteMutation = useMutation({
+    mutationFn: (board: { id: string; name: string }) => deletePinterestBoard(board.id).then(() => board),
+    onSuccess: (board) => {
+      queryClient.invalidateQueries({ queryKey: pinterestBoardsKey });
+      queryClient.invalidateQueries({ queryKey: ['pinterest-pins'] });
+      toast.success(t('pinterest_connect.board_deleted', { name: board.name }));
+      setConfirming(null);
+    },
+    onError: (error: Error) => toast.error(error.message || t('common.error_occurred')),
+  });
+
+  if (boards.length === 0) return null;
+
+  return (
+    <div className="mt-3">
+      <p className="text-xs font-medium text-slate-500">{t('pinterest_connect.boards_list_title')}</p>
+      <ul className="mt-1 divide-y divide-slate-100 rounded-lg border border-slate-100">
+        {boards.map((board) => (
+          <li key={board.id} className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-sm text-slate-800">{board.name}</span>
+            {confirming === board.id ? (
+              <span className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <span className="text-xs text-red-700">{t('pinterest_connect.board_delete_confirm', { name: board.name })}</span>
+                <span className="flex gap-2">
+                  <Button variant="secondary" onClick={() => setConfirming(null)} disabled={deleteMutation.isPending}>{t('pinterest_pins.cancel')}</Button>
+                  <Button variant="primary" onClick={() => deleteMutation.mutate(board)} disabled={deleteMutation.isPending}>{t('pinterest_connect.board_delete_yes')}</Button>
+                </span>
+              </span>
+            ) : (
+              <button
+                type="button"
+                className="self-start text-xs font-medium text-red-600 hover:text-red-700 sm:self-auto"
+                aria-label={t('pinterest_connect.board_delete', { name: board.name })}
+                onClick={() => setConfirming(board.id)}
+              >
+                {t('pinterest_connect.board_delete_short')}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -315,7 +374,12 @@ export function PinterestConnectionPanel() {
           </form>
         )}
 
-        {connection.connected && <CreateBoardForm />}
+        {connection.connected && (
+          <>
+            <CreateBoardForm />
+            <BoardList />
+          </>
+        )}
 
         <CredentialsForm
           key={`${connection.credentials.app_id}-${connection.credentials.sandbox}-${connection.credentials.has_secret}`}

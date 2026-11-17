@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PinterestConnection;
+use App\Models\PinterestPin;
 use App\Models\PinterestPublishLog;
 use App\Services\Pinterest\PinterestClient;
 use App\Services\Pinterest\PinterestCredentials;
@@ -139,6 +140,59 @@ class PinterestConnectionController extends Controller
 
             return response()->json(['message' => $message], $e->isAuthFailure() ? Response::HTTP_FORBIDDEN : Response::HTTP_BAD_GATEWAY);
         }
+    }
+
+    /**
+     * Takes a pin the job posted off Pinterest. The pin stays in the admin as a draft: ready again, with its date and
+     * Pinterest id cleared, so the job does not post it a second time until the owner schedules it again.
+     */
+    public function deletePin(PinterestPin $pinterestPin): JsonResponse
+    {
+        if (blank($pinterestPin->pinterest_pin_id)) {
+            return response()->json(['message' => 'This pin was not posted through the API, so it can only be deleted on Pinterest by hand.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        try {
+            $this->client->deletePin($pinterestPin->pinterest_pin_id);
+        } catch (PinterestException $e) {
+            return $this->remoteDeleteFailed($e);
+        }
+
+        $pinterestPin->forceFill([
+            'status' => PinterestPin::STATUS_READY,
+            'posted_at' => null,
+            'posted_via' => null,
+            'pinterest_pin_id' => null,
+            'scheduled_date' => null,
+            'publish_attempts' => 0,
+            'last_error' => null,
+        ])->save();
+
+        return response()->json(['data' => ['id' => $pinterestPin->id, 'status' => $pinterestPin->status]]);
+    }
+
+    /** Deletes a board on Pinterest, with every pin on it there. Pins here that pointed at it lose the board, nothing more. */
+    public function deleteBoard(string $boardId): Response|JsonResponse
+    {
+        try {
+            $this->client->deleteBoard($boardId);
+        } catch (PinterestException $e) {
+            return $this->remoteDeleteFailed($e);
+        }
+
+        PinterestPin::query()->where('pinterest_board_id', $boardId)->update(['pinterest_board_id' => null]);
+
+        return response()->noContent();
+    }
+
+    private function remoteDeleteFailed(PinterestException $e): JsonResponse
+    {
+        // 403: the login was given before boards:write was asked for, or Pinterest will not let this item go.
+        $message = $e->httpStatus === 403
+            ? 'Pinterest did not allow the deletion. Disconnect and connect again to give the permission, then retry.'
+            : $e->getMessage();
+
+        return response()->json(['message' => $message], $e->isAuthFailure() ? Response::HTTP_FORBIDDEN : Response::HTTP_BAD_GATEWAY);
     }
 
     public function updateSettings(Request $request): JsonResponse

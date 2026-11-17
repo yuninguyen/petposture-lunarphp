@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\Admin;
 
 use App\Models\PinterestConnection;
+use App\Models\PinterestPin;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -219,6 +220,127 @@ class PinterestConnectionControllerTest extends TestCase
         $this->getJson('/api/admin/pinterest/boards')
             ->assertOk()
             ->assertExactJson(['data' => [['id' => '1', 'name' => 'Feeding'], ['id' => '2', 'name' => 'Walks']]]);
+    }
+
+    private function postedPin(array $overrides = []): PinterestPin
+    {
+        $pin = PinterestPin::query()->create([
+            'image' => 'media/pin.png',
+            'title' => 'A posted pin',
+            'description' => 'About it.',
+            'destination_url' => 'https://petposture.com/blog/a-post',
+            'pinterest_board_id' => '222',
+            'scheduled_date' => '2026-11-16',
+        ]);
+        $pin->forceFill(array_merge([
+            'status' => 'posted',
+            'posted_at' => now(),
+            'posted_via' => 'api',
+            'pinterest_pin_id' => '111',
+            'publish_attempts' => 1,
+        ], $overrides))->save();
+
+        return $pin;
+    }
+
+    public function test_a_pin_posted_through_the_api_can_be_deleted_on_pinterest_and_becomes_a_draft(): void
+    {
+        $this->actingAsRole();
+        $this->connection();
+        $pin = $this->postedPin();
+        Http::fake(['api.pinterest.com/v5/pins/111' => Http::response(null, 204)]);
+
+        $this->deleteJson("/api/admin/pinterest/pins/{$pin->id}")->assertOk()->assertJsonPath('data.status', 'ready');
+
+        Http::assertSent(fn ($request) => $request->method() === 'DELETE' && str_ends_with($request->url(), '/pins/111'));
+        $pin->refresh();
+        $this->assertSame('ready', $pin->status);
+        $this->assertNull($pin->pinterest_pin_id);
+        $this->assertNull($pin->posted_at);
+        $this->assertNull($pin->posted_via);
+        $this->assertNull($pin->scheduled_date, 'No date, so the job cannot post it again by itself.');
+        $this->assertSame('222', $pin->pinterest_board_id);
+    }
+
+    public function test_a_pin_posted_by_hand_cannot_be_deleted_on_pinterest_from_here(): void
+    {
+        $this->actingAsRole();
+        $this->connection();
+        $pin = $this->postedPin(['posted_via' => 'manual', 'pinterest_pin_id' => null]);
+        Http::fake();
+
+        $this->deleteJson("/api/admin/pinterest/pins/{$pin->id}")->assertUnprocessable();
+
+        Http::assertNothingSent();
+        $this->assertSame('posted', $pin->refresh()->status);
+    }
+
+    public function test_the_pin_stays_posted_when_pinterest_refuses_to_delete_it(): void
+    {
+        $this->actingAsRole();
+        $this->connection();
+        $pin = $this->postedPin();
+        Http::fake(['api.pinterest.com/v5/pins/111' => Http::response(['code' => 29, 'message' => 'Not authorized'], 403)]);
+
+        $this->deleteJson("/api/admin/pinterest/pins/{$pin->id}")
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Pinterest did not allow the deletion. Disconnect and connect again to give the permission, then retry.');
+
+        $this->assertSame('posted', $pin->refresh()->status);
+        $this->assertSame('111', $pin->pinterest_pin_id);
+    }
+
+    public function test_a_board_can_be_deleted_and_pins_here_lose_only_the_board(): void
+    {
+        $this->actingAsRole();
+        $this->connection();
+        $onBoard = $this->postedPin();
+        $elsewhere = $this->postedPin(['pinterest_pin_id' => '112']);
+        $elsewhere->forceFill(['pinterest_board_id' => '333'])->save();
+        Http::fake(['api.pinterest.com/v5/boards/222' => Http::response(null, 204)]);
+
+        $this->deleteJson('/api/admin/pinterest/boards/222')->assertNoContent();
+
+        Http::assertSent(fn ($request) => $request->method() === 'DELETE' && str_ends_with($request->url(), '/boards/222'));
+        $this->assertNull($onBoard->refresh()->pinterest_board_id);
+        $this->assertSame('posted', $onBoard->status, 'The pin itself is not touched here.');
+        $this->assertSame('333', $elsewhere->refresh()->pinterest_board_id);
+    }
+
+    public function test_only_numeric_board_ids_are_accepted(): void
+    {
+        $this->actingAsRole();
+        $this->connection();
+        Http::fake();
+
+        $this->deleteJson('/api/admin/pinterest/boards/abc')->assertNotFound();
+
+        Http::assertNothingSent();
+    }
+
+    public function test_deleting_says_so_when_pinterest_is_not_connected(): void
+    {
+        $this->actingAsRole();
+        $pin = $this->postedPin();
+
+        $this->deleteJson("/api/admin/pinterest/pins/{$pin->id}")->assertForbidden();
+        $this->deleteJson('/api/admin/pinterest/boards/222')->assertForbidden();
+    }
+
+    public function test_no_business_role_can_delete_on_pinterest(): void
+    {
+        $this->connection();
+        $pin = $this->postedPin();
+        Http::fake();
+
+        foreach (self::BLOCKED_ROLES as $role) {
+            $this->actingAsRole($role);
+
+            $this->deleteJson("/api/admin/pinterest/pins/{$pin->id}")->assertForbidden();
+            $this->deleteJson('/api/admin/pinterest/boards/222')->assertForbidden();
+        }
+
+        Http::assertNothingSent();
     }
 
     public function test_the_boards_say_so_when_pinterest_is_not_connected(): void

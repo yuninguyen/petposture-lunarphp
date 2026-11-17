@@ -186,6 +186,19 @@ export async function createPinterestBoard(name: string): Promise<PinterestBoard
   return (await fetchJson<{ data: PinterestBoard }>('/admin/pinterest/boards', { method: 'POST', body: { name } })).data;
 }
 
+/**
+ * Takes a pin posted through the API off Pinterest. The pin stays in the admin as a draft with no date, so it is not
+ * posted again until it is scheduled again.
+ */
+export async function deletePinOnPinterest(id: number): Promise<void> {
+  await fetchJson(`/admin/pinterest/pins/${id}`, { method: 'DELETE' });
+}
+
+/** Deletes a board on Pinterest, and every pin on it there. */
+export async function deletePinterestBoard(id: string): Promise<void> {
+  await fetchJson(`/admin/pinterest/boards/${id}`, { method: 'DELETE' });
+}
+
 export async function updatePinterestCredentials(values: PinterestCredentialsInput): Promise<PinterestCredentials> {
   return (await fetchJson<{ data: PinterestCredentials }>('/admin/pinterest/credentials', { method: 'PUT', body: values })).data;
 }

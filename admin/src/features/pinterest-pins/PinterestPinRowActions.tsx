@@ -40,6 +40,14 @@ function CheckCircleIcon({ className }: { className?: string }) {
   );
 }
 
+function UnpublishIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636a9 9 0 11-12.728 0M12 3v9" />
+    </svg>
+  );
+}
+
 function RetryIcon({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -49,7 +57,18 @@ function RetryIcon({ className }: { className?: string }) {
 }
 
 /** What Yuni does with a pin: take the image, copy the text, post it by hand, then mark it posted. */
-export function PinterestPinRowActions({ pin, onEdit, onDelete }: { pin: PinterestPin; onEdit: (pin: PinterestPin) => void; onDelete: (pin: PinterestPin) => void }) {
+export function PinterestPinRowActions({
+  pin,
+  onEdit,
+  onDelete,
+  onUnpublish,
+}: {
+  pin: PinterestPin;
+  onEdit: (pin: PinterestPin) => void;
+  onDelete: (pin: PinterestPin) => void;
+  /** Asks to take the pin off Pinterest; only offered for a pin the posting job posted. */
+  onUnpublish: (pin: PinterestPin) => void;
+}) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [downloading, setDownloading] = useState(false);
@@ -110,6 +129,11 @@ export function PinterestPinRowActions({ pin, onEdit, onDelete }: { pin: Pintere
       {pin.status !== 'posted' && pin.status !== 'publishing' && (
         <ActionButton label={t('pinterest_pins.action_mark_posted')} onClick={() => postedMutation.mutate()} disabled={postedMutation.isPending}>
           <CheckCircleIcon className="h-4 w-4" />
+        </ActionButton>
+      )}
+      {pin.status === 'posted' && pin.posted_via === 'api' && pin.pinterest_pin_id && (
+        <ActionButton label={t('pinterest_pins.action_unpublish')} onClick={() => onUnpublish(pin)} danger>
+          <UnpublishIcon className="h-4 w-4" />
         </ActionButton>
       )}
       <ActionButton label={t('pinterest_pins.action_edit')} onClick={() => onEdit(pin)}>

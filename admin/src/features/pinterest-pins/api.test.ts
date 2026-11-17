@@ -12,6 +12,8 @@ import {
   completePinterestCallback,
   createPin,
   deletePin,
+  deletePinOnPinterest,
+  deletePinterestBoard,
   disconnectPinterest,
   downloadPinImage,
   fetchPinOptions,
@@ -120,6 +122,24 @@ describe('pin writes', () => {
     await retryPin(7);
 
     expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest-pins/7', { method: 'PUT', body: { status: 'ready' } });
+  });
+});
+
+describe('deleting on Pinterest', () => {
+  it('deletes a posted pin on Pinterest by its admin id', async () => {
+    fetchJson.mockResolvedValue(null);
+
+    await deletePinOnPinterest(7);
+
+    expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest/pins/7', { method: 'DELETE' });
+  });
+
+  it('deletes a board on Pinterest by its Pinterest id', async () => {
+    fetchJson.mockResolvedValue(null);
+
+    await deletePinterestBoard('549755885175');
+
+    expect(fetchJson).toHaveBeenCalledWith('/admin/pinterest/boards/549755885175', { method: 'DELETE' });
   });
 });
 
