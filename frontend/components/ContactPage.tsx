@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle, Copy } from "lucide-react";
 import { fetchApi } from '@/lib/fetchApi';
 import { useSettings } from '@/context/SettingsContext';
 
@@ -48,6 +48,8 @@ const MESSAGES = {
     },
 };
 
+const BRAND_SUBJECTS = ['Supplier', 'Affiliate'];
+
 export default function ContactPage() {
     const { contact } = useSettings();
     const phoneHref = `tel:${(contact.phone || '').replace(/[^\d+]/g, '')}`;
@@ -61,6 +63,17 @@ export default function ContactPage() {
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+    const [copied, setCopied] = useState('');
+
+    const copySubject = async (subject: string) => {
+        try {
+            await navigator.clipboard.writeText(subject);
+            setCopied(subject);
+        } catch {
+            // Clipboard blocked: the subject is also written in the paragraph above.
+            setCopied('');
+        }
+    };
 
     const validate = (): FieldErrors => {
         const errors: FieldErrors = {};
@@ -334,6 +347,24 @@ export default function ContactPage() {
                         <a href="mailto:support@petposture.com" className="font-bold text-rust hover:underline break-all">support@petposture.com</a>{' '}
                         with the subject &ldquo;Supplier&rdquo; or &ldquo;Affiliate&rdquo; and tell us about your product, your wholesale terms, or your affiliate programme. We only feature products we&rsquo;ve researched ourselves, and we don&rsquo;t accept paid placement. Please note we&rsquo;re not yet set up to sell directly, so dropship partnerships will be considered once our shop setup is complete.
                     </p>
+                    <div className="mt-6 pt-6 border-t border-zinc-100">
+                        <p className="text-xs font-black uppercase tracking-[0.08em] text-rust mb-3">Quick send with a ready-made subject</p>
+                        <div className="flex flex-wrap gap-3">
+                            {BRAND_SUBJECTS.map((subject) => (
+                                <button
+                                    key={subject}
+                                    type="button"
+                                    onClick={() => copySubject(subject)}
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zinc-200 text-sm font-bold text-primary hover:border-secondary hover:text-rust transition-colors"
+                                >
+                                    <Copy size={14} /> Copy &ldquo;{subject}&rdquo;
+                                </button>
+                            ))}
+                        </div>
+                        <p role="status" aria-live="polite" className="mt-3 min-h-[1.25rem] text-sm font-medium text-zinc-500">
+                            {copied && <>Copied &ldquo;{copied}&rdquo; &mdash; paste it into the Subject line of your email.</>}
+                        </p>
+                    </div>
                 </div>
             </section>
 

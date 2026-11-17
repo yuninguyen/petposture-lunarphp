@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import React from 'react';
+import { act } from 'react';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ContactPage from './ContactPage';
@@ -40,6 +42,27 @@ describe('Contact page', () => {
         expect(html).not.toContain('Order Number');
         expect(html).not.toContain('order tracking');
         expect(html).not.toContain('shipping, returns');
+    });
+
+    it('copies a ready-made subject and tells the visitor where to paste it', async () => {
+        const writeText = vi.fn().mockResolvedValue(undefined);
+        Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+        (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        const root = createRoot(container);
+        await act(async () => root.render(<ContactPage />));
+
+        const button = Array.from(container.querySelectorAll('button')).find((b) => b.textContent?.includes('Supplier'));
+        expect(button).toBeTruthy();
+        expect(container.textContent).toContain('Copy “Affiliate”');
+
+        await act(async () => button!.click());
+
+        expect(writeText).toHaveBeenCalledWith('Supplier');
+        expect(container.textContent).toContain('Copied “Supplier” — paste it into the Subject line of your email.');
+        await act(async () => root.unmount());
     });
 
     it('invites brands to write about dropship and affiliate work', () => {
