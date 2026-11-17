@@ -8,6 +8,7 @@ use App\Http\Resources\Admin\PinterestPinResource;
 use App\Models\CuratorMedia;
 use App\Models\PinterestPin;
 use App\Models\Post;
+use App\Services\Pinterest\PinterestImage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -139,7 +141,17 @@ class PinterestPinController extends Controller
         $name = Str::slug($pinterestPin->title) ?: 'pinterest-pin';
         $extension = strtolower(pathinfo($pinterestPin->image, PATHINFO_EXTENSION));
 
-        return $disk->download($pinterestPin->image, $extension !== '' ? "{$name}.{$extension}" : $name);
+        // Pinterest's own upload takes JPG and PNG only, and the library stores WebP: hand over a JPG for those.
+        try {
+            [$bytes, $mime, $pinterestExtension] = PinterestImage::forPinterest($disk->get($pinterestPin->image), $extension);
+
+            return response()->streamDownload(function () use ($bytes): void {
+                echo $bytes;
+            }, "{$name}.{$pinterestExtension}", ['Content-Type' => $mime]);
+        } catch (RuntimeException) {
+            // Could not convert: give the file as it is rather than nothing.
+            return $disk->download($pinterestPin->image, $extension !== '' ? "{$name}.{$extension}" : $name);
+        }
     }
 
     /**

@@ -504,6 +504,37 @@ class PinterestPinControllerTest extends TestCase
         $this->assertStringContainsString('does-your-frenchie-eat-too-fast.png', $disposition);
     }
 
+    public function test_a_webp_image_is_downloaded_as_a_jpg_because_pinterest_takes_jpg_and_png_only(): void
+    {
+        if (! function_exists('imagewebp') || ! function_exists('imagecreatefromwebp')) {
+            $this->markTestSkipped('GD has no WebP support here.');
+        }
+
+        $this->actingAsRole();
+        ob_start();
+        imagewebp(imagecreatetruecolor(20, 30));
+        Storage::disk('public')->put('media/pin.webp', (string) ob_get_clean());
+        $pin = $this->makePin(['image' => 'media/pin.webp', 'title' => 'Does your Frenchie eat too fast?']);
+
+        $response = $this->get("/api/admin/pinterest-pins/{$pin->id}/download")->assertOk();
+
+        $this->assertStringContainsString('does-your-frenchie-eat-too-fast.jpg', (string) $response->headers->get('content-disposition'));
+        $this->assertSame('image/jpeg', $response->headers->get('content-type'));
+        $this->assertStringStartsWith("\xFF\xD8", $response->streamedContent());
+    }
+
+    public function test_an_image_that_cannot_be_converted_is_downloaded_as_it_is(): void
+    {
+        $this->actingAsRole();
+        Storage::disk('public')->put('media/odd.webp', 'not-really-an-image');
+        $pin = $this->makePin(['image' => 'media/odd.webp', 'title' => 'An odd one']);
+
+        $response = $this->get("/api/admin/pinterest-pins/{$pin->id}/download")->assertOk();
+
+        $this->assertStringContainsString('an-odd-one.webp', (string) $response->headers->get('content-disposition'));
+        $this->assertSame('not-really-an-image', $response->streamedContent());
+    }
+
     public function test_the_download_says_so_when_the_image_file_is_gone(): void
     {
         $this->actingAsRole();

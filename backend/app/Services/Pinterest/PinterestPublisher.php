@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -203,28 +204,13 @@ class PinterestPublisher
             throw new PinterestException('The image file of this pin is missing.');
         }
 
-        $bytes = $disk->get($pin->image);
-        $extension = strtolower(pathinfo($pin->image, PATHINFO_EXTENSION));
-
-        if ($extension === 'png') {
-            return [$bytes, 'image/png'];
+        try {
+            [$bytes, $mime] = PinterestImage::forPinterest($disk->get($pin->image), pathinfo($pin->image, PATHINFO_EXTENSION));
+        } catch (RuntimeException $e) {
+            throw new PinterestException($e->getMessage());
         }
 
-        if (in_array($extension, ['jpg', 'jpeg'], true)) {
-            return [$bytes, 'image/jpeg'];
-        }
-
-        $image = function_exists('imagecreatefromstring') ? @imagecreatefromstring($bytes) : false;
-
-        if ($image === false) {
-            throw new PinterestException('The image could not be converted to JPEG for Pinterest.');
-        }
-
-        ob_start();
-        imagejpeg($image, null, 92);
-        $jpeg = (string) ob_get_clean();
-
-        return [$jpeg, 'image/jpeg'];
+        return [$bytes, $mime];
     }
 
     private function insideWindow(Carbon $local): bool
