@@ -125,4 +125,15 @@ export function useCreateProductAssociation() { const qc = useQueryClient(); ret
 export function useDeleteProductAssociation() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ productId, associationId }: { productId: number; associationId: number }) => deleteProductAssociation(productId, associationId), onSuccess: (_data, variables) => qc.invalidateQueries({ queryKey: ['products', variables.productId, 'associations'] }) }); }
 export function useBulkDeleteProducts() { const qc = useQueryClient(); return useMutation({ mutationFn: bulkDeleteProducts, onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }) }); }
 export function useBulkUpdateProductStatus() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ ids, status }: { ids: number[]; status: ProductStatus }) => bulkUpdateProductStatus(ids, status), onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }) }); }
+export interface ProductImportRow { row: number; name: string; variant: string; price: string; status: 'create' | 'skipped_duplicate' | 'error'; reasons: string[]; warnings: string[]; photos: { slot: number; source: 'library' | 'url'; label: string; alt: string }[] }
+export interface ProductImportPreview { summary: { create: number; skipped_duplicate: number; error: number }; rows: ProductImportRow[] }
+export interface ProductImportResult {
+  created: { row: number; name: string; id: number; slug: string }[];
+  skipped: { row: number; name: string; reason: string }[];
+  failed: { row: number; name: string; reasons: string[] }[];
+  photo_warnings: { row: number; name: string; message: string }[];
+}
+function importBody(file: File) { const body = new FormData(); body.append('file', file); return body; }
+export async function previewProductImport(file: File): Promise<ProductImportPreview> { return (await fetchJson<{ data: ProductImportPreview }>('/admin/products/import/preview', { method: 'POST', body: importBody(file) })).data; }
+export async function importProducts(file: File): Promise<ProductImportResult> { return (await fetchJson<{ data: ProductImportResult }>('/admin/products/import', { method: 'POST', body: importBody(file) })).data; }
 export function useDeleteProduct() { const qc = useQueryClient(); return useMutation({ mutationFn: deleteProduct, onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }) }); }

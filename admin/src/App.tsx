@@ -336,7 +336,7 @@ export function AppRoutes({ userRoles, userAbilities = [] }: { userRoles: string
         <Route path="/brands" element={<BrandsPage />} />
         <Route path="/collection-groups" element={<CollectionGroupsPage />} />
         <Route path="/collections" element={<CollectionsPage />} />
-        <Route path="/products" element={<ProductsListPage />} />
+        <Route path="/products" element={<ProductsListPage canImport={isCoreAdmin} />} />
         <Route path="/products/:id" element={<ProductFormPage key={location.pathname} />} />
         <Route path="/solutions" element={<SolutionsListPage />} />
         <Route path="/solutions/new" element={<SolutionFormPage key={location.pathname} />} />
