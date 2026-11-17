@@ -1893,7 +1893,6 @@
   "pinterest_pins.unpublish_message": "This removes the pin from Pinterest. It stays here as a draft with no date, so it will not be posted again until you schedule it again.",
   "pinterest_pins.unpublished": "Deleted on Pinterest. The pin is a draft again.",
   "pinterest_connect.boards_list_title": "Your boards",
-  "pinterest_connect.board_delete_short": "Delete",
   "pinterest_connect.board_delete": "Delete the board \"{{name}}\"",
   "pinterest_connect.board_delete_confirm": "Delete \"{{name}}\"? Every pin on this board is deleted on Pinterest too. This cannot be undone.",
   "pinterest_connect.board_delete_yes": "Yes, delete the board",

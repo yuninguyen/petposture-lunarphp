@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
+import { TrashIcon } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import {
@@ -113,11 +114,12 @@ function BoardList() {
             ) : (
               <button
                 type="button"
-                className="self-start text-xs font-medium text-red-600 hover:text-red-700 sm:self-auto"
+                className="inline-flex h-8 w-8 items-center justify-center self-start rounded-md text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 sm:self-auto"
+                title={t('pinterest_connect.board_delete', { name: board.name })}
                 aria-label={t('pinterest_connect.board_delete', { name: board.name })}
                 onClick={() => setConfirming(board.id)}
               >
-                {t('pinterest_connect.board_delete_short')}
+                <TrashIcon className="h-4 w-4" />
               </button>
             )}
           </li>
