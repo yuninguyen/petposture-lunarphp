@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import {
   PinterestCredentials,
   PinterestCredentialsInput,
@@ -79,9 +80,8 @@ function CredentialsForm({ credentials, connected, startOpen }: { credentials: P
           </div>
           <div>
             <label htmlFor="pin-app-secret" className="mb-1 block text-xs font-medium text-slate-500">{t('pinterest_connect.app_secret')}</label>
-            <Input
+            <PasswordInput
               id="pin-app-secret"
-              type="password"
               autoComplete="new-password"
               placeholder={credentials.has_secret ? t('pinterest_connect.app_secret_set') : ''}
               value={values.app_secret}

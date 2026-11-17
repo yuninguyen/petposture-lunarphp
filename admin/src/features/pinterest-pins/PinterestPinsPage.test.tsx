@@ -471,6 +471,21 @@ describe('PinterestPinsPage automatic posting', () => {
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('App details saved.'));
   });
 
+  it('lets the owner check the secret being pasted with the eye button', async () => {
+    renderPage();
+
+    const secret = (await screen.findByLabelText('App secret')) as HTMLInputElement;
+    fireEvent.change(secret, { target: { value: 'pasted-secret-123' } });
+    expect(secret.type).toBe('password');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(secret.type).toBe('text');
+    expect(secret.value).toBe('pasted-secret-123');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+    expect(secret.type).toBe('password');
+  });
+
   it('shows what the server refused next to the field', async () => {
     mockedFetch.mockImplementation(async (url: string, init?: FetchApiOptions) => {
       if (url === '/admin/pinterest-pins/options') return { data: options };
