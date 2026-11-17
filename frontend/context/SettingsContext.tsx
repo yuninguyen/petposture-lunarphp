@@ -42,7 +42,8 @@ const defaults: ShopSettings = {
     },
     contact: {
         phone: "+1 (916) 623-5368",
-        address: "1501 South Greeley Hwy, Ste C #1465, Cheyenne, WY 82007, United States",
+        // No address until the LLC has a real one: it is entered in the admin (SEO & Social > Business address).
+        address: null,
     },
 };
 

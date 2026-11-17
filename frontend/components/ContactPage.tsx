@@ -312,13 +312,14 @@ export default function ContactPage() {
                                         value={contact.phone || '+1 (916) 623-5368'}
                                         href={phoneHref}
                                     />
-                                    <ContactInfoItem
-                                        icon={MapPin}
-                                        label="Our Office"
-                                        value={contact.address || '1501 South Greeley Hwy, Ste C #1465, Cheyenne, WY 82007, United States'}
-                                        note="This is not retail location"
-                                        href="https://maps.app.goo.gl/B9HUyLdTnm4etSrL9"
-                                    />
+                                    {contact.address && (
+                                        <ContactInfoItem
+                                            icon={MapPin}
+                                            label="Our Office"
+                                            value={contact.address}
+                                            note="This is not retail location"
+                                        />
+                                    )}
                                 </div>
                             </div>
 
@@ -335,6 +336,18 @@ export default function ContactPage() {
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            {/* For brands: suppliers and affiliate programmes write to support@ with one of two subjects. */}
+            <section className="pb-20 px-4 md:px-8 bg-white" aria-labelledby="brands-title">
+                <div className="max-w-[1100px] mx-auto p-8 md:p-10 rounded-2xl border border-zinc-100 bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)]">
+                    <h3 id="brands-title" className="text-xl font-black uppercase tracking-[0.08em] text-primary mb-4">For brands: dropship &amp; affiliate</h3>
+                    <p className="text-[15px] text-zinc-500 leading-relaxed font-medium">
+                        If you make or supply pet products that fit the dogs we cover (Corgi, Dachshund, English Bulldog, French Bulldog, Pug), we&rsquo;d like to hear from you. Email{' '}
+                        <a href="mailto:support@petposture.com" className="font-bold text-rust hover:underline break-all">support@petposture.com</a>{' '}
+                        with the subject &ldquo;Supplier&rdquo; or &ldquo;Affiliate&rdquo; and tell us about your product, your wholesale terms, or your affiliate programme. We only feature products we&rsquo;ve researched ourselves, and we don&rsquo;t accept paid placement. Please note we&rsquo;re not yet set up to sell directly, so dropship partnerships will be considered once our shop setup is complete.
+                    </p>
                 </div>
             </section>
 

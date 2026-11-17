@@ -88,11 +88,19 @@ class ContentController extends Controller
         }
 
         $phone = setting('business_phone') ?: '+1 (916) 623-5368';
-        $address = setting('business_address') ?: '1501 South Greeley Hwy, Ste C #1465, Cheyenne, WY 82007, United States';
+        $address = trim((string) setting('business_address'));
+
+        // {{#business_address}}...{{/business_address}} is kept only when an address is set, so a page can
+        // carry its address line and lose it cleanly until the LLC has a real one (entered in the admin).
+        $content = preg_replace_callback(
+            '/\{\{#business_address\}\}(.*?)\{\{\/business_address\}\}/s',
+            fn (array $match) => $address !== '' ? $match[1] : '',
+            $content
+        );
 
         return str_replace(
             ['{{business_phone}}', '{{business_address}}', '{{business_address_inline}}'],
-            [$phone, $this->formatAddressMultiline($address), $address],
+            [$phone, $address !== '' ? $this->formatAddressMultiline($address) : '', $address],
             $content
         );
     }

@@ -149,9 +149,9 @@ const pathname = usePathname();
             </li>
             <li className="h-full relative group flex items-center hover:bg-white/10 transition-all duration-300">
               <span className="flex items-center gap-2.5 h-full px-6 text-gray-100 cursor-default">
-                <Clock size={14} className="text-secondary" /> 10:00 AM - 20:00 PM
+                <Clock size={14} className="text-secondary" /> 10:00 AM - 8:00 PM
               </span>
-              <NavTooltip textCase="uppercase">10:00 AM - 20:00 PM</NavTooltip>
+              <NavTooltip textCase="uppercase">10:00 AM - 8:00 PM</NavTooltip>
             </li>
             <li className="h-full relative group flex items-center hover:bg-white/10 transition-all duration-300">
               <a href={phoneHref} className="flex items-center gap-2.5 h-full px-6 hover:text-secondary transition-colors text-gray-100">

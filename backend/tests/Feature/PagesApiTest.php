@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Page;
+use App\Models\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -46,5 +47,35 @@ class PagesApiTest extends TestCase
     public function test_unknown_slug_returns_404(): void
     {
         $this->getJson('/api/pages/does-not-exist')->assertNotFound();
+    }
+
+    public function test_address_section_is_dropped_while_no_business_address_is_set(): void
+    {
+        $this->makeAddressPage();
+
+        $this->getJson('/api/pages/contact-legal')
+            ->assertOk()
+            ->assertJsonPath('data.content', '<p>PetPosture LLC</p>');
+    }
+
+    public function test_address_section_is_kept_once_a_business_address_is_set(): void
+    {
+        Setting::set('business_address', '1 Main St, Cheyenne, WY 82001, United States', 'string', 'general');
+        $this->makeAddressPage();
+
+        $this->getJson('/api/pages/contact-legal')
+            ->assertOk()
+            ->assertJsonPath('data.content', fn (string $html) => str_contains($html, '1 Main St<br>Cheyenne, WY 82001<br>United States') && ! str_contains($html, '{{'));
+    }
+
+    private function makeAddressPage(): void
+    {
+        Page::create([
+            'slug' => 'contact-legal',
+            'title' => 'Legal',
+            'content' => '<p>PetPosture LLC{{#business_address}}<br>{{business_address}}{{/business_address}}</p>',
+            'is_active' => true,
+            'is_core' => false,
+        ]);
     }
 }

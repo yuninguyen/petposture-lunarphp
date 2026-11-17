@@ -116,8 +116,9 @@ If you have further questions on your {{ config('app.name') }}.com order, please
 <tr>
 <td align="center" style="{{ $font }} padding-top:12px;">
 <p style="{{ $font }} margin:0; font-size:12px; line-height:1.7; color:#c2c2c2;">
-{{ config('app.name') }}<br>
-1501 South Greeley Hwy, Ste C #1465, Cheyenne, WY 82007, United States
+{{ config('app.name') }}
+@if(filled(setting('business_address')))<br>{{ setting('business_address') }}
+@endif
 </p>
 </td>
 </tr>
