@@ -195,7 +195,7 @@ export default function ContactPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Full Name */}
                                 <div className="relative group">
-                                    <label htmlFor="name" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-rust ${fieldErrors.name ? 'text-red-500' : 'text-primary/40'}`}>Full Name *</label>
+                                    <label htmlFor="name" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-primary ${fieldErrors.name ? 'text-red-500' : 'text-primary/40'}`}>Full Name *</label>
                                     <input
                                         type="text"
                                         id="name"
@@ -211,7 +211,7 @@ export default function ContactPage() {
 
                                 {/* Email Address */}
                                 <div className="relative group">
-                                    <label htmlFor="email" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-rust ${fieldErrors.email ? 'text-red-500' : 'text-primary/40'}`}>Email Address *</label>
+                                    <label htmlFor="email" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-primary ${fieldErrors.email ? 'text-red-500' : 'text-primary/40'}`}>Email Address *</label>
                                     <input
                                         type="email"
                                         id="email"
@@ -230,7 +230,7 @@ export default function ContactPage() {
                             <div className="grid grid-cols-1 gap-8">
                                 {/* Subject */}
                                 <div className="relative group">
-                                    <label htmlFor="subject" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-rust ${fieldErrors.subject ? 'text-red-500' : 'text-primary/40'}`}>Subject / Inquiry Type *</label>
+                                    <label htmlFor="subject" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-primary ${fieldErrors.subject ? 'text-red-500' : 'text-primary/40'}`}>Subject / Inquiry Type *</label>
                                     <input
                                         type="text"
                                         id="subject"
@@ -247,7 +247,7 @@ export default function ContactPage() {
 
                             {/* Message */}
                             <div className="relative group">
-                                <label htmlFor="message" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-rust ${fieldErrors.message ? 'text-red-500' : 'text-primary/40'}`}>Your Message *</label>
+                                <label htmlFor="message" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-primary ${fieldErrors.message ? 'text-red-500' : 'text-primary/40'}`}>Your Message *</label>
                                 <textarea
                                     id="message"
                                     name="message"
