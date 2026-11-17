@@ -98,6 +98,23 @@ class ProductPickApiTest extends TestCase
         $this->assertSame('https://api.petposture.com/go/pick/necoichi-bowl', $item['pick']['goUrl']);
     }
 
+    public function test_a_photo_alt_is_the_admin_alt_text_and_never_the_file_name(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $product = $this->pick();
+        $collection = config('lunar.media.collection');
+        $product->addMedia(\Illuminate\Http\UploadedFile::fake()->image('kong-puppy.jpg'))
+            ->withCustomProperties(['primary' => true, 'alt' => 'Necoichi bowl, Gray, Large'])
+            ->toMediaCollection($collection);
+        $product->addMedia(\Illuminate\Http\UploadedFile::fake()->image('side.jpg'))
+            ->withCustomProperties(['primary' => false])
+            ->toMediaCollection($collection);
+
+        $alts = collect($this->getJson('/api/products/necoichi-bowl')->assertOk()->json('data.images'))->pluck('alt')->all();
+
+        $this->assertSame(['Necoichi bowl, Gray, Large', 'Necoichi bowl'], $alts);
+    }
+
     public function test_the_story_fields_are_exposed_and_parsed(): void
     {
         $this->pick([

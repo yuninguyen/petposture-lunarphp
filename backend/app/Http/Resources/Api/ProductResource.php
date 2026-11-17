@@ -160,7 +160,8 @@ class ProductResource extends JsonResource
                 $images[] = [
                     'id' => $media->id,
                     'src' => $this->mediaUrl($media),
-                    'alt' => $media->name ?? $this->translateAttribute('name'),
+                    // The admin's "Alt text" box is stored as a custom property; media->name is only the file name.
+                    'alt' => filled($media->getCustomProperty('alt')) ? $media->getCustomProperty('alt') : $this->translateAttribute('name'),
                 ];
             }
 
