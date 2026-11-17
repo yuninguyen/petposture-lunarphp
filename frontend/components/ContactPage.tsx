@@ -54,7 +54,6 @@ export default function ContactPage() {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        orderNumber: '',
         subject: '',
         message: '',
         website: '' // honeypot: hidden from real users, bots tend to fill every field
@@ -93,7 +92,6 @@ export default function ContactPage() {
                     email: formData.email,
                     subject: formData.subject,
                     message: formData.message,
-                    order_number: formData.orderNumber || undefined,
                     website: formData.website,
                 },
             });
@@ -109,7 +107,7 @@ export default function ContactPage() {
             }
 
             setStatus('success');
-            setFormData({ name: '', email: '', orderNumber: '', subject: '', message: '', website: '' });
+            setFormData({ name: '', email: '', subject: '', message: '', website: '' });
         } catch (err) {
             setStatus('error');
             setErrorMessage(err instanceof Error ? err.message : MESSAGES.error);
@@ -140,7 +138,7 @@ export default function ContactPage() {
                     </h1>
                     <div className="w-12 h-1 bg-secondary mx-auto rounded-full mb-6"></div>
                     <p className="hidden md:block text-[18px] text-zinc-500 max-w-xl mx-auto leading-relaxed font-medium">
-                        Have a question about product fit, order tracking, or breed-specific needs?
+                        Have a question about product fit or breed-specific needs?
                         Our PetPosture specialists are here to help with practical product guidance.
                     </p>
                 </div>
@@ -215,21 +213,8 @@ export default function ContactPage() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {/* Order Number */}
-                                <div className="relative group">
-                                    <label htmlFor="orderNumber" className="text-sm font-semibold uppercase tracking-[0.08em] text-primary/40 mb-2 block transition-colors group-focus-within:text-rust">Order Number (Optional)</label>
-                                    <input
-                                        type="text"
-                                        id="orderNumber"
-                                        name="orderNumber"
-                                        value={formData.orderNumber}
-                                        onChange={handleInputChange}
-                                        placeholder="#PP-12345"
-                                        className="w-full border-b-2 border-zinc-100 py-3 text-sm font-bold transition-all focus:outline-none focus:border-secondary bg-transparent text-primary placeholder:text-zinc-200"
-                                    />
-                                </div>
-
+                            {/* SHOP-HIDDEN: the Order Number field (with the orderNumber state) is restored by reopen-shop.sh */}
+                            <div className="grid grid-cols-1 gap-8">
                                 {/* Subject */}
                                 <div className="relative group">
                                     <label htmlFor="subject" className={`text-sm font-semibold uppercase tracking-[0.08em] mb-2 block transition-colors group-focus-within:text-rust ${fieldErrors.subject ? 'text-red-500' : 'text-primary/40'}`}>Subject / Inquiry Type *</label>
@@ -328,7 +313,8 @@ export default function ContactPage() {
                                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700" />
                                 <h4 className="text-white text-lg font-black uppercase tracking-[0.08em] mb-4">Have a Quick Question?</h4>
                                 <p className="text-white/60 text-sm leading-relaxed mb-6">
-                                    Many common questions about shipping, returns, and breed-specific fits are answered in our Help Center.
+                                    {/* SHOP-HIDDEN: shipping/returns wording is restored by reopen-shop.sh */}
+                                    Many answers about breed-specific fits are already in our guides and help pages.
                                 </p>
                                 <Link href="/faqs" className="inline-flex items-center gap-2 text-secondary font-black text-sm uppercase tracking-[0.08em] hover:text-white transition-colors group">
                                     Visit Help Center <span className="group-hover:translate-x-1 transition-transform">→</span>

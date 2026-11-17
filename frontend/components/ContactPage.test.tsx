@@ -33,6 +33,15 @@ describe('Contact page', () => {
         expect(html).toContain('1 Main St');
     });
 
+    // SHOP-HIDDEN: reverted together with the rest of the "hide the shop" commit when the shop reopens.
+    it('does not ask for an order number or promise order help while the shop is hidden', () => {
+        const html = renderToStaticMarkup(<ContactPage />);
+
+        expect(html).not.toContain('Order Number');
+        expect(html).not.toContain('order tracking');
+        expect(html).not.toContain('shipping, returns');
+    });
+
     it('invites brands to write about dropship and affiliate work', () => {
         const html = renderToStaticMarkup(<ContactPage />);
 
