@@ -30,9 +30,9 @@ class LegalPagesSeeder extends Seeder
         return [
             'privacy-policy' => [
                 'title' => 'Privacy Policy',
-                'meta_description' => 'Learn how PetPosture LLC collects, processes, and protects your personal information.',
+                'meta_description' => 'Learn how PetPosture collects, processes, and protects your personal information.',
                 'content' => <<<'HTML'
-                <p>This privacy notice for PetPosture LLC ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>," or "<strong>our</strong>"), describes how and why we might collect, store, use, and/or share ("<strong>process</strong>") your information when you use our services ("<strong>Services</strong>"), such as when you:</p>
+                <p>This privacy notice for PetPosture ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>," or "<strong>our</strong>"), describes how and why we might collect, store, use, and/or share ("<strong>process</strong>") your information when you use our services ("<strong>Services</strong>"), such as when you:</p>
                 <ul>
                 <li>Visit our website at <a href="http://petposture.com">http://petposture.com</a>, or any website of ours that links to this privacy notice</li>
                 <li>Engage with us in other related ways, including any sales, marketing, or events</li>
@@ -42,7 +42,7 @@ class LegalPagesSeeder extends Seeder
                 <blockquote>
                 <p><strong>SUMMARY OF KEY POINTS</strong></p>
                 <p><em>This summary provides key points from our privacy notice, but you can find out more details about any of these topics by clicking the link following each key point or by using our table of contents below to find the section you are looking for.</em></p>
-                <p><strong>What personal information do we process?</strong> When you visit, use, or navigate our Services, we may process personal information depending on how you interact with PetPosture LLC and the Services, the choices you make, and the products and features you use.</p>
+                <p><strong>What personal information do we process?</strong> When you visit, use, or navigate our Services, we may process personal information depending on how you interact with PetPosture and the Services, the choices you make, and the products and features you use.</p>
                 <p><strong>Do we process any sensitive personal information?</strong> We do not process sensitive personal information.</p>
                 <p><strong>Do we receive any information from third parties?</strong> We do not receive any information from third parties.</p>
                 <p><strong>How do we process your information?</strong> We process your information to provide, improve, and administer our Services, communicate with you, for security and fraud prevention, and to comply with law.</p>
@@ -120,7 +120,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>12. HOW CAN YOU CONTACT US ABOUT THIS NOTICE?</h2>
                 <p>If you have questions or comments about this notice, you may email us at <a href="mailto:support@petposture.com">support@petposture.com</a> or by post to:</p>
-                <p><strong>PetPosture LLC</strong>{{#business_address}}<br>{{business_address}}{{/business_address}}</p>
+                <p><strong>PetPosture</strong>{{#business_address}}<br>{{business_address}}{{/business_address}}</p>
 
                 <h2>13. HOW CAN YOU REVIEW, UPDATE, OR DELETE THE DATA WE COLLECT FROM YOU?</h2>
                 <p>Based on the applicable laws of your country, you may have the right to request access to the personal information we collect from you, change that information, or delete it. To request to review, update, or delete your personal information, please visit: <a href="mailto:support@petposture.com">support@petposture.com</a>.</p>
@@ -144,7 +144,7 @@ class LegalPagesSeeder extends Seeder
                 'title' => 'Terms and Conditions',
                 'meta_description' => 'The terms and conditions governing your use of the PetPosture website and services.',
                 'content' => <<<'HTML'
-                <p>These Terms and Conditions ("<strong>Terms</strong>") constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("<strong>you</strong>") and PetPosture LLC ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>," or "<strong>our</strong>"), concerning your access to and use of the <a href="http://petposture.com">http://petposture.com</a> website as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "<strong>Site</strong>").</p>
+                <p>These Terms and Conditions ("<strong>Terms</strong>") constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("<strong>you</strong>") and PetPosture ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>," or "<strong>our</strong>"), concerning your access to and use of the <a href="http://petposture.com">http://petposture.com</a> website as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "<strong>Site</strong>").</p>
                 <p>You agree that by accessing the Site, you have read, understood, and agreed to be bound by all of these Terms and Conditions. <strong>IF YOU DO NOT AGREE WITH ALL OF THESE TERMS AND CONDITIONS, THEN YOU ARE EXPRESSLY PROHIBITED FROM USING THE SITE AND YOU MUST DISCONTINUE USE IMMEDIATELY.</strong></p>
 
                 <h2>1. OUR SERVICES</h2>
@@ -210,7 +210,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>20. CONTACT US</h2>
                 <p>In order to resolve a complaint regarding the Site or to receive further information regarding use of the Site, please contact us at:</p>
-                <p><strong>PetPosture LLC</strong>{{#business_address}}<br>{{business_address}}{{/business_address}}<br>Email: <a href="mailto:support@petposture.com">support@petposture.com</a></p>
+                <p><strong>PetPosture</strong>{{#business_address}}<br>{{business_address}}{{/business_address}}<br>Email: <a href="mailto:support@petposture.com">support@petposture.com</a></p>
                 HTML,
             ],
 
@@ -218,12 +218,12 @@ class LegalPagesSeeder extends Seeder
                 'title' => 'Cookie Policy',
                 'meta_description' => 'How PetPosture uses cookies and similar tracking technologies, and how to control them.',
                 'content' => <<<'HTML'
-                <p>This Cookie Policy explains how PetPosture LLC ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>," and "<strong>our</strong>") uses cookies and similar technologies to recognize you when you visit our website at <a href="http://petposture.com">http://petposture.com</a> ("<strong>Website</strong>"). It explains what these technologies are and why we use them, as well as your rights to control our use of them.</p>
+                <p>This Cookie Policy explains how PetPosture ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>," and "<strong>our</strong>") uses cookies and similar technologies to recognize you when you visit our website at <a href="http://petposture.com">http://petposture.com</a> ("<strong>Website</strong>"). It explains what these technologies are and why we use them, as well as your rights to control our use of them.</p>
                 <p>In some cases we may use cookies to collect personal information, or that becomes personal information if we combine it with other information.</p>
 
                 <h2>1. WHAT ARE COOKIES?</h2>
                 <p>Cookies are small data files that are placed on your computer or mobile device when you visit a website. Cookies are widely used by website owners in order to make their websites work, or to work more efficiently, as well as to provide reporting information.</p>
-                <p>Cookies set by the website owner (in this case, PetPosture LLC) are called "first-party cookies." Cookies set by parties other than the website owner are called "third-party cookies."</p>
+                <p>Cookies set by the website owner (in this case, PetPosture) are called "first-party cookies." Cookies set by parties other than the website owner are called "third-party cookies."</p>
 
                 <h2>2. WHY DO WE USE COOKIES?</h2>
                 <p>We use first- and third-party cookies for several reasons. Some cookies are required for technical reasons in order for our Website to operate, and we refer to these as "essential" or "strictly necessary" cookies. Other cookies also enable us to track and target the interests of our users to enhance the experience on our Online Sections. Third parties serve cookies through our Website for advertising, analytics, and other purposes.</p>
@@ -262,7 +262,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>9. WHERE CAN I GET FURTHER INFORMATION?</h2>
                 <p>If you have any questions about our use of cookies or other technologies, please email us at <a href="mailto:support@petposture.com">support@petposture.com</a> or by post to:</p>
-                <p><strong>PetPosture LLC</strong>{{#business_address}}<br>{{business_address}}{{/business_address}}<br>Phone: +1 (916) 623-5368</p>
+                <p><strong>PetPosture</strong>{{#business_address}}<br>{{business_address}}{{/business_address}}<br>Phone: +1 (916) 623-5368</p>
                 HTML,
             ],
 
@@ -271,7 +271,7 @@ class LegalPagesSeeder extends Seeder
                 'meta_description' => 'Rules for acceptable use of the PetPosture website and services.',
                 'content' => <<<'HTML'
                 <h2>1. WHO WE ARE</h2>
-                <p>PetPosture LLC ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>," or "<strong>our</strong>") is a company registered in the United States{{#business_address}} at {{business_address_inline}}{{/business_address}}. We operate the website http://petposture.com (the "<strong>Site</strong>"), and any other related products and services that refer or link to this Acceptable Use Policy (collectively, the "<strong>Services</strong>").</p>
+                <p>PetPosture ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>," or "<strong>our</strong>") is a company registered in the United States{{#business_address}} at {{business_address_inline}}{{/business_address}}. We operate the website http://petposture.com (the "<strong>Site</strong>"), and any other related products and services that refer or link to this Acceptable Use Policy (collectively, the "<strong>Services</strong>").</p>
 
                 <h2>2. USE OF THE SERVICES</h2>
                 <p>When you use the Services, you agree to abide by this Acceptable Use Policy and our Terms and Conditions. You may not use the Services:</p>
@@ -314,7 +314,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>7. HOW CAN YOU CONTACT US ABOUT THIS POLICY?</h2>
                 <p>If you have any further questions or comments, you may contact us at:</p>
-                <p><strong>PetPosture LLC</strong>{{#business_address}}<br>{{business_address}}{{/business_address}}<br>Email: <a href="mailto:support@petposture.com">support@petposture.com</a></p>
+                <p><strong>PetPosture</strong>{{#business_address}}<br>{{business_address}}{{/business_address}}<br>Email: <a href="mailto:support@petposture.com">support@petposture.com</a></p>
                 HTML,
             ],
 
@@ -322,11 +322,11 @@ class LegalPagesSeeder extends Seeder
                 'title' => 'Affiliate Disclosure',
                 'meta_description' => 'How PetPosture discloses and handles affiliate marketing relationships.',
                 'content' => <<<'HTML'
-                <p>PetPosture LLC ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>," or "<strong>our</strong>") participates in affiliate marketing programs, which means some links and product recommendations on our website and blog may be affiliate links.</p>
+                <p>PetPosture ("<strong>Company</strong>," "<strong>we</strong>," "<strong>us</strong>," or "<strong>our</strong>") participates in affiliate marketing programs, which means some links and product recommendations on our website and blog may be affiliate links.</p>
 
                 <h2>1. AFFILIATE DISCLOSURE</h2>
                 <p><em><strong>In Short:</strong> Some links on our Site are affiliate links. If you make a purchase through one, we may earn a commission at no extra cost to you.</em></p>
-                <p>Certain articles, product comparisons, and buying guides on our Site contain links to third-party retailers and marketplaces (such as Amazon, Chewy, Petco, PetSmart, and Walmart). Some of these are affiliate links, meaning that if you click through and make a purchase, PetPosture LLC may receive a small commission from the retailer. This comes at no additional cost to you — the price you pay is the same whether or not you use our link.</p>
+                <p>Certain articles, product comparisons, and buying guides on our Site contain links to third-party retailers and marketplaces (such as Amazon, Chewy, Petco, PetSmart, and Walmart). Some of these are affiliate links, meaning that if you click through and make a purchase, PetPosture may receive a small commission from the retailer. This comes at no additional cost to you — the price you pay is the same whether or not you use our link.</p>
 
                 <h2>2. HOW AFFILIATE LINKS WORK</h2>
                 <p>When you click an affiliate link on our Site, a cookie or tracking parameter provided by the retailer or its affiliate network may be placed in your browser so that, if you complete a purchase, the retailer can attribute the resulting commission to us. We do not control, and are not responsible for, the privacy practices of these third-party retailers or affiliate networks. Please review their respective privacy policies before making a purchase.</p>
@@ -339,7 +339,7 @@ class LegalPagesSeeder extends Seeder
 
                 <h2>5. HOW CAN YOU CONTACT US ABOUT THIS DISCLOSURE?</h2>
                 <p>If you have questions about our affiliate relationships, you may email us at <a href="mailto:support@petposture.com">support@petposture.com</a> or by post to:</p>
-                <p><strong>PetPosture LLC</strong>{{#business_address}}<br>{{business_address}}{{/business_address}}</p>
+                <p><strong>PetPosture</strong>{{#business_address}}<br>{{business_address}}{{/business_address}}</p>
                 HTML,
             ],
 
@@ -384,7 +384,7 @@ class LegalPagesSeeder extends Seeder
                 <p><strong>Email:</strong> <a href="mailto:support@petposture.com">support@petposture.com</a></p>
                 <p><strong>Phone:</strong> +1 (916) 623-5368</p>
                 <p><strong>Operating Hours:</strong> 10:00 AM – 20:00 PM (Monday – Friday)</p>
-                <p>PetPosture LLC{{#business_address}}<br>{{business_address_inline}}{{/business_address}}</p>
+                <p>PetPosture{{#business_address}}<br>{{business_address_inline}}{{/business_address}}</p>
 
                 <h2>7. FREQUENTLY ASKED QUESTIONS</h2>
                 <h3>Why did I only receive part of my order?</h3>

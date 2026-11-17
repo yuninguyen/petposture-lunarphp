@@ -237,7 +237,7 @@ ${{ number_format($lineTotal, 2) }}
 <tr>
 <td align="center" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:12px; line-height:1.6; color:#a0a0a0;">
 Internal notification &mdash; not sent to the customer.<br>
-&copy; {{ date('Y') }} {{ config('app.name') }} LLC. All rights reserved.
+&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
 </td>
 </tr>
 </table>

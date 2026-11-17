@@ -85,7 +85,7 @@ Copy {{ $senderEmail }} above to reply to {{ $senderName }} directly.
 </tr>
 <tr>
 <td align="center" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto','Oxygen','Ubuntu','Cantarell','Fira Sans','Droid Sans','Helvetica Neue',sans-serif; font-size:12px; line-height:1.6; color:#a0a0a0;">
-&copy; {{ date('Y') }} {{ config('app.name') }} LLC. All rights reserved.
+&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
 @if(filled(setting('business_address')))<br>{{ setting('business_address') }}
 @endif
 </td>
