@@ -146,8 +146,19 @@ class PinterestPublishingTest extends TestCase
         $this->assertStringContainsString('client_id=1640181', $url);
         $this->assertStringContainsString('state=abc', $url);
         parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
-        $this->assertSame('boards:read,pins:read,pins:write,user_accounts:read', $query['scope']);
-        $this->assertStringNotContainsString('boards:write', $url);
+        $this->assertSame('boards:read,boards:write,pins:read,pins:write,user_accounts:read', $query['scope']);
+    }
+
+    public function test_a_board_can_be_created_on_the_connected_account(): void
+    {
+        $this->connection();
+        Http::fake(['api.pinterest.com/v5/boards' => Http::response(['id' => '549755885175', 'name' => 'TEST sandbox board'], 201)]);
+
+        $board = app(PinterestClient::class)->createBoard('TEST sandbox board');
+
+        $this->assertSame(['id' => '549755885175', 'name' => 'TEST sandbox board'], $board);
+        Http::assertSent(fn ($request) => str_ends_with($request->url(), '/boards') && $request['name'] === 'TEST sandbox board');
+        $this->assertSame('create_board', PinterestPublishLog::query()->latest('id')->value('action'));
     }
 
     // ---------------------------------------------------------------- keeping the login fresh

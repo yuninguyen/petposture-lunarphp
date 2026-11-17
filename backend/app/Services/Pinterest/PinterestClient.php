@@ -122,6 +122,18 @@ class PinterestClient
         return $boards;
     }
 
+    /** Creates a board on the connected account and returns it as [id, name]. Needs the boards:write permission. */
+    public function createBoard(string $name): array
+    {
+        $created = $this->send($this->requireConnection(), 'post', '/boards', ['name' => $name], 'create_board');
+
+        if (blank($created['id'] ?? null)) {
+            throw new PinterestException('Pinterest answered without a board id.', 200);
+        }
+
+        return ['id' => (string) $created['id'], 'name' => (string) ($created['name'] ?? $name)];
+    }
+
     /**
      * Creates the pin and returns Pinterest's id for it. The image goes as base64 so it does not have to be
      * reachable from the internet. A timeout or 5xx throws with outcomeUnknown set: the pin may exist.

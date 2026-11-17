@@ -82,6 +82,7 @@ class PinterestConnectionControllerTest extends TestCase
             $this->postJson('/api/admin/pinterest/callback', ['code' => 'c', 'state' => 's'])->assertForbidden();
             $this->deleteJson('/api/admin/pinterest/connection')->assertForbidden();
             $this->getJson('/api/admin/pinterest/boards')->assertForbidden();
+            $this->postJson('/api/admin/pinterest/boards', ['name' => 'Feeding'])->assertForbidden();
             $this->putJson('/api/admin/pinterest/settings', ['auto_publish' => true])->assertForbidden();
         }
 

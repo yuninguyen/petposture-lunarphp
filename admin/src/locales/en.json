@@ -1882,5 +1882,10 @@
   "pinterest_connect.sandbox_hint": "Turn it on while the app only has Trial access. Pins are not public in the sandbox. Turn it off once Pinterest gives Standard access.",
   "pinterest_connect.credentials_connected_note": "Pinterest is connected. After changing the app id or secret, disconnect and connect again.",
   "pinterest_connect.save_credentials": "Save app details",
-  "pinterest_connect.credentials_saved": "App details saved."
+  "pinterest_connect.credentials_saved": "App details saved.",
+  "pinterest_connect.board_title": "Create a board",
+  "pinterest_connect.board_hint": "A pin needs a board. A new account, or the sandbox, has none yet. If this fails with a permission error, disconnect and connect again.",
+  "pinterest_connect.board_name": "Board name",
+  "pinterest_connect.board_create": "Create board",
+  "pinterest_connect.board_created": "Board \"{{name}}\" created."
 }

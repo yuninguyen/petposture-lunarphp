@@ -348,6 +348,7 @@ describe('PinterestPinsPage automatic posting', () => {
       if (url === '/admin/pinterest-pins/options') return { data: options };
       if (url === '/admin/pinterest/connection') return { data: connection };
       if (url.startsWith('/admin/pinterest-pins?')) return { data: pins, meta: meta({ total: pins.length }) };
+      if (url === '/admin/pinterest/boards' && init?.method === 'POST') return { data: { id: '77', name: 'TEST sandbox board' } };
       if (init?.method === 'PUT') return { data: { ...readyPin, status: 'ready' } };
       return null;
     });
@@ -518,6 +519,42 @@ describe('PinterestPinsPage automatic posting', () => {
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Pinterest is not set up on the server (app id, secret and redirect address).'));
     expect(screen.getByRole('button', { name: 'Connect Pinterest' })).toBeTruthy();
+  });
+
+  it('creates a board from the panel when connected', async () => {
+    withPins([readyPin], { ...notConnected, connected: true, status: 'connected', username: 'petposture' });
+    renderPage();
+
+    fireEvent.change(await screen.findByLabelText('Board name'), { target: { value: '  TEST sandbox board  ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create board' }));
+
+    await waitFor(() => expect(mockedFetch).toHaveBeenCalledWith('/admin/pinterest/boards', { method: 'POST', body: { name: 'TEST sandbox board' } }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+  });
+
+  it('does not offer to create a board when Pinterest is not connected', async () => {
+    renderPage();
+
+    await screen.findByText(/Connect your Pinterest business account/);
+
+    expect(screen.queryByLabelText('Board name')).toBeNull();
+  });
+
+  it('says why when Pinterest refuses to create the board', async () => {
+    mockedFetch.mockImplementation(async (url: string, init?: FetchApiOptions) => {
+      if (url === '/admin/pinterest-pins/options') return { data: options };
+      if (url === '/admin/pinterest/connection') return { data: { ...notConnected, connected: true, status: 'connected', username: 'petposture' } };
+      if (url === '/admin/pinterest/boards' && init?.method === 'POST') {
+        throw Object.assign(new Error('Pinterest did not allow creating boards. Disconnect and connect again to give that permission.'), { status: 403 });
+      }
+      return { data: [readyPin], meta: meta({ total: 1 }) };
+    });
+    renderPage();
+
+    fireEvent.change(await screen.findByLabelText('Board name'), { target: { value: 'Feeding' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create board' }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Pinterest did not allow creating boards. Disconnect and connect again to give that permission.'));
   });
 
   it('asks before disconnecting', async () => {

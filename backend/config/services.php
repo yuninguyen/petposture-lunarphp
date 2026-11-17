@@ -81,7 +81,8 @@ return [
         'redirect_uri' => env('PINTEREST_REDIRECT_URI'),
         'api_base' => rtrim((string) env('PINTEREST_API_BASE', 'https://api.pinterest.com/v5'), '/'),
         'oauth_url' => env('PINTEREST_OAUTH_URL', 'https://www.pinterest.com/oauth/'),
-        'scopes' => ['boards:read', 'pins:read', 'pins:write', 'user_accounts:read'],
+        // boards:write is only for the "Create a board" button (a new account, or the sandbox, has no boards yet).
+        'scopes' => ['boards:read', 'boards:write', 'pins:read', 'pins:write', 'user_accounts:read'],
     ],
 
     'pingpong' => [

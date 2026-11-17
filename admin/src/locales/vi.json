@@ -1882,5 +1882,10 @@
   "pinterest_connect.sandbox_hint": "Bật khi ứng dụng mới có quyền Trial. Pin trong sandbox không công khai. Tắt khi Pinterest cấp quyền Standard.",
   "pinterest_connect.credentials_connected_note": "Đang kết nối Pinterest. Sau khi đổi app id hoặc secret, hãy ngắt kết nối rồi kết nối lại.",
   "pinterest_connect.save_credentials": "Lưu thông tin ứng dụng",
-  "pinterest_connect.credentials_saved": "Đã lưu thông tin ứng dụng."
+  "pinterest_connect.credentials_saved": "Đã lưu thông tin ứng dụng.",
+  "pinterest_connect.board_title": "Tạo board",
+  "pinterest_connect.board_hint": "Pin cần có board. Tài khoản mới hoặc sandbox chưa có board nào. Nếu báo lỗi thiếu quyền, hãy ngắt kết nối rồi kết nối lại.",
+  "pinterest_connect.board_name": "Tên board",
+  "pinterest_connect.board_create": "Tạo board",
+  "pinterest_connect.board_created": "Đã tạo board \"{{name}}\"."
 }

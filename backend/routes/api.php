@@ -203,6 +203,7 @@ Route::prefix('/admin')
         Route::post('/pinterest/callback', [PinterestConnectionController::class, 'callback']);
         Route::delete('/pinterest/connection', [PinterestConnectionController::class, 'disconnect']);
         Route::get('/pinterest/boards', [PinterestConnectionController::class, 'boards']);
+        Route::post('/pinterest/boards', [PinterestConnectionController::class, 'createBoard']);
         Route::put('/pinterest/settings', [PinterestConnectionController::class, 'updateSettings']);
         Route::put('/pinterest/credentials', [PinterestConnectionController::class, 'updateCredentials']);
 

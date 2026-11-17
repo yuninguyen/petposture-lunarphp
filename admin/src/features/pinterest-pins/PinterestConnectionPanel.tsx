@@ -9,8 +9,10 @@ import {
   PinterestCredentials,
   PinterestCredentialsInput,
   PinterestPublishSettings,
+  createPinterestBoard,
   disconnectPinterest,
   fetchPinterestConnection,
+  pinterestBoardsKey,
   pinterestConnectionKey,
   startPinterestConnect,
   updatePinterestCredentials,
@@ -24,6 +26,46 @@ function formatDate(iso: string): string {
 /** The address Pinterest sends the owner back to: this admin's own callback page. */
 function defaultRedirectUri(): string {
   return `${window.location.origin}/system/integrations/pinterest/callback`;
+}
+
+/** A new account (or the sandbox) has no boards, and a pin needs one: this makes one without leaving the admin. */
+function CreateBoardForm() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [name, setName] = useState('');
+
+  const createMutation = useMutation({
+    mutationFn: () => createPinterestBoard(name.trim()),
+    onSuccess: (board) => {
+      queryClient.invalidateQueries({ queryKey: pinterestBoardsKey });
+      toast.success(t('pinterest_connect.board_created', { name: board.name }));
+      setName('');
+    },
+    onError: (error: Error & { data?: { errors?: Record<string, string[]> } }) => {
+      const first = error.data?.errors ? Object.values(error.data.errors)[0]?.[0] : undefined;
+      toast.error(first || error.message || t('common.error_occurred'));
+    },
+  });
+
+  return (
+    <form
+      className="mt-4 border-t border-slate-100 pt-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (name.trim() !== '') createMutation.mutate();
+      }}
+    >
+      <h3 className="text-sm font-semibold text-slate-900">{t('pinterest_connect.board_title')}</h3>
+      <p className="mt-1 text-xs text-slate-500">{t('pinterest_connect.board_hint')}</p>
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="w-full sm:w-72">
+          <label htmlFor="pin-new-board" className="mb-1 block text-xs font-medium text-slate-500">{t('pinterest_connect.board_name')}</label>
+          <Input id="pin-new-board" maxLength={50} value={name} onChange={(event) => setName(event.target.value)} />
+        </div>
+        <Button type="submit" variant="secondary" disabled={createMutation.isPending || name.trim() === ''}>{t('pinterest_connect.board_create')}</Button>
+      </div>
+    </form>
+  );
 }
 
 /**
@@ -272,6 +314,8 @@ export function PinterestConnectionPanel() {
             </div>
           </form>
         )}
+
+        {connection.connected && <CreateBoardForm />}
 
         <CredentialsForm
           key={`${connection.credentials.app_id}-${connection.credentials.sandbox}-${connection.credentials.has_secret}`}

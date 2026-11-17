@@ -124,6 +124,23 @@ class PinterestConnectionController extends Controller
         }
     }
 
+    /** Makes a new board on the connected account, for the pin form to choose. */
+    public function createBoard(Request $request): JsonResponse
+    {
+        $data = $request->validate(['name' => ['required', 'string', 'max:50']]);
+
+        try {
+            return response()->json(['data' => $this->client->createBoard(trim($data['name']))], Response::HTTP_CREATED);
+        } catch (PinterestException $e) {
+            // 403: the login was given before boards:write was asked for, so it has to be given again.
+            $message = $e->httpStatus === 403
+                ? 'Pinterest did not allow creating boards. Disconnect and connect again to give that permission.'
+                : $e->getMessage();
+
+            return response()->json(['message' => $message], $e->isAuthFailure() ? Response::HTTP_FORBIDDEN : Response::HTTP_BAD_GATEWAY);
+        }
+    }
+
     public function updateSettings(Request $request): JsonResponse
     {
         $data = $request->validate([

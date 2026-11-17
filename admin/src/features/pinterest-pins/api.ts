@@ -181,6 +181,11 @@ export async function fetchPinterestBoards(): Promise<PinterestBoard[]> {
   return (await fetchJson<{ data: PinterestBoard[] }>('/admin/pinterest/boards')).data;
 }
 
+/** Makes a new board on the connected Pinterest account. Needs the boards:write permission, given when connecting. */
+export async function createPinterestBoard(name: string): Promise<PinterestBoard> {
+  return (await fetchJson<{ data: PinterestBoard }>('/admin/pinterest/boards', { method: 'POST', body: { name } })).data;
+}
+
 export async function updatePinterestCredentials(values: PinterestCredentialsInput): Promise<PinterestCredentials> {
   return (await fetchJson<{ data: PinterestCredentials }>('/admin/pinterest/credentials', { method: 'PUT', body: values })).data;
 }
