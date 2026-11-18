@@ -12,6 +12,7 @@ use App\Models\ProductRedirect;
 use App\Models\SeoMetadata;
 use App\Services\Admin\ProductAttributeService;
 use App\Services\ProductRouteService;
+use App\Support\PickKind;
 use App\Support\RetailerUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,6 +40,7 @@ class ProductController extends Controller
             'status' => ['nullable', 'in:draft,published'],
             'brand_id' => ['nullable', 'integer', 'exists:lunar_brands,id'],
             'product_type_id' => ['nullable', 'integer', 'exists:lunar_product_types,id'],
+            'kind' => ['nullable', 'in:'.PickKind::PICK.','.PickKind::SHOP],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
@@ -61,6 +63,10 @@ class ProductController extends Controller
             if (array_key_exists($filter, $validated) && $validated[$filter] !== null) {
                 $query->where($filter, $validated[$filter]);
             }
+        }
+
+        if (! empty($validated['kind'])) {
+            PickKind::constrain($query, $validated['kind']);
         }
 
         $products = $query->paginate($validated['per_page'] ?? 15);
@@ -93,6 +99,7 @@ class ProductController extends Controller
                         'currency' => $currency->code,
                     ] : null,
                     'status' => $product->status,
+                    'kind' => PickKind::of($product),
                     'created_at' => $product->created_at?->toISOString(),
                     'updated_at' => $product->updated_at?->toISOString(),
                 ];
