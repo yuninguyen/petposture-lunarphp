@@ -329,6 +329,7 @@
   "posts.form_hint_scheduled": "The post stays hidden and goes live by itself at this time (US Eastern Time), within about a minute. To cancel, set the status back to Draft.",
   "posts.errors.schedule_time": "Pick a publish time in the future (US Eastern Time).",
   "posts.form_button_save_draft": "Save Draft",
+  "posts.form_button_save_schedule": "Save Schedule",
   "posts.form_button_update_publish": "Update & Publish",
   "posts.create_category": "New category",
   "posts.create_category_name": "Category name",

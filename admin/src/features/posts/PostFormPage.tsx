@@ -49,6 +49,7 @@ import { Card } from '@/components/ui/card';
 import { EyeIcon, TrashIcon, PlusIcon, MinusIcon } from '@/components/ui/icons';
 import { MediaPicker } from '@/features/media/MediaPicker';
 import { getPostFormSchema, PostFormValues } from './postSchema';
+import { saveButtonLabelKey } from './saveButtonLabel';
 import {
   useAffiliateNetworks,
   useBreeds,
@@ -472,11 +473,7 @@ export function PostFormPage() {
             </Button>
           )}
           <Button type="submit" variant="primary" disabled={isSubmitting}>
-            {isSubmitting
-              ? t('posts.form_button_saving')
-              : selectedStatus === 'published'
-                ? t('posts.form_button_update_publish')
-                : t('posts.form_button_save_draft')}
+            {t(saveButtonLabelKey(selectedStatus, isSubmitting))}
           </Button>
         </div>
       </div>

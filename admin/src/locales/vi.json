@@ -329,6 +329,7 @@
   "posts.form_hint_scheduled": "Bài sẽ được ẩn và tự đăng đúng giờ này (giờ miền Đông Hoa Kỳ), trong vòng khoảng một phút. Muốn hủy, đặt lại trạng thái về Nháp.",
   "posts.errors.schedule_time": "Hãy chọn giờ đăng ở tương lai (giờ miền Đông Hoa Kỳ).",
   "posts.form_button_save_draft": "Lưu nháp",
+  "posts.form_button_save_schedule": "Lưu lịch đăng",
   "posts.form_button_update_publish": "Cập nhật & Đăng",
   "posts.create_category": "Chuyên mục mới",
   "posts.create_category_name": "Tên chuyên mục",
