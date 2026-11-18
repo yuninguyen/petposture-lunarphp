@@ -22,6 +22,7 @@ const product: ProductSummary = {
   total_stock: 3,
   price: null,
   status: 'draft',
+  kind: 'shop',
   created_at: null,
   updated_at: null,
 };

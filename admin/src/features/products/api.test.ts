@@ -9,6 +9,12 @@ describe('product api helpers', () => {
   it('builds server filter query without empty values', () => {
     expect(buildProductsQuery({ search: ' harness ', status: 'published', brand_id: 2, product_type_id: '', page: 3 })).toBe('/admin/products?search=harness&status=published&brand_id=2&page=3');
   });
+  it('asks the server for one kind of product alongside the other filters, and leaves it out for all kinds', () => {
+    expect(buildProductsQuery({ search: 'kong', status: 'published', brand_id: 2, kind: 'pick', page: 2 })).toBe('/admin/products?search=kong&status=published&brand_id=2&kind=pick&page=2');
+    expect(buildProductsQuery({ kind: 'shop' })).toBe('/admin/products?kind=shop');
+    expect(buildProductsQuery({ kind: '' })).toBe('/admin/products');
+    expect(buildProductsQuery({})).toBe('/admin/products');
+  });
   it('flattens collection trees with breadcrumb labels', () => {
     expect(flattenCollectionTrees([{ id: 1, name: 'Catalog', handle: 'catalog', collections: [{ id: 2, collection_group_id: 1, parent_id: null, name: { en: 'Dogs', vi: 'Chó' }, slug: 'dogs', children_count: 1, children: [{ id: 3, collection_group_id: 1, parent_id: 2, name: { en: 'Harnesses', vi: '' }, slug: 'harnesses', children_count: 0, children: [] }] }] }])).toEqual([{ id: 2, label: 'Catalog / Dogs', slug: 'dogs' }, { id: 3, label: 'Catalog / Dogs / Harnesses', slug: 'harnesses' }]);
   });

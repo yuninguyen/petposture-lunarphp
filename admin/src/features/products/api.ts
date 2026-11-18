@@ -47,10 +47,12 @@ export interface ProductSummary {
   id: number; thumbnail: string | null; name: string; description: string; product_type: { id: number; name: string };
   brand: { id: number; name: string } | null; first_collection: { id: number; name: string } | null;
   total_stock: number; price: { amount: number; formatted: string; currency: string } | null;
-  status: ProductStatus; created_at: string | null; updated_at: string | null;
+  status: ProductStatus; kind: ProductKind; created_at: string | null; updated_at: string | null;
 }
+/** A Pick is an affiliate showcase product (it has a retailer link); anything else is a Shop product PetPosture sells. */
+export type ProductKind = 'pick' | 'shop';
 export interface ProductsPage { data: ProductSummary[]; meta: { current_page: number; last_page: number; per_page: number; total: number } }
-export interface ProductFilters { search?: string; status?: ProductStatus | ''; brand_id?: number | ''; product_type_id?: number | ''; page?: number; per_page?: number }
+export interface ProductFilters { search?: string; status?: ProductStatus | ''; brand_id?: number | ''; product_type_id?: number | ''; kind?: ProductKind | ''; page?: number; per_page?: number }
 export interface CreateProductPayload { name: string; product_type_id: number; sku: string; base_price: string }
 export interface UpdateProductPayload { slug: string; status: ProductStatus; brand_id: number | null; attributes: AttributeValues; collections: number[]; media: Array<{ id: number; source: ProductMedia['source']; alt: string }>; seo: ProductSeo }
 export interface UpdateVariantPayload {
@@ -69,6 +71,7 @@ export function buildProductsQuery(filters: ProductFilters): string {
   if (filters.status) params.set('status', filters.status);
   if (filters.brand_id !== '' && filters.brand_id != null) params.set('brand_id', String(filters.brand_id));
   if (filters.product_type_id !== '' && filters.product_type_id != null) params.set('product_type_id', String(filters.product_type_id));
+  if (filters.kind) params.set('kind', filters.kind);
   if (filters.page) params.set('page', String(filters.page));
   if (filters.per_page) params.set('per_page', String(filters.per_page));
   const query = params.toString();
