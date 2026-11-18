@@ -13,6 +13,8 @@ Artisan::command('inspire', function () {
 Schedule::command(ExpireOverdueReturnRequests::class)->daily();
 Schedule::job(new SyncAffiliateReportJob)->dailyAt('06:00');
 Schedule::command('storefront:refresh-replay --limit=100 --max-seconds=20')->everyMinute();
+// Blog posts scheduled in the admin go live within a minute of their time; a delayed run publishes them at the next one.
+Schedule::command('posts:publish-due')->everyMinute()->withoutOverlapping();
 // Pinterest: at most one pin per run, and only when the owner has switched automatic posting on (see PinterestPublisher).
 Schedule::command('pinterest:publish-next')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('pinterest:refresh-token')->dailyAt('05:30');

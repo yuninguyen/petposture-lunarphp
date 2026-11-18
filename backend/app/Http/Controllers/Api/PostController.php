@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\PostResource;
 use App\Models\BlogCategory;
 use App\Models\Post;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class PostController extends Controller
 {
@@ -74,8 +76,8 @@ class PostController extends Controller
     {
         $this->authorizeAdmin('create_post');
 
-        $validated = $request->validate($this->validationRules(forUpdate: false));
-        if (($validated['status'] ?? 'draft') === 'published') {
+        $validated = $this->applySchedule($request->validate($this->validationRules(forUpdate: false)), null);
+        if (in_array($validated['status'] ?? 'draft', ['published', 'scheduled'], true)) {
             $this->authorizeAdmin('publish_post');
         }
         $validated['type'] = $validated['type'] ?? Post::TYPE_ARTICLE;
@@ -139,12 +141,12 @@ class PostController extends Controller
         // A live post is edited, or taken back to draft, only by someone who may publish:
         // update_post alone is not tied to authorship, so without this a writer could change
         // an article under its readers.
-        if ($post->status === 'published') {
+        if (in_array($post->status, ['published', 'scheduled'], true)) {
             $this->authorizeAdmin('publish_post');
         }
 
-        $validated = $request->validate($this->validationRules(forUpdate: true));
-        if (($validated['status'] ?? null) === 'published' && $post->status !== 'published') {
+        $validated = $this->applySchedule($request->validate($this->validationRules(forUpdate: true)), $post);
+        if (in_array($validated['status'] ?? null, ['published', 'scheduled'], true) && ! in_array($post->status, ['published', 'scheduled'], true)) {
             $this->authorizeAdmin('publish_post');
         }
         $comparison = $this->extractComparisonData($validated);
@@ -293,6 +295,49 @@ class PostController extends Controller
         return response()->json(['url' => $url]);
     }
 
+    /**
+     * The scheduling rules for a save. The publish time is a moment in time (the admin sends it in UTC).
+     * - "published" with a time still ahead becomes "scheduled": the post is not live until then, so it must not say it is.
+     *   A post that is already live cannot be moved into the future this way; it would silently go offline.
+     * - "scheduled" needs a time ahead; an unchanged time that has just passed is left for the scheduler to publish.
+     * - Cancelling a schedule (scheduled to draft) clears the time, so a stale date cannot publish it later.
+     */
+    private function applySchedule(array $validated, ?Post $post): array
+    {
+        $status = $validated['status'] ?? $post?->status;
+        $publishedAt = array_key_exists('published_at', $validated) ? $validated['published_at'] : $post?->published_at;
+        $when = $publishedAt ? Carbon::parse($publishedAt) : null;
+
+        // Always stored as the UTC moment: a time sent with an offset (10:47-05:00) must not be saved as 10:47.
+        if (array_key_exists('published_at', $validated) && $when) {
+            $validated['published_at'] = $when->copy()->utc()->toDateTimeString();
+        }
+
+        if ($status === 'published' && $when?->isFuture()) {
+            $isLive = $post && $post->status === 'published' && $post->published_at && $post->published_at->isPast();
+            if ($isLive) {
+                throw ValidationException::withMessages(['published_at' => 'This post is already live. Set it to Draft first to schedule it for later.']);
+            }
+
+            $status = 'scheduled';
+            $validated['status'] = 'scheduled';
+        }
+
+        if ($status === 'scheduled') {
+            $unchanged = $post && $post->status === 'scheduled' && $post->published_at && $when && $when->equalTo($post->published_at);
+
+            if (! $when || (! $unchanged && ! $when->isFuture())) {
+                throw ValidationException::withMessages(['published_at' => 'A scheduled post needs a publish time in the future.']);
+            }
+        }
+
+        if ($post && $post->status === 'scheduled' && ($validated['status'] ?? null) === 'draft') {
+            $validated['published_at'] = null;
+        }
+
+        return $validated;
+    }
+
     protected function validationRules(bool $forUpdate): array
     {
         $slugRule = $forUpdate
@@ -304,7 +349,7 @@ class PostController extends Controller
             'title' => $forUpdate ? 'sometimes|required|string|max:255' : 'required|string|max:255',
             'slug' => $slugRule,
             'content' => $forUpdate ? 'sometimes|required|string' : 'required|string',
-            'status' => 'nullable|in:draft,published,archived',
+            'status' => 'nullable|in:draft,published,scheduled,archived',
             'type' => 'nullable|in:'.implode(',', [Post::TYPE_ARTICLE, Post::TYPE_GUIDE, Post::TYPE_COMPARISON]),
             'featured_image' => 'nullable|string',
             'featured_image_alt' => 'nullable|string|max:255',
