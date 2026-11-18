@@ -160,11 +160,15 @@ export function PicksIndex({
                 )}
 
                 {picks.length > 0 ? (
-                    <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                        {picks.map((product) => (
-                            <PickListCard key={product.slug} product={product} allBreedsCount={breeds.length} now={now} />
-                        ))}
-                    </div>
+                    <>
+                        {/* The card titles are h3, so the list needs an h2 above them for the headings to go h1, h2, h3. */}
+                        <h2 className="sr-only">{breedName || solutionName ? 'Matching Picks' : 'All Picks'}</h2>
+                        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                            {picks.map((product) => (
+                                <PickListCard key={product.slug} product={product} allBreedsCount={breeds.length} now={now} />
+                            ))}
+                        </div>
+                    </>
                 ) : breedName && solutionName ? (
                     <p className="mt-6 rounded-2xl border-[1.5px] border-dashed border-[#e2e5e8] px-5 py-10 text-center text-[15px] text-[#4b5563]">
                         No Picks match that combination yet. We only list Picks we have actually looked at for that breed and solution.{' '}

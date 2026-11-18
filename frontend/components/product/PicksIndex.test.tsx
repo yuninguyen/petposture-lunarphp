@@ -42,6 +42,29 @@ const render = (props: Partial<React.ComponentProps<typeof PicksIndex>> = {}) =>
         <PicksIndex allPicks={[bowl, harness]} breed={null} solution={null} now={NOW} {...props} />,
     ).replace(/&#x27;/g, "'");
 
+const headingLevels = (html: string) => [...html.matchAll(/<h([1-6])[\s>]/g)].map((match) => Number(match[1]));
+
+describe('PicksIndex heading order', () => {
+    it.each([
+        ['all Picks', {}],
+        ['a breed filter', { breed: 'french-bulldog' }],
+        ['a solution filter', { solution: 'feeding' }],
+    ])('goes h1, then h2, then h3 without skipping a level for %s', (_label, props) => {
+        const levels = headingLevels(render(props as Partial<React.ComponentProps<typeof PicksIndex>>));
+
+        expect(levels[0]).toBe(1);
+        expect(levels.filter((level) => level === 1)).toHaveLength(1);
+        levels.slice(1).forEach((level, index) => expect(level, `heading ${index + 2} jumps from h${levels[index]}`).toBeLessThanOrEqual(levels[index] + 1));
+    });
+
+    it('has the list heading between the h1 and the card titles, and it is only for screen readers', () => {
+        const html = render();
+
+        expect(html).toMatch(/<h2 class="sr-only">All Picks<\/h2>/);
+        expect(render({ breed: 'french-bulldog' })).toMatch(/<h2 class="sr-only">Matching Picks<\/h2>/);
+    });
+});
+
 describe('PicksIndex header', () => {
     it('opens with the shape-of-your-dog headline under a PetPosture Picks tag', () => {
         const html = render();
