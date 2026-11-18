@@ -116,6 +116,23 @@ test('sitemap follows every page of posts instead of stopping at the first', asy
     );
 });
 
+test('sitemap looks at the posts every five minutes and at the products every hour', async () => {
+    const seen = [];
+    const sitemap = loadSitemap(async (url, init) => {
+        seen.push({ url: String(url), revalidate: init?.next?.revalidate });
+
+        return { ok: true, async json() { return { data: [], meta: { last_page: 1 } }; } };
+    });
+
+    await sitemap();
+
+    const revalidateFor = (path) => seen.filter((call) => call.url.includes(path)).map((call) => call.revalidate);
+
+    assert.deepEqual(revalidateFor('/api/posts'), [300]);
+    assert.ok(revalidateFor('/api/products').length > 0);
+    assert.ok(revalidateFor('/api/products').every((seconds) => seconds === 3600));
+});
+
 test('sitemap keeps the posts it already fetched when a later page fails', async () => {
     const sitemap = loadSitemap(async (url) => {
         const parsed = new URL(url);

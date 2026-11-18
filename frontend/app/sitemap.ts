@@ -17,7 +17,11 @@ function validLastModified(value?: string): Date | undefined {
     return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
-async function fetchAllPages<T>(path: string, extraParams: Record<string, string> = {}): Promise<T[]> {
+// Products change rarely; posts can go live by themselves at a scheduled time, so their list is looked at more often.
+const PRODUCTS_REVALIDATE_SECONDS = 3600;
+const POSTS_REVALIDATE_SECONDS = 300;
+
+async function fetchAllPages<T>(path: string, extraParams: Record<string, string> = {}, revalidate = PRODUCTS_REVALIDATE_SECONDS): Promise<T[]> {
     const rows: T[] = [];
     let page = 1;
     let lastPage = 1;
@@ -25,7 +29,7 @@ async function fetchAllPages<T>(path: string, extraParams: Record<string, string
     while (page <= lastPage) {
         try {
             const params = new URLSearchParams({ page: String(page), ...extraParams });
-            const res = await fetch(`${API_BASE_URL}${path}?${params}`, { next: { revalidate: 3600 } });
+            const res = await fetch(`${API_BASE_URL}${path}?${params}`, { next: { revalidate } });
             if (!res.ok) break;
             const payload = await res.json();
             if (!Array.isArray(payload?.data)) break;
@@ -44,7 +48,7 @@ async function fetchAllPages<T>(path: string, extraParams: Record<string, string
 }
 
 const fetchProducts = () => fetchAllPages<ApiProduct>('/api/products', { per_page: '100' });
-const fetchPosts = () => fetchAllPages<ApiPost>('/api/posts');
+const fetchPosts = () => fetchAllPages<ApiPost>('/api/posts', {}, POSTS_REVALIDATE_SECONDS);
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const staticPages: MetadataRoute.Sitemap = [
