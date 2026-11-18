@@ -11,6 +11,8 @@ import {
     pickCtaLabel,
     pickListStats,
     pickPriceParts,
+    pickSeoTitle,
+    PICK_TITLE_MAX,
     pickSolutions,
     pickTakeSummary,
     picksHref,
@@ -54,6 +56,53 @@ describe('pickCtaLabel', () => {
 
     it('never names a store when the retailer is unknown', () => {
         expect(pickCtaLabel(pick({ retailer: null, retailerName: null }))).toBe('View on the retailer site');
+    });
+});
+
+describe('pickSeoTitle', () => {
+    const fullTitle = (name: string) => `${pickSeoTitle(name)} | PetPosture`;
+
+    it('leaves a name that already fits the limit exactly as it is', () => {
+        for (const name of [
+            'KONG Puppy Chew Dog Toy',
+            '2 Hounds Design Freedom No Pull Harness, Black, Medium',
+            'PetSafe Drinkwell Pagoda Ceramic Dog & Cat Fountain',
+            'Outward Hound Hide N\' Slide Puzzle Game Dog Toy',
+        ]) {
+            expect(pickSeoTitle(name), name).toBe(name);
+        }
+    });
+
+    it('drops the trailing size details of a long name, one at a time, until the title fits', () => {
+        const joyride = 'Joyride Harness Premium Advanced No Pull Dog Harness 2.0, Blue Serenity, X-Small: 12 to 17-in chest';
+
+        expect(pickSeoTitle(joyride)).toBe('Joyride Harness Premium Advanced No Pull Dog Harness 2.0');
+        expect(fullTitle(joyride).length).toBeLessThanOrEqual(PICK_TITLE_MAX);
+    });
+
+    it('stops at the first detail that makes it fit, keeping the rest', () => {
+        expect(pickSeoTitle('Acme Super Comfortable Dog Bed, Charcoal Gray, Extra Large Size')).toBe('Acme Super Comfortable Dog Bed, Charcoal Gray');
+    });
+
+    it('cuts a long name with no comma or colon at a word and marks it with an ellipsis', () => {
+        const name = 'Extraordinarily Long Product Name Without Any Separators Whatsoever That Keeps Going On';
+        const title = pickSeoTitle(name);
+
+        expect(title.endsWith('…')).toBe(true);
+        expect(fullTitle(name).length).toBeLessThanOrEqual(PICK_TITLE_MAX);
+        expect(name.startsWith(title.slice(0, -1))).toBe(true);
+        expect(title.slice(0, -1).endsWith(' ')).toBe(false);
+    });
+
+    it('never needs more than the limit for any live Pick name', () => {
+        for (const name of [
+            'PetSafe Drinkwell Pagoda Ceramic Dog & Cat Fountain',
+            'Outward Hound Fun Feeder Slo Bowl, Sage, Small 2-cup',
+            'BullHug Adjustable No-Choke Harness, Medium Black',
+            'Joyride Harness Premium Advanced No Pull Dog Harness 2.0, Blue Serenity, X-Small: 12 to 17-in chest',
+        ]) {
+            expect(fullTitle(name).length, name).toBeLessThanOrEqual(PICK_TITLE_MAX);
+        }
     });
 });
 

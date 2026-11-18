@@ -6,7 +6,7 @@ import Footer from '@/components/Footer';
 import { PickDetails } from '@/components/product/PickDetails';
 import { getApiBaseUrl } from '@/lib/api';
 import { firstMetaDescription } from '@/lib/meta-description';
-import { PICKS_PATH, relatedPicks } from '@/lib/pick';
+import { PICKS_PATH, pickSeoTitle, relatedPicks } from '@/lib/pick';
 import { buildPickBreadcrumbJsonLd, buildPickJsonLd, serializeJsonLd } from '@/lib/pick-json-ld';
 import { buildPreviewQuery } from '@/lib/preview-query';
 import { SITE_URL } from '@/lib/site';
@@ -66,7 +66,7 @@ export async function generateMetadata({ params, searchParams }: { params: Param
     if (!product) return { title: 'Pick', robots: { index: false, follow: false } };
 
     const seoMeta = product.seoMeta;
-    const title = seoMeta?.title || product.name;
+    const title = seoMeta?.title || pickSeoTitle(product.name);
     const description = firstMetaDescription(
         [seoMeta?.description, product.description],
         `${product.name}: what we like, what to watch for, and which dogs it suits.`,

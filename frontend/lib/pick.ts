@@ -128,6 +128,33 @@ export function relatedPicks(
     return [...others.filter(sharesBreed), ...others.filter((candidate) => !sharesBreed(candidate))].slice(0, count);
 }
 
+/** The site adds this to every page title (see the title template in app/layout.tsx). */
+const TITLE_SUFFIX = ' | PetPosture';
+
+/** Search tools flag a whole title (name plus suffix) longer than this. */
+export const PICK_TITLE_MAX = 70;
+
+/**
+ * The page title of a Pick, made from its name. A name that already fits is used as it is. A longer one loses its
+ * trailing details one at a time, each after the last comma or colon (the size, "12 to 17-in chest"), until the whole
+ * title fits; a name with no such break is cut at a word and ends in an ellipsis. The name shown on the page is
+ * never changed, and a title typed in the admin is used instead of this.
+ */
+export function pickSeoTitle(name: string): string {
+    const limit = PICK_TITLE_MAX - TITLE_SUFFIX.length;
+    let title = name.trim();
+
+    while (title.length > limit) {
+        const cut = Math.max(title.lastIndexOf(', '), title.lastIndexOf(': '));
+        if (cut <= 0) break;
+        title = title.slice(0, cut);
+    }
+
+    if (title.length > limit) title = `${title.slice(0, limit - 1).replace(/\s+\S*$/, '')}…`;
+
+    return title;
+}
+
 /** "french-bulldog" -> "French Bulldog" */
 export function humanizeSlug(slug: string): string {
     return slug
