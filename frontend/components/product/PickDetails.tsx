@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import type { Product, ProductPick } from '@/types/shop';
-import { buttonClasses } from '@/components/ui/Button';
-import { formatPickDate, humanizeSlug, pickCtaLabel, pickPriceParts } from '@/lib/pick';
+import { formatPickDate, humanizeSlug } from '@/lib/pick';
 import { sanitizeRichHtml } from '@/lib/sanitize-rich-html';
 import { PickCard } from './PickCard';
 import { PickGallery } from './PickGallery';
+import { PickBuyBox, PickSpecs, PickVariantProvider } from './PickVariantSelector';
 
-export const PICK_DISCLOSURE = 'PetPosture may earn a commission if you buy through this link, at no extra cost to you.';
+export { PICK_DISCLOSURE } from '@/lib/pick';
 
 type PickProduct = Product & { pick: ProductPick };
 
@@ -28,7 +28,6 @@ function SectionTitle({ children }: { children: string }) {
 // screen the photo moves to the left column. Every editorial block is left out when it was not entered.
 export function PickDetails({ product, related }: { product: PickProduct; related: Product[] }) {
     const { pick } = product;
-    const price = pickPriceParts(pick);
 
     // A Pick can be published before its photo is uploaded; then there is no gallery at all.
     const photos = (product.images ?? []).filter((image) => image.src);
@@ -72,6 +71,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
             </nav>
 
             <section className="px-4 pb-12 pt-6 md:px-8">
+                <PickVariantProvider variants={pick.variants}>
                 <div className={`mx-auto grid grid-cols-1 items-start gap-x-12 gap-y-6 ${hasPhoto ? 'max-w-[1200px] lg:grid-cols-2' : 'max-w-[720px]'}`}>
                     <header className={rightColumn}>
                         <p className="mb-3 inline-block rounded-[3px] bg-secondary-light px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-rust">{eyebrow}</p>
@@ -84,26 +84,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                     </header>
 
                     <div className={`${cardClass} shadow-[0_12px_32px_rgba(34,33,33,0.08)] ${rightColumn}`}>
-                        {price && (
-                            <div className="mb-4">
-                                <p className="text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">{price.label}</p>
-                                <p className="py-[10px] text-[32px] font-bold leading-tight text-primary">{price.amount}</p>
-                                <p className="text-xs text-zinc-500">{price.note}</p>
-                            </div>
-                        )}
-                        <a
-                            href={pick.goUrl}
-                            target="_blank"
-                            rel="sponsored nofollow noopener"
-                            className={buttonClasses({ variant: 'primary', size: 'md', className: 'min-h-[52px] w-full gap-[9px] shadow-xl shadow-orange-500/20' })}
-                        >
-                            {pickCtaLabel(pick)}
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
-                                <path d="M7 17L17 7M9 7h8v8" />
-                            </svg>
-                        </a>
-                        <p className="mt-3 text-xs leading-5 text-zinc-500">{PICK_DISCLOSURE}</p>
-                        <p className="mt-2 text-xs leading-5 text-zinc-500">No made-up star ratings: just pros and cons.</p>
+                        <PickBuyBox pick={pick} />
                     </div>
 
                     {pick.ourTake && (
@@ -119,19 +100,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                         </div>
                     )}
 
-                    {specs.length > 0 && (
-                        <div className={`${cardClass} ${rightColumn}`}>
-                            <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">Quick specs</h3>
-                            <dl className="divide-y divide-zinc-100 text-sm">
-                                {specs.map((spec) => (
-                                    <div key={spec.label} className="flex justify-between gap-4 py-2.5">
-                                        <dt className="font-semibold text-primary">{spec.label}</dt>
-                                        <dd className="text-right text-zinc-600">{spec.value}</dd>
-                                    </div>
-                                ))}
-                            </dl>
-                        </div>
-                    )}
+                    <PickSpecs specs={specs} className={`${cardClass} ${rightColumn}`} />
 
                     {hasBestFor && (
                         <div className={rightColumn}>
@@ -163,6 +132,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                         />
                     )}
                 </div>
+                </PickVariantProvider>
             </section>
 
             {hasPractical && (

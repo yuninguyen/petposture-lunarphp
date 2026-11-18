@@ -2,6 +2,8 @@ import type { Product, ProductPick } from '@/types/shop';
 
 export type PickProduct = Product & { pick: ProductPick };
 
+export const PICK_DISCLOSURE = 'PetPosture may earn a commission if you buy through this link, at no extra cost to you.';
+
 /** Every breed some Pick is best for, once each and sorted, for the filter chips of the Picks list. */
 export function pickBreeds(picks: PickProduct[]): string[] {
     return [...new Set(picks.flatMap((product) => product.pick.bestForBreeds))].sort();

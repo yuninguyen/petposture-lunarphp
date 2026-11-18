@@ -73,7 +73,19 @@ export interface ProductVariant {
  * `goUrl` counts the click, then redirects; the retailer URL itself is never returned.
  * The reference price is the retailer's price and only comes with its checked date (YYYY-MM-DD).
  */
+/** One choice on a Pick page that has several variants (for example Colour: Camo). Absent or empty with one variant. */
+export interface PickVariant {
+    id: number;
+    /** "Camo" or "Camo, Medium": the option values of the variant. */
+    label: string;
+    options: { name: string | null; value: string }[];
+    /** The variant's own retailer price, or the product's when it has none; null without a checked date. */
+    referencePrice: number | null;
+    goUrl: string;
+}
+
 export interface ProductPick {
+    variants?: PickVariant[];
     retailer: string | null;
     retailerName: string | null;
     goUrl: string;

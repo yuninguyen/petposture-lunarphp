@@ -41,9 +41,18 @@ class AffiliateClickController extends Controller
             ->first();
         abort_unless($product, 404);
 
+        // A variant of this product may have its own retailer page (e.g. another colour). A missing, unknown or
+        // foreign variant id, or one without its own link, falls back to the product's link.
+        $variant = is_numeric($request->query('variant'))
+            ? $product->variants()->whereKey((int) $request->query('variant'))->with('values')->first()
+            : null;
+
         // The URL is typed in the admin, so only follow plain web links.
-        $url = RetailerUrl::web($product->translateAttribute('external_url'));
+        $url = ($variant ? RetailerUrl::web($variant->translateAttribute('external_url')) : null)
+            ?? RetailerUrl::web($product->translateAttribute('external_url'));
         abort_unless($url !== null, 404);
+
+        $variantLabel = $variant ? $variant->values->map(fn ($value) => $value->translate('name'))->implode(', ') : '';
 
         $networkSlug = trim((string) $product->translateAttribute('affiliate_network_slug'));
         $network = $networkSlug === '' ? null : AffiliateNetwork::where('slug', $networkSlug)->first();
@@ -52,7 +61,7 @@ class AffiliateClickController extends Controller
             'post_id' => null,
             'product_id' => $product->id,
             'affiliate_network_id' => $network?->id,
-            'product_name' => (string) $product->translateAttribute('name'),
+            'product_name' => (string) $product->translateAttribute('name').($variantLabel !== '' ? " ({$variantLabel})" : ''),
             'target_url' => $url,
             'referrer' => $request->headers->get('referer'),
         ]);
