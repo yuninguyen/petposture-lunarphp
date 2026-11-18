@@ -9,8 +9,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
     const referer = request.headers.get('referer');
     if (referer) headers.referer = referer;
 
+    // Only a numeric variant id is passed on; the backend falls back to the product's link for any other value.
+    const variant = new URL(request.url).searchParams.get('variant');
+    const query = variant && /^\d+$/.test(variant) ? `?variant=${variant}` : '';
+
     try {
-        const upstream = await fetch(`${getApiBaseUrl()}/go/pick/${encodeURIComponent(slug)}`, {
+        const upstream = await fetch(`${getApiBaseUrl()}/go/pick/${encodeURIComponent(slug)}${query}`, {
             redirect: 'manual',
             cache: 'no-store',
             headers,
