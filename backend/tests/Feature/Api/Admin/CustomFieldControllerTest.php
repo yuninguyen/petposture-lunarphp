@@ -42,7 +42,7 @@ class CustomFieldControllerTest extends TestCase
     {
         $this->actingAsAdmin();
         // The Pick variant fields come from a migration; this test is about the fields it creates itself.
-        $seeded = \Lunar\Models\Attribute::query()->where('attribute_type', \Lunar\Models\ProductVariant::morphName())->whereIn('handle', ['external_url', 'reference_price']);
+        $seeded = Attribute::query()->where('attribute_type', ProductVariant::morphName())->whereIn('handle', ['external_url', 'reference_price']);
         ProductType::all()->each(fn (ProductType $existing) => $existing->mappedAttributes()->detach($seeded->pluck('id')->all()));
         $seeded->delete();
         $type = ProductType::factory()->create(['name' => 'Harnesses']);

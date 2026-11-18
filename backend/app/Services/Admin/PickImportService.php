@@ -3,7 +3,6 @@
 namespace App\Services\Admin;
 
 use App\Models\AffiliateNetwork;
-use Lunar\Models\Brand;
 use App\Models\CuratorMedia;
 use App\Support\ImageOptimizer;
 use App\Support\RetailerUrl;
@@ -15,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Lunar\Models\Attribute;
+use Lunar\Models\Brand;
 use Lunar\Models\Currency;
 use Lunar\Models\Product;
 use Lunar\Models\ProductType;

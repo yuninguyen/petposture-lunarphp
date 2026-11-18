@@ -9,6 +9,7 @@ use App\Services\ProductSyncService;
 use App\Support\RetailerUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class ProductResource extends JsonResource
@@ -84,7 +85,7 @@ class ProductResource extends JsonResource
             'specs' => $this->resolveSpecs(),
 
             // Affiliate "Pick" details; null for an ordinary product
-            'pick' => $this->resolvePick($productSlug),
+            'pick' => $this->resolvePick($productSlug, $variants),
 
             // Options — e.g. [{"name":"Size","values":["S","M","L"]}]
             'options' => $this->resolveOptions(),
@@ -212,7 +213,7 @@ class ProductResource extends JsonResource
      * the button goes through `goUrl` so every click is counted. The reference price is the
      * retailer's, so it is only returned together with a valid checked date.
      */
-    private function resolvePick(string $slug): ?array
+    private function resolvePick(string $slug, Collection $variants): ?array
     {
         if ($this->pickUrl() === null) {
             return null;
@@ -230,7 +231,7 @@ class ProductResource extends JsonResource
             // The public storefront host (petposture.com), which forwards /go/pick/* here; not the API host.
             'goUrl' => rtrim((string) config('app.frontend_url'), '/')."/go/pick/{$slug}",
             'referencePrice' => $price,
-            'variants' => $this->resolvePickVariants($slug, $checkedDate),
+            'variants' => $this->resolvePickVariants($slug, $checkedDate, $variants),
             'priceCheckedDate' => $price === null ? null : $checkedDate,
             'bestForBreeds' => $this->resolveTagList('best_for_breeds'),
             'bestForNotes' => $this->resolveLines('best_for_note'),
@@ -297,9 +298,9 @@ class ProductResource extends JsonResource
      * selector. A variant's own reference price wins; without one it uses the product's. The retailer URL is
      * never returned: each variant's button goes through its own /go link so the click is counted.
      */
-    private function resolvePickVariants(string $slug, ?string $checkedDate): array
+    private function resolvePickVariants(string $slug, ?string $checkedDate, Collection $allVariants): array
     {
-        $variants = $this->variants
+        $variants = $allVariants
             ->filter(fn ($variant) => $variant->relationLoaded('values') && $variant->values->isNotEmpty())
             ->sortBy('id')
             ->values();

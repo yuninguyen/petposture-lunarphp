@@ -14,6 +14,7 @@ use Laravel\Sanctum\Sanctum;
 use Lunar\FieldTypes\Text;
 use Lunar\Models\Attribute;
 use Lunar\Models\AttributeGroup;
+use Lunar\Models\Brand;
 use Lunar\Models\Currency;
 use Lunar\Models\Language;
 use Lunar\Models\Product;
@@ -152,7 +153,7 @@ class ProductImportTest extends TestCase
 
     public function test_the_brand_column_sets_the_brand_of_the_pick_matching_by_name_without_case(): void
     {
-        $brand = \Lunar\Models\Brand::query()->create(['name' => 'KONG']);
+        $brand = Brand::query()->create(['name' => 'KONG']);
 
         $this->postJson('/api/admin/products/import', ['file' => $this->brandFile(' kong ')])->assertCreated()->assertJsonCount(1, 'data.created');
 
@@ -161,7 +162,7 @@ class ProductImportTest extends TestCase
 
     public function test_an_unknown_brand_flags_the_row_instead_of_creating_a_new_brand(): void
     {
-        \Lunar\Models\Brand::query()->create(['name' => 'KONG']);
+        Brand::query()->create(['name' => 'KONG']);
 
         $this->postJson('/api/admin/products/import/preview', ['file' => $this->brandFile('Kongg')])
             ->assertOk()
@@ -170,7 +171,7 @@ class ProductImportTest extends TestCase
         $this->postJson('/api/admin/products/import', ['file' => $this->brandFile('Kongg')])->assertCreated()->assertJsonCount(1, 'data.failed');
 
         $this->assertSame(0, Product::query()->count());
-        $this->assertSame(1, \Lunar\Models\Brand::query()->count());
+        $this->assertSame(1, Brand::query()->count());
     }
 
     public function test_a_blank_brand_leaves_the_pick_without_one(): void

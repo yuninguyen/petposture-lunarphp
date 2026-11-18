@@ -4,10 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\AffiliateNetwork;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Lunar\FieldTypes\Text;
 use Lunar\Models\Currency;
 use Lunar\Models\Language;
 use Lunar\Models\Product;
+use Lunar\Models\ProductOption;
+use Lunar\Models\ProductOptionValue;
 use Lunar\Models\ProductType;
 use Lunar\Models\TaxClass;
 use Tests\TestCase;
@@ -100,13 +104,13 @@ class ProductPickApiTest extends TestCase
 
     public function test_a_photo_alt_is_the_admin_alt_text_and_never_the_file_name(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('local');
+        Storage::fake('local');
         $product = $this->pick();
         $collection = config('lunar.media.collection');
-        $product->addMedia(\Illuminate\Http\UploadedFile::fake()->image('kong-puppy.jpg'))
+        $product->addMedia(UploadedFile::fake()->image('kong-puppy.jpg'))
             ->withCustomProperties(['primary' => true, 'alt' => 'Necoichi bowl, Gray, Large'])
             ->toMediaCollection($collection);
-        $product->addMedia(\Illuminate\Http\UploadedFile::fake()->image('side.jpg'))
+        $product->addMedia(UploadedFile::fake()->image('side.jpg'))
             ->withCustomProperties(['primary' => false])
             ->toMediaCollection($collection);
 
@@ -118,9 +122,9 @@ class ProductPickApiTest extends TestCase
     /** Gives the product's variant a Colour of Camo and adds a second variant with Black; returns [camo, black]. */
     private function colourVariants(Product $product, array $camoAttributes = [], array $blackAttributes = []): array
     {
-        $option = \Lunar\Models\ProductOption::query()->create(['name' => ['en' => 'Colour'], 'label' => ['en' => 'Colour'], 'handle' => 'colour', 'shared' => false]);
-        $camoValue = \Lunar\Models\ProductOptionValue::query()->create(['product_option_id' => $option->id, 'name' => ['en' => 'Camo'], 'position' => 1]);
-        $blackValue = \Lunar\Models\ProductOptionValue::query()->create(['product_option_id' => $option->id, 'name' => ['en' => 'Black'], 'position' => 2]);
+        $option = ProductOption::query()->create(['name' => ['en' => 'Colour'], 'label' => ['en' => 'Colour'], 'handle' => 'colour', 'shared' => false]);
+        $camoValue = ProductOptionValue::query()->create(['product_option_id' => $option->id, 'name' => ['en' => 'Camo'], 'position' => 1]);
+        $blackValue = ProductOptionValue::query()->create(['product_option_id' => $option->id, 'name' => ['en' => 'Black'], 'position' => 2]);
         $product->productOptions()->attach([$option->id => ['position' => 1]]);
 
         $camo = $product->variants()->firstOrFail();

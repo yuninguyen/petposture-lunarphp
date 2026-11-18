@@ -7,7 +7,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Lunar\FieldTypes\Text;
 use Lunar\Models\Language;
 use Lunar\Models\Product;
+use Lunar\Models\ProductOption;
+use Lunar\Models\ProductOptionValue;
 use Lunar\Models\ProductType;
+use Lunar\Models\ProductVariant;
+use Lunar\Models\TaxClass;
 use Tests\TestCase;
 
 class PickClickRedirectTest extends TestCase
@@ -64,14 +68,14 @@ class PickClickRedirectTest extends TestCase
         ]);
     }
 
-    private function colourVariants(Product $product, array $blackAttributes): \Lunar\Models\ProductVariant
+    private function colourVariants(Product $product, array $blackAttributes): ProductVariant
     {
-        $option = \Lunar\Models\ProductOption::query()->create(['name' => ['en' => 'Colour'], 'label' => ['en' => 'Colour'], 'handle' => 'colour', 'shared' => false]);
-        $camoValue = \Lunar\Models\ProductOptionValue::query()->create(['product_option_id' => $option->id, 'name' => ['en' => 'Camo'], 'position' => 1]);
-        $blackValue = \Lunar\Models\ProductOptionValue::query()->create(['product_option_id' => $option->id, 'name' => ['en' => 'Black'], 'position' => 2]);
+        $option = ProductOption::query()->create(['name' => ['en' => 'Colour'], 'label' => ['en' => 'Colour'], 'handle' => 'colour', 'shared' => false]);
+        $camoValue = ProductOptionValue::query()->create(['product_option_id' => $option->id, 'name' => ['en' => 'Camo'], 'position' => 1]);
+        $blackValue = ProductOptionValue::query()->create(['product_option_id' => $option->id, 'name' => ['en' => 'Black'], 'position' => 2]);
         $product->productOptions()->attach([$option->id => ['position' => 1]]);
 
-        $camo = $product->variants()->create(['tax_class_id' => \Lunar\Models\TaxClass::query()->firstOrCreate(['name' => 'Default Tax'], ['default' => true])->id, 'sku' => 'CAMO', 'attribute_data' => collect()]);
+        $camo = $product->variants()->create(['tax_class_id' => TaxClass::query()->firstOrCreate(['name' => 'Default Tax'], ['default' => true])->id, 'sku' => 'CAMO', 'attribute_data' => collect()]);
         $camo->values()->sync([$camoValue->id]);
         $black = $product->variants()->create(['tax_class_id' => $camo->tax_class_id, 'sku' => 'BLACK', 'attribute_data' => collect(array_map(fn ($value) => new Text($value), $blackAttributes))]);
         $black->values()->sync([$blackValue->id]);
