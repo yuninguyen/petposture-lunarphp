@@ -21,8 +21,11 @@ const chipClass = (active: boolean, activeClass = 'border-[#3e4c57] bg-[#3e4c57]
 
 const NEED_ACTIVE = 'border-[#df8448] bg-[#df8448] text-[#1a2128]';
 
-const rowLabelClass = 'w-[54px] shrink-0 text-[11.5px] font-bold uppercase tracking-[0.12em] text-[#6b7680]';
-const rowChipsClass = 'flex flex-nowrap gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0';
+// On a phone the chips wrap onto as many rows as they need, so every choice is visible without sideways scrolling.
+// The label sits level with the first row of chips; from sm up everything is centred on one row as before.
+const rowLabelClass = 'mt-[11px] w-[54px] shrink-0 text-[11.5px] font-bold uppercase tracking-[0.12em] text-[#6b7680] sm:mt-0';
+const rowChipsClass = 'flex min-w-0 flex-1 flex-wrap gap-2';
+const filterRowClass = 'flex items-start gap-3 sm:items-center';
 
 const statClass =
     'inline-flex items-center gap-2 rounded-full border border-[#f3ddc9] bg-[#fdf7f0] px-[15px] py-2 text-[13px] font-semibold text-[#2c3840]';
@@ -115,7 +118,7 @@ export function PicksIndex({
                 {allPicks.length > 0 && (breeds.length > 0 || solutions.length > 0) && (
                     <section aria-label="Filter picks" className="mt-8 grid gap-2.5 border-y border-[#e2e5e8] py-3.5">
                         {breeds.length > 0 && (
-                            <div className="flex items-center gap-3">
+                            <div className={filterRowClass}>
                                 <span className={rowLabelClass}>Breed</span>
                                 <div className={rowChipsClass}>
                                     <Link href={picksHref({ breed: null, solution })} className={chipClass(!breed)} {...(!breed ? { 'aria-current': 'true' } : {})}>All breeds</Link>
@@ -133,7 +136,7 @@ export function PicksIndex({
                             </div>
                         )}
                         {solutions.length > 0 && (
-                            <div className="flex items-center gap-3">
+                            <div className={filterRowClass}>
                                 <span className={rowLabelClass}>Solution</span>
                                 <div className={rowChipsClass}>
                                     <Link href={picksHref({ breed, solution: null })} className={chipClass(!solution, NEED_ACTIVE)} {...(!solution ? { 'aria-current': 'true' } : {})}>All solutions</Link>

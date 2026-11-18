@@ -221,10 +221,12 @@ describe('PicksIndex filter', () => {
         expect(render({ breed: 'french-bulldog' })).toMatch(/Showing <b[^>]*>1 of 2<\/b> picks/);
     });
 
-    it('keeps the chips in a single scrolling row on a phone, each at least 40px high', () => {
+    it('wraps the chips onto several rows on a phone instead of scrolling sideways, each at least 40px high', () => {
         const html = render();
 
-        expect(html).toContain('overflow-x-auto');
+        expect(html).not.toContain('overflow-x-auto');
+        expect(html).not.toContain('flex-nowrap');
+        expect(html).toContain('flex-wrap');
         expect(html).toContain('min-h-[40px]');
     });
 });
