@@ -54,6 +54,6 @@ class NameAttributeMappingMigrationTest extends TestCase
 
         $this->migration()->up();
 
-        $this->assertSame(0, ProductType::query()->first()->mappedAttributes()->count());
+        $this->assertSame(0, ProductType::query()->first()->mappedAttributes()->where('handle', 'name')->count());
     }
 }

@@ -230,6 +230,7 @@ class ProductResource extends JsonResource
             // The public storefront host (petposture.com), which forwards /go/pick/* here; not the API host.
             'goUrl' => rtrim((string) config('app.frontend_url'), '/')."/go/pick/{$slug}",
             'referencePrice' => $price,
+            'variants' => $this->resolvePickVariants($slug, $checkedDate),
             'priceCheckedDate' => $price === null ? null : $checkedDate,
             'bestForBreeds' => $this->resolveTagList('best_for_breeds'),
             'bestForNotes' => $this->resolveLines('best_for_note'),
@@ -280,9 +281,51 @@ class ProductResource extends JsonResource
 
     private function resolveReferencePrice(): ?float
     {
-        $raw = str_replace(['$', ','], '', trim((string) $this->translateAttribute('reference_price')));
+        return $this->numericPrice($this->translateAttribute('reference_price'));
+    }
+
+    private function numericPrice(mixed $value): ?float
+    {
+        $raw = str_replace(['$', ','], '', trim((string) $value));
 
         return is_numeric($raw) && (float) $raw >= 0 ? round((float) $raw, 2) : null;
+    }
+
+    /**
+     * The variants a reader can choose between on a Pick page, one per variant that has option values
+     * (for example Colour: Camo). Empty unless there are at least two, so a single-variant Pick shows no
+     * selector. A variant's own reference price wins; without one it uses the product's. The retailer URL is
+     * never returned: each variant's button goes through its own /go link so the click is counted.
+     */
+    private function resolvePickVariants(string $slug, ?string $checkedDate): array
+    {
+        $variants = $this->variants
+            ->filter(fn ($variant) => $variant->relationLoaded('values') && $variant->values->isNotEmpty())
+            ->sortBy('id')
+            ->values();
+
+        if ($variants->count() < 2) {
+            return [];
+        }
+
+        $goUrl = rtrim((string) config('app.frontend_url'), '/')."/go/pick/{$slug}";
+
+        return $variants->map(function ($variant) use ($goUrl, $checkedDate): array {
+            $options = $variant->values->map(fn ($value): array => [
+                'name' => $value->relationLoaded('option') ? $value->option->translate('name') : null,
+                'value' => $value->translate('name'),
+            ])->values()->all();
+
+            return [
+                'id' => (int) $variant->id,
+                'label' => collect($options)->pluck('value')->implode(', '),
+                'options' => $options,
+                'referencePrice' => $checkedDate === null
+                    ? null
+                    : ($this->numericPrice($variant->translateAttribute('reference_price')) ?? $this->resolveReferencePrice()),
+                'goUrl' => "{$goUrl}?variant={$variant->id}",
+            ];
+        })->all();
     }
 
     /** One entry per non-empty line of a text attribute. */

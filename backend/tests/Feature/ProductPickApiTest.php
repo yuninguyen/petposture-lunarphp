@@ -115,6 +115,57 @@ class ProductPickApiTest extends TestCase
         $this->assertSame(['Necoichi bowl, Gray, Large', 'Necoichi bowl'], $alts);
     }
 
+    /** Gives the product's variant a Colour of Camo and adds a second variant with Black; returns [camo, black]. */
+    private function colourVariants(Product $product, array $camoAttributes = [], array $blackAttributes = []): array
+    {
+        $option = \Lunar\Models\ProductOption::query()->create(['name' => ['en' => 'Colour'], 'label' => ['en' => 'Colour'], 'handle' => 'colour', 'shared' => false]);
+        $camoValue = \Lunar\Models\ProductOptionValue::query()->create(['product_option_id' => $option->id, 'name' => ['en' => 'Camo'], 'position' => 1]);
+        $blackValue = \Lunar\Models\ProductOptionValue::query()->create(['product_option_id' => $option->id, 'name' => ['en' => 'Black'], 'position' => 2]);
+        $product->productOptions()->attach([$option->id => ['position' => 1]]);
+
+        $camo = $product->variants()->firstOrFail();
+        $camo->values()->sync([$camoValue->id]);
+        $camo->update(['attribute_data' => collect(array_map(fn ($value) => new Text($value), $camoAttributes))]);
+
+        $black = $camo->replicate();
+        $black->sku = 'SKU-black';
+        $black->attribute_data = collect(array_map(fn ($value) => new Text($value), $blackAttributes));
+        $black->save();
+        $black->values()->sync([$blackValue->id]);
+
+        return [$camo->fresh(), $black->fresh()];
+    }
+
+    public function test_a_pick_with_two_variants_lists_them_with_their_own_price_and_go_link(): void
+    {
+        config(['app.frontend_url' => 'https://petposture.com']);
+        $product = $this->pick();
+        [$camo, $black] = $this->colourVariants($product, [], ['reference_price' => '49.95', 'external_url' => 'https://www.chewy.com/black/dp/2']);
+
+        $pick = $this->listed()['pick'];
+
+        $this->assertSame([
+            ['id' => $camo->id, 'label' => 'Camo', 'options' => [['name' => 'Colour', 'value' => 'Camo']], 'referencePrice' => 49.96, 'goUrl' => "https://petposture.com/go/pick/necoichi-bowl?variant={$camo->id}"],
+            ['id' => $black->id, 'label' => 'Black', 'options' => [['name' => 'Colour', 'value' => 'Black']], 'referencePrice' => 49.95, 'goUrl' => "https://petposture.com/go/pick/necoichi-bowl?variant={$black->id}"],
+        ], $pick['variants']);
+        $this->assertStringNotContainsString('chewy.com/black', json_encode($pick), 'a variant retailer URL must not be exposed');
+    }
+
+    public function test_a_pick_with_one_variant_has_no_variant_list(): void
+    {
+        $this->pick();
+
+        $this->assertSame([], $this->listed()['pick']['variants']);
+    }
+
+    public function test_variant_prices_are_withheld_without_a_checked_date_like_the_product_price(): void
+    {
+        $product = $this->pick(['price_checked_date' => '']);
+        $this->colourVariants($product, [], ['reference_price' => '49.95']);
+
+        $this->assertSame([null, null], collect($this->listed()['pick']['variants'])->pluck('referencePrice')->all());
+    }
+
     public function test_the_story_fields_are_exposed_and_parsed(): void
     {
         $this->pick([
