@@ -183,8 +183,10 @@ export default function BlogPage({ initialData }: { initialData?: { posts: BlogP
             : filteredPosts;
 
     if (isLoading) {
+        // Also what a crawler gets when the server could not load the posts, so the page still has its h1.
         return (
             <div className="flex min-h-screen items-center justify-center bg-white font-hanken">
+                <h1 className="sr-only">PetPosture Blog</h1>
                 <div className="text-center">
                     <Loader2 className="mx-auto mb-6 animate-spin text-rust" size={48} />
                     <p className="text-sm font-bold uppercase tracking-widest text-primary">
@@ -267,6 +269,9 @@ export default function BlogPage({ initialData }: { initialData?: { posts: BlogP
                 </div>
             </nav>
 
+            {/* The page's own title for search engines and screen readers; the featured article below is an h2. */}
+            <h1 className="sr-only">PetPosture Blog</h1>
+
             {featuredPost && (
                 <section className="bg-[#f8f9fa] px-4 py-10 md:px-8 md:py-14">
                     <div className="mx-auto max-w-[1200px]">
@@ -307,9 +312,9 @@ export default function BlogPage({ initialData }: { initialData?: { posts: BlogP
                                     </span>
                                 </div>
                                 <Link href={`/blog/${featuredPost.slug || featuredPost.id}`}>
-                                    <h1 className="mb-6 cursor-pointer text-[28px] font-bold leading-tight text-primary transition-colors hover:text-[#2c3840] md:text-[36px]">
+                                    <h2 className="mb-6 cursor-pointer text-[28px] font-bold leading-tight text-primary transition-colors hover:text-[#2c3840] md:text-[36px]">
                                         {featuredPost.title}
-                                    </h1>
+                                    </h2>
                                 </Link>
                                 <p className="mb-8 line-clamp-3 text-[16px] leading-relaxed text-[#666666]">
                                     {stripHtml(featuredPost.content).substring(0, 160)}...
@@ -438,10 +443,10 @@ export default function BlogPage({ initialData }: { initialData?: { posts: BlogP
 
                     <aside className="space-y-12 lg:w-80">
                         <div className="rounded-2xl border border-zinc-100 bg-white p-8 shadow-sm">
-                            <h4 className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.08em] text-rust">
+                            <h2 className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.08em] text-rust">
                                 Follow PetPosture
                                 <div className="h-1.5 w-1.5 rounded-full bg-secondary/20" />
-                            </h4>
+                            </h2>
                             <div className="grid grid-cols-1 gap-3">
                                 {[
                                     { icon: Facebook, label: "Facebook", color: "#1877F2", href: socialLinks.facebook },
@@ -472,10 +477,10 @@ export default function BlogPage({ initialData }: { initialData?: { posts: BlogP
 
                         {posts.length > 0 && (
                             <div>
-                                <h4 className="mb-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.08em] text-rust">
+                                <h2 className="mb-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.08em] text-rust">
                                     Most Discussed
                                     <div className="h-[1px] flex-1 bg-zinc-100" />
-                                </h4>
+                                </h2>
                                 <div className="space-y-7">
                                     <Link href={`/blog/${posts[0].slug || posts[0].id}`} className="group block">
                                         <div className="relative aspect-[16/10] overflow-hidden rounded-xl shadow-sm">
@@ -490,9 +495,9 @@ export default function BlogPage({ initialData }: { initialData?: { posts: BlogP
                                                 Editor&apos;s Pick
                                             </span>
                                         </div>
-                                        <h5 className="mt-3 line-clamp-2 text-[15px] font-bold leading-tight text-primary transition-colors group-hover:text-[#2c3840]">
+                                        <h3 className="mt-3 line-clamp-2 text-[15px] font-bold leading-tight text-primary transition-colors group-hover:text-[#2c3840]">
                                             {posts[0].title}
-                                        </h5>
+                                        </h3>
                                     </Link>
                                     {posts.slice(1, 4).map((post) => (
                                         <Link
@@ -510,9 +515,9 @@ export default function BlogPage({ initialData }: { initialData?: { posts: BlogP
                                                 />
                                             </div>
                                             <div className="flex-1">
-                                                <h6 className="mb-1 line-clamp-2 text-sm font-bold leading-snug text-primary transition-colors group-hover:text-[#2c3840]">
+                                                <h3 className="mb-1 line-clamp-2 text-sm font-bold leading-snug text-primary transition-colors group-hover:text-[#2c3840]">
                                                     {post.title}
-                                                </h6>
+                                                </h3>
                                                 <span suppressHydrationWarning className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                                                     {post.published_at || post.created_at
                                                         ? formatDate(post.published_at || post.created_at || "")
