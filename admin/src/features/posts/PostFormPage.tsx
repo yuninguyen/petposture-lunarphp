@@ -22,6 +22,7 @@ import TaskItem from '@tiptap/extension-task-item';
 import { fetchJson } from '@/lib/api';
 import { fetchCurrentUser } from '@/lib/auth';
 import { prettifyHtml } from '@/lib/htmlFormat';
+import { easternInputToUtcIso, utcIsoToEasternInput } from '@/lib/easternTime';
 
 // TipTap's Link extension only preserves href/target/rel/class(config default)
 // by default and drops `style` entirely — so pasted CTA buttons like
@@ -89,7 +90,7 @@ interface PostDetail {
   title: string;
   slug: string;
   content: string;
-  status: 'draft' | 'published';
+  status: 'draft' | 'published' | 'scheduled';
   blog_category: { id: string; name: string } | null;
   featured_image: string | null;
   featured_media_id: string | null;
@@ -201,6 +202,10 @@ export function PostFormPage() {
 
   const selectedType = useWatch({ control, name: 'type' });
   const selectedStatus = useWatch({ control, name: 'status' });
+  // Cancelling a schedule (Scheduled -> Draft) also clears the time, as the server does, so no old time is left behind.
+  useEffect(() => {
+    if (selectedStatus === 'draft' && existingPost?.status === 'scheduled') setValue('published_at', '');
+  }, [selectedStatus, existingPost?.status, setValue]);
   const selectedTags = useWatch({ control, name: 'tags' });
   const previewSlug = useWatch({ control, name: 'slug' }) ?? '';
   const featuredMediaId = useWatch({ control, name: 'featured_media_id' });
@@ -265,7 +270,8 @@ export function PostFormPage() {
         featured_image_alt: existingPost.featured_image_alt ?? '',
         author: existingPost.author ?? '',
         type: existingPost.type ?? 'article',
-        published_at: existingPost.published_at ? existingPost.published_at.slice(0, 16) : '',
+        // Stored in UTC, shown and edited in US Eastern Time.
+        published_at: utcIsoToEasternInput(existingPost.published_at),
         breeds: existingPost.breeds?.map((b) => b.id) ?? [],
         solutions: existingPost.solutions?.map((s) => s.id) ?? [],
         tags: existingPost.tags?.map((t) => t.id) ?? [],
@@ -427,8 +433,8 @@ export function PostFormPage() {
       ...values,
       content: editor?.getHTML() ?? values.content,
       // datetime-local sends an empty string when untouched; the backend's
-      // `nullable|date` rule rejects "" — send null instead.
-      published_at: values.published_at || null,
+      // `nullable|date` rule rejects "" — send null instead. The time typed is Eastern; the server gets the UTC moment.
+      published_at: easternInputToUtcIso(values.published_at),
       // Same "" vs null issue as published_at: metadata.source_url/checked_at
       // are only required_with price/rating, but an empty string still fails
       // their `url`/date-format rules on items that don't have either.
@@ -774,6 +780,7 @@ export function PostFormPage() {
               <div className="relative">
                 <select {...register('status')} className="appearance-none w-full px-3 py-2 pr-8 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white hover:bg-slate-50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors cursor-pointer shadow-sm">
                   <option value="draft">{t('posts.status_draft')}</option>
+                  <option value="scheduled">{t('posts.status_scheduled')}</option>
                   <option value="published">{t('posts.status_published')}</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
@@ -791,6 +798,8 @@ export function PostFormPage() {
                 {...register('published_at')}
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm"
               />
+              {selectedStatus === 'scheduled' && <p className="mt-1 text-xs text-slate-500">{t('posts.form_hint_scheduled')}</p>}
+              {errors.published_at?.message && <p className="mt-1 text-xs text-red-600">{String(errors.published_at.message)}</p>}
             </div>
             </Card>
           </div>

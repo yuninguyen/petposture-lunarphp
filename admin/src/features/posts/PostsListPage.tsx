@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DeleteConfirmModal } from '@/components/ui/delete-confirm-modal';
 import { Badge, type BadgeColor } from '@/components/ui/badge';
+import { formatEastern } from '@/lib/easternTime';
 
 const columnHelper = createColumnHelper<Post>();
 
@@ -21,7 +22,7 @@ export function PostsListPage() {
   const { t } = useTranslation();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<'' | 'draft' | 'published'>('');
+  const [status, setStatus] = useState<'' | 'draft' | 'published' | 'scheduled'>('');
   const [category, setCategory] = useState('');
   const [type, setType] = useState<'' | 'article' | 'guide' | 'comparison'>('');
   const [page, setPage] = useState(1);
@@ -128,11 +129,19 @@ export function PostsListPage() {
     }),
     columnHelper.accessor('status', {
       header: t('posts.header_status'),
-      cell: (info) => (
-        <Badge color={info.getValue() === 'published' ? 'emerald' : 'slate'}>
-          {info.getValue() === 'published' ? t('posts.status_published') : t('posts.status_draft')}
-        </Badge>
-      ),
+      cell: (info) => {
+        const status = info.getValue();
+        const scheduledFor = status === 'scheduled' ? formatEastern(info.row.original.published_at) : '';
+
+        return (
+          <div>
+            <Badge color={status === 'published' ? 'emerald' : status === 'scheduled' ? 'amber' : 'slate'}>
+              {status === 'published' ? t('posts.status_published') : status === 'scheduled' ? t('posts.status_scheduled') : t('posts.status_draft')}
+            </Badge>
+            {scheduledFor && <p className="mt-1 text-xs text-slate-500">{t('posts.scheduled_for', { time: scheduledFor })}</p>}
+          </div>
+        );
+      },
     }),
     columnHelper.accessor('updated_at', {
       header: t('posts.header_updated'),
@@ -205,11 +214,12 @@ export function PostsListPage() {
             <div className="relative">
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value as '' | 'draft' | 'published')}
+                onChange={(e) => setStatus(e.target.value as '' | 'draft' | 'published' | 'scheduled')}
                 className="appearance-none w-full px-3 py-2 pr-8 rounded-lg border border-slate-200 text-sm text-slate-700 bg-white hover:bg-slate-50 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-colors cursor-pointer shadow-sm h-[38px]"
               >
                 <option value="">{t('posts.filter_status_all')}</option>
                 <option value="draft">{t('posts.status_draft')}</option>
+                <option value="scheduled">{t('posts.status_scheduled')}</option>
                 <option value="published">{t('posts.status_published')}</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">

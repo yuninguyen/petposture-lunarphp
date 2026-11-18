@@ -350,3 +350,26 @@ describe('getPostFormSchema — taxonomy, seo, published_at, highlight free-text
     expect(result.success).toBe(false);
   });
 });
+
+describe('getPostFormSchema — scheduled status', () => {
+  const scheduled = { blog_category_id: '1', title: 'A Post', content: '<p>x</p>', type: 'article' as const, status: 'scheduled' as const };
+
+  it('accepts a scheduled post with a publish time still ahead (Eastern Time)', () => {
+    expect(getPostFormSchema(t).safeParse({ ...scheduled, published_at: '2099-11-21T10:47' }).success).toBe(true);
+  });
+
+  it('rejects a scheduled post with no time or a time in the past, on the published_at field', () => {
+    for (const published_at of [undefined, null, '', '2000-01-01T10:00']) {
+      const result = getPostFormSchema(t).safeParse({ ...scheduled, published_at });
+
+      expect(result.success, String(published_at)).toBe(false);
+      if (!result.success) expect(result.error.issues.some((issue) => issue.path.join('.') === 'published_at')).toBe(true);
+    }
+  });
+
+  it('does not ask a draft or a published post for a future time', () => {
+    for (const status of ['draft', 'published'] as const) {
+      expect(getPostFormSchema(t).safeParse({ ...scheduled, status, published_at: '2000-01-01T10:00' }).success, status).toBe(true);
+    }
+  });
+});

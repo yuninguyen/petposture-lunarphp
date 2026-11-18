@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isFutureEasternInput } from '@/lib/easternTime';
 
 export type TranslationFunction = (key: string) => string;
 
@@ -72,7 +73,7 @@ export const getPostFormSchema = (t: TranslationFunction) =>
     // admin form never collects it — keep it optional in the client schema.
     slug: z.string().min(1, t('posts.errors.slug_required')).optional(),
     content: z.string().min(1, t('posts.errors.content_required')),
-    status: z.enum(['draft', 'published', 'archived']),
+    status: z.enum(['draft', 'published', 'scheduled', 'archived']),
     type: z.enum(['article', 'guide', 'comparison']).default('article'),
     featured_image_alt: z.string().optional(),
     featured_media_id: z.string().nullable().optional(),
@@ -98,6 +99,12 @@ export const getPostFormSchema = (t: TranslationFunction) =>
     comparison_intro: z.string().optional(),
     disclosure_shown: z.boolean().optional(),
     comparison_items: z.array(comparisonItemSchema(t)).optional(),
+  })
+  .superRefine((data, ctx) => {
+    // A scheduled post needs a publish time (Eastern Time, as typed in the form) that is still ahead.
+    if (data.status === 'scheduled' && !isFutureEasternInput(data.published_at)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['published_at'], message: t('posts.errors.schedule_time') });
+    }
   });
 
 export type PostFormValues = z.infer<ReturnType<typeof getPostFormSchema>>;

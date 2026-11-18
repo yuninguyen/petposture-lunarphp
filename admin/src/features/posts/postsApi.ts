@@ -5,7 +5,7 @@ export interface Post {
   id: string;
   title: string;
   slug: string;
-  status: 'draft' | 'published';
+  status: 'draft' | 'published' | 'scheduled';
   type: 'article' | 'guide' | 'comparison';
   blog_category: { id: string; name: string } | null;
   has_out_of_stock_comparison_items: boolean;
@@ -25,7 +25,7 @@ export interface PostsPage {
 
 export interface PostsFilters {
   search?: string;
-  status?: 'draft' | 'published';
+  status?: 'draft' | 'published' | 'scheduled';
   category?: string;
   type?: 'article' | 'guide' | 'comparison';
   page?: number;
