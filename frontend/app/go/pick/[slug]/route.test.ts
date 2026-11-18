@@ -33,13 +33,16 @@ describe('/go/pick/[slug]', () => {
         expect(String(fetchMock.mock.calls[1][0])).toMatch(/\/go\/pick\/kong-puppy$/);
     });
 
-    it('answers 404 when the backend does not know the Pick or cannot be reached', async () => {
+    it('sends the reader back to the Pick page when the backend gives no link or cannot be reached', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('nope', { status: 404 })));
-        expect((await ask('nothing')).status).toBe(404);
+        const unknown = await ask('nothing');
+        expect(unknown.status).toBe(302);
+        expect(unknown.headers.get('location')).toBe('/picks/nothing');
 
         vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')));
         const down = await ask('kong-puppy');
-        expect(down.status).toBe(404);
+        expect(down.status).toBe(302);
+        expect(down.headers.get('location')).toBe('/picks/kong-puppy');
         expect(down.headers.get('cache-control')).toBe('no-store');
     });
 });

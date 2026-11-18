@@ -28,8 +28,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
             });
         }
     } catch {
-        // fall through to the 404 below
+        // fall through to the Pick page below
     }
 
-    return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store' } });
+    // The backend gave no retailer link (unknown Pick, or briefly unreachable, for example while it restarts).
+    // A reader who pressed Buy lands back on the Pick page rather than on a bare "Not found"; an unknown slug
+    // gets that page's own 404.
+    return new Response(null, { status: 302, headers: { Location: `/picks/${encodeURIComponent(slug)}`, 'Cache-Control': 'no-store' } });
 }
