@@ -75,7 +75,7 @@ describe('PickDetails', () => {
 
     it('has exactly one primary button, opening the tracked link in a new tab with the affiliate rel', () => {
         const html = render();
-        const anchors = html.match(/<a [^>]*rel="sponsored nofollow noopener"[^>]*>[\s\S]*?<\/a>/g) ?? [];
+        const anchors = html.match(/<a [^>]*rel="sponsored noopener"[^>]*>[\s\S]*?<\/a>/g) ?? [];
 
         expect(anchors).toHaveLength(1);
         expect(anchors[0]).toContain(`href="${GO_URL}"`);
@@ -87,7 +87,7 @@ describe('PickDetails', () => {
     // The Muse mock's button is 52px high with 14px text; the 56px "lg" size read as too tall next to it.
     it('makes the button 52px high with 14px text like the design, not the taller lg size', () => {
         const html = render();
-        const anchor = html.match(/<a [^>]*rel="sponsored nofollow noopener"[^>]*>/)?.[0] ?? '';
+        const anchor = html.match(/<a [^>]*rel="sponsored noopener"[^>]*>/)?.[0] ?? '';
 
         expect(anchor).toContain('min-h-[52px]');
         expect(anchor).toContain('text-sm');
@@ -97,7 +97,7 @@ describe('PickDetails', () => {
     // The Muse mock ends the button with the diagonal "opens elsewhere" arrow (up and to the right), not a plain →.
     it('ends the button with the diagonal up-right arrow of the design, hidden from screen readers', () => {
         const html = render();
-        const anchor = html.match(/<a [^>]*rel="sponsored nofollow noopener"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? '';
+        const anchor = html.match(/<a [^>]*rel="sponsored noopener"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? '';
 
         expect(anchor).toMatch(/>Buy on Chewy<svg [^>]*aria-hidden="true"[^>]*><path d="M7 17L17 7M9 7h8v8"><\/path><\/svg><\/a>$/);
         expect(anchor).not.toContain('→');

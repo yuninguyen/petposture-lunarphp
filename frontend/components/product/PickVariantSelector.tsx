@@ -78,7 +78,7 @@ export function PickBuyBox({ pick }: { pick: ProductPick }) {
             <a
                 href={goUrl}
                 target="_blank"
-                rel="sponsored nofollow noopener"
+                rel="sponsored noopener"
                 className={buttonClasses({ variant: 'primary', size: 'md', className: 'min-h-[52px] w-full gap-[9px] shadow-xl shadow-orange-500/20' })}
             >
                 {pickCtaLabel(pick)}

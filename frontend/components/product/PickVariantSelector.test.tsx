@@ -66,7 +66,7 @@ describe('Pick variant selector', () => {
         expect(container.textContent).toContain('$49.95');
         expect(container.textContent).not.toContain('$45.95');
         expect(container.querySelector('a')!.getAttribute('href')).toBe('https://petposture.com/go/pick/balance-harness?variant=2');
-        expect(container.querySelector('a')!.getAttribute('rel')).toBe('sponsored nofollow noopener');
+        expect(container.querySelector('a')!.getAttribute('rel')).toBe('sponsored noopener');
         const specs = container.querySelector('.specs')!.textContent!;
         expect(specs).toContain('Black');
         expect(specs).not.toContain('Camo (old)');
