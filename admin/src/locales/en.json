@@ -325,7 +325,7 @@
   "posts.form_label_featured_image_alt": "Image Alt Text",
   "posts.form_label_published_at": "Publish time (US Eastern Time)",
   "posts.status_scheduled": "Scheduled",
-  "posts.scheduled_for": "Goes live {{time}}",
+  "posts.scheduled_for": "{{time}}",
   "posts.form_hint_scheduled": "The post stays hidden and goes live by itself at this time (US Eastern Time), within about a minute. To cancel, set the status back to Draft.",
   "posts.errors.schedule_time": "Pick a publish time in the future (US Eastern Time).",
   "posts.form_button_save_draft": "Save Draft",
