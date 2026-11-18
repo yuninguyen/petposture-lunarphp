@@ -41,6 +41,8 @@ class CustomFieldControllerTest extends TestCase
     public function test_list_returns_only_manageable_text_fields_with_mappings(): void
     {
         $this->actingAsAdmin();
+        // The Pick variant fields come from a migration; this test is about the fields it creates itself.
+        \Lunar\Models\Attribute::query()->where('attribute_type', \Lunar\Models\ProductVariant::morphName())->whereIn('handle', ['external_url', 'reference_price'])->delete();
         $type = ProductType::factory()->create(['name' => 'Harnesses']);
         $manageable = $this->makeAttribute('Sizing Notes', 'sizing_notes', 'product', ['section' => null]);
         $type->mappedAttributes()->attach($manageable->id);
