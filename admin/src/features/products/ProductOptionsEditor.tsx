@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 import type { ProductOption, ProductVariant, SaveProductOptionsPayload } from './api';
 
 type DraftValue = { id?: number; name: string };
@@ -33,6 +34,7 @@ export function ProductOptionsEditor({
   const { t } = useTranslation();
   const [draft, setDraft] = useState<DraftOption[]>(() => toDraft(options));
   const [expanded, setExpanded] = useState(false);
+  const [pending, setPending] = useState<{ kind: 'generate' } | { kind: 'delete'; variant: ProductVariant } | null>(null);
 
   useEffect(() => setDraft(toDraft(options)), [options]);
 
@@ -66,17 +68,26 @@ export function ProductOptionsEditor({
     setExpanded(false);
   }
 
-  async function generate() {
-    if (!window.confirm(t('products.generate_variants_confirm', { count: projectedCount }))) return;
-    await onGenerate();
+  function generate() {
+    setPending({ kind: 'generate' });
   }
 
-  async function removeVariant(variant: ProductVariant) {
-    const message = variant.has_order_history
-      ? t('products.delete_variant_history_confirm', { sku: variant.sku })
-      : t('products.delete_variant_confirm', { sku: variant.sku });
-    if (window.confirm(message)) await onDeleteVariant(variant);
+  function removeVariant(variant: ProductVariant) {
+    setPending({ kind: 'delete', variant });
   }
+
+  async function confirmPending() {
+    const action = pending;
+    setPending(null);
+    if (action?.kind === 'generate') await onGenerate();
+    if (action?.kind === 'delete') await onDeleteVariant(action.variant);
+  }
+
+  const pendingMessage = pending?.kind === 'delete'
+    ? (pending.variant.has_order_history
+      ? t('products.delete_variant_history_confirm', { sku: pending.variant.sku })
+      : t('products.delete_variant_confirm', { sku: pending.variant.sku }))
+    : t('products.generate_variants_confirm', { count: projectedCount });
 
   return <Card className="overflow-hidden">
     <div className="flex items-center justify-between gap-4 p-6">
@@ -120,6 +131,15 @@ export function ProductOptionsEditor({
 
       {(variants.length > 1 || options.length > 0) && <div className="overflow-x-auto border-t"><table className="w-full"><thead className="bg-slate-50"><tr>{['sku', 'options', 'price', 'stock', 'actions'].map((key) => <th key={key} className="px-6 py-3 text-left text-xs font-semibold uppercase text-slate-500">{t(`products.column_${key}`)}</th>)}</tr></thead><tbody className="divide-y">{variants.map((variant) => <tr key={variant.id}><td className="px-6 py-4 text-sm font-medium">{variant.sku}</td><td className="px-6 py-4 text-sm">{variant.option_values.map((value) => `${value.option_name}: ${value.value_name}`).join(' / ') || '—'}</td><td className="px-6 py-4 text-sm">{variant.formatted_price ?? variant.base_price}</td><td className="px-6 py-4 text-sm">{variant.stock}</td><td className="px-6 py-4"><div className="flex gap-2"><Button type="button" variant="secondary" onClick={() => onEditVariant(variant)}>{t('common.edit')}</Button><Button type="button" variant="danger" disabled={variants.length <= 1 || isDeleting} onClick={() => removeVariant(variant)}>{t('common.delete')}</Button></div>{variant.has_order_history && <p className="mt-1 text-xs text-amber-700">{t('products.variant_has_order_history')}</p>}</td></tr>)}</tbody></table></div>}
     </>}
+    <ConfirmModal
+      open={pending !== null}
+      title={pending?.kind === 'delete' ? t('common.delete') : t('products.generate_variants')}
+      message={pendingMessage}
+      confirmLabel={pending?.kind === 'delete' ? t('common.delete') : t('products.generate_variants')}
+      danger={pending?.kind === 'delete'}
+      onConfirm={confirmPending}
+      onClose={() => setPending(null)}
+    />
   </Card>;
 }
 

@@ -872,6 +872,28 @@ class ProductControllerTest extends TestCase
         $this->assertSame('OTHER-001', $variant->fresh()->sku);
     }
 
+    public function test_a_single_variant_product_gets_a_second_variant_from_one_colour_option_keeping_the_original(): void
+    {
+        $this->actingAsAdmin();
+        $product = $this->product('Balance Harness');
+        $base = $this->variant($product, 'BLUE-9-BALANCE-HARNESS', 4595, 5);
+
+        $this->postJson("/api/admin/products/{$product->id}/options", [
+            'options' => [['name' => 'Colour', 'values' => [['name' => 'Camo'], ['name' => 'Black']]]],
+        ])->assertOk();
+
+        $response = $this->postJson("/api/admin/products/{$product->id}/variants/generate")->assertOk()->assertJsonCount(2, 'data');
+
+        $variants = $product->variants()->with(['values', 'prices'])->orderBy('id')->get();
+        $this->assertCount(2, $variants);
+        $this->assertSame($base->id, $variants[0]->id);
+        $this->assertSame('BLUE-9-BALANCE-HARNESS', $variants[0]->sku);
+        $this->assertNotSame($variants[0]->sku, $variants[1]->sku);
+        $this->assertSame(['Black', 'Camo'], $variants->map(fn ($variant) => $variant->values->first()->translate('name'))->sort()->values()->all());
+        $this->assertSame(4595, $variants[1]->prices->first()->price->value);
+        $this->assertSame(2, collect($response->json('data'))->pluck('id')->unique()->count());
+    }
+
     public function test_admin_can_manage_options_and_regenerate_matrix_without_changing_unchanged_variant_ids(): void
     {
         $this->actingAsAdmin();

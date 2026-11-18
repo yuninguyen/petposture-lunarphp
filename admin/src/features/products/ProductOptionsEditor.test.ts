@@ -63,12 +63,12 @@ function renderEditor(variants: ProductVariant[], expand = true) {
     const edit = Array.from(host.querySelectorAll('button')).find((button) => button.textContent === 'common.edit')!;
     act(() => edit.click());
   }
-  return { host, root, onDeleteVariant };
+  return { host, root, onDeleteVariant, onGenerate: props.onGenerate };
 }
 
 describe('ProductOptionsEditor', () => {
   it('shows projected count and order-history warning before allowing soft delete', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const confirm = vi.spyOn(window, 'confirm');
     const { host, root, onDeleteVariant } = renderEditor([variant(1, true), variant(2)]);
 
     expect(host.textContent).toContain('products.projected_variants:2');
@@ -77,8 +77,39 @@ describe('ProductOptionsEditor', () => {
 
     await act(async () => deleteButtons[0].click());
 
-    expect(confirm).toHaveBeenCalledWith('products.delete_variant_history_confirm');
+    // The confirmation is an in-page dialog, not window.confirm, and nothing is deleted until it is confirmed.
+    expect(confirm).not.toHaveBeenCalled();
+    expect(onDeleteVariant).not.toHaveBeenCalled();
+    const dialog = host.querySelector('[role=dialog]')!;
+    expect(dialog.textContent).toContain('products.delete_variant_history_confirm');
+    const confirmButton = Array.from(dialog.querySelectorAll('button')).find((button) => button.textContent === 'common.delete')!;
+    await act(async () => confirmButton.click());
+
     expect(onDeleteVariant).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
+    expect(host.querySelector('[role=dialog]')).toBeNull();
+    confirm.mockRestore();
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('asks in a dialog before generating, generates only after it is confirmed, and can be cancelled', async () => {
+    const confirm = vi.spyOn(window, 'confirm');
+    const { host, root, onGenerate } = renderEditor([variant(1), variant(2)]);
+    const button = (container: Element, label: string) => Array.from(container.querySelectorAll('button')).find((item) => item.textContent === label)!;
+
+    await act(async () => button(host, 'products.generate_variants').click());
+    expect(onGenerate).not.toHaveBeenCalled();
+    expect(host.querySelector('[role=dialog]')!.textContent).toContain('products.generate_variants_confirm:2');
+
+    await act(async () => button(host.querySelector('[role=dialog]')!, 'common.cancel').click());
+    expect(onGenerate).not.toHaveBeenCalled();
+    expect(host.querySelector('[role=dialog]')).toBeNull();
+
+    await act(async () => button(host, 'products.generate_variants').click());
+    await act(async () => button(host.querySelector('[role=dialog]')!, 'products.generate_variants').click());
+    expect(onGenerate).toHaveBeenCalledTimes(1);
+    expect(confirm).not.toHaveBeenCalled();
+
     confirm.mockRestore();
     act(() => root.unmount());
     host.remove();
