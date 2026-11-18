@@ -42,6 +42,76 @@ const render = (props: Partial<React.ComponentProps<typeof PicksIndex>> = {}) =>
         <PicksIndex allPicks={[bowl, harness]} breed={null} solution={null} now={NOW} {...props} />,
     ).replace(/&#x27;/g, "'");
 
+describe('PicksIndex pages', () => {
+    const twenty = Array.from({ length: 20 }, (_, index) => pickProduct(`pick-${index + 1}`, `Pick ${index + 1}`, index < 15 ? ['pug'] : ['corgi']));
+    const cards = (html: string) => new Set(html.match(/href="\/picks\/pick-\d+"/g)).size;
+
+    it('shows twelve cards on the first page with a pager to the second, and the rest on the second', () => {
+        const first = render({ allPicks: twenty });
+        const second = render({ allPicks: twenty, page: 2 });
+
+        expect(cards(first)).toBe(12);
+        expect(first).toContain('Pick 12');
+        expect(first).not.toContain('Pick 13');
+        expect(first).toMatch(/Showing <b[^>]*>1–12 of 20<\/b> picks/);
+        expect(cards(second)).toBe(8);
+        expect(second).toContain('Pick 13');
+        expect(second).not.toContain('Pick 12<');
+        expect(second).toMatch(/Showing <b[^>]*>13–20 of 20<\/b> picks/);
+    });
+
+    it('links the pages with plain links: page 1 has no page parameter, the current page is marked, and previous and next appear where they apply', () => {
+        const first = render({ allPicks: twenty });
+        const second = render({ allPicks: twenty, page: 2 });
+
+        const pageLink = (html: string, number: number) => html.match(new RegExp(`<a [^>]*aria-label="Page ${number}"[^>]*>`))?.[0] ?? '';
+
+        expect(first).toContain('aria-label="Pagination"');
+        expect(pageLink(first, 1)).toContain('href="/picks"');
+        expect(pageLink(first, 1)).toContain('aria-current="page"');
+        expect(pageLink(first, 2)).toContain('href="/picks?page=2"');
+        expect(pageLink(first, 2)).not.toContain('aria-current');
+        expect(pageLink(second, 2)).toContain('aria-current="page"');
+        expect(first).toMatch(/rel="next"/);
+        expect(first).not.toMatch(/rel="prev"/);
+        expect(second).toMatch(/rel="prev"/);
+        expect(second).not.toMatch(/rel="next"/);
+    });
+
+    it('keeps the chosen breed in the page links, and a breed chip starts again from the first page', () => {
+        const html = render({ allPicks: twenty, breed: 'pug', page: 2 });
+
+        expect(html).toContain('href="/picks?breed=pug"');
+        expect(html).toContain('href="/picks?breed=pug&amp;page=2"');
+        expect(html).toContain('href="/picks?breed=corgi"');
+        expect(html).not.toContain('breed=corgi&amp;page');
+        expect(cards(html)).toBe(3);
+        expect(html).toMatch(/Showing <b[^>]*>13–15 of 15<\/b> picks/);
+    });
+
+    it('has no pager and the old count when everything fits on one page', () => {
+        const html = render({ allPicks: twenty.slice(0, 12) });
+
+        expect(html).not.toContain('aria-label="Pagination"');
+        expect(html).toMatch(/Showing <b[^>]*>12 of 12<\/b> picks/);
+        expect(render()).not.toContain('aria-label="Pagination"');
+    });
+
+    it('shows the last page for a page past the end, and the first for a page that is not a real one', () => {
+        expect(cards(render({ allPicks: twenty, page: 99 }))).toBe(8);
+        expect(cards(render({ allPicks: twenty, page: 0 }))).toBe(12);
+    });
+
+    it('keeps the headings in order on a page of a long list', () => {
+        for (const page of [1, 2]) {
+            const levels = headingLevels(render({ allPicks: twenty, page }));
+
+            expect(levels[0]).toBe(1);
+            levels.slice(1).forEach((level, index) => expect(level, `page ${page}: heading ${index + 2} jumps from h${levels[index]}`).toBeLessThanOrEqual(levels[index] + 1));
+        }
+    });
+});
+
 const headingLevels = (html: string) => [...html.matchAll(/<h([1-6])[\s>]/g)].map((match) => Number(match[1]));
 
 describe('PicksIndex heading order', () => {

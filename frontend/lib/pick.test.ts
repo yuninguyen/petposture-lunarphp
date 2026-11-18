@@ -13,6 +13,8 @@ import {
     pickPriceParts,
     pickSeoTitle,
     PICK_TITLE_MAX,
+    PICKS_PER_PAGE,
+    paginatePicks,
     pickSolutions,
     pickTakeSummary,
     picksHref,
@@ -56,6 +58,44 @@ describe('pickCtaLabel', () => {
 
     it('never names a store when the retailer is unknown', () => {
         expect(pickCtaLabel(pick({ retailer: null, retailerName: null }))).toBe('View on the retailer site');
+    });
+});
+
+describe('Picks list pages', () => {
+    const items = (count: number) => Array.from({ length: count }, (_, index) => index + 1);
+
+    it('shows twelve Picks on a page', () => {
+        expect(PICKS_PER_PAGE).toBe(12);
+    });
+
+    it('puts twelve on the first page and the other eight of twenty on the second', () => {
+        const first = paginatePicks(items(20), 1);
+        const second = paginatePicks(items(20), 2);
+
+        expect(first).toMatchObject({ page: 1, pages: 2, total: 20, from: 1, to: 12 });
+        expect(first.items).toEqual(items(12));
+        expect(second).toMatchObject({ page: 2, pages: 2, total: 20, from: 13, to: 20 });
+        expect(second.items).toEqual([13, 14, 15, 16, 17, 18, 19, 20]);
+    });
+
+    it('needs a second page only for the thirteenth Pick', () => {
+        expect(paginatePicks(items(12), 1).pages).toBe(1);
+        expect(paginatePicks(items(13), 1).pages).toBe(2);
+        expect(paginatePicks(items(13), 2).items).toEqual([13]);
+        expect(paginatePicks([], 1)).toMatchObject({ page: 1, pages: 1, total: 0, from: 0, to: 0, items: [] });
+    });
+
+    it('treats a page below 1 or not a number as the first, and one past the end as the last', () => {
+        for (const page of [0, -3, Number.NaN, 1.9]) expect(paginatePicks(items(20), page).page, String(page)).toBe(1);
+        expect(paginatePicks(items(20), 99)).toMatchObject({ page: 2, from: 13, to: 20 });
+    });
+
+    it('writes page 2 and on into the address, never page 1, and keeps the filters', () => {
+        expect(picksHref({ breed: null, solution: null, page: 2 })).toBe('/picks?page=2');
+        expect(picksHref({ breed: 'pug', solution: 'walking', page: 3 })).toBe('/picks?breed=pug&solution=walking&page=3');
+        expect(picksHref({ breed: 'pug', solution: null, page: 1 })).toBe('/picks?breed=pug');
+        expect(picksHref({ breed: null, solution: null, page: null })).toBe('/picks');
+        expect(picksHref({ breed: null, solution: null })).toBe('/picks');
     });
 });
 

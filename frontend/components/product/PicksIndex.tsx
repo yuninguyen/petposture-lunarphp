@@ -8,6 +8,7 @@ import {
     pickBreeds,
     pickListStats,
     pickSolutions,
+    paginatePicks,
     picksHref,
     type PickProduct,
 } from '@/lib/pick';
@@ -55,16 +56,19 @@ export function PicksIndex({
     allPicks,
     breed,
     solution,
+    page = 1,
     now,
 }: {
     allPicks: PickProduct[];
     breed: string | null;
     solution: string | null;
+    page?: number;
     now: Date;
 }) {
     const breeds = pickBreeds(allPicks);
     const solutions = pickSolutions(allPicks);
     const picks = filterPicksBySolution(filterPicksByBreed(allPicks, breed), solution);
+    const paged = paginatePicks(picks, page);
     const stats = pickListStats(allPicks);
     const breedName = breed ? humanizeSlug(breed) : null;
     const solutionName = solution ? humanizeSlug(solution) : null;
@@ -154,7 +158,11 @@ export function PicksIndex({
                             </div>
                         )}
                         <p role="status" className="text-[13.5px] text-[#6b7680]">
-                            Showing <b className="font-semibold text-[#2c3840]">{`${picks.length} of ${allPicks.length}`}</b> picks
+                            Showing{' '}
+                            <b className="font-semibold text-[#2c3840]">
+                                {paged.pages > 1 ? `${paged.from}–${paged.to} of ${picks.length}` : `${picks.length} of ${allPicks.length}`}
+                            </b>{' '}
+                            picks
                         </p>
                     </section>
                 )}
@@ -164,10 +172,11 @@ export function PicksIndex({
                         {/* The card titles are h3, so the list needs an h2 above them for the headings to go h1, h2, h3. */}
                         <h2 className="sr-only">{breedName || solutionName ? 'Matching Picks' : 'All Picks'}</h2>
                         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                            {picks.map((product) => (
+                            {paged.items.map((product) => (
                                 <PickListCard key={product.slug} product={product} allBreedsCount={breeds.length} now={now} />
                             ))}
                         </div>
+                        {paged.pages > 1 && <PicksPagination breed={breed} solution={solution} page={paged.page} pages={paged.pages} />}
                     </>
                 ) : breedName && solutionName ? (
                     <p className="mt-6 rounded-2xl border-[1.5px] border-dashed border-[#e2e5e8] px-5 py-10 text-center text-[15px] text-[#4b5563]">
@@ -213,5 +222,37 @@ export function PicksIndex({
                 </section>
             )}
         </>
+    );
+}
+
+// Previous, the page numbers and next, as plain links that keep the breed and solution chosen. Page 1 has no
+// `page` parameter, so there is one address for it.
+function PicksPagination({ breed, solution, page, pages }: { breed: string | null; solution: string | null; page: number; pages: number }) {
+    const href = (target: number) => picksHref({ breed, solution, page: target });
+
+    return (
+        <nav aria-label="Pagination" className="mt-10 flex flex-wrap items-center justify-center gap-2">
+            {page > 1 && (
+                <Link href={href(page - 1)} rel="prev" className={chipClass(false)}>
+                    ← Previous
+                </Link>
+            )}
+            {Array.from({ length: pages }, (_, index) => index + 1).map((number) => (
+                <Link
+                    key={number}
+                    href={href(number)}
+                    className={`${chipClass(number === page)} min-w-[40px] justify-center`}
+                    aria-label={`Page ${number}`}
+                    {...(number === page ? { 'aria-current': 'page' as const } : {})}
+                >
+                    {number}
+                </Link>
+            ))}
+            {page < pages && (
+                <Link href={href(page + 1)} rel="next" className={chipClass(false)}>
+                    Next →
+                </Link>
+            )}
+        </nav>
     );
 }

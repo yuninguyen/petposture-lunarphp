@@ -30,14 +30,37 @@ export function filterPicksBySolution(picks: PickProduct[], solution: string | n
     return solution ? picks.filter((product) => (product.solutionTags ?? []).includes(solution)) : picks;
 }
 
-/** The list URL for a combination of filters, so a chip in one row keeps what was chosen in the other. */
-export function picksHref({ breed, solution }: { breed: string | null; solution: string | null }): string {
+/** How many Picks the list shows on one page; the rest are on the next pages. */
+export const PICKS_PER_PAGE = 12;
+
+/**
+ * The list URL for a combination of filters, so a chip in one row keeps what was chosen in the other.
+ * A filter link leaves `page` out, which starts again from the first page; page 1 never carries a `page` parameter.
+ */
+export function picksHref({ breed, solution, page }: { breed: string | null; solution: string | null; page?: number | null }): string {
     const params = new URLSearchParams();
     if (breed) params.set('breed', breed);
     if (solution) params.set('solution', solution);
+    if (page && page > 1) params.set('page', String(page));
     const query = params.toString();
 
     return query ? `/picks?${query}` : '/picks';
+}
+
+/** One page of the list. A page below 1 or not a number is the first; one past the end is the last. */
+export function paginatePicks<T>(items: T[], page: number): { items: T[]; page: number; pages: number; total: number; from: number; to: number } {
+    const pages = Math.max(1, Math.ceil(items.length / PICKS_PER_PAGE));
+    const current = Math.min(Math.max(1, Math.floor(page) || 1), pages);
+    const start = (current - 1) * PICKS_PER_PAGE;
+
+    return {
+        items: items.slice(start, start + PICKS_PER_PAGE),
+        page: current,
+        pages,
+        total: items.length,
+        from: items.length === 0 ? 0 : start + 1,
+        to: Math.min(start + PICKS_PER_PAGE, items.length),
+    };
 }
 
 /** The Picks that are best for a breed; no breed means all of them, an unknown breed means none. */

@@ -17,11 +17,15 @@ test('the Picks list and a Pick page are rendered per request so their CSP nonce
     assert.match(list, /await headers\(\)/);
 });
 
-test('the Picks list reads both filters from the URL and hands them to the list', () => {
-    assert.match(list, /breed: rawBreed, solution: rawSolution/);
-    assert.match(list, /<PicksIndex allPicks=\{all\} breed=\{breed\} solution=\{solution\}/);
+test('the Picks list reads both filters and the page from the URL and hands them to the list', () => {
+    assert.match(list, /breed: rawBreed, solution: rawSolution, page: rawPage/);
+    assert.match(list, /<PicksIndex allPicks=\{all\} breed=\{breed\} solution=\{solution\} page=\{page\}/);
 });
 
-test('the Picks list has its own canonical URL, whatever the filters', () => {
-    assert.match(list, /canonical: '\/picks'/);
+test('the Picks list is canonical at /picks for the first page and for every filtered view; page 2 and on have their own', () => {
+    assert.match(list, /page > 1 && !filtered \? picksHref\(\{ breed: null, solution: null, page \}\) : '\/picks'/);
+});
+
+test('a page past the end goes to the last page', () => {
+    assert.match(list, /if \(page > pages\) redirect\(picksHref\(\{ breed, solution, page: pages \}\)\)/);
 });
