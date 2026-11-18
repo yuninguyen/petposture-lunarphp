@@ -109,7 +109,7 @@ describe('PickDetails', () => {
         expect(html).toContain('>Check Price on Amazon<');
     });
 
-    it('puts the buy box right after the title, before "Our take" and the photo, so the button is on the first screen of a phone', () => {
+    it('keeps the buy box right after the title in the page source, before "Our take" and the photo', () => {
         const html = render();
         const title = html.indexOf('<h1');
         const button = html.indexOf('>Buy on Chewy<');
@@ -118,6 +118,21 @@ describe('PickDetails', () => {
         expect(button).toBeGreaterThan(title);
         expect(button).toBeLessThan(html.indexOf('Our take'));
         expect(button).toBeLessThan(html.indexOf('<img'));
+    });
+
+    it('draws the photo right under the title on a phone and leaves the two desktop columns as they were', () => {
+        const html = render();
+        const header = html.match(/<header class="([^"]*)"/)?.[1] ?? '';
+        const gallery = html.match(/<div class="([^"]*lg:col-start-1[^"]*)"/)?.[1] ?? '';
+
+        // title first, photo second, everything else in its written order (order 0)
+        expect(header).toContain('order-[-2]');
+        expect(gallery).toContain('order-[-1]');
+        // from lg up `order` is reset and the explicit columns apply: photo left, information right
+        expect(header).toContain('lg:order-none');
+        expect(header).toContain('lg:col-start-2');
+        expect(gallery).toContain('lg:order-none');
+        expect(gallery).toContain('lg:row-span-6');
     });
 
     it('shows the price as the retailer price with the date it was checked, never the site price', () => {

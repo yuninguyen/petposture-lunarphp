@@ -73,7 +73,9 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
             <section className="px-4 pb-12 pt-6 md:px-8">
                 <PickVariantProvider variants={pick.variants}>
                 <div className={`mx-auto grid grid-cols-1 items-start gap-x-12 gap-y-6 ${hasPhoto ? 'max-w-[1200px] lg:grid-cols-2' : 'max-w-[720px]'}`}>
-                    <header className={rightColumn}>
+                    {/* On a phone the blocks stack in this order: title, photo, then the rest as written. `order` only moves
+                        what is drawn; from lg up the explicit columns below place everything and `order` is reset. */}
+                    <header className={`order-[-2] lg:order-none ${rightColumn}`}>
                         <p className="mb-3 inline-block rounded-[3px] bg-secondary-light px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-rust">{eyebrow}</p>
                         <h1 className="mb-1 text-[28px] font-bold leading-[1.15] text-primary md:text-[34px]">{product.name}</h1>
                         {product.brand && (
@@ -95,7 +97,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                     )}
 
                     {hasPhoto && (
-                        <div className="lg:col-start-1 lg:row-span-6 lg:row-start-1 lg:self-start">
+                        <div className="order-[-1] lg:order-none lg:col-start-1 lg:row-span-6 lg:row-start-1 lg:self-start">
                             <PickGallery images={images} name={product.name} />
                         </div>
                     )}
