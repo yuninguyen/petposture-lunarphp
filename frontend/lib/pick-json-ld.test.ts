@@ -40,19 +40,95 @@ describe('buildPickJsonLd', () => {
         expect(ld.description).toBe('A raised, tilted bowl.');
     });
 
-    it('never claims an offer, a rating, a review, a price or a stock level', () => {
+    it('never claims an offer, a rating, a price or a stock level, and has no review when nothing was written', () => {
         const ld = buildPickJsonLd(SITE, product());
         const json = JSON.stringify(ld);
 
         for (const key of ['offers', 'aggregateRating', 'review', 'sku', 'gtin', 'availability', 'price']) {
             expect(ld, key).not.toHaveProperty(key);
         }
+        expect(json).not.toContain('reviewRating');
         expect(json).not.toContain('InStock');
         expect(json).not.toContain('OutOfStock');
         expect(json).not.toContain('22.71');
         expect(json).not.toContain('25.99');
         expect(json).not.toContain('4.6');
         expect(json).not.toContain('128');
+    });
+
+    describe('PetPosture review', () => {
+        const written: Partial<ProductPick> = {
+            ourTake: "Based on the seller's description and customer reviews — we haven't tested this ourselves.",
+            pros: ['Raised design', ' Easy to clean ', ''],
+            cons: ['Holds about one cup'],
+        };
+        const withPick = (changes: Partial<ProductPick>) => product({ pick: { ...pick, ...changes } } as Partial<Product>);
+
+        it('is the take as the body with pros and cons as notes, written by PetPosture on the date the price was checked', () => {
+            const ld = buildPickJsonLd(SITE, withPick(written));
+
+            expect(ld.review).toEqual({
+                '@type': 'Review',
+                name: "PetPosture's take on Necoichi Tilted Elevated Bowl",
+                author: { '@type': 'Organization', name: 'PetPosture' },
+                datePublished: '2026-11-15',
+                reviewBody: "Based on the seller's description and customer reviews — we haven't tested this ourselves.",
+                positiveNotes: {
+                    '@type': 'ItemList',
+                    itemListElement: [
+                        { '@type': 'ListItem', position: 1, name: 'Raised design' },
+                        { '@type': 'ListItem', position: 2, name: 'Easy to clean' },
+                    ],
+                },
+                negativeNotes: {
+                    '@type': 'ItemList',
+                    itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Holds about one cup' }],
+                },
+            });
+        });
+
+        it('never carries a rating, an offer or a price, with or without a review', () => {
+            const ld = buildPickJsonLd(SITE, withPick(written));
+            const json = JSON.stringify(ld);
+
+            for (const key of ['offers', 'aggregateRating']) expect(ld, key).not.toHaveProperty(key);
+            expect(json).not.toContain('reviewRating');
+            expect(json).not.toContain('ratingValue');
+            expect(json).not.toContain('25.99');
+        });
+
+        it('leaves out the date when the price has no checked date', () => {
+            const ld = buildPickJsonLd(SITE, withPick({ ...written, priceCheckedDate: null }));
+
+            expect(ld.review).not.toHaveProperty('datePublished');
+        });
+
+        it('drops the notes below two statements but keeps a written take', () => {
+            const ld = buildPickJsonLd(SITE, withPick({ ourTake: 'A short take.', pros: ['Only one note'], cons: [] }));
+
+            expect(ld.review).toMatchObject({ reviewBody: 'A short take.' });
+            expect(ld.review).not.toHaveProperty('positiveNotes');
+            expect(ld.review).not.toHaveProperty('negativeNotes');
+        });
+
+        it('works from the notes alone, and leaves out an empty side', () => {
+            const ld = buildPickJsonLd(SITE, withPick({ ourTake: null, pros: ['One', 'Two'], cons: [] }));
+
+            expect(ld.review).not.toHaveProperty('reviewBody');
+            expect(ld.review).toHaveProperty('positiveNotes');
+            expect(ld.review).not.toHaveProperty('negativeNotes');
+        });
+
+        it('is left out when there is no take and fewer than two notes', () => {
+            expect(buildPickJsonLd(SITE, withPick({ ourTake: '  ', pros: ['Only one'], cons: [] }))).not.toHaveProperty('review');
+        });
+
+        it('keeps text typed in the admin from closing the script early', () => {
+            const html = serializeJsonLd(buildPickJsonLd(SITE, withPick({ ...written, ourTake: 'Nice </script><b>bowl</b>' })));
+
+            expect(html).not.toContain('</script>');
+            expect(html).toContain('\\u003c/script>');
+        });
     });
 
     it('does not point at the hidden shop', () => {
