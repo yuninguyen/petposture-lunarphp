@@ -33,7 +33,7 @@ export function PickGallery({ images, name }: { images: GalleryImage[]; name: st
                 </div>
             )}
 
-            <div className="relative order-1 aspect-[4/3] w-full overflow-hidden rounded-2xl border border-zinc-100 bg-white sm:aspect-square md:order-2">
+            <div className="relative order-1 aspect-[4/3] w-full overflow-hidden rounded-2xl border border-zinc-100 bg-white sm:aspect-square md:order-2 lg:aspect-[4/3]">
                 <Image
                     src={current.src}
                     alt={current.alt || name}
