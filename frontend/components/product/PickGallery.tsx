@@ -33,13 +33,13 @@ export function PickGallery({ images, name }: { images: GalleryImage[]; name: st
                 </div>
             )}
 
-            <div className="relative order-1 aspect-[4/3] w-full max-w-[480px] overflow-hidden rounded-2xl border border-zinc-100 bg-white sm:aspect-square md:order-2">
+            <div className="relative order-1 aspect-[4/3] w-full overflow-hidden rounded-2xl border border-zinc-100 bg-white sm:aspect-square md:order-2">
                 <Image
                     src={current.src}
                     alt={current.alt || name}
                     fill
                     priority
-                    sizes="(max-width: 1024px) 100vw, 480px"
+                    sizes="(max-width: 1024px) 100vw, 600px"
                     className="object-contain p-6 sm:p-8"
                 />
             </div>

@@ -26,8 +26,8 @@ function SectionTitle({ children, align = 'center' }: { children: string; align?
 // The detail page of a "PetPosture Pick". PetPosture does not sell it, so there is no cart, stock, shipping
 // or returns text here: one button sends the reader to the retailer.
 //
-// The top is a short hero: the photo on the left, the title and the buy box on the right, both columns about
-// as tall as each other. Everything else runs full width underneath, so neither column can end up empty:
+// The top is a short hero: the photo on the left, the title and the buy box on the right, each as tall as its
+// own content. Everything else runs full width underneath, so neither column can end up empty:
 // our take, best for, product details (the quick specs), the practical difference, pros and cons.
 // On a phone the order is: title, photo, buy box, then the rest as written.
 // Every editorial block is left out when it was not entered.
@@ -91,8 +91,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                         )}
                     </header>
 
-                    {/* Stretches to the bottom of the photo, so the two hero columns end together. */}
-                    <div className={`${cardClass} shadow-[0_12px_32px_rgba(34,33,33,0.08)] lg:self-stretch ${rightColumn}`}>
+                    <div className={`${cardClass} shadow-[0_12px_32px_rgba(34,33,33,0.08)] ${rightColumn}`}>
                         <PickBuyBox pick={pick} />
                     </div>
 
@@ -126,7 +125,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                                     </li>
                                 ))}
                                 {pick.bestForNotes.map((note) => (
-                                    <li key={note} className="inline-block rounded-[3px] bg-zinc-50 px-4 py-1.5 text-xs font-semibold text-zinc-600">
+                                    <li key={note} className="inline-block rounded-[3px] border border-zinc-200 px-4 py-1.5 text-xs font-bold text-primary">
                                         {note}
                                     </li>
                                 ))}
