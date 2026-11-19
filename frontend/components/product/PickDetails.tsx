@@ -12,11 +12,13 @@ type PickProduct = Product & { pick: ProductPick };
 
 const cardClass = 'rounded-2xl border border-zinc-200 bg-white p-5';
 
-function SectionTitle({ children }: { children: string }) {
+function SectionTitle({ children, align = 'center' }: { children: string; align?: 'left' | 'center' }) {
+    const left = align === 'left';
+
     return (
-        <div className="mb-8 text-center">
+        <div className={left ? 'mb-5' : 'mb-8 text-center'}>
             <h2 className="text-[24px] font-bold text-primary md:text-[28px]">{children}</h2>
-            <div className="mx-auto mt-3 h-[3px] w-11 rounded-full bg-secondary" />
+            <div className={`mt-3 h-[3px] w-11 rounded-full bg-secondary ${left ? '' : 'mx-auto'}`} />
         </div>
     );
 }
@@ -24,8 +26,11 @@ function SectionTitle({ children }: { children: string }) {
 // The detail page of a "PetPosture Pick". PetPosture does not sell it, so there is no cart, stock, shipping
 // or returns text here: one button sends the reader to the retailer.
 //
-// The blocks are in reading order for a phone: title, buy box, our take, photo, specs, best for. On a wide
-// screen the photo moves to the left column. Every editorial block is left out when it was not entered.
+// The top is a short hero: the photo on the left, the title and the buy box on the right, both columns about
+// as tall as each other. Everything else runs full width underneath, so neither column can end up empty:
+// our take, best for, product details (the quick specs), the practical difference, pros and cons.
+// On a phone the order is: title, photo, buy box, then the rest as written.
+// Every editorial block is left out when it was not entered.
 export function PickDetails({ product, related }: { product: PickProduct; related: Product[] }) {
     const { pick } = product;
 
@@ -38,6 +43,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
             : [];
     const hasPhoto = images.length > 0;
     const rightColumn = hasPhoto ? 'lg:col-start-2' : '';
+    const width = hasPhoto ? 'max-w-[1200px]' : 'max-w-[720px]';
 
     // Quick specs win over a product spec with the same label, so a fact is never listed twice.
     const quickLabels = new Set(pick.quickSpecs.map((spec) => spec.label.toLowerCase()));
@@ -72,8 +78,8 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
 
             <section className="px-4 pb-12 pt-6 md:px-8">
                 <PickVariantProvider variants={pick.variants}>
-                <div className={`mx-auto grid grid-cols-1 items-start gap-x-12 gap-y-6 ${hasPhoto ? 'max-w-[1200px] lg:grid-cols-2' : 'max-w-[720px]'}`}>
-                    {/* On a phone the blocks stack in this order: title, photo, then the rest as written. `order` only moves
+                <div className={`mx-auto grid grid-cols-1 items-start gap-x-12 gap-y-6 ${hasPhoto ? `${width} lg:grid-cols-2 lg:grid-rows-[auto_1fr]` : width}`}>
+                    {/* On a phone the blocks stack in this order: title, photo, then the buy box. `order` only moves
                         what is drawn; from lg up the explicit columns below place everything and `order` is reset. */}
                     <header className={`order-[-2] lg:order-none ${rightColumn}`}>
                         <p className="mb-3 inline-block rounded-[3px] bg-secondary-light px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-rust">{eyebrow}</p>
@@ -85,27 +91,28 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                         )}
                     </header>
 
-                    <div className={`${cardClass} shadow-[0_12px_32px_rgba(34,33,33,0.08)] ${rightColumn}`}>
+                    {/* Stretches to the bottom of the photo, so the two hero columns end together. */}
+                    <div className={`${cardClass} shadow-[0_12px_32px_rgba(34,33,33,0.08)] lg:self-stretch ${rightColumn}`}>
                         <PickBuyBox pick={pick} />
                     </div>
 
+                    {hasPhoto && (
+                        <div className="order-[-1] lg:order-none lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-start">
+                            <PickGallery images={images} name={product.name} />
+                        </div>
+                    )}
+                </div>
+
+                <div className={`mx-auto mt-10 flex flex-col gap-10 ${width}`}>
                     {pick.ourTake && (
-                        <div className={`rounded-2xl bg-secondary-light p-5 ${rightColumn}`}>
+                        <div className="rounded-2xl bg-secondary-light p-5">
                             <h3 className="mb-2 text-base font-black text-primary">Our take</h3>
                             <p className="whitespace-pre-line text-sm leading-7 text-[#3E4C57]">{pick.ourTake}</p>
                         </div>
                     )}
 
-                    {hasPhoto && (
-                        <div className="order-[-1] lg:order-none lg:col-start-1 lg:row-span-6 lg:row-start-1 lg:self-start">
-                            <PickGallery images={images} name={product.name} />
-                        </div>
-                    )}
-
-                    <PickSpecs specs={specs} className={`${cardClass} ${rightColumn}`} />
-
                     {hasBestFor && (
-                        <div className={rightColumn}>
+                        <div>
                             <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">Best for</h3>
                             <ul className="flex flex-wrap gap-2">
                                 {pick.bestForBreeds.map((breed) => (
@@ -127,73 +134,71 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                         </div>
                     )}
 
+                    <PickSpecs specs={specs} className={cardClass} title="Product details" wide />
+
                     {product.description && (
                         <div
-                            className={`text-sm leading-7 text-zinc-600 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 ${rightColumn}`}
+                            className="text-sm leading-7 text-zinc-600 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
                             dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(product.description) }}
                         />
+                    )}
+
+                    {hasPractical && (
+                        <div>
+                            <SectionTitle align="left">The practical difference</SectionTitle>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                {pick.problem && (
+                                    <div className={cardClass}>
+                                        <h3 className="mb-2 text-base font-black text-primary">The Problem</h3>
+                                        <p className="text-sm leading-7 text-zinc-600">{pick.problem}</p>
+                                    </div>
+                                )}
+                                {pick.approach && (
+                                    <div className={cardClass}>
+                                        <h3 className="mb-2 text-base font-black text-primary">The PetPosture Approach</h3>
+                                        <p className="text-sm leading-7 text-zinc-600">{pick.approach}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {hasProsCons && (
+                        <div>
+                            <SectionTitle align="left">Honest Pros & Cons</SectionTitle>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                {pick.pros.length > 0 && (
+                                    <div className={cardClass}>
+                                        <h3 className="mb-3 text-base font-black text-primary">What we like</h3>
+                                        <ul className="space-y-2 text-sm leading-6 text-zinc-600">
+                                            {pick.pros.map((item) => (
+                                                <li key={item} className="flex gap-2">
+                                                    <span className="font-bold text-emerald-500">✓</span>
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                                {pick.cons.length > 0 && (
+                                    <div className={cardClass}>
+                                        <h3 className="mb-3 text-base font-black text-primary">What to know first</h3>
+                                        <ul className="space-y-2 text-sm leading-6 text-zinc-600">
+                                            {pick.cons.map((item) => (
+                                                <li key={item} className="flex gap-2">
+                                                    <span className="font-bold text-rose-500">✕</span>
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     )}
                 </div>
                 </PickVariantProvider>
             </section>
-
-            {hasPractical && (
-                <section className="bg-zinc-50 px-4 py-12 md:px-8">
-                    <div className="mx-auto max-w-[1000px]">
-                        <SectionTitle>The practical difference</SectionTitle>
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            {pick.problem && (
-                                <div className={cardClass}>
-                                    <h3 className="mb-2 text-base font-black text-primary">The Problem</h3>
-                                    <p className="text-sm leading-7 text-zinc-600">{pick.problem}</p>
-                                </div>
-                            )}
-                            {pick.approach && (
-                                <div className={cardClass}>
-                                    <h3 className="mb-2 text-base font-black text-primary">The PetPosture Approach</h3>
-                                    <p className="text-sm leading-7 text-zinc-600">{pick.approach}</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </section>
-            )}
-
-            {hasProsCons && (
-                <section className="px-4 py-12 md:px-8">
-                    <div className="mx-auto max-w-[1000px]">
-                        <SectionTitle>Honest Pros & Cons</SectionTitle>
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            {pick.pros.length > 0 && (
-                                <div className={cardClass}>
-                                    <h3 className="mb-3 text-base font-black text-primary">What we like</h3>
-                                    <ul className="space-y-2 text-sm leading-6 text-zinc-600">
-                                        {pick.pros.map((item) => (
-                                            <li key={item} className="flex gap-2">
-                                                <span className="font-bold text-emerald-500">✓</span>
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                            {pick.cons.length > 0 && (
-                                <div className={cardClass}>
-                                    <h3 className="mb-3 text-base font-black text-primary">What to know first</h3>
-                                    <ul className="space-y-2 text-sm leading-6 text-zinc-600">
-                                        {pick.cons.map((item) => (
-                                            <li key={item} className="flex gap-2">
-                                                <span className="font-bold text-rose-500">✕</span>
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </section>
-            )}
 
             {(related.length > 0 || firstBreed) && (
                 <section className="border-t border-zinc-100 bg-zinc-50 px-4 py-12 md:px-8">

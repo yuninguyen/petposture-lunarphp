@@ -93,7 +93,18 @@ export function PickBuyBox({ pick }: { pick: ProductPick }) {
 }
 
 /** The quick specs, with the chosen variant's option values (Colour: Camo) taking the place of a same-named line. */
-export function PickSpecs({ specs, className }: { specs: { label: string; value: string }[]; className: string }) {
+export function PickSpecs({
+    specs,
+    className,
+    title = 'Quick specs',
+    wide = false,
+}: {
+    specs: { label: string; value: string }[];
+    className: string;
+    title?: string;
+    // Full-width use: the rows run in two columns from md up instead of one long, sparse list.
+    wide?: boolean;
+}) {
     const { selected } = usePickVariant();
     const fromVariant = (selected?.options ?? []).filter((option): option is { name: string; value: string } => Boolean(option.name));
     const variantLabels = new Set(fromVariant.map((option) => option.name.toLowerCase()));
@@ -106,10 +117,10 @@ export function PickSpecs({ specs, className }: { specs: { label: string; value:
 
     return (
         <div className={className}>
-            <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">Quick specs</h3>
-            <dl className="divide-y divide-zinc-100 text-sm">
+            <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">{title}</h3>
+            <dl className={`text-sm ${wide ? 'md:columns-2 md:gap-x-12' : 'divide-y divide-zinc-100'}`}>
                 {merged.map((spec) => (
-                    <div key={spec.label} className="flex justify-between gap-4 py-2.5">
+                    <div key={spec.label} className={`flex justify-between gap-4 py-2.5 ${wide ? 'break-inside-avoid border-b border-zinc-100' : ''}`}>
                         <dt className="font-semibold text-primary">{spec.label}</dt>
                         <dd className="text-right text-zinc-600">{spec.value}</dd>
                     </div>

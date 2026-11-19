@@ -132,7 +132,18 @@ describe('PickDetails', () => {
         expect(header).toContain('lg:order-none');
         expect(header).toContain('lg:col-start-2');
         expect(gallery).toContain('lg:order-none');
-        expect(gallery).toContain('lg:row-span-6');
+        expect(gallery).toContain('lg:row-span-2');
+    });
+
+    it('keeps the hero to the photo, the title and the buy box, and runs the rest full width in the written order', () => {
+        const html = render();
+        const order = ['Our take', 'Best for', 'Product details', 'The practical difference', 'Honest Pros', 'More PetPosture Picks'].map((text) => html.indexOf(text));
+
+        expect(order.every((position) => position > -1)).toBe(true);
+        expect(order).toEqual([...order].sort((a, b) => a - b));
+        // the buy box is above all of them, and the quick specs are not drawn a second time under their old name
+        expect(html.indexOf('>Buy on Chewy<')).toBeLessThan(order[0]);
+        expect(html).not.toContain('Quick specs');
     });
 
     it('shows the price as the retailer price with the date it was checked, never the site price', () => {
@@ -194,17 +205,17 @@ describe('PickDetails', () => {
     it('lists the quick specs, lets them win over the same label from the product specs, and hides the card when there are none', () => {
         const html = render();
 
-        expect(html).toContain('Quick specs');
+        expect(html).toContain('Product details');
         expect(html).toContain('Porcelain');
         expect(html).toContain('15°');
         expect(html).not.toContain('Ceramic');
-        expect(render(product(pickData({ quickSpecs: [] }), { specs: [] }))).not.toContain('Quick specs');
+        expect(render(product(pickData({ quickSpecs: [] }), { specs: [] }))).not.toContain('Product details');
     });
 
     it('keeps product specs entered the old way when no quick spec uses their label', () => {
         const html = render(product(pickData({ quickSpecs: [] })));
 
-        expect(html).toContain('Quick specs');
+        expect(html).toContain('Product details');
         expect(html).toContain('Ceramic');
     });
 
