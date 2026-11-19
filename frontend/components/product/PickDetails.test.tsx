@@ -265,6 +265,16 @@ describe('PickDetails', () => {
         expect(render()).toContain('A raised, tilted bowl.');
     });
 
+    it('draws nothing for a description that is only empty tags, so no gap is left between the blocks', () => {
+        const html = render(product(pickData(), { description: '<p></p>' }));
+
+        // the same marker is there when the description has text, so the checks below can fail
+        expect(render()).toContain('[&amp;_p]:mb-3');
+        expect(html).not.toContain('<p></p>');
+        expect(html).not.toContain('[&amp;_p]:mb-3');
+        expect(render(product(pickData(), { description: '' }))).not.toContain('[&amp;_p]:mb-3');
+    });
+
     it('has a breadcrumb Home > Picks > the Pick, with Picks linking to the list', () => {
         const html = render();
 

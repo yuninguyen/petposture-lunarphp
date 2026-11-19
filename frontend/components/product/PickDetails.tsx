@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Product, ProductPick } from '@/types/shop';
 import { formatPickDate, humanizeSlug } from '@/lib/pick';
 import { sanitizeRichHtml } from '@/lib/sanitize-rich-html';
+import { stripHtml } from '@/lib/text';
 import { PickCard } from './PickCard';
 import { PickGallery } from './PickGallery';
 import { PickBuyBox, PickSpecs, PickVariantProvider } from './PickVariantSelector';
@@ -59,6 +60,8 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
     const hasBestFor = pick.bestForBreeds.length > 0 || pick.bestForNotes.length > 0;
     const hasPractical = Boolean(pick.problem || pick.approach);
     const hasProsCons = pick.pros.length > 0 || pick.cons.length > 0;
+    // An empty rich-text field is saved as "<p></p>"; that has no text, and drawing it would leave a gap.
+    const hasDescription = stripHtml(product.description ?? '') !== '';
 
     return (
         <div className="bg-white">
@@ -135,7 +138,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
 
                     <PickSpecs specs={specs} className={cardClass} title="Product details" wide />
 
-                    {product.description && (
+                    {product.description && hasDescription && (
                         <div
                             className="text-sm leading-7 text-zinc-600 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
                             dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(product.description) }}
