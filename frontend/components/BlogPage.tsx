@@ -50,6 +50,7 @@ export type BlogPost = {
 
 type PostsResponse = {
     data?: BlogPost[];
+    meta?: { last_page?: number };
 };
 
 type CategoriesResponse = {
@@ -64,13 +65,17 @@ const fadeUp = {
 // `initialData` is fetched on the server so the posts are already in the HTML
 // Google reads. It is null when that fetch failed, and the page then loads the
 // data in the browser as it always did.
-export default function BlogPage({ initialData }: { initialData?: { posts: BlogPost[]; categories: BlogCategory[] } | null }) {
+export default function BlogPage({ initialData }: { initialData?: { posts: BlogPost[]; categories: BlogCategory[]; lastPage?: number } | null }) {
     const { social: socialLinks } = useSettings();
     const [activeTab, setActiveTab] = useState("All");
     const [posts, setPosts] = useState<BlogPost[]>(initialData?.posts ?? []);
     const [categories, setCategories] = useState<BlogCategory[]>(initialData?.categories ?? []);
     const [isLoading, setIsLoading] = useState(!initialData);
     const [error, setError] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [lastPage, setLastPage] = useState(initialData?.lastPage ?? 1);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [loadMoreFailed, setLoadMoreFailed] = useState(false);
     const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
     const tabsScrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -113,6 +118,7 @@ export default function BlogPage({ initialData }: { initialData?: { posts: BlogP
                 ])) as [PostsResponse, CategoriesResponse];
 
                 setPosts(Array.isArray(postsData.data) ? postsData.data : []);
+                setLastPage(postsData.meta?.last_page ?? 1);
                 setCategories(Array.isArray(catsData.data) ? catsData.data : []);
             } catch {
                 setError("We are currently updating our stories. Please check back shortly.");
@@ -143,8 +149,13 @@ export default function BlogPage({ initialData }: { initialData?: { posts: BlogP
 
                 const data = (await res.json()) as PostsResponse;
                 setPosts(Array.isArray(data.data) ? data.data : []);
+                setPage(1);
+                setLastPage(data.meta?.last_page ?? 1);
+                setLoadMoreFailed(false);
             } catch {
                 setPosts([]);
+                setPage(1);
+                setLastPage(1);
             }
         }, 300);
 
@@ -152,6 +163,32 @@ export default function BlogPage({ initialData }: { initialData?: { posts: BlogP
             if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
         };
     }, [searchQuery]);
+
+    // Fetches the next page of the same list (same search) and adds the posts not already shown.
+    const handleLoadMore = async () => {
+        setIsLoadingMore(true);
+        setLoadMoreFailed(false);
+        try {
+            const params = new URLSearchParams({ page: String(page + 1) });
+            if (searchQuery.trim()) params.set("q", searchQuery.trim());
+
+            const res = await fetch(`${getApiBaseUrl()}/api/posts?${params.toString()}`);
+            if (!res.ok) throw new Error("Load more failed");
+
+            const data = (await res.json()) as PostsResponse;
+            const more = Array.isArray(data.data) ? data.data : [];
+            setPosts((current) => {
+                const shown = new Set(current.map((post) => post.id));
+                return [...current, ...more.filter((post) => !shown.has(post.id))];
+            });
+            setPage(page + 1);
+            setLastPage(data.meta?.last_page ?? page + 1);
+        } catch {
+            setLoadMoreFailed(true);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
 
     const handleShare = async (post: BlogPost) => {
         const postSlug = post.slug || post.id;
@@ -432,11 +469,19 @@ export default function BlogPage({ initialData }: { initialData?: { posts: BlogP
                             )}
                         </div>
 
-                        {latestPosts.length > 0 && (
-                            <div className="mt-20 flex justify-center border-t border-zinc-100 pt-10">
-                                <button className="rounded-[3px] bg-secondary px-8 py-4 text-sm font-bold uppercase tracking-[0.08em] text-ink shadow-xl shadow-orange-100/50 transition-all hover:bg-secondary-dark md:px-14">
-                                    Load More Content
+                        {page < lastPage && (
+                            <div className="mt-20 flex flex-col items-center gap-3 border-t border-zinc-100 pt-10">
+                                <button
+                                    type="button"
+                                    onClick={() => void handleLoadMore()}
+                                    disabled={isLoadingMore}
+                                    className="rounded-[3px] bg-secondary px-8 py-4 text-sm font-bold uppercase tracking-[0.08em] text-ink shadow-xl shadow-orange-100/50 transition-all hover:bg-secondary-dark disabled:opacity-60 md:px-14"
+                                >
+                                    {isLoadingMore ? "Loading..." : "Load More Content"}
                                 </button>
+                                {loadMoreFailed && (
+                                    <p role="alert" className="text-sm text-[#666666]">We could not load more stories. Please try again.</p>
+                                )}
                             </div>
                         )}
                     </div>

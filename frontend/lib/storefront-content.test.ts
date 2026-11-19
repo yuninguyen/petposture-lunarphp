@@ -121,6 +121,20 @@ describe('storefront content fetchers', () => {
     expect(index?.categories).toHaveLength(1);
   });
 
+  it('hands over how many pages of posts there are, one when the API does not say', async () => {
+    stubFetch({
+      '/api/posts': { body: { data: [{ id: '1', slug: 'a', title: 'A', content: 'x' }], meta: { last_page: 3 } } },
+      '/api/blog/categories': { body: { data: [] } },
+    });
+    expect((await fetchBlogIndex())?.lastPage).toBe(3);
+
+    stubFetch({
+      '/api/posts': { body: { data: [] } },
+      '/api/blog/categories': { body: { data: [] } },
+    });
+    expect((await fetchBlogIndex())?.lastPage).toBe(1);
+  });
+
   it('returns null for the blog index when either request fails', async () => {
     stubFetch({
       '/api/posts': { body: { data: [] } },

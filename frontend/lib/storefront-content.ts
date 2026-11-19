@@ -50,15 +50,19 @@ export function toInsightPost(post: ApiInsightRow): InsightPost {
 // Returns null on any failure so callers can fall back to fetching in the
 // browser. During `next build` the VPS only reaches the API through Cloudflare,
 // which answers 403, so a null here is an expected outcome and not an error.
-async function fetchRows<T>(path: string): Promise<T[] | null> {
+async function fetchPayload<T>(path: string): Promise<{ data: T[]; meta?: { last_page?: number } } | null> {
     try {
         const res = await fetch(`${getApiBaseUrl()}${path}`, { next: { revalidate: REVALIDATE_SECONDS } });
         if (!res.ok) return null;
         const json = await res.json();
-        return Array.isArray(json?.data) ? json.data : null;
+        return Array.isArray(json?.data) ? json : null;
     } catch {
         return null;
     }
+}
+
+async function fetchRows<T>(path: string): Promise<T[] | null> {
+    return (await fetchPayload<T>(path))?.data ?? null;
 }
 
 export async function fetchPicks(): Promise<Product[] | null> {
@@ -71,15 +75,16 @@ export async function fetchInsightPosts(): Promise<InsightPost[] | null> {
     return rows ? rows.slice(0, INSIGHT_COUNT).map(toInsightPost) : null;
 }
 
-export async function fetchBlogIndex(): Promise<{ posts: BlogPost[]; categories: BlogCategory[] } | null> {
-    const [posts, categories] = await Promise.all([
-        fetchRows<BlogPost>('/api/posts'),
+export async function fetchBlogIndex(): Promise<{ posts: BlogPost[]; categories: BlogCategory[]; lastPage: number } | null> {
+    const [postsPayload, categories] = await Promise.all([
+        fetchPayload<BlogPost>('/api/posts'),
         fetchRows<BlogCategory>('/api/blog/categories'),
     ]);
-    if (!posts || !categories) return null;
+    if (!postsPayload || !categories) return null;
 
     return {
-        posts: posts.map((post) => ({
+        lastPage: postsPayload.meta?.last_page ?? 1,
+        posts: postsPayload.data.map((post) => ({
             ...post,
             content: stripHtml(post.content || '').slice(0, BLOG_EXCERPT_SOURCE_LENGTH),
         })),
