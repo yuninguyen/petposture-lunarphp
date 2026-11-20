@@ -14,13 +14,11 @@ type PickProduct = Product & { pick: ProductPick };
 
 const cardClass = 'rounded-2xl border border-zinc-200 bg-white p-5';
 
-function SectionTitle({ children, align = 'center' }: { children: string; align?: 'left' | 'center' }) {
-    const left = align === 'left';
-
+function SectionTitle({ children }: { children: string }) {
     return (
-        <div className={left ? 'mb-5' : 'mb-8 text-center'}>
+        <div className="mb-8 text-center">
             <h2 className="text-[24px] font-bold text-primary md:text-[28px]">{children}</h2>
-            <div className={`mt-3 h-[3px] w-11 rounded-full bg-secondary ${left ? '' : 'mx-auto'}`} />
+            <div className="mx-auto mt-3 h-[3px] w-11 rounded-full bg-secondary" />
         </div>
     );
 }
@@ -155,7 +153,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
 
                     {hasPractical && (
                         <div>
-                            <SectionTitle align="left">The practical difference</SectionTitle>
+                            <SectionTitle>The practical difference</SectionTitle>
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 {pick.problem && (
                                     <div className={cardClass}>
@@ -175,7 +173,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
 
                     {hasProsCons && (
                         <div>
-                            <SectionTitle align="left">Honest Pros & Cons</SectionTitle>
+                            <SectionTitle>Honest Pros & Cons</SectionTitle>
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 {pick.pros.length > 0 && (
                                     <div className={cardClass}>

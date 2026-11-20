@@ -346,6 +346,20 @@ describe('PickDetails', () => {
         expect(accordion(noSpecs, 'Quick Specs')).toBeUndefined();
     });
 
+    it('centers the titles of The practical difference and Honest Pros & Cons, the same way as More PetPosture Picks', () => {
+        const html = render();
+
+        for (const text of ['The practical difference', 'Honest Pros &amp; Cons', 'More PetPosture Picks']) {
+            const match = html.match(new RegExp(`<div class="([^"]*)"><h2[^>]*>${text}</h2><div class="([^"]*)"></div></div>`));
+
+            expect(match, text).not.toBeNull();
+            // the text is centered, and so is the orange bar under it, at every width
+            expect(match![1]).toContain('text-center');
+            expect(match![1]).not.toMatch(/\blg:text-left\b|\bmd:text-left\b|\btext-left\b/);
+            expect(match![2]).toContain('mx-auto');
+        }
+    });
+
     it('draws no box at all when there is neither a description nor any specs, so no gap is left', () => {
         const html = render(product(pickData({ quickSpecs: [] }), { specs: [], description: '<p></p>' }));
 
