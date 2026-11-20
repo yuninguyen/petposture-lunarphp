@@ -137,11 +137,12 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                         </div>
                     )}
 
-                    {/* Product details (the description) and Quick Specs: side by side from lg up when both are there,
-                        each as tall as its own content. Alone, a block takes the whole width. */}
-                    <div className={`grid grid-cols-1 items-start gap-6 empty:hidden ${sideBySide ? 'lg:grid-cols-2' : ''}`}>
+                    {/* One box holding Product details (the description) and Quick Specs: two columns from lg up when both
+                        are there, one above the other below that. Alone, a column takes the whole box. With neither, the box
+                        has no children and `empty:hidden` takes it out of the layout, so no gap is left. */}
+                    <div className={`${cardClass} grid grid-cols-1 items-start gap-6 empty:hidden ${sideBySide ? 'lg:grid-cols-2 lg:gap-x-10' : ''}`}>
                         {hasDescription && (
-                            <div className={cardClass}>
+                            <div>
                                 <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">Product details</h3>
                                 <div
                                     className="text-sm leading-7 text-zinc-600 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5"
@@ -149,7 +150,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                                 />
                             </div>
                         )}
-                        <PickSpecs specs={specs} className={cardClass} title="Quick Specs" wide={!hasDescription} />
+                        <PickSpecs specs={specs} className="" title="Quick Specs" wide={!hasDescription} />
                     </div>
 
                     {hasPractical && (

@@ -271,15 +271,27 @@ describe('PickDetails', () => {
         expect(html.slice(html.indexOf('Product details'), html.indexOf('Quick Specs'))).not.toMatch(/<li[\s>]/);
     });
 
-    // The class list of the block that holds Product details and Quick Specs (the hero has a grid of its own).
-    const detailsGrid = (html: string) => html.match(/class="(grid grid-cols-1 items-start gap-6 empty:hidden[^"]*)"/)?.[1] ?? '';
+    // The class list of the one box that holds Product details and Quick Specs (the hero has a grid of its own).
+    const detailsBox = (html: string) => html.match(/class="([^"]*rounded-2xl[^"]*empty:hidden[^"]*)"/)?.[1] ?? '';
 
-    it('puts the two blocks side by side from lg up, and one above the other below that', () => {
-        const grid = detailsGrid(render());
+    it('puts the two columns side by side from lg up, and one above the other below that, inside one box', () => {
+        const box = detailsBox(render());
 
-        expect(grid).toContain('grid-cols-1');
-        expect(grid).toContain('lg:grid-cols-2');
-        expect(grid).toContain('items-start');
+        expect(box).toContain('rounded-2xl');
+        expect(box).toContain('border');
+        expect(box).toContain('grid-cols-1');
+        expect(box).toContain('lg:grid-cols-2');
+        expect(box).toContain('items-start');
+        // only a gap between the columns, no divider line
+        expect(box).not.toMatch(/divide-|border-l|border-r/);
+    });
+
+    it('is one box: Product details and Quick Specs sit in the same card, with no second card between them', () => {
+        const html = render();
+        const between = html.slice(html.indexOf('Product details'), html.indexOf('Quick Specs'));
+
+        expect(between).not.toContain('rounded-2xl');
+        expect(html.match(/class="[^"]*empty:hidden[^"]*"/g)).toHaveLength(1);
     });
 
     it('draws nothing for a description that is only empty tags, so no gap is left, and Quick Specs takes the whole width', () => {
@@ -289,7 +301,7 @@ describe('PickDetails', () => {
             expect(html).not.toContain('Product details');
             expect(html).not.toContain('<p></p>');
             expect(html).toContain('Quick Specs');
-            expect(detailsGrid(html)).not.toContain('lg:grid-cols-2');
+            expect(detailsBox(html)).not.toContain('lg:grid-cols-2');
             // alone, the specs run in two columns
             expect(html).toContain('md:columns-2');
         }
@@ -301,7 +313,17 @@ describe('PickDetails', () => {
         expect(html).toContain('Product details');
         expect(html).toContain('A raised, tilted bowl.');
         expect(html).not.toContain('Quick Specs');
-        expect(detailsGrid(html)).not.toContain('lg:grid-cols-2');
+        expect(detailsBox(html)).not.toContain('lg:grid-cols-2');
+    });
+
+    it('draws no box at all when there is neither a description nor any specs, so no gap is left', () => {
+        const html = render(product(pickData({ quickSpecs: [] }), { specs: [], description: '<p></p>' }));
+
+        expect(html).not.toContain('Product details');
+        expect(html).not.toContain('Quick Specs');
+        expect(html.match(/class="[^"]*empty:hidden[^"]*"/g) ?? []).toHaveLength(1);
+        // the box has no children, so `empty:hidden` takes it out of the layout
+        expect(html).toMatch(/<div class="[^"]*empty:hidden[^"]*"><\/div>/);
     });
 
     it('keeps the specs in one column when they sit beside the description', () => {
