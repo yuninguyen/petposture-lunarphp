@@ -4,6 +4,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 import type { PickVariant, ProductPick } from '@/types/shop';
 import { buttonClasses } from '@/components/ui/Button';
 import { PICK_DISCLOSURE, pickCtaLabel, pickPriceParts } from '@/lib/pick';
+import { PickAccordionSection } from './PickAccordionSection';
 
 type Selection = { variants: PickVariant[]; selected: PickVariant | null; select: (id: number) => void };
 
@@ -98,12 +99,16 @@ export function PickSpecs({
     className,
     title = 'Quick specs',
     wide = false,
+    accordion = false,
 }: {
     specs: { label: string; value: string }[];
     className: string;
     title?: string;
     // Full-width use: the rows run in two columns from md up instead of one long, sparse list.
     wide?: boolean;
+    // Below lg the title is a button that opens and closes the rows (closed to start with). It lives here because the
+    // rows can be empty, and only this component knows, once a variant is chosen, whether there is anything to show.
+    accordion?: boolean;
 }) {
     const { selected } = usePickVariant();
     const fromVariant = (selected?.options ?? []).filter((option): option is { name: string; value: string } => Boolean(option.name));
@@ -115,17 +120,23 @@ export function PickSpecs({
 
     if (merged.length === 0) return null;
 
+    const rows = (
+        <dl className={`text-sm ${wide ? 'md:columns-2 md:gap-x-12' : 'divide-y divide-zinc-100'}`}>
+            {merged.map((spec) => (
+                <div key={spec.label} className={`flex justify-between gap-4 py-2.5 ${wide ? 'break-inside-avoid border-b border-zinc-100' : ''}`}>
+                    <dt className="font-semibold text-primary">{spec.label}</dt>
+                    <dd className="text-right text-zinc-600">{spec.value}</dd>
+                </div>
+            ))}
+        </dl>
+    );
+
+    if (accordion) return <PickAccordionSection title={title} className={className}>{rows}</PickAccordionSection>;
+
     return (
         <div className={className}>
             <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">{title}</h3>
-            <dl className={`text-sm ${wide ? 'md:columns-2 md:gap-x-12' : 'divide-y divide-zinc-100'}`}>
-                {merged.map((spec) => (
-                    <div key={spec.label} className={`flex justify-between gap-4 py-2.5 ${wide ? 'break-inside-avoid border-b border-zinc-100' : ''}`}>
-                        <dt className="font-semibold text-primary">{spec.label}</dt>
-                        <dd className="text-right text-zinc-600">{spec.value}</dd>
-                    </div>
-                ))}
-            </dl>
+            {rows}
         </div>
     );
 }

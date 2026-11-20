@@ -3,6 +3,7 @@ import type { Product, ProductPick } from '@/types/shop';
 import { formatPickDate, humanizeSlug } from '@/lib/pick';
 import { sanitizeRichHtml } from '@/lib/sanitize-rich-html';
 import { stripHtml } from '@/lib/text';
+import { PickAccordionSection } from './PickAccordionSection';
 import { PickCard } from './PickCard';
 import { PickGallery } from './PickGallery';
 import { PickBuyBox, PickSpecs, PickVariantProvider } from './PickVariantSelector';
@@ -140,17 +141,16 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                     {/* One box holding Product details (the description) and Quick Specs: two columns from lg up when both
                         are there, one above the other below that. Alone, a column takes the whole box. With neither, the box
                         has no children and `empty:hidden` takes it out of the layout, so no gap is left. */}
-                    <div className={`${cardClass} grid grid-cols-1 items-start gap-6 empty:hidden ${sideBySide ? 'lg:grid-cols-2 lg:gap-x-10' : ''}`}>
+                    <div className={`${cardClass} grid grid-cols-1 items-start empty:hidden lg:gap-6 ${sideBySide ? 'lg:grid-cols-2 lg:gap-x-10' : ''}`}>
                         {hasDescription && (
-                            <div>
-                                <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">Product details</h3>
+                            <PickAccordionSection title="Product details">
                                 <div
                                     className="text-sm leading-7 text-zinc-600 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5"
                                     dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(product.description ?? '') }}
                                 />
-                            </div>
+                            </PickAccordionSection>
                         )}
-                        <PickSpecs specs={specs} className="" title="Quick Specs" wide={!hasDescription} />
+                        <PickSpecs specs={specs} className="" title="Quick Specs" wide={!hasDescription} accordion />
                     </div>
 
                     {hasPractical && (

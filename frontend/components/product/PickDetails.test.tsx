@@ -316,6 +316,36 @@ describe('PickDetails', () => {
         expect(detailsBox(html)).not.toContain('lg:grid-cols-2');
     });
 
+    // Below lg each of the two is an accordion, closed to start with; from lg up they are plain blocks that are always shown.
+    const accordion = (html: string, title: string) => html.match(new RegExp(`<button[^>]*aria-expanded="(true|false)"[^>]*><span class="[^"]*">${title}</span>`))?.[1];
+
+    it('starts both as closed accordions on a phone, each with its own button and a plus', () => {
+        const html = render();
+
+        expect(accordion(html, 'Product details')).toBe('false');
+        expect(accordion(html, 'Quick Specs')).toBe('false');
+        expect(html.match(/<span aria-hidden="true"[^>]*>\+<\/span>/g)).toHaveLength(2);
+        // the content of both is hidden below lg and forced visible from lg up
+        expect(html.match(/class="hidden lg:block lg:pb-0"/g)).toHaveLength(2);
+    });
+
+    it('keeps the plain titles for lg and up, where there is no accordion', () => {
+        const html = render();
+
+        expect(html).toMatch(/<h3 class="mb-3 hidden lg:block [^"]*">Product details<\/h3>/);
+        expect(html).toMatch(/<h3 class="mb-3 hidden lg:block [^"]*">Quick Specs<\/h3>/);
+    });
+
+    it('has an accordion only for what is there: no description, no Product details; no specs, no Quick Specs', () => {
+        const noDescription = render(product(pickData(), { description: '<p></p>' }));
+        const noSpecs = render(product(pickData({ quickSpecs: [] }), { specs: [] }));
+
+        expect(accordion(noDescription, 'Product details')).toBeUndefined();
+        expect(accordion(noDescription, 'Quick Specs')).toBe('false');
+        expect(accordion(noSpecs, 'Product details')).toBe('false');
+        expect(accordion(noSpecs, 'Quick Specs')).toBeUndefined();
+    });
+
     it('draws no box at all when there is neither a description nor any specs, so no gap is left', () => {
         const html = render(product(pickData({ quickSpecs: [] }), { specs: [], description: '<p></p>' }));
 
