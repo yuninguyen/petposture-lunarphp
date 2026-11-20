@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { AttributeDefinition, AttributeValues, ProductDetail, ProductVariant, UpdateProductPayload, UpdateVariantPayload } from './api';
+import { retailerLinkError } from './pickKind';
 
 const optionalText = z.string().trim().transform((value) => value || null);
 const optionalNumberText = z.string().trim().refine((value) => value === '' || (!Number.isNaN(Number(value)) && Number(value) >= 0), 'products.validation.non_negative').transform((value) => value || null);
@@ -9,6 +10,15 @@ export const createProductSchema = z.object({
   product_type_id: z.coerce.number().int().positive('products.validation.product_type_required'),
   sku: z.string().trim().min(1, 'products.validation.sku_required').max(255, 'products.validation.max_255'),
   base_price: z.string().trim().min(1, 'products.validation.price_required').refine((value) => !Number.isNaN(Number(value)) && Number(value) >= 0, 'products.validation.non_negative'),
+  kind: z.enum(['pick', 'shop']),
+  external_url: z.string().trim(),
+}).superRefine((values, context) => {
+  // A Pick is a product with a retailer link, so it cannot be created without one. A Shop product has no link at all.
+  if (values.kind !== 'pick') return;
+
+  const message = retailerLinkError(values.external_url);
+
+  if (message) context.addIssue({ code: 'custom', path: ['external_url'], message });
 });
 export type CreateProductValues = z.input<typeof createProductSchema>;
 

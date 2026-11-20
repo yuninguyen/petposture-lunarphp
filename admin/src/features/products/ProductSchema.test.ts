@@ -3,7 +3,17 @@ import { createProductSchema, productDefaults, productPayload, validateRequiredA
 
 describe('Product schemas', () => {
   it('validates and coerces create values', () => {
-    expect(createProductSchema.parse({ name: ' Harness ', product_type_id: '2', sku: 'SKU', base_price: '12.50' })).toEqual({ name: 'Harness', product_type_id: 2, sku: 'SKU', base_price: '12.50' });
+    expect(createProductSchema.parse({ name: ' Harness ', product_type_id: '2', sku: 'SKU', base_price: '12.50', kind: 'shop', external_url: '' })).toEqual({ name: 'Harness', product_type_id: 2, sku: 'SKU', base_price: '12.50', kind: 'shop', external_url: '' });
+  });
+  it('needs a web retailer link for a Pick, and does not ask for one for a Shop product', () => {
+    const base = { name: 'Bowl', product_type_id: '1', sku: 'SKU', base_price: '9.99' };
+    const messages = (values: object) => { const result = createProductSchema.safeParse(values); return result.success ? [] : result.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`); };
+
+    expect(messages({ ...base, kind: 'pick', external_url: '' })).toEqual(['external_url: products.validation.pick_link_required']);
+    expect(messages({ ...base, kind: 'pick', external_url: 'chewy.com/a' })).toEqual(['external_url: products.validation.pick_link_invalid']);
+    expect(messages({ ...base, kind: 'pick', external_url: ' https://www.chewy.com/a/dp/1 ' })).toEqual([]);
+    expect(messages({ ...base, kind: 'shop', external_url: '' })).toEqual([]);
+    expect(messages({ ...base, kind: 'gift', external_url: '' })).toHaveLength(1);
   });
   it('requires both locales for required translated attributes', () => {
     const definitions = [{ handle: 'name', label: 'Name', type: 'translated_text' as const, section: null, system: true, required: true, value: { en: '', vi: '' } }];

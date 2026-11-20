@@ -37,7 +37,7 @@ export interface ProductVariant {
   base_price: string; formatted_price: string | null; has_order_history: boolean; option_values: OptionValue[]; attributes: AttributeDefinition[];
 }
 export interface ProductDetail {
-  id: number; slug: string | null; status: ProductStatus; brand_id: number | null; product_type_id: number;
+  id: number; slug: string | null; status: ProductStatus; kind: ProductKind; brand_id: number | null; product_type_id: number;
   product_type: { id: number; name: string }; brand: { id: number; name: string } | null;
   has_variants: boolean; product_attributes: AttributeDefinition[]; product_options: ProductOption[]; variants: ProductVariant[];
   collection_ids: number[]; media: ProductMedia[]; seo: ProductSeo; default_currency: Currency; tax_classes: TaxClass[]; updated_at: string | null;
@@ -53,7 +53,7 @@ export interface ProductSummary {
 export type ProductKind = 'pick' | 'shop';
 export interface ProductsPage { data: ProductSummary[]; meta: { current_page: number; last_page: number; per_page: number; total: number } }
 export interface ProductFilters { search?: string; status?: ProductStatus | ''; brand_id?: number | ''; product_type_id?: number | ''; kind?: ProductKind | ''; page?: number; per_page?: number }
-export interface CreateProductPayload { name: string; product_type_id: number; sku: string; base_price: string }
+export interface CreateProductPayload { name: string; product_type_id: number; sku: string; base_price: string; kind?: ProductKind; external_url?: string }
 export interface UpdateProductPayload { slug: string; status: ProductStatus; brand_id: number | null; attributes: AttributeValues; collections: number[]; media: Array<{ id: number; source: ProductMedia['source']; alt: string }>; seo: ProductSeo }
 export interface UpdateVariantPayload {
   sku: string; gtin: string | null; mpn: string | null; ean: string | null; stock: number; cost: string | null; backorder: number;
