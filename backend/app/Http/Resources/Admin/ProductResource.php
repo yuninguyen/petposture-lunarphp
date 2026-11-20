@@ -4,6 +4,7 @@ namespace App\Http\Resources\Admin;
 
 use App\Models\SeoMetadata;
 use App\Services\Admin\ProductAttributeService;
+use App\Support\PickKind;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\DB;
@@ -37,6 +38,7 @@ class ProductResource extends JsonResource
             'id' => $this->id,
             'slug' => $this->defaultUrl?->slug,
             'status' => $this->status,
+            'kind' => PickKind::of($this->resource),
             'brand_id' => $this->brand_id,
             'product_type_id' => $this->product_type_id,
             'product_type' => [

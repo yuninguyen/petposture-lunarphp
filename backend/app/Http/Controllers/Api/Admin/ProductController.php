@@ -199,12 +199,30 @@ class ProductController extends Controller
                 ]);
             }
 
+            $attributeData = [
+                'name' => $this->attributeService->makeNameValue($nameAttribute->type, $validated['name']),
+            ];
+
+            // A Pick is born with its retailer link, so it is never a Pick without one (the request has checked it).
+            if (($validated['kind'] ?? null) === PickKind::PICK) {
+                $urlAttribute = Attribute::query()
+                    ->where('attribute_type', Product::morphName())
+                    ->where('handle', 'external_url')
+                    ->first();
+
+                if (! $urlAttribute) {
+                    throw ValidationException::withMessages([
+                        'external_url' => 'The retailer link attribute is not configured.',
+                    ]);
+                }
+
+                $attributeData['external_url'] = $this->attributeService->makeNameValue($urlAttribute->type, RetailerUrl::web($validated['external_url']));
+            }
+
             $product = Product::query()->create([
                 'status' => 'draft',
                 'product_type_id' => $productType->id,
-                'attribute_data' => [
-                    'name' => $this->attributeService->makeNameValue($nameAttribute->type, $validated['name']),
-                ],
+                'attribute_data' => $attributeData,
             ]);
             $variant = $product->variants()->create([
                 'tax_class_id' => $taxClass->id,

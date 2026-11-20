@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\PickKind;
+use App\Support\RetailerUrl;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -58,6 +60,30 @@ class UpdateProductRequest extends FormRequest
             if ($identities->duplicates()->isNotEmpty()) {
                 $validator->errors()->add('media', 'The media list must not contain duplicate items.');
             }
+
+            $this->validateRetailerLink($validator);
         });
+    }
+
+    /**
+     * The retailer link decides whether a product is a Pick, so a save may not leave a contradiction: a link that is
+     * not a web address, or a Pick whose link was emptied. A Shop product may stay without a link, or get a good one.
+     */
+    private function validateRetailerLink($validator): void
+    {
+        $attributes = $this->input('attributes');
+
+        if (! is_array($attributes) || ! array_key_exists('external_url', $attributes) || is_array($attributes['external_url'])) {
+            return;
+        }
+
+        $url = trim((string) $attributes['external_url']);
+        $product = $this->route('product');
+
+        if ($url !== '' && RetailerUrl::web($url) === null) {
+            $validator->errors()->add('attributes.external_url', 'The retailer link must start with http:// or https://.');
+        } elseif ($url === '' && $product && PickKind::of($product) === PickKind::PICK) {
+            $validator->errors()->add('attributes.external_url', 'A Pick needs its retailer link; it cannot be left empty.');
+        }
     }
 }

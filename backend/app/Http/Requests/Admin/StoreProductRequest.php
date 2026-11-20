@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\PickKind;
+use App\Support\RetailerUrl;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Lunar\Models\Currency;
@@ -20,7 +22,26 @@ class StoreProductRequest extends FormRequest
             'product_type_id' => ['required', 'integer', Rule::exists('lunar_product_types', 'id')],
             'sku' => ['required', 'string', 'max:255', Rule::unique('lunar_product_variants', 'sku')],
             'base_price' => ['required', $this->currencyDecimalRule()],
+            'kind' => ['nullable', Rule::in([PickKind::PICK, PickKind::SHOP])],
+            'external_url' => ['nullable', 'string', 'max:2048'],
         ];
+    }
+
+    /** The kind chosen in the form may not contradict the link: a Pick needs a web link, a Shop product has none. */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $kind = $this->input('kind');
+            $url = trim((string) $this->input('external_url', ''));
+
+            if ($kind === PickKind::PICK && RetailerUrl::web($url) === null) {
+                $validator->errors()->add('external_url', 'A Pick needs a retailer link that starts with http:// or https://.');
+            }
+
+            if ($kind === PickKind::SHOP && $url !== '') {
+                $validator->errors()->add('external_url', 'A Shop product has no retailer link; choose Pick to add one.');
+            }
+        });
     }
 
     private function currencyDecimalRule(): \Closure
