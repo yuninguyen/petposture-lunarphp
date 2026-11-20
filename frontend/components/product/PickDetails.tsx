@@ -62,6 +62,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
     const hasProsCons = pick.pros.length > 0 || pick.cons.length > 0;
     // An empty rich-text field is saved as "<p></p>"; that has no text, and drawing it would leave a gap.
     const hasDescription = stripHtml(product.description ?? '') !== '';
+    const sideBySide = hasDescription && specs.length > 0;
 
     return (
         <div className="bg-white">
@@ -136,14 +137,20 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                         </div>
                     )}
 
-                    <PickSpecs specs={specs} className={cardClass} title="Product details" wide />
-
-                    {product.description && hasDescription && (
-                        <div
-                            className="text-sm leading-7 text-zinc-600 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5"
-                            dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(product.description) }}
-                        />
-                    )}
+                    {/* Product details (the description) and Quick Specs: side by side from lg up when both are there,
+                        each as tall as its own content. Alone, a block takes the whole width. */}
+                    <div className={`grid grid-cols-1 items-start gap-6 empty:hidden ${sideBySide ? 'lg:grid-cols-2' : ''}`}>
+                        {hasDescription && (
+                            <div className={cardClass}>
+                                <h3 className="mb-3 text-[11px] font-black uppercase tracking-[0.12em] text-zinc-500">Product details</h3>
+                                <div
+                                    className="text-sm leading-7 text-zinc-600 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5"
+                                    dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(product.description ?? '') }}
+                                />
+                            </div>
+                        )}
+                        <PickSpecs specs={specs} className={cardClass} title="Quick Specs" wide={!hasDescription} />
+                    </div>
 
                     {hasPractical && (
                         <div>

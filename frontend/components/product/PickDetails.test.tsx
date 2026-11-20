@@ -137,13 +137,12 @@ describe('PickDetails', () => {
 
     it('keeps the hero to the photo, the title and the buy box, and runs the rest full width in the written order', () => {
         const html = render();
-        const order = ['Our take', 'Best for', 'Product details', 'The practical difference', 'Honest Pros', 'More PetPosture Picks'].map((text) => html.indexOf(text));
+        const order = ['Our take', 'Best for', 'Product details', 'Quick Specs', 'The practical difference', 'Honest Pros', 'More PetPosture Picks'].map((text) => html.indexOf(text));
 
         expect(order.every((position) => position > -1)).toBe(true);
         expect(order).toEqual([...order].sort((a, b) => a - b));
-        // the buy box is above all of them, and the quick specs are not drawn a second time under their old name
+        // the buy box is above all of them
         expect(html.indexOf('>Buy on Chewy<')).toBeLessThan(order[0]);
-        expect(html).not.toContain('Quick specs');
     });
 
     it('shows the price as the retailer price with the date it was checked, never the site price', () => {
@@ -205,17 +204,17 @@ describe('PickDetails', () => {
     it('lists the quick specs, lets them win over the same label from the product specs, and hides the card when there are none', () => {
         const html = render();
 
-        expect(html).toContain('Product details');
+        expect(html).toContain('Quick Specs');
         expect(html).toContain('Porcelain');
         expect(html).toContain('15°');
         expect(html).not.toContain('Ceramic');
-        expect(render(product(pickData({ quickSpecs: [] }), { specs: [] }))).not.toContain('Product details');
+        expect(render(product(pickData({ quickSpecs: [] }), { specs: [] }))).not.toContain('Quick Specs');
     });
 
     it('keeps product specs entered the old way when no quick spec uses their label', () => {
         const html = render(product(pickData({ quickSpecs: [] })));
 
-        expect(html).toContain('Product details');
+        expect(html).toContain('Quick Specs');
         expect(html).toContain('Ceramic');
     });
 
@@ -261,18 +260,52 @@ describe('PickDetails', () => {
         expect(render(product(pickData({ pros: [], cons: [] })))).not.toContain('Honest Pros');
     });
 
-    it('shows the description entered in the admin', () => {
-        expect(render()).toContain('A raised, tilted bowl.');
+    it('shows the description entered in the admin, unchanged, in its own "Product details" block before the Quick Specs', () => {
+        const html = render();
+
+        expect(html).toContain('A raised, tilted bowl.');
+        expect(html.indexOf('Product details')).toBeGreaterThan(-1);
+        expect(html.indexOf('Product details')).toBeLessThan(html.indexOf('A raised, tilted bowl.'));
+        expect(html.indexOf('A raised, tilted bowl.')).toBeLessThan(html.indexOf('Quick Specs'));
+        // a paragraph, not a list of bullets
+        expect(html.slice(html.indexOf('Product details'), html.indexOf('Quick Specs'))).not.toMatch(/<li[\s>]/);
     });
 
-    it('draws nothing for a description that is only empty tags, so no gap is left between the blocks', () => {
-        const html = render(product(pickData(), { description: '<p></p>' }));
+    // The class list of the block that holds Product details and Quick Specs (the hero has a grid of its own).
+    const detailsGrid = (html: string) => html.match(/class="(grid grid-cols-1 items-start gap-6 empty:hidden[^"]*)"/)?.[1] ?? '';
 
-        // the same marker is there when the description has text, so the checks below can fail
-        expect(render()).toContain('[&amp;_p]:mb-3');
-        expect(html).not.toContain('<p></p>');
-        expect(html).not.toContain('[&amp;_p]:mb-3');
-        expect(render(product(pickData(), { description: '' }))).not.toContain('[&amp;_p]:mb-3');
+    it('puts the two blocks side by side from lg up, and one above the other below that', () => {
+        const grid = detailsGrid(render());
+
+        expect(grid).toContain('grid-cols-1');
+        expect(grid).toContain('lg:grid-cols-2');
+        expect(grid).toContain('items-start');
+    });
+
+    it('draws nothing for a description that is only empty tags, so no gap is left, and Quick Specs takes the whole width', () => {
+        for (const description of ['<p></p>', '']) {
+            const html = render(product(pickData(), { description }));
+
+            expect(html).not.toContain('Product details');
+            expect(html).not.toContain('<p></p>');
+            expect(html).toContain('Quick Specs');
+            expect(detailsGrid(html)).not.toContain('lg:grid-cols-2');
+            // alone, the specs run in two columns
+            expect(html).toContain('md:columns-2');
+        }
+    });
+
+    it('shows Product details alone, across the whole width, when there are no specs', () => {
+        const html = render(product(pickData({ quickSpecs: [] }), { specs: [] }));
+
+        expect(html).toContain('Product details');
+        expect(html).toContain('A raised, tilted bowl.');
+        expect(html).not.toContain('Quick Specs');
+        expect(detailsGrid(html)).not.toContain('lg:grid-cols-2');
+    });
+
+    it('keeps the specs in one column when they sit beside the description', () => {
+        expect(render()).not.toContain('md:columns-2');
     });
 
     it('has a breadcrumb Home > Picks > the Pick, with Picks linking to the list', () => {
