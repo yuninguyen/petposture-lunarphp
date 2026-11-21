@@ -90,7 +90,7 @@ describe('PickDetails', () => {
         const html = render();
         const anchor = html.match(/<a [^>]*rel="sponsored noopener"[^>]*>/)?.[0] ?? '';
 
-        expect(anchor).toContain('h-9');
+        expect(anchor).toContain('h-[36px]');
         expect(anchor).toContain('text-[0.78rem]');
         expect(anchor).not.toContain('min-h-[52px]');
         expect(anchor).not.toContain('h-14');
@@ -146,10 +146,10 @@ describe('PickDetails', () => {
 
         expect(classes(petsmart)).toContain('border border-primary bg-white');
         expect(classes(petsmart)).not.toContain('bg-secondary');
-        expect(classes(petsmart)).toContain('h-9');
+        expect(classes(petsmart)).toContain('h-[36px]');
         expect(classes(petsmart)).toContain('uppercase');
         expect(classes(chewy)).toContain('bg-secondary');
-        expect(classes(chewy)).toContain('h-9');
+        expect(classes(chewy)).toContain('h-[36px]');
     });
 
     it('shows one Chewy row, no PetSmart and no second link when there is no second retailer', () => {
