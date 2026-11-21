@@ -184,10 +184,10 @@ describe('PickDetails', () => {
         expect(html).toContain('Lower price · Save $24.00');
         expect(html.match(/Lower price/g)).toHaveLength(1);
         expect(html).toContain('bg-[#FDF2EA]');
-        // the block wraps the PetSmart row and the line: the price comes first, the line right after the button
+        // the line hangs under the PetSmart price inside the row: the price comes first, then the line, then the Buy button
         expect(html.indexOf('>$40.99<')).toBeLessThan(html.indexOf('Lower price'));
-        expect(html.indexOf('aria-label="Buy on PetSmart"')).toBeLessThan(html.indexOf('Lower price'));
-        expect(html.indexOf('Lower price')).toBeLessThan(html.indexOf('PetPosture may earn a commission'));
+        expect(html.indexOf('Lower price')).toBeLessThan(html.indexOf('aria-label="Buy on PetSmart"'));
+        expect(html.indexOf('aria-label="Buy on PetSmart"')).toBeLessThan(html.indexOf('PetPosture may earn a commission'));
     });
 
     it('marks Chewy instead when Chewy is the cheaper one', () => {
@@ -195,8 +195,10 @@ describe('PickDetails', () => {
         const html = furhaven(20, '2026-11-20', 25.5, '2026-11-21');
 
         expect(html).toContain('Lower price · Save $5.50');
-        expect(html.indexOf('Lower price')).toBeLessThan(html.indexOf('aria-label="Buy on PetSmart"'));
-        expect(html.indexOf('aria-label="Buy on Chewy"')).toBeLessThan(html.indexOf('Lower price'));
+        // the line belongs to the Chewy row: after the Chewy price, before the Chewy button, and so before the PetSmart row
+        expect(html.indexOf('>$20.00<')).toBeLessThan(html.indexOf('Lower price'));
+        expect(html.indexOf('Lower price')).toBeLessThan(html.indexOf('aria-label="Buy on Chewy"'));
+        expect(html.indexOf('aria-label="Buy on Chewy"')).toBeLessThan(html.indexOf('aria-label="Buy on PetSmart"'));
     });
 
     it('says nothing about a saving of a cent, of 99 cents, or of nothing at all, and tints no row', () => {
@@ -275,7 +277,7 @@ describe('PickDetails', () => {
         expect(anchors(unpriced)).toHaveLength(1);
     });
 
-    it('lines the columns up: one shared grid with a fixed 104px Buy column, and every row and the tinted block are subgrids of it', () => {
+    it('lines the columns up: one shared grid with a fixed 104px Buy column, and the header and every row, the tinted one included, are subgrids of it', () => {
         today('2026-11-21');
         const html = furhaven(64.99, '2026-11-17', 40.99, '2026-11-21');
 
@@ -288,27 +290,91 @@ describe('PickDetails', () => {
             expect(row).toContain('grid-cols-subgrid');
             expect(row).toContain('col-span-full');
         }
-        expect(html).toMatch(/class="col-span-full grid grid-cols-subgrid [^"]*bg-\[#FDF2EA\]"/);
+        // the tinted row is one of those subgrid rows itself, not a block around it
+        expect(html).toMatch(/role="row" class="col-span-full grid grid-cols-subgrid [^"]*bg-\[#FDF2EA\][^"]*"/);
         // four cells in a row, so a missing price leaves its column empty instead of moving the button
         expect(html.match(/role="cell"/g)).toHaveLength(8);
     });
 
-    it('draws the tinted block with square corners, flush with the table', () => {
-        today('2026-11-21');
-        const block = furhaven(64.99, '2026-11-17', 40.99, '2026-11-21').match(/<div class="([^"]*bg-\[#FDF2EA\])"/)?.[1] ?? '';
+    // The rows of the table, header first, as the pieces of HTML each starts at.
+    const rowsOf = (html: string) => html.split('<div role="row"').slice(1);
+    const classes = (element: string) => element.match(/class="([^"]*)"/)?.[1] ?? '';
 
-        expect(block).toContain('bg-[#FDF2EA]');
-        expect(block).not.toContain('rounded');
+    it('draws the tinted row with square corners, flush with the table', () => {
+        today('2026-11-21');
+        const tinted = rowsOf(furhaven(64.99, '2026-11-17', 40.99, '2026-11-21')).find((row) => row.includes('bg-[#FDF2EA]')) ?? '';
+
+        expect(classes(tinted)).toContain('bg-[#FDF2EA]');
+        expect(classes(tinted)).not.toContain('rounded');
     });
 
-    it('keeps the "Lower price" line out of every column: it is a full-width line of its own inside the tinted block', () => {
+    it('leaves a 6px gap above the tinted row, and none above the other rows', () => {
+        today('2026-11-21');
+        const [header, chewy, petsmart] = rowsOf(furhaven(64.99, '2026-11-17', 40.99, '2026-11-21'));
+
+        expect(classes(petsmart)).toContain('mt-[6px]');
+        expect(classes(chewy)).not.toContain('mt-[');
+        expect(classes(header)).not.toContain('mt-[');
+    });
+
+    it('shows the "Lower price" line as plain green text inside the Price cell, not as a pill and not as a line of its own', () => {
         today('2026-11-21');
         const html = furhaven(64.99, '2026-11-17', 40.99, '2026-11-21');
-        const block = html.match(/<div class="col-span-full grid grid-cols-subgrid [^"]*bg-\[#FDF2EA\]">([\s\S]*?)<\/div><\/div><\/div>/)?.[1] ?? '';
+        const tinted = rowsOf(html).find((row) => row.includes('bg-[#FDF2EA]')) ?? '';
+        const [, priceCell] = tinted.split('role="cell"').slice(1);
+        const line = priceCell.match(/<span class="([^"]*)">Lower price · Save \$24\.00<\/span>/)?.[1] ?? '';
 
-        expect(block).toContain('<div role="row"');
-        expect(block).toMatch(/<div class="col-span-full px-\[2px\] pb-\[14px\]"><span [^>]*>Lower price/);
-        expect(block.match(/role="cell"/g)).toHaveLength(4);
+        // the second cell is the Price one: it holds the price and the line together
+        expect(priceCell).toContain('>$40.99<');
+        expect(line).toContain('text-[#2e7d4f]');
+        expect(line).toContain('font-bold');
+        for (const pill of ['rounded', 'bg-[#e7f3ec]', 'bg-green', 'px-[9px]', 'uppercase', 'inline-block']) {
+            expect(line, pill).not.toContain(pill);
+        }
+        // the old full-width line under the row is gone
+        expect(html).not.toContain('col-span-full px-[2px] pb-[14px]');
+        expect(tinted.match(/role="cell"/g)).toHaveLength(4);
+    });
+
+    it('hangs the line under the price without moving the row: out of the flow on desktop, the row holds it with extra bottom padding', () => {
+        today('2026-11-21');
+        const [, chewy, petsmart] = rowsOf(furhaven(64.99, '2026-11-17', 40.99, '2026-11-21'));
+        const line = classes(petsmart.match(/<span class="[^"]*">Lower price/)?.[0] ?? '');
+
+        // absolute and 6px under the price: it takes no part in centring the price, the date, the logo and the button
+        expect(line).toContain('absolute');
+        expect(line).toContain('top-[calc(100%+6px)]');
+        expect(line).toContain('left-0');
+        expect(line).toContain('whitespace-nowrap');
+        // the date is on the main line: no row of its own except on a phone
+        const dateCell = classes(petsmart.split('role="cell"')[3]);
+        expect(dateCell.split(' ').filter((token) => /^row-start-/.test(token))).toEqual([]);
+        // 30px under the tinted row (14px on a phone, where the line is in the flow), 14px under the others
+        expect(classes(petsmart)).toContain('pb-[30px]');
+        expect(classes(petsmart)).toContain('max-[560px]:pb-[14px]');
+        expect(classes(chewy)).toContain('pb-[14px]');
+        expect(classes(chewy)).not.toContain('pb-[30px]');
+    });
+
+    it('insets the logo and the Buy button 12px, and the header Merchant label with the logo, on every row', () => {
+        today('2026-11-21');
+        const html = furhaven(64.99, '2026-11-17', 40.99, '2026-11-21');
+        const [header, ...rows] = rowsOf(html);
+
+        expect(header).toContain('<span role="columnheader" class="pl-[12px]">Merchant</span>');
+        for (const row of rows) {
+            expect(classes(row.split('role="cell"')[1])).toContain('pl-[12px]');
+            const button = classes(row.match(/<a [^>]*>/)?.[0] ?? '');
+            expect(button).toContain('w-[calc(100%-12px)]');
+            expect(button).toContain('max-[560px]:mr-[12px]');
+            expect(button).toContain('max-[560px]:w-auto');
+        }
+    });
+
+    it('keeps the logo from being squeezed out of shape when its column is narrow', () => {
+        const html = render(product(pickData({ secondRetailer: PETSMART })));
+
+        expect(html.match(/<img [^>]*object-contain object-left[^>]*>/g)).toHaveLength(2);
     });
 
     it('stacks a row on a phone: header hidden, logo, price and button on the first line, the check date under them', () => {
@@ -320,6 +386,31 @@ describe('PickDetails', () => {
         expect(html).toContain('max-[560px]:row-start-2');
         expect(html).toContain('max-[560px]:min-w-[72px]');
         expect(html).toContain('>Checked </span>17 Nov 2026');
+    });
+
+    it('on a phone puts the saving on the second line, right-aligned under the price and the button, the date on the left', () => {
+        today('2026-11-21');
+        const [, chewy, petsmart] = rowsOf(furhaven(64.99, '2026-11-17', 40.99, '2026-11-21'));
+        const cells = petsmart.split('role="cell"');
+        const priceCell = classes(cells[2]);
+        const date = classes(cells[3]);
+        const line = classes(petsmart.match(/<span class="[^"]*">Lower price/)?.[0] ?? '');
+
+        // the Price cell draws nothing itself on a phone, so the price and the line sit in the grid of the row
+        expect(priceCell).toContain('max-[560px]:contents');
+        // second line: the saving over the two right columns (under the price and the button), pulled in to the button's edge
+        for (const token of ['max-[560px]:static', 'max-[560px]:col-start-2', 'max-[560px]:col-span-2', 'max-[560px]:row-start-2', 'max-[560px]:justify-self-end', 'max-[560px]:mr-[12px]']) {
+            expect(line, token).toContain(token);
+        }
+        // the date takes the first column of that line only, so the saving has the room; inset 12px to stand under the logo
+        expect(date).toContain('max-[560px]:col-span-1');
+        expect(date).toContain('max-[560px]:col-start-1');
+        expect(date).toContain('max-[560px]:row-start-2');
+        expect(date).toContain('max-[560px]:pl-[12px]');
+        // a row without a saving keeps the date over the whole line, inset the same
+        const plainDate = classes(chewy.split('role="cell"')[3]);
+        expect(plainDate).toContain('max-[560px]:col-span-3');
+        expect(plainDate).toContain('max-[560px]:pl-[12px]');
     });
 
     it('draws each store as a logo with its name as the alt text, and names a store that has no logo in text', () => {
