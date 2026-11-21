@@ -94,14 +94,25 @@ describe('the price table', () => {
 
     it('shows a price only with its date, and the first store follows the chosen variant', () => {
         expect(pickPriceRows(pick({ priceCheckedDate: null }), null, false)[0].price).toBeNull();
-        expect(pickPriceRows(pick({ secondRetailer: second(40.99, null) }), null, false)[1].price).toBeNull();
-        expect(pickPriceRows(pick({ secondRetailer: second(null, '2026-11-21') }), null, false)[1].price).toBeNull();
-
         const variant = { id: 2, label: 'Black', options: [], referencePrice: 52, goUrl: '/go?variant=2' };
         const [first] = pickPriceRows(pick(), variant, true);
 
         expect(first.price).toBe('$52.00');
         expect(first.goUrl).toBe('/go?variant=2');
+    });
+
+    it('has no second row until the second store has both its price and its check date', () => {
+        for (const [price, date] of [[null, null], [40.99, null], [null, '2026-11-21']] as const) {
+            const rows = pickPriceRows(pick({ secondRetailer: second(price, date) }), null, false);
+
+            expect(rows.map((row) => row.slot), `${price} ${date}`).toEqual(['first']);
+        }
+        // an API that predates the price fields (no price, no date at all) is the same as none entered
+        expect(pickPriceRows(pick({ secondRetailer: { retailer: 'petsmart', retailerName: 'PetSmart', goUrl: '/go?retailer=second' } }), null, false)).toHaveLength(1);
+        // and with a variant chooser the row still needs them, then keeps only its button
+        const variant = { id: 1, label: 'Camo', options: [], referencePrice: 45.95, goUrl: '/go?variant=1' };
+        expect(pickPriceRows(pick({ secondRetailer: second(null, null) }), variant, true)).toHaveLength(1);
+        expect(pickPriceRows(pick({ secondRetailer: second(40.99, '2026-11-21') }), variant, true)).toHaveLength(2);
     });
 
     it('gives the second store no price while the reader can choose between variants', () => {

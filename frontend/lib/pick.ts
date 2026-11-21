@@ -288,9 +288,10 @@ function priceRow(slot: PickPriceRow['slot'], name: string, slug: string | null,
 }
 
 /**
- * The rows of the price table: the first store, then the second when the admin set one. A price is only shown with
- * the date it was checked. The first store's price follows the chosen variant; the second store's link is for the one
- * product that was checked, so when the reader can choose between variants it has no price (and nothing to compare).
+ * The rows of the price table: the first store, then the second once the admin entered its price AND the date it was
+ * checked (without both there is no second row at all, button included). A price is only shown with the date it was
+ * checked. The first store's price follows the chosen variant; the second store's link is for the one product that was
+ * checked, so when the reader can choose between variants its row keeps only the button (and nothing is compared).
  */
 export function pickPriceRows(pick: ProductPick, selected: PickVariant | null, hasVariantChoice: boolean): PickPriceRow[] {
     const rows = [
@@ -298,11 +299,11 @@ export function pickPriceRows(pick: ProductPick, selected: PickVariant | null, h
     ];
     const second = pick.secondRetailer;
 
-    if (second) {
+    if (second && second.price != null && second.priceCheckedDate != null) {
         const name = second.retailerName ?? (second.retailer ? humanizeSlug(second.retailer) : 'Retailer');
         const comparable = !hasVariantChoice;
 
-        rows.push(priceRow('second', name, second.retailer, comparable ? (second.price ?? null) : null, comparable ? (second.priceCheckedDate ?? null) : null, second.goUrl, pickSecondCtaLabel(second)));
+        rows.push(priceRow('second', name, second.retailer, comparable ? second.price : null, comparable ? second.priceCheckedDate : null, second.goUrl, pickSecondCtaLabel(second)));
     }
 
     return rows;

@@ -113,6 +113,21 @@ describe('Pick variant selector', () => {
         expect(chooser).toContain('href="https://petposture.com/go/pick/balance-harness?retailer=second"');
     });
 
+    it('shows no PetSmart row at all, with or without a chooser, until its price and date are entered', () => {
+        const unpriced: ProductPick = { ...pick, secondRetailer: { ...withPetSmart.secondRetailer!, price: null, priceCheckedDate: null } };
+
+        for (const variants of [undefined, [camo, black]]) {
+            const html = renderToStaticMarkup(
+                <PickVariantProvider variants={variants}>
+                    <PickBuyBox pick={unpriced} today="2026-11-21" />
+                </PickVariantProvider>,
+            );
+
+            expect(html).not.toContain('PetSmart');
+            expect(html).not.toContain('retailer=second');
+        }
+    });
+
     it('keeps the PetSmart link when another variant is chosen, and changes only the Chewy one', async () => {
         (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
         const container = document.createElement('div');

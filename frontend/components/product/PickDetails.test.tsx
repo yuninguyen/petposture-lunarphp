@@ -114,7 +114,8 @@ describe('PickDetails', () => {
         expect(html).toContain('>Amazon</span>');
     });
 
-    const PETSMART = { retailer: 'petsmart', retailerName: 'PetSmart', goUrl: 'https://petposture.com/go/pick/necoichi-bowl?retailer=second' };
+    // A second store only has a row once its price and the date it was checked are both entered.
+    const PETSMART = { retailer: 'petsmart', retailerName: 'PetSmart', goUrl: 'https://petposture.com/go/pick/necoichi-bowl?retailer=second', price: 40.99, priceCheckedDate: '2026-11-21' };
     const priced = (price: number | null, priceCheckedDate: string | null) => ({ ...PETSMART, price, priceCheckedDate });
     const anchors = (html: string) => [...html.matchAll(/<a [^>]*rel="sponsored noopener"[^>]*>[\s\S]*?<\/a>/g)].map((match) => match[0]);
 
@@ -229,16 +230,20 @@ describe('PickDetails', () => {
         expect(furhaven(64.99, '2026-10-22', 40.99, '2026-11-21')).toContain('Lower price');
     });
 
-    it('gives the PetSmart row only its button until its price and date are entered', () => {
+    it('leaves the PetSmart row out altogether, button included, until its price and date are both entered', () => {
         today('2026-11-21');
 
         for (const [price, date] of [[null, null], [40.99, null], [null, '2026-11-21']] as const) {
             const html = furhaven(64.99, '2026-11-17', price, date);
 
-            expect(anchors(html), `${price} ${date}`).toHaveLength(2);
+            expect(anchors(html), `${price} ${date}`).toHaveLength(1);
+            expect(html).not.toContain('PetSmart');
+            expect(html).not.toContain('retailer=second');
             expect(html).not.toContain('40.99');
-            expect(html).not.toContain('21 Nov 2026');
             expect(html).not.toContain('Lower price');
+            expect(html).not.toContain('FDF2EA');
+            // one store again, so the one-link wording and a single Chewy row
+            expect(html).toContain('if you buy through this link,');
         }
     });
 
@@ -263,6 +268,11 @@ describe('PickDetails', () => {
         expect(html).not.toContain('40.99');
         expect(html).not.toContain('Lower price');
         expect(html).toContain('aria-label="Buy on PetSmart"');
+
+        // with the chooser too, a PetSmart row needs its price and date entered before it appears at all
+        const unpriced = render(product(pickData({ referencePrice: 64.99, priceCheckedDate: '2026-11-17', variants, secondRetailer: priced(null, null) })));
+        expect(unpriced).not.toContain('PetSmart');
+        expect(anchors(unpriced)).toHaveLength(1);
     });
 
     it('lines the columns up: one shared grid with a fixed 104px Buy column, and every row and the tinted block are subgrids of it', () => {
