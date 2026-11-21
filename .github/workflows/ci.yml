@@ -127,9 +127,9 @@ jobs:
       - name: Contract tests (SEO / sitemap / JSON-LD / rich content)
         run: npm run test:node
 
-      - name: Cloudflare cache script tests
+      - name: Cloudflare cache script and deploy config tests
         working-directory: .
-        run: node --test scripts/cloudflare-storefront-rules.test.mjs scripts/verify-storefront-cache.test.mjs
+        run: node --test scripts/cloudflare-storefront-rules.test.mjs scripts/verify-storefront-cache.test.mjs scripts/deploy-config.test.mjs
 
   admin:
     name: Admin (Node 22)

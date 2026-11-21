@@ -110,3 +110,15 @@ fi
 echo "$SHA" > "$CANONICAL/DEPLOYED_COMMIT"
 echo "deployed_release=$RELEASE_DIR" > "$CANONICAL/DEPLOYED_RELEASE"
 echo "Deployed $SHA. Rollback target recorded in $RELEASE_DIR/ROLLBACK_IMAGES."
+
+# Purge the Cloudflare zone so the edge stops serving the previous release's pages (and its API
+# responses; the API GETs are edge-cached too). The frontend image is built with the backend
+# reachable (see frontend/Dockerfile.prod), so what the origin serves now is already complete and
+# one purge is enough. Never fail the deploy over this: the release is live and the edge copies
+# expire on their own (s-maxage=300); it is reported so a failure is not silent.
+purge_output="$(docker exec petposture-backend php artisan tinker --execute='$r = app(App\Services\CloudflareCacheService::class)->purgeAll(); echo !$r->configured ? "not-configured" : ($r->successful ? "ok" : "FAILED");' 2>&1 | tail -1)" || purge_output="exec-failed"
+echo "Cloudflare purge: ${purge_output:-no-output}"
+case "$purge_output" in
+    ok) ;;
+    *) echo "WARNING: Cloudflare was not purged ($purge_output). Pages may show the previous release for up to 5 minutes; purge by hand if that matters." >&2 ;;
+esac

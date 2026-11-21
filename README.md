@@ -341,7 +341,8 @@ entries out of `sitemap.xml`** (the sitemap now lists the guides, the blog and `
    keeps the current line and drops the test files the reverts deleted. Any other conflict stops it.
    (A bare `git revert --no-commit $(git log --grep ...)` does NOT work: it stops on that conflict.)
 2. Check nothing was missed: the script says so, and `grep -r SHOP-HIDDEN frontend` must print nothing.
-3. Deploy, then purge the Cloudflare cache (`app(CloudflareCacheService::class)->purgeAll()` in tinker).
+3. Deploy (`scripts/deploy-vps.sh` purges the Cloudflare cache at its end; if its output says the
+   purge was not done, run `app(CloudflareCacheService::class)->purgeAll()` in tinker).
 4. The shop's **data** is not code: publish the products you want back in the admin (Puppia was set to
    draft), and only reopen once a payment processor is live.
 
@@ -522,9 +523,19 @@ origin marked public. `/blog/<slug>` posts are rendered on demand and are never 
   `respect_origin` caches nothing, so that order is always safe.
 - Post saves purge the whole zone (`purgeAll()`), but Next.js keeps its own ISR copy of `/blog`
   for up to 5 minutes, so a new post can take that long to appear.
-- After a deploy the homepage and `/blog` HTML can show the client-side fallback for about
-  5 minutes: `next build` on the VPS is blocked by Cloudflare (403) when it calls the public API,
-  and ISR regenerates the pages from the internal API afterwards.
+- **After a deploy the homepage and `/blog` HTML must be complete straight away.** Until
+  2026-11-22 they were not: `next build` on the VPS could not read the API (the public API answers
+  403 to the VPS, and the default build network cannot reach the backend), so `/` and `/blog` were
+  baked with no data (the client-side fallback), and stayed that way until ISR rebuilt them
+  (`revalidate = 300`, on the first request after that) **plus** up to 5 more minutes for Cloudflare
+  to drop the copy it cached from the old page (`s-maxage=300`, `stale-while-revalidate=86400`):
+  8-10 minutes in practice, and crawlers saw an empty page. Now the frontend build uses
+  `network: host` and `INTERNAL_API_URL=http://127.0.0.1:8001` (`docker-compose.prod.yml`,
+  `frontend/Dockerfile.prod`) to read the backend that is still running during the build, and
+  `scripts/deploy-vps.sh` purges the Cloudflare zone once the release is live. If the backend is
+  down at build time the pages fall back to the old empty state (the build does not fail); then
+  wait for ISR or purge again. To check a deploy, request `/blog` right after it without a cache
+  buster and look for the post links; `scripts/deploy-config.test.mjs` guards this configuration.
 
 ### Backend container processes (supervisord)
 
@@ -578,9 +589,10 @@ existing `payment_intent.*` webhook marks the order paid. Refunds reuse the Stri
 (BNPL refunds return status `pending`). A declined/abandoned attempt leaves the order
 `awaiting-payment`; the success page then offers "Retry card payment". Logos live in
 `frontend/public/assets/payment/` (Cash App's is a hand-built badge, not the official asset).
-`/api/checkout/payment-methods` is edge-cached by Cloudflare and deploys do not purge it, so after
-changing `STRIPE_ALT_PAYMENT_METHODS` run `App\Services\CloudflareCacheService::purgeAll()` (via
-`php artisan tinker` on the VPS).
+`/api/checkout/payment-methods` is edge-cached by Cloudflare. `scripts/deploy-vps.sh` purges the
+zone at the end of a deploy (it did not before 2026-11-22), so a deploy that recreates the backend
+refreshes it; changing `STRIPE_ALT_PAYMENT_METHODS` without a deploy still needs
+`App\Services\CloudflareCacheService::purgeAll()` (via `php artisan tinker` on the VPS).
 
 **ACH Direct Debit (`ach_debit`)** uses the same session endpoint but a PaymentIntent of type
 `us_bank_account` with `verification_method=instant` (instant bank login only; the micro-deposit
@@ -761,6 +773,13 @@ ssh root@<vps-ip> "cd /opt/petposture && git pull origin main \
 
 Build/recreate only `backend` or only `frontend` if the change is isolated to one side.
 
+The usual deploy is `scripts/deploy-vps.sh` (it builds from a release directory, recreates the
+containers, checks them and purges Cloudflare). Two things it relies on: the frontend image is built
+with `network: host` and `INTERNAL_API_URL=http://127.0.0.1:8001` so `next build` can read the
+backend, which must therefore still be running while the new image builds (so do not stop it
+before the build); and it does not purge when `scripts/deploy-vps.sh` is bypassed, so after a manual
+deploy like the one above purge Cloudflare yourself.
+
 ### `.env` files
 
 `backend/.env` and `frontend/.env` live directly on the VPS at `/opt/petposture/` (not
@@ -905,7 +924,7 @@ npm run lint       # ESLint (no Prettier — see RULES.md)
 npx tsc --noEmit    # TypeScript strict-mode check
 npm test            # vitest: proxy/cache policy, CSP, content fetchers, Button
 npm run test:node   # node:test contract tests: sitemap, SEO/canonical, JSON-LD, rich content
-cd .. && node --test scripts/cloudflare-storefront-rules.test.mjs scripts/verify-storefront-cache.test.mjs
+cd .. && node --test scripts/cloudflare-storefront-rules.test.mjs scripts/verify-storefront-cache.test.mjs scripts/deploy-config.test.mjs
 ```
 
 CI (`.github/workflows/ci.yml`) runs `npm test` in the "Frontend" job (Node 20, same as production)

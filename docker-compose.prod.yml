@@ -39,8 +39,17 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
+      # `next build` prerenders `/` and `/blog` (and a few list pages) from the API. The public API
+      # answers 403 to the VPS (Cloudflare), and the default build network cannot reach the backend
+      # on the host, so those pages used to be baked EMPTY and stayed that way until ISR rebuilt them
+      # (up to ~10 min with Cloudflare in front). Host networking lets the build read the backend that
+      # is still running during the build, so the pages are baked with real data. The backend must
+      # keep listening on 127.0.0.1:8001 (it does: network_mode host). If it is down at build time
+      # the pages fall back to the old empty state; the build does not fail.
+      network: host
       args:
         NEXT_PUBLIC_API_URL: https://api.petposture.com
+        INTERNAL_API_URL: http://127.0.0.1:8001
     image: petposture-frontend:prod
     container_name: petposture-frontend
     restart: unless-stopped

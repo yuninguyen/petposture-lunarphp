@@ -9,8 +9,12 @@ COPY . .
 
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Only the build gets INTERNAL_API_URL (so prerendering reads the backend directly instead of the
+# Cloudflare-blocked public URL). It is set on the command, not with ENV, so it is not baked into
+# the image: the running container gets its own INTERNAL_API_URL from docker-compose.prod.yml.
+ARG INTERNAL_API_URL
 ENV NODE_ENV=production
-RUN npm run build
+RUN INTERNAL_API_URL=$INTERNAL_API_URL npm run build
 
 EXPOSE 3000
 CMD ["node", "server.js"]
