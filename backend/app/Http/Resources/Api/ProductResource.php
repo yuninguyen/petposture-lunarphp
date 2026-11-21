@@ -258,10 +258,16 @@ class ProductResource extends JsonResource
             return null;
         }
 
+        // Like the first store's, the price is only returned together with a valid checked date.
+        $checkedDate = $this->resolveCheckedDate('second_retailer_price_checked_date');
+        $price = $checkedDate === null ? null : $this->numericPrice($this->translateAttribute('second_retailer_price'));
+
         return [
             'retailer' => $second['network']->slug,
             'retailerName' => $second['network']->name,
             'goUrl' => rtrim((string) config('app.frontend_url'), '/')."/go/pick/{$slug}?retailer=second",
+            'price' => $price,
+            'priceCheckedDate' => $price === null ? null : $checkedDate,
         ];
     }
 
@@ -292,9 +298,9 @@ class ProductResource extends JsonResource
             ->all();
     }
 
-    private function resolveCheckedDate(): ?string
+    private function resolveCheckedDate(string $attributeHandle = 'price_checked_date'): ?string
     {
-        $raw = trim((string) $this->translateAttribute('price_checked_date'));
+        $raw = trim((string) $this->translateAttribute($attributeHandle));
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $raw);
 
         // A rolled-over date such as 2026-13-45 formats differently, so it is rejected here.

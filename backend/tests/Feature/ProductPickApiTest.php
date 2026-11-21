@@ -267,11 +267,51 @@ class ProductPickApiTest extends TestCase
         $pick = $this->listed()['pick'];
         $go = rtrim((string) config('app.frontend_url'), '/').'/go/pick/necoichi-bowl';
 
-        $this->assertSame(['retailer' => 'petsmart', 'retailerName' => 'PetSmart', 'goUrl' => "{$go}?retailer=second"], $pick['secondRetailer']);
+        $this->assertSame(
+            ['retailer' => 'petsmart', 'retailerName' => 'PetSmart', 'goUrl' => "{$go}?retailer=second", 'price' => null, 'priceCheckedDate' => null],
+            $pick['secondRetailer'],
+        );
         // the first retailer's button is untouched, and the second link itself is never sent to the browser
         $this->assertSame('chewy', $pick['retailer']);
         $this->assertSame($go, $pick['goUrl']);
         $this->assertStringNotContainsString('petsmart.com', json_encode($pick));
+    }
+
+    public function test_the_second_retailer_price_comes_with_its_own_checked_date_and_leaves_the_first_price_alone(): void
+    {
+        AffiliateNetwork::query()->firstOrCreate(['slug' => 'petsmart'], ['name' => 'PetSmart', 'active' => true]);
+        $this->pick([
+            'second_retailer_slug' => 'petsmart', 'second_retailer_url' => self::PETSMART_URL,
+            'second_retailer_price' => '$40.99', 'second_retailer_price_checked_date' => '2026-11-21',
+        ]);
+
+        $pick = $this->listed()['pick'];
+
+        $this->assertSame(40.99, $pick['secondRetailer']['price']);
+        $this->assertSame('2026-11-21', $pick['secondRetailer']['priceCheckedDate']);
+        $this->assertSame(49.96, $pick['referencePrice']);
+        $this->assertSame('2026-11-14', $pick['priceCheckedDate']);
+    }
+
+    public function test_the_second_retailer_price_is_withheld_without_a_valid_date_or_a_number(): void
+    {
+        AffiliateNetwork::query()->firstOrCreate(['slug' => 'petsmart'], ['name' => 'PetSmart', 'active' => true]);
+        $link = ['second_retailer_slug' => 'petsmart', 'second_retailer_url' => self::PETSMART_URL];
+
+        foreach ([
+            ['second_retailer_price' => '40.99'],
+            ['second_retailer_price' => '40.99', 'second_retailer_price_checked_date' => '2026-13-45'],
+            ['second_retailer_price' => 'cheap', 'second_retailer_price_checked_date' => '2026-11-21'],
+            ['second_retailer_price_checked_date' => '2026-11-21'],
+        ] as $index => $fields) {
+            $this->pick($link + $fields, slug: "priced-{$index}");
+
+            $second = $this->listed("priced-{$index}")['pick']['secondRetailer'];
+
+            $this->assertNotNull($second, 'the button stays, case '.$index);
+            $this->assertNull($second['price'], 'case '.$index);
+            $this->assertNull($second['priceCheckedDate'], 'case '.$index);
+        }
     }
 
     public function test_there_is_no_second_retailer_until_the_slug_names_a_network_and_the_link_is_a_web_address(): void
