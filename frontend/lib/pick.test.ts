@@ -10,6 +10,9 @@ import {
     pickCardPrice,
     pickCtaLabel,
     pickSecondCtaLabel,
+    pickLowerPrice,
+    pickPriceRows,
+    pickVariantLine,
     pickListStats,
     pickPriceParts,
     pickSeoTitle,
@@ -72,6 +75,83 @@ describe('pickSecondCtaLabel', () => {
         expect(pickSecondCtaLabel({ retailer: 'chewy', retailerName: 'Chewy', goUrl: '/go' })).toBe('Buy on Chewy');
         expect(pickSecondCtaLabel({ retailer: 'amazon', retailerName: 'Amazon', goUrl: '/go' })).toBe('Check Price on Amazon');
         expect(pickSecondCtaLabel({ retailer: 'petco', retailerName: 'Petco', goUrl: '/go' })).toBe('View on Petco');
+    });
+});
+
+describe('the price table', () => {
+    const second = (price: number | null, priceCheckedDate: string | null) => ({ retailer: 'petsmart', retailerName: 'PetSmart', goUrl: '/go?retailer=second', price, priceCheckedDate });
+    const now = new Date('2026-11-21T12:00:00Z');
+    const lower = (chewy: number, petsmart: number, chewyDate = '2026-11-21', petsmartDate = '2026-11-21') =>
+        pickLowerPrice(pickPriceRows(pick({ referencePrice: chewy, priceCheckedDate: chewyDate, secondRetailer: second(petsmart, petsmartDate) }), null, false), now);
+
+    it('has one row for one store and two, Chewy first, with a second store', () => {
+        expect(pickPriceRows(pick(), null, false).map((row) => row.slot)).toEqual(['first']);
+        expect(pickPriceRows(pick({ secondRetailer: second(40.99, '2026-11-21') }), null, false).map((row) => [row.slot, row.name, row.price, row.checked])).toEqual([
+            ['first', 'Chewy', '$49.96', '14 Nov 2026'],
+            ['second', 'PetSmart', '$40.99', '21 Nov 2026'],
+        ]);
+    });
+
+    it('shows a price only with its date, and the first store follows the chosen variant', () => {
+        expect(pickPriceRows(pick({ priceCheckedDate: null }), null, false)[0].price).toBeNull();
+        expect(pickPriceRows(pick({ secondRetailer: second(40.99, null) }), null, false)[1].price).toBeNull();
+        expect(pickPriceRows(pick({ secondRetailer: second(null, '2026-11-21') }), null, false)[1].price).toBeNull();
+
+        const variant = { id: 2, label: 'Black', options: [], referencePrice: 52, goUrl: '/go?variant=2' };
+        const [first] = pickPriceRows(pick(), variant, true);
+
+        expect(first.price).toBe('$52.00');
+        expect(first.goUrl).toBe('/go?variant=2');
+    });
+
+    it('gives the second store no price while the reader can choose between variants', () => {
+        const variant = { id: 1, label: 'Camo', options: [], referencePrice: 45.95, goUrl: '/go?variant=1' };
+        const rows = pickPriceRows(pick({ secondRetailer: second(40.99, '2026-11-21') }), variant, true);
+
+        expect(rows[1].price).toBeNull();
+        expect(rows[1].goUrl).toBe('/go?retailer=second');
+        expect(pickLowerPrice(rows, now)).toBeNull();
+    });
+
+    it('names the cheaper store and the saving in dollars and cents', () => {
+        expect(lower(64.99, 40.99)).toEqual({ slot: 'second', save: '$24.00' });
+        expect(lower(20, 25.5)).toEqual({ slot: 'first', save: '$5.50' });
+        expect(lower(30, 29)).toEqual({ slot: 'second', save: '$1.00' });
+    });
+
+    it('stays silent under a dollar and at equal prices', () => {
+        expect(lower(18.4, 18.39)).toBeNull();
+        expect(lower(19.43, 19.43)).toBeNull();
+        expect(lower(29.99, 29.0)).toBeNull();
+    });
+
+    it('counts in cents, so float noise cannot hide a saving of exactly one dollar', () => {
+        // 10.1 + 0.2 is 10.299999999999999, and minus 9.3 is a hair under 1 when subtracted as floats
+        expect(lower(10.1 + 0.2, 9.3)).toEqual({ slot: 'second', save: '$1.00' });
+    });
+
+    it('stays silent when either check is more than 30 days old, and says it when it is exactly 30', () => {
+        expect(lower(64.99, 40.99, '2026-10-01')).toBeNull();
+        expect(lower(64.99, 40.99, '2026-11-21', '2026-10-01')).toBeNull();
+        expect(lower(64.99, 40.99, '2026-10-22')).toEqual({ slot: 'second', save: '$24.00' });
+        expect(lower(64.99, 40.99, '2026-10-21')).toBeNull();
+        expect(lower(64.99, 40.99, '2026-11-22')).toBeNull();
+    });
+
+    it('has no comparison for a single store', () => {
+        expect(pickLowerPrice(pickPriceRows(pick(), null, false), now)).toBeNull();
+    });
+
+    it('reads the product from the colour and size of the quick specs', () => {
+        const specs = (...pairs: [string, string][]) => pick({ quickSpecs: pairs.map(([label, value]) => ({ label, value })) });
+
+        expect(pickVariantLine(specs(['Color', 'Mist Gray'], ['Size', 'Large']))).toBe('Mist Gray · Large');
+        expect(pickVariantLine(specs(['Size', 'Large'], ['Colour', 'Black']))).toBe('Black · Large');
+        expect(pickVariantLine(specs(['Color', 'Black'], ['Size', 'Medium: 24 to 34-in chest']))).toBe('Black · Medium');
+        expect(pickVariantLine(specs(['Size', 'Medium — 3.5 in wide x 3 in high']))).toBe('Medium');
+        expect(pickVariantLine(specs(['Size', '12 to 17-in chest']))).toBe('12 to 17-in chest');
+        expect(pickVariantLine(specs(['Material', 'Nylon']))).toBeNull();
+        expect(pickVariantLine(pick())).toBeNull();
     });
 });
 

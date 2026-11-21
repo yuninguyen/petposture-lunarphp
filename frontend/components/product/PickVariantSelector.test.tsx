@@ -86,4 +86,54 @@ describe('Pick variant selector', () => {
         expect(html).not.toContain('$');
         expect(html).toContain('?variant=1');
     });
+
+    const withPetSmart: ProductPick = {
+        ...pick,
+        secondRetailer: { retailer: 'petsmart', retailerName: 'PetSmart', goUrl: 'https://petposture.com/go/pick/balance-harness?retailer=second', price: 40.99, priceCheckedDate: '2026-11-21' },
+    };
+
+    it('gives the PetSmart row its price and a comparison while there is nothing to choose, and not once there is', async () => {
+        const single = renderToStaticMarkup(
+            <PickVariantProvider>
+                <PickBuyBox pick={withPetSmart} today="2026-11-21" />
+            </PickVariantProvider>,
+        );
+        expect(single).toContain('>$40.99<');
+        expect(single).toContain('Lower price · Save $4.96');
+
+        const chooser = renderToStaticMarkup(
+            <PickVariantProvider variants={[camo, black]}>
+                <PickBuyBox pick={withPetSmart} today="2026-11-21" />
+            </PickVariantProvider>,
+        );
+        expect(chooser).toContain('>$45.95<');
+        expect(chooser).not.toContain('$40.99');
+        expect(chooser).not.toContain('Lower price');
+        // the PetSmart button is still there, for the one product that was checked
+        expect(chooser).toContain('href="https://petposture.com/go/pick/balance-harness?retailer=second"');
+    });
+
+    it('keeps the PetSmart link when another variant is chosen, and changes only the Chewy one', async () => {
+        (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        const root = createRoot(container);
+        await act(async () => root.render(
+            <PickVariantProvider variants={[camo, black]}>
+                <PickBuyBox pick={withPetSmart} today="2026-11-21" />
+            </PickVariantProvider>,
+        ));
+
+        await act(async () => Array.from(container.querySelectorAll('button')).find((button) => button.textContent === 'Black')!.click());
+
+        const links = Array.from(container.querySelectorAll('a')).map((link) => link.getAttribute('href'));
+        expect(links).toEqual([
+            'https://petposture.com/go/pick/balance-harness?variant=2',
+            'https://petposture.com/go/pick/balance-harness?retailer=second',
+        ]);
+        expect(container.textContent).toContain('$49.95');
+        expect(container.textContent).not.toContain('$40.99');
+
+        await act(async () => root.unmount());
+    });
 });

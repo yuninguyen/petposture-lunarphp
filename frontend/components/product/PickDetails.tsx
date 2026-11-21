@@ -95,7 +95,7 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                     </header>
 
                     <div className={`${cardClass} shadow-[0_12px_32px_rgba(34,33,33,0.08)] ${rightColumn}`}>
-                        <PickBuyBox pick={pick} />
+                        <PickBuyBox pick={pick} today={new Date().toISOString().slice(0, 10)} />
                     </div>
 
                     {hasPhoto && (

@@ -1,8 +1,10 @@
-import type { Product, ProductPick, SecondRetailer } from '@/types/shop';
+import type { PickVariant, Product, ProductPick, SecondRetailer } from '@/types/shop';
 
 export type PickProduct = Product & { pick: ProductPick };
 
 export const PICK_DISCLOSURE = 'PetPosture may earn a commission if you buy through this link, at no extra cost to you.';
+/** The same sentence for a price table with two stores, where there is more than one link. */
+export const PICK_DISCLOSURE_MANY = 'PetPosture may earn a commission if you buy through these links, at no extra cost to you.';
 
 /** Every breed some Pick is best for, once each and sorted, for the filter chips of the Picks list. */
 export function pickBreeds(picks: PickProduct[]): string[] {
@@ -87,15 +89,19 @@ export const PICK_PRICE_MAX_AGE_DAYS = 30;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export function isPickPriceFresh(pick: ProductPick, now: Date): boolean {
-    if (!pick.priceCheckedDate) return false;
+function isFreshDate(isoDate: string | null | undefined, now: Date): boolean {
+    if (!isoDate) return false;
 
-    const checked = new Date(`${pick.priceCheckedDate}T00:00:00Z`).getTime();
+    const checked = new Date(`${isoDate}T00:00:00Z`).getTime();
     if (Number.isNaN(checked)) return false;
 
     const ageDays = Math.floor((now.getTime() - checked) / DAY_MS);
 
     return ageDays >= 0 && ageDays <= PICK_PRICE_MAX_AGE_DAYS;
+}
+
+export function isPickPriceFresh(pick: ProductPick, now: Date): boolean {
+    return isFreshDate(pick.priceCheckedDate, now);
 }
 
 /** The price line of a list card: the Pick page's price parts, but only while the check is recent enough. */
@@ -234,4 +240,101 @@ export function pickPriceParts(pick: ProductPick): { label: string; amount: stri
         amount: `$${pick.referencePrice.toFixed(2)}`,
         note: `Checked ${formatPickDate(pick.priceCheckedDate)} — check current price`,
     };
+}
+
+/** The stores whose logo is on the site, cropped to the artwork so the height alone sets the size. Any other store is named in text. */
+const RETAILER_LOGOS: Record<string, { src: string; width: number; height: number }> = {
+    chewy: { src: '/images/retailers/chewy.png', width: 396, height: 118 },
+    petsmart: { src: '/images/retailers/petsmart.png', width: 516, height: 132 },
+};
+
+/** A store has to be this much cheaper (in cents) before the table says so; one cent is not a saving. */
+export const PICK_SAVE_MIN_CENTS = 100;
+
+/** One store of the price table: its name or logo, its own price with the date it was checked, and its tracked button. */
+export interface PickPriceRow {
+    slot: 'first' | 'second';
+    name: string;
+    logo: { src: string; width: number; height: number } | null;
+    /** "$64.99", or null when there is no price (none entered, no date, or a store whose price cannot be compared). */
+    price: string | null;
+    cents: number | null;
+    checkedDate: string | null;
+    /** "17 Nov 2026" */
+    checked: string | null;
+    goUrl: string;
+    /** The visible button text. */
+    buttonLabel: string;
+    /** What the button does, for a screen reader: "Buy on Chewy". */
+    ariaLabel: string;
+}
+
+function priceRow(slot: PickPriceRow['slot'], name: string, slug: string | null, price: number | null, checkedDate: string | null, goUrl: string, ariaLabel: string): PickPriceRow {
+    const shown = price !== null && checkedDate !== null;
+
+    return {
+        slot,
+        name,
+        logo: RETAILER_LOGOS[(slug ?? name).toLowerCase()] ?? null,
+        price: shown ? `$${price.toFixed(2)}` : null,
+        cents: shown ? Math.round(price * 100) : null,
+        checkedDate: shown ? checkedDate : null,
+        checked: shown ? formatPickDate(checkedDate) : null,
+        goUrl,
+        // The button names no store (the logo beside it does); Amazon keeps its "Check Price" wording.
+        buttonLabel: name === 'Amazon' ? 'Check Price' : 'Buy',
+        ariaLabel,
+    };
+}
+
+/**
+ * The rows of the price table: the first store, then the second when the admin set one. A price is only shown with
+ * the date it was checked. The first store's price follows the chosen variant; the second store's link is for the one
+ * product that was checked, so when the reader can choose between variants it has no price (and nothing to compare).
+ */
+export function pickPriceRows(pick: ProductPick, selected: PickVariant | null, hasVariantChoice: boolean): PickPriceRow[] {
+    const rows = [
+        priceRow('first', retailerName(pick) ?? 'Retailer', pick.retailer, selected ? selected.referencePrice : pick.referencePrice, pick.priceCheckedDate, selected?.goUrl ?? pick.goUrl, pickCtaLabel(pick)),
+    ];
+    const second = pick.secondRetailer;
+
+    if (second) {
+        const name = second.retailerName ?? (second.retailer ? humanizeSlug(second.retailer) : 'Retailer');
+        const comparable = !hasVariantChoice;
+
+        rows.push(priceRow('second', name, second.retailer, comparable ? (second.price ?? null) : null, comparable ? (second.priceCheckedDate ?? null) : null, second.goUrl, pickSecondCtaLabel(second)));
+    }
+
+    return rows;
+}
+
+/**
+ * Which store is the cheaper one, and by how much, or null when there is nothing fair to say: one store only, a price
+ * missing, a check older than the 30 days a price may be called current, or a difference under a dollar.
+ */
+export function pickLowerPrice(rows: PickPriceRow[], now: Date): { slot: PickPriceRow['slot']; save: string } | null {
+    const [first, second] = rows;
+
+    if (!first || !second || first.cents === null || second.cents === null) return null;
+    if (!isFreshDate(first.checkedDate, now) || !isFreshDate(second.checkedDate, now)) return null;
+
+    const difference = first.cents - second.cents;
+    if (Math.abs(difference) < PICK_SAVE_MIN_CENTS) return null;
+
+    return { slot: difference > 0 ? 'second' : 'first', save: `$${(Math.abs(difference) / 100).toFixed(2)}` };
+}
+
+/**
+ * The line under "Compare prices" that says which product the prices are for: the colour and size from the quick
+ * specs ("Mist Gray · Large"), the size cut where a longer note starts ("Medium: 24 to 34-in chest"). A Pick with a
+ * variant chooser says it in the chooser instead.
+ */
+export function pickVariantLine(pick: ProductPick): string | null {
+    const spec = (labels: string[]) => {
+        const found = pick.quickSpecs.find((item) => labels.includes(item.label.trim().toLowerCase()));
+
+        return found ? found.value.split(/\s+[—–-]\s+|:/)[0].trim() : '';
+    };
+
+    return [spec(['color', 'colour']), spec(['size'])].filter(Boolean).join(' · ') || null;
 }

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Product, ProductPick } from '../../types/shop';
 import { PickDetails } from './PickDetails';
 
@@ -80,17 +80,19 @@ describe('PickDetails', () => {
         expect(anchors).toHaveLength(1);
         expect(anchors[0]).toContain(`href="${GO_URL}"`);
         expect(anchors[0]).toContain('target="_blank"');
-        expect(anchors[0]).toContain('>Buy on Chewy<');
+        // the logo beside it names the store, so the button only says Buy; a screen reader still hears which store
+        expect(anchors[0]).toContain('aria-label="Buy on Chewy"');
+        expect(anchors[0]).toContain('>Buy<');
         expect(html).not.toContain('noreferrer');
     });
 
-    // The Muse mock's button is 52px high with 14px text; the 56px "lg" size read as too tall next to it.
-    it('makes the button 52px high with 14px text like the design, not the taller lg size', () => {
+    it('makes each Buy button 36px high with small text, not the taller sizes of the single buy box', () => {
         const html = render();
         const anchor = html.match(/<a [^>]*rel="sponsored noopener"[^>]*>/)?.[0] ?? '';
 
-        expect(anchor).toContain('min-h-[52px]');
-        expect(anchor).toContain('text-sm');
+        expect(anchor).toContain('h-9');
+        expect(anchor).toContain('text-[0.78rem]');
+        expect(anchor).not.toContain('min-h-[52px]');
         expect(anchor).not.toContain('h-14');
     });
 
@@ -99,72 +101,244 @@ describe('PickDetails', () => {
         const html = render();
         const anchor = html.match(/<a [^>]*rel="sponsored noopener"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? '';
 
-        expect(anchor).toMatch(/>Buy on Chewy<svg [^>]*aria-hidden="true"[^>]*><path d="M7 17L17 7M9 7h8v8"><\/path><\/svg><\/a>$/);
+        expect(anchor).toMatch(/>Buy<svg [^>]*aria-hidden="true"[^>]*><path d="M7 17L17 7M9 7h8v8"><\/path><\/svg><\/a>$/);
         expect(anchor).not.toContain('→');
     });
 
-    it('names Amazon on the button when the retailer is Amazon', () => {
+    it('keeps the Check Price wording when the retailer is Amazon, and shows its name instead of a logo', () => {
         const html = render(product(pickData({ retailer: 'amazon', retailerName: 'Amazon' })));
 
-        expect(html).toContain('>Check Price on Amazon<');
+        expect(html).toContain('aria-label="Check Price on Amazon"');
+        expect(html).toContain('>Check Price<');
+        expect(html).not.toContain('/images/retailers/');
+        expect(html).toContain('>Amazon</span>');
     });
 
     const PETSMART = { retailer: 'petsmart', retailerName: 'PetSmart', goUrl: 'https://petposture.com/go/pick/necoichi-bowl?retailer=second' };
+    const priced = (price: number | null, priceCheckedDate: string | null) => ({ ...PETSMART, price, priceCheckedDate });
     const anchors = (html: string) => [...html.matchAll(/<a [^>]*rel="sponsored noopener"[^>]*>[\s\S]*?<\/a>/g)].map((match) => match[0]);
 
-    it('adds a "Buy on PetSmart" button right under the Chewy one, before the affiliate disclosure', () => {
+    // The table says "recent" from today's date, so the date is fixed here (the page passes the real one).
+    const today = (iso: string) => vi.useFakeTimers({ toFake: ['Date'], now: new Date(`${iso}T12:00:00Z`) });
+    afterEach(() => vi.useRealTimers());
+
+    const furhaven = (chewyPrice: number, chewyDate: string, petsmartPrice: number | null, petsmartDate: string | null) =>
+        render(product(pickData({ referencePrice: chewyPrice, priceCheckedDate: chewyDate, secondRetailer: priced(petsmartPrice, petsmartDate) })));
+
+    it('adds a PetSmart row right under the Chewy one, before the affiliate disclosure', () => {
         const html = render(product(pickData({ secondRetailer: PETSMART })));
         const [chewy, petsmart] = anchors(html);
 
         expect(anchors(html)).toHaveLength(2);
-        expect(chewy).toContain('>Buy on Chewy<');
-        expect(petsmart).toContain('>Buy on PetSmart<');
-        expect(html.indexOf('>Buy on Chewy<')).toBeLessThan(html.indexOf('>Buy on PetSmart<'));
-        expect(html.indexOf('>Buy on PetSmart<')).toBeLessThan(html.indexOf('PetPosture may earn a commission'));
+        expect(chewy).toContain('aria-label="Buy on Chewy"');
+        expect(petsmart).toContain('aria-label="Buy on PetSmart"');
+        expect(html.indexOf('aria-label="Buy on Chewy"')).toBeLessThan(html.indexOf('aria-label="Buy on PetSmart"'));
+        expect(html.indexOf('aria-label="Buy on PetSmart"')).toBeLessThan(html.indexOf('PetPosture may earn a commission'));
         // it goes through /go like the first button, opens a new tab and carries the same rel
         expect(petsmart).toContain('href="https://petposture.com/go/pick/necoichi-bowl?retailer=second"');
         expect(petsmart).toContain('target="_blank"');
         expect(petsmart).toContain('rel="sponsored noopener"');
     });
 
-    it('draws the PetSmart button as the secondary (outline) button, the same size and shape as the Chewy one', () => {
+    it('draws the PetSmart button as the outline button and the Chewy one as the solid orange one, the same size', () => {
         const [chewy, petsmart] = anchors(render(product(pickData({ secondRetailer: PETSMART }))));
         const classes = (anchor: string) => anchor.match(/class="([^"]*)"/)![1];
 
         expect(classes(petsmart)).toContain('border border-primary bg-white');
         expect(classes(petsmart)).not.toContain('bg-secondary');
-        expect(classes(petsmart)).toContain('min-h-[52px]');
-        expect(classes(petsmart)).toContain('w-full');
+        expect(classes(petsmart)).toContain('h-9');
         expect(classes(petsmart)).toContain('uppercase');
         expect(classes(chewy)).toContain('bg-secondary');
-        expect(classes(chewy)).toContain('min-h-[52px]');
+        expect(classes(chewy)).toContain('h-9');
     });
 
-    it('shows no second button, and nothing about PetSmart, when there is no second retailer', () => {
+    it('shows one Chewy row, no PetSmart and no second link when there is no second retailer', () => {
         for (const secondRetailer of [undefined, null]) {
             const html = render(product(pickData({ secondRetailer })));
 
             expect(anchors(html)).toHaveLength(1);
             expect(html).not.toContain('PetSmart');
             expect(html).not.toContain('retailer=second');
+            expect(html).not.toContain('Lower price');
+            expect(html).not.toContain('FDF2EA');
         }
     });
 
-    it('does not show a PetSmart price: the price card is the same with or without the second button', () => {
-        const prices = (html: string) => html.match(/\$\d+(?:\.\d+)?/g);
+    it('shows both prices, each with its own check date, the Chewy one first', () => {
+        today('2026-11-21');
+        const html = furhaven(64.99, '2026-11-17', 40.99, '2026-11-21');
 
-        expect(prices(render(product(pickData({ secondRetailer: PETSMART }))))).toEqual(prices(render()));
+        expect(html).toContain('>$64.99<');
+        expect(html).toContain('17 Nov 2026');
+        expect(html).toContain('>$40.99<');
+        expect(html).toContain('21 Nov 2026');
+        expect(html.indexOf('$64.99')).toBeLessThan(html.indexOf('$40.99'));
+        expect(html).toContain('Compare prices');
+    });
+
+    it('marks the cheaper store with a peach block and a "Lower price" line under its row', () => {
+        today('2026-11-21');
+        const html = furhaven(64.99, '2026-11-17', 40.99, '2026-11-21');
+
+        expect(html).toContain('Lower price · Save $24.00');
+        expect(html.match(/Lower price/g)).toHaveLength(1);
+        expect(html).toContain('bg-[#FDF2EA]');
+        // the block wraps the PetSmart row and the line: the price comes first, the line right after the button
+        expect(html.indexOf('>$40.99<')).toBeLessThan(html.indexOf('Lower price'));
+        expect(html.indexOf('aria-label="Buy on PetSmart"')).toBeLessThan(html.indexOf('Lower price'));
+        expect(html.indexOf('Lower price')).toBeLessThan(html.indexOf('PetPosture may earn a commission'));
+    });
+
+    it('marks Chewy instead when Chewy is the cheaper one', () => {
+        today('2026-11-21');
+        const html = furhaven(20, '2026-11-20', 25.5, '2026-11-21');
+
+        expect(html).toContain('Lower price · Save $5.50');
+        expect(html.indexOf('Lower price')).toBeLessThan(html.indexOf('aria-label="Buy on PetSmart"'));
+        expect(html.indexOf('aria-label="Buy on Chewy"')).toBeLessThan(html.indexOf('Lower price'));
+    });
+
+    it('says nothing about a saving of a cent, of 99 cents, or of nothing at all, and tints no row', () => {
+        today('2026-11-21');
+
+        for (const [chewy, petsmart] of [[18.4, 18.39], [19.43, 19.43], [29.99, 29.0]] as const) {
+            const html = furhaven(chewy, '2026-11-21', petsmart, '2026-11-21');
+
+            expect(html, `${chewy} vs ${petsmart}`).not.toContain('Lower price');
+            expect(html, `${chewy} vs ${petsmart}`).not.toContain('FDF2EA');
+            expect(html).toContain(`>$${petsmart.toFixed(2)}<`);
+        }
+    });
+
+    it('does say it from exactly one dollar', () => {
+        today('2026-11-21');
+
+        expect(furhaven(30, '2026-11-21', 29, '2026-11-21')).toContain('Lower price · Save $1.00');
+    });
+
+    it('keeps both prices but drops the line when either check is more than 30 days old', () => {
+        today('2026-11-21');
+
+        for (const html of [furhaven(64.99, '2026-10-01', 40.99, '2026-11-21'), furhaven(64.99, '2026-11-21', 40.99, '2026-10-01')]) {
+            expect(html).toContain('>$64.99<');
+            expect(html).toContain('>$40.99<');
+            expect(html).not.toContain('Lower price');
+            expect(html).not.toContain('FDF2EA');
+        }
+        // 30 days old is still recent
+        expect(furhaven(64.99, '2026-10-22', 40.99, '2026-11-21')).toContain('Lower price');
+    });
+
+    it('gives the PetSmart row only its button until its price and date are entered', () => {
+        today('2026-11-21');
+
+        for (const [price, date] of [[null, null], [40.99, null], [null, '2026-11-21']] as const) {
+            const html = furhaven(64.99, '2026-11-17', price, date);
+
+            expect(anchors(html), `${price} ${date}`).toHaveLength(2);
+            expect(html).not.toContain('40.99');
+            expect(html).not.toContain('21 Nov 2026');
+            expect(html).not.toContain('Lower price');
+        }
+    });
+
+    it('has no PetSmart price while the Chewy price has no date, and no comparison', () => {
+        today('2026-11-21');
+        const html = render(product(pickData({ referencePrice: null, priceCheckedDate: null, secondRetailer: priced(40.99, '2026-11-21') })));
+
+        expect(html).not.toContain('Lower price');
+        expect(html).not.toContain('64.99');
+        expect(html).toContain('>$40.99<');
+    });
+
+    it('does not compare prices once the reader can choose between variants, and gives PetSmart no price then', () => {
+        today('2026-11-21');
+        const variants = [
+            { id: 1, label: 'Mist Gray', options: [{ name: 'Colour', value: 'Mist Gray' }], referencePrice: 64.99, goUrl: `${GO_URL}?variant=1` },
+            { id: 2, label: 'Black', options: [{ name: 'Colour', value: 'Black' }], referencePrice: 64.99, goUrl: `${GO_URL}?variant=2` },
+        ];
+        const html = render(product(pickData({ referencePrice: 64.99, priceCheckedDate: '2026-11-17', variants, secondRetailer: priced(40.99, '2026-11-21') })));
+
+        expect(html).toContain('>$64.99<');
+        expect(html).not.toContain('40.99');
+        expect(html).not.toContain('Lower price');
+        expect(html).toContain('aria-label="Buy on PetSmart"');
+    });
+
+    it('lines the columns up: one shared grid with a fixed 104px Buy column, and every row and the tinted block are subgrids of it', () => {
+        today('2026-11-21');
+        const html = furhaven(64.99, '2026-11-17', 40.99, '2026-11-21');
+
+        expect(html).toContain('grid-cols-[minmax(0,1.05fr)_minmax(0,0.72fr)_minmax(0,1.05fr)_104px]');
+        expect(html).not.toContain('auto_minmax');
+        // the header and both rows and the tinted block span all the columns of the table
+        const rows = html.match(/role="row" class="[^"]*"/g) ?? [];
+        expect(rows).toHaveLength(3);
+        for (const row of rows) {
+            expect(row).toContain('grid-cols-subgrid');
+            expect(row).toContain('col-span-full');
+        }
+        expect(html).toMatch(/class="col-span-full grid grid-cols-subgrid [^"]*bg-\[#FDF2EA\]"/);
+        // four cells in a row, so a missing price leaves its column empty instead of moving the button
+        expect(html.match(/role="cell"/g)).toHaveLength(8);
+    });
+
+    it('keeps the "Lower price" line out of every column: it is a full-width line of its own inside the tinted block', () => {
+        today('2026-11-21');
+        const html = furhaven(64.99, '2026-11-17', 40.99, '2026-11-21');
+        const block = html.match(/<div class="col-span-full grid grid-cols-subgrid [^"]*bg-\[#FDF2EA\]">([\s\S]*?)<\/div><\/div><\/div>/)?.[1] ?? '';
+
+        expect(block).toContain('<div role="row"');
+        expect(block).toMatch(/<div class="col-span-full px-\[2px\] pb-\[14px\]"><span [^>]*>Lower price/);
+        expect(block.match(/role="cell"/g)).toHaveLength(4);
+    });
+
+    it('stacks a row on a phone: header hidden, logo, price and button on the first line, the check date under them', () => {
+        today('2026-11-21');
+        const html = furhaven(64.99, '2026-11-17', 40.99, '2026-11-21');
+
+        expect(html).toContain('max-[560px]:hidden');
+        expect(html).toContain('max-[560px]:grid-cols-[minmax(0,1fr)_auto_auto]');
+        expect(html).toContain('max-[560px]:row-start-2');
+        expect(html).toContain('max-[560px]:min-w-[72px]');
+        expect(html).toContain('>Checked </span>17 Nov 2026');
+    });
+
+    it('draws each store as a logo with its name as the alt text, and names a store that has no logo in text', () => {
+        const html = render(product(pickData({ secondRetailer: PETSMART })));
+
+        expect(html).toContain('<img src="/images/retailers/chewy.png" alt="Chewy"');
+        expect(html).toContain('<img src="/images/retailers/petsmart.png" alt="PetSmart"');
+        expect(html).toContain('h-[18px]');
+        expect(html).toContain('min-[561px]:h-[22px]');
+        expect(render(product(pickData({ retailer: 'zooplus', retailerName: 'Zooplus' })))).toContain('>Zooplus</span>');
+    });
+
+    it('says which product the prices are for, from the colour and size of the quick specs', () => {
+        const line = (quickSpecs: { label: string; value: string }[]) => render(product(pickData({ quickSpecs })));
+
+        expect(line([{ label: 'Color', value: 'Mist Gray' }, { label: 'Size', value: 'Large' }])).toContain('Mist Gray · Large');
+        expect(line([{ label: 'Colour', value: 'Black' }, { label: 'Size', value: 'Medium: 24 to 34-in chest' }])).toContain('Black · Medium<');
+        expect(line([{ label: 'Size', value: 'Medium — 3.5 in wide x 3 in high' }])).toContain('>Medium<');
+        expect(line([{ label: 'Material', value: 'Porcelain' }])).not.toMatch(/mt-1 text-\[0\.85rem\]/);
+    });
+
+    it('says "this link" with one store and "these links" with two', () => {
+        expect(render()).toContain('if you buy through this link,');
+        expect(render(product(pickData({ secondRetailer: PETSMART })))).toContain('if you buy through these links,');
     });
 
     it('keeps the buy box right after the title in the page source, before "Our take" and the photo', () => {
         const html = render();
         const title = html.indexOf('<h1');
-        const button = html.indexOf('>Buy on Chewy<');
+        const button = html.indexOf('aria-label="Buy on Chewy"');
 
         expect(title).toBeGreaterThan(-1);
         expect(button).toBeGreaterThan(title);
         expect(button).toBeLessThan(html.indexOf('Our take'));
-        expect(button).toBeLessThan(html.indexOf('<img'));
+        // the Chewy logo inside the buy box is an image too, so the photo is found by its own alt text
+        expect(html.indexOf('alt="Bowl from above"')).toBeGreaterThan(-1);
+        expect(button).toBeLessThan(html.indexOf('alt="Bowl from above"'));
     });
 
     it('draws the photo right under the title on a phone and leaves the two desktop columns as they were', () => {
@@ -189,16 +363,20 @@ describe('PickDetails', () => {
         expect(order.every((position) => position > -1)).toBe(true);
         expect(order).toEqual([...order].sort((a, b) => a - b));
         // the buy box is above all of them
-        expect(html.indexOf('>Buy on Chewy<')).toBeLessThan(order[0]);
+        expect(html.indexOf('aria-label="Buy on Chewy"')).toBeGreaterThan(-1);
+        expect(html.indexOf('aria-label="Buy on Chewy"')).toBeLessThan(order[0]);
     });
 
     it('shows the price as the retailer price with the date it was checked, never the site price', () => {
         const html = render();
 
-        expect(html).toContain('Price at Chewy');
-        expect(html).toContain('$49.96');
-        expect(html).toContain('Checked 14 Nov 2026 — check current price');
+        expect(html).toContain('Compare prices');
+        expect(html).toContain('>$49.96<');
+        expect(html).toContain('14 Nov 2026');
         expect(html).not.toContain('22.71');
+        // the old single-store card is gone
+        expect(html).not.toContain('Price at Chewy');
+        expect(html).not.toContain('check current price');
     });
 
     it('shows no price at all without a checked date', () => {
@@ -210,14 +388,14 @@ describe('PickDetails', () => {
         expect(html).not.toContain('Checked');
     });
 
-    it('puts the live affiliate disclosure right after the button', () => {
+    it('puts the live affiliate disclosure right after the price table', () => {
         const html = render();
         const disclosure = 'PetPosture may earn a commission if you buy through this link, at no extra cost to you.';
-        const button = html.indexOf('>Buy on Chewy<');
+        const buttonEnd = html.indexOf('</a>', html.indexOf('aria-label="Buy on Chewy"'));
 
         expect(html).toContain(disclosure);
-        expect(html.indexOf(disclosure) - button).toBeGreaterThan(0);
-        expect(html.indexOf(disclosure) - button).toBeLessThan(400);
+        expect(html.indexOf(disclosure) - buttonEnd).toBeGreaterThan(0);
+        expect(html.indexOf(disclosure) - buttonEnd).toBeLessThan(200);
     });
 
     it('names the date in the eyebrow when there is one, and only "PetPosture Pick" when there is not', () => {
@@ -466,9 +644,11 @@ describe('PickDetails', () => {
         const withoutPhoto = product(pickData(), { image: null, images: [] } as unknown as Partial<Product>);
         const html = render(withoutPhoto);
 
-        expect(html).not.toContain('<img');
+        // no product photo; the only image left is the Chewy logo in the price table
+        expect(html).not.toContain('/storage/bowl.png');
+        expect(html.match(/<img /g)).toHaveLength(1);
         expect(html).not.toContain('src=""');
-        expect(html).toContain('>Buy on Chewy<');
+        expect(html).toContain('aria-label="Buy on Chewy"');
     });
 
     it('shows every related Pick as a card with its photo and name, not only the "All … Picks" link', () => {

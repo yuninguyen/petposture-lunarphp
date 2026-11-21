@@ -89,6 +89,9 @@ export interface SecondRetailer {
     retailer: string | null;
     retailerName: string | null;
     goUrl: string;
+    /** This store's own price and the date it was checked; only both together, and null until the admin entered them. */
+    price?: number | null;
+    priceCheckedDate?: string | null;
 }
 
 export interface ProductPick {
