@@ -293,6 +293,14 @@ describe('PickDetails', () => {
         expect(html.match(/role="cell"/g)).toHaveLength(8);
     });
 
+    it('draws the tinted block with square corners, flush with the table', () => {
+        today('2026-11-21');
+        const block = furhaven(64.99, '2026-11-17', 40.99, '2026-11-21').match(/<div class="([^"]*bg-\[#FDF2EA\])"/)?.[1] ?? '';
+
+        expect(block).toContain('bg-[#FDF2EA]');
+        expect(block).not.toContain('rounded');
+    });
+
     it('keeps the "Lower price" line out of every column: it is a full-width line of its own inside the tinted block', () => {
         today('2026-11-21');
         const html = furhaven(64.99, '2026-11-17', 40.99, '2026-11-21');

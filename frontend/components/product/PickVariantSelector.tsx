@@ -146,7 +146,7 @@ export function PickBuyBox({ pick, today }: { pick: ProductPick; today?: string 
                 )}
                 {rows.map((row) =>
                     lower?.slot === row.slot ? (
-                        <div key={row.slot} className="col-span-full grid grid-cols-subgrid gap-x-3 rounded-[10px] bg-[#FDF2EA]">
+                        <div key={row.slot} className="col-span-full grid grid-cols-subgrid gap-x-3 bg-[#FDF2EA]">
                             <PriceRow row={row} flush />
                             <div className="col-span-full px-[2px] pb-[14px]">
                                 <span className="inline-block max-w-full rounded-full bg-[#e7f3ec] px-[9px] py-[3px] text-[0.68rem] font-extrabold uppercase tracking-[0.08em] text-[#2e7d4f]">
