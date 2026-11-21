@@ -105,13 +105,98 @@ describe('PickDetails', () => {
         expect(anchor).not.toContain('→');
     });
 
-    it('keeps the Check Price wording when the retailer is Amazon, and shows its name instead of a logo', () => {
-        const html = render(product(pickData({ retailer: 'amazon', retailerName: 'Amazon' })));
+    // A Pick sold only on Amazon: the main retailer is Amazon, so the first row is its row, not Chewy's.
+    const AMAZON_GO = 'https://petposture.com/go/pick/rabbitgoo-harness';
+    const amazonPick = (overrides: Partial<ProductPick> = {}) =>
+        pickData({ retailer: 'amazon', retailerName: 'Amazon', goUrl: AMAZON_GO, referencePrice: 39.99, priceCheckedDate: '2026-11-21', ...overrides });
 
-        expect(html).toContain('aria-label="Check Price on Amazon"');
-        expect(html).toContain('>Check Price<');
-        expect(html).not.toContain('/images/retailers/');
-        expect(html).toContain('>Amazon</span>');
+    it('an Amazon-only Pick has one row: the Amazon logo, its price and check date, and a Buy button through /go', () => {
+        const html = render(product(amazonPick()));
+        const [button] = anchors(html);
+
+        // the row is Amazon's: its logo, never Chewy's, and the text fallback is not used
+        expect(html).toContain('<img src="/images/retailers/amazon.png" alt="Amazon"');
+        expect(html).not.toContain('/images/retailers/chewy.png');
+        expect(html).not.toContain('>Amazon</span>');
+        expect(html).not.toContain('Chewy');
+        // a table of one row (the header and that row), with the price and the date the admin typed
+        expect(html.match(/role="row"/g)).toHaveLength(2);
+        expect(html).toContain('>$39.99<');
+        expect(html).toContain('21 Nov 2026');
+        // the same short "Buy" as every store (a longer word would not fit the 104px column); the link is the plain
+        // /go one, never the second-retailer one
+        expect(anchors(html)).toHaveLength(1);
+        expect(button).toContain('aria-label="Buy on Amazon"');
+        expect(button).toContain('>Buy<');
+        expect(html).not.toContain('Check Price');
+        expect(button).toContain(`href="${AMAZON_GO}"`);
+        expect(button).toContain('rel="sponsored noopener"');
+        expect(button).toContain('target="_blank"');
+        expect(html).not.toContain('retailer=second');
+        expect(html).not.toContain('PetSmart');
+        expect(html).not.toContain('Lower price');
+        expect(html).toContain('if you buy through this link,');
+    });
+
+    it('draws the Amazon logo the same size as the other two, and the Chewy row of a Chewy Pick is unchanged', () => {
+        const amazon = render(product(amazonPick()));
+        const chewy = render();
+
+        for (const html of [amazon, chewy]) {
+            expect(html).toContain('h-[18px]');
+            expect(html).toContain('min-[561px]:h-[22px]');
+            expect(html).toContain('object-contain object-left');
+        }
+        expect(amazon).toContain('width="398" height="120"');
+        expect(chewy).toContain('<img src="/images/retailers/chewy.png" alt="Chewy"');
+        expect(chewy).not.toContain('amazon');
+    });
+
+    it('lets Amazon be the second store of a Chewy Pick: both logos, the second-retailer link, and the Lower price line', () => {
+        today('2026-11-21');
+        const html = render(product(pickData({
+            referencePrice: 64.99,
+            priceCheckedDate: '2026-11-17',
+            secondRetailer: { retailer: 'amazon', retailerName: 'Amazon', goUrl: `${GO_URL}?retailer=second`, price: 40.99, priceCheckedDate: '2026-11-21' },
+        })));
+        const [chewy, amazon] = anchors(html);
+
+        expect(html).toContain('<img src="/images/retailers/chewy.png" alt="Chewy"');
+        expect(html).toContain('<img src="/images/retailers/amazon.png" alt="Amazon"');
+        expect(chewy).toContain('aria-label="Buy on Chewy"');
+        expect(amazon).toContain('aria-label="Buy on Amazon"');
+        expect(amazon).toContain('>Buy<');
+        expect(amazon).toContain(`href="${GO_URL}?retailer=second"`);
+        expect(html).toContain('Lower price · Save $24.00');
+        expect(html).toContain('if you buy through these links,');
+        // the line belongs to the Amazon row: after the Amazon price, before the Amazon button
+        expect(html.indexOf('>$40.99<')).toBeLessThan(html.indexOf('Lower price'));
+        expect(html.indexOf('Lower price')).toBeLessThan(html.indexOf('aria-label="Buy on Amazon"'));
+    });
+
+    it('lets Amazon be the main store next to PetSmart: Amazon first, PetSmart second, compared the same way', () => {
+        today('2026-11-21');
+        const html = render(product(amazonPick({
+            referencePrice: 59.99,
+            priceCheckedDate: '2026-11-20',
+            secondRetailer: { retailer: 'petsmart', retailerName: 'PetSmart', goUrl: `${AMAZON_GO}?retailer=second`, price: 40.99, priceCheckedDate: '2026-11-21' },
+        })));
+
+        expect(html.indexOf('alt="Amazon"')).toBeLessThan(html.indexOf('alt="PetSmart"'));
+        expect(html).toContain('Lower price · Save $19.00');
+        // PetSmart is the cheaper one, so the line is in its row, after the Amazon button
+        expect(html.indexOf('aria-label="Buy on Amazon"')).toBeLessThan(html.indexOf('Lower price'));
+        expect(html.indexOf('Lower price')).toBeLessThan(html.indexOf('aria-label="Buy on PetSmart"'));
+    });
+
+    it('shows an Amazon-only Pick without a price as one row with just the button, and without a date as no price at all', () => {
+        for (const overrides of [{ referencePrice: null, priceCheckedDate: null }, { referencePrice: 39.99, priceCheckedDate: null }]) {
+            const html = render(product(amazonPick(overrides)));
+
+            expect(html).not.toContain('$');
+            expect(anchors(html)).toHaveLength(1);
+            expect(html).toContain('<img src="/images/retailers/amazon.png" alt="Amazon"');
+        }
     });
 
     // A second store only has a row once its price and the date it was checked are both entered.

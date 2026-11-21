@@ -48,8 +48,8 @@ describe('pickCtaLabel', () => {
         expect(pickCtaLabel(pick())).toBe('Buy on Chewy');
     });
 
-    it('says "Check Price on Amazon" for Amazon', () => {
-        expect(pickCtaLabel(pick({ retailer: 'amazon', retailerName: 'Amazon' }))).toBe('Check Price on Amazon');
+    it('says "Buy on Amazon" for Amazon', () => {
+        expect(pickCtaLabel(pick({ retailer: 'amazon', retailerName: 'Amazon' }))).toBe('Buy on Amazon');
     });
 
     it('names any other retailer from its network name', () => {
@@ -73,7 +73,7 @@ describe('pickSecondCtaLabel', () => {
     it('names the second store from its network, the same way as the first button does', () => {
         expect(pickSecondCtaLabel({ retailer: 'petsmart', retailerName: 'PetSmart', goUrl: 'https://petposture.com/go/pick/x?retailer=second' })).toBe('Buy on PetSmart');
         expect(pickSecondCtaLabel({ retailer: 'chewy', retailerName: 'Chewy', goUrl: '/go' })).toBe('Buy on Chewy');
-        expect(pickSecondCtaLabel({ retailer: 'amazon', retailerName: 'Amazon', goUrl: '/go' })).toBe('Check Price on Amazon');
+        expect(pickSecondCtaLabel({ retailer: 'amazon', retailerName: 'Amazon', goUrl: '/go' })).toBe('Buy on Amazon');
         expect(pickSecondCtaLabel({ retailer: 'petco', retailerName: 'Petco', goUrl: '/go' })).toBe('View on Petco');
     });
 });
@@ -90,6 +90,48 @@ describe('the price table', () => {
             ['first', 'Chewy', '$49.96', '14 Nov 2026'],
             ['second', 'PetSmart', '$40.99', '21 Nov 2026'],
         ]);
+    });
+
+    it('names the main store from the Pick\'s own retailer, not Chewy: an Amazon Pick has an Amazon first row with its logo', () => {
+        const [first, ...rest] = pickPriceRows(pick({ retailer: 'amazon', retailerName: 'Amazon', goUrl: '/go/pick/rabbitgoo', referencePrice: 39.99, priceCheckedDate: '2026-11-21' }), null, false);
+
+        expect(rest).toEqual([]);
+        expect(first).toMatchObject({
+            slot: 'first',
+            name: 'Amazon',
+            logo: { src: '/images/retailers/amazon.png', width: 398, height: 120 },
+            price: '$39.99',
+            checked: '21 Nov 2026',
+            goUrl: '/go/pick/rabbitgoo',
+            buttonLabel: 'Buy',
+            ariaLabel: 'Buy on Amazon',
+        });
+        // a Chewy Pick keeps the Chewy logo and the Buy wording
+        expect(pickPriceRows(pick(), null, false)[0]).toMatchObject({ name: 'Chewy', logo: { src: '/images/retailers/chewy.png' }, buttonLabel: 'Buy' });
+    });
+
+    it('gives every store the same short "Buy" on its button: a longer word spills out of the fixed 104px column', () => {
+        for (const retailer of ['chewy', 'petsmart', 'amazon', 'walmart', 'petco', 'pet-supplies-plus']) {
+            const [row] = pickPriceRows(pick({ retailer, retailerName: null }), null, false);
+
+            expect(row.buttonLabel, retailer).toBe('Buy');
+            expect(row.buttonLabel.length).toBeLessThanOrEqual(3);
+        }
+    });
+
+    it('finds each store\'s logo by its slug whatever the case, and names a store with no logo in text', () => {
+        expect(pickPriceRows(pick({ retailer: 'Amazon', retailerName: null }), null, false)[0]).toMatchObject({ name: 'Amazon', logo: { src: '/images/retailers/amazon.png' } });
+        expect(pickPriceRows(pick({ retailer: 'zooplus', retailerName: 'Zooplus' }), null, false)[0]).toMatchObject({ name: 'Zooplus', logo: null });
+    });
+
+    it('takes Amazon as the second store too, with its own price and the same short Buy button', () => {
+        const rows = pickPriceRows(pick({ secondRetailer: { retailer: 'amazon', retailerName: 'Amazon', goUrl: '/go?retailer=second', price: 40.99, priceCheckedDate: '2026-11-21' } }), null, false);
+
+        expect(rows.map((row) => [row.slot, row.name, row.price, row.buttonLabel])).toEqual([
+            ['first', 'Chewy', '$49.96', 'Buy'],
+            ['second', 'Amazon', '$40.99', 'Buy'],
+        ]);
+        expect(rows[1].logo?.src).toBe('/images/retailers/amazon.png');
     });
 
     it('shows a price only with its date, and the first store follows the chosen variant', () => {

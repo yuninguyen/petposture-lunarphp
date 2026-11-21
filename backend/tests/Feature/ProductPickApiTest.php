@@ -277,6 +277,46 @@ class ProductPickApiTest extends TestCase
         $this->assertStringNotContainsString('petsmart.com', json_encode($pick));
     }
 
+    private const AMAZON_URL = 'https://www.amazon.com/rabbitgoo-example/dp/B0EXAMPLE01';
+
+    public function test_a_pick_sold_only_on_amazon_exposes_amazon_as_its_retailer_with_the_plain_go_link_and_no_second_retailer(): void
+    {
+        AffiliateNetwork::query()->firstOrCreate(['slug' => 'amazon'], ['name' => 'Amazon', 'active' => true]);
+        $this->pick([
+            'external_url' => self::AMAZON_URL, 'affiliate_network_slug' => 'amazon',
+            'reference_price' => '39.99', 'price_checked_date' => '2026-11-21',
+        ], slug: 'rabbitgoo-harness');
+
+        $pick = $this->listed('rabbitgoo-harness')['pick'];
+
+        $this->assertSame('amazon', $pick['retailer']);
+        $this->assertSame('Amazon', $pick['retailerName']);
+        $this->assertSame(rtrim((string) config('app.frontend_url'), '/').'/go/pick/rabbitgoo-harness', $pick['goUrl']);
+        $this->assertSame(39.99, $pick['referencePrice']);
+        $this->assertSame('2026-11-21', $pick['priceCheckedDate']);
+        $this->assertNull($pick['secondRetailer']);
+        // the Amazon link itself is never sent to the browser, so every click goes through /go and is counted
+        $this->assertStringNotContainsString('amazon.com', json_encode($pick));
+    }
+
+    public function test_amazon_can_be_the_second_retailer_with_its_own_price_and_date(): void
+    {
+        AffiliateNetwork::query()->firstOrCreate(['slug' => 'amazon'], ['name' => 'Amazon', 'active' => true]);
+        $this->pick([
+            'second_retailer_slug' => 'amazon', 'second_retailer_url' => self::AMAZON_URL,
+            'second_retailer_price' => '40.99', 'second_retailer_price_checked_date' => '2026-11-21',
+        ]);
+
+        $second = $this->listed()['pick']['secondRetailer'];
+
+        $this->assertSame('amazon', $second['retailer']);
+        $this->assertSame('Amazon', $second['retailerName']);
+        $this->assertSame(40.99, $second['price']);
+        $this->assertSame('2026-11-21', $second['priceCheckedDate']);
+        $this->assertStringContainsString('?retailer=second', $second['goUrl']);
+        $this->assertStringNotContainsString('amazon.com', json_encode($second));
+    }
+
     public function test_the_second_retailer_price_comes_with_its_own_checked_date_and_leaves_the_first_price_alone(): void
     {
         AffiliateNetwork::query()->firstOrCreate(['slug' => 'petsmart'], ['name' => 'PetSmart', 'active' => true]);

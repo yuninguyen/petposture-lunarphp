@@ -164,6 +164,42 @@ class PickClickRedirectTest extends TestCase
         $this->assertDatabaseCount('affiliate_clicks', 1);
     }
 
+    private const AMAZON_URL = 'https://www.amazon.com/rabbitgoo-example/dp/B0EXAMPLE01';
+
+    public function test_an_amazon_pick_is_recorded_against_the_amazon_network_and_redirects_to_the_amazon_page(): void
+    {
+        $chewy = $this->network('chewy');
+        $amazon = $this->network('amazon');
+        $product = $this->pick(['external_url' => self::AMAZON_URL, 'affiliate_network_slug' => 'amazon']);
+
+        $this->get('/go/pick/necoichi-bowl', ['Referer' => 'https://petposture.com/picks/necoichi-bowl'])
+            ->assertRedirect(self::AMAZON_URL);
+
+        $this->assertDatabaseHas('affiliate_clicks', [
+            'product_id' => $product->id,
+            'affiliate_network_id' => $amazon->id,
+            'target_url' => self::AMAZON_URL,
+            'referrer' => 'https://petposture.com/picks/necoichi-bowl',
+        ]);
+        $this->assertDatabaseMissing('affiliate_clicks', ['affiliate_network_id' => $chewy->id]);
+        $this->assertDatabaseCount('affiliate_clicks', 1);
+    }
+
+    public function test_amazon_can_be_the_second_retailer_of_a_chewy_pick_and_its_click_goes_to_the_amazon_network(): void
+    {
+        $chewy = $this->network('chewy');
+        $amazon = $this->network('amazon');
+        $product = $this->pick(['second_retailer_slug' => 'amazon', 'second_retailer_url' => self::AMAZON_URL]);
+
+        $this->get('/go/pick/necoichi-bowl?retailer=second')->assertRedirect(self::AMAZON_URL);
+        // the plain link of the same Pick still goes to Chewy, counted against Chewy
+        $this->get('/go/pick/necoichi-bowl')->assertRedirect(self::CHEWY_URL);
+
+        $this->assertDatabaseHas('affiliate_clicks', ['product_id' => $product->id, 'affiliate_network_id' => $amazon->id, 'target_url' => self::AMAZON_URL]);
+        $this->assertDatabaseHas('affiliate_clicks', ['product_id' => $product->id, 'affiliate_network_id' => $chewy->id, 'target_url' => self::CHEWY_URL]);
+        $this->assertDatabaseCount('affiliate_clicks', 2);
+    }
+
     public function test_the_second_retailer_never_falls_back_to_the_first_retailers_link(): void
     {
         $this->network('chewy');

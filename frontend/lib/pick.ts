@@ -200,8 +200,7 @@ function retailerName(pick: ProductPick): string | null {
 export { retailerName as pickRetailerName };
 
 function ctaLabelFor(name: string | null): string {
-    if (name === 'Chewy' || name === 'PetSmart') return `Buy on ${name}`;
-    if (name === 'Amazon') return 'Check Price on Amazon';
+    if (name === 'Chewy' || name === 'PetSmart' || name === 'Amazon') return `Buy on ${name}`;
 
     return name ? `View on ${name}` : 'View on the retailer site';
 }
@@ -246,6 +245,7 @@ export function pickPriceParts(pick: ProductPick): { label: string; amount: stri
 const RETAILER_LOGOS: Record<string, { src: string; width: number; height: number }> = {
     chewy: { src: '/images/retailers/chewy.png', width: 396, height: 118 },
     petsmart: { src: '/images/retailers/petsmart.png', width: 516, height: 132 },
+    amazon: { src: '/images/retailers/amazon.png', width: 398, height: 120 },
 };
 
 /** A store has to be this much cheaper (in cents) before the table says so; one cent is not a saving. */
@@ -281,8 +281,8 @@ function priceRow(slot: PickPriceRow['slot'], name: string, slug: string | null,
         checkedDate: shown ? checkedDate : null,
         checked: shown ? formatPickDate(checkedDate) : null,
         goUrl,
-        // The button names no store (the logo beside it does); Amazon keeps its "Check Price" wording.
-        buttonLabel: name === 'Amazon' ? 'Check Price' : 'Buy',
+        // The button names no store (the logo beside it does), and is short because its column is a fixed 104px.
+        buttonLabel: 'Buy',
         ariaLabel,
     };
 }
