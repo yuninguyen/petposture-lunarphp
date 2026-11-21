@@ -7,6 +7,7 @@ use App\Services\InventoryService;
 use App\Services\ProductRouteService;
 use App\Services\ProductSyncService;
 use App\Support\RetailerUrl;
+use App\Support\SecondRetailer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
@@ -230,6 +231,7 @@ class ProductResource extends JsonResource
             // calls this API at an internal address that a visitor's browser cannot open.
             // The public storefront host (petposture.com), which forwards /go/pick/* here; not the API host.
             'goUrl' => rtrim((string) config('app.frontend_url'), '/')."/go/pick/{$slug}",
+            'secondRetailer' => $this->resolveSecondRetailer($slug),
             'referencePrice' => $price,
             'variants' => $this->resolvePickVariants($slug, $checkedDate, $variants),
             'priceCheckedDate' => $price === null ? null : $checkedDate,
@@ -241,6 +243,25 @@ class ProductResource extends JsonResource
             'quickSpecs' => $this->resolveLabelledLines('quick_specs'),
             'pros' => $this->resolveLines('pros'),
             'cons' => $this->resolveLines('cons'),
+        ];
+    }
+
+    /**
+     * The button for a second store (for example PetSmart), or null when there is none. Like the first, it goes
+     * through /go so the click is counted, and its URL is never returned.
+     */
+    private function resolveSecondRetailer(string $slug): ?array
+    {
+        $second = SecondRetailer::of($this->resource);
+
+        if ($second === null) {
+            return null;
+        }
+
+        return [
+            'retailer' => $second['network']->slug,
+            'retailerName' => $second['network']->name,
+            'goUrl' => rtrim((string) config('app.frontend_url'), '/')."/go/pick/{$slug}?retailer=second",
         ];
     }
 

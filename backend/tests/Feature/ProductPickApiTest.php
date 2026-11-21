@@ -256,6 +256,43 @@ class ProductPickApiTest extends TestCase
         $this->assertArrayNotHasKey('aggregateRating', $seo);
     }
 
+    private const PETSMART_URL = 'https://www.petsmart.com/dog/toys/chew-toys/benebone-maple-stick-dog-chew-toy-94595.html';
+
+    public function test_a_second_retailer_with_a_web_link_and_a_known_network_exposes_its_button_without_the_link(): void
+    {
+        AffiliateNetwork::query()->firstOrCreate(['slug' => 'chewy'], ['name' => 'Chewy', 'active' => true]);
+        AffiliateNetwork::query()->firstOrCreate(['slug' => 'petsmart'], ['name' => 'PetSmart', 'active' => true]);
+        $this->pick(['second_retailer_slug' => 'petsmart', 'second_retailer_url' => self::PETSMART_URL]);
+
+        $pick = $this->listed()['pick'];
+        $go = rtrim((string) config('app.frontend_url'), '/').'/go/pick/necoichi-bowl';
+
+        $this->assertSame(['retailer' => 'petsmart', 'retailerName' => 'PetSmart', 'goUrl' => "{$go}?retailer=second"], $pick['secondRetailer']);
+        // the first retailer's button is untouched, and the second link itself is never sent to the browser
+        $this->assertSame('chewy', $pick['retailer']);
+        $this->assertSame($go, $pick['goUrl']);
+        $this->assertStringNotContainsString('petsmart.com', json_encode($pick));
+    }
+
+    public function test_there_is_no_second_retailer_until_the_slug_names_a_network_and_the_link_is_a_web_address(): void
+    {
+        AffiliateNetwork::query()->firstOrCreate(['slug' => 'petsmart'], ['name' => 'PetSmart', 'active' => true]);
+
+        foreach ([
+            [],
+            ['second_retailer_slug' => 'petsmart'],
+            ['second_retailer_slug' => 'petsmart', 'second_retailer_url' => ''],
+            ['second_retailer_url' => self::PETSMART_URL],
+            ['second_retailer_slug' => 'no-such-store', 'second_retailer_url' => self::PETSMART_URL],
+            ['second_retailer_slug' => 'petsmart', 'second_retailer_url' => 'javascript:alert(1)'],
+            ['second_retailer_slug' => 'petsmart', 'second_retailer_url' => 'petsmart.com/dog'],
+        ] as $index => $fields) {
+            $this->pick($fields, slug: "pick-{$index}");
+
+            $this->assertNull($this->listed("pick-{$index}")['pick']['secondRetailer'], 'case '.$index);
+        }
+    }
+
     public function test_an_ordinary_product_keeps_its_offers_json_ld(): void
     {
         $this->pick(['external_url' => '']);

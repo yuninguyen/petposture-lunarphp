@@ -143,6 +143,58 @@ class PickClickRedirectTest extends TestCase
         $this->assertDatabaseCount('affiliate_clicks', 0);
     }
 
+    private const PETSMART_URL = 'https://www.petsmart.com/dog/toys/chew-toys/benebone-maple-stick-dog-chew-toy-94595.html';
+
+    public function test_the_second_retailer_click_is_recorded_against_its_network_and_redirects_to_its_page(): void
+    {
+        $this->network('chewy');
+        $petsmart = $this->network('petsmart');
+        $product = $this->pick(['second_retailer_slug' => 'petsmart', 'second_retailer_url' => self::PETSMART_URL]);
+
+        $this->get('/go/pick/necoichi-bowl?retailer=second', ['Referer' => 'https://petposture.com/picks/necoichi-bowl'])
+            ->assertRedirect(self::PETSMART_URL);
+
+        $this->assertDatabaseHas('affiliate_clicks', [
+            'product_id' => $product->id,
+            'affiliate_network_id' => $petsmart->id,
+            'product_name' => 'Necoichi bowl',
+            'target_url' => self::PETSMART_URL,
+            'referrer' => 'https://petposture.com/picks/necoichi-bowl',
+        ]);
+        $this->assertDatabaseCount('affiliate_clicks', 1);
+    }
+
+    public function test_the_second_retailer_never_falls_back_to_the_first_retailers_link(): void
+    {
+        $this->network('chewy');
+        $this->network('petsmart');
+        // not configured, an unknown network, or a link that is not a web address: nothing to send the reader to
+        foreach ([
+            [],
+            ['second_retailer_slug' => 'petsmart'],
+            ['second_retailer_url' => self::PETSMART_URL],
+            ['second_retailer_slug' => 'no-such-store', 'second_retailer_url' => self::PETSMART_URL],
+            ['second_retailer_slug' => 'petsmart', 'second_retailer_url' => 'javascript:alert(1)'],
+        ] as $index => $fields) {
+            $this->pick($fields, slug: "second-{$index}");
+
+            $this->get("/go/pick/second-{$index}?retailer=second")->assertNotFound();
+        }
+
+        $this->assertDatabaseCount('affiliate_clicks', 0);
+    }
+
+    public function test_only_the_exact_value_second_asks_for_the_second_retailer(): void
+    {
+        $this->network('chewy');
+        $this->network('petsmart');
+        $this->pick(['second_retailer_slug' => 'petsmart', 'second_retailer_url' => self::PETSMART_URL]);
+
+        $this->get('/go/pick/necoichi-bowl?retailer=petsmart')->assertRedirect(self::CHEWY_URL);
+        $this->get('/go/pick/necoichi-bowl?retailer=')->assertRedirect(self::CHEWY_URL);
+        $this->get('/go/pick/necoichi-bowl')->assertRedirect(self::CHEWY_URL);
+    }
+
     public function test_only_http_and_https_urls_are_followed(): void
     {
         foreach (['javascript:alert(1)', 'ftp://example.com/file', '//evil.example', 'not a url'] as $index => $url) {
