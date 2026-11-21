@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import type { PickVariant, ProductPick } from '@/types/shop';
 import { buttonClasses } from '@/components/ui/Button';
-import { PICK_DISCLOSURE, pickCtaLabel, pickPriceParts } from '@/lib/pick';
+import { PICK_DISCLOSURE, pickCtaLabel, pickPriceParts, pickSecondCtaLabel } from '@/lib/pick';
 import { PickAccordionSection } from './PickAccordionSection';
 
 type Selection = { variants: PickVariant[]; selected: PickVariant | null; select: (id: number) => void };
@@ -87,6 +87,21 @@ export function PickBuyBox({ pick }: { pick: ProductPick }) {
                     <path d="M7 17L17 7M9 7h8v8" />
                 </svg>
             </a>
+            {/* The second store, when the admin set one: an outline button of the same size, going through /go as well. It
+                does not follow the variant choice (it is the link of the one product checked), and shows no price. */}
+            {pick.secondRetailer && (
+                <a
+                    href={pick.secondRetailer.goUrl}
+                    target="_blank"
+                    rel="sponsored noopener"
+                    className={buttonClasses({ variant: 'secondary', size: 'md', className: 'mt-3 min-h-[52px] w-full gap-[9px]' })}
+                >
+                    {pickSecondCtaLabel(pick.secondRetailer)}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
+                        <path d="M7 17L17 7M9 7h8v8" />
+                    </svg>
+                </a>
+            )}
             <p className="mt-3 text-xs leading-5 text-zinc-500">{PICK_DISCLOSURE}</p>
             <p className="mt-2 text-xs leading-5 text-zinc-500">No made-up star ratings: just pros and cons.</p>
         </>

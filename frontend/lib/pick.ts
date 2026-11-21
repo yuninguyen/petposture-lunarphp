@@ -1,4 +1,4 @@
-import type { Product, ProductPick } from '@/types/shop';
+import type { Product, ProductPick, SecondRetailer } from '@/types/shop';
 
 export type PickProduct = Product & { pick: ProductPick };
 
@@ -193,14 +193,21 @@ function retailerName(pick: ProductPick): string | null {
 
 export { retailerName as pickRetailerName };
 
-/** The button text must name the store the button actually opens. */
-export function pickCtaLabel(pick: ProductPick): string {
-    const name = retailerName(pick);
-
-    if (name === 'Chewy') return 'Buy on Chewy';
+function ctaLabelFor(name: string | null): string {
+    if (name === 'Chewy' || name === 'PetSmart') return `Buy on ${name}`;
     if (name === 'Amazon') return 'Check Price on Amazon';
 
     return name ? `View on ${name}` : 'View on the retailer site';
+}
+
+/** The button text must name the store the button actually opens. */
+export function pickCtaLabel(pick: ProductPick): string {
+    return ctaLabelFor(retailerName(pick));
+}
+
+/** The text of the button for a second store, named the same way as the first button. */
+export function pickSecondCtaLabel(second: SecondRetailer): string {
+    return ctaLabelFor(second.retailerName ?? (second.retailer ? humanizeSlug(second.retailer) : null));
 }
 
 /** "2026-11-14" -> "14 Nov 2026", read as a calendar date so no timezone can move it a day. */

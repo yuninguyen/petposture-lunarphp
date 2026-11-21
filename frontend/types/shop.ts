@@ -84,11 +84,20 @@ export interface PickVariant {
     goUrl: string;
 }
 
+/** A second store a Pick can be bought from. Its link never reaches the browser: the button goes through `goUrl`. */
+export interface SecondRetailer {
+    retailer: string | null;
+    retailerName: string | null;
+    goUrl: string;
+}
+
 export interface ProductPick {
     variants?: PickVariant[];
     retailer: string | null;
     retailerName: string | null;
     goUrl: string;
+    /** The button for a second store, or null when the admin set none (or its slug names no network). */
+    secondRetailer?: SecondRetailer | null;
     referencePrice: number | null;
     priceCheckedDate: string | null;
     bestForBreeds: string[];

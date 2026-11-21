@@ -33,6 +33,21 @@ describe('/go/pick/[slug]', () => {
         expect(String(fetchMock.mock.calls[1][0])).toMatch(/\/go\/pick\/kong-puppy$/);
     });
 
+    it('asks the backend for the second retailer only when the value is exactly "second"', async () => {
+        const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { location: 'https://www.petsmart.com/dog/x.html' } }));
+        vi.stubGlobal('fetch', fetchMock);
+        const go = (query: string) => GET(new Request(`https://petposture.com/go/pick/kong-puppy${query}`), { params: Promise.resolve({ slug: 'kong-puppy' }) });
+
+        const response = await go('?retailer=second');
+        expect(response.headers.get('location')).toBe('https://www.petsmart.com/dog/x.html');
+        expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/go\/pick\/kong-puppy\?retailer=second$/);
+
+        for (const [index, query] of ['?retailer=petsmart', '?retailer=', '?retailer=second%26x=1', '?retailer=SECOND'].entries()) {
+            await go(query);
+            expect(String(fetchMock.mock.calls[index + 1][0])).toMatch(/\/go\/pick\/kong-puppy$/);
+        }
+    });
+
     it('sends the reader back to the Pick page when the backend gives no link or cannot be reached', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('nope', { status: 404 })));
         const unknown = await ask('nothing');

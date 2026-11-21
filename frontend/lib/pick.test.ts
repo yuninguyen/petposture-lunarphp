@@ -9,6 +9,7 @@ import {
     pickBreeds,
     pickCardPrice,
     pickCtaLabel,
+    pickSecondCtaLabel,
     pickListStats,
     pickPriceParts,
     pickSeoTitle,
@@ -58,6 +59,19 @@ describe('pickCtaLabel', () => {
 
     it('never names a store when the retailer is unknown', () => {
         expect(pickCtaLabel(pick({ retailer: null, retailerName: null }))).toBe('View on the retailer site');
+    });
+
+    it('says "Buy on PetSmart" for PetSmart', () => {
+        expect(pickCtaLabel(pick({ retailer: 'petsmart', retailerName: 'PetSmart' }))).toBe('Buy on PetSmart');
+    });
+});
+
+describe('pickSecondCtaLabel', () => {
+    it('names the second store from its network, the same way as the first button does', () => {
+        expect(pickSecondCtaLabel({ retailer: 'petsmart', retailerName: 'PetSmart', goUrl: 'https://petposture.com/go/pick/x?retailer=second' })).toBe('Buy on PetSmart');
+        expect(pickSecondCtaLabel({ retailer: 'chewy', retailerName: 'Chewy', goUrl: '/go' })).toBe('Buy on Chewy');
+        expect(pickSecondCtaLabel({ retailer: 'amazon', retailerName: 'Amazon', goUrl: '/go' })).toBe('Check Price on Amazon');
+        expect(pickSecondCtaLabel({ retailer: 'petco', retailerName: 'Petco', goUrl: '/go' })).toBe('View on Petco');
     });
 });
 

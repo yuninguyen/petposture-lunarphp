@@ -109,6 +109,53 @@ describe('PickDetails', () => {
         expect(html).toContain('>Check Price on Amazon<');
     });
 
+    const PETSMART = { retailer: 'petsmart', retailerName: 'PetSmart', goUrl: 'https://petposture.com/go/pick/necoichi-bowl?retailer=second' };
+    const anchors = (html: string) => [...html.matchAll(/<a [^>]*rel="sponsored noopener"[^>]*>[\s\S]*?<\/a>/g)].map((match) => match[0]);
+
+    it('adds a "Buy on PetSmart" button right under the Chewy one, before the affiliate disclosure', () => {
+        const html = render(product(pickData({ secondRetailer: PETSMART })));
+        const [chewy, petsmart] = anchors(html);
+
+        expect(anchors(html)).toHaveLength(2);
+        expect(chewy).toContain('>Buy on Chewy<');
+        expect(petsmart).toContain('>Buy on PetSmart<');
+        expect(html.indexOf('>Buy on Chewy<')).toBeLessThan(html.indexOf('>Buy on PetSmart<'));
+        expect(html.indexOf('>Buy on PetSmart<')).toBeLessThan(html.indexOf('PetPosture may earn a commission'));
+        // it goes through /go like the first button, opens a new tab and carries the same rel
+        expect(petsmart).toContain('href="https://petposture.com/go/pick/necoichi-bowl?retailer=second"');
+        expect(petsmart).toContain('target="_blank"');
+        expect(petsmart).toContain('rel="sponsored noopener"');
+    });
+
+    it('draws the PetSmart button as the secondary (outline) button, the same size and shape as the Chewy one', () => {
+        const [chewy, petsmart] = anchors(render(product(pickData({ secondRetailer: PETSMART }))));
+        const classes = (anchor: string) => anchor.match(/class="([^"]*)"/)![1];
+
+        expect(classes(petsmart)).toContain('border border-primary bg-white');
+        expect(classes(petsmart)).not.toContain('bg-secondary');
+        expect(classes(petsmart)).toContain('min-h-[52px]');
+        expect(classes(petsmart)).toContain('w-full');
+        expect(classes(petsmart)).toContain('uppercase');
+        expect(classes(chewy)).toContain('bg-secondary');
+        expect(classes(chewy)).toContain('min-h-[52px]');
+    });
+
+    it('shows no second button, and nothing about PetSmart, when there is no second retailer', () => {
+        for (const secondRetailer of [undefined, null]) {
+            const html = render(product(pickData({ secondRetailer })));
+
+            expect(anchors(html)).toHaveLength(1);
+            expect(html).not.toContain('PetSmart');
+            expect(html).not.toContain('retailer=second');
+        }
+    });
+
+    it('does not show a PetSmart price: the price card is the same with or without the second button', () => {
+        const prices = (html: string) => html.match(/\$\d+(?:\.\d+)?/g);
+
+        expect(prices(render(product(pickData({ secondRetailer: PETSMART }))))).toEqual(prices(render()));
+    });
+
     it('keeps the buy box right after the title in the page source, before "Our take" and the photo', () => {
         const html = render();
         const title = html.indexOf('<h1');
