@@ -98,7 +98,7 @@ function PriceRow({ row, save }: { row: PickPriceRow; save?: string }) {
                     target="_blank"
                     rel="sponsored noopener"
                     aria-label={row.ariaLabel}
-                    className={buttonClasses({ variant: row.slot === 'first' ? 'primary' : 'secondary', size: 'sm', className: 'w-[calc(100%-12px)] gap-[6px] max-[560px]:mr-[12px] max-[560px]:w-auto max-[560px]:min-w-[72px] max-[560px]:px-3' })}
+                    className={buttonClasses({ variant: 'primary', size: 'sm', className: 'w-[calc(100%-12px)] gap-[6px] max-[560px]:mr-[12px] max-[560px]:w-auto max-[560px]:min-w-[72px] max-[560px]:px-3' })}
                 >
                     {row.buttonLabel}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">

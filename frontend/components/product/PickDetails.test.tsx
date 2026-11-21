@@ -226,12 +226,12 @@ describe('PickDetails', () => {
         expect(petsmart).toContain('rel="sponsored noopener"');
     });
 
-    it('draws the PetSmart button as the outline button and the Chewy one as the solid orange one, the same size', () => {
+    it('draws every Buy button solid orange, the same size, with no outline button', () => {
         const [chewy, petsmart] = anchors(render(product(pickData({ secondRetailer: PETSMART }))));
         const classes = (anchor: string) => anchor.match(/class="([^"]*)"/)![1];
 
-        expect(classes(petsmart)).toContain('border border-primary bg-white');
-        expect(classes(petsmart)).not.toContain('bg-secondary');
+        expect(classes(petsmart)).toContain('bg-secondary');
+        expect(classes(petsmart)).not.toContain('border border-primary bg-white');
         expect(classes(petsmart)).toContain('h-[36px]');
         expect(classes(petsmart)).toContain('uppercase');
         expect(classes(chewy)).toContain('bg-secondary');
