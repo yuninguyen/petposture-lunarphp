@@ -3,7 +3,7 @@ import type { AttributeDefinition, ProductKind } from './api';
 // A Pick is a product with a retailer link. These fields only mean something on a Pick, so a Shop product does not
 // show them (and nobody types an affiliate link into a product PetPosture sells itself). The list is the one the
 // Pick attribute migrations add; other attributes stay visible on every product.
-export const PICK_PRODUCT_HANDLES = ['external_url', 'affiliate_network_slug', 'reference_price', 'price_checked_date', 'best_for_breeds', 'pros', 'cons', 'our_take', 'best_for_note', 'problem', 'approach', 'quick_specs', 'second_retailer_slug', 'second_retailer_url'];
+export const PICK_PRODUCT_HANDLES = ['external_url', 'affiliate_network_slug', 'reference_price', 'price_checked_date', 'best_for_breeds', 'pros', 'cons', 'our_take', 'best_for_note', 'problem', 'approach', 'quick_specs', 'second_retailer_slug', 'second_retailer_url', 'second_retailer_price', 'second_retailer_price_checked_date'];
 export const PICK_VARIANT_HANDLES = ['external_url', 'reference_price'];
 
 export function isWebUrl(value: string): boolean {
