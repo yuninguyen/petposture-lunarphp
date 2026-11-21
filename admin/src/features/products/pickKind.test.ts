@@ -33,9 +33,9 @@ describe('createProductPayload', () => {
 });
 
 describe('productFieldsFor', () => {
-  const all = [field('name', true), field('description'), field('external_url'), field('reference_price'), field('pros'), field('quick_specs'), field('breed_tags')];
+  const all = [field('name', true), field('description'), field('external_url'), field('reference_price'), field('pros'), field('quick_specs'), field('second_retailer_slug'), field('second_retailer_url'), field('breed_tags')];
 
-  it('hides every Pick field on a Shop product and keeps the others', () => {
+  it('hides every Pick field on a Shop product, the second retailer included, and keeps the others', () => {
     expect(handles(productFieldsFor(all, false))).toEqual(['name', 'description', 'breed_tags']);
   });
 
