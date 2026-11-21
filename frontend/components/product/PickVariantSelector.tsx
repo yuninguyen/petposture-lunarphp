@@ -59,7 +59,10 @@ function MerchantLogo({ row }: { row: PickPriceRow }) {
 // inset 12px so the tinted row has room around them. The "Lower price" line is plain text hung under the price: it takes no
 // part in centering the row, so the price, the date, the logo and the button stay on one line (the row's extra bottom padding
 // holds it). Up to 560px the header goes and each row stacks: logo, price and button on the first line, the check date under
-// them on the left and, on the cheaper row, the saving on the right, under the price and the button.
+// them on the left and, on the cheaper row, the saving on the right, under the price and the button. Up to 400px the date does
+// not fit beside the saving with room to spare (at 390px it has under 4px, and it wraps onto two or three lines below
+// that), so it takes the whole second line and the saving goes to a third line of its own, still right-aligned to the edge
+// of the button. From 401px the date has at least 14px to spare.
 const TABLE_COLUMNS = 'grid-cols-[minmax(0,1.05fr)_minmax(0,0.72fr)_minmax(0,1.05fr)_104px]';
 const ROW_BASE = 'col-span-full grid grid-cols-subgrid items-center gap-x-3 gap-y-1 px-[2px] pt-[14px] max-[560px]:grid-cols-[minmax(0,1fr)_auto_auto] max-[560px]:gap-x-[10px]';
 
@@ -77,14 +80,14 @@ function PriceRow({ row, save }: { row: PickPriceRow; save?: string }) {
                     {row.price}
                 </span>
                 {save && (
-                    <span className="absolute left-0 top-[calc(100%+6px)] whitespace-nowrap text-[0.78rem] font-bold leading-[1.3] text-[#2e7d4f] max-[560px]:static max-[560px]:col-span-2 max-[560px]:col-start-2 max-[560px]:row-start-2 max-[560px]:mr-[12px] max-[560px]:justify-self-end">
+                    <span className="absolute left-0 top-[calc(100%+6px)] whitespace-nowrap text-[0.78rem] font-bold leading-[1.3] text-[#2e7d4f] max-[560px]:static max-[560px]:col-span-2 max-[560px]:col-start-2 max-[560px]:row-start-2 max-[560px]:mr-[12px] max-[560px]:justify-self-end max-[400px]:col-span-3 max-[400px]:col-start-1 max-[400px]:row-start-3">
                         Lower price · Save {save}
                     </span>
                 )}
             </div>
             <div
                 role="cell"
-                className={`min-w-0 whitespace-nowrap text-[0.85rem] text-[#7a8894] max-[560px]:col-start-1 max-[560px]:row-start-2 max-[560px]:whitespace-normal max-[560px]:pl-[12px] max-[560px]:text-[0.78rem] ${save ? 'max-[560px]:col-span-1' : 'max-[560px]:col-span-3'} ${row.checked ? '' : 'max-[560px]:hidden'}`}
+                className={`min-w-0 whitespace-nowrap text-[0.85rem] text-[#7a8894] max-[560px]:col-start-1 max-[560px]:row-start-2 max-[560px]:whitespace-normal max-[560px]:pl-[12px] max-[560px]:text-[0.78rem] ${save ? 'max-[560px]:col-span-1 max-[400px]:col-span-3' : 'max-[560px]:col-span-3'} ${row.checked ? '' : 'max-[560px]:hidden'}`}
             >
                 {row.checked && <span className="hidden max-[560px]:inline">Checked </span>}
                 {row.checked}

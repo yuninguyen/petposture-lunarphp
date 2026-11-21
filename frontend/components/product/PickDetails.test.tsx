@@ -411,6 +411,30 @@ describe('PickDetails', () => {
         const plainDate = classes(chewy.split('role="cell"')[3]);
         expect(plainDate).toContain('max-[560px]:col-span-3');
         expect(plainDate).toContain('max-[560px]:pl-[12px]');
+        expect(plainDate).not.toContain('max-[400px]');
+    });
+
+    it('up to 400px gives the date the whole second line and moves the saving to a third line, right-aligned to the Buy button', () => {
+        today('2026-11-21');
+        const [, chewy, petsmart] = rowsOf(furhaven(64.99, '2026-11-17', 40.99, '2026-11-21'));
+        const cells = petsmart.split('role="cell"');
+        const date = classes(cells[3]);
+        const line = classes(petsmart.match(/<span class="[^"]*">Lower price/)?.[0] ?? '');
+
+        // the date: the whole line, so it stays on one line ("Checked 21 Nov 2026") instead of wrapping beside the saving
+        expect(date).toContain('max-[400px]:col-span-3');
+        expect(date).toContain('max-[560px]:row-start-2');
+        // the saving: a third line of its own, across the row, still pulled in to the button's edge and right-aligned
+        for (const token of ['max-[400px]:row-start-3', 'max-[400px]:col-start-1', 'max-[400px]:col-span-3', 'max-[560px]:justify-self-end', 'max-[560px]:mr-[12px]']) {
+            expect(line, token).toContain(token);
+        }
+        // from 401px to 560px the date and the saving share the second line
+        expect(date).toContain('max-[560px]:col-span-1');
+        expect(line).toContain('max-[560px]:row-start-2');
+        expect(line).toContain('max-[560px]:col-start-2');
+        // a row without a saving has nothing to move
+        expect(petsmart.split('role="cell"')).toHaveLength(5);
+        expect(chewy).not.toContain('max-[400px]');
     });
 
     it('draws each store as a logo with its name as the alt text, and names a store that has no logo in text', () => {
