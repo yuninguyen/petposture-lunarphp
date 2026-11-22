@@ -14,7 +14,7 @@ const labelClass = 'mb-[7px] text-[11px] font-bold uppercase tracking-[0.06em] t
  */
 export function PicksSearch({ breed, solution, q, sort }: { breed: string | null; solution: string | null; q: string | null; sort: PickSort }) {
     return (
-        <div className="w-full shrink-0 lg:w-[270px]">
+        <div className="w-full shrink-0 lg:w-[360px]">
             <p className={labelClass}>Search picks</p>
             <form action="/picks" method="get" role="search" className="flex h-10 items-center rounded-xl border border-[#e4e4e7] bg-white focus-within:border-[#df8448] focus-within:shadow-[0_0_0_3px_#fdf2ea]">
                 {breed && <input type="hidden" name="breed" value={breed} />}
@@ -40,12 +40,12 @@ export function PicksSearch({ breed, solution, q, sort }: { breed: string | null
             </form>
             <div className="mt-2.5">
                 <p className={labelClass}>Popular</p>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="grid grid-cols-4 gap-1.5">
                     {POPULAR_SEARCHES.map((word) => (
                         <Link
                             key={word}
                             href={picksHref({ breed, solution, q: word, sort })}
-                            className="inline-flex items-center rounded-full border border-[#f5d9c4] bg-[#fdf2ea] px-[11px] py-[5px] text-[12px] text-[#c9713a] hover:border-[#df8448]"
+                            className="inline-flex items-center justify-center rounded-full border border-[#f5d9c4] bg-[#fdf2ea] px-2 py-[5px] text-[12px] text-[#c9713a] hover:border-[#df8448]"
                         >
                             {word}
                         </Link>

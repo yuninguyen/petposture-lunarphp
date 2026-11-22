@@ -1,8 +1,11 @@
+import { after } from 'next/server';
 import { getApiBaseUrl } from '@/lib/api';
+import { rememberedTarget, rememberTarget } from '@/lib/goTargets';
 
 // The public "Buy on ..." link of a Pick. The backend records the click and knows the retailer URL;
-// this route only lets the link live on petposture.com instead of showing the API host. It is never cached,
-// because a cached redirect would send readers on without the click being counted.
+// this route only lets the link live on petposture.com instead of showing the API host. The response is never
+// cached by the browser or Cloudflare (a cached redirect would skip the count); the server itself remembers a link
+// for a few minutes so a repeat press redirects at once and the click is counted in the background.
 export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const headers: Record<string, string> = {};
@@ -22,15 +25,32 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
             ? '?retailer=second'
             : variant && /^\d+$/.test(variant) ? `?variant=${variant}` : '';
 
-    try {
-        const upstream = await fetch(`${getApiBaseUrl()}/go/pick/${encodeURIComponent(slug)}${query}`, {
-            redirect: 'manual',
-            cache: 'no-store',
-            headers,
+    const backendUrl = `${getApiBaseUrl()}/go/pick/${encodeURIComponent(slug)}${query}`;
+    const askBackend = () => fetch(backendUrl, { redirect: 'manual', cache: 'no-store', headers });
+    const key = `${slug}${query}`;
+
+    // A link seen in the last few minutes redirects at once; the backend still counts the click, just after the
+    // reader has already left. The first press of a link, and the first after a few minutes, waits for the backend.
+    const remembered = rememberedTarget(key);
+    if (remembered) {
+        after(async () => {
+            try {
+                await askBackend();
+            } catch (error) {
+                console.error('Could not record a Pick click:', error);
+            }
         });
+
+        return new Response(null, { status: 302, headers: { Location: remembered, 'Cache-Control': 'no-store' } });
+    }
+
+    try {
+        const upstream = await askBackend();
         const location = upstream.headers.get('location');
 
         if (upstream.status >= 300 && upstream.status < 400 && location) {
+            rememberTarget(key, location);
+
             return new Response(null, {
                 status: 302,
                 headers: { Location: location, 'Cache-Control': 'no-store' },

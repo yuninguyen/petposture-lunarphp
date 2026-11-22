@@ -130,7 +130,7 @@ export function PicksIndex({
 
                 {allPicks.length > 0 && (
                     <>
-                    <section aria-label="Filter picks" className="mt-8 rounded-xl border border-[#e2e5e8] p-4">
+                    <section aria-label="Filter picks" className="mt-8 border-y border-[#e2e5e8] py-3.5">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
                         <div className="grid min-w-0 flex-1 gap-2.5">
                         {breeds.length > 0 && (

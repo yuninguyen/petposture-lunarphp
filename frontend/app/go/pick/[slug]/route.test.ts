@@ -1,10 +1,16 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearRememberedTargets } from '@/lib/goTargets';
 import { GET } from './route';
+
+// `after` only works inside a request; here it runs the callback straight away and keeps the promise to wait on.
+const pending: Promise<unknown>[] = [];
+vi.mock('next/server', () => ({ after: (callback: () => Promise<void>) => { pending.push(callback()); } }));
 
 const ask = (slug: string, referer?: string) =>
     GET(new Request(`https://petposture.com/go/pick/${slug}`, { headers: referer ? { referer } : {} }), { params: Promise.resolve({ slug }) });
 
 describe('/go/pick/[slug]', () => {
+    beforeEach(() => { clearRememberedTargets(); pending.length = 0; });
     afterEach(() => vi.unstubAllGlobals());
 
     it('passes the retailer redirect on without letting anything cache it, and hands the referer to the click log', async () => {
@@ -36,7 +42,7 @@ describe('/go/pick/[slug]', () => {
     it('asks the backend for the second retailer only when the value is exactly "second"', async () => {
         const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { location: 'https://www.petsmart.com/dog/x.html' } }));
         vi.stubGlobal('fetch', fetchMock);
-        const go = (query: string) => GET(new Request(`https://petposture.com/go/pick/kong-puppy${query}`), { params: Promise.resolve({ slug: 'kong-puppy' }) });
+        const go = (query: string) => (clearRememberedTargets(), GET(new Request(`https://petposture.com/go/pick/kong-puppy${query}`), { params: Promise.resolve({ slug: 'kong-puppy' }) }));
 
         const response = await go('?retailer=second');
         expect(response.headers.get('location')).toBe('https://www.petsmart.com/dog/x.html');
@@ -51,7 +57,7 @@ describe('/go/pick/[slug]', () => {
     it('passes a numeric merchant id on, so the Buy button of another store opens that store and counts for it', async () => {
         const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { location: 'https://www.petsmart.com/dog/x.html' } }));
         vi.stubGlobal('fetch', fetchMock);
-        const go = (query: string) => GET(new Request(`https://petposture.com/go/pick/kong-puppy${query}`), { params: Promise.resolve({ slug: 'kong-puppy' }) });
+        const go = (query: string) => (clearRememberedTargets(), GET(new Request(`https://petposture.com/go/pick/kong-puppy${query}`), { params: Promise.resolve({ slug: 'kong-puppy' }) }));
 
         const response = await go('?merchant=3');
         expect(response.headers.get('location')).toBe('https://www.petsmart.com/dog/x.html');
@@ -64,6 +70,64 @@ describe('/go/pick/[slug]', () => {
         }
         await go('?merchant=7&retailer=second&variant=9');
         expect(String(fetchMock.mock.calls[6][0])).toMatch(/\/go\/pick\/kong-puppy\?merchant=7$/);
+    });
+
+    it('redirects at once from a remembered link and has the backend count the click afterwards, with the referer', async () => {
+        const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { location: 'https://www.chewy.com/x/dp/1' } }));
+        vi.stubGlobal('fetch', fetchMock);
+
+        // first press: waits for the backend, which counts the click itself
+        const first = await ask('kong-puppy');
+        expect(first.headers.get('location')).toBe('https://www.chewy.com/x/dp/1');
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(pending).toHaveLength(0);
+
+        // second press: the answer does not wait for the backend; the count is sent afterwards
+        let release: (value: Response) => void = () => {};
+        fetchMock.mockReturnValueOnce(new Promise<Response>((resolve) => { release = resolve; }));
+        const second = await ask('kong-puppy', 'https://petposture.com/picks/kong-puppy');
+        expect(second.status).toBe(302);
+        expect(second.headers.get('location')).toBe('https://www.chewy.com/x/dp/1');
+        expect(second.headers.get('cache-control')).toBe('no-store');
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(fetchMock.mock.calls[1][1].headers.referer).toBe('https://petposture.com/picks/kong-puppy');
+        expect(pending).toHaveLength(1);
+        release(new Response(null, { status: 302 }));
+        await Promise.all(pending);
+    });
+
+    it('remembers a link per choice, so another store or variant of the same Pick is not sent to the first one', async () => {
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(new Response(null, { status: 302, headers: { location: 'https://www.chewy.com/a' } }))
+            .mockResolvedValueOnce(new Response(null, { status: 302, headers: { location: 'https://www.petsmart.com/b' } }))
+            .mockResolvedValue(new Response(null, { status: 302 }));
+        vi.stubGlobal('fetch', fetchMock);
+        const go = (query: string) => GET(new Request(`https://petposture.com/go/pick/kong-puppy${query}`), { params: Promise.resolve({ slug: 'kong-puppy' }) });
+
+        expect((await go('')).headers.get('location')).toBe('https://www.chewy.com/a');
+        expect((await go('?merchant=3')).headers.get('location')).toBe('https://www.petsmart.com/b');
+        expect((await go('?merchant=3')).headers.get('location')).toBe('https://www.petsmart.com/b');
+        expect((await go('')).headers.get('location')).toBe('https://www.chewy.com/a');
+        await Promise.all(pending);
+    });
+
+    it('does not remember a failed answer, and a lost background count does not break the redirect', async () => {
+        const failing = vi.fn().mockResolvedValue(new Response('nope', { status: 404 }));
+        vi.stubGlobal('fetch', failing);
+        await ask('kong-puppy');
+        await ask('kong-puppy');
+        expect(failing).toHaveBeenCalledTimes(2);
+
+        const fetchMock = vi.fn().mockResolvedValueOnce(new Response(null, { status: 302, headers: { location: 'https://www.chewy.com/a' } }));
+        vi.stubGlobal('fetch', fetchMock);
+        await ask('kong-puppy');
+        fetchMock.mockRejectedValueOnce(new Error('down'));
+        const quiet = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const again = await ask('kong-puppy');
+        await Promise.all(pending);
+        expect(again.headers.get('location')).toBe('https://www.chewy.com/a');
+        expect(quiet).toHaveBeenCalled();
+        quiet.mockRestore();
     });
 
     it('sends the reader back to the Pick page when the backend gives no link or cannot be reached', async () => {
