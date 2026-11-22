@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 type GalleryImage = { id: number | null; src: string; alt?: string };
 
 const ARROW =
-    'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white text-primary transition-colors hover:border-secondary hover:text-rust md:h-10 md:w-10';
+    'flex h-9 w-9 shrink-0 items-center justify-center rounded-[3px] border border-zinc-200 bg-white text-primary transition-colors hover:border-secondary hover:text-rust md:h-10 md:w-10';
 
 function Chevron({ direction }: { direction: 'left' | 'right' }) {
     return (

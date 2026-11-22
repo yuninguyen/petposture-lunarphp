@@ -55,6 +55,10 @@ describe('PickGallery', () => {
 
         expect(button('Next image').className).toContain('h-9 w-9');
         expect(button('Next image').className).toContain('md:h-10 md:w-10');
+        for (const label of ['Previous image', 'Next image']) {
+            expect(button(label).className).toContain('rounded-[3px]');
+            expect(button(label).className).not.toContain('rounded-full');
+        }
         expect(button('Show image 1').className).toContain('h-16 w-16');
         expect(button('Show image 1').className).toContain('md:h-[72px] md:w-[72px]');
     });
