@@ -27,7 +27,7 @@ export function ChecklistCard({ title, hint, labelPrefix, items, testId }: { tit
             <div className="min-w-0 text-sm">
               <p className="font-medium text-slate-800">
                 <span className="sr-only">{t(`checklist.status.${item.status}`)}: </span>
-                {t(`${labelPrefix}.${item.id}`)}
+                {t(item.label ?? `${labelPrefix}.${item.id}`, item.labelParams)}
               </p>
               <p className="text-xs text-slate-500">{t(item.detail, item.params)}</p>
             </div>

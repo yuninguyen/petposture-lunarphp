@@ -6,6 +6,14 @@ import type { AttributeDefinition, ProductKind } from './api';
 export const PICK_PRODUCT_HANDLES = ['external_url', 'affiliate_network_slug', 'reference_price', 'price_checked_date', 'best_for_breeds', 'pros', 'cons', 'our_take', 'best_for_note', 'problem', 'approach', 'quick_specs', 'second_retailer_slug', 'second_retailer_url', 'second_retailer_price', 'second_retailer_price_checked_date'];
 export const PICK_VARIANT_HANDLES = ['external_url', 'reference_price'];
 
+// The stores of a Pick are edited in one list (the Merchants box), so a Pick's field list leaves these out: the first
+// store lives in the first four, the old "second retailer" ones are kept in the database but no longer edited.
+export const MERCHANT_ATTRIBUTE_HANDLES = ['external_url', 'affiliate_network_slug', 'reference_price', 'price_checked_date', 'second_retailer_slug', 'second_retailer_url', 'second_retailer_price', 'second_retailer_price_checked_date'];
+
+export function withoutMerchantFields(definitions: AttributeDefinition[]): AttributeDefinition[] {
+  return definitions.filter((definition) => !MERCHANT_ATTRIBUTE_HANDLES.includes(definition.handle));
+}
+
 export function isWebUrl(value: string): boolean {
   try {
     const url = new URL(value.trim());

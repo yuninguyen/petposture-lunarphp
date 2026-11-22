@@ -10,6 +10,10 @@ export interface PickChecklistInput {
   attributes: Record<string, AttributeValue | undefined>;
   /** The attribute handles this product has at all, so a field the product type does not offer is not asked for. */
   handles: string[];
+  /** The stores after the first one, as they are in the form right now. */
+  merchants: { affiliate_network_id: number | null; url: string; price: string; price_checked_date: string }[];
+  /** Store names by network id, to name each store's line. */
+  networkNames: Record<number, string>;
   /** Today as YYYY-MM-DD (UTC), passed in so the check is the same in a test as in the browser. */
   today: string;
 }
@@ -73,8 +77,17 @@ export function pickChecklist(input: PickChecklistInput): ChecklistItem[] {
 
   // 3. Price and the date it was checked, for the first store and, when there is one, the second store.
   items.push(priceItem('price', textOf(input.attributes.reference_price), textOf(input.attributes.price_checked_date), input.today));
-  const hasSecondStore = ['second_retailer_slug', 'second_retailer_url', 'second_retailer_price', 'second_retailer_price_checked_date'].some((handle) => filled(input, handle));
-  if (hasSecondStore) items.push(priceItem('second_price', textOf(input.attributes.second_retailer_price), textOf(input.attributes.second_retailer_price_checked_date), input.today));
+  input.merchants.forEach((store, index) => {
+    const name = store.affiliate_network_id === null ? undefined : input.networkNames[store.affiliate_network_id];
+    const result: ChecklistItem = store.affiliate_network_id === null || store.url.trim() === ''
+      ? { id: '', status: 'missing', detail: 'products.checklist.detail.store_incomplete' }
+      : priceItem('', store.price.trim(), store.price_checked_date.trim(), input.today);
+
+    // A store with no merchant chosen yet is named by its place in the list.
+    items.push(name
+      ? { ...result, id: `store_${index}`, label: 'products.checklist.items.store_price', labelParams: { name } }
+      : { ...result, id: `store_${index}`, label: 'products.checklist.items.store_unnamed', labelParams: { number: index + 2 } });
+  });
 
   // 4. Real photos, not just the main one.
   items.push(input.media.length === 0

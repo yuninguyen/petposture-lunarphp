@@ -21,6 +21,8 @@ export interface AttributeDefinition {
   value: AttributeValue;
 }
 export interface ProductMedia { id: string; url: string; source: 'spatie' | 'curator'; alt: string }
+/** A store after the first one on a Pick (the first is in the product's own attributes). Price and date are text, as typed. */
+export interface ProductMerchant { id: number; affiliate_network_id: number; url: string; price: string; price_checked_date: string }
 export interface ProductSeo { title: string; description: string; keyphrase: string; og_title: string; og_description: string; og_image: string | null; canonical_url: string; is_indexable: boolean; is_followable: boolean }
 export interface Currency { id: number; code: string; decimal_places: number; factor: number }
 export interface TaxClass { id: number; name: string }
@@ -40,7 +42,7 @@ export interface ProductDetail {
   id: number; slug: string | null; status: ProductStatus; kind: ProductKind; brand_id: number | null; product_type_id: number;
   product_type: { id: number; name: string }; brand: { id: number; name: string } | null;
   has_variants: boolean; product_attributes: AttributeDefinition[]; product_options: ProductOption[]; variants: ProductVariant[];
-  collection_ids: number[]; media: ProductMedia[]; seo: ProductSeo; default_currency: Currency; tax_classes: TaxClass[]; updated_at: string | null;
+  collection_ids: number[]; media: ProductMedia[]; merchants: ProductMerchant[]; seo: ProductSeo; default_currency: Currency; tax_classes: TaxClass[]; updated_at: string | null;
 }
 export interface ProductAssociation { id: number; type: ProductAssociationType; target: { id: number; name: string; status: ProductStatus; slug: string | null; thumbnail: string | null } }
 export interface ProductSummary {
@@ -54,7 +56,7 @@ export type ProductKind = 'pick' | 'shop';
 export interface ProductsPage { data: ProductSummary[]; meta: { current_page: number; last_page: number; per_page: number; total: number } }
 export interface ProductFilters { search?: string; status?: ProductStatus | ''; brand_id?: number | ''; product_type_id?: number | ''; kind?: ProductKind | ''; page?: number; per_page?: number }
 export interface CreateProductPayload { name: string; product_type_id: number; sku: string; base_price: string; kind?: ProductKind; external_url?: string }
-export interface UpdateProductPayload { slug: string; status: ProductStatus; brand_id: number | null; attributes: AttributeValues; collections: number[]; media: Array<{ id: number; source: ProductMedia['source']; alt: string }>; seo: ProductSeo }
+export interface UpdateProductPayload { slug: string; status: ProductStatus; brand_id: number | null; attributes: AttributeValues; collections: number[]; media: Array<{ id: number; source: ProductMedia['source']; alt: string }>; merchants?: Array<{ id: number | null; affiliate_network_id: number; url: string; price: string; price_checked_date: string }>; seo: ProductSeo }
 export interface UpdateVariantPayload {
   sku: string; gtin: string | null; mpn: string | null; ean: string | null; stock: number; cost: string | null; backorder: number;
   purchasable: ProductVariant['purchasable']; unit_quantity: number; quantity_increment: number; min_quantity: number;

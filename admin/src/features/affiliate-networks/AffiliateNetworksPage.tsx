@@ -15,6 +15,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { MediaPicker } from '@/features/media/MediaPicker';
 import {
   fetchAffiliateNetworks,
   createAffiliateNetwork,
@@ -486,18 +487,18 @@ export function AffiliateNetworksPage() {
                   />
                 </div>
 
-                {/* Logo URL */}
+                {/* Logo: chosen from the Media Library; the address of the image is what is saved */}
                 <div className="space-y-1 sm:col-span-2">
                   <label className="text-xs font-semibold text-slate-700">
-                    {t('affiliate_networks.field_logo', 'Logo URL')}
+                    {t('affiliate_networks.field_logo', 'Logo')}
                   </label>
-                  <input
-                    type="url"
-                    value={logo}
-                    onChange={(e) => setLogo(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  <MediaPicker
+                    context="general"
+                    preview="badge"
+                    value={logo ? { id: null, url: logo } : null}
+                    onChange={(media) => setLogo(media?.url ?? '')}
                   />
+                  <p className="text-xs text-slate-500">{t('affiliate_networks.field_logo_hint')}</p>
                 </div>
 
                 {/* Merchant ID */}

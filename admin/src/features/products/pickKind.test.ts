@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createProductPayload, isWebUrl, productFieldsFor, retailerLinkError, variantFieldsFor } from './pickKind';
+import { createProductPayload, isWebUrl, productFieldsFor, retailerLinkError, variantFieldsFor, withoutMerchantFields } from './pickKind';
 import type { AttributeDefinition } from './api';
 
 const field = (handle: string, required = false): AttributeDefinition => ({ handle, label: handle, type: 'text', section: null, system: false, required, value: '' });
@@ -51,6 +51,22 @@ describe('productFieldsFor', () => {
     productFieldsFor(all, true);
 
     expect(all.find((definition) => definition.handle === 'external_url')?.required).toBe(false);
+  });
+});
+
+describe('withoutMerchantFields', () => {
+  it('leaves out every field the Merchants box edits, and keeps the rest of a Pick in order', () => {
+    const all = [field('name'), field('external_url'), field('affiliate_network_slug'), field('reference_price'), field('price_checked_date'), field('second_retailer_slug'), field('second_retailer_url'), field('second_retailer_price'), field('second_retailer_price_checked_date'), field('our_take'), field('quick_specs')];
+
+    expect(handles(withoutMerchantFields(all))).toEqual(['name', 'our_take', 'quick_specs']);
+  });
+
+  it('does not change the list it was given', () => {
+    const all = [field('name'), field('external_url')];
+
+    withoutMerchantFields(all);
+
+    expect(handles(all)).toEqual(['name', 'external_url']);
   });
 });
 

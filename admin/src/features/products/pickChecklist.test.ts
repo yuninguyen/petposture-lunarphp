@@ -7,6 +7,8 @@ const base: PickChecklistInput = {
   brandId: 7,
   attributes: { reference_price: '45.95', price_checked_date: '2026-11-17', best_for_breeds: 'pug,french-bulldog', solution_tags: 'mobility-support' },
   handles: ['reference_price', 'best_for_breeds', 'solution_tags'],
+  merchants: [],
+  networkNames: { 4: 'PetSmart', 5: 'Amazon' },
   today: TODAY,
 };
 const item = (input: PickChecklistInput, id: string) => pickChecklist(input).find((entry) => entry.id === id);
@@ -54,17 +56,41 @@ describe('pickChecklist', () => {
     expect(at('2026-12-01')).toMatchObject({ status: 'warn', detail: 'products.checklist.detail.date_future' });
   });
 
-  it('checks the second store only when one is set, with its own price and date', () => {
-    expect(item(base, 'second_price')).toBeUndefined();
+  it('adds one line per other store, named after it, with its own price and date', () => {
+    expect(item(base, 'store_0')).toBeUndefined();
 
-    const withSecond = { ...base, attributes: { ...base.attributes, second_retailer_slug: 'petsmart', second_retailer_url: 'https://www.petsmart.com/x' } };
-    expect(item(withSecond, 'second_price')).toMatchObject({ status: 'missing', detail: 'products.checklist.detail.price_missing' });
+    const store = { affiliate_network_id: 4, url: 'https://www.petsmart.com/x', price: '', price_checked_date: '' };
+    const noPrice = { ...base, merchants: [store] };
+    expect(item(noPrice, 'store_0')).toMatchObject({ status: 'missing', detail: 'products.checklist.detail.price_missing', label: 'products.checklist.items.store_price', labelParams: { name: 'PetSmart' } });
 
-    const priced = { ...withSecond, attributes: { ...withSecond.attributes, second_retailer_price: '40.99', second_retailer_price_checked_date: '2026-09-01' } };
-    expect(item(priced, 'second_price')).toMatchObject({ status: 'warn', detail: 'products.checklist.detail.price_old' });
+    const old = { ...base, merchants: [{ ...store, price: '40.99', price_checked_date: '2026-09-01' }] };
+    expect(item(old, 'store_0')).toMatchObject({ status: 'warn', detail: 'products.checklist.detail.price_old' });
 
-    const fresh = { ...priced, attributes: { ...priced.attributes, second_retailer_price_checked_date: '2026-11-21' } };
-    expect(item(fresh, 'second_price')).toMatchObject({ status: 'ok' });
+    const fresh = { ...base, merchants: [{ ...store, price: '40.99', price_checked_date: '2026-11-21' }] };
+    expect(item(fresh, 'store_0')).toMatchObject({ status: 'ok' });
+  });
+
+  it('lists every store on its own line, in order, and does not mix their prices up', () => {
+    const merchants = [
+      { affiliate_network_id: 4, url: 'https://www.petsmart.com/x', price: '40.99', price_checked_date: '2026-11-21' },
+      { affiliate_network_id: 5, url: 'https://www.amazon.com/x', price: '', price_checked_date: '' },
+    ];
+    const ids = pickChecklist({ ...base, merchants }).map((entry) => entry.id);
+
+    expect(ids).toEqual(['alt', 'brand', 'price', 'store_0', 'store_1', 'photos', 'breeds', 'solutions', 'honest_take']);
+    expect(item({ ...base, merchants }, 'store_0')).toMatchObject({ status: 'ok', labelParams: { name: 'PetSmart' } });
+    expect(item({ ...base, merchants }, 'store_1')).toMatchObject({ status: 'missing', labelParams: { name: 'Amazon' } });
+  });
+
+  it('asks for the merchant and the link when a store is half filled in', () => {
+    for (const store of [
+      { affiliate_network_id: null, url: 'https://www.petsmart.com/x', price: '', price_checked_date: '' },
+      { affiliate_network_id: 4, url: '  ', price: '', price_checked_date: '' },
+    ]) {
+      expect(item({ ...base, merchants: [store] }, 'store_0')).toMatchObject({ status: 'missing', detail: 'products.checklist.detail.store_incomplete' });
+    }
+    // a store with no merchant chosen is named by its place in the list, not by a bare number
+    expect(item({ ...base, merchants: [{ affiliate_network_id: null, url: '', price: '', price_checked_date: '' }] }, 'store_0')).toMatchObject({ label: 'products.checklist.items.store_unnamed', labelParams: { number: 2 } });
   });
 
   it('asks for the breeds and the solution tags, and skips the tags when the product type has none', () => {

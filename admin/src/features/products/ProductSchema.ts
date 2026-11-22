@@ -29,6 +29,8 @@ export const productFormSchema = z.object({
   attributes: z.record(z.union([z.string(), z.object({ en: z.string(), vi: z.string() })])),
   collections: z.array(z.number().int().positive()),
   media: z.array(z.object({ id: z.string(), url: z.string(), source: z.enum(['spatie', 'curator']), alt: z.string() })),
+  // The stores after the first one (the first is in `attributes`). A row's id is kept so its Buy link does not change.
+  merchants: z.array(z.object({ id: z.number().nullable(), affiliate_network_id: z.number().nullable(), url: z.string(), price: z.string(), price_checked_date: z.string() })),
   seo: z.object({
     title: z.string().max(60),
     description: z.string().max(160),
@@ -71,7 +73,9 @@ export function validateRequiredAttributes(definitions: AttributeDefinition[], v
   }
   return errors;
 }
-export function productDefaults(product: ProductDetail): ProductFormValues { return { slug: product.slug ?? '', status: product.status, brand_id: product.brand_id, attributes: Object.fromEntries(product.product_attributes.map((a) => [a.handle, a.value])), collections: product.collection_ids, media: product.media, seo: product.seo }; }
-export function productPayload(values: ProductFormValues): UpdateProductPayload { return { slug: values.slug.trim().toLowerCase(), status: values.status, brand_id: values.brand_id, attributes: values.attributes, collections: values.collections, media: values.media.map((media) => ({ id: Number(media.id), source: media.source, alt: media.alt })), seo: values.seo }; }
+export function productDefaults(product: ProductDetail): ProductFormValues { return { slug: product.slug ?? '', status: product.status, brand_id: product.brand_id, attributes: Object.fromEntries(product.product_attributes.map((a) => [a.handle, a.value])), collections: product.collection_ids, media: product.media, merchants: (product.merchants ?? []).map((merchant) => ({ id: merchant.id, affiliate_network_id: merchant.affiliate_network_id, url: merchant.url, price: merchant.price, price_checked_date: merchant.price_checked_date })), seo: product.seo }; }
+export function productPayload(values: ProductFormValues): UpdateProductPayload { return { slug: values.slug.trim().toLowerCase(), status: values.status, brand_id: values.brand_id, attributes: values.attributes, collections: values.collections, media: values.media.map((media) => ({ id: Number(media.id), source: media.source, alt: media.alt })), merchants: merchantsPayload(values.merchants), seo: values.seo }; }
+/** A list row with nothing chosen and nothing typed is a blank the editor left behind, so it is not sent. */
+export function merchantsPayload(rows: ProductFormValues['merchants']): NonNullable<UpdateProductPayload['merchants']> { return rows.filter((row) => row.affiliate_network_id !== null || row.url.trim() !== '').map((row) => ({ id: row.id, affiliate_network_id: row.affiliate_network_id as number, url: row.url.trim(), price: row.price.trim(), price_checked_date: row.price_checked_date.trim() })); }
 export function variantDefaults(variant: ProductVariant): VariantFormValues { return { sku: variant.sku, gtin: variant.gtin ?? '', mpn: variant.mpn ?? '', ean: variant.ean ?? '', stock: variant.stock, cost: variant.cost ?? '', backorder: variant.backorder, purchasable: variant.purchasable, unit_quantity: variant.unit_quantity, quantity_increment: variant.quantity_increment, min_quantity: variant.min_quantity, tax_class_id: variant.tax_class_id, tax_ref: variant.tax_ref ?? '', shippable: variant.shippable, length_value: String(variant.length_value ?? ''), length_unit: variant.length_unit, width_value: String(variant.width_value ?? ''), width_unit: variant.width_unit, height_value: String(variant.height_value ?? ''), height_unit: variant.height_unit, weight_value: String(variant.weight_value ?? ''), weight_unit: variant.weight_unit, base_price: variant.base_price, attributes: Object.fromEntries(variant.attributes.map((a) => [a.handle, a.value])) }; }
 export function variantPayload(values: z.output<typeof variantFormSchema>): UpdateVariantPayload { return values as UpdateVariantPayload; }

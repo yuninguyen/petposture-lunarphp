@@ -1,4 +1,20 @@
+import { useQuery } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/api';
+
+/** A store to pick from in a Pick's form: only active ones, with the logo chosen for them (the selector endpoint has no keys). */
+export interface MerchantOption {
+  id: number;
+  name: string;
+  slug: string;
+  logo: string | null;
+}
+
+export function useMerchantOptions() {
+  return useQuery({
+    queryKey: ['affiliate-networks', 'merchant-options'],
+    queryFn: () => fetchJson<MerchantOption[]>('/admin/affiliate-networks'),
+  });
+}
 
 export interface AffiliateNetworkItem {
   id: number;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createProductSchema, productDefaults, productPayload, validateRequiredAttributes, variantFormSchema } from './ProductSchema';
+import { createProductSchema, merchantsPayload, productDefaults, productPayload, validateRequiredAttributes, variantFormSchema } from './ProductSchema';
 
 describe('Product schemas', () => {
   it('validates and coerces create values', () => {
@@ -20,7 +20,29 @@ describe('Product schemas', () => {
     expect(validateRequiredAttributes(definitions, { name: { en: 'English', vi: '' } })).toEqual({ 'name.vi': 'products.validation.required' });
   });
   it('serializes ordered media with numeric ids', () => {
-    expect(productPayload({ slug: ' Harness-One ', status: 'draft', brand_id: null, attributes: { name: 'A' }, collections: [4, 2], media: [{ id: '9', url: '/a.jpg', source: 'curator', alt: 'A cat' }], seo: { title: 'Harness SEO', description: '', keyphrase: '', og_title: '', og_description: '', og_image: null, canonical_url: '', is_indexable: true, is_followable: true } })).toMatchObject({ slug: 'harness-one', media: [{ id: 9, source: 'curator', alt: 'A cat' }], seo: { title: 'Harness SEO', is_indexable: true } });
+    expect(productPayload({ slug: ' Harness-One ', status: 'draft', brand_id: null, attributes: { name: 'A' }, collections: [4, 2], media: [{ id: '9', url: '/a.jpg', source: 'curator', alt: 'A cat' }], merchants: [], seo: { title: 'Harness SEO', description: '', keyphrase: '', og_title: '', og_description: '', og_image: null, canonical_url: '', is_indexable: true, is_followable: true } })).toMatchObject({ slug: 'harness-one', media: [{ id: 9, source: 'curator', alt: 'A cat' }], seo: { title: 'Harness SEO', is_indexable: true } });
+  });
+  it('sends the other stores as typed, keeps a row id, and leaves out a blank row', () => {
+    const rows = [
+      { id: 12, affiliate_network_id: 4, url: ' https://www.petsmart.com/x ', price: ' 40.99 ', price_checked_date: '2026-11-21' },
+      { id: null, affiliate_network_id: 5, url: 'https://www.amazon.com/x', price: '', price_checked_date: '' },
+      { id: null, affiliate_network_id: null, url: '   ', price: '', price_checked_date: '' },
+    ];
+
+    expect(merchantsPayload(rows)).toEqual([
+      { id: 12, affiliate_network_id: 4, url: 'https://www.petsmart.com/x', price: '40.99', price_checked_date: '2026-11-21' },
+      { id: null, affiliate_network_id: 5, url: 'https://www.amazon.com/x', price: '', price_checked_date: '' },
+    ]);
+    // a row that has a link but no merchant is still sent, so the server can say what is missing
+    expect(merchantsPayload([{ id: null, affiliate_network_id: null, url: 'https://www.petsmart.com/x', price: '', price_checked_date: '' }])).toHaveLength(1);
+  });
+  it('hydrates the other stores of a Pick, and an empty list for a product without any', () => {
+    const base = { slug: 'p', status: 'draft', brand_id: null, product_attributes: [], collection_ids: [], media: [], seo: {} } as any;
+
+    expect(productDefaults(base).merchants).toEqual([]);
+    expect(productDefaults({ ...base, merchants: [{ id: 3, affiliate_network_id: 4, url: 'https://www.petsmart.com/x', price: '40.99', price_checked_date: '2026-11-21' }] }).merchants).toEqual([
+      { id: 3, affiliate_network_id: 4, url: 'https://www.petsmart.com/x', price: '40.99', price_checked_date: '2026-11-21' },
+    ]);
   });
   it('hydrates the selected brand and newly mapped product fields', () => {
     const defaults = productDefaults({

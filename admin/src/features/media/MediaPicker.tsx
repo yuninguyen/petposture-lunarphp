@@ -5,7 +5,7 @@ import { MediaLibraryModal, type MediaContext } from '@/components/ui/media-libr
 
 type MediaPickerValue = { id: string | null; url: string } | null;
 type MediaPickerChangeHandler = { bivarianceHack(media: MediaPickerValue): void }['bivarianceHack'];
-type MediaPickerPreview = 'default' | 'logo' | 'favicon';
+type MediaPickerPreview = 'default' | 'logo' | 'favicon' | 'badge';
 
 export function MediaPicker({
   value,
@@ -35,6 +35,8 @@ export function MediaPicker({
             className={
               fill
                 ? 'w-full flex-1 min-h-0 object-cover rounded-lg border border-gray-200'
+                : preview === 'badge'
+                  ? 'h-16 w-40 object-contain rounded-lg border border-gray-200 bg-slate-50 p-2'
                 : preview === 'logo'
                   ? 'h-64 w-full object-contain rounded-lg border border-gray-200 bg-slate-50 p-3'
                 : preview === 'favicon'
