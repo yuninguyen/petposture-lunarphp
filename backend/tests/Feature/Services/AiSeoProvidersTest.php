@@ -12,6 +12,7 @@ use App\Services\AiSeoProviders\OpenAiSeoProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use Tests\TestCase;
 
 class AiSeoProvidersTest extends TestCase
@@ -179,6 +180,58 @@ class AiSeoProvidersTest extends TestCase
             Http::assertSent(fn (Request $request): bool => ! array_key_exists('thinkingConfig', data_get($request->data(), 'generationConfig', []))
                 && data_get($request->data(), 'generationConfig.responseSchema') !== null);
         }
+    }
+
+    public function test_gemini_tries_once_more_after_a_503_and_waits_a_second_first(): void
+    {
+        Sleep::fake();
+        config()->set('services.gemini.key', 'gemini-key');
+        config()->set('services.gemini.model', 'gemini-3.6-flash');
+        Http::fake(['*' => Http::sequence()
+            ->push(['error' => ['message' => 'This model is currently experiencing high demand.']], 503)
+            ->push($this->geminiBody()),
+        ]);
+
+        $this->assertSame($this->metadata(), app(GeminiSeoProvider::class)->generate('Prompt'));
+
+        Http::assertSentCount(2);
+        Sleep::assertSleptTimes(1);
+        Sleep::assertSlept(fn ($duration): bool => $duration->totalMilliseconds === 1000.0);
+    }
+
+    public function test_gemini_gives_up_after_the_second_503(): void
+    {
+        Sleep::fake();
+        config()->set('services.gemini.key', 'gemini-key');
+        config()->set('services.gemini.model', 'gemini-3.6-flash');
+        Http::fake(['*' => Http::response(['error' => ['message' => 'high demand']], 503)]);
+
+        try {
+            app(GeminiSeoProvider::class)->generate('Prompt');
+            $this->fail('A second 503 should end in an invalid-response error.');
+        } catch (AiSeoGenerationException) {
+            $this->addToAssertionCount(1);
+        }
+
+        Http::assertSentCount(2);
+    }
+
+    public function test_gemini_does_not_retry_other_errors(): void
+    {
+        Sleep::fake();
+        config()->set('services.gemini.key', 'gemini-key');
+        config()->set('services.gemini.model', 'gemini-3.6-flash');
+        Http::fake(['*' => Http::response(['error' => ['message' => 'bad request']], 400)]);
+
+        try {
+            app(GeminiSeoProvider::class)->generate('Prompt');
+            $this->fail('A 400 should end in an invalid-response error.');
+        } catch (AiSeoGenerationException) {
+            $this->addToAssertionCount(1);
+        }
+
+        Http::assertSentCount(1);
+        Sleep::assertNeverSlept();
     }
 
     public function test_gemini_waits_up_to_sixty_seconds_for_an_answer(): void

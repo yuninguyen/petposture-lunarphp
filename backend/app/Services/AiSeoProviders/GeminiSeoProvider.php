@@ -2,6 +2,7 @@
 
 namespace App\Services\AiSeoProviders;
 
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 
 class GeminiSeoProvider extends AbstractAiSeoProvider
@@ -48,6 +49,9 @@ class GeminiSeoProvider extends AbstractAiSeoProvider
         $response = Http::acceptJson()
             ->withHeaders(['x-goog-api-key' => $this->apiKey()])
             ->timeout(self::TIMEOUT_SECONDS)
+            // A 503 "high demand" answers fast and usually clears within a second, so it is tried once more. A timeout is
+            // not retried: that would be another 60 seconds, past what Cloudflare waits.
+            ->retry(2, 1000, fn ($exception): bool => $exception instanceof RequestException && $exception->response->status() === 503, throw: false)
             ->post(
                 'https://generativelanguage.googleapis.com/v1beta/models/'.rawurlencode($this->model()).':generateContent',
                 [
