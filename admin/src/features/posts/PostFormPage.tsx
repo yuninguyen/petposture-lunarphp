@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { PostChecklistCard } from './PostChecklistCard';
+import { easternReadout } from './postChecklist';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -203,6 +205,7 @@ export function PostFormPage() {
 
   const selectedType = useWatch({ control, name: 'type' });
   const selectedStatus = useWatch({ control, name: 'status' });
+  const publishedAtValue = useWatch({ control, name: 'published_at' }) ?? '';
   // Cancelling a schedule (Scheduled -> Draft) also clears the time, as the server does, so no old time is left behind.
   useEffect(() => {
     if (selectedStatus === 'draft' && existingPost?.status === 'scheduled') setValue('published_at', '');
@@ -548,6 +551,7 @@ export function PostFormPage() {
         </div>
 
         <div className="w-full lg:w-1/3 space-y-6">
+          <PostChecklistCard control={control as any} hasFeaturedImage={Boolean(featuredImageUrl)} />
           <Card className="space-y-4 p-5">
             <h3 className="text-lg font-semibold text-slate-800">{t('posts.section_settings')}</h3>
 
@@ -795,6 +799,7 @@ export function PostFormPage() {
                 {...register('published_at')}
                 className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm"
               />
+              {easternReadout(publishedAtValue) && <p className="mt-1 text-xs font-medium text-slate-700" data-testid="published-at-readout">{t('posts.form_readout_published_at', { time: easternReadout(publishedAtValue) })}</p>}
               {selectedStatus === 'scheduled' && <p className="mt-1 text-xs text-slate-500">{t('posts.form_hint_scheduled')}</p>}
               {errors.published_at?.message && <p className="mt-1 text-xs text-red-600">{String(errors.published_at.message)}</p>}
             </div>

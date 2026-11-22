@@ -7,7 +7,9 @@ import { Card } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { Button } from '../../components/ui/button';
-import { SparklesIcon } from '../../components/ui/icons';
+import { CopyIcon, SparklesIcon } from '../../components/ui/icons';
+import toast from 'react-hot-toast';
+import { buildSeoPrompt, parseSeoJson, plainText, type SeoJsonKey } from './seoPrompt';
 import { MediaPicker } from '../media/MediaPicker';
 import type { MediaContext } from '../../components/ui/media-library-modal';
 import clsx from 'clsx';
@@ -23,7 +25,18 @@ interface SeoSettingsSectionProps {
   contentType?: 'blog' | 'product';
   googlePreviewImage?: string | null;
   googlePreviewPath?: string;
+  /** More fields the "Copy prompt" text should include besides the title and content, e.g. a Pick's "Our take". */
+  extraContent?: { label: string; key: string }[];
 }
+
+// What a chatbot answer's keys are called in this form, for the "too long" message.
+const JSON_KEY_LABEL: Record<SeoJsonKey, string> = {
+  seo_title: 'posts.seo.title',
+  focus_keyphrase: 'posts.seo.keyphrase',
+  meta_description: 'posts.seo.description',
+  social_title: 'posts.seo.og_title',
+  social_description: 'posts.seo.og_description',
+};
 
 type SeoTab = 'google' | 'social';
 
@@ -37,9 +50,11 @@ function CharCounter({ count, max }: { count: number; max: number }) {
   );
 }
 
-export function SeoSettingsSection({ control, register, setValue, getValues, titleKey = 'title', contentKey = 'content', mediaContext = 'blog', contentType = 'blog', googlePreviewImage = null, googlePreviewPath = '' }: SeoSettingsSectionProps) {
+export function SeoSettingsSection({ control, register, setValue, getValues, titleKey = 'title', contentKey = 'content', mediaContext = 'blog', contentType = 'blog', googlePreviewImage = null, googlePreviewPath = '', extraContent = [] }: SeoSettingsSectionProps) {
   const { t } = useTranslation();
   const generateSeo = useGenerateSeo();
+  const [pasted, setPasted] = useState('');
+  const [pasteMessage, setPasteMessage] = useState<{ tone: 'error' | 'warn' | 'ok'; text: string } | null>(null);
   const [tab, setTab] = useState<SeoTab>('google');
   const [generated, setGenerated] = useState(false);
   const [needTitle, setNeedTitle] = useState(false);
@@ -76,6 +91,49 @@ export function SeoSettingsSection({ control, register, setValue, getValues, tit
     );
   }
 
+  // The way without the paid API: the prompt goes to whatever chatbot Yuni already uses, and its JSON answer comes back here.
+  async function handleCopyPrompt() {
+    const title = plainText(getValues(titleKey));
+    if (!title) {
+      setNeedTitle(true);
+      return;
+    }
+    setNeedTitle(false);
+    const prompt = buildSeoPrompt({
+      contentType,
+      title,
+      content: getValues(contentKey),
+      extras: extraContent.map((extra) => ({ label: extra.label, value: getValues(extra.key) })),
+    });
+    try {
+      await navigator.clipboard.writeText(prompt);
+      toast.success(t('posts.seo.copy_prompt_done'));
+    } catch {
+      toast.error(t('posts.seo.copy_prompt_failed'));
+    }
+  }
+
+  function handleFillFromJson() {
+    const result = parseSeoJson(pasted);
+    if (!result.ok) {
+      setPasteMessage({
+        tone: 'error',
+        text: result.error === 'empty' ? t('posts.seo.paste_empty') : result.error === 'invalid' ? t('posts.seo.paste_invalid') : t('posts.seo.paste_missing_keys', { keys: result.missing.join(', ') }),
+      });
+      return;
+    }
+    const options = { shouldValidate: true, shouldDirty: true };
+    setValue('seo.title', result.data.seo_title, options);
+    setValue('seo.keyphrase', result.data.focus_keyphrase, options);
+    setValue('seo.description', result.data.meta_description, options);
+    setValue('seo.og_title', result.data.social_title, options);
+    setValue('seo.og_description', result.data.social_description, options);
+    setPasted('');
+    setPasteMessage(result.tooLong.length > 0
+      ? { tone: 'warn', text: t('posts.seo.paste_too_long', { fields: result.tooLong.map((key) => t(JSON_KEY_LABEL[key])).join(', ') }) }
+      : { tone: 'ok', text: t('posts.seo.paste_filled') });
+  }
+
   const tabClass = (active: boolean) =>
     clsx(
       'px-3 py-1.5 text-sm font-semibold rounded-t-lg border border-b-0 -mb-px',
@@ -84,18 +142,41 @@ export function SeoSettingsSection({ control, register, setValue, getValues, tit
 
   return (
     <Card className="space-y-4 p-5">
-      <div className="flex items-center justify-between gap-4 mb-3">
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div>
           <h3 className="text-lg font-semibold text-slate-800">{t('posts.section_seo')}</h3>
           <p className="text-sm text-gray-500">{t('posts.seo.section_hint')}</p>
         </div>
-        <Button type="button" variant="secondary" className="whitespace-nowrap shrink-0" disabled={generateSeo.isPending} onClick={handleGenerate}>
-          <SparklesIcon className="h-4 w-4" />
-          {generateSeo.isPending ? t('posts.seo.generating_ai') : t('posts.seo.generate_ai')}
-        </Button>
+        <div className="flex shrink-0 flex-col items-start gap-1 sm:items-end">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="secondary" className="whitespace-nowrap shrink-0" onClick={handleCopyPrompt}>
+              <CopyIcon className="h-4 w-4" />
+              {t('posts.seo.copy_prompt')}
+            </Button>
+            <Button type="button" variant="secondary" className="whitespace-nowrap shrink-0" disabled={generateSeo.isPending} onClick={handleGenerate}>
+              <SparklesIcon className="h-4 w-4" />
+              {generateSeo.isPending ? t('posts.seo.generating_ai') : t('posts.seo.generate_ai')}
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500" data-testid="ai-api-fallback-note">{t('posts.seo.api_fallback_note')}</p>
+        </div>
       </div>
 
       <div className="space-y-4">
+
+        <div className="space-y-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3" data-testid="seo-chatbot-panel">
+          <p className="text-xs text-gray-600">{t('posts.seo.chatbot_hint')}</p>
+          <label className="block text-sm font-medium text-slate-700">{t('posts.seo.paste_label')}</label>
+          <Textarea value={pasted} onChange={(event) => setPasted(event.target.value)} rows={3} placeholder={t('posts.seo.paste_placeholder')} data-testid="seo-json-input" />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="button" variant="secondary" onClick={handleFillFromJson}>{t('posts.seo.fill_from_json')}</Button>
+            {pasteMessage && (
+              <p role="status" className={clsx('text-xs', pasteMessage.tone === 'error' ? 'text-red-600' : pasteMessage.tone === 'warn' ? 'text-amber-700' : 'text-green-600')} data-testid="seo-json-message">
+                {pasteMessage.text}
+              </p>
+            )}
+          </div>
+        </div>
 
         {needTitle && <p className="text-xs text-red-600">{t('posts.seo.add_title_first')}</p>}
         {generateSeo.isError && <p className="text-xs text-red-600">{(generateSeo.error as Error).message}</p>}
