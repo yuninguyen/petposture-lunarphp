@@ -89,7 +89,7 @@ describe('Pick variant selector', () => {
 
     const withPetSmart: ProductPick = {
         ...pick,
-        secondRetailer: { retailer: 'petsmart', retailerName: 'PetSmart', goUrl: 'https://petposture.com/go/pick/balance-harness?retailer=second', price: 40.99, priceCheckedDate: '2026-11-21' },
+        merchants: [{ id: 1, retailer: 'petsmart', retailerName: 'PetSmart', goUrl: 'https://petposture.com/go/pick/balance-harness?retailer=second', price: 40.99, priceCheckedDate: '2026-11-21' }],
     };
 
     it('gives the PetSmart row its price and a comparison while there is nothing to choose, and not once there is', async () => {
@@ -114,7 +114,7 @@ describe('Pick variant selector', () => {
     });
 
     it('shows no PetSmart row at all, with or without a chooser, until its price and date are entered', () => {
-        const unpriced: ProductPick = { ...pick, secondRetailer: { ...withPetSmart.secondRetailer!, price: null, priceCheckedDate: null } };
+        const unpriced: ProductPick = { ...pick, merchants: [{ ...withPetSmart.merchants![0], price: null, priceCheckedDate: null }] };
 
         for (const variants of [undefined, [camo, black]]) {
             const html = renderToStaticMarkup(

@@ -46,8 +46,8 @@ function MerchantLogo({ row }: { row: PickPriceRow }) {
         <img
             src={row.logo.src}
             alt={row.name}
-            width={row.logo.width}
-            height={row.logo.height}
+            width={row.logo.width ?? undefined}
+            height={row.logo.height ?? undefined}
             onError={() => setFailed(true)}
             className="block h-[18px] w-auto max-w-full object-contain object-left min-[561px]:h-[22px]"
         />
@@ -161,7 +161,7 @@ export function PickBuyBox({ pick, today }: { pick: ProductPick; today?: string 
                     </div>
                 )}
                 {rows.map((row) => (
-                    <PriceRow key={row.slot} row={row} save={lower?.slot === row.slot ? lower.save : undefined} />
+                    <PriceRow key={row.key} row={row} save={lower[row.key]} />
                 ))}
             </div>
             <p className="mt-[14px] text-xs leading-5 text-zinc-500">{rows.length > 1 ? PICK_DISCLOSURE_MANY : PICK_DISCLOSURE}</p>

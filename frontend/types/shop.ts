@@ -84,10 +84,13 @@ export interface PickVariant {
     goUrl: string;
 }
 
-/** A second store a Pick can be bought from. Its link never reaches the browser: the button goes through `goUrl`. */
-export interface SecondRetailer {
+/** A store after the first one that a Pick can be bought from. Its link never reaches the browser: the button goes through `goUrl`. */
+export interface PickMerchant {
+    id: number;
     retailer: string | null;
     retailerName: string | null;
+    /** The logo chosen for this store in the admin, or null (the page then uses its own artwork or the store's name). */
+    retailerLogo?: string | null;
     goUrl: string;
     /** This store's own price and the date it was checked; only both together, and null until the admin entered them. */
     price?: number | null;
@@ -99,8 +102,10 @@ export interface ProductPick {
     retailer: string | null;
     retailerName: string | null;
     goUrl: string;
-    /** The button for a second store, or null when the admin set none (or its slug names no network). */
-    secondRetailer?: SecondRetailer | null;
+    /** The logo chosen for the first store in the admin, or null. */
+    retailerLogo?: string | null;
+    /** The other stores, in the order the admin put them; empty when there are none. */
+    merchants?: PickMerchant[];
     referencePrice: number | null;
     priceCheckedDate: string | null;
     bestForBreeds: string[];

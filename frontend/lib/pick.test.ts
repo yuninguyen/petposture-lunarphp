@@ -9,7 +9,7 @@ import {
     pickBreeds,
     pickCardPrice,
     pickCtaLabel,
-    pickSecondCtaLabel,
+    pickMerchantCtaLabel,
     pickLowerPrice,
     pickPriceRows,
     pickVariantLine,
@@ -69,26 +69,26 @@ describe('pickCtaLabel', () => {
     });
 });
 
-describe('pickSecondCtaLabel', () => {
+describe('pickMerchantCtaLabel', () => {
     it('names the second store from its network, the same way as the first button does', () => {
-        expect(pickSecondCtaLabel({ retailer: 'petsmart', retailerName: 'PetSmart', goUrl: 'https://petposture.com/go/pick/x?retailer=second' })).toBe('Buy on PetSmart');
-        expect(pickSecondCtaLabel({ retailer: 'chewy', retailerName: 'Chewy', goUrl: '/go' })).toBe('Buy on Chewy');
-        expect(pickSecondCtaLabel({ retailer: 'amazon', retailerName: 'Amazon', goUrl: '/go' })).toBe('Buy on Amazon');
-        expect(pickSecondCtaLabel({ retailer: 'petco', retailerName: 'Petco', goUrl: '/go' })).toBe('View on Petco');
+        expect(pickMerchantCtaLabel({ id: 1, retailer: 'petsmart', retailerName: 'PetSmart', goUrl: 'https://petposture.com/go/pick/x?retailer=second' })).toBe('Buy on PetSmart');
+        expect(pickMerchantCtaLabel({ id: 1, retailer: 'chewy', retailerName: 'Chewy', goUrl: '/go' })).toBe('Buy on Chewy');
+        expect(pickMerchantCtaLabel({ id: 1, retailer: 'amazon', retailerName: 'Amazon', goUrl: '/go' })).toBe('Buy on Amazon');
+        expect(pickMerchantCtaLabel({ id: 1, retailer: 'petco', retailerName: 'Petco', goUrl: '/go' })).toBe('View on Petco');
     });
 });
 
 describe('the price table', () => {
-    const second = (price: number | null, priceCheckedDate: string | null) => ({ retailer: 'petsmart', retailerName: 'PetSmart', goUrl: '/go?retailer=second', price, priceCheckedDate });
+    const second = (price: number | null, priceCheckedDate: string | null) => ({ id: 1, retailer: 'petsmart', retailerName: 'PetSmart', goUrl: '/go?retailer=second', price, priceCheckedDate });
     const now = new Date('2026-11-21T12:00:00Z');
     const lower = (chewy: number, petsmart: number, chewyDate = '2026-11-21', petsmartDate = '2026-11-21') =>
-        pickLowerPrice(pickPriceRows(pick({ referencePrice: chewy, priceCheckedDate: chewyDate, secondRetailer: second(petsmart, petsmartDate) }), null, false), now);
+        pickLowerPrice(pickPriceRows(pick({ referencePrice: chewy, priceCheckedDate: chewyDate, merchants: [second(petsmart, petsmartDate)] }), null, false), now);
 
     it('has one row for one store and two, Chewy first, with a second store', () => {
-        expect(pickPriceRows(pick(), null, false).map((row) => row.slot)).toEqual(['first']);
-        expect(pickPriceRows(pick({ secondRetailer: second(40.99, '2026-11-21') }), null, false).map((row) => [row.slot, row.name, row.price, row.checked])).toEqual([
+        expect(pickPriceRows(pick(), null, false).map((row) => row.key)).toEqual(['first']);
+        expect(pickPriceRows(pick({ merchants: [second(40.99, '2026-11-21')] }), null, false).map((row) => [row.key, row.name, row.price, row.checked])).toEqual([
             ['first', 'Chewy', '$49.96', '14 Nov 2026'],
-            ['second', 'PetSmart', '$40.99', '21 Nov 2026'],
+            ['merchant-1', 'PetSmart', '$40.99', '21 Nov 2026'],
         ]);
     });
 
@@ -97,7 +97,7 @@ describe('the price table', () => {
 
         expect(rest).toEqual([]);
         expect(first).toMatchObject({
-            slot: 'first',
+            key: 'first',
             name: 'Amazon',
             logo: { src: '/images/retailers/amazon.png', width: 398, height: 120 },
             price: '$39.99',
@@ -125,11 +125,11 @@ describe('the price table', () => {
     });
 
     it('takes Amazon as the second store too, with its own price and the same short Buy button', () => {
-        const rows = pickPriceRows(pick({ secondRetailer: { retailer: 'amazon', retailerName: 'Amazon', goUrl: '/go?retailer=second', price: 40.99, priceCheckedDate: '2026-11-21' } }), null, false);
+        const rows = pickPriceRows(pick({ merchants: [{ id: 1, retailer: 'amazon', retailerName: 'Amazon', goUrl: '/go?retailer=second', price: 40.99, priceCheckedDate: '2026-11-21' }] }), null, false);
 
-        expect(rows.map((row) => [row.slot, row.name, row.price, row.buttonLabel])).toEqual([
+        expect(rows.map((row) => [row.key, row.name, row.price, row.buttonLabel])).toEqual([
             ['first', 'Chewy', '$49.96', 'Buy'],
-            ['second', 'Amazon', '$40.99', 'Buy'],
+            ['merchant-1', 'Amazon', '$40.99', 'Buy'],
         ]);
         expect(rows[1].logo?.src).toBe('/images/retailers/amazon.png');
     });
@@ -145,54 +145,54 @@ describe('the price table', () => {
 
     it('has no second row until the second store has both its price and its check date', () => {
         for (const [price, date] of [[null, null], [40.99, null], [null, '2026-11-21']] as const) {
-            const rows = pickPriceRows(pick({ secondRetailer: second(price, date) }), null, false);
+            const rows = pickPriceRows(pick({ merchants: [second(price, date)] }), null, false);
 
-            expect(rows.map((row) => row.slot), `${price} ${date}`).toEqual(['first']);
+            expect(rows.map((row) => row.key), `${price} ${date}`).toEqual(['first']);
         }
         // an API that predates the price fields (no price, no date at all) is the same as none entered
-        expect(pickPriceRows(pick({ secondRetailer: { retailer: 'petsmart', retailerName: 'PetSmart', goUrl: '/go?retailer=second' } }), null, false)).toHaveLength(1);
+        expect(pickPriceRows(pick({ merchants: [{ id: 1, retailer: 'petsmart', retailerName: 'PetSmart', goUrl: '/go?retailer=second' }] }), null, false)).toHaveLength(1);
         // and with a variant chooser the row still needs them, then keeps only its button
         const variant = { id: 1, label: 'Camo', options: [], referencePrice: 45.95, goUrl: '/go?variant=1' };
-        expect(pickPriceRows(pick({ secondRetailer: second(null, null) }), variant, true)).toHaveLength(1);
-        expect(pickPriceRows(pick({ secondRetailer: second(40.99, '2026-11-21') }), variant, true)).toHaveLength(2);
+        expect(pickPriceRows(pick({ merchants: [second(null, null)] }), variant, true)).toHaveLength(1);
+        expect(pickPriceRows(pick({ merchants: [second(40.99, '2026-11-21')] }), variant, true)).toHaveLength(2);
     });
 
     it('gives the second store no price while the reader can choose between variants', () => {
         const variant = { id: 1, label: 'Camo', options: [], referencePrice: 45.95, goUrl: '/go?variant=1' };
-        const rows = pickPriceRows(pick({ secondRetailer: second(40.99, '2026-11-21') }), variant, true);
+        const rows = pickPriceRows(pick({ merchants: [second(40.99, '2026-11-21')] }), variant, true);
 
         expect(rows[1].price).toBeNull();
         expect(rows[1].goUrl).toBe('/go?retailer=second');
-        expect(pickLowerPrice(rows, now)).toBeNull();
+        expect(pickLowerPrice(rows, now)).toEqual({});
     });
 
     it('names the cheaper store and the saving in dollars and cents', () => {
-        expect(lower(64.99, 40.99)).toEqual({ slot: 'second', save: '$24.00' });
-        expect(lower(20, 25.5)).toEqual({ slot: 'first', save: '$5.50' });
-        expect(lower(30, 29)).toEqual({ slot: 'second', save: '$1.00' });
+        expect(lower(64.99, 40.99)).toEqual({ 'merchant-1': '$24.00' });
+        expect(lower(20, 25.5)).toEqual({ first: '$5.50' });
+        expect(lower(30, 29)).toEqual({ 'merchant-1': '$1.00' });
     });
 
     it('stays silent under a dollar and at equal prices', () => {
-        expect(lower(18.4, 18.39)).toBeNull();
-        expect(lower(19.43, 19.43)).toBeNull();
-        expect(lower(29.99, 29.0)).toBeNull();
+        expect(lower(18.4, 18.39)).toEqual({});
+        expect(lower(19.43, 19.43)).toEqual({});
+        expect(lower(29.99, 29.0)).toEqual({});
     });
 
     it('counts in cents, so float noise cannot hide a saving of exactly one dollar', () => {
         // 10.1 + 0.2 is 10.299999999999999, and minus 9.3 is a hair under 1 when subtracted as floats
-        expect(lower(10.1 + 0.2, 9.3)).toEqual({ slot: 'second', save: '$1.00' });
+        expect(lower(10.1 + 0.2, 9.3)).toEqual({ 'merchant-1': '$1.00' });
     });
 
     it('stays silent when either check is more than 30 days old, and says it when it is exactly 30', () => {
-        expect(lower(64.99, 40.99, '2026-10-01')).toBeNull();
-        expect(lower(64.99, 40.99, '2026-11-21', '2026-10-01')).toBeNull();
-        expect(lower(64.99, 40.99, '2026-10-22')).toEqual({ slot: 'second', save: '$24.00' });
-        expect(lower(64.99, 40.99, '2026-10-21')).toBeNull();
-        expect(lower(64.99, 40.99, '2026-11-22')).toBeNull();
+        expect(lower(64.99, 40.99, '2026-10-01')).toEqual({});
+        expect(lower(64.99, 40.99, '2026-11-21', '2026-10-01')).toEqual({});
+        expect(lower(64.99, 40.99, '2026-10-22')).toEqual({ 'merchant-1': '$24.00' });
+        expect(lower(64.99, 40.99, '2026-10-21')).toEqual({});
+        expect(lower(64.99, 40.99, '2026-11-22')).toEqual({});
     });
 
     it('has no comparison for a single store', () => {
-        expect(pickLowerPrice(pickPriceRows(pick(), null, false), now)).toBeNull();
+        expect(pickLowerPrice(pickPriceRows(pick(), null, false), now)).toEqual({});
     });
 
     it('reads the product from the colour and size of the quick specs', () => {
@@ -508,6 +508,88 @@ describe('relatedPicks', () => {
 
     it('returns nothing when the viewed Pick is the only one', () => {
         expect(relatedPicks([apiPick(1)], 1)).toEqual([]);
+    });
+});
+
+describe('a list of stores', () => {
+    const store = (id: number, retailer: string, retailerName: string, price: number | null, priceCheckedDate: string | null, retailerLogo: string | null = null) =>
+        ({ id, retailer, retailerName, retailerLogo, goUrl: `/go?merchant=${id}`, price, priceCheckedDate });
+    const now = new Date('2026-11-21T12:00:00Z');
+    const rowsFor = (chewy: number, ...others: [number, number | null][]) =>
+        pickPriceRows(pick({ referencePrice: chewy, priceCheckedDate: '2026-11-21', merchants: others.map(([id, price]) => store(id, `shop-${id}`, `Shop ${id}`, price, price === null ? null : '2026-11-21')) }), null, false);
+
+    it('has one row per store, in the order the admin put them, each keyed by its own id', () => {
+        const rows = pickPriceRows(pick({ merchants: [store(8, 'amazon', 'Amazon', 39.99, '2026-11-21'), store(5, 'petsmart', 'PetSmart', 40.99, '2026-11-20'), store(9, 'petco', 'Petco', 44, '2026-11-19')] }), null, false);
+
+        expect(rows.map((row) => [row.key, row.name, row.price, row.goUrl])).toEqual([
+            ['first', 'Chewy', '$49.96', 'https://api.petposture.com/go/pick/necoichi-bowl'],
+            ['merchant-8', 'Amazon', '$39.99', '/go?merchant=8'],
+            ['merchant-5', 'PetSmart', '$40.99', '/go?merchant=5'],
+            ['merchant-9', 'Petco', '$44.00', '/go?merchant=9'],
+        ]);
+        expect(rows.map((row) => row.buttonLabel)).toEqual(['Buy', 'Buy', 'Buy', 'Buy']);
+        expect(rows.map((row) => row.ariaLabel)).toEqual(['Buy on Chewy', 'Buy on Amazon', 'Buy on PetSmart', 'View on Petco']);
+    });
+
+    it('leaves out a store that has no price or no check date, and keeps the others', () => {
+        const rows = pickPriceRows(pick({ merchants: [store(1, 'amazon', 'Amazon', null, null), store(2, 'petsmart', 'PetSmart', 40.99, '2026-11-21'), store(3, 'petco', 'Petco', 44, null)] }), null, false);
+
+        expect(rows.map((row) => row.key)).toEqual(['first', 'merchant-2']);
+    });
+
+    it('treats a missing list like an empty one', () => {
+        expect(pickPriceRows(pick({ merchants: undefined }), null, false)).toHaveLength(1);
+        expect(pickPriceRows(pick({ merchants: [] }), null, false)).toHaveLength(1);
+    });
+
+    it('uses the logo chosen in the admin before the site\'s own, and the site\'s own before the name', () => {
+        const rows = pickPriceRows(pick({
+            retailerLogo: 'https://cdn.example.test/chewy-new.png',
+            merchants: [
+                store(1, 'amazon', 'Amazon', 39.99, '2026-11-21', 'https://cdn.example.test/amazon-new.svg'),
+                store(2, 'petsmart', 'PetSmart', 40.99, '2026-11-21'),
+                store(3, 'zooplus', 'Zooplus', 41.5, '2026-11-21'),
+            ],
+        }), null, false);
+
+        expect(rows[0].logo).toEqual({ src: 'https://cdn.example.test/chewy-new.png', width: null, height: null });
+        expect(rows[1].logo).toEqual({ src: 'https://cdn.example.test/amazon-new.svg', width: null, height: null });
+        expect(rows[2].logo).toMatchObject({ src: '/images/retailers/petsmart.png' });
+        expect(rows[3].logo).toBeNull();
+    });
+
+    it('marks only the cheapest store, by how far it is below the second cheapest', () => {
+        // Chewy 50, A 45, B 40, C 49.50: B is the cheapest and A the second, so B saves $5.00 and nobody else is marked
+        expect(pickLowerPrice(rowsFor(50, [1, 45], [2, 40], [3, 49.5]), now)).toEqual({ 'merchant-2': '$5.00' });
+    });
+
+    it('marks the cheapest of three even when it is not next to the first: Amazon $36.99 against PetSmart $40.99', () => {
+        const rows = pickPriceRows(pick({ referencePrice: 49.99, priceCheckedDate: '2026-11-21', merchants: [store(1, 'petsmart', 'PetSmart', 40.99, '2026-11-21'), store(2, 'amazon', 'Amazon', 36.99, '2026-11-21')] }), null, false);
+
+        expect(pickLowerPrice(rows, now)).toEqual({ 'merchant-2': '$4.00' });
+    });
+
+    it('marks the first store when it is the cheapest, by how far it is below the next cheapest', () => {
+        expect(pickLowerPrice(rowsFor(40, [1, 45], [2, 50]), now)).toEqual({ first: '$5.00' });
+        // not when the next cheapest is within a dollar
+        expect(pickLowerPrice(rowsFor(40, [1, 40.5], [2, 50]), now)).toEqual({});
+    });
+
+    it('marks nothing when the two lowest prices are equal or within a dollar', () => {
+        expect(pickLowerPrice(rowsFor(50, [1, 40], [2, 40]), now)).toEqual({});
+        expect(pickLowerPrice(rowsFor(50, [1, 40], [2, 40.99]), now)).toEqual({});
+        expect(pickLowerPrice(rowsFor(50, [1, 40], [2, 41]), now)).toEqual({ 'merchant-1': '$1.00' });
+    });
+
+    it('compares only the prices that are current: a stale store is neither marked nor used as the price to beat', () => {
+        const stale = (chewyDate: string) => pickPriceRows(pick({ referencePrice: 50, priceCheckedDate: chewyDate, merchants: [store(1, 'a', 'A', 40, '2026-09-01'), store(2, 'b', 'B', 44, '2026-11-21'), store(3, 'c', 'C', 47, '2026-11-20')] }), null, false);
+
+        // A is the cheapest but its check is old: B (44) is compared with C (47)
+        expect(pickLowerPrice(stale('2026-11-21'), now)).toEqual({ 'merchant-2': '$3.00' });
+        // the first store's own check being old takes it out as well
+        expect(pickLowerPrice(stale('2026-09-01'), now)).toEqual({ 'merchant-2': '$3.00' });
+        // one current price is nothing to compare with
+        expect(pickLowerPrice(pickPriceRows(pick({ referencePrice: 50, priceCheckedDate: '2026-09-01', merchants: [store(1, 'a', 'A', 40, '2026-11-21')] }), null, false), now)).toEqual({});
     });
 });
 

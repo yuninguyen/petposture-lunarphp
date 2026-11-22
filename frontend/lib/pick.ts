@@ -1,4 +1,4 @@
-import type { PickVariant, Product, ProductPick, SecondRetailer } from '@/types/shop';
+import type { PickMerchant, PickVariant, Product, ProductPick } from '@/types/shop';
 
 export type PickProduct = Product & { pick: ProductPick };
 
@@ -210,9 +210,9 @@ export function pickCtaLabel(pick: ProductPick): string {
     return ctaLabelFor(retailerName(pick));
 }
 
-/** The text of the button for a second store, named the same way as the first button. */
-export function pickSecondCtaLabel(second: SecondRetailer): string {
-    return ctaLabelFor(second.retailerName ?? (second.retailer ? humanizeSlug(second.retailer) : null));
+/** The text of the button for one of the other stores, named the same way as the first button. */
+export function pickMerchantCtaLabel(merchant: PickMerchant): string {
+    return ctaLabelFor(merchant.retailerName ?? (merchant.retailer ? humanizeSlug(merchant.retailer) : null));
 }
 
 /** "2026-11-14" -> "14 Nov 2026", read as a calendar date so no timezone can move it a day. */
@@ -251,11 +251,19 @@ const RETAILER_LOGOS: Record<string, { src: string; width: number; height: numbe
 /** A store has to be this much cheaper (in cents) before the table says so; one cent is not a saving. */
 export const PICK_SAVE_MIN_CENTS = 100;
 
+/** A store's logo: one chosen in the admin (an address, size not known) or one of the site's own (size known). */
+export interface PickLogo {
+    src: string;
+    width: number | null;
+    height: number | null;
+}
+
 /** One store of the price table: its name or logo, its own price with the date it was checked, and its tracked button. */
 export interface PickPriceRow {
-    slot: 'first' | 'second';
+    /** "first", or "merchant-<id>" for the others, so a row keeps its identity when the list changes. */
+    key: string;
     name: string;
-    logo: { src: string; width: number; height: number } | null;
+    logo: PickLogo | null;
     /** "$64.99", or null when there is no price (none entered, no date, or a store whose price cannot be compared). */
     price: string | null;
     cents: number | null;
@@ -269,13 +277,15 @@ export interface PickPriceRow {
     ariaLabel: string;
 }
 
-function priceRow(slot: PickPriceRow['slot'], name: string, slug: string | null, price: number | null, checkedDate: string | null, goUrl: string, ariaLabel: string): PickPriceRow {
+function priceRow(key: string, name: string, slug: string | null, logoUrl: string | null, price: number | null, checkedDate: string | null, goUrl: string, ariaLabel: string): PickPriceRow {
     const shown = price !== null && checkedDate !== null;
+    const own = RETAILER_LOGOS[(slug ?? name).toLowerCase()];
 
     return {
-        slot,
+        key,
         name,
-        logo: RETAILER_LOGOS[(slug ?? name).toLowerCase()] ?? null,
+        // The logo chosen in the admin wins; without one the site's own artwork for the store, then its name in text.
+        logo: logoUrl ? { src: logoUrl, width: null, height: null } : own ?? null,
         price: shown ? `$${price.toFixed(2)}` : null,
         cents: shown ? Math.round(price * 100) : null,
         checkedDate: shown ? checkedDate : null,
@@ -288,41 +298,48 @@ function priceRow(slot: PickPriceRow['slot'], name: string, slug: string | null,
 }
 
 /**
- * The rows of the price table: the first store, then the second once the admin entered its price AND the date it was
- * checked (without both there is no second row at all, button included). A price is only shown with the date it was
- * checked. The first store's price follows the chosen variant; the second store's link is for the one product that was
- * checked, so when the reader can choose between variants its row keeps only the button (and nothing is compared).
+ * The rows of the price table: the first store, then each of the other stores in the order the admin put them, once
+ * the admin entered its price AND the date it was checked (without both there is no row at all, button included). A
+ * price is only shown with the date it was checked. The first store's price follows the chosen variant; another
+ * store's link is for the one product that was checked, so when the reader can choose between variants its row keeps
+ * only the button (and nothing is compared).
  */
 export function pickPriceRows(pick: ProductPick, selected: PickVariant | null, hasVariantChoice: boolean): PickPriceRow[] {
     const rows = [
-        priceRow('first', retailerName(pick) ?? 'Retailer', pick.retailer, selected ? selected.referencePrice : pick.referencePrice, pick.priceCheckedDate, selected?.goUrl ?? pick.goUrl, pickCtaLabel(pick)),
+        priceRow('first', retailerName(pick) ?? 'Retailer', pick.retailer, pick.retailerLogo ?? null, selected ? selected.referencePrice : pick.referencePrice, pick.priceCheckedDate, selected?.goUrl ?? pick.goUrl, pickCtaLabel(pick)),
     ];
-    const second = pick.secondRetailer;
 
-    if (second && second.price != null && second.priceCheckedDate != null) {
-        const name = second.retailerName ?? (second.retailer ? humanizeSlug(second.retailer) : 'Retailer');
+    for (const merchant of pick.merchants ?? []) {
+        if (merchant.price == null || merchant.priceCheckedDate == null) continue;
+
+        const name = merchant.retailerName ?? (merchant.retailer ? humanizeSlug(merchant.retailer) : 'Retailer');
         const comparable = !hasVariantChoice;
 
-        rows.push(priceRow('second', name, second.retailer, comparable ? second.price : null, comparable ? second.priceCheckedDate : null, second.goUrl, pickSecondCtaLabel(second)));
+        rows.push(priceRow(`merchant-${merchant.id}`, name, merchant.retailer, merchant.retailerLogo ?? null, comparable ? merchant.price : null, comparable ? merchant.priceCheckedDate : null, merchant.goUrl, pickMerchantCtaLabel(merchant)));
     }
 
     return rows;
 }
 
 /**
- * Which store is the cheaper one, and by how much, or null when there is nothing fair to say: one store only, a price
- * missing, a check older than the 30 days a price may be called current, or a difference under a dollar.
+ * Which store is the lowest, as { row key: "$4.00" }: only the cheapest store is marked, and the amount is how far it is
+ * below the next cheapest ("Save $4.00" against the second lowest price). Empty when there is nothing fair to say: fewer
+ * than two prices to compare, or a difference under a dollar (so a tie marks nothing). Only prices that are current
+ * count: a price with no date, or checked more than 30 days ago, is left out, so such a store is neither marked nor used
+ * as the price the cheapest one is compared with. With two stores this is the old rule: the cheaper of the two, by the
+ * difference between them.
  */
-export function pickLowerPrice(rows: PickPriceRow[], now: Date): { slot: PickPriceRow['slot']; save: string } | null {
-    const [first, second] = rows;
+export function pickLowerPrice(rows: PickPriceRow[], now: Date): Record<string, string> {
+    const current = rows
+        .flatMap((row) => (row.cents !== null && isFreshDate(row.checkedDate, now) ? [{ key: row.key, cents: row.cents }] : []))
+        .sort((a, b) => a.cents - b.cents);
 
-    if (!first || !second || first.cents === null || second.cents === null) return null;
-    if (!isFreshDate(first.checkedDate, now) || !isFreshDate(second.checkedDate, now)) return null;
+    if (current.length < 2) return {};
 
-    const difference = first.cents - second.cents;
-    if (Math.abs(difference) < PICK_SAVE_MIN_CENTS) return null;
+    const [cheapest, next] = current;
+    const difference = next.cents - cheapest.cents;
 
-    return { slot: difference > 0 ? 'second' : 'first', save: `$${(Math.abs(difference) / 100).toFixed(2)}` };
+    return difference >= PICK_SAVE_MIN_CENTS ? { [cheapest.key]: `$${(difference / 100).toFixed(2)}` } : {};
 }
 
 /**
