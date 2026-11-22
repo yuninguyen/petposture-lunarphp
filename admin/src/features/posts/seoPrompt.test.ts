@@ -42,6 +42,30 @@ describe('buildSeoPrompt', () => {
     expect(product).toContain('Product description:\nx');
   });
 
+  it('gives a Pick, a post, a breed page and a solution page both rules, and a Shop product only the call-to-action one', () => {
+    const noTesting = 'PetPosture does not test products itself';
+    const noCallToAction = 'Never use a call to action or urgency';
+
+    for (const contentType of ['pick', 'blog'] as const) {
+      const prompt = buildSeoPrompt({ contentType, title: 'T', content: 'x' });
+
+      expect(prompt).toContain(noTesting);
+      expect(prompt).toContain('do not use "we tested", "our review", "hands-on" or "we tried"');
+      expect(prompt).toContain(noCallToAction);
+      expect(prompt).toContain('never start a sentence with "Read our"');
+    }
+
+    const shop = buildSeoPrompt({ contentType: 'product', title: 'T', content: 'x' });
+    expect(shop).toContain(noCallToAction);
+    expect(shop).not.toContain(noTesting);
+  });
+
+  it('words a Pick like a product page and a post like an article', () => {
+    expect(buildSeoPrompt({ contentType: 'pick', title: 'T', content: 'x' })).toContain('Product name: T');
+    expect(buildSeoPrompt({ contentType: 'pick', title: 'T', content: 'x' })).toContain('product detail page');
+    expect(buildSeoPrompt({ contentType: 'blog', title: 'T', content: 'x' })).toContain('Article title: T');
+  });
+
   it('sends plain text only and stops the content at 3000 characters', () => {
     const prompt = buildSeoPrompt({ contentType: 'blog', title: 'T', content: `<p>${'a'.repeat(5000)}</p>` });
 

@@ -9,7 +9,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { Button } from '../../components/ui/button';
 import { CopyIcon, SparklesIcon } from '../../components/ui/icons';
 import toast from 'react-hot-toast';
-import { buildSeoPrompt, parseSeoJson, plainText, type SeoJsonKey } from './seoPrompt';
+import { buildSeoPrompt, parseSeoJson, plainText, type SeoContentType, type SeoJsonKey } from './seoPrompt';
 import { MediaPicker } from '../media/MediaPicker';
 import type { MediaContext } from '../../components/ui/media-library-modal';
 import clsx from 'clsx';
@@ -22,7 +22,7 @@ interface SeoSettingsSectionProps {
   titleKey?: string;
   contentKey?: string;
   mediaContext?: MediaContext;
-  contentType?: 'blog' | 'product';
+  contentType?: SeoContentType;
   googlePreviewImage?: string | null;
   googlePreviewPath?: string;
   /** More fields the "Copy prompt" text should include besides the title and content, e.g. a Pick's "Our take". */

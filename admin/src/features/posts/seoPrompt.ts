@@ -2,7 +2,8 @@
 // The wording mirrors what the paid "Generate with AI" button sends (AiSeoGeneratorService::prompt in the backend),
 // so an answer from a chatbot follows the same rules about claims.
 
-export type SeoContentType = 'blog' | 'product';
+/** 'pick' is a Pick, 'product' a Shop product, 'blog' a post, a breed page or a solution page. */
+export type SeoContentType = 'blog' | 'product' | 'pick';
 
 export const SEO_JSON_KEYS = ['seo_title', 'focus_keyphrase', 'meta_description', 'social_title', 'social_description'] as const;
 export type SeoJsonKey = (typeof SEO_JSON_KEYS)[number];
@@ -13,6 +14,10 @@ export const SEO_LIMITS: Record<SeoJsonKey, number> = { seo_title: 60, focus_key
 
 const POSITIONING = 'PetPosture is a breed-focused product recommendation brand that helps dog owners narrow product choices based on how their dog is built, everyday challenges, practical fit, dimensions, materials, usability, cleaning, and access.\n\n'
   + 'Never make veterinary, clinical, injury-prevention, posture-correction, testing, or unsupported health claims. Never invent ratings, review counts, prices, test evidence, merchant availability, or numerical proof. Only use claims supported by the supplied content.';
+
+// The same two rules are in AiSeoGeneratorService (backend) for the paid button; keep them in step.
+const NO_FIRSTHAND_TESTING = 'PetPosture does not test products itself. Never write as if PetPosture tested, reviewed or handled the product firsthand: do not use "we tested", "our review", "hands-on" or "we tried". Passing on what the seller says or what customers say is fine when the supplied content says it.';
+const NO_CALL_TO_ACTION = 'Never use a call to action or urgency: no "today", "now", "don\'t miss" or "shop now", and never start a sentence with "Read our".';
 
 const CONTENT_LIMIT = 3000;
 
@@ -35,7 +40,9 @@ export interface SeoPromptInput {
 }
 
 export function buildSeoPrompt({ contentType, title, content, extras = [] }: SeoPromptInput): string {
-  const isProduct = contentType === 'product';
+  // A Pick and the editorial pages share both rules. A Shop product is sold by PetPosture itself, so only the call-to-action rule applies.
+  const isProduct = contentType === 'product' || contentType === 'pick';
+  const rules = contentType === 'product' ? NO_CALL_TO_ACTION : `${NO_FIRSTHAND_TESTING}\n\n${NO_CALL_TO_ACTION}`;
   const task = isProduct
     ? 'You are writing SEO metadata for a product detail page. Keep claims grounded in the supplied description, use purchase-intent keywords naturally, and never use clickbait or exaggerated benefits.'
     : 'You are writing SEO metadata for an editorial blog article. Keep claims accurate to the supplied content, keyword-relevant, and never clickbait or exaggerated.';
@@ -43,7 +50,7 @@ export function buildSeoPrompt({ contentType, title, content, extras = [] }: Seo
     + '{"seo_title": "", "focus_keyphrase": "", "meta_description": "", "social_title": "", "social_description": ""}\n'
     + `Limits: seo_title up to ${SEO_LIMITS.seo_title} characters; focus_keyphrase up to ${SEO_LIMITS.focus_keyphrase} characters (2 to 4 words); meta_description 120 to ${SEO_LIMITS.meta_description} characters; social_title up to ${SEO_LIMITS.social_title} characters; social_description up to ${SEO_LIMITS.social_description} characters.`;
   const body = plainText(content).slice(0, CONTENT_LIMIT);
-  const parts = [POSITIONING, task, output, `${isProduct ? 'Product name' : 'Article title'}: ${title.trim()}`, `${isProduct ? 'Product description' : 'Article content'}:\n${body}`];
+  const parts = [POSITIONING, rules, task, output, `${isProduct ? 'Product name' : 'Article title'}: ${title.trim()}`, `${isProduct ? 'Product description' : 'Article content'}:\n${body}`];
 
   for (const extra of extras) {
     const text = plainText(extra.value).slice(0, CONTENT_LIMIT);

@@ -15,7 +15,7 @@ class AiSeoController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'nullable|string',
-            'content_type' => 'sometimes|in:blog,product',
+            'content_type' => 'sometimes|in:blog,product,pick',
         ]);
 
         try {

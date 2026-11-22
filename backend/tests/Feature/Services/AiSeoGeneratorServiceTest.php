@@ -11,6 +11,7 @@ use App\Services\AiSeoProviders\GrokSeoProvider;
 use App\Services\AiSeoProviders\OpenAiSeoProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class AiSeoGeneratorServiceTest extends TestCase
@@ -126,6 +127,68 @@ class AiSeoGeneratorServiceTest extends TestCase
         $this->app->instance(OpenAiSeoProvider::class, $openai);
         $this->app->instance(GrokSeoProvider::class, $grok);
         $this->app->instance(GeminiSeoProvider::class, $gemini);
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: bool}>
+     */
+    public static function promptRuleCases(): array
+    {
+        // content type => whether the "PetPosture does not test products" rule belongs in the prompt
+        return [
+            'blog' => ['blog', true],
+            'pick' => ['pick', true],
+            'shop product' => ['product', false],
+        ];
+    }
+
+    #[DataProvider('promptRuleCases')]
+    public function test_prompt_carries_the_rules_that_belong_to_the_content_type(string $contentType, bool $noFirsthandTesting): void
+    {
+        $prompt = null;
+        $anthropic = Mockery::mock(AnthropicSeoProvider::class);
+        $anthropic->shouldReceive('isConfigured')->andReturnTrue();
+        $anthropic->shouldReceive('generate')->once()->with(Mockery::on(function ($given) use (&$prompt) {
+            $prompt = $given;
+
+            return true;
+        }))->andReturn($this->metadata());
+        $this->bindProviders($anthropic, $this->unconfigured(OpenAiSeoProvider::class), $this->unconfigured(GrokSeoProvider::class), $this->unconfigured(GeminiSeoProvider::class));
+
+        app(AiSeoGeneratorService::class)->generate('Necoichi Bowl', '<p>A tilted bowl.</p>', $contentType);
+
+        $this->assertStringContainsString('Never use a call to action or urgency', $prompt);
+        $this->assertStringContainsString('never start a sentence with "Read our"', $prompt);
+
+        if ($noFirsthandTesting) {
+            $this->assertStringContainsString('PetPosture does not test products itself', $prompt);
+            $this->assertStringContainsString('do not use "we tested", "our review", "hands-on" or "we tried"', $prompt);
+        } else {
+            $this->assertStringNotContainsString('does not test products itself', $prompt);
+        }
+    }
+
+    public function test_pick_and_shop_product_use_the_product_page_wording_and_a_post_uses_the_article_wording(): void
+    {
+        $prompts = [];
+
+        foreach (['pick', 'product', 'blog'] as $contentType) {
+            $anthropic = Mockery::mock(AnthropicSeoProvider::class);
+            $anthropic->shouldReceive('isConfigured')->andReturnTrue();
+            $anthropic->shouldReceive('generate')->once()->with(Mockery::on(function ($given) use (&$prompts, $contentType) {
+                $prompts[$contentType] = $given;
+
+                return true;
+            }))->andReturn($this->metadata());
+            $this->bindProviders($anthropic, $this->unconfigured(OpenAiSeoProvider::class), $this->unconfigured(GrokSeoProvider::class), $this->unconfigured(GeminiSeoProvider::class));
+
+            app(AiSeoGeneratorService::class)->generate('Title', 'Body', $contentType);
+        }
+
+        $this->assertStringContainsString('Product name: Title', $prompts['pick']);
+        $this->assertStringContainsString('Product name: Title', $prompts['product']);
+        $this->assertStringContainsString('Article title: Title', $prompts['blog']);
+        $this->assertStringContainsString('Never invent ratings, review counts, prices', $prompts['pick']);
     }
 
     private function unconfigured(string $class): object

@@ -16,7 +16,7 @@ import { SeoSettingsSection } from './SeoSettingsSection';
 
 const answer = { seo_title: 'Raised Dog Bowl | PetPosture', focus_keyphrase: 'raised dog bowl', meta_description: 'A raised bowl that keeps food and water at a comfortable height.', social_title: 'A raised bowl for dogs', social_description: 'See who this raised bowl suits and what to check first.' };
 
-function Harness({ name = 'Necoichi Bowl', extra = false }: { name?: string; extra?: boolean }) {
+function Harness({ name = 'Necoichi Bowl', extra = false, contentType = 'product' }: { name?: string; extra?: boolean; contentType?: 'blog' | 'product' | 'pick' }) {
   const form = useForm({
     defaultValues: {
       attributes: { name, description: '<p>A tilted elevated bowl.</p>', our_take: 'Based on the seller description.', quick_specs: '' },
@@ -36,7 +36,7 @@ function Harness({ name = 'Necoichi Bowl', extra = false }: { name?: string; ext
     contentKey: 'attributes.description',
     extraContent: extra ? [{ label: 'Our take', key: 'attributes.our_take' }, { label: 'Quick specs', key: 'attributes.quick_specs' }] : [],
     mediaContext: 'product',
-    contentType: 'product',
+    contentType,
   });
 }
 
@@ -87,6 +87,27 @@ describe('SeoSettingsSection without the paid API', () => {
     expect(prompt).not.toContain('Our take');
     expect(mocks.success).toHaveBeenCalledWith('posts.seo.copy_prompt_done');
     expect(mocks.mutate).not.toHaveBeenCalled();
+  });
+
+  it('tells the paid button and the copied prompt that this is a Pick, with both rules in the prompt', async () => {
+    act(() => root.render(createElement(Harness, { contentType: 'pick' })));
+
+    act(() => button('posts.seo.generate_ai').click());
+    expect(mocks.mutate).toHaveBeenCalledWith(expect.objectContaining({ content_type: 'pick' }), expect.any(Object));
+
+    await act(async () => { button('posts.seo.copy_prompt').click(); });
+    const prompt = writeText.mock.calls[0][0] as string;
+    expect(prompt).toContain('PetPosture does not test products itself');
+    expect(prompt).toContain('Never use a call to action or urgency');
+  });
+
+  it('keeps a Shop product to the call-to-action rule only', async () => {
+    act(() => root.render(createElement(Harness, { contentType: 'product' })));
+    await act(async () => { button('posts.seo.copy_prompt').click(); });
+
+    const prompt = writeText.mock.calls[0][0] as string;
+    expect(prompt).toContain('Never use a call to action or urgency');
+    expect(prompt).not.toContain('PetPosture does not test products itself');
   });
 
   it('adds the extra fields a Pick passes in', async () => {

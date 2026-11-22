@@ -139,7 +139,7 @@ export function useDuplicatePost() {
 
 export function useGenerateSeo() {
   return useMutation({
-    mutationFn: (payload: { title: string; content: string; content_type: 'blog' | 'product' }) =>
+    mutationFn: (payload: { title: string; content: string; content_type: 'blog' | 'product' | 'pick' }) =>
       fetchJson<{
         seo_title: string;
         focus_keyphrase: string;

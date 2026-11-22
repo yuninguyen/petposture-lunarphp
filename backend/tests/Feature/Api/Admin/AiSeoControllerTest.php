@@ -105,6 +105,29 @@ class AiSeoControllerTest extends TestCase
         ])->assertOk();
     }
 
+    public function test_pick_content_type_is_forwarded_to_the_generator(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+        Sanctum::actingAs($user);
+
+        $this->mock(AiSeoGeneratorService::class, function ($mock) {
+            $mock->shouldReceive('generate')
+                ->once()
+                ->with('Necoichi Bowl', '<p>A tilted bowl.</p>', 'pick')
+                ->andReturn([
+                    'seo_title' => 'T', 'focus_keyphrase' => 'k', 'meta_description' => 'd',
+                    'social_title' => 'st', 'social_description' => 'sd',
+                ]);
+        });
+
+        $this->postJson('/api/admin/posts/generate-seo', [
+            'title' => 'Necoichi Bowl',
+            'content' => '<p>A tilted bowl.</p>',
+            'content_type' => 'pick',
+        ])->assertOk();
+    }
+
     public function test_content_type_is_validated(): void
     {
         $user = User::factory()->create();

@@ -15,6 +15,11 @@ use Throwable;
 
 class AiSeoGeneratorService
 {
+    // The same two rules are written in admin/src/features/posts/seoPrompt.ts for the "Copy prompt" button; keep them in step.
+    private const NO_FIRSTHAND_TESTING = 'PetPosture does not test products itself. Never write as if PetPosture tested, reviewed or handled the product firsthand: do not use "we tested", "our review", "hands-on" or "we tried". Passing on what the seller says or what customers say is fine when the supplied content says it.';
+
+    private const NO_CALL_TO_ACTION = 'Never use a call to action or urgency: no "today", "now", "don\'t miss" or "shop now", and never start a sentence with "Read our".';
+
     public function __construct(
         private AnthropicSeoProvider $anthropic,
         private OpenAiSeoProvider $openai,
@@ -109,9 +114,16 @@ class AiSeoGeneratorService
         $positioning = "PetPosture is a breed-focused product recommendation brand that helps dog owners narrow product choices based on how their dog is built, everyday challenges, practical fit, dimensions, materials, usability, cleaning, and access.\n\n"
             .'Never make veterinary, clinical, injury-prevention, posture-correction, testing, or unsupported health claims. Never invent ratings, review counts, prices, test evidence, merchant availability, or numerical proof. Only use claims supported by the supplied content.';
 
+        // A Pick and the editorial pages (posts, breeds, solutions) share both rules. A Shop product is sold by PetPosture
+        // itself, so "we do not test products" is not assumed for it; only the call-to-action rule applies.
+        $rules = match ($contentType) {
+            'product' => self::NO_CALL_TO_ACTION,
+            default => self::NO_FIRSTHAND_TESTING."\n\n".self::NO_CALL_TO_ACTION,
+        };
+
         return match ($contentType) {
-            'product' => "{$positioning}\n\nYou are writing SEO metadata for a product detail page. Keep claims grounded in the supplied description, use purchase-intent keywords naturally, and never use clickbait or exaggerated benefits.\n\nProduct name: {$title}\n\nProduct description:\n{$excerpt}",
-            default => "{$positioning}\n\nYou are writing SEO metadata for an editorial blog article. Keep claims accurate to the supplied content, keyword-relevant, and never clickbait or exaggerated.\n\nArticle title: {$title}\n\nArticle content:\n{$excerpt}",
+            'pick', 'product' => "{$positioning}\n\n{$rules}\n\nYou are writing SEO metadata for a product detail page. Keep claims grounded in the supplied description, use purchase-intent keywords naturally, and never use clickbait or exaggerated benefits.\n\nProduct name: {$title}\n\nProduct description:\n{$excerpt}",
+            default => "{$positioning}\n\n{$rules}\n\nYou are writing SEO metadata for an editorial blog article. Keep claims accurate to the supplied content, keyword-relevant, and never clickbait or exaggerated.\n\nArticle title: {$title}\n\nArticle content:\n{$excerpt}",
         };
     }
 }
