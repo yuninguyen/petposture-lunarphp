@@ -35,18 +35,93 @@ export function filterPicksBySolution(picks: PickProduct[], solution: string | n
 /** How many Picks the list shows on one page; the rest are on the next pages. */
 export const PICKS_PER_PAGE = 12;
 
+/** The ways the Picks list can be ordered; `featured` is the order the API sends and has no parameter in the address. */
+export const PICK_SORTS = [
+    { value: 'featured', label: 'Featured' },
+    { value: 'price-asc', label: 'Price: Low to High' },
+    { value: 'price-desc', label: 'Price: High to Low' },
+    { value: 'newest', label: 'Newest' },
+    { value: 'name-asc', label: 'Name A–Z' },
+    { value: 'name-desc', label: 'Name Z–A' },
+] as const;
+
+export type PickSort = (typeof PICK_SORTS)[number]['value'];
+
+/** The sort named in the address; anything unknown is the default. */
+export function parsePickSort(raw: string | null | undefined): PickSort {
+    return PICK_SORTS.find((sort) => sort.value === raw)?.value ?? 'featured';
+}
+
+/** The words searched for, trimmed and with runs of spaces collapsed; null when there is nothing to search. */
+export function normalizePickQuery(raw: string | null | undefined): string | null {
+    const query = (raw ?? '').replace(/\s+/g, ' ').trim().slice(0, 100);
+
+    return query || null;
+}
+
+/** Picks whose name or brand contains every word searched for, ignoring case. No query means all of them. */
+export function searchPicks(picks: PickProduct[], query: string | null): PickProduct[] {
+    const words = (normalizePickQuery(query) ?? '').toLowerCase().split(' ').filter(Boolean);
+    if (words.length === 0) return picks;
+
+    return picks.filter((product) => {
+        const haystack = `${product.name} ${product.brand ?? ''}`.toLowerCase();
+
+        return words.every((word) => haystack.includes(word));
+    });
+}
+
+/** A copy of the Picks in the order chosen. Price is the Pick's reference price (a Pick without one goes last); newest is the highest id. */
+export function sortPicks(picks: PickProduct[], sort: PickSort): PickProduct[] {
+    const byName = (a: PickProduct, b: PickProduct) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' });
+    // A Pick without a price goes last in either direction.
+    const byPrice = (direction: 1 | -1) => (a: PickProduct, b: PickProduct) => {
+        const x = a.pick.referencePrice;
+        const y = b.pick.referencePrice;
+        if (x == null || y == null) return x == null && y == null ? byName(a, b) : x == null ? 1 : -1;
+
+        return (x - y) * direction || byName(a, b);
+    };
+    const list = [...picks];
+
+    switch (sort) {
+        case 'price-asc':
+            return list.sort(byPrice(1));
+        case 'price-desc':
+            return list.sort(byPrice(-1));
+        case 'newest':
+            return list.sort((a, b) => b.id - a.id);
+        case 'name-asc':
+            return list.sort(byName);
+        case 'name-desc':
+            return list.sort((a, b) => byName(b, a));
+        default:
+            return list;
+    }
+}
+
 /**
  * The list URL for a combination of filters, so a chip in one row keeps what was chosen in the other.
  * A filter link leaves `page` out, which starts again from the first page; page 1 never carries a `page` parameter.
+ * The search words and the sort ride along the same way; the default sort has no parameter.
  */
-export function picksHref({ breed, solution, page }: { breed: string | null; solution: string | null; page?: number | null }): string {
+export function picksHref({ breed, solution, page, q, sort }: {
+    breed: string | null;
+    solution: string | null;
+    page?: number | null;
+    q?: string | null;
+    sort?: PickSort | null;
+}): string {
     const params = new URLSearchParams();
     if (breed) params.set('breed', breed);
     if (solution) params.set('solution', solution);
+    const query = normalizePickQuery(q);
+    if (query) params.set('q', query);
+    if (sort && sort !== 'featured') params.set('sort', sort);
     if (page && page > 1) params.set('page', String(page));
-    const query = params.toString();
+    const search = params.toString();
 
-    return query ? `/picks?${query}` : '/picks';
+    return search ? `/picks?${search}` : '/picks';
 }
 
 /** One page of the list. A page below 1 or not a number is the first; one past the end is the last. */

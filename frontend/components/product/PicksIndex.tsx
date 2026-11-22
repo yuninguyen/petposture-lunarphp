@@ -10,9 +10,14 @@ import {
     pickSolutions,
     paginatePicks,
     picksHref,
+    searchPicks,
+    sortPicks,
+    type PickSort,
     type PickProduct,
 } from '@/lib/pick';
 import { PickListCard } from './PickListCard';
+import { PicksSearch } from './PicksSearch';
+import { PicksSort } from './PicksSort';
 
 // A breed chip turns slate when chosen, a solution chip turns orange, as in the design.
 const chipClass = (active: boolean, activeClass = 'border-[#3e4c57] bg-[#3e4c57] text-white') =>
@@ -56,18 +61,22 @@ export function PicksIndex({
     allPicks,
     breed,
     solution,
+    q = null,
+    sort = 'featured',
     page = 1,
     now,
 }: {
     allPicks: PickProduct[];
     breed: string | null;
     solution: string | null;
+    q?: string | null;
+    sort?: PickSort;
     page?: number;
     now: Date;
 }) {
     const breeds = pickBreeds(allPicks);
     const solutions = pickSolutions(allPicks);
-    const picks = filterPicksBySolution(filterPicksByBreed(allPicks, breed), solution);
+    const picks = sortPicks(searchPicks(filterPicksBySolution(filterPicksByBreed(allPicks, breed), solution), q), sort);
     const paged = paginatePicks(picks, page);
     const stats = pickListStats(allPicks);
     const breedName = breed ? humanizeSlug(breed) : null;
@@ -119,17 +128,20 @@ export function PicksIndex({
                     )}
                 </header>
 
-                {allPicks.length > 0 && (breeds.length > 0 || solutions.length > 0) && (
-                    <section aria-label="Filter picks" className="mt-8 grid gap-2.5 border-y border-[#e2e5e8] py-3.5">
+                {allPicks.length > 0 && (
+                    <>
+                    <section aria-label="Filter picks" className="mt-8 rounded-xl border border-[#e2e5e8] p-4">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+                        <div className="grid min-w-0 flex-1 gap-2.5">
                         {breeds.length > 0 && (
                             <div className={filterRowClass}>
                                 <span className={rowLabelClass}>Breed</span>
                                 <div className={rowChipsClass}>
-                                    <Link href={picksHref({ breed: null, solution })} className={chipClass(!breed)} {...(!breed ? { 'aria-current': 'true' } : {})}>All breeds</Link>
+                                    <Link href={picksHref({ breed: null, solution, q, sort })} className={chipClass(!breed)} {...(!breed ? { 'aria-current': 'true' } : {})}>All breeds</Link>
                                     {breeds.map((slug) => (
                                         <Link
                                             key={slug}
-                                            href={picksHref({ breed: slug, solution })}
+                                            href={picksHref({ breed: slug, solution, q, sort })}
                                             className={chipClass(slug === breed)}
                                             {...(slug === breed ? { 'aria-current': 'true' } : {})}
                                         >
@@ -143,11 +155,11 @@ export function PicksIndex({
                             <div className={filterRowClass}>
                                 <span className={rowLabelClass}>Solution</span>
                                 <div className={rowChipsClass}>
-                                    <Link href={picksHref({ breed, solution: null })} className={chipClass(!solution, NEED_ACTIVE)} {...(!solution ? { 'aria-current': 'true' } : {})}>All solutions</Link>
+                                    <Link href={picksHref({ breed, solution: null, q, sort })} className={chipClass(!solution, NEED_ACTIVE)} {...(!solution ? { 'aria-current': 'true' } : {})}>All solutions</Link>
                                     {solutions.map((slug) => (
                                         <Link
                                             key={slug}
-                                            href={picksHref({ breed, solution: slug })}
+                                            href={picksHref({ breed, solution: slug, q, sort })}
                                             className={chipClass(slug === solution, NEED_ACTIVE)}
                                             {...(slug === solution ? { 'aria-current': 'true' } : {})}
                                         >
@@ -157,6 +169,11 @@ export function PicksIndex({
                                 </div>
                             </div>
                         )}
+                        </div>
+                        <PicksSearch breed={breed} solution={solution} q={q} sort={sort} />
+                      </div>
+                    </section>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                         <p role="status" className="text-[13.5px] text-[#6b7680]">
                             Showing{' '}
                             <b className="font-semibold text-[#2c3840]">
@@ -164,7 +181,9 @@ export function PicksIndex({
                             </b>{' '}
                             picks
                         </p>
-                    </section>
+                        <PicksSort breed={breed} solution={solution} q={q} sort={sort} />
+                    </div>
+                    </>
                 )}
 
                 {picks.length > 0 ? (
@@ -176,8 +195,16 @@ export function PicksIndex({
                                 <PickListCard key={product.slug} product={product} allBreedsCount={breeds.length} now={now} />
                             ))}
                         </div>
-                        {paged.pages > 1 && <PicksPagination breed={breed} solution={solution} page={paged.page} pages={paged.pages} />}
+                        {paged.pages > 1 && <PicksPagination breed={breed} solution={solution} q={q} sort={sort} page={paged.page} pages={paged.pages} />}
                     </>
+                ) : q ? (
+                    <div className="mt-6 rounded-2xl border-[1.5px] border-dashed border-[#e2e5e8] px-5 py-10 text-center text-[15px] text-[#4b5563]">
+                        <p className="font-semibold text-[#2c3840]">No picks found</p>
+                        <p className="mt-1">
+                            Nothing matches “{q}”{breedName || solutionName ? ' with the filters chosen' : ''}.{' '}
+                            <Link href="/picks" className="font-semibold underline">Clear search</Link>
+                        </p>
+                    </div>
                 ) : breedName && solutionName ? (
                     <p className="mt-6 rounded-2xl border-[1.5px] border-dashed border-[#e2e5e8] px-5 py-10 text-center text-[15px] text-[#4b5563]">
                         No Picks match that combination yet. We only list Picks we have actually looked at for that breed and solution.{' '}
@@ -227,8 +254,8 @@ export function PicksIndex({
 
 // Previous, the page numbers and next, as plain links that keep the breed and solution chosen. Page 1 has no
 // `page` parameter, so there is one address for it.
-function PicksPagination({ breed, solution, page, pages }: { breed: string | null; solution: string | null; page: number; pages: number }) {
-    const href = (target: number) => picksHref({ breed, solution, page: target });
+function PicksPagination({ breed, solution, q, sort, page, pages }: { breed: string | null; solution: string | null; q: string | null; sort: PickSort; page: number; pages: number }) {
+    const href = (target: number) => picksHref({ breed, solution, q, sort, page: target });
 
     return (
         <nav aria-label="Pagination" className="mt-10 flex flex-wrap items-center justify-center gap-2">

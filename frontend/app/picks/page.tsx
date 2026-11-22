@@ -5,7 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { PicksIndex } from '@/components/product/PicksIndex';
 import { getApiBaseUrl } from '@/lib/api';
-import { PICKS_PATH, filterPicksByBreed, filterPicksBySolution, paginatePicks, pickProducts, picksHref } from '@/lib/pick';
+import { PICKS_PATH, filterPicksByBreed, filterPicksBySolution, normalizePickQuery, paginatePicks, parsePickSort, pickProducts, picksHref, searchPicks } from '@/lib/pick';
 import type { Product } from '@/types/shop';
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -23,9 +23,9 @@ const isChosen = (value: string | string[] | undefined) => typeof value === 'str
 
 // The first page, and every filtered view, keep /picks as their address; page 2 and on are their own pages.
 export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
-    const { breed, solution, page: rawPage } = await searchParams;
+    const { breed, solution, q, sort, page: rawPage } = await searchParams;
     const page = requestedPage(rawPage);
-    const filtered = isChosen(breed) || isChosen(solution);
+    const filtered = isChosen(breed) || isChosen(solution) || isChosen(q) || isChosen(sort);
 
     return {
         title: page > 1 ? `PetPosture Picks, page ${page}` : 'PetPosture Picks',
@@ -53,21 +53,23 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
     // Reading headers makes this route render per request, so the nonce CSP matches the body.
     await headers();
 
-    const { breed: rawBreed, solution: rawSolution, page: rawPage } = await searchParams;
+    const { breed: rawBreed, solution: rawSolution, q: rawQ, sort: rawSort, page: rawPage } = await searchParams;
     const breed = typeof rawBreed === 'string' && rawBreed ? rawBreed : null;
     const solution = typeof rawSolution === 'string' && rawSolution ? rawSolution : null;
+    const q = normalizePickQuery(typeof rawQ === 'string' ? rawQ : null);
+    const sort = parsePickSort(typeof rawSort === 'string' ? rawSort : null);
     const page = requestedPage(rawPage);
 
     const all = await fetchPicks();
 
     // A page past the end (a list that got shorter, or a typed address) goes to the last page instead of showing nothing.
-    const { pages } = paginatePicks(filterPicksBySolution(filterPicksByBreed(all, breed), solution), page);
-    if (page > pages) redirect(picksHref({ breed, solution, page: pages }));
+    const { pages } = paginatePicks(searchPicks(filterPicksBySolution(filterPicksByBreed(all, breed), solution), q), page);
+    if (page > pages) redirect(picksHref({ breed, solution, q, sort, page: pages }));
 
     return (
         <main className="min-h-screen bg-white font-hanken">
             <Header />
-            <PicksIndex allPicks={all} breed={breed} solution={solution} page={page} now={new Date()} />
+            <PicksIndex allPicks={all} breed={breed} solution={solution} q={q} sort={sort} page={page} now={new Date()} />
             <Footer />
         </main>
     );
