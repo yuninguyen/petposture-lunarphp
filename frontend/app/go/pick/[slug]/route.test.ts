@@ -48,6 +48,24 @@ describe('/go/pick/[slug]', () => {
         }
     });
 
+    it('passes a numeric merchant id on, so the Buy button of another store opens that store and counts for it', async () => {
+        const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { location: 'https://www.petsmart.com/dog/x.html' } }));
+        vi.stubGlobal('fetch', fetchMock);
+        const go = (query: string) => GET(new Request(`https://petposture.com/go/pick/kong-puppy${query}`), { params: Promise.resolve({ slug: 'kong-puppy' }) });
+
+        const response = await go('?merchant=3');
+        expect(response.headers.get('location')).toBe('https://www.petsmart.com/dog/x.html');
+        expect(String(fetchMock.mock.calls[0][0])).toMatch(/\/go\/pick\/kong-puppy\?merchant=3$/);
+
+        // anything that is not a plain number is not passed on, and a merchant id wins over the older forms
+        for (const [index, query] of ['?merchant=abc', '?merchant=', '?merchant=3%26x=1', '?merchant=-1', '?merchant=1.5'].entries()) {
+            await go(query);
+            expect(String(fetchMock.mock.calls[index + 1][0])).toMatch(/\/go\/pick\/kong-puppy$/);
+        }
+        await go('?merchant=7&retailer=second&variant=9');
+        expect(String(fetchMock.mock.calls[6][0])).toMatch(/\/go\/pick\/kong-puppy\?merchant=7$/);
+    });
+
     it('sends the reader back to the Pick page when the backend gives no link or cannot be reached', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('nope', { status: 404 })));
         const unknown = await ask('nothing');

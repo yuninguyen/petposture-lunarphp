@@ -9,13 +9,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
     const referer = request.headers.get('referer');
     if (referer) headers.referer = referer;
 
-    // Only a numeric variant id is passed on; the backend falls back to the product's link for any other value.
-    // The button of the second store asks for exactly `retailer=second`; any other value is the first retailer.
+    // Only a numeric id is passed on: the backend falls back to the product's own link for any other value.
+    // The button of one of the other stores asks for `merchant=<id>`. `retailer=second` is the older form of the same
+    // thing (the first of the other stores), kept for links and cached pages that already carry it and asking for
+    // exactly that value; any other `retailer` value is the first retailer. A variant id picks a variant's own link.
     const search = new URL(request.url).searchParams;
+    const merchant = search.get('merchant');
     const variant = search.get('variant');
-    const query = search.get('retailer') === 'second'
-        ? '?retailer=second'
-        : variant && /^\d+$/.test(variant) ? `?variant=${variant}` : '';
+    const query = merchant && /^\d+$/.test(merchant)
+        ? `?merchant=${merchant}`
+        : search.get('retailer') === 'second'
+            ? '?retailer=second'
+            : variant && /^\d+$/.test(variant) ? `?variant=${variant}` : '';
 
     try {
         const upstream = await fetch(`${getApiBaseUrl()}/go/pick/${encodeURIComponent(slug)}${query}`, {
