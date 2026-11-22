@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AffiliateNetwork;
+use App\Models\PickMerchant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Lunar\FieldTypes\Text;
 use Lunar\Models\Language;
@@ -145,13 +146,27 @@ class PickClickRedirectTest extends TestCase
 
     private const PETSMART_URL = 'https://www.petsmart.com/dog/toys/chew-toys/benebone-maple-stick-dog-chew-toy-94595.html';
 
-    public function test_the_second_retailer_click_is_recorded_against_its_network_and_redirects_to_its_page(): void
+    private const AMAZON_URL = 'https://www.amazon.com/rabbitgoo-example/dp/B0EXAMPLE01';
+
+    /** Adds another store to the end of a Pick's list of stores. */
+    private function store(Product $product, string $slug, string $url): PickMerchant
+    {
+        return PickMerchant::query()->create([
+            'product_id' => $product->id,
+            'position' => ((int) PickMerchant::query()->where('product_id', $product->id)->max('position')) + 1,
+            'affiliate_network_id' => $this->network($slug)->id,
+            'url' => $url,
+        ]);
+    }
+
+    public function test_a_store_click_is_recorded_against_its_network_and_redirects_to_its_page(): void
     {
         $this->network('chewy');
         $petsmart = $this->network('petsmart');
-        $product = $this->pick(['second_retailer_slug' => 'petsmart', 'second_retailer_url' => self::PETSMART_URL]);
+        $product = $this->pick();
+        $store = $this->store($product, 'petsmart', self::PETSMART_URL);
 
-        $this->get('/go/pick/necoichi-bowl?retailer=second', ['Referer' => 'https://petposture.com/picks/necoichi-bowl'])
+        $this->get("/go/pick/necoichi-bowl?merchant={$store->id}", ['Referer' => 'https://petposture.com/picks/necoichi-bowl'])
             ->assertRedirect(self::PETSMART_URL);
 
         $this->assertDatabaseHas('affiliate_clicks', [
@@ -163,8 +178,6 @@ class PickClickRedirectTest extends TestCase
         ]);
         $this->assertDatabaseCount('affiliate_clicks', 1);
     }
-
-    private const AMAZON_URL = 'https://www.amazon.com/rabbitgoo-example/dp/B0EXAMPLE01';
 
     public function test_an_amazon_pick_is_recorded_against_the_amazon_network_and_redirects_to_the_amazon_page(): void
     {
@@ -185,49 +198,66 @@ class PickClickRedirectTest extends TestCase
         $this->assertDatabaseCount('affiliate_clicks', 1);
     }
 
-    public function test_amazon_can_be_the_second_retailer_of_a_chewy_pick_and_its_click_goes_to_the_amazon_network(): void
+    public function test_each_store_on_the_list_has_its_own_link_and_its_click_goes_to_its_own_network(): void
     {
         $chewy = $this->network('chewy');
         $amazon = $this->network('amazon');
-        $product = $this->pick(['second_retailer_slug' => 'amazon', 'second_retailer_url' => self::AMAZON_URL]);
+        $petsmart = $this->network('petsmart');
+        $product = $this->pick();
+        $first = $this->store($product, 'amazon', self::AMAZON_URL);
+        $second = $this->store($product, 'petsmart', self::PETSMART_URL);
 
-        $this->get('/go/pick/necoichi-bowl?retailer=second')->assertRedirect(self::AMAZON_URL);
+        $this->get("/go/pick/necoichi-bowl?merchant={$second->id}")->assertRedirect(self::PETSMART_URL);
+        $this->get("/go/pick/necoichi-bowl?merchant={$first->id}")->assertRedirect(self::AMAZON_URL);
         // the plain link of the same Pick still goes to Chewy, counted against Chewy
         $this->get('/go/pick/necoichi-bowl')->assertRedirect(self::CHEWY_URL);
 
+        $this->assertDatabaseHas('affiliate_clicks', ['product_id' => $product->id, 'affiliate_network_id' => $petsmart->id, 'target_url' => self::PETSMART_URL]);
         $this->assertDatabaseHas('affiliate_clicks', ['product_id' => $product->id, 'affiliate_network_id' => $amazon->id, 'target_url' => self::AMAZON_URL]);
         $this->assertDatabaseHas('affiliate_clicks', ['product_id' => $product->id, 'affiliate_network_id' => $chewy->id, 'target_url' => self::CHEWY_URL]);
-        $this->assertDatabaseCount('affiliate_clicks', 2);
+        $this->assertDatabaseCount('affiliate_clicks', 3);
     }
 
-    public function test_the_second_retailer_never_falls_back_to_the_first_retailers_link(): void
+    public function test_the_older_retailer_second_link_means_the_first_of_the_other_stores(): void
+    {
+        $this->network('chewy');
+        $product = $this->pick();
+        $this->store($product, 'amazon', self::AMAZON_URL);
+        $this->store($product, 'petsmart', self::PETSMART_URL);
+
+        $this->get('/go/pick/necoichi-bowl?retailer=second')->assertRedirect(self::AMAZON_URL);
+    }
+
+    public function test_a_store_never_falls_back_to_the_first_retailers_link(): void
     {
         $this->network('chewy');
         $this->network('petsmart');
-        // not configured, an unknown network, or a link that is not a web address: nothing to send the reader to
-        foreach ([
-            [],
-            ['second_retailer_slug' => 'petsmart'],
-            ['second_retailer_url' => self::PETSMART_URL],
-            ['second_retailer_slug' => 'no-such-store', 'second_retailer_url' => self::PETSMART_URL],
-            ['second_retailer_slug' => 'petsmart', 'second_retailer_url' => 'javascript:alert(1)'],
-        ] as $index => $fields) {
-            $this->pick($fields, slug: "second-{$index}");
+        $other = $this->pick(slug: 'other-pick');
+        $foreign = $this->store($other, 'petsmart', self::PETSMART_URL);
 
-            $this->get("/go/pick/second-{$index}?retailer=second")->assertNotFound();
-        }
+        // no stores, a store that is not on this Pick, one that does not exist, and a link that is not a web address
+        $this->pick(slug: 'second-0');
+        $this->get('/go/pick/second-0?retailer=second')->assertNotFound();
+        $this->get("/go/pick/second-0?merchant={$foreign->id}")->assertNotFound();
+        $this->get('/go/pick/second-0?merchant=999999')->assertNotFound();
+
+        $broken = $this->pick(slug: 'second-1');
+        $this->store($broken, 'petsmart', 'javascript:alert(1)');
+        $this->get('/go/pick/second-1?retailer=second')->assertNotFound();
 
         $this->assertDatabaseCount('affiliate_clicks', 0);
     }
 
-    public function test_only_the_exact_value_second_asks_for_the_second_retailer(): void
+    public function test_only_the_exact_value_second_or_a_number_for_merchant_asks_for_another_store(): void
     {
         $this->network('chewy');
-        $this->network('petsmart');
-        $this->pick(['second_retailer_slug' => 'petsmart', 'second_retailer_url' => self::PETSMART_URL]);
+        $product = $this->pick();
+        $this->store($product, 'petsmart', self::PETSMART_URL);
 
         $this->get('/go/pick/necoichi-bowl?retailer=petsmart')->assertRedirect(self::CHEWY_URL);
         $this->get('/go/pick/necoichi-bowl?retailer=')->assertRedirect(self::CHEWY_URL);
+        $this->get('/go/pick/necoichi-bowl?merchant=abc')->assertRedirect(self::CHEWY_URL);
+        $this->get('/go/pick/necoichi-bowl?merchant=')->assertRedirect(self::CHEWY_URL);
         $this->get('/go/pick/necoichi-bowl')->assertRedirect(self::CHEWY_URL);
     }
 

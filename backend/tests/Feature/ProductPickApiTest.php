@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AffiliateNetwork;
+use App\Models\PickMerchant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -258,28 +259,62 @@ class ProductPickApiTest extends TestCase
 
     private const PETSMART_URL = 'https://www.petsmart.com/dog/toys/chew-toys/benebone-maple-stick-dog-chew-toy-94595.html';
 
-    public function test_a_second_retailer_with_a_web_link_and_a_known_network_exposes_its_button_without_the_link(): void
+    private const AMAZON_URL = 'https://www.amazon.com/rabbitgoo-example/dp/B0EXAMPLE01';
+
+    /** Adds another store to the end of a Pick's list of stores. */
+    private function store(Product $product, string $slug, string $name, string $url, array $extra = []): PickMerchant
     {
-        AffiliateNetwork::query()->firstOrCreate(['slug' => 'chewy'], ['name' => 'Chewy', 'active' => true]);
-        AffiliateNetwork::query()->firstOrCreate(['slug' => 'petsmart'], ['name' => 'PetSmart', 'active' => true]);
-        $this->pick(['second_retailer_slug' => 'petsmart', 'second_retailer_url' => self::PETSMART_URL]);
+        $network = AffiliateNetwork::query()->firstOrCreate(['slug' => $slug], ['name' => $name, 'active' => true]);
+
+        return PickMerchant::query()->create(array_merge([
+            'product_id' => $product->id,
+            'position' => ((int) PickMerchant::query()->where('product_id', $product->id)->max('position')) + 1,
+            'affiliate_network_id' => $network->id,
+            'url' => $url,
+        ], $extra));
+    }
+
+    private function chewy(): AffiliateNetwork
+    {
+        return AffiliateNetwork::query()->firstOrCreate(['slug' => 'chewy'], ['name' => 'Chewy', 'active' => true]);
+    }
+
+    public function test_the_other_stores_are_listed_in_order_each_with_its_own_go_link_and_never_the_link(): void
+    {
+        $this->chewy();
+        $product = $this->pick();
+        $petsmart = $this->store($product, 'petsmart', 'PetSmart', self::PETSMART_URL);
+        $amazon = $this->store($product, 'amazon', 'Amazon', self::AMAZON_URL);
 
         $pick = $this->listed()['pick'];
         $go = rtrim((string) config('app.frontend_url'), '/').'/go/pick/necoichi-bowl';
 
         $this->assertSame(
-            ['retailer' => 'petsmart', 'retailerName' => 'PetSmart', 'goUrl' => "{$go}?retailer=second", 'price' => null, 'priceCheckedDate' => null],
-            $pick['secondRetailer'],
+            [
+                ['id' => $petsmart->id, 'retailer' => 'petsmart', 'retailerName' => 'PetSmart', 'retailerLogo' => null, 'goUrl' => "{$go}?merchant={$petsmart->id}", 'price' => null, 'priceCheckedDate' => null],
+                ['id' => $amazon->id, 'retailer' => 'amazon', 'retailerName' => 'Amazon', 'retailerLogo' => null, 'goUrl' => "{$go}?merchant={$amazon->id}", 'price' => null, 'priceCheckedDate' => null],
+            ],
+            $pick['merchants'],
         );
-        // the first retailer's button is untouched, and the second link itself is never sent to the browser
+        // the first retailer's button is untouched, and no store's link itself is ever sent to the browser
         $this->assertSame('chewy', $pick['retailer']);
         $this->assertSame($go, $pick['goUrl']);
         $this->assertStringNotContainsString('petsmart.com', json_encode($pick));
+        $this->assertStringNotContainsString('amazon.com', json_encode($pick));
+        $this->assertArrayNotHasKey('secondRetailer', $pick);
     }
 
-    private const AMAZON_URL = 'https://www.amazon.com/rabbitgoo-example/dp/B0EXAMPLE01';
+    public function test_the_stores_follow_the_position_the_admin_gave_them(): void
+    {
+        $this->chewy();
+        $product = $this->pick();
+        $this->store($product, 'amazon', 'Amazon', self::AMAZON_URL, ['position' => 2]);
+        $this->store($product, 'petsmart', 'PetSmart', self::PETSMART_URL, ['position' => 1]);
 
-    public function test_a_pick_sold_only_on_amazon_exposes_amazon_as_its_retailer_with_the_plain_go_link_and_no_second_retailer(): void
+        $this->assertSame(['petsmart', 'amazon'], array_column($this->listed()['pick']['merchants'], 'retailer'));
+    }
+
+    public function test_a_pick_sold_only_on_amazon_exposes_amazon_as_its_retailer_with_the_plain_go_link_and_no_other_stores(): void
     {
         AffiliateNetwork::query()->firstOrCreate(['slug' => 'amazon'], ['name' => 'Amazon', 'active' => true]);
         $this->pick([
@@ -294,83 +329,73 @@ class ProductPickApiTest extends TestCase
         $this->assertSame(rtrim((string) config('app.frontend_url'), '/').'/go/pick/rabbitgoo-harness', $pick['goUrl']);
         $this->assertSame(39.99, $pick['referencePrice']);
         $this->assertSame('2026-11-21', $pick['priceCheckedDate']);
-        $this->assertNull($pick['secondRetailer']);
+        $this->assertSame([], $pick['merchants']);
         // the Amazon link itself is never sent to the browser, so every click goes through /go and is counted
         $this->assertStringNotContainsString('amazon.com', json_encode($pick));
     }
 
-    public function test_amazon_can_be_the_second_retailer_with_its_own_price_and_date(): void
+    public function test_a_store_price_comes_with_its_own_checked_date_and_leaves_the_first_price_alone(): void
     {
-        AffiliateNetwork::query()->firstOrCreate(['slug' => 'amazon'], ['name' => 'Amazon', 'active' => true]);
-        $this->pick([
-            'second_retailer_slug' => 'amazon', 'second_retailer_url' => self::AMAZON_URL,
-            'second_retailer_price' => '40.99', 'second_retailer_price_checked_date' => '2026-11-21',
-        ]);
-
-        $second = $this->listed()['pick']['secondRetailer'];
-
-        $this->assertSame('amazon', $second['retailer']);
-        $this->assertSame('Amazon', $second['retailerName']);
-        $this->assertSame(40.99, $second['price']);
-        $this->assertSame('2026-11-21', $second['priceCheckedDate']);
-        $this->assertStringContainsString('?retailer=second', $second['goUrl']);
-        $this->assertStringNotContainsString('amazon.com', json_encode($second));
-    }
-
-    public function test_the_second_retailer_price_comes_with_its_own_checked_date_and_leaves_the_first_price_alone(): void
-    {
-        AffiliateNetwork::query()->firstOrCreate(['slug' => 'petsmart'], ['name' => 'PetSmart', 'active' => true]);
-        $this->pick([
-            'second_retailer_slug' => 'petsmart', 'second_retailer_url' => self::PETSMART_URL,
-            'second_retailer_price' => '$40.99', 'second_retailer_price_checked_date' => '2026-11-21',
-        ]);
+        $this->chewy();
+        $product = $this->pick();
+        $this->store($product, 'amazon', 'Amazon', self::AMAZON_URL, ['price' => 40.99, 'price_checked_date' => '2026-11-21']);
 
         $pick = $this->listed()['pick'];
 
-        $this->assertSame(40.99, $pick['secondRetailer']['price']);
-        $this->assertSame('2026-11-21', $pick['secondRetailer']['priceCheckedDate']);
+        $this->assertSame(40.99, $pick['merchants'][0]['price']);
+        $this->assertSame('2026-11-21', $pick['merchants'][0]['priceCheckedDate']);
         $this->assertSame(49.96, $pick['referencePrice']);
         $this->assertSame('2026-11-14', $pick['priceCheckedDate']);
     }
 
-    public function test_the_second_retailer_price_is_withheld_without_a_valid_date_or_a_number(): void
+    public function test_a_store_price_is_withheld_without_a_date_and_a_date_without_a_price_shows_nothing(): void
     {
-        AffiliateNetwork::query()->firstOrCreate(['slug' => 'petsmart'], ['name' => 'PetSmart', 'active' => true]);
-        $link = ['second_retailer_slug' => 'petsmart', 'second_retailer_url' => self::PETSMART_URL];
+        $this->chewy();
 
         foreach ([
-            ['second_retailer_price' => '40.99'],
-            ['second_retailer_price' => '40.99', 'second_retailer_price_checked_date' => '2026-13-45'],
-            ['second_retailer_price' => 'cheap', 'second_retailer_price_checked_date' => '2026-11-21'],
-            ['second_retailer_price_checked_date' => '2026-11-21'],
-        ] as $index => $fields) {
-            $this->pick($link + $fields, slug: "priced-{$index}");
+            ['price' => 40.99],
+            ['price' => 40.99, 'price_checked_date' => null],
+            ['price_checked_date' => '2026-11-21'],
+            [],
+        ] as $index => $extra) {
+            $product = $this->pick(slug: "priced-{$index}");
+            $this->store($product, 'petsmart', 'PetSmart', self::PETSMART_URL, $extra);
 
-            $second = $this->listed("priced-{$index}")['pick']['secondRetailer'];
+            $store = $this->listed("priced-{$index}")['pick']['merchants'][0] ?? null;
 
-            $this->assertNotNull($second, 'the button stays, case '.$index);
-            $this->assertNull($second['price'], 'case '.$index);
-            $this->assertNull($second['priceCheckedDate'], 'case '.$index);
+            $this->assertNotNull($store, 'the button stays, case '.$index);
+            $this->assertNull($store['price'], 'case '.$index);
+            $this->assertNull($store['priceCheckedDate'], 'case '.$index);
         }
     }
 
-    public function test_there_is_no_second_retailer_until_the_slug_names_a_network_and_the_link_is_a_web_address(): void
+    public function test_a_store_whose_link_is_not_a_web_address_is_left_out(): void
     {
-        AffiliateNetwork::query()->firstOrCreate(['slug' => 'petsmart'], ['name' => 'PetSmart', 'active' => true]);
+        $this->chewy();
 
-        foreach ([
-            [],
-            ['second_retailer_slug' => 'petsmart'],
-            ['second_retailer_slug' => 'petsmart', 'second_retailer_url' => ''],
-            ['second_retailer_url' => self::PETSMART_URL],
-            ['second_retailer_slug' => 'no-such-store', 'second_retailer_url' => self::PETSMART_URL],
-            ['second_retailer_slug' => 'petsmart', 'second_retailer_url' => 'javascript:alert(1)'],
-            ['second_retailer_slug' => 'petsmart', 'second_retailer_url' => 'petsmart.com/dog'],
-        ] as $index => $fields) {
-            $this->pick($fields, slug: "pick-{$index}");
+        foreach (['javascript:alert(1)', 'petsmart.com/dog', 'ftp://example.com/file', ''] as $index => $url) {
+            $product = $this->pick(slug: "pick-{$index}");
+            $this->store($product, 'petsmart', 'PetSmart', $url);
 
-            $this->assertNull($this->listed("pick-{$index}")['pick']['secondRetailer'], 'case '.$index);
+            $this->assertSame([], $this->listed("pick-{$index}")['pick']['merchants'], 'case '.$index);
         }
+    }
+
+    public function test_the_logo_chosen_for_a_network_is_returned_for_the_first_store_and_the_others(): void
+    {
+        $chewy = $this->chewy();
+        $chewy->update(['logo' => 'https://cdn.example.test/chewy.png']);
+        $product = $this->pick();
+        $amazon = $this->store($product, 'amazon', 'Amazon', self::AMAZON_URL);
+        $amazon->network->update(['logo' => '  https://cdn.example.test/amazon.svg  ']);
+        $this->store($product, 'petsmart', 'PetSmart', self::PETSMART_URL);
+
+        $pick = $this->listed()['pick'];
+
+        $this->assertSame('https://cdn.example.test/chewy.png', $pick['retailerLogo']);
+        $this->assertSame('https://cdn.example.test/amazon.svg', $pick['merchants'][0]['retailerLogo']);
+        // a store with no logo says so, and the page then uses its own artwork or the store's name
+        $this->assertNull($pick['merchants'][1]['retailerLogo']);
     }
 
     public function test_an_ordinary_product_keeps_its_offers_json_ld(): void

@@ -3,11 +3,12 @@
 namespace App\Http\Resources\Api;
 
 use App\Models\AffiliateNetwork;
+use App\Models\PickMerchant;
 use App\Services\InventoryService;
 use App\Services\ProductRouteService;
 use App\Services\ProductSyncService;
+use App\Support\PickMerchants;
 use App\Support\RetailerUrl;
-use App\Support\SecondRetailer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
@@ -221,17 +222,19 @@ class ProductResource extends JsonResource
         }
 
         $retailer = trim((string) $this->translateAttribute('affiliate_network_slug'));
+        $network = $retailer !== '' ? AffiliateNetwork::where('slug', $retailer)->first() : null;
         $checkedDate = $this->resolveCheckedDate();
         $price = $checkedDate === null ? null : $this->resolveReferencePrice();
 
         return [
             'retailer' => $retailer !== '' ? $retailer : null,
-            'retailerName' => $retailer !== '' ? AffiliateNetwork::where('slug', $retailer)->value('name') : null,
+            'retailerName' => $network?->name,
+            'retailerLogo' => $this->networkLogo($network),
             // Built from APP_URL, not the request host: the storefront renders on the server and
             // calls this API at an internal address that a visitor's browser cannot open.
             // The public storefront host (petposture.com), which forwards /go/pick/* here; not the API host.
             'goUrl' => rtrim((string) config('app.frontend_url'), '/')."/go/pick/{$slug}",
-            'secondRetailer' => $this->resolveSecondRetailer($slug),
+            'merchants' => $this->resolveMerchants($slug),
             'referencePrice' => $price,
             'variants' => $this->resolvePickVariants($slug, $checkedDate, $variants),
             'priceCheckedDate' => $price === null ? null : $checkedDate,
@@ -247,28 +250,33 @@ class ProductResource extends JsonResource
     }
 
     /**
-     * The button for a second store (for example PetSmart), or null when there is none. Like the first, it goes
-     * through /go so the click is counted, and its URL is never returned.
+     * The buttons for the stores after the first one (for example PetSmart, Amazon), in the order the admin put them.
+     * Like the first, each goes through /go so the click is counted, and its URL is never returned. Like the first
+     * store's, a price is only returned together with a valid checked date.
      */
-    private function resolveSecondRetailer(string $slug): ?array
+    private function resolveMerchants(string $slug): array
     {
-        $second = SecondRetailer::of($this->resource);
+        return PickMerchants::of($this->resource)->map(function (PickMerchant $merchant) use ($slug): array {
+            $price = $merchant->price_checked_date === null || $merchant->price === null ? null : round((float) $merchant->price, 2);
 
-        if ($second === null) {
-            return null;
-        }
+            return [
+                'id' => $merchant->id,
+                'retailer' => $merchant->network->slug,
+                'retailerName' => $merchant->network->name,
+                'retailerLogo' => $this->networkLogo($merchant->network),
+                'goUrl' => rtrim((string) config('app.frontend_url'), '/')."/go/pick/{$slug}?merchant={$merchant->id}",
+                'price' => $price,
+                'priceCheckedDate' => $price === null ? null : $merchant->price_checked_date->format('Y-m-d'),
+            ];
+        })->all();
+    }
 
-        // Like the first store's, the price is only returned together with a valid checked date.
-        $checkedDate = $this->resolveCheckedDate('second_retailer_price_checked_date');
-        $price = $checkedDate === null ? null : $this->numericPrice($this->translateAttribute('second_retailer_price'));
+    /** The logo chosen for a store in the admin, or null so the page falls back to its own artwork or the store's name. */
+    private function networkLogo(?AffiliateNetwork $network): ?string
+    {
+        $logo = trim((string) $network?->logo);
 
-        return [
-            'retailer' => $second['network']->slug,
-            'retailerName' => $second['network']->name,
-            'goUrl' => rtrim((string) config('app.frontend_url'), '/')."/go/pick/{$slug}?retailer=second",
-            'price' => $price,
-            'priceCheckedDate' => $price === null ? null : $checkedDate,
-        ];
+        return $logo === '' ? null : $logo;
     }
 
     /** A trimmed text attribute, or null when it is empty so the page can leave the block out. */

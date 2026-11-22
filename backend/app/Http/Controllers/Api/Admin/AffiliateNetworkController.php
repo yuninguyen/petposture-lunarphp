@@ -12,7 +12,8 @@ class AffiliateNetworkController extends Controller
     {
         $networks = AffiliateNetwork::where('active', true)
             ->orderBy('name')
-            ->get(['name', 'slug']);
+            // id and logo are what the Pick form needs to offer a store with its logo; keys and secrets stay out.
+            ->get(['id', 'name', 'slug', 'logo']);
 
         return response()->json($networks);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Admin;
 
+use App\Models\PickMerchant;
 use App\Models\SeoMetadata;
 use App\Services\Admin\ProductAttributeService;
 use App\Support\PickKind;
@@ -93,6 +94,20 @@ class ProductResource extends JsonResource
                 'id' => $taxClass->id,
                 'name' => $taxClass->name,
             ])->values()->all(),
+            // The stores after the first one, as the admin typed them (a row that the page would not show is listed too,
+            // so it can be fixed). The first store is in product_attributes.
+            'merchants' => PickMerchant::query()
+                ->where('product_id', $this->id)
+                ->orderBy('position')
+                ->orderBy('id')
+                ->get()
+                ->map(fn (PickMerchant $merchant): array => [
+                    'id' => $merchant->id,
+                    'affiliate_network_id' => $merchant->affiliate_network_id,
+                    'url' => $merchant->url,
+                    'price' => $merchant->price === null ? '' : (string) $merchant->price,
+                    'price_checked_date' => $merchant->price_checked_date?->format('Y-m-d') ?? '',
+                ])->values()->all(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
     }

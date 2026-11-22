@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\AffiliateNetwork;
 use App\Support\PickKind;
 use App\Support\RetailerUrl;
 use Illuminate\Foundation\Http\FormRequest;
@@ -37,6 +38,13 @@ class UpdateProductRequest extends FormRequest
             'media.*.id' => ['required', 'integer'],
             'media.*.source' => ['required', Rule::in(['spatie', 'curator'])],
             'media.*.alt' => ['nullable', 'string', 'max:255'],
+            // The stores after the first one (the first is in the attributes). Any number up to a sensible cap.
+            'merchants' => ['sometimes', 'array', 'max:10'],
+            'merchants.*.id' => ['nullable', 'integer'],
+            'merchants.*.affiliate_network_id' => ['required', 'integer', Rule::exists('affiliate_networks', 'id')],
+            'merchants.*.url' => ['required', 'string', 'max:2048'],
+            'merchants.*.price' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
+            'merchants.*.price_checked_date' => ['nullable', 'date_format:Y-m-d'],
             'seo' => ['sometimes', 'array'],
             'seo.title' => ['nullable', 'string', 'max:60'],
             'seo.description' => ['nullable', 'string', 'max:160'],
@@ -62,7 +70,48 @@ class UpdateProductRequest extends FormRequest
             }
 
             $this->validateRetailerLink($validator);
+            $this->validateMerchants($validator);
         });
+    }
+
+    /**
+     * Each other store needs a plain web link, and a store may appear once: not twice in the list, and not again
+     * as the first store (whose network slug is in the attributes).
+     */
+    private function validateMerchants($validator): void
+    {
+        $merchants = $this->input('merchants');
+
+        if (! is_array($merchants)) {
+            return;
+        }
+
+        $attributes = $this->input('attributes');
+        $firstSlug = is_array($attributes) && is_string($attributes['affiliate_network_slug'] ?? null)
+            ? trim($attributes['affiliate_network_slug'])
+            : trim((string) $this->route('product')?->translateAttribute('affiliate_network_slug'));
+        $firstNetworkId = $firstSlug === '' ? null : AffiliateNetwork::where('slug', $firstSlug)->value('id');
+        $seen = [];
+
+        foreach ($merchants as $index => $merchant) {
+            if (! is_array($merchant)) {
+                continue;
+            }
+
+            if (is_string($merchant['url'] ?? null) && RetailerUrl::web($merchant['url']) === null) {
+                $validator->errors()->add("merchants.{$index}.url", 'The store link must start with http:// or https://.');
+            }
+
+            $networkId = isset($merchant['affiliate_network_id']) ? (int) $merchant['affiliate_network_id'] : null;
+
+            if ($networkId !== null && ($networkId === $firstNetworkId || in_array($networkId, $seen, true))) {
+                $validator->errors()->add("merchants.{$index}.affiliate_network_id", 'This store is already on the list.');
+            }
+
+            if ($networkId !== null) {
+                $seen[] = $networkId;
+            }
+        }
     }
 
     /**

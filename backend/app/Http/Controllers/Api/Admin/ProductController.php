@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\StoreProductRequest;
 use App\Http\Requests\Admin\UpdateProductRequest;
 use App\Http\Resources\Admin\ProductResource;
 use App\Models\CuratorMedia;
+use App\Models\PickMerchant;
 use App\Models\ProductRedirect;
 use App\Models\SeoMetadata;
 use App\Services\Admin\ProductAttributeService;
@@ -342,6 +343,10 @@ class ProductController extends Controller
                 $this->syncMedia($locked, $validated['media']);
             }
 
+            if (array_key_exists('merchants', $validated)) {
+                $this->syncMerchants($locked, $validated['merchants']);
+            }
+
             if (array_key_exists('seo', $validated)) {
                 SeoMetadata::query()->updateOrCreate([
                     'seoable_type' => Product::class,
@@ -449,6 +454,39 @@ class ProductController extends Controller
             'variants.values' => fn ($query) => $query->orderBy('product_option_id')->orderBy('position')->orderBy('id'),
             'variants.values.option',
         ]);
+    }
+
+    /**
+     * Replaces a Pick's list of other stores with the submitted one, in the submitted order. A row that is still on the
+     * list keeps its id: the id is in the /go link of its Buy button, so it must not change when the list is saved again.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     */
+    private function syncMerchants(Product $product, array $rows): void
+    {
+        $existing = PickMerchant::query()->where('product_id', $product->id)->get()->keyBy('id');
+        $keep = [];
+
+        foreach (array_values($rows) as $index => $row) {
+            $values = [
+                'position' => $index + 1,
+                'affiliate_network_id' => (int) $row['affiliate_network_id'],
+                'url' => RetailerUrl::web($row['url']),
+                'price' => isset($row['price']) && $row['price'] !== '' ? round((float) $row['price'], 2) : null,
+                'price_checked_date' => ($row['price_checked_date'] ?? '') !== '' ? $row['price_checked_date'] : null,
+            ];
+            $merchant = isset($row['id']) ? $existing->get((int) $row['id']) : null;
+
+            if ($merchant) {
+                $merchant->update($values);
+            } else {
+                $merchant = PickMerchant::query()->create(['product_id' => $product->id] + $values);
+            }
+
+            $keep[] = $merchant->id;
+        }
+
+        PickMerchant::query()->where('product_id', $product->id)->whereNotIn('id', $keep)->delete();
     }
 
     private function syncMedia(Product $product, array $requested): void

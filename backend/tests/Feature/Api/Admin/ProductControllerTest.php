@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Api\Admin;
 
+use App\Models\AffiliateNetwork;
 use App\Models\CuratorMedia;
+use App\Models\PickMerchant;
 use App\Models\SeoMetadata;
 use App\Models\User;
 use App\Services\ProductRouteService;
@@ -12,6 +14,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
 use Lunar\FieldTypes\Text;
 use Lunar\FieldTypes\TranslatedText;
@@ -574,6 +577,137 @@ class ProductControllerTest extends TestCase
             'slug' => 'draft-preview-product',
         ]);
         $this->getJson($expiredUrl)->assertNotFound();
+    }
+
+    private function network(string $slug, string $name): AffiliateNetwork
+    {
+        return AffiliateNetwork::query()->firstOrCreate(['slug' => $slug], ['name' => $name, 'active' => true]);
+    }
+
+    private function merchantRows(Product $product): array
+    {
+        return PickMerchant::query()->where('product_id', $product->id)->orderBy('position')->get()
+            ->map(fn (PickMerchant $row): array => [
+                'id' => $row->id, 'position' => $row->position, 'network' => $row->network->slug, 'url' => $row->url,
+                'price' => $row->price === null ? null : (float) $row->price, 'date' => $row->price_checked_date?->format('Y-m-d'),
+            ])->all();
+    }
+
+    private function putMerchants(Product $product, array $merchants): TestResponse
+    {
+        return $this->putJson("/api/admin/products/{$product->id}", [
+            'status' => 'draft',
+            'brand_id' => null,
+            'attributes' => ['name' => 'Pick'],
+            'merchants' => $merchants,
+        ]);
+    }
+
+    public function test_the_product_response_lists_the_other_stores_as_the_admin_typed_them(): void
+    {
+        $this->actingAsAdmin();
+        $petsmart = $this->network('petsmart', 'PetSmart');
+        $product = $this->product('Pick');
+        $row = PickMerchant::query()->create([
+            'product_id' => $product->id, 'position' => 1, 'affiliate_network_id' => $petsmart->id,
+            'url' => 'https://www.petsmart.com/dog/x.html', 'price' => 40.99, 'price_checked_date' => '2026-11-21',
+        ]);
+
+        $this->getJson("/api/admin/products/{$product->id}")
+            ->assertOk()
+            ->assertJsonPath('data.merchants', [[
+                'id' => $row->id,
+                'affiliate_network_id' => $petsmart->id,
+                'url' => 'https://www.petsmart.com/dog/x.html',
+                'price' => '40.99',
+                'price_checked_date' => '2026-11-21',
+            ]]);
+    }
+
+    public function test_saving_the_list_keeps_the_order_and_the_id_of_a_row_that_stays(): void
+    {
+        $this->actingAsAdmin();
+        $petsmart = $this->network('petsmart', 'PetSmart');
+        $amazon = $this->network('amazon', 'Amazon');
+        $product = $this->product('Pick');
+
+        $this->putMerchants($product, [
+            ['affiliate_network_id' => $petsmart->id, 'url' => 'https://www.petsmart.com/dog/x.html', 'price' => '40.99', 'price_checked_date' => '2026-11-21'],
+            ['affiliate_network_id' => $amazon->id, 'url' => 'https://www.amazon.com/dp/B0EXAMPLE01', 'price' => '', 'price_checked_date' => ''],
+        ])->assertOk();
+
+        [$first, $second] = $this->merchantRows($product);
+        $this->assertSame(['petsmart', 1, 40.99, '2026-11-21'], [$first['network'], $first['position'], $first['price'], $first['date']]);
+        $this->assertSame(['amazon', 2, null, null], [$second['network'], $second['position'], $second['price'], $second['date']]);
+
+        // Saved again in the other order: the same two rows, the same ids, new positions.
+        $this->putMerchants($product, [
+            ['id' => $second['id'], 'affiliate_network_id' => $amazon->id, 'url' => 'https://www.amazon.com/dp/B0EXAMPLE01', 'price' => '39.50', 'price_checked_date' => '2026-11-22'],
+            ['id' => $first['id'], 'affiliate_network_id' => $petsmart->id, 'url' => 'https://www.petsmart.com/dog/x.html', 'price' => '40.99', 'price_checked_date' => '2026-11-21'],
+        ])->assertOk();
+
+        $rows = $this->merchantRows($product);
+        $this->assertSame([$second['id'], $first['id']], array_column($rows, 'id'));
+        $this->assertSame([1, 2], array_column($rows, 'position'));
+        $this->assertSame(39.5, $rows[0]['price']);
+
+        // A row left off the list is removed; the one that stays keeps its id.
+        $this->putMerchants($product, [
+            ['id' => $first['id'], 'affiliate_network_id' => $petsmart->id, 'url' => 'https://www.petsmart.com/dog/x.html'],
+        ])->assertOk();
+
+        $this->assertSame([$first['id']], array_column($this->merchantRows($product), 'id'));
+    }
+
+    public function test_a_save_without_a_merchants_key_leaves_the_list_alone_and_an_empty_list_clears_it(): void
+    {
+        $this->actingAsAdmin();
+        $petsmart = $this->network('petsmart', 'PetSmart');
+        $product = $this->product('Pick');
+        PickMerchant::query()->create(['product_id' => $product->id, 'position' => 1, 'affiliate_network_id' => $petsmart->id, 'url' => 'https://www.petsmart.com/dog/x.html']);
+
+        $this->putJson("/api/admin/products/{$product->id}", ['status' => 'draft', 'brand_id' => null, 'attributes' => ['name' => 'Pick']])->assertOk();
+        $this->assertCount(1, $this->merchantRows($product));
+
+        $this->putMerchants($product, [])->assertOk();
+        $this->assertCount(0, $this->merchantRows($product));
+    }
+
+    public function test_an_id_that_belongs_to_another_product_is_not_touched(): void
+    {
+        $this->actingAsAdmin();
+        $petsmart = $this->network('petsmart', 'PetSmart');
+        $mine = $this->product('Pick');
+        $other = $this->product('Other pick');
+        $foreign = PickMerchant::query()->create(['product_id' => $other->id, 'position' => 1, 'affiliate_network_id' => $petsmart->id, 'url' => 'https://www.petsmart.com/dog/other.html']);
+
+        $this->putMerchants($mine, [
+            ['id' => $foreign->id, 'affiliate_network_id' => $petsmart->id, 'url' => 'https://www.petsmart.com/dog/mine.html'],
+        ])->assertOk();
+
+        $this->assertSame('https://www.petsmart.com/dog/other.html', $foreign->fresh()->url);
+        $this->assertSame(['https://www.petsmart.com/dog/mine.html'], array_column($this->merchantRows($mine), 'url'));
+    }
+
+    public function test_the_list_is_checked_before_it_is_saved(): void
+    {
+        $this->actingAsAdmin();
+        $petsmart = $this->network('petsmart', 'PetSmart');
+        $chewy = $this->network('chewy', 'Chewy');
+        $product = $this->product('Pick', 'draft', null, ['affiliate_network_slug' => new Text('chewy')]);
+        $good = ['affiliate_network_id' => $petsmart->id, 'url' => 'https://www.petsmart.com/dog/x.html'];
+
+        $this->putMerchants($product, [['url' => 'javascript:alert(1)'] + $good])->assertJsonValidationErrors('merchants.0.url');
+        $this->putMerchants($product, [['url' => 'petsmart.com/dog'] + $good])->assertJsonValidationErrors('merchants.0.url');
+        $this->putMerchants($product, [['affiliate_network_id' => 999999] + $good])->assertJsonValidationErrors('merchants.0.affiliate_network_id');
+        $this->putMerchants($product, [$good, $good])->assertJsonValidationErrors('merchants.1.affiliate_network_id');
+        $this->putMerchants($product, [['affiliate_network_id' => $chewy->id] + $good])->assertJsonValidationErrors('merchants.0.affiliate_network_id');
+        $this->putMerchants($product, [['price' => '-1'] + $good])->assertJsonValidationErrors('merchants.0.price');
+        $this->putMerchants($product, [['price' => 'cheap'] + $good])->assertJsonValidationErrors('merchants.0.price');
+        $this->putMerchants($product, [['price_checked_date' => '21/11/2026'] + $good])->assertJsonValidationErrors('merchants.0.price_checked_date');
+        $this->putMerchants($product, array_fill(0, 11, $good))->assertJsonValidationErrors('merchants');
+
+        $this->assertCount(0, $this->merchantRows($product));
     }
 
     private function draftPick(string $slug = 'draft-pick'): Product

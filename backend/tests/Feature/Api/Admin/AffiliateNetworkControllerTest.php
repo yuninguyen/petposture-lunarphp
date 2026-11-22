@@ -43,13 +43,15 @@ class AffiliateNetworkControllerTest extends TestCase
         $this->assertArrayNotHasKey('data', $response->json());
     }
 
-    public function test_index_only_returns_name_and_slug(): void
+    public function test_index_only_returns_what_a_selector_needs_and_never_a_key(): void
     {
-        AffiliateNetwork::create(['name' => 'Target', 'slug' => 'target', 'active' => true, 'api_key' => 'secret']);
+        AffiliateNetwork::create(['name' => 'Target', 'slug' => 'target', 'active' => true, 'api_key' => 'secret', 'logo' => 'https://cdn.example.test/target.png']);
 
         $response = $this->getJson('/api/admin/affiliate-networks')->assertOk();
 
-        $this->assertSame(['name', 'slug'], array_keys($response->json('0')));
+        $this->assertSame(['id', 'name', 'slug', 'logo'], array_keys($response->json('0')));
+        $target = collect($response->json())->firstWhere('slug', 'target');
+        $this->assertSame('https://cdn.example.test/target.png', $target['logo']);
         $this->assertStringNotContainsString('secret', $response->getContent());
     }
 

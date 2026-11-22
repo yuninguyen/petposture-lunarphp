@@ -693,7 +693,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Http\\Resources\\Admin\\ProductResource\:\:\$id\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 3
 			path: app/Http/Resources/Admin/ProductResource.php
 
 		-
