@@ -153,6 +153,49 @@ class AiSeoProvidersTest extends TestCase
         });
     }
 
+    public function test_gemini_3_models_are_asked_to_think_at_the_low_level(): void
+    {
+        foreach (['gemini-3.6-flash', 'Gemini-3-Pro-Preview'] as $model) {
+            config()->set('services.gemini.key', 'gemini-key');
+            config()->set('services.gemini.model', $model);
+            Http::fake(['*' => Http::response($this->geminiBody())]);
+
+            app(GeminiSeoProvider::class)->generate('Prompt');
+
+            Http::assertSent(fn (Request $request): bool => data_get($request->data(), 'generationConfig.thinkingConfig') === ['thinkingLevel' => 'low']
+                && data_get($request->data(), 'generationConfig.responseMimeType') === 'application/json');
+        }
+    }
+
+    public function test_other_gemini_models_are_not_sent_a_thinking_field_they_may_reject(): void
+    {
+        foreach (['gemini-2.5-flash', 'gemini-account-model'] as $model) {
+            config()->set('services.gemini.key', 'gemini-key');
+            config()->set('services.gemini.model', $model);
+            Http::fake(['*' => Http::response($this->geminiBody())]);
+
+            app(GeminiSeoProvider::class)->generate('Prompt');
+
+            Http::assertSent(fn (Request $request): bool => ! array_key_exists('thinkingConfig', data_get($request->data(), 'generationConfig', []))
+                && data_get($request->data(), 'generationConfig.responseSchema') !== null);
+        }
+    }
+
+    public function test_gemini_waits_up_to_sixty_seconds_for_an_answer(): void
+    {
+        $timeout = new \ReflectionClassConstant(GeminiSeoProvider::class, 'TIMEOUT_SECONDS');
+
+        $this->assertSame(60, $timeout->getValue());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function geminiBody(): array
+    {
+        return ['candidates' => [['content' => ['parts' => [['text' => json_encode($this->metadata())]]]]]];
+    }
+
     public function test_gemini_schema_omits_unsupported_additional_properties_keyword(): void
     {
         $this->assertArrayNotHasKey('additionalProperties', AiSeoMetadata::geminiSchema());
