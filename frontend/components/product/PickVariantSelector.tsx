@@ -64,7 +64,7 @@ function MerchantLogo({ row }: { row: PickPriceRow }) {
 // that), so it takes the whole second line and the saving goes to a third line of its own, still right-aligned to the edge
 // of the button. From 401px the date has at least 14px to spare.
 const TABLE_COLUMNS = 'grid-cols-[minmax(0,1.05fr)_minmax(0,0.72fr)_minmax(0,1.05fr)_104px]';
-const ROW_BASE = 'col-span-full grid grid-cols-subgrid items-center gap-x-3 gap-y-1 px-[2px] pt-[14px] max-[560px]:grid-cols-[minmax(0,1fr)_auto_auto] max-[560px]:gap-x-[10px]';
+const ROW_BASE = 'col-span-full grid grid-cols-subgrid items-center gap-x-3 gap-y-1 px-[2px] pt-[14px] max-[560px]:pt-[8px] max-[560px]:grid-cols-[minmax(0,1fr)_auto_auto] max-[560px]:gap-x-[10px]';
 
 /** `save` is set on the cheaper row only: it tints the row (6px below the one above) and carries the "Lower price" line. */
 function PriceRow({ row, save }: { row: PickPriceRow; save?: string }) {
@@ -151,7 +151,7 @@ export function PickBuyBox({ pick, today }: { pick: ProductPick; today?: string 
             {variantLine && <p className="mt-1 text-[0.85rem] text-[#7a8894]">{variantLine}</p>}
             {/* One row per store, the first store above the second. A store's price is its own, with the date it was
                 checked; the second store's button goes through /go as well and does not follow the variant choice. */}
-            <div role="table" aria-label="Compare prices" className={`mt-[14px] grid ${TABLE_COLUMNS} gap-x-3`}>
+            <div role="table" aria-label="Compare prices" className={`mt-[14px] max-[560px]:mt-[2px] grid ${TABLE_COLUMNS} gap-x-3`}>
                 {rows.some((row) => row.price) && (
                     <div role="row" className="col-span-full grid grid-cols-subgrid items-center gap-x-3 border-y border-[#eee7dc] px-[2px] py-2 text-[0.68rem] font-bold uppercase tracking-[0.11em] text-[#8b98a1] max-[560px]:hidden">
                         <span role="columnheader" className="pl-[12px]">Merchant</span>
