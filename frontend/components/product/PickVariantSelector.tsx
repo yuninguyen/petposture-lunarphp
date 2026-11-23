@@ -76,7 +76,7 @@ function PriceRow({ row, save }: { row: PickPriceRow; save?: string }) {
             {/* On a phone this cell draws nothing of its own ("contents"), so the price and the saving line can sit in the
                 grid of the row: the price on the first line, the saving on the second, right-aligned under the button. */}
             <div role="cell" className="relative min-w-0 max-[560px]:contents">
-                <span className="block whitespace-nowrap text-[1.25rem] font-bold leading-[1.1] text-primary max-[560px]:col-start-2 max-[560px]:row-start-1 max-[560px]:justify-self-end">
+                <span className="block whitespace-nowrap text-[1.25rem] font-bold leading-[1.1] text-primary max-[560px]:col-start-2 max-[560px]:row-start-1 max-[560px]:mr-[22px] max-[560px]:justify-self-end">
                     {row.price}
                 </span>
                 {save && (
