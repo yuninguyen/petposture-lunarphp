@@ -29,3 +29,24 @@ test('the Picks list is canonical at /picks for the first page and for every fil
 test('a page past the end goes to the last page', () => {
     assert.match(list, /if \(page > pages\) redirect\(picksHref\(\{ breed, solution, q, sort, page: pages \}\)\)/);
 });
+
+// Article <-> Pick links: the Pick page lists the guides that mention it, the article lists its Picks above the comments.
+test('the Pick page hands the guides that mention it to the page, read from mentioned_in beside the product', () => {
+    assert.match(detail, /mentionedIn: Array\.isArray\(payload\?\.mentioned_in\)/);
+    assert.match(detail, /<PickDetails product=\{product\} related=\{related\} mentionedIn=\{lookup\.mentionedIn\} \/>/);
+});
+
+test('"Mentioned in" comes after "More PetPosture Picks" on the Pick page', () => {
+    const details = readFileSync(new URL('../../components/product/PickDetails.tsx', import.meta.url), 'utf8');
+
+    assert.ok(details.indexOf('More PetPosture Picks') < details.indexOf('<MentionedInPosts posts={mentionedIn} />'));
+});
+
+test('the article page hands its Picks to the page, and the Picks section sits above the comments', () => {
+    const article = readFileSync(new URL('../blog/[slug]/page.tsx', import.meta.url), 'utf8');
+    const articlePage = readFileSync(new URL('../../components/BlogPostPage.tsx', import.meta.url), 'utf8');
+
+    assert.match(article, /picks=\{Array\.isArray\(post\.picks\) \? post\.picks : \[\]\}/);
+    assert.ok(articlePage.indexOf('<MentionedPicks') > -1);
+    assert.ok(articlePage.indexOf('<MentionedPicks') < articlePage.indexOf('{/* Comments Section */}'));
+});

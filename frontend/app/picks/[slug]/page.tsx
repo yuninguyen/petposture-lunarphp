@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { notFound, permanentRedirect } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import type { MentionedPost } from '@/components/product/MentionedInPosts';
 import { PickDetails } from '@/components/product/PickDetails';
 import { getApiBaseUrl } from '@/lib/api';
 import { firstMetaDescription } from '@/lib/meta-description';
@@ -16,7 +17,7 @@ type Params = Promise<{ slug: string }>;
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 type PickProduct = Product & { pick: ProductPick };
 
-type Lookup = { product: PickProduct | null; redirectSlug: string | null };
+type Lookup = { product: PickProduct | null; redirectSlug: string | null; mentionedIn: MentionedPost[] };
 
 // A product that is not a Pick has no page here: it would have to be sold, and PetPosture does not sell.
 async function fetchPick(slug: string, previewQuery?: string): Promise<Lookup> {
@@ -26,19 +27,21 @@ async function fetchPick(slug: string, previewQuery?: string): Promise<Lookup> {
             cache: previewQuery ? 'no-store' : undefined,
             next: previewQuery ? undefined : { revalidate: 60 },
         });
-        if (!response.ok) return { product: null, redirectSlug: null };
+        if (!response.ok) return { product: null, redirectSlug: null, mentionedIn: [] };
 
         const payload = await response.json();
         const redirectPath = typeof payload?.redirect?.path === 'string' ? payload.redirect.path : null;
 
         return {
             product: payload?.data?.pick ? (payload.data as PickProduct) : null,
+            // The guides that mention this Pick; the API sends the live ones only, in `mentioned_in` beside `data`.
+            mentionedIn: Array.isArray(payload?.mentioned_in) ? (payload.mentioned_in as MentionedPost[]) : [],
             // The API answers an old product URL with the current path; the Pick lives at its last segment.
             redirectSlug: redirectPath ? (redirectPath.split('/').filter(Boolean).pop() ?? null) : null,
         };
     } catch (error) {
         console.error('Failed to fetch pick:', error);
-        return { product: null, redirectSlug: null };
+        return { product: null, redirectSlug: null, mentionedIn: [] };
     }
 }
 
@@ -122,7 +125,7 @@ export default async function Page({ params, searchParams }: { params: Params; s
             <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildPickJsonLd(SITE_URL, product)) }} />
             <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildPickBreadcrumbJsonLd(SITE_URL, product)) }} />
             <Header />
-            <PickDetails product={product} related={related} />
+            <PickDetails product={product} related={related} mentionedIn={lookup.mentionedIn} />
             <Footer />
         </main>
     );

@@ -9,6 +9,7 @@ import { formatDate } from '@/lib/date';
 import { buildPreviewQuery } from '@/lib/preview-query';
 import { SITE_URL } from '@/lib/site';
 import type { ComparisonData } from '@/components/blog/ComparisonTable';
+import type { Product } from '@/types/shop';
 
 type ApiPost = {
     id: string;
@@ -31,6 +32,8 @@ type ApiPost = {
     tags?: { name: string; slug: string }[];
     breeds?: { id: string; name: string; slug?: string | null }[];
     solutions?: { id: string; name: string; slug?: string | null }[];
+    /** The Picks this guide mentions, in the shape of a Pick product; the API sends the published ones only. */
+    picks?: Product[];
     seo?: {
         title?: string;
         keyphrase?: string;
@@ -219,7 +222,12 @@ export default async function Page({ params, searchParams }: { params: Promise<{
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingJsonLd) }}
             />
-            <BlogPostPage post={toViewModel(post)} recentPosts={recentPosts.map(toViewModel)} />
+            <BlogPostPage
+                post={toViewModel(post)}
+                recentPosts={recentPosts.map(toViewModel)}
+                picks={Array.isArray(post.picks) ? post.picks : []}
+                picksCheckedAt={new Date().toISOString()}
+            />
         </>
     );
 }

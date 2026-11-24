@@ -23,6 +23,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import ComparisonTable, { ComparisonData } from '@/components/blog/ComparisonTable';
+import { MentionedPicks } from '@/components/blog/MentionedPicks';
+import type { Product } from '@/types/shop';
 import { useSettings } from '@/context/SettingsContext';
 import { withTableOfContents, withResponsiveTables } from '@/lib/text';
 import { getApiBaseUrl } from '@/lib/api';
@@ -59,6 +61,9 @@ interface BlogPost {
 interface BlogPostPageProps {
     post: BlogPost;
     recentPosts: BlogPost[];
+    /** The Picks the guide mentions (shown above the comments), and the moment the page was made, for the price dates. */
+    picks?: Product[];
+    picksCheckedAt?: string;
 }
 
 type Comment = {
@@ -68,7 +73,7 @@ type Comment = {
     created_at: string;
 };
 
-export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
+export default function BlogPostPage({ post, recentPosts, picks = [], picksCheckedAt }: BlogPostPageProps) {
     const { social } = useSettings();
     const [isCommenting, setIsCommenting] = React.useState(false);
     const shareUrl = `${SITE_URL}/blog/${post.slug}`;
@@ -306,6 +311,8 @@ export default function BlogPostPage({ post, recentPosts }: BlogPostPageProps) {
                                 </ul>
                             </aside>
                         )}
+
+                        <MentionedPicks picks={picks} postTitle={post.title} now={picksCheckedAt ?? new Date().toISOString()} />
 
                         {/* Comments Section */}
                         <div id="comments" className="mt-24 space-y-16">

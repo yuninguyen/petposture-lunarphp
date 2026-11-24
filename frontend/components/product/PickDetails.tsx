@@ -3,6 +3,7 @@ import type { Product, ProductPick } from '@/types/shop';
 import { formatPickDate, humanizeSlug } from '@/lib/pick';
 import { sanitizeRichHtml } from '@/lib/sanitize-rich-html';
 import { stripHtml } from '@/lib/text';
+import { MentionedInPosts, type MentionedPost } from './MentionedInPosts';
 import { PickAccordionSection } from './PickAccordionSection';
 import { PickCard } from './PickCard';
 import { PickGallery } from './PickGallery';
@@ -31,7 +32,7 @@ function SectionTitle({ children }: { children: string }) {
 // our take, best for, product details (the quick specs), the practical difference, pros and cons.
 // On a phone the order is: title, photo, buy box, then the rest as written.
 // Every editorial block is left out when it was not entered.
-export function PickDetails({ product, related }: { product: PickProduct; related: Product[] }) {
+export function PickDetails({ product, related, mentionedIn = [] }: { product: PickProduct; related: Product[]; mentionedIn?: MentionedPost[] }) {
     const { pick } = product;
 
     // A Pick can be published before its photo is uploaded; then there is no gallery at all.
@@ -248,6 +249,8 @@ export function PickDetails({ product, related }: { product: PickProduct; relate
                     </div>
                 </section>
             )}
+
+            <MentionedInPosts posts={mentionedIn} />
         </div>
     );
 }
