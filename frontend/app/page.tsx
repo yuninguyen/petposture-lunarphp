@@ -10,7 +10,7 @@ import { STOREFRONT_SETTINGS_TAG, STOREFRONT_SITE_MEDIA_TAG } from '@/lib/storef
 // object, so the image has to be repeated too.
 const HOME_TITLE = 'PetPosture | Dog Product Picks by Breed & Body Type';
 const HOME_DESCRIPTION =
-    'Dog product picks matched to breed and body type. Ramp guides for Dachshunds, harness and feeding guides for French Bulldogs.';
+    'Dog product picks matched to breed and body type. Ramp guides for Dachshunds, harness and feeding guides for French Bulldogs. Browse by breed or need.';
 
 const HOME_SOCIAL_IMAGE = {
     url: '/assets/banner/social-preview.webp',

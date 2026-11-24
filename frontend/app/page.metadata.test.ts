@@ -7,7 +7,7 @@ import { metadata } from './page';
 
 const TITLE = 'PetPosture | Dog Product Picks by Breed & Body Type';
 const DESCRIPTION =
-    'Dog product picks matched to breed and body type. Ramp guides for Dachshunds, harness and feeding guides for French Bulldogs.';
+    'Dog product picks matched to breed and body type. Ramp guides for Dachshunds, harness and feeding guides for French Bulldogs. Browse by breed or need.';
 
 describe('homepage metadata', () => {
     it('has its own title that skips the "| PetPosture" template, and its own description', () => {
@@ -26,8 +26,9 @@ describe('homepage metadata', () => {
         expect(metadata.twitter?.images).toHaveLength(1);
     });
 
-    it('stays within search-result length: title up to 60, description up to 160', () => {
+    it('stays within search-result length: title up to 60, description 140 to 160', () => {
         expect(TITLE.length).toBeLessThanOrEqual(60);
+        expect(DESCRIPTION.length).toBeGreaterThanOrEqual(140);
         expect(DESCRIPTION.length).toBeLessThanOrEqual(160);
     });
 
