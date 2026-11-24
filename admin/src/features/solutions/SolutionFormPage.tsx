@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { SearchableMultiSelect } from '@/components/ui/SearchableMultiSelect';
+import { ProductKindMultiSelect } from '@/components/ui/ProductKindMultiSelect';
 import { MediaPicker } from '@/features/media/MediaPicker';
 import toast from 'react-hot-toast';
 import { useCreateSolution, useUpdateSolution, useSolution, Solution } from './solutionsApi';
@@ -290,8 +291,8 @@ export function SolutionFormPage() {
                 control={control}
                 name="product_ids"
                 render={({ field: { value, onChange } }) => (
-                  <SearchableMultiSelect
-                    options={products.map((p: any) => ({ id: p.id, label: p.name || p.title }))}
+                  <ProductKindMultiSelect
+                    products={products}
                     value={value}
                     onChange={onChange}
                     placeholder="Search products..."
