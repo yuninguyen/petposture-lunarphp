@@ -6,6 +6,7 @@ use App\Traits\HasMetadata;
 use App\Traits\HasSeo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Lunar\Models\Product;
 
 class Post extends Model
 {
@@ -69,6 +70,18 @@ class Post extends Model
     public function solutions()
     {
         return $this->belongsToMany(Solution::class, 'post_solution');
+    }
+
+    /** The Picks this post mentions (set from the post only). Rows are kept while either side is unpublished. */
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'post_product', 'post_id', 'lunar_product_id')->withTimestamps();
+    }
+
+    /** Posts readers can open: published, and past their publish date (a scheduled post is not live yet). */
+    public function scopeLive($query)
+    {
+        return $query->where('status', 'published')->where('published_at', '<=', now());
     }
 
     public static function estimateReadTime(string $html): string

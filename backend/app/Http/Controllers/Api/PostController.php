@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\PostResource;
 use App\Models\BlogCategory;
 use App\Models\Post;
+use App\Support\PickKind;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Lunar\Models\Product;
 
 class PostController extends Controller
 {
@@ -131,7 +133,38 @@ class PostController extends Controller
     {
         $this->authorizeAdmin();
 
-        return new PostResource($post->load('blogCategory'));
+        return new PostResource($post->load('blogCategory', 'products'));
+    }
+
+    /**
+     * The Picks a post can mention: published, with a variant (so the storefront can show them), and a retailer
+     * link. Behind the post permission, so a writer who cannot open the product list can still choose from here.
+     */
+    public function pickOptions(): JsonResponse
+    {
+        $this->authorizeAdmin();
+
+        $query = Product::query()->where('status', 'published')->whereHas('variants')->with(['brand', 'thumbnail']);
+        $products = PickKind::constrain($query, PickKind::PICK)->get();
+
+        return response()->json(['data' => $products
+            ->map(fn (Product $product): array => [
+                'id' => $product->id,
+                'name' => (string) $product->translateAttribute('name'),
+                'brand' => $product->brand?->name,
+                'reference_price' => $this->referencePrice($product),
+                'thumbnail' => $product->thumbnail?->getUrl('small') ?: null,
+            ])
+            ->sortBy(fn (array $option) => strtolower(($option['brand'] ?? '').' '.$option['name']))
+            ->values(),
+        ]);
+    }
+
+    private function referencePrice(Product $product): ?float
+    {
+        $raw = str_replace(['$', ','], '', trim((string) $product->translateAttribute('reference_price')));
+
+        return is_numeric($raw) && (float) $raw >= 0 ? round((float) $raw, 2) : null;
     }
 
     public function update(Request $request, Post $post)
@@ -230,6 +263,7 @@ class PostController extends Controller
         $replica->breeds()->sync($post->breeds->pluck('id'));
         $replica->solutions()->sync($post->solutions->pluck('id'));
         $replica->tags()->sync($post->tags->pluck('id'));
+        $replica->products()->sync($post->products()->pluck('lunar_products.id'));
 
         if ($post->seo) {
             $replica->seo()->create($post->seo->only([
@@ -363,6 +397,14 @@ class PostController extends Controller
             'solutions.*' => 'integer|exists:solutions,id',
             'tags' => 'nullable|array',
             'tags.*' => 'integer|exists:blog_tags,id',
+            'product_ids' => 'nullable|array|max:20',
+            'product_ids.*' => ['integer', 'distinct', function (string $attribute, mixed $value, \Closure $fail): void {
+                $product = Product::find($value);
+
+                if (! $product || PickKind::of($product) !== PickKind::PICK) {
+                    $fail(__('Only Picks can be linked to a post.'));
+                }
+            }],
             'seo' => 'nullable|array',
             'seo.title' => 'nullable|string|max:60',
             'seo.keyphrase' => 'nullable|string|max:255',
@@ -431,9 +473,12 @@ class PostController extends Controller
             'breeds' => $validated['breeds'] ?? [],
             'solutions' => $validated['solutions'] ?? [],
             'tags' => $validated['tags'] ?? [],
+            // Unlike the three above, an absent product_ids means "leave the links alone", so a partial update
+            // can never wipe them; only a list that was actually sent (even an empty one) is written.
+            'product_ids' => isset($validated['product_ids']) ? array_values($validated['product_ids']) : null,
         ];
 
-        unset($validated['breeds'], $validated['solutions'], $validated['tags']);
+        unset($validated['breeds'], $validated['solutions'], $validated['tags'], $validated['product_ids']);
 
         return $taxonomy;
     }
@@ -443,6 +488,10 @@ class PostController extends Controller
         $post->breeds()->sync($taxonomy['breeds']);
         $post->solutions()->sync($taxonomy['solutions']);
         $post->tags()->sync($taxonomy['tags']);
+
+        if ($taxonomy['product_ids'] !== null) {
+            $post->products()->sync($taxonomy['product_ids']);
+        }
     }
 
     /**

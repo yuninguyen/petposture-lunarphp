@@ -42,7 +42,7 @@ export interface ProductDetail {
   id: number; slug: string | null; status: ProductStatus; kind: ProductKind; brand_id: number | null; product_type_id: number;
   product_type: { id: number; name: string }; brand: { id: number; name: string } | null;
   has_variants: boolean; product_attributes: AttributeDefinition[]; product_options: ProductOption[]; variants: ProductVariant[];
-  collection_ids: number[]; media: ProductMedia[]; merchants: ProductMerchant[]; seo: ProductSeo; default_currency: Currency; tax_classes: TaxClass[]; updated_at: string | null;
+  collection_ids: number[]; media: ProductMedia[]; merchants: ProductMerchant[]; mentioned_in?: Array<{ id: number; title: string; published_at: string | null }>; seo: ProductSeo; default_currency: Currency; tax_classes: TaxClass[]; updated_at: string | null;
 }
 export interface ProductAssociation { id: number; type: ProductAssociationType; target: { id: number; name: string; status: ProductStatus; slug: string | null; thumbnail: string | null } }
 export interface ProductSummary {

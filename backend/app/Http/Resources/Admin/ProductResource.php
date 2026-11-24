@@ -6,6 +6,7 @@ use App\Models\PickMerchant;
 use App\Models\SeoMetadata;
 use App\Services\Admin\ProductAttributeService;
 use App\Support\PickKind;
+use App\Support\PostPickLinks;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\DB;
@@ -107,6 +108,13 @@ class ProductResource extends JsonResource
                     'url' => $merchant->url,
                     'price' => $merchant->price === null ? '' : (string) $merchant->price,
                     'price_checked_date' => $merchant->price_checked_date?->format('Y-m-d') ?? '',
+                ])->values()->all(),
+            // Read-only: the live posts that mention this Pick. The link is edited on the post, never here.
+            'mentioned_in' => PostPickLinks::postsOf($this->resource)
+                ->map(fn ($post): array => [
+                    'id' => $post->id,
+                    'title' => $post->title,
+                    'published_at' => $post->published_at?->toISOString(),
                 ])->values()->all(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

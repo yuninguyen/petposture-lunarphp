@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\NewReviewNotification;
 use App\Services\ProductRouteService;
 use App\Services\ReviewPurchaseEvidenceService;
+use App\Support\PostPickLinks;
 use App\Traits\HttpResponses;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -189,7 +190,10 @@ class ProductController extends Controller
                 ]]);
             }
 
-            return new ProductResource($product);
+            // The live posts that mention this Pick, for its "Mentioned in" section; an empty list for anything else.
+            return (new ProductResource($product))->additional([
+                'mentioned_in' => PostPickLinks::postsOf($product)->map(fn ($post) => PostPickLinks::summary($post))->values(),
+            ]);
         }
 
         $redirectProduct = $this->resolveRedirectProduct($slug);

@@ -268,6 +268,7 @@ Route::prefix('/admin')
 
         Route::get('/posts', [PostController::class, 'index']);
         Route::post('/posts', [PostController::class, 'store']);
+        Route::get('/posts/pick-options', [PostController::class, 'pickOptions']);
         Route::get('/posts/{post}', [PostController::class, 'show']);
         Route::get('/posts/{post}/preview-url', [PostController::class, 'previewUrl']);
         Route::put('/posts/{post}', [PostController::class, 'update']);

@@ -60,9 +60,11 @@ import {
   useCreateCategory,
   useCreateTag,
   useDeletePost,
+  usePickOptions,
   useSolutions,
   useUsers,
 } from './postsApi';
+import { RelatedProductsField } from './RelatedProductsField';
 import { ComparisonDetailsSection } from './ComparisonDetailsSection';
 import { SeoSettingsSection } from './SeoSettingsSection';
 import { TipTapToolbar } from './TipTapToolbar';
@@ -104,6 +106,7 @@ interface PostDetail {
   breeds: { id: string; name: string }[];
   solutions: { id: string; name: string }[];
   tags: { id: string; name: string }[];
+  product_ids?: number[];
   seo: {
     title: string | null;
     keyphrase: string | null;
@@ -162,6 +165,9 @@ export function PostFormPage() {
   const { data: tagsData } = useBlogTags();
   const tags = tagsData ?? [];
 
+  const { data: pickOptionsData, isSuccess: pickOptionsReady } = usePickOptions();
+  const pickOptions = pickOptionsData ?? [];
+
   const { data: usersData } = useUsers();
   const users = usersData ?? [];
 
@@ -189,6 +195,7 @@ export function PostFormPage() {
       breeds: [],
       solutions: [],
       tags: [],
+      product_ids: [],
       seo: {
         title: '',
         keyphrase: '',
@@ -279,6 +286,7 @@ export function PostFormPage() {
         breeds: existingPost.breeds?.map((b) => b.id) ?? [],
         solutions: existingPost.solutions?.map((s) => s.id) ?? [],
         tags: existingPost.tags?.map((t) => t.id) ?? [],
+        product_ids: existingPost.product_ids ?? [],
         seo: {
           title: existingPost.seo?.title ?? '',
           keyphrase: existingPost.seo?.keyphrase ?? '',
@@ -750,6 +758,14 @@ export function PostFormPage() {
               )}
               {createTag.isError && <p className="text-xs text-red-600 mt-1">{t('posts.create_tag_error')}</p>}
             </div>
+
+            <Controller
+              name="product_ids"
+              control={control}
+              render={({ field }) => (
+                <RelatedProductsField options={pickOptions} value={field.value ?? []} onChange={field.onChange} ready={pickOptionsReady} />
+              )}
+            />
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">{t('posts.form_label_featured_image')}</label>

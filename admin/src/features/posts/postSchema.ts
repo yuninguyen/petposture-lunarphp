@@ -86,6 +86,8 @@ export const getPostFormSchema = (t: TranslationFunction) =>
     breeds: z.array(z.string()).default([]),
     solutions: z.array(z.string()).default([]),
     tags: z.array(z.string()).default([]),
+    // The Picks this post mentions (Related Products). Always sent, so the list on screen is the list that is saved.
+    product_ids: z.array(z.number()).default([]),
     seo: z
       .object({
         title: z.string().max(60).optional(),

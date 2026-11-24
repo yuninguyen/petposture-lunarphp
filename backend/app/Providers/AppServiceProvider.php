@@ -131,6 +131,9 @@ class AppServiceProvider extends ServiceProvider
                 ->withPivot('priority')
                 ->orderByPivot('priority');
         });
+        Product::resolveRelationUsing('posts', function (Product $product) {
+            return $product->belongsToMany(Post::class, 'post_product', 'lunar_product_id', 'post_id');
+        });
         Product::resolveRelationUsing('solutions', function (Product $product) {
             return $product->belongsToMany(Solution::class, 'solution_product', 'lunar_product_id', 'solution_id')
                 ->withPivot('priority')

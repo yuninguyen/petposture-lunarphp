@@ -104,6 +104,25 @@ export function useSolutions() {
   });
 }
 
+/** A Published Pick a post can mention (from GET /admin/posts/pick-options, behind the post permission). */
+export interface PickOption {
+  id: number;
+  name: string;
+  brand: string | null;
+  reference_price: number | null;
+  thumbnail: string | null;
+}
+
+export function usePickOptions() {
+  return useQuery({
+    queryKey: ['post-pick-options'],
+    queryFn: async () => {
+      const res = await fetchJson<{ data: PickOption[] }>('/admin/posts/pick-options');
+      return Array.isArray(res.data) ? res.data : [];
+    },
+  });
+}
+
 export function useBlogTags() {
   return useQuery({
     queryKey: ['blog-tags'],

@@ -59,6 +59,10 @@ class PostResource extends JsonResource
                 'name' => $tag->name,
                 'slug' => $tag->slug,
             ])->values(),
+            // Only when loaded: the admin edit form gets the ids it selected (every link, whatever its status), the public
+            // article gets the Picks readers may see, in the shape of a Pick product.
+            'product_ids' => $this->whenLoaded('products', fn () => $this->resource->products->pluck('id')->values()),
+            'picks' => $this->whenLoaded('mentionedPicks', fn () => ProductResource::collection($this->resource->mentionedPicks)->resolve()),
         ];
     }
 

@@ -7,6 +7,7 @@ use App\Http\Resources\Api\PostResource;
 use App\Models\BlogCategory;
 use App\Models\Page;
 use App\Models\Post;
+use App\Support\PostPickLinks;
 use App\Traits\HttpResponses;
 use Illuminate\Http\Request;
 
@@ -42,6 +43,7 @@ class ContentController extends Controller
         }
 
         $post = $query->with(['blogCategory', 'metadata', 'tags', 'seo', 'featuredMedia'])->firstOrFail();
+        $post->setRelation('mentionedPicks', PostPickLinks::picksOf($post));
 
         return new PostResource($post);
     }
