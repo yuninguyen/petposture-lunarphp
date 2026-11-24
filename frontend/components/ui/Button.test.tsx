@@ -72,7 +72,9 @@ it("keeps secondary hover neutral and preserves the Hero CTA reference treatment
   expect(heroSource).toContain("borderRadius: 3");
   expect(heroSource).toContain("borderWidth: 0");
   expect(heroSource).toContain("sm:flex-row");
-  expect(heroSource).toContain("<span className=\"lg:hidden\">Better Products for the Way Your Dog Is Built.</span>");
+  // The H1 is one sentence with a line break from lg up, not two copies of it with one hidden by CSS.
+  expect(heroSource).toContain("Better Products for the{' '}<br className=\"hidden lg:inline\" />Way Your Dog Is Built.");
+  expect(heroSource.match(/Better Products for the/g)).toHaveLength(1);
 });
 
 it("migrates cart page and drawer actions to the shared primitive", () => {

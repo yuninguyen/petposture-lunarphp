@@ -32,8 +32,9 @@ export default function Hero({ heroImage }: { heroImage?: string | null }) {
             {/* Obsidian Glass Box */}
             <div className="w-full max-w-[440px] rounded-2xl border border-white/20 bg-black/20 p-5 shadow-2xl backdrop-blur-[4px] sm:max-w-[540px] sm:p-6 lg:max-w-none lg:px-10 lg:py-8">
               <h1 className="mb-4 text-[20px] font-black uppercase leading-[1.3] tracking-[0.045em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] min-[360px]:text-[22px] sm:text-[24px] md:text-[30px] md:tracking-[0.08em]" style={{ fontFamily: 'var(--font-hanken)' }}>
-                <span className="lg:hidden">Better Products for the Way Your Dog Is Built.</span>
-                <span className="hidden lg:inline">Better Products for the<br />Way Your Dog Is Built.</span>
+                {/* One sentence only: the line break after "the" shows from lg up. Two spans (one hidden by CSS) made
+                    the heading read twice to anything that reads the text, e.g. 91 characters in SEO checkers. */}
+                Better Products for the{' '}<br className="hidden lg:inline" />Way Your Dog Is Built.
               </h1>
 
               <p className="mx-auto mb-6 max-w-[420px] text-[13px] leading-relaxed tracking-[0.02em] text-white drop-shadow-sm lg:mx-0 sm:text-[14px] md:text-[15px]">
