@@ -308,8 +308,10 @@ function ShopCategories() {
               </div>
             </div>
             <p className="mb-3 text-center text-[11px] font-semibold text-zinc-500 sm:hidden">Swipe to see more solutions</p>
+            {/* A scrolling row clips above and below too: the top padding is room for the circle that lifts on hover,
+                and the same negative margin keeps everything where it was. */}
             <div
-              className="flex flex-row overflow-x-auto snap-x snap-mandatory scroll-px-4 scrollbar-hide sm:grid sm:grid-cols-4 gap-3 mb-4 sm:mb-6"
+              className="flex flex-row overflow-x-auto snap-x snap-mandatory scroll-px-4 scrollbar-hide sm:grid sm:grid-cols-4 gap-3 -mt-1 pt-1 mb-4 sm:mb-6"
               style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
               onScroll={makeScrollHandler(solutions.length, setActiveSolutionSlide)}
             >
