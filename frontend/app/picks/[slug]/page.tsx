@@ -7,6 +7,7 @@ import type { MentionedPost } from '@/components/product/MentionedInPosts';
 import { PickDetails } from '@/components/product/PickDetails';
 import { getApiBaseUrl } from '@/lib/api';
 import { firstMetaDescription } from '@/lib/meta-description';
+import { pageTitle } from '@/lib/page-title';
 import { PICKS_PATH, pickSeoTitle, relatedPicks } from '@/lib/pick';
 import { buildPickBreadcrumbJsonLd, buildPickJsonLd, serializeJsonLd } from '@/lib/pick-json-ld';
 import { buildPreviewQuery } from '@/lib/preview-query';
@@ -79,7 +80,7 @@ export async function generateMetadata({ params, searchParams }: { params: Param
     const ogImage = seoMeta?.og_image || product.image || undefined;
 
     return {
-        title,
+        title: pageTitle(title),
         description,
         alternates: { canonical: `/picks/${product.slug}` },
         // A signed preview link shows a draft, which must never be indexed.

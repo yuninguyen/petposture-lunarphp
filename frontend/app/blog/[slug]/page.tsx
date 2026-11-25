@@ -6,6 +6,7 @@ import { headers } from 'next/headers';
 import BlogPostPage from '@/components/BlogPostPage';
 import { API_BASE_URL } from '@/lib/api';
 import { formatDate } from '@/lib/date';
+import { pageTitle } from '@/lib/page-title';
 import { buildPreviewQuery } from '@/lib/preview-query';
 import { SITE_URL } from '@/lib/site';
 import type { ComparisonData } from '@/components/blog/ComparisonTable';
@@ -161,7 +162,7 @@ export async function generateMetadata({ params, searchParams }: { params: Promi
     const ogImage = seo?.og_image || post.featured_image || undefined;
 
     return {
-        title,
+        title: pageTitle(title),
         description,
         alternates: { canonical: `/blog/${slug}` },
         robots: {

@@ -17,7 +17,11 @@ function loadGenerateMetadata(path, fixture, kind) {
     const setup = kind === 'product'
         ? `const SITE_URL = '${siteUrl}'; const fixture = ${JSON.stringify(fixture)}; const fetchProduct = async () => ({ product: fixture, redirectPath: null }); const buildPreviewQuery = () => ''; const serializeSearchParams = () => ''; const stripHtml = (value) => value; const permanentRedirect = () => { throw new Error('unexpected redirect'); };`
         : `const SITE_URL = '${siteUrl}'; const fixture = ${JSON.stringify(fixture)}; const fetchPost = async () => fixture; const buildPreviewQuery = () => '';`;
-    const output = ts.transpileModule(`${setup}\n${functionSource}\nthis.generateMetadata = generateMetadata;`, {
+    // The real title helper, so a page's title is checked as the page builds it.
+    const titleHelper = readFileSync(new URL('../lib/page-title.ts', import.meta.url), 'utf8')
+        .replace("import type { Metadata } from 'next';", '')
+        .replace('export function pageTitle', 'function pageTitle');
+    const output = ts.transpileModule(`${setup}\n${titleHelper}\n${functionSource}\nthis.generateMetadata = generateMetadata;`, {
         compilerOptions: { module: ts.ModuleKind.Script, target: ts.ScriptTarget.ES2022 },
     }).outputText;
     const context = vm.createContext({ Promise, URLSearchParams, String, Boolean });
@@ -60,6 +64,20 @@ test('Product canonical, OG, JSON-LD, and sitemap URLs stay identical', async ()
     // Reverting the "hide the shop" commits makes this expect the entry again.
     const entry = (await sitemap()).find((item) => item.url === expectedAbsolute);
     assert.equal(entry, undefined, 'sitemap must not list a hidden shop product URL');
+});
+
+test('Blog: an SEO title that already has the brand suffix is not given it twice, and nothing else changes', async () => {
+    const seo = { title: 'Research Guide | PetPosture', description: 'About the guide' };
+    const post = { slug: 'research-guide', title: 'Research Guide', content: 'Content', featured_image: null, seo };
+    const metadata = await loadGenerateMetadata('./blog/[slug]/page.tsx', post, 'blog');
+    assert.equal(metadata.title.absolute, 'Research Guide | PetPosture');
+    assert.equal(metadata.openGraph.title, 'Research Guide | PetPosture');
+    assert.equal(metadata.twitter.title, 'Research Guide | PetPosture');
+    assert.equal(metadata.description, 'About the guide');
+    assert.equal(metadata.alternates.canonical, '/blog/research-guide');
+
+    const plain = await loadGenerateMetadata('./blog/[slug]/page.tsx', { ...post, seo: { title: 'Research Guide' } }, 'blog');
+    assert.equal(plain.title, 'Research Guide', 'the layout template adds the suffix to this one');
 });
 
 test('Blog canonical, OG, and sitemap URLs stay identical without optional SEO fields', async () => {
