@@ -53,7 +53,10 @@ const related = (slug: string, name: string): Product => ({
     price: 10, rating: 0, reviews: 0, image: `/storage/${slug}.png`, pick: pickData({ goUrl: `https://api.petposture.com/go/pick/${slug}` }),
 } as Product);
 
-const render = (p = product(), others: Product[] = []) => renderToStaticMarkup(<PickDetails product={p} related={others} />);
+// "Lower price · " is its own span so a phone can hide it; the tests below read the line as the one sentence a wide
+// screen shows. PickVariantSelector.test.tsx checks the span itself.
+const render = (p = product(), others: Product[] = []) =>
+    renderToStaticMarkup(<PickDetails product={p} related={others} />).replaceAll('<span class="max-[560px]:hidden">Lower price · </span>', 'Lower price · ');
 
 describe('PickDetails', () => {
     it('has no cart, stock, shipping, returns or payment text, even when the variant stock is 0', () => {
@@ -143,8 +146,8 @@ describe('PickDetails', () => {
         const chewy = render();
 
         for (const html of [amazon, chewy]) {
-            expect(html).toContain('h-[18px]');
-            expect(html).toContain('min-[561px]:h-[22px]');
+            expect(html).toContain('h-[22px]');
+            expect(html).toContain('max-[361px]:h-[18px]');
             expect(html).toContain('object-contain object-left');
         }
         expect(amazon).toContain('width="398" height="120"');
@@ -500,7 +503,7 @@ describe('PickDetails', () => {
         expect(html).toContain('>Checked </span>17 Nov 2026');
     });
 
-    it('on a phone puts the saving on the second line, right-aligned under the price and the button, the date on the left', () => {
+    it('on a phone puts the date on the second line and the saving under it, both starting under the logo', () => {
         today('2026-11-21');
         const [, chewy, petsmart] = rowsOf(furhaven(64.99, '2026-11-17', 40.99, '2026-11-21'));
         const cells = petsmart.split('role="cell"');
@@ -510,43 +513,20 @@ describe('PickDetails', () => {
 
         // the Price cell draws nothing itself on a phone, so the price and the line sit in the grid of the row
         expect(priceCell).toContain('max-[560px]:contents');
-        // second line: the saving over the two right columns (under the price and the button), pulled in to the button's edge
-        for (const token of ['max-[560px]:static', 'max-[560px]:col-start-2', 'max-[560px]:col-span-2', 'max-[560px]:row-start-2', 'max-[560px]:justify-self-end', 'max-[560px]:mr-[12px]']) {
+        // third line: the saving across the row, left-aligned with the date, never over at the right edge
+        for (const token of ['max-[560px]:static', 'max-[560px]:col-start-1', 'max-[560px]:col-span-3', 'max-[560px]:row-start-3', 'max-[560px]:justify-self-start', 'max-[560px]:pl-[12px]']) {
             expect(line, token).toContain(token);
         }
-        // the date takes the first column of that line only, so the saving has the room; inset 12px to stand under the logo
-        expect(date).toContain('max-[560px]:col-span-1');
-        expect(date).toContain('max-[560px]:col-start-1');
-        expect(date).toContain('max-[560px]:row-start-2');
-        expect(date).toContain('max-[560px]:pl-[12px]');
-        // a row without a saving keeps the date over the whole line, inset the same
-        const plainDate = classes(chewy.split('role="cell"')[3]);
-        expect(plainDate).toContain('max-[560px]:col-span-3');
-        expect(plainDate).toContain('max-[560px]:pl-[12px]');
-        expect(plainDate).not.toContain('max-[400px]');
-    });
-
-    it('up to 400px gives the date the whole second line and moves the saving to a third line, right-aligned to the Buy button', () => {
-        today('2026-11-21');
-        const [, chewy, petsmart] = rowsOf(furhaven(64.99, '2026-11-17', 40.99, '2026-11-21'));
-        const cells = petsmart.split('role="cell"');
-        const date = classes(cells[3]);
-        const line = classes(petsmart.match(/<span class="[^"]*">Lower price/)?.[0] ?? '');
-
-        // the date: the whole line, so it stays on one line ("Checked 21 Nov 2026") instead of wrapping beside the saving
-        expect(date).toContain('max-[400px]:col-span-3');
-        expect(date).toContain('max-[560px]:row-start-2');
-        // the saving: a third line of its own, across the row, still pulled in to the button's edge and right-aligned
-        for (const token of ['max-[400px]:row-start-3', 'max-[400px]:col-start-1', 'max-[400px]:col-span-3', 'max-[560px]:justify-self-end', 'max-[560px]:mr-[12px]']) {
-            expect(line, token).toContain(token);
+        expect(line).not.toContain('max-[560px]:justify-self-end');
+        // the date has the whole second line, inset 12px to stand under the logo, with or without a saving
+        for (const cell of [date, classes(chewy.split('role="cell"')[3])]) {
+            for (const token of ['max-[560px]:col-start-1', 'max-[560px]:col-span-3', 'max-[560px]:row-start-2', 'max-[560px]:pl-[12px]']) {
+                expect(cell, token).toContain(token);
+            }
         }
-        // from 401px to 560px the date and the saving share the second line
-        expect(date).toContain('max-[560px]:col-span-1');
-        expect(line).toContain('max-[560px]:row-start-2');
-        expect(line).toContain('max-[560px]:col-start-2');
-        // a row without a saving has nothing to move
+        // no in-between rules are left for 400px
+        expect(petsmart).not.toContain('max-[400px]');
         expect(petsmart.split('role="cell"')).toHaveLength(5);
-        expect(chewy).not.toContain('max-[400px]');
     });
 
     it('draws each store as a logo with its name as the alt text, and names a store that has no logo in text', () => {
@@ -554,8 +534,8 @@ describe('PickDetails', () => {
 
         expect(html).toContain('<img src="/images/retailers/chewy.png" alt="Chewy"');
         expect(html).toContain('<img src="/images/retailers/petsmart.png" alt="PetSmart"');
-        expect(html).toContain('h-[18px]');
-        expect(html).toContain('min-[561px]:h-[22px]');
+        expect(html).toContain('h-[22px]');
+        expect(html).toContain('max-[361px]:h-[18px]');
         expect(render(product(pickData({ retailer: 'zooplus', retailerName: 'Zooplus' })))).toContain('>Zooplus</span>');
     });
 

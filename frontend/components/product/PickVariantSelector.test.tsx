@@ -99,7 +99,8 @@ describe('Pick variant selector', () => {
             </PickVariantProvider>,
         );
         expect(single).toContain('>$40.99<');
-        expect(single).toContain('Lower price · Save $4.96');
+        // On a phone only the amount shows: "Lower price · " is hidden up to 560px, "Save $4.96" is not.
+        expect(single).toContain('<span class="max-[560px]:hidden">Lower price · </span>Save $4.96</span>');
 
         const chooser = renderToStaticMarkup(
             <PickVariantProvider variants={[camo, black]}>
@@ -111,6 +112,83 @@ describe('Pick variant selector', () => {
         expect(chooser).not.toContain('Lower price');
         // the PetSmart button is still there, for the one product that was checked
         expect(chooser).toContain('href="https://petposture.com/go/pick/balance-harness?retailer=second"');
+    });
+
+    it('gives every store logo one size (22px, 18px when stacked) and Walmart more height, because its letters fill less of its file', () => {
+        const stores =['petsmart', 'amazon', 'petco', 'walmart'] as const;
+        const names = { petsmart: 'PetSmart', amazon: 'Amazon', petco: 'Petco', walmart: 'Walmart' };
+        const html = renderToStaticMarkup(
+            <PickBuyBox
+                today="2026-11-21"
+                pick={{
+                    ...pick,
+                    retailerLogo: 'https://cdn.example.test/chewy.webp',
+                    merchants: stores.map((retailer, index) => ({
+                        id: index + 1, retailer, retailerName: names[retailer], retailerLogo: `https://cdn.example.test/${retailer}.webp`,
+                        goUrl: `https://petposture.com/go/pick/balance-harness?merchant=${index + 1}`, price: 50 + index, priceCheckedDate: '2026-11-21',
+                    })),
+                }}
+            />,
+        );
+        const host = document.createElement('div');
+        host.innerHTML = html;
+        const classesOf = (alt: string) => host.querySelector(`img[alt="${alt}"]`)!.className.split(' ');
+
+        for (const alt of ['Chewy', 'PetSmart', 'Amazon', 'Petco']) {
+            expect(classesOf(alt)).toEqual(expect.arrayContaining(['h-[22px]', 'max-[361px]:h-[18px]', 'w-auto', 'max-w-[min(130px,100%)]', 'object-contain', 'object-left']));
+            expect(classesOf(alt)).not.toContain('h-[30px]');
+        }
+        expect(classesOf('Walmart')).toEqual(expect.arrayContaining(['h-[30px]', 'max-[361px]:h-[24px]', 'w-auto', 'max-w-[min(150px,100%)]', 'object-contain']));
+        expect(classesOf('Walmart')).not.toContain('h-[22px]');
+    });
+
+    // Tailwind's max-[Npx] means "narrower than N", so max-[441px] is "440px and down", max-[361px] "360px and down".
+    it('up to 440px brings the price closer to the Buy button, and up to 360px puts logo and price first, then the date beside Buy, then the saving', () => {
+        const host = document.createElement('div');
+        host.innerHTML = renderToStaticMarkup(<PickBuyBox pick={withPetSmart} today="2026-11-21" />);
+        const [first, cheaper] = [...host.querySelectorAll('[role="row"]')].filter((row) => row.querySelector('a'));
+        const classes = (element: Element) => element.className.split(' ');
+        const parts = (row: Element) => {
+            const [logo, priceCell, date, button] = [...row.querySelectorAll('[role="cell"]')];
+            const [price, save] = [...priceCell.querySelectorAll('span')];
+
+            return { logo, price, save, date, button };
+        };
+
+        for (const row of [first, cheaper]) {
+            const { logo, price, date, button } = parts(row);
+            expect(classes(row)).toContain('max-[361px]:grid-cols-[minmax(0,1fr)_auto]');
+            expect(classes(price)).toEqual(expect.arrayContaining(['max-[560px]:mr-[40px]', 'max-[441px]:mr-[12px]', 'max-[560px]:col-start-2', 'max-[560px]:row-start-1', 'max-[560px]:justify-self-end']));
+            expect(classes(price)).not.toContain('max-[380px]:mr-[12px]');
+            // From 412px there is room to spare, so the price sits further left, away from the button.
+            expect(classes(price)).toContain('min-[412px]:max-[441px]:mr-[28px]');
+            // Logo and price keep the first line. The price runs across both columns there, so however long it is it
+            // does not widen the button's column and squeeze the date under the logo.
+            expect(classes(logo).filter((name) => /^max-\[361px\]:(col|row)-/.test(name))).toEqual([]);
+            expect(classes(price)).toEqual(expect.arrayContaining(['max-[361px]:col-span-2', 'max-[361px]:col-start-1']));
+            expect(classes(price).filter((name) => /^max-\[361px\]:row-/.test(name))).toEqual([]);
+            expect(classes(date)).toEqual(expect.arrayContaining(['max-[361px]:whitespace-nowrap', 'max-[361px]:text-[length:clamp(11px,3.7vw,0.78rem)]']));
+            // An ordinary price keeps its size.
+            expect(classes(price)).not.toContain('max-[441px]:text-[1.05rem]');
+            expect(classes(date)).toEqual(expect.arrayContaining(['max-[361px]:col-span-1', 'max-[361px]:col-start-1', 'max-[361px]:row-start-2', 'max-[361px]:self-center']));
+            // The button is beside the date only, in the same place on every row, so a long saving cannot run into it.
+            expect(classes(button)).toEqual(expect.arrayContaining(['max-[361px]:col-start-2', 'max-[361px]:row-start-2', 'max-[361px]:self-center']));
+            expect(classes(button).filter((name) => name.includes('row-span'))).toEqual([]);
+        }
+        // The saving keeps the phone's third line, left-aligned; at 360px and down there are only two columns to span.
+        expect(classes(parts(cheaper).save)).toEqual(expect.arrayContaining(['max-[560px]:row-start-3', 'max-[560px]:justify-self-start', 'max-[361px]:col-span-2', 'max-[361px]:col-start-1']));
+    });
+
+    it('sets a price of a thousand dollars or more smaller on a phone, so the row shrinks instead of breaking', () => {
+        const priceClasses = (referencePrice: number) => {
+            const host = document.createElement('div');
+            host.innerHTML = renderToStaticMarkup(<PickBuyBox pick={{ ...pick, referencePrice }} today="2026-11-21" />);
+
+            return [...host.querySelectorAll('[role="cell"]')[1].querySelector('span')!.classList];
+        };
+
+        expect(priceClasses(999.99)).not.toContain('max-[441px]:text-[1.05rem]');
+        expect(priceClasses(1123.99)).toContain('max-[441px]:text-[1.05rem]');
     });
 
     it('shows no PetSmart row at all, with or without a chooser, until its price and date are entered', () => {

@@ -35,11 +35,19 @@ function selectorLabel(variants: PickVariant[]): string {
     return names.size === 1 && [...names][0] !== '' ? [...names][0] : 'Options';
 }
 
+// Every logo gets one height and a width cap, never a fixed width, smaller when the row is stacked (360px and down).
+// The sizes are meant to give the letters about the same height. Walmart's letters fill only 60% of its file (the
+// spark is taller than the name), the other logos' 84% or more, so its file gets more height.
+const LOGO_SIZE = 'h-[22px] max-w-[min(130px,100%)] max-[361px]:h-[18px]';
+const WALMART_LOGO_SIZE = 'h-[30px] max-w-[min(150px,100%)] max-[361px]:h-[24px]';
+
 /** The store's logo, or its name in text when it has none or the image does not load. */
 function MerchantLogo({ row }: { row: PickPriceRow }) {
     const [failed, setFailed] = useState(false);
 
     if (!row.logo || failed) return <span className="text-base font-extrabold text-primary">{row.name}</span>;
+
+    const size = row.name.toLowerCase() === 'walmart' ? WALMART_LOGO_SIZE : LOGO_SIZE;
 
     return (
         // eslint-disable-next-line @next/next/no-img-element
@@ -49,7 +57,7 @@ function MerchantLogo({ row }: { row: PickPriceRow }) {
             width={row.logo.width ?? undefined}
             height={row.logo.height ?? undefined}
             onError={() => setFailed(true)}
-            className="block h-[18px] w-auto max-w-full object-contain object-left min-[561px]:h-[22px]"
+            className={`block ${size} w-auto object-contain object-left`}
         />
     );
 }
@@ -58,41 +66,44 @@ function MerchantLogo({ row }: { row: PickPriceRow }) {
 // subgrids of it, so Merchant / Price / Checked / Buy start at the same place in every row; the logo and the Buy button are
 // inset 12px so the tinted row has room around them. The "Lower price" line is plain text hung under the price: it takes no
 // part in centering the row, so the price, the date, the logo and the button stay on one line (the row's extra bottom padding
-// holds it). Up to 560px the header goes and each row stacks: logo, price and button on the first line, the check date under
-// them on the left and, on the cheaper row, the saving on the right, under the price and the button. Up to 400px the date does
-// not fit beside the saving with room to spare (at 390px it has under 4px, and it wraps onto two or three lines below
-// that), so it takes the whole second line and the saving goes to a third line of its own, still right-aligned to the edge
-// of the button. From 401px the date has at least 14px to spare.
+// holds it). Up to 560px the header goes and each row stacks: logo, price and button on the first line, the check date
+// on the second and, on the cheaper row, the saving ("Save $4.00", without "Lower price") on a third line under the
+// date, both starting under the logo. Up to 440px the price sits 12px from the button instead
+// of 40px, which gives the logo column that room. Up to 360px a row cannot hold logo, price and button side by side
+// without shrinking the logo, so the button moves down: logo and price on the first line, the check date with the
+// button beside it on the second, and the saving on a line of its own with the whole width, so it cannot run into
+// the button however long the amount is.
 const TABLE_COLUMNS = 'grid-cols-[minmax(0,1.05fr)_minmax(0,0.72fr)_minmax(0,1.05fr)_104px]';
-const ROW_BASE = 'col-span-full grid grid-cols-subgrid items-center gap-x-3 gap-y-1 px-[2px] pt-[14px] max-[560px]:pt-[8px] max-[560px]:grid-cols-[minmax(0,1fr)_auto_auto] max-[560px]:gap-x-[10px]';
+const ROW_BASE = 'col-span-full grid grid-cols-subgrid items-center gap-x-3 gap-y-1 px-[2px] pt-[14px] max-[560px]:pt-[8px] max-[560px]:grid-cols-[minmax(0,1fr)_auto_auto] max-[560px]:gap-x-[10px] max-[361px]:grid-cols-[minmax(0,1fr)_auto] max-[361px]:gap-x-[8px] max-[361px]:gap-y-[2px] max-[361px]:pt-[12px]';
 
 /** `save` is set on the cheaper row only: it tints the row (6px below the one above) and carries the "Lower price" line. */
 function PriceRow({ row, save }: { row: PickPriceRow; save?: string }) {
     return (
         <div role="row" className={`${ROW_BASE} ${save ? 'mt-[6px] bg-[#FDF2EA] pb-[30px] max-[560px]:pb-[14px]' : 'border-b border-[#eee7dc] pb-[14px]'}`}>
-            <div role="cell" className="flex min-w-0 items-center pl-[12px] max-[560px]:col-start-1 max-[560px]:row-start-1">
+            <div role="cell" className="flex min-w-0 items-center pl-[12px] max-[560px]:col-start-1 max-[560px]:row-start-1 max-[361px]:min-h-[28px]">
                 <MerchantLogo row={row} />
             </div>
             {/* On a phone this cell draws nothing of its own ("contents"), so the price and the saving line can sit in the
                 grid of the row: the price on the first line, the saving on the second, right-aligned under the button. */}
             <div role="cell" className="relative min-w-0 max-[560px]:contents">
-                <span className="block whitespace-nowrap text-[1.25rem] font-bold leading-[1.1] text-primary max-[560px]:col-start-2 max-[560px]:row-start-1 max-[560px]:mr-[40px] max-[380px]:mr-[12px] max-[560px]:justify-self-end">
+                <span className={`block whitespace-nowrap text-[1.25rem] font-bold leading-[1.1] text-primary max-[560px]:col-start-2 max-[560px]:row-start-1 max-[560px]:mr-[40px] max-[441px]:mr-[12px] min-[412px]:max-[441px]:mr-[28px] max-[560px]:justify-self-end max-[361px]:col-span-2 max-[361px]:col-start-1 ${(row.cents ?? 0) >= 100000 ? 'max-[441px]:text-[1.05rem]' : ''}`}>
                     {row.price}
                 </span>
                 {save && (
-                    <span className="absolute left-0 top-[calc(100%+6px)] whitespace-nowrap text-[0.78rem] font-bold leading-[1.3] text-[#2e7d4f] max-[560px]:static max-[560px]:col-span-2 max-[560px]:col-start-2 max-[560px]:row-start-2 max-[560px]:mr-[12px] max-[560px]:justify-self-end max-[400px]:col-span-3 max-[400px]:col-start-1 max-[400px]:row-start-3">
-                        Lower price · Save {save}
+                    <span className="absolute left-0 top-[calc(100%+6px)] whitespace-nowrap text-[0.78rem] font-bold leading-[1.3] text-[#2e7d4f] max-[560px]:static max-[560px]:col-span-3 max-[560px]:col-start-1 max-[560px]:row-start-3 max-[560px]:justify-self-start max-[560px]:pl-[12px] max-[361px]:col-span-2 max-[361px]:col-start-1">
+                        {/* On a phone the tinted row already marks the cheaper store, so the amount alone is enough. */}
+                        <span className="max-[560px]:hidden">Lower price · </span>Save {save}
                     </span>
                 )}
             </div>
             <div
                 role="cell"
-                className={`min-w-0 whitespace-nowrap text-[0.85rem] text-[#7a8894] max-[560px]:col-start-1 max-[560px]:row-start-2 max-[560px]:whitespace-normal max-[560px]:pl-[12px] max-[560px]:text-[0.78rem] ${save ? 'max-[560px]:col-span-1 max-[400px]:col-span-3' : 'max-[560px]:col-span-3'} ${row.checked ? '' : 'max-[560px]:hidden'}`}
+                className={`min-w-0 whitespace-nowrap text-[0.85rem] text-[#7a8894] max-[560px]:col-start-1 max-[560px]:row-start-2 max-[560px]:whitespace-normal max-[560px]:pl-[12px] max-[560px]:text-[0.78rem] max-[560px]:col-span-3 max-[361px]:col-span-1 max-[361px]:col-start-1 max-[361px]:row-start-2 max-[361px]:self-center max-[361px]:whitespace-nowrap max-[361px]:text-[length:clamp(11px,3.7vw,0.78rem)] ${row.checked ? '' : 'max-[560px]:hidden'}`}
             >
                 {row.checked && <span className="hidden max-[560px]:inline">Checked </span>}
                 {row.checked}
             </div>
-            <div role="cell" className="min-w-0 max-[560px]:col-start-3 max-[560px]:row-start-1 max-[560px]:justify-self-end">
+            <div role="cell" className="min-w-0 max-[560px]:col-start-3 max-[560px]:row-start-1 max-[560px]:justify-self-end max-[361px]:col-start-2 max-[361px]:row-start-2 max-[361px]:self-center">
                 <a
                     href={row.goUrl}
                     target="_blank"
