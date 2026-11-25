@@ -8,6 +8,7 @@ use App\Services\StorefrontCacheRefreshService;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Tests\Fixtures\StorefrontHtml;
 use Tests\TestCase;
 
@@ -77,6 +78,18 @@ class StorefrontConnectedRefreshTest extends TestCase
             $this->assertFalse(app(StorefrontCacheRefreshService::class)->refresh([])->successful);
             $this->assertCount(count($pages) + 3, $this->calls);
         }
+    }
+
+    public function test_a_homepage_that_does_not_match_is_logged_with_the_field_names_only(): void
+    {
+        Log::spy();
+        $this->transport([StorefrontHtml::render('A')]);
+
+        $this->assertFalse(app(StorefrontCacheRefreshService::class)->refresh([])->successful);
+        Log::shouldHaveReceived('warning')->once()->with(
+            'Storefront homepage does not match the saved settings; the cache was not purged.',
+            ['fields' => ['json-ld:organization', 'json-ld:website']],
+        );
     }
 
     public function test_legacy_serialized_envelope_executes_full_chain_not_edge_only(): void

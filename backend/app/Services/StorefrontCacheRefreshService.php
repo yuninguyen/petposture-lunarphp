@@ -5,6 +5,7 @@ namespace App\Services;
 use App\ValueObjects\CloudflarePurgeResult;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
 
@@ -40,7 +41,12 @@ class StorefrontCacheRefreshService
             // One sequential pair is within the at-most-three-pair budget. Any mismatch
             // fails this attempt; a journal retry starts with eviction and fresh expected data.
             foreach ([true, false] as $bypassCache) {
-                if (! $freshness->matches($transport->homepage($deadline, $bypassCache), $expected) || hrtime(true) / 1e9 >= $deadline) {
+                $differing = $freshness->mismatches($transport->homepage($deadline, $bypassCache), $expected);
+                if ($differing !== []) {
+                    // The catch below keeps its general message; without this line the log never says why.
+                    Log::warning('Storefront homepage does not match the saved settings; the cache was not purged.', ['fields' => $differing]);
+                }
+                if ($differing !== [] || hrtime(true) / 1e9 >= $deadline) {
                     throw new RuntimeException('Origin projection mismatch.');
                 }
             }

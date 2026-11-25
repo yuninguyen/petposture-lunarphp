@@ -32,7 +32,7 @@ class StorefrontProjectionTest extends TestCase
         $this->assertSame('PetPosture', $projection['website']['name']);
         $this->assertArrayNotHasKey('logo', $projection['organization']);
         $this->assertArrayNotHasKey('sameAs', $projection['organization']);
-        $this->assertSame('PetPosture — Breed-Focused Pet Product Recommendations', $projection['metadata']['title']);
+        $this->assertSame('PetPosture | Dog Product Picks by Breed & Body Type', $projection['metadata']['title']);
     }
 
     public function test_malformed_independent_projection_cannot_become_legitimate_defaults(): void

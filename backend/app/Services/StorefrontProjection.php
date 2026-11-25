@@ -10,6 +10,14 @@ final class StorefrontProjection
 
     private const DESCRIPTION = 'Breed-focused pet product recommendations based on practical fit, materials, usability and everyday comfort.';
 
+    // The homepage declares its own metadata (frontend/app/page.tsx), whatever the admin settings say. These must stay
+    // the same as there, or the automatic cache purge stops; StorefrontHomepageContractTest compares the two.
+    private const HOME_TITLE = 'PetPosture | Dog Product Picks by Breed & Body Type';
+
+    private const HOME_DESCRIPTION = 'Dog product picks matched to breed and body type. Ramp guides for Dachshunds, harness and feeding guides for French Bulldogs. Browse by breed or need.';
+
+    private const HOME_SITE_NAME = 'PetPosture';
+
     public static function fromPublicData(array $settings, array $banners): array
     {
         foreach (['shop_name', 'shop_logo', 'description', 'social', 'contact'] as $key) {
@@ -60,19 +68,18 @@ final class StorefrontProjection
                 $found = true;
             }
         }
-        $title = $name.' — Breed-Focused Pet Product Recommendations';
         $preview = self::URL.'/assets/banner/social-preview.webp';
 
         return [
             'organization' => $organization,
             'website' => ['@type' => 'WebSite', '@id' => self::URL.'/#website', 'name' => $name, 'url' => self::URL],
             'metadata' => [
-                'title' => $title, 'description' => $description,
-                'og:site_name' => $name, 'og:type' => 'website', 'og:url' => self::URL,
-                'og:title' => $title, 'og:description' => $description, 'og:image' => $preview,
-                'og:image:width' => '1200', 'og:image:height' => '630', 'og:image:alt' => $name.' pet products',
-                'twitter:card' => 'summary_large_image', 'twitter:title' => $title,
-                'twitter:description' => $description, 'twitter:image' => $preview,
+                'title' => self::HOME_TITLE, 'description' => self::HOME_DESCRIPTION,
+                'og:site_name' => self::HOME_SITE_NAME, 'og:type' => 'website', 'og:url' => self::URL,
+                'og:title' => self::HOME_TITLE, 'og:description' => self::HOME_DESCRIPTION, 'og:image' => $preview,
+                'og:image:width' => '1200', 'og:image:height' => '630', 'og:image:alt' => self::HOME_SITE_NAME.' pet products',
+                'twitter:card' => 'summary_large_image', 'twitter:title' => self::HOME_TITLE,
+                'twitter:description' => self::HOME_DESCRIPTION, 'twitter:image' => $preview,
             ],
             'hero' => $hero ?? '/assets/banner/hero-banner-homepage.webp',
         ];

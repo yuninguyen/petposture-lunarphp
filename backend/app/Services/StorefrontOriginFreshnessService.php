@@ -13,72 +13,107 @@ class StorefrontOriginFreshnessService
 {
     public function matches(string $html, array $expected): bool
     {
+        return $this->mismatches($html, $expected) === [];
+    }
+
+    /**
+     * The names of what differs, never the values. Empty means the homepage matches. A page that cannot be read at all
+     * is reported as "document".
+     *
+     * @return list<string>
+     */
+    public function mismatches(string $html, array $expected): array
+    {
         try {
             if (strlen($html) > 2097152 || ! mb_check_encoding($html, 'UTF-8')
                 || ! preg_match('~<!doctype\s+html\s*>~i', $html)
                 || ! preg_match('~</body>\s*</html>\s*\z~i', $html)) {
-                return false;
+                return ['document'];
             }
             $parser = new HTML5(['disable_html_ns' => true]);
             $document = $parser->loadHTML($html);
             if ($parser->hasErrors()) {
-                return false;
+                return ['document'];
             }
             $xpath = new DOMXPath($document);
             if ($xpath->query('//*[@nonce] | //base')->length !== 0) {
-                return false;
+                return ['document'];
             }
+            $differing = [];
             foreach ($expected['metadata'] as $key => $value) {
                 $selector = $key === 'title' ? '//head/title'
                     : (str_starts_with($key, 'og:') ? '//meta[@property="'.$key.'"]' : '//meta[@name="'.$key.'"]');
                 $nodes = $xpath->query($selector);
                 if ($nodes->length !== 1 || ($key === 'title' ? $nodes[0]->textContent : $nodes[0]->getAttribute('content')) !== $value) {
-                    return false;
+                    $differing[] = $key;
                 }
             }
             $canonical = $xpath->query('//link[@rel="canonical"]');
             if ($canonical->length !== 1 || ! in_array($canonical[0]->getAttribute('href'), ['https://petposture.com', 'https://petposture.com/'], true)) {
-                return false;
+                $differing[] = 'canonical';
             }
+
+            return [...$differing, ...$this->schemaMismatches($xpath, $expected), ...$this->heroMismatches($xpath, $expected)];
+        } catch (Throwable) {
+            return ['document'];
+        }
+    }
+
+    /** @return list<string> */
+    private function schemaMismatches(DOMXPath $xpath, array $expected): array
+    {
+        try {
             $entities = [];
             foreach ($xpath->query('//script[@type="application/ld+json"]') as $script) {
                 $root = StorefrontJson::decode($script->textContent);
                 if (! is_array($root) || ($root['@context'] ?? null) !== 'https://schema.org' || ! is_array($root['@graph'] ?? null)) {
-                    return false;
+                    return ['json-ld'];
                 }
                 foreach ($root['@graph'] as $entity) {
                     if (! is_array($entity) || ! is_string($entity['@id'] ?? null) || isset($entities[$entity['@id']])) {
-                        return false;
+                        return ['json-ld'];
                     }
                     $entities[$entity['@id']] = $entity;
                 }
             }
+            $differing = [];
             foreach (['organization', 'website'] as $key) {
                 $wanted = $expected[$key];
                 if (! self::sameValue($entities[$wanted['@id']] ?? null, $wanted)) {
-                    return false;
+                    $differing[] = 'json-ld:'.$key;
                 }
             }
+
+            return $differing;
+        } catch (Throwable) {
+            return ['json-ld'];
+        }
+    }
+
+    /** @return list<string> */
+    private function heroMismatches(DOMXPath $xpath, array $expected): array
+    {
+        try {
             $images = $xpath->query('//img[@alt="Comfortable feeding setup"]');
             if ($images->length !== 1 || $this->source($images[0]->getAttribute('src')) !== $this->absolute($expected['hero'])) {
-                return false;
+                return ['hero-image'];
             }
             if ($images[0]->hasAttribute('srcset')) {
                 $srcset = $images[0]->getAttribute('srcset');
                 if ($srcset === '') {
-                    return false;
+                    return ['hero-image'];
                 }
                 foreach (explode(',', $srcset) as $candidate) {
                     if (! preg_match('/^\s*(\S+)\s+([1-9][0-9]*w|(?:[0-9]+\.)?[0-9]+x)\s*$/D', $candidate, $parts)
                         || $this->source($parts[1]) !== $this->absolute($expected['hero'])) {
-                        return false;
+                        return ['hero-image'];
                     }
                 }
             }
 
-            return true;
+            return [];
         } catch (Throwable) {
-            return false;
+            return ['hero-image'];
         }
     }
 
