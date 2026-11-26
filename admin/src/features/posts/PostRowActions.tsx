@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import type { Post } from './postsApi';
-import { useFrontendUrl } from './postsApi';
+import { useFrontendUrl, usePostPreview } from './postsApi';
 import { EyeIcon, PencilIcon, CopyIcon, TrashIcon, DotsVerticalIcon } from '../../components/ui/icons';
 
 interface PostRowActionsProps {
@@ -21,6 +22,7 @@ export function PostRowActions({ post, onDuplicate, onDelete }: PostRowActionsPr
   // dev and petposture.com in production, never the wrong one.
   const { data: frontendUrl } = useFrontendUrl();
   const viewBaseUrl = frontendUrl ?? import.meta.env.VITE_FRONTEND_URL ?? 'https://petposture.com';
+  const preview = usePostPreview();
 
   useEffect(() => {
     if (!open) return;
@@ -35,7 +37,7 @@ export function PostRowActions({ post, onDuplicate, onDelete }: PostRowActionsPr
 
   return (
     <div className="flex items-center justify-end gap-1">
-      {post.status === 'published' && (
+      {post.status === 'published' ? (
         <a
           href={`${viewBaseUrl}/blog/${post.slug}`}
           target="_blank"
@@ -45,6 +47,17 @@ export function PostRowActions({ post, onDuplicate, onDelete }: PostRowActionsPr
         >
           <EyeIcon />
         </a>
+      ) : (
+        <button
+          type="button"
+          title={t('posts.form_button_preview')}
+          aria-label={t('posts.form_button_preview')}
+          disabled={preview.isPending}
+          onClick={() => preview.mutate(post.id, { onError: () => toast.error(t('posts.preview_error')) })}
+          className="inline-flex items-center justify-center rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:cursor-wait disabled:opacity-50"
+        >
+          <EyeIcon />
+        </button>
       )}
 
       <div className="relative" ref={menuRef}>

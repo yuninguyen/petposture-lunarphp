@@ -61,6 +61,7 @@ import {
   useCreateTag,
   useDeletePost,
   usePickOptions,
+  usePostPreview,
   useSolutions,
   useUsers,
 } from './postsApi';
@@ -354,29 +355,14 @@ export function PostFormPage() {
     }
   });
 
-  const previewMutation = useMutation({
-    mutationFn: () => fetchJson<{ url: string }>(`/admin/posts/${id}/preview-url`),
-  });
+  const previewMutation = usePostPreview();
 
   const deletePost = useDeletePost();
   const createCategory = useCreateCategory();
   const createTag = useCreateTag();
 
   function handlePreview() {
-    // Popup blockers kill window.open calls made after an await, so instead
-    // fetch the signed URL and then click a real anchor (target=_blank) — a
-    // navigation, not a popup, so it is not blocked.
-    previewMutation.mutate(undefined, {
-      onSuccess: (data) => {
-        const anchor = document.createElement('a');
-        anchor.href = data.url;
-        anchor.target = '_blank';
-        anchor.rel = 'noopener noreferrer';
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-      },
-    });
+    if (id) previewMutation.mutate(id);
   }
 
   function handleDeletePost() {

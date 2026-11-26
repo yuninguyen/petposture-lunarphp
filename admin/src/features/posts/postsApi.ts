@@ -238,6 +238,24 @@ export function useCreateTag() {
   });
 }
 
+// Asks for a signed preview link of a post (any status) and opens it in a new tab.
+export function usePostPreview() {
+  return useMutation({
+    mutationFn: (id: number | string) => fetchJson<{ url: string }>(`/admin/posts/${id}/preview-url`),
+    onSuccess: ({ url }) => {
+      // Popup blockers kill window.open calls made after an await, so click a
+      // real anchor (target=_blank) instead — a navigation, not a popup.
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+    },
+  });
+}
+
 // The storefront base URL comes from the backend (config('app.frontend_url'),
 // exposed via GET /api/settings) — the SAME value the preview endpoint uses —
 // so admin View links always target the right frontend for the environment.
