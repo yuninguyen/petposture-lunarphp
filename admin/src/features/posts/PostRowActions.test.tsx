@@ -47,7 +47,8 @@ beforeEach(() => {
   mocks.fetchJson.mockReset();
   mocks.toastError.mockReset();
   mocks.fetchJson.mockImplementation((url: string) =>
-    url === '/settings' ? Promise.resolve({ data: { frontend_url: 'https://storefront.test' } }) : previewResponse());
+    // /settings answers late on purpose: the View link must still end up on the right storefront.
+    url === '/settings' ? new Promise((resolve) => setTimeout(() => resolve({ data: { frontend_url: 'https://storefront.test' } }), 20)) : previewResponse());
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
     opened.push({ href: this.href, target: this.target, rel: this.rel });
   });
@@ -62,6 +63,8 @@ describe('PostRowActions view and preview', () => {
   it('links a published post to its live page and asks for no preview link', async () => {
     await mount('published');
 
+    // React only redraws once an act() step ends, so wait in short steps for the late /settings answer.
+    for (let i = 0; i < 100 && !liveLink()?.href.startsWith('https://storefront.test'); i++) await flush();
     expect(liveLink()?.getAttribute('href')).toBe('https://storefront.test/blog/my-post');
     expect(previewButton()).toBeNull();
     expect(previewCalls()).toHaveLength(0);

@@ -310,7 +310,8 @@ export function SolutionFormPage() {
                 name="post_ids"
                 render={({ field: { value, onChange } }) => (
                   <SearchableMultiSelect
-                    options={posts.map((p: any) => ({ id: p.id, label: p.title }))}
+                    // The posts list sends string ids, the saved posts are numbers: compare as numbers.
+                    options={posts.map((p: any) => ({ id: Number(p.id), label: p.title }))}
                     value={value}
                     onChange={onChange}
                     placeholder="Search posts..."
